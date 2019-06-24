@@ -236,12 +236,12 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     private int getMemSize(int original) {
-        // If job asked for >999MB but <4000MB, subtract out 400 MB for JVM, meta_space, code_cache, etc.
+        // If job asked for >999MB but <4000MB, subtract out 500 MB for JVM, meta_space, code_cache, etc.
         // leaving rest for the heap, Xmx.
         if (original < 4000)
-            return original > 999 ? original - 400 : original;
-        // If job asked for >4000, subtract out based on scale back percentage, but at least 400 MB
-        return original - Math.max((int) (original * workerJvmMemoryScaleBackPct / 100.0), 400);
+            return original > 999 ? original - 500 : original;
+        // If job asked for >4000, subtract out based on scale back percentage, but at least 500 MB
+        return original - Math.max((int) (original * workerJvmMemoryScaleBackPct / 100.0), 500);
     }
 
     private ExecutorInfo createMantisWorkerExecutor(final ExecuteStageRequest executeStageRequest,
@@ -281,7 +281,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("JVM_CODE_CACHE_SIZE_MB")
-                                .setValue("100")
+                                .setValue("200")
                 )
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
