@@ -15,12 +15,12 @@
  */
 
 ext {
-    mqlVersion = '2.+'
+    mqlVersion = '3.+'
     nettyVersion = '4.1.17.Final'
 }
 
 dependencies {
     compile "io.netty:netty-handler:$nettyVersion"
-    compile "io.mantisrx:mql-core:$mqlVersion"
+    compile "io.mantisrx:mql-jvm:$mqlVersion"
     compile project(':mantis-common')
 }

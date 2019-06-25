@@ -63,12 +63,12 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
     private static IFn require = Clojure.var("clojure.core", "require");
 
     static {
-        require.invoke(Clojure.read("io.mantisrx.mql.core"));
-        require.invoke(Clojure.read("io.mantisrx.mql.components"));
+        require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.core"));
+        require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.server"));
     }
 
-    private static IFn mqlMakeQuery = Clojure.var("io.mantisrx.mql.components", "make-query");
-    private static IFn mqlParses = Clojure.var("io.mantisrx.mql.core", "parses?");
+    private static IFn mqlMakeQuery = Clojure.var("io.mantisrx.mql.jvm.interfaces.server", "make-query");
+    private static IFn mqlParses = Clojure.var("io.mantisrx.mql.jvm.interfaces.core", "parses?");
 
     private Func2<Map<String, List<String>>, S, Void> requestPreprocessor;
     private Func2<Map<String, List<String>>, S, Void> requestPostprocessor;
