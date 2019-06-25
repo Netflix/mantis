@@ -17,13 +17,13 @@
 ext {
     archaiusVersion = '2.3.+'
     jacksonVersion = '2.8.+'
-    mqlVersion = '2.0.5'
+    mqlVersion = '3.+'
     spectatorVersion = '0.82.+'
     mantisDiscoveryVersion = '1.+'
 }
 
 dependencies {
-    api "io.mantisrx:mql-core:$mqlVersion"
+    api "io.mantisrx:mql-jvm:$mqlVersion"
     api 'io.reactivex:rxjava:1.3.8'
     api "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
 

@@ -32,12 +32,12 @@ public class MQL {
 
     private static final Logger LOG = LoggerFactory.getLogger(MQL.class);
     private static IFn require = Clojure.var("clojure.core", "require");
-    private static IFn cljMakeQuery = Clojure.var("io.mantisrx.mql.components", "make-query");
-    private static IFn cljSuperset = Clojure.var("io.mantisrx.mql.core", "queries->superset-projection");
+    private static IFn cljMakeQuery = Clojure.var("io.mantisrx.mql.jvm.interfaces.server", "make-query");
+    private static IFn cljSuperset = Clojure.var("io.mantisrx.mql.jvm.interfaces.core", "queries->superset-projection");
 
     static {
-        require.invoke(Clojure.read("io.mantisrx.mql.core"));
-        require.invoke(Clojure.read("io.mantisrx.mql.components"));
+        require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.server"));
+        require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.core"));
     }
 
     public static void init() {
