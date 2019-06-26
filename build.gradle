@@ -24,7 +24,7 @@ buildscript {
 
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:5.1.1'
-        classpath 'io.mantisrx:mantis-gradle-plugin:1.0.+'
+        classpath 'io.mantisrx:mantis-gradle-plugin:1.+'
     }
 }
 
