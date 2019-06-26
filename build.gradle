@@ -24,7 +24,6 @@ buildscript {
 
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:5.1.1'
-        classpath 'io.mantisrx:mantis-gradle-plugin:1.0.33'
     }
 }
 
@@ -51,7 +50,6 @@ apply plugin: 'java-library'
 apply plugin: 'application'
 apply plugin: 'checkstyle'
 apply plugin: 'pmd'
-apply plugin: 'mantis'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
