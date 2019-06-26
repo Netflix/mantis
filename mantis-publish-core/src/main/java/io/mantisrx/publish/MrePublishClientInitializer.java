@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * Components:
  * <p>
  * 1. {@link MantisEventPublisher} is the user-facing object for publishing events into Mantis.
- * 2. {@link SubscriptionTracker} maintains and updates a list of scheduledFutures.
+ * 2. {@link SubscriptionTracker} maintains and updates a list of subscriptions.
  * 3. {@link MantisJobDiscovery} maintains and updates a list of Mantis Jobs and their workers.
  * <p>
  * This class has several configuration options. See {@link MrePublishConfiguration} for more information on
