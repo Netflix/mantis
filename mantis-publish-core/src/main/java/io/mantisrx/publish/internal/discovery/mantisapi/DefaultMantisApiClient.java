@@ -16,15 +16,8 @@
 
 package io.mantisrx.publish.internal.discovery.mantisapi;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,8 +52,6 @@ import com.netflix.spectator.ipc.http.HttpClient;
 import com.netflix.spectator.ipc.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-
 
 public class DefaultMantisApiClient implements MantisApiClient {
 
@@ -173,64 +164,4 @@ public class DefaultMantisApiClient implements MantisApiClient {
         return new JobDiscoveryInfo(jobClusterName, jobSchedulingInfo.getJobId(), jobWorkers);
     }
 
-    @Override
-    public Observable<JobDiscoveryInfo> jobDiscoveryInfoStream(final String jobClusterName) {
-        try {
-            // Interim impl to get JobDiscoveryInfo from SSE stream, will be replaced by above method once the request response API is added
-            URL url = new URL(String.format(JOB_DISCOVERY_STREAM_URL_FORMAT, mrePublishConfiguration.discoveryApiHostname(), mrePublishConfiguration.discoveryApiPort(), jobClusterName));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
-            conn.setReadTimeout(READ_TIMEOUT_MS);
-            conn.connect();
-            int responseCode = conn.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                InputStream inputStream = conn.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                StringBuffer response = new StringBuffer();
-                String inputLine;
-                boolean dataElementNotRead = true;
-                while ((inputLine = bufferedReader.readLine()) != null) {
-                    if (inputLine.startsWith("data:")) {
-                        if (dataElementNotRead) {
-                            dataElementNotRead = false;
-                            // start accumulating response payload till the next data element
-                            response.append(inputLine.substring(5));
-                            logger.debug("appended {}", inputLine);
-                        } else {
-                            // finish reading the data element
-                            logger.debug("finished reading data element");
-                            break;
-                        }
-                    } else {
-                        if (!dataElementNotRead) {
-                            // append next chunk of data for the data element
-                            if (inputLine.isEmpty()) {
-                                logger.debug("finished reading data element");
-                                break;
-                            } else {
-                                logger.debug("appended {}", inputLine);
-                                response.append(inputLine);
-                            }
-                        }
-                    }
-                }
-                bufferedReader.close();
-                String discoveryInfoPayload = response.toString();
-                JobSchedulingInfo jobSchedulingInfo = mapper.readValue(discoveryInfoPayload, JobSchedulingInfo.class);
-                JobDiscoveryInfo jobDiscoveryInfo = convertJobSchedInfo(jobSchedulingInfo, jobClusterName);
-                logger.debug(jobDiscoveryInfo.toString());
-                return Observable.just(jobDiscoveryInfo);
-            } else {
-                logger.debug("resp {}", responseCode);
-            }
-        } catch (MalformedURLException e) {
-            logger.error("invalid URL", e);
-        } catch (ProtocolException e) {
-            logger.error("caught protocol exception", e);
-        } catch (IOException e) {
-            logger.error("caught IOException", e);
-        }
-        return Observable.empty();
-    }
 }
