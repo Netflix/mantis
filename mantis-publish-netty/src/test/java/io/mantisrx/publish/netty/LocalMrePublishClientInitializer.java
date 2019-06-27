@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import com.netflix.archaius.DefaultPropertyFactory;
@@ -55,8 +57,6 @@ import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannelManager;
 import io.mantisrx.publish.netty.transmitters.ChoiceOfTwoEventTransmitter;
 import io.netty.util.ResourceLeakDetector;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
 
 
 public class LocalMrePublishClientInitializer {
@@ -135,17 +135,15 @@ public class LocalMrePublishClientInitializer {
         final Event event = new Event();
         final CountDownLatch latch = new CountDownLatch(1000);
         event.set("testKey", "testValue");
-        Subscription subscription = Schedulers
-                .newThread()
-                .createWorker()
-                .schedulePeriodically(() -> {
-                    eventPublisher.publish(event);
-                    latch.countDown();
-                }, 1, 1, TimeUnit.SECONDS);
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "EventPublisherTest"));
+        ScheduledFuture<?> scheduledFuture = executor.scheduleAtFixedRate(() -> {
+            eventPublisher.publish(event);
+            latch.countDown();
+        }, 1, 1, TimeUnit.SECONDS);
 
         latch.await();
-        if (!subscription.isUnsubscribed()) {
-            subscription.unsubscribe();
+        if (!scheduledFuture.isCancelled()) {
+            scheduledFuture.cancel(true);
         }
         mreClient.stop();
     }

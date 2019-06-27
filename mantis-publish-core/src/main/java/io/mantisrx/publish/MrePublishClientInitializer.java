@@ -20,8 +20,9 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import io.mantisrx.publish.api.EventPublisher;
 import io.mantisrx.publish.config.MrePublishConfiguration;
@@ -29,9 +30,6 @@ import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import com.netflix.spectator.api.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
-
 
 /**
  * Initializes the Mantis Realtime Events Publisher and its internal components.
@@ -57,7 +55,20 @@ public class MrePublishClientInitializer {
     private final EventTransmitter eventTransmitter;
     private final Tee tee;
 
-    private final List<Subscription> subscriptions = new ArrayList<>();
+    private final List<ScheduledFuture<?>> scheduledFutures = new ArrayList<>();
+    private static final ScheduledThreadPoolExecutor DRAINER_EXECUTOR =
+            new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "MantisDrainer"));
+    private static final ScheduledThreadPoolExecutor SUBSCRIPTIONS_EXECUTOR =
+            new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "MantisSubscriptionsTracker"));
+
+    static {
+        DRAINER_EXECUTOR.setRemoveOnCancelPolicy(true);
+        SUBSCRIPTIONS_EXECUTOR.setRemoveOnCancelPolicy(true);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            DRAINER_EXECUTOR.shutdown();
+            SUBSCRIPTIONS_EXECUTOR.shutdown();
+        }));
+    }
 
     public MrePublishClientInitializer(
             MrePublishConfiguration config,
@@ -81,57 +92,46 @@ public class MrePublishClientInitializer {
      * Starts internal components for the Mantis Realtime Events Publisher.
      */
     public void start() {
-        this.subscriptions.add(setupSubscriptionTracker(subscriptionsTracker));
-        this.subscriptions.add(setupDrainer(streamManager, eventTransmitter, tee));
+        this.scheduledFutures.add(setupSubscriptionTracker(subscriptionsTracker));
+        this.scheduledFutures.add(setupDrainer(streamManager, eventTransmitter, tee));
     }
 
     /**
      * Safely shuts down internal components for the Mantis Realtime Events Publisher.
      */
     public void stop() {
-        Iterator<Subscription> iterator = subscriptions.iterator();
+        Iterator<ScheduledFuture<?>> iterator = scheduledFutures.iterator();
         while (iterator.hasNext()) {
-            Subscription sub = iterator.next();
-            if (sub != null && !sub.isUnsubscribed()) {
-                sub.unsubscribe();
+            ScheduledFuture<?> next = iterator.next();
+            if (next != null && !next.isCancelled()) {
+                next.cancel(false);
             }
         }
-        subscriptions.clear();
+        scheduledFutures.clear();
     }
 
     public EventPublisher getEventPublisher() {
         return eventPublisher;
     }
 
-    private Subscription setupDrainer(StreamManager streamManager, EventTransmitter transmitter, Tee tee) {
+    private ScheduledFuture<?> setupDrainer(StreamManager streamManager, EventTransmitter transmitter, Tee tee) {
         EventProcessor eventProcessor = new EventProcessor(config, streamManager, tee);
         EventDrainer eventDrainer =
                 new EventDrainer(config, streamManager, registry, eventProcessor, transmitter, Clock.systemUTC());
 
-        return Schedulers
-                .newThread()
-                .createWorker()
-                .schedulePeriodically(eventDrainer::run, 1, config.drainerIntervalMsec(), TimeUnit.MILLISECONDS);
+        return DRAINER_EXECUTOR.scheduleAtFixedRate(eventDrainer::run,
+                0, config.drainerIntervalMsec(), TimeUnit.MILLISECONDS);
     }
 
-    private Subscription setupSubscriptionTracker(SubscriptionTracker subscriptionsTracker) {
-        final AtomicLong subscriptionsRefreshTimeMs = new AtomicLong(System.currentTimeMillis());
-        final int subRefreshIntervalMs = config.subscriptionRefreshIntervalSec() * 1000;
-
-        return Schedulers
-                .newThread()
-                .createWorker()
-                .schedulePeriodically(() -> {
-                    try {
-                        if ((System.currentTimeMillis() - subscriptionsRefreshTimeMs.get()) > subRefreshIntervalMs) {
-                            subscriptionsTracker.refreshSubscriptions();
-                            subscriptionsRefreshTimeMs.set(System.currentTimeMillis());
-                        }
-                    } catch (Exception e) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("failed to refresh subscriptions", e);
-                        }
-                    }
-                }, 1, 1, TimeUnit.SECONDS);
+    private ScheduledFuture<?> setupSubscriptionTracker(SubscriptionTracker subscriptionsTracker) {
+        return SUBSCRIPTIONS_EXECUTOR.scheduleAtFixedRate(() -> {
+            try {
+                subscriptionsTracker.refreshSubscriptions();
+            } catch (Exception e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("failed to refresh scheduledFutures", e);
+                }
+            }
+        }, 1, config.subscriptionRefreshIntervalSec(), TimeUnit.SECONDS);
     }
 }
