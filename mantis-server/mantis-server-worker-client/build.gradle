@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+ext {
+    mantisControlPlaneVersion = '1.+'
+}
+
 dependencies {
     api project(':mantis-runtime')
-    api project(':mantis-server:mantis-server-core')
-    api project(':mantis-server:mantis-server-master-client')
+    api "io.mantisrx:mantis-control-plane-core:$mantisControlPlaneVersion"
+    api "io.mantisrx:mantis-control-plane-client:$mantisControlPlaneVersion"
 
     testImplementation "junit:junit-dep:$junitVersion"
     testImplementation "org.mockito:mockito-all:$mockitoVersion"
