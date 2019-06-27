@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+ext {
+    mantisControlPlaneVersion = '1.+'
+}
+
 dependencies {
     implementation project(':mantis-runtime')
-    implementation project(':mantis-server:mantis-server-master-client')
+    implementation "io.mantisrx:mantis-control-plane-client:$mantisControlPlaneVersion"
     implementation project(':mantis-server:mantis-server-worker-client')
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
