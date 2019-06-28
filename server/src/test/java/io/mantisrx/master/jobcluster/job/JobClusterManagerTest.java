@@ -105,11 +105,13 @@ import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
+@Ignore
 public class JobClusterManagerTest {
     static ActorSystem system;
     private static TestKit probe;
