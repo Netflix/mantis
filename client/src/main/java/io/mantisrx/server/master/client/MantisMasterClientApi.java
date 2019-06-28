@@ -297,7 +297,7 @@ public class MantisMasterClientApi {
     //        }
     //    }
 
-    private Observable<JobSubmitResponse> submitJob(final String submitJobRequestJson) {
+    public Observable<JobSubmitResponse> submitJob(final String submitJobRequestJson) {
         return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
                 .switchMap((Func1<MasterDescription, Observable<JobSubmitResponse>>) masterDescription -> {
