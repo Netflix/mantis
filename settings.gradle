@@ -16,12 +16,12 @@
 
 rootProject.name = 'mantis'
 
-//include 'mantis-client'
+include 'mantis-client'
 include 'mantis-common'
 include 'mantis-discovery-proto'
 include 'mantis-network'
 include 'mantis-remote-observable'
 include 'mantis-runtime'
-//include 'mantis-server:mantis-server-agent'
-//include 'mantis-server:mantis-server-worker'
-//include 'mantis-server:mantis-server-worker-client'
+include 'mantis-server:mantis-server-agent'
+include 'mantis-server:mantis-server-worker'
+include 'mantis-server:mantis-server-worker-client'
