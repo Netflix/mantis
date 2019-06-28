@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -70,6 +71,9 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 
 
+/**
+ *
+ */
 public class MantisMasterClientApi {
 
     static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
@@ -108,14 +112,16 @@ public class MantisMasterClientApi {
     private final Observable<Endpoint> masterEndpoint;
     private final int subscribeAttemptsToMaster;
     private final Func1<Observable<? extends Throwable>, Observable<?>> retryLogic = attempts -> attempts
-            .zipWith(Observable.range(1, Integer.MAX_VALUE), (Func2<Throwable, Integer, Integer>) (t1, integer) -> integer)
+            .zipWith(Observable.range(1, Integer.MAX_VALUE),
+                    (Func2<Throwable, Integer, Integer>) (t1, integer) -> integer)
             .flatMap((Func1<Integer, Observable<?>>) integer -> {
                 long delay = 2 * (integer > 10 ? 10 : integer);
                 logger.info(": retrying conx after sleeping for " + delay + " secs");
                 return Observable.timer(delay, TimeUnit.SECONDS);
             });
     private final Func1<Observable<? extends Void>, Observable<?>> repeatLogic = attempts -> attempts
-            .zipWith(Observable.range(1, Integer.MAX_VALUE), (Func2<Void, Integer, Integer>) (t1, integer) -> integer)
+            .zipWith(Observable.range(1, Integer.MAX_VALUE),
+                    (Func2<Void, Integer, Integer>) (t1, integer) -> integer)
             .flatMap((Func1<Integer, Observable<?>>) integer -> {
                 long delay = 2 * (integer > 10 ? 10 : integer);
                 logger.warn("On Complete received! : repeating conx after sleeping for " + delay + " secs");
@@ -123,6 +129,10 @@ public class MantisMasterClientApi {
             });
     private MasterMonitor masterMonitor;
 
+    /**
+     *
+     * @param masterMonitor
+     */
     public MantisMasterClientApi(MasterMonitor masterMonitor) {
         this.masterMonitor = masterMonitor;
         masterEndpoint = masterMonitor.getMasterObservable()
@@ -142,7 +152,7 @@ public class MantisMasterClientApi {
                 logger.warn("Invalid number for connectTimeoutSecs: " + p);
             }
         }
-        //subscribeAttemptsToMaster = a;
+
         subscribeAttemptsToMaster = Integer.MAX_VALUE;
     }
 
@@ -150,152 +160,144 @@ public class MantisMasterClientApi {
         return "http://" + md.getHostname() + ":" + md.getApiPort() + path;
     }
 
-    //
-    //    public Observable<Void> createNamedJob(final CreateJobClusterRequest request) {
-    //        return masterMonitor.getMasterObservable()
-    //                .filter(md -> md != null)
-    //                .switchMap((Func1<MasterDescription, Observable<Void>>) md -> {
-    //                    try {
-    //                        NamedJobDefinition namedJobDefinition = MantisProtoAdapter.toNamedJobDefinition(request);
-    //                        String namedJobDefnJsonString = objectMapper.writeValueAsString(namedJobDefinition);
-    //                        return getPostResponse(toUri(md, API_JOB_NAME_CREATE), namedJobDefnJsonString)
-    //                                .onErrorResumeNext(t -> {
-    //                                    logger.warn("Can't connect to master: {}", t.getMessage(), t);
-    //                                    return Observable.empty();
-    //                                })
-    //                                .map(s -> {
-    //                                    logger.info(s);
-    //                                    return null;
-    //                                });
-    //                    } catch (JsonProcessingException | MalformedURLException e) {
-    //                        return Observable.error(e);
-    //                    }
-    //                });
-    //    }
-    //
-    //    public Observable<Void> updateNamedJob(final UpdateJobClusterRequest request) {
-    //        return masterMonitor.getMasterObservable()
-    //                .filter(md -> md != null)
-    //                .switchMap((Func1<MasterDescription, Observable<Void>>) md -> {
-    //                    try {
-    //                        NamedJobDefinition namedJobDefinition = MantisProtoAdapter.toNamedJobDefinition(request);
-    //                        String namedJobDefnJsonString = objectMapper.writeValueAsString(namedJobDefinition);
-    //                        return getPostResponse(toUri(md, API_JOB_NAME_UPDATE), namedJobDefnJsonString)
-    //                                .onErrorResumeNext(t -> {
-    //                                    logger.warn("Can't connect to master: {}", t.getMessage(), t);
-    //                                    return Observable.empty();
-    //                                })
-    //                                .map(s -> {
-    //                                    logger.info(s);
-    //                                    return null;
-    //                                });
-    //                    } catch (JsonProcessingException | MalformedURLException e) {
-    //                        return Observable.error(e);
-    //                    }
-    //                });
-    //    }
-    //
-    //    /**
-    //     * @deprecated use {{@link #submitJob(SubmitJobRequest)}} instead
-    //     */
-    //    @Deprecated
-    //    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
-    //                                                   final List<Parameter> parameters,
-    //                                                   final JobSla jobSla,
-    //                                                   final SchedulingInfo schedulingInfo) {
-    //        return submitJob(name, version, parameters, jobSla, 0L, schedulingInfo, WorkerMigrationConfig.DEFAULT);
-    //    }
-    //
-    //    /**
-    //     * @deprecated use {{@link #submitJob(SubmitJobRequest)}} instead
-    //     */
-    //    @Deprecated
-    //    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
-    //                                                   final List<Parameter> parameters,
-    //                                                   final JobSla jobSla,
-    //                                                   final long subscriptionTimeoutSecs,
-    //                                                   final SchedulingInfo schedulingInfo,
-    //                                                   final WorkerMigrationConfig migrationConfig) {
-    //        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, false, migrationConfig);
-    //    }
-    //
-    //    /**
-    //     * @deprecated use {{@link #submitJob(SubmitJobRequest)}} instead
-    //     */
-    //    @Deprecated
-    //    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
-    //                                                   final List<Parameter> parameters,
-    //                                                   final JobSla jobSla,
-    //                                                   final long subscriptionTimeoutSecs,
-    //                                                   final SchedulingInfo schedulingInfo) {
-    //        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, false, WorkerMigrationConfig.DEFAULT);
-    //    }
-    //
-    //    /**
-    //     * @deprecated use {{@link #submitJob(SubmitJobRequest)}} instead
-    //     */
-    //    @Deprecated
-    //    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
-    //                                                   final List<Parameter> parameters,
-    //                                                   final JobSla jobSla,
-    //                                                   final long subscriptionTimeoutSecs,
-    //                                                   final SchedulingInfo schedulingInfo,
-    //                                                   final boolean readyForJobMaster) {
-    //        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, WorkerMigrationConfig.DEFAULT);
-    //    }
-    //
-    //    /**
-    //     * @deprecated use {{@link #submitJob(SubmitJobRequest)}} instead
-    //     */
-    //    @Deprecated
-    //    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
-    //                                                   final List<Parameter> parameters,
-    //                                                   final JobSla jobSla,
-    //                                                   final long subscriptionTimeoutSecs,
-    //                                                   final SchedulingInfo schedulingInfo,
-    //                                                   final boolean readyForJobMaster,
-    //                                                   final WorkerMigrationConfig migrationConfig) {
-    //        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, Lists.newLinkedList());
-    //    }
-    //
-    //    /**
-    //     * @deprecated use {{@link #submitJob(SubmitJobRequest)}} instead
-    //     */
-    //    @Deprecated
-    //    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
-    //                                                   final List<Parameter> parameters,
-    //                                                   final JobSla jobSla,
-    //                                                   final long subscriptionTimeoutSecs,
-    //                                                   final SchedulingInfo schedulingInfo,
-    //                                                   final boolean readyForJobMaster,
-    //                                                   final WorkerMigrationConfig migrationConfig,
-    //                                                   final List<Label> labels) {
-    //        try {
-    //            String jobDef = getJobDefinitionString(name, null, version, parameters, jobSla,
-    //                    subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels);
-    //            return submitJob(jobDef);
-    //        } catch (MalformedURLException | JsonProcessingException e) {
-    //            return Observable.error(e);
-    //        }
-    //    }
-    //
-    //    public Observable<JobSubmitResponse> submitJob(final SubmitJobRequest submitJobRequest) {
-    //        try {
-    //            String submitJobReqJsonStr = JsonFormat.printer().includingDefaultValueFields().print(submitJobRequest);
-    //            return submitJob(submitJobReqJsonStr);
-    //        } catch (InvalidProtocolBufferException e) {
-    //            return Observable.error(e);
-    //        }
-    //    }
-    //
-    //    public Observable<JobSubmitResponse> submitJob(final JobDefinition jobDefinition) {
-    //        try {
-    //            String submitJobReqJsonStr = JsonFormat.printer().includingDefaultValueFields().print(jobDefinition);
-    //            return submitJob(submitJobReqJsonStr);
-    //        } catch (InvalidProtocolBufferException e) {
-    //            return Observable.error(e);
-    //        }
-    //    }
+
+    /**
+     *
+     * @param name
+     * @param version
+     * @param parameters
+     * @param jobSla
+     * @param schedulingInfo
+     * @return
+     */
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final SchedulingInfo schedulingInfo) {
+        return submitJob(name, version, parameters, jobSla, 0L, schedulingInfo,
+                WorkerMigrationConfig.DEFAULT);
+    }
+
+    /**
+     *
+     * @param name
+     * @param version
+     * @param parameters
+     * @param jobSla
+     * @param subscriptionTimeoutSecs
+     * @param schedulingInfo
+     * @param migrationConfig
+     * @return
+     */
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final long subscriptionTimeoutSecs,
+                                                   final SchedulingInfo schedulingInfo,
+                                                   final WorkerMigrationConfig migrationConfig) {
+        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo,
+                false, migrationConfig);
+    }
+
+    /**
+     *
+     * @param name
+     * @param version
+     * @param parameters
+     * @param jobSla
+     * @param subscriptionTimeoutSecs
+     * @param schedulingInfo
+     * @return
+     */
+
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final long subscriptionTimeoutSecs,
+                                                   final SchedulingInfo schedulingInfo) {
+        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo,
+                false, WorkerMigrationConfig.DEFAULT);
+    }
+
+    /**
+     *
+     * @param name
+     * @param version
+     * @param parameters
+     * @param jobSla
+     * @param subscriptionTimeoutSecs
+     * @param schedulingInfo
+     * @param readyForJobMaster
+     * @return
+     */
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final long subscriptionTimeoutSecs,
+                                                   final SchedulingInfo schedulingInfo,
+                                                   final boolean readyForJobMaster) {
+        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo,
+                readyForJobMaster, WorkerMigrationConfig.DEFAULT);
+    }
+
+    /**
+     *
+     * @param name
+     * @param version
+     * @param parameters
+     * @param jobSla
+     * @param subscriptionTimeoutSecs
+     * @param schedulingInfo
+     * @param readyForJobMaster
+     * @param migrationConfig
+     * @return
+     */
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final long subscriptionTimeoutSecs,
+                                                   final SchedulingInfo schedulingInfo,
+                                                   final boolean readyForJobMaster,
+                                                   final WorkerMigrationConfig migrationConfig) {
+        return submitJob(name, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo,
+                readyForJobMaster, migrationConfig, new LinkedList<>());
+    }
+
+    /**
+     *
+     * @param name
+     * @param version
+     * @param parameters
+     * @param jobSla
+     * @param subscriptionTimeoutSecs
+     * @param schedulingInfo
+     * @param readyForJobMaster
+     * @param migrationConfig
+     * @param labels
+     * @return
+     */
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final long subscriptionTimeoutSecs,
+                                                   final SchedulingInfo schedulingInfo,
+                                                   final boolean readyForJobMaster,
+                                                   final WorkerMigrationConfig migrationConfig,
+                                                   final List<Label> labels) {
+        try {
+            String jobDef = getJobDefinitionString(name, null, version, parameters, jobSla,
+                    subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels);
+            return submitJob(jobDef);
+        } catch (MalformedURLException | JsonProcessingException e) {
+            return Observable.error(e);
+        }
+    }
+
+    /**
+     *
+     * @param submitJobRequestJson
+     * @return
+     */
 
     public Observable<JobSubmitResponse> submitJob(final String submitJobRequestJson) {
         return masterMonitor.getMasterObservable()
@@ -319,18 +321,28 @@ public class MantisMasterClientApi {
 
     private String getJobDefinitionString(String name, String jobUrl, String version, List<Parameter> parameters,
                                           JobSla jobSla, long subscriptionTimeoutSecs, SchedulingInfo schedulingInfo,
-                                          boolean readyForJobMaster, final WorkerMigrationConfig migrationConfig, final List<Label> labels)
+                                          boolean readyForJobMaster, final WorkerMigrationConfig migrationConfig,
+                                          final List<Label> labels)
             throws JsonProcessingException, MalformedURLException {
         MantisJobDefinition jobDefinition = new MantisJobDefinition(name, System.getProperty("user.name"),
                 jobUrl == null ? null : new URL(jobUrl),
-                version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, 0, 0, null, null, readyForJobMaster, migrationConfig, labels);
+                version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, 0, 0,
+                null, null, readyForJobMaster, migrationConfig, labels);
         return objectMapper.writeValueAsString(jobDefinition);
     }
 
     public Observable<Void> killJob(final String jobId) {
-        return killJob(jobId, "Unknown", "User requested");
+        return killJob(jobId, "Unknown",
+                "User requested");
     }
 
+    /**
+     *
+     * @param jobId
+     * @param user
+     * @param reason
+     * @return
+     */
     public Observable<Void> killJob(final String jobId, final String user, final String reason) {
         return masterMonitor.getMasterObservable()
                 .filter(md -> md != null)
@@ -355,7 +367,16 @@ public class MantisMasterClientApi {
                 });
     }
 
-    public Observable<Boolean> scaleJobStage(final String jobId, final int stageNum, final int numWorkers, final String reason) {
+    /**
+     *
+     * @param jobId
+     * @param stageNum
+     * @param numWorkers
+     * @param reason
+     * @return
+     */
+    public Observable<Boolean> scaleJobStage(final String jobId, final int stageNum, final int numWorkers,
+                                             final String reason) {
         return masterMonitor
                 .getMasterObservable()
                 .filter(md -> md != null)
@@ -375,15 +396,26 @@ public class MantisMasterClientApi {
                 });
     }
 
-    public Observable<Boolean> resubmitJobWorker(final String jobId, final String user, final int workerNum, final String reason) {
+    /**
+     *
+     * @param jobId
+     * @param user
+     * @param workerNum
+     * @param reason
+     * @return
+     */
+    public Observable<Boolean> resubmitJobWorker(final String jobId, final String user, final int workerNum,
+                                                 final String reason) {
         return masterMonitor.getMasterObservable()
                 .filter(md -> md != null)
                 .take(1)
                 .flatMap((Func1<MasterDescription, Observable<Boolean>>) md -> {
-                    final ResubmitJobWorkerRequest resubmitJobWorkerRequest = new ResubmitJobWorkerRequest(jobId, user, workerNum, reason);
+                    final ResubmitJobWorkerRequest resubmitJobWorkerRequest = new ResubmitJobWorkerRequest(jobId,
+                            user, workerNum, reason);
                     logger.info("sending request to resubmit worker {} for jobId {}", workerNum, jobId);
                     try {
-                        return submitPostRequest(toUri(md, API_JOB_RESUBMIT_WORKER), objectMapper.writeValueAsString(resubmitJobWorkerRequest))
+                        return submitPostRequest(toUri(md, API_JOB_RESUBMIT_WORKER),
+                                objectMapper.writeValueAsString(resubmitJobWorkerRequest))
                                 .map(s -> {
                                     logger.info("POST to resubmit worker {} returned status: {}", workerNum, s);
                                     return s.codeClass().equals(HttpStatusClass.SUCCESS);
@@ -418,31 +450,11 @@ public class MantisMasterClientApi {
                 .map(o -> o.toString(Charset.defaultCharset()));
     }
 
-    //    private Observable<String> getGetResponse(final String uri) {
-    //        return RxNetty
-    //                .createHttpRequest(HttpClientRequest.createGet(uri), new HttpClient.HttpClientConfig.Builder()
-    //                        .setFollowRedirect(true).followRedirect(MAX_REDIRECTS).build())
-    //                .lift(new OperatorOnErrorResumeNextViaFunction<>(new Func1<Throwable, Observable<? extends HttpClientResponse<ByteBuf>>>() {
-    //                    @Override
-    //                    public Observable<? extends HttpClientResponse<ByteBuf>> call(Throwable t) {
-    //                        return Observable.error(t);
-    //                    }
-    //                }))
-    //                .timeout(GET_TIMEOUT_SECS, TimeUnit.SECONDS)
-    //                .retryWhen(retryLogic)
-    //                .flatMap(new Func1<HttpClientResponse<ByteBuf>, Observable<ByteBuf>>() {
-    //                    @Override
-    //                    public Observable<ByteBuf> call(HttpClientResponse<ByteBuf> r) {
-    //                        return r.getContent();
-    //                    }
-    //                })
-    //                .map(new Func1<ByteBuf, String>() {
-    //                    @Override
-    //                    public String call(ByteBuf o) {
-    //                        return o.toString(Charset.defaultCharset());
-    //                    }
-    //                });
-    //    }
+    /**
+     *
+     * @param jobName
+     * @return
+     */
 
     public Observable<Boolean> namedJobExists(final String jobName) {
         return masterMonitor.getMasterObservable()
@@ -450,7 +462,8 @@ public class MantisMasterClientApi {
                 .switchMap((Func1<MasterDescription, Observable<Boolean>>) masterDescription -> {
                     String uri = API_JOB_NAME_LIST + "/" + jobName;
                     logger.info("Calling GET on " + uri);
-                    return HttpUtility.getGetResponse(masterDescription.getHostname(), masterDescription.getApiPort(), uri)
+                    return HttpUtility.getGetResponse(masterDescription.getHostname(),
+                            masterDescription.getApiPort(), uri)
                             .onErrorResumeNext(throwable -> {
                                 logger.warn("Can't connect to master: {}", throwable.getMessage(), throwable);
                                 return Observable.error(throwable);
@@ -467,13 +480,19 @@ public class MantisMasterClientApi {
                 ;
     }
 
+    /**
+     *
+     * @param jobId
+     * @return
+     */
     public Observable<Integer> getSinkStageNum(final String jobId) {
         return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
                 .switchMap(masterDescription -> {
                     String uri = API_JOBS_LIST_PATH + "/" + jobId;
                     logger.info("Calling GET on " + uri);
-                    return HttpUtility.getGetResponse(masterDescription.getHostname(), masterDescription.getApiPort(), uri)
+                    return HttpUtility.getGetResponse(masterDescription.getHostname(),
+                            masterDescription.getApiPort(), uri)
                             .onErrorResumeNext(throwable -> {
                                 logger.warn("Can't connect to master: {}", throwable.getMessage(), throwable);
                                 return Observable.error(throwable);
@@ -497,6 +516,12 @@ public class MantisMasterClientApi {
                 });
     }
 
+    /**
+     *
+     * @param jobName
+     * @param state
+     * @return
+     */
     // returns json array of job metadata
     public Observable<String> getJobsOfNamedJob(final String jobName, final MantisJobState.MetaState state) {
         return masterMonitor.getMasterObservable()
@@ -506,7 +531,8 @@ public class MantisMasterClientApi {
                     if (state != null)
                         uri = uri + "?jobState=" + state;
                     logger.info("Calling GET on " + uri);
-                    return HttpUtility.getGetResponse(masterDescription.getHostname(), masterDescription.getApiPort(), uri)
+                    return HttpUtility.getGetResponse(masterDescription.getHostname(),
+                            masterDescription.getApiPort(), uri)
                             .onErrorResumeNext(throwable -> {
                                 logger.warn("Can't connect to master: {}", throwable.getMessage(), throwable);
                                 return Observable.empty();
@@ -555,54 +581,12 @@ public class MantisMasterClientApi {
             logger.info("Got sink stage number for job " + jobId + ": " + lastStage);
             return lastStage;
         } catch (JSONException e) {
-            logger.error("Error parsing info for job " + jobId + " from json data (" + response + "): " + e.getMessage());
+            logger.error("Error parsing info for job " + jobId + " from json data (" + response + "): "
+                    + e.getMessage());
             throw new MasterClientException(throwMessage);
         }
     }
 
-    // Keep until confirming new method works in prod
-    //    public Observable<JobSchedulingInfo> schedulingChangesOld(String jobId) {
-    //        Map<String,String> subscriptionParams = new HashMap<String,String>();
-    //        subscriptionParams.put("jobId", jobId);
-    //
-    //        final ConnectToObservable.Builder<JobSchedulingInfo> connectionBuilder =
-    //                new ConnectToObservable.Builder<JobSchedulingInfo>()
-    //                        .subscribeAttempts(subscribeAttemptsToMaster)
-    //                        .name("/v1/api/master/schedulingchanges")
-    //                        .subscribeParameters(subscriptionParams)
-    //                        .decoder(new Decoder<JobSchedulingInfo>() {
-    //                            @Override
-    //                            public JobSchedulingInfo decode(byte[] bytes) {
-    //                                try {
-    //                                    final String data = new String(bytes, Charset.defaultCharset());
-    //                                    return objectMapper.readValue(data, JobSchedulingInfo.class);
-    //                                } catch (Exception e) {
-    //                                    logger.warn("SchedulingInfoBytes: " + new String(bytes));
-    //                                    logger.error("Error parsing scheduling info: " + e.getMessage());
-    //                                    throw new RuntimeException(e);
-    //                                }
-    //                            }
-    //                        })
-    //                ;
-    //
-    //        Observable<List<Endpoint>> changes = masterEndpoint
-    //                .map(new Func1<Endpoint,List<Endpoint>>(){
-    //                    @Override
-    //                    public List<Endpoint> call(Endpoint t1) {
-    //                        List<Endpoint> list = new ArrayList<Endpoint>(1);
-    //                        list.add(t1);
-    //                        return list;
-    //                    }
-    //                });
-    //
-    //        Reconciliator<JobSchedulingInfo> reconciliator = new Reconciliator.Builder<JobSchedulingInfo>()
-    //                .name("master-schedulingChanges")
-    //                .connectionSet(DynamicConnectionSet.create(connectionBuilder, MAX_RANDOM_WAIT_RETRY_SEC))
-    //                .injector(new ToDeltaEndpointInjector(changes))
-    //                .build();
-    //
-    //        return Observable.merge(reconciliator.observables());
-    //    }
 
     private HttpClient<ByteBuf, ServerSentEvent> getRxnettySseClient(String hostname, int port) {
         return RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
@@ -611,7 +595,8 @@ public class MantisMasterClientApi {
                 .withNoConnectionPooling().build();
     }
 
-    private WebSocketClient<TextWebSocketFrame, TextWebSocketFrame> getRxnettyWebSocketClient(String host, int port, String uri) {
+    private WebSocketClient<TextWebSocketFrame, TextWebSocketFrame> getRxnettyWebSocketClient(String host,
+                                                                                              int port, String uri) {
         return
                 RxNetty.<TextWebSocketFrame, TextWebSocketFrame>newWebSocketClientBuilder(host, port)
                         .withWebSocketURI(uri)
@@ -619,6 +604,11 @@ public class MantisMasterClientApi {
                         .build();
     }
 
+    /**
+     *
+     * @param jobId
+     * @return
+     */
     public Observable<String> getJobStatusObservable(final String jobId) {
         return masterMonitor.getMasterObservable()
                 .filter((md) -> md != null)
@@ -629,26 +619,36 @@ public class MantisMasterClientApi {
                                 .map((TextWebSocketFrame webSocketFrame) -> webSocketFrame.text())));
     }
 
+    /**
+     *
+     * @param jobId
+     * @return
+     */
     public Observable<JobSchedulingInfo> schedulingChanges(final String jobId) {
         return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
                 .retryWhen(retryLogic)
-                .switchMap((Func1<MasterDescription, Observable<JobSchedulingInfo>>) masterDescription -> getRxnettySseClient(masterDescription.getHostname(), masterDescription.getSchedInfoPort())
+                .switchMap((Func1<MasterDescription,
+                        Observable<JobSchedulingInfo>>) masterDescription -> getRxnettySseClient(
+                                masterDescription.getHostname(), masterDescription.getSchedInfoPort())
                         .submit(HttpClientRequest.createGet("/assignmentresults/" + jobId + "?sendHB=true"))
-                        .flatMap((Func1<HttpClientResponse<ServerSentEvent>, Observable<JobSchedulingInfo>>) response -> {
+                        .flatMap((Func1<HttpClientResponse<ServerSentEvent>,
+                                Observable<JobSchedulingInfo>>) response -> {
                             if (!HttpResponseStatus.OK.equals(response.getStatus())) {
                                 return Observable.error(new Exception(response.getStatus().reasonPhrase()));
                             }
                             return response.getContent()
                                     .map(event -> {
                                         try {
-                                            return objectMapper.readValue(event.contentAsString(), JobSchedulingInfo.class);
+                                            return objectMapper.readValue(event.contentAsString(),
+                                                    JobSchedulingInfo.class);
                                         } catch (IOException e) {
                                             throw new RuntimeException("Invalid schedInfo json: " + e.getMessage(), e);
                                         }
                                     })
                                     .timeout(3 * MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS, TimeUnit.SECONDS)
-                                    .filter(schedulingInfo -> schedulingInfo != null && !JobSchedulingInfo.HB_JobId.equals(schedulingInfo.getJobId()))
+                                    .filter(schedulingInfo -> schedulingInfo != null
+                                            && !JobSchedulingInfo.HB_JobId.equals(schedulingInfo.getJobId()))
                                     ;
                         }))
                 .repeatWhen(repeatLogic)
@@ -656,11 +656,17 @@ public class MantisMasterClientApi {
                 ;
     }
 
+    /**
+     *
+     * @param jobName
+     * @return
+     */
     public Observable<NamedJobInfo> namedJobInfo(final String jobName) {
         return masterMonitor.getMasterObservable()
                 .filter(masterDescription -> masterDescription != null)
                 .retryWhen(retryLogic)
-                .switchMap((Func1<MasterDescription, Observable<NamedJobInfo>>) masterDescription -> getRxnettySseClient(masterDescription.getHostname(), masterDescription.getSchedInfoPort())
+                .switchMap((Func1<MasterDescription, Observable<NamedJobInfo>>) masterDescription ->
+                        getRxnettySseClient(masterDescription.getHostname(), masterDescription.getSchedInfoPort())
                         .submit(HttpClientRequest.createGet("/namedjobs/" + jobName + "?sendHB=true"))
                         .flatMap((Func1<HttpClientResponse<ServerSentEvent>, Observable<NamedJobInfo>>) response -> {
                             if (!HttpResponseStatus.OK.equals(response.getStatus()))
@@ -673,8 +679,10 @@ public class MantisMasterClientApi {
                                             throw new RuntimeException("Invalid namedJobInfo json: " + e.getMessage(), e);
                                         }
                                     })
-                                    .timeout(3 * MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS, TimeUnit.SECONDS)
-                                    .filter(namedJobInfo -> namedJobInfo != null && !JobSchedulingInfo.HB_JobId.equals(namedJobInfo.getName()))
+                                    .timeout(3 * MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS,
+                                            TimeUnit.SECONDS)
+                                    .filter(namedJobInfo -> namedJobInfo != null
+                                            && !JobSchedulingInfo.HB_JobId.equals(namedJobInfo.getName()))
                                     ;
                         }))
                 .repeatWhen(repeatLogic)
@@ -682,37 +690,12 @@ public class MantisMasterClientApi {
                 ;
     }
 
-    // Keep until confirming new method works in prod
-    //    public Observable<NamedJobInfo> namedJobInfoOld(String jobName) {
-    //        Map<String,String> subscriptionParams = new HashMap<String,String>();
-    //        subscriptionParams.put("jobName", jobName);
-    //        ConnectToObservable.Builder<NamedJobInfo> connectionBuilder =
-    //                new ConnectToObservable.Builder<NamedJobInfo>()
-    //                        .subscribeAttempts(subscribeAttemptsToMaster)
-    //                        .name("/v1/api/master/namedjobs")
-    //                        .subscribeParameters(subscriptionParams)
-    //                        .decoder(new JsonCodec<NamedJobInfo>(NamedJobInfo.class));
-    //        logger.info("Creating dynamic connection for getting scheduling info");
-    //
-    //        Observable<List<Endpoint>> changes = masterEndpoint
-    //                .map(new Func1<Endpoint,List<Endpoint>>(){
-    //                    @Override
-    //                    public List<Endpoint> call(Endpoint t1) {
-    //                        List<Endpoint> list = new ArrayList<Endpoint>(1);
-    //                        list.add(t1);
-    //                        return list;
-    //                    }
-    //                });
-    //
-    //        Reconciliator<NamedJobInfo> reconciliator = new Reconciliator.Builder<NamedJobInfo>()
-    //                .name("master-namedJobInfo")
-    //                .connectionSet(DynamicConnectionSet.create(connectionBuilder, MAX_RANDOM_WAIT_RETRY_SEC))
-    //                .injector(new ToDeltaEndpointInjector(changes))
-    //                .build();
-    //
-    //        return Observable.merge(reconciliator.observables());
-    //    }
 
+    /**
+     *
+     * @param jobId
+     * @return
+     */
     public Observable<JobAssignmentResult> assignmentResults(String jobId) {
         ConnectToObservable.Builder<JobAssignmentResult> connectionBuilder =
                 new ConnectToObservable.Builder<JobAssignmentResult>()
