@@ -33,6 +33,7 @@ import akka.testkit.javadsl.TestKit;
 import com.google.common.collect.Lists;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
+import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -59,14 +60,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 
-@Ignore
+
 public class JobTestMigrationTests {
 
     static ActorSystem system;
     private static TestKit probe;
     
-    //private static MantisJobStore jobStore;
-    //private static IMantisStorageProvider storageProvider;
     private static final String user = "mantis";
     final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
@@ -75,9 +74,8 @@ public class JobTestMigrationTests {
     public static void setup() {
         system = ActorSystem.create();
         probe = new TestKit(system);
+        TestHelpers.setupMasterConfig();
     
-    //  storageProvider = new SimpleCachedFileStorageProvider();
-    //  jobStore = new MantisJobStore(storageProvider);
     }
 
     @AfterClass

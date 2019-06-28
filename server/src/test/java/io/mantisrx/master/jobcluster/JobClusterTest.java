@@ -143,7 +143,7 @@ import org.mockito.stubbing.Answer;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-@Ignore
+
 public class JobClusterTest {
     public static final SLA NO_OP_SLA = new SLA(0, 0, null, null);
 
