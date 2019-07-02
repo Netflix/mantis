@@ -22,6 +22,6 @@ ext {
 
 dependencies {
     api "io.mantisrx:mantis-runtime:$mantisVersion"
-    api "io.mantisrx:mantis-server-core:$mantisVersion"
+    api "io.mantisrx:mantis-control-plane-core:$mantisVersion"
     api "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
 }
