@@ -1,6 +1,6 @@
 # mantis-publish
 
-[![Build Status](https://img.shields.io/travis/Netflix/mantis-publish.svg)](https://travis-ci.org/Netflix/mantis-publish)
+[![Build Status](https://img.shields.io/travis/com/Netflix/mantis-publish.svg)](https://travis-ci.com/Netflix/mantis-publish)
 [![Version](https://img.shields.io/bintray/v/netflixoss/maven/mantis-publish.svg)](https://bintray.com/netflixoss/maven/mantis-publish/_latestVersion)
 [![OSS Lifecycle](https://img.shields.io/osslifecycle/Netflix/mantis-publish.svg)](https://github.com/Netflix/mantis-publish)
 [![License](https://img.shields.io/github/license/Netflix/mantis-publish.svg)](https://www.apache.org/licenses/LICENSE-2.0)
