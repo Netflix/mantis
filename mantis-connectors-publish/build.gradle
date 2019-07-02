@@ -15,8 +15,8 @@
  */
 
 ext {
-    mantisVersion = '1.+'
-    mantisPublishVersion = '0.1.+'
+    mantisVersion = '1.2.+'
+    mantisPublishVersion = '1.2.+'
     rxJavaVersion = '1.3.+'
 }
 
