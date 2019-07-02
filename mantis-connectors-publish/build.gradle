@@ -15,13 +15,13 @@
  */
 
 ext {
-    mantisVersion = '1.+'
-    mantisPublishVersion = '0.1.+'
+    mantisVersion = '1.2.+'
+    mantisPublishVersion = '1.2.+'
     rxJavaVersion = '1.3.+'
 }
 
 dependencies {
     api "io.mantisrx:mantis-runtime:$mantisVersion"
-    api "io.mantisrx:mantis-server-core:$mantisVersion"
+    api "io.mantisrx:mantis-control-plane-core:$mantisVersion"
     api "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
 }

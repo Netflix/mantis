@@ -15,8 +15,10 @@
  */
 
 ext {
-    mantisVersion = '1.+'
-    mantisPublishVersion = '0.1.+'
+    gsonVersion = '2.8.+'
+    mantisVersion = '1.2.+'
+    mantisControlPlaneVersion = '1.2.+'
+    mantisPublishVersion = '1.2.+'
     rxJavaVersion = '1.3.+'
     vavrVersion = '0.9.+'
 }
@@ -24,7 +26,8 @@ ext {
 dependencies {
     api "io.mantisrx:mantis-runtime:$mantisVersion"
     api "io.mantisrx:mantis-client:$mantisVersion"
-    api "io.mantisrx:mantis-server-core:$mantisVersion"
+    api "io.mantisrx:mantis-control-plane-core:$mantisControlPlaneVersion"
     api "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
+    implementation "com.google.code.gson:gson:$gsonVersion"
     implementation "io.vavr:vavr:$vavrVersion"
 }
