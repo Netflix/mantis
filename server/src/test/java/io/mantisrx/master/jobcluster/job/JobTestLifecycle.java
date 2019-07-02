@@ -81,7 +81,7 @@ import io.mantisrx.server.core.domain.JobMetadata;
 public class JobTestLifecycle {
 
 	static ActorSystem system;
-	private static TestKit probe;
+
 	
 	private static MantisJobStore jobStore;
 	private static IMantisStorageProvider storageProvider;
@@ -93,7 +93,7 @@ public class JobTestLifecycle {
 	@BeforeClass
 	public static void setup() {
 		system = ActorSystem.create();
-		probe = new TestKit(system);
+
 		TestHelpers.setupMasterConfig();
 		storageProvider = new MantisStorageProviderAdapter(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(), eventPublisher);
 		jobStore = new MantisJobStore(storageProvider);

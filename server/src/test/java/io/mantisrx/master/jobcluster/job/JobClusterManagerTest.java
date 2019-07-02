@@ -114,7 +114,7 @@ import rx.subjects.BehaviorSubject;
 @Ignore
 public class JobClusterManagerTest {
     static ActorSystem system;
-    private static TestKit probe;
+
     private static MantisJobStore jobStoreMock;
     private static ActorRef jobClusterManagerActor;
     private static MantisScheduler schedulerMock;
@@ -134,7 +134,7 @@ public class JobClusterManagerTest {
         system = ActorSystem.create(
                 "JobClusterManagerTest",
                 config.withFallback(ConfigFactory.load()));
-        probe = new TestKit(system);
+
 
         TestHelpers.setupMasterConfig();
         jobStoreMock = mock(MantisJobStore.class);
@@ -237,6 +237,7 @@ public class JobClusterManagerTest {
             ActorRef jobClusterManagerActor,
             String clusterName,
             WorkerMigrationConfig migrationConfig) {
+        TestKit probe = new TestKit(system);
         JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
                 Lists.newArrayList(),
@@ -250,6 +251,7 @@ public class JobClusterManagerTest {
     }
 
     private void submitJobAndAssert(ActorRef jobClusterManagerActor, String cluster) {
+        TestKit probe = new TestKit(system);
         JobDefinition jobDefn;
         try {
             jobDefn = createJob(cluster);
@@ -274,6 +276,7 @@ public class JobClusterManagerTest {
     @Test
     public void testBootStrapJobClustersAndJobs1() {
 
+        TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new MantisStorageProviderAdapter(
                 new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(),
@@ -348,6 +351,7 @@ public class JobClusterManagerTest {
     @Test
     public void testBootStrapJobClustersAndJobsNegativeTest() throws IOException {
 
+        TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisStorageProviderAdapter storageProviderAdapter = mock(MantisStorageProviderAdapter.class);
         when(storageProviderAdapter.loadAllJobClusters()).thenThrow(new IOException(
@@ -374,6 +378,7 @@ public class JobClusterManagerTest {
     @Test
     public void testBootStrapJobClustersAndJobs() {
 
+        TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new MantisStorageProviderAdapter(
                 new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(),
@@ -622,6 +627,7 @@ public class JobClusterManagerTest {
     @Test
     public void testJobClusterCreate() throws MalformedURLException {
 
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterCreateCluster";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
@@ -644,6 +650,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterCreateDupFails() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterCreateDupFails";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
@@ -681,6 +688,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testListJobClusters() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testListJobClusters";
         JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
@@ -720,6 +728,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testListJobs() throws InvalidJobException {
+        TestKit probe = new TestKit(system);
         //create cluster 1
         String clusterName = "testListJobs";
         JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
@@ -789,6 +798,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterUpdateAndDelete() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterUpdateAndDeleteCluster";
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname", "labelvalue");
@@ -847,6 +857,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterSLAUpdate() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterSLAUpdate";
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname", "labelvalue");
@@ -884,6 +895,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterLabelUpdate() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterLabelUpdate";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
@@ -919,6 +931,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterArtifactUpdate() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdate";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
@@ -952,6 +965,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterWorkerMigrationUpdate() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterWorkerMigrationUpdate";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
@@ -985,6 +999,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterDisable() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterDisable";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
@@ -1015,6 +1030,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobClusterEnable() throws MalformedURLException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterEnable";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
@@ -1059,6 +1075,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobSubmit() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmit";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
@@ -1104,6 +1121,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testWorkerList() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testWorkerList";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
@@ -1170,6 +1188,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testGetJobIdSubject() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetJobIdSubject";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
                 clusterName,
@@ -1252,6 +1271,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testJobSubmitToNonExistentCluster() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitToNonExistentClusterCluster";
 
 
@@ -1280,6 +1300,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testTerminalEventFromZombieWorkerIgnored() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testZombieWorkerHandling";
 
 
@@ -1308,6 +1329,7 @@ public class JobClusterManagerTest {
 
     @Test
     public void testNonTerminalEventFromZombieWorkerLeadsToTermination() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testNonTerminalEventFromZombieWorkerLeadsToTermination";
 
 
