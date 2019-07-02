@@ -152,7 +152,7 @@ public class JobClusterTest {
     public static final JobOwner DEFAULT_JOB_OWNER = new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo");
     final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
     static ActorSystem system;
-    private static TestKit probe;
+    //private static TestKit probe;
 
     private static MantisJobStore jobStore;
     private static IMantisStorageProvider storageProvider;
@@ -167,7 +167,7 @@ public class JobClusterTest {
             "  test.single-expect-default = 500 millis\n" +
             "}\n");
         system = ActorSystem.create("JobClusterTest", config.withFallback(ConfigFactory.load()));
-        probe = new TestKit(system);
+
 
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
@@ -267,6 +267,7 @@ public class JobClusterTest {
     public void testJobClusterCreate() throws Exception  {
 
         String name = "testJobClusterCreate";
+        TestKit probe = new TestKit(system);
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(name);
@@ -301,6 +302,7 @@ public class JobClusterTest {
     @Test
     public void testJobClusterEnable() {
         try {
+            TestKit probe = new TestKit(system);
             String clusterName = "testJobClusterEnable";
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -378,6 +380,7 @@ public class JobClusterTest {
     @Test
     public void testJobClusterUpdateAndDelete() throws Exception  {
 
+        TestKit probe = new TestKit(system);
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
@@ -443,6 +446,7 @@ public class JobClusterTest {
     @Test
     public void testJobClusterUpdateFailsIfArtifactNotUnique() throws Exception  {
 
+        TestKit probe = new TestKit(system);
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
@@ -470,6 +474,7 @@ public class JobClusterTest {
     @Test
     public void testJobClusterDeleteFailsIfJobsActive() throws Exception  {
 
+        TestKit probe = new TestKit(system);
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
@@ -505,6 +510,7 @@ public class JobClusterTest {
     @Test
     public void testJobClusterDeletePurgesCompletedJobs() throws Exception  {
 
+        TestKit probe = new TestKit(system);
         List<Label> labels = Lists.newLinkedList();
         Label l = new Label("labelname","labelvalue");
         labels.add(l);
@@ -549,6 +555,7 @@ public class JobClusterTest {
     @Test
     public void testJobClusterDisable() throws InterruptedException {
 
+        TestKit probe = new TestKit(system);
         CountDownLatch storeCompletedCalled = new CountDownLatch(1);
         String clusterName = "testJobClusterDisable";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -633,6 +640,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobClusterSLAUpdate() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterSLAUpdate";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -665,6 +673,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobClusterMigrationConfigUpdate() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterMigrationConfigUpdate";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -697,6 +706,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobClusterArtifactUpdate() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdate";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -735,6 +745,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobClusterArtifactUpdateNotUniqueFails() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdateNotUniqueFails";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -771,6 +782,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobClusterArtifactUpdateMultipleTimes() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterArtifactUpdateMultipleTimes";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -837,6 +849,7 @@ public class JobClusterTest {
     public void testJobClusterInvalidSLAUpdateIgnored() throws Exception  {
 
 
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterInvalidSLAUpdateIgnored";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -871,6 +884,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobClusterLabelsUpdate() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterLabelsUpdate";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -925,6 +939,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobSubmit() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmit";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -962,6 +977,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobSubmitWithNoJarAndSchedInfo() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithNoJarAndSchedInfo";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1013,6 +1029,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobSubmitWithVersionAndNoSchedInfo() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithVersionAndNoSchedInfo";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1115,6 +1132,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobComplete() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobComplete";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1152,6 +1170,7 @@ public class JobClusterTest {
     }
     @Test
     public void testJobKillTriggersSLAToLaunchNew() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobKillTriggersSLAToLaunchNew";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1205,6 +1224,7 @@ public class JobClusterTest {
     // TODO
 // TODO    @Test
     public void testJobSubmitTriggersSLAToKillOld() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitTriggersSLAToKillOld";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1286,6 +1306,7 @@ public class JobClusterTest {
 
  //TODO   @Test
     public void testJobSubmitTriggersSLAToKillOldHandlesErrors() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitTriggersSLAToKillOldHandlesErrors";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1364,6 +1385,7 @@ public class JobClusterTest {
 
     @Test
     public void testCronTriggersSLAToKillOld() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitTriggersSLAToKillOld";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1414,6 +1436,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobSubmitWithUnique() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithUnique";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1463,6 +1486,7 @@ public class JobClusterTest {
 
     @Test
     public void testQuickJobSubmit() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testQuickJobSubmit";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1503,6 +1527,7 @@ public class JobClusterTest {
 
     @Test
     public void testQuickJobSubmitWithNoSchedInfoInPreviousJob() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testQuickJobSubmitWithNoSchedInfoInPreviousJob";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1553,6 +1578,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobSubmitWithNoSchedInfoUsesJobClusterValues() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithNoSchedInfoUsesJobClusterValues";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1628,6 +1654,7 @@ public class JobClusterTest {
 
     @Test
     public void testQuickJobSubmitWithNoPreviousHistoryFails() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testQuickJobSubmitWithNoPreviousHistoryFails";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1656,6 +1683,7 @@ public class JobClusterTest {
     @Test
     @Ignore
     public void testUpdateJobClusterArtifactWithAutoSubmit() {
+        TestKit probe = new TestKit(system);
         try {
             String clusterName = "testUpdateJobClusterArtifactWithAutoSubmit";
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -1708,6 +1736,7 @@ public class JobClusterTest {
 
     @Test
     public void testJobSubmitFails() {
+        TestKit probe = new TestKit(system);
         try {
             String clusterName = "testJobSubmitFails";
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -1744,6 +1773,7 @@ public class JobClusterTest {
 
     @Test
     public void testGetLastSubmittedJobSubject() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJobSubject";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1796,6 +1826,7 @@ public class JobClusterTest {
 
     @Test
     public void testGetLastSubmittedJobSubjectWithWrongClusterNameFails() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJobSubjectWithWrongClusterNameFails";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1838,6 +1869,7 @@ public class JobClusterTest {
 
     @Test
     public void testListArchivedWorkers() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testListArchivedWorkers";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
 
@@ -1894,6 +1926,7 @@ public class JobClusterTest {
     @Test
     public void testZombieWorkerKilledOnMessage() {
         String clusterName = "testZombieWorkerKilledOnMessage";
+        TestKit probe = new TestKit(system);
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
@@ -1921,6 +1954,7 @@ public class JobClusterTest {
 
     @Test
     public void testZombieWorkerTerminateEventIgnored() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testZombieWorkerTerminateEventIgnored";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -1945,6 +1979,7 @@ public class JobClusterTest {
     }
     @Test
     public void testResubmitWorker() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testResubmitWorker";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -2000,6 +2035,7 @@ public class JobClusterTest {
 
     @Test
     public void testScaleStage() {
+        TestKit probe = new TestKit(system);
         try {
             String clusterName = "testScaleStage";
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -2065,6 +2101,7 @@ public class JobClusterTest {
 
     @Test
     public void testGetJobDetailsForArchivedJob() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetJobDetailsForArchivedJob";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -2117,6 +2154,7 @@ public class JobClusterTest {
 
     @Test
     public void testListJobIdsForCluster() throws InvalidJobException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testListJobsForCluster";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -2221,6 +2259,7 @@ public class JobClusterTest {
 
     @Test
     public void testListJobsForCluster() throws InvalidJobException, InterruptedException {
+        TestKit probe = new TestKit(system);
         String clusterName = "testListJobsForCluster";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
@@ -2309,6 +2348,7 @@ public class JobClusterTest {
 
     @Test
     public void testGetLastSubmittedJob() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJob";
 
         final JobDefinition jobDefn1 = createJob(clusterName);
@@ -2348,6 +2388,7 @@ public class JobClusterTest {
 
     @Test
     public void testGetLastSubmittedJobWithCompletedOnly() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJobWithCompletedOnly";
 
         final JobDefinition jobDefn1 = createJob(clusterName);
@@ -2375,6 +2416,7 @@ public class JobClusterTest {
      */
     @Test
     public void testGetLastSubmittedJobWithNoJobs() throws Exception  {
+        TestKit probe = new TestKit(system);
         String clusterName = "testGetLastSubmittedJobWithNoJobs";
 
         final JobDefinition jobDefn1 = createJob(clusterName);
@@ -2389,6 +2431,7 @@ public class JobClusterTest {
 
     @Test
     public void testListJobWithLabelMatch() {
+        TestKit probe = new TestKit(system);
         String clusterName = "testListJobWithLabelMatch";
         try {
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -2479,7 +2522,7 @@ public class JobClusterTest {
     @Test
     public void testLostWorkerGetsReplaced() {
 
-
+        TestKit probe = new TestKit(system);
         String clusterName = "testLostWorkerGetsReplaced";
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
         //MantisJobStore jobStoreMock = mock(MantisJobStore.class);
