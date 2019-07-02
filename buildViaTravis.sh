@@ -6,7 +6,7 @@ if [ "$TRAVIS_PULL_REQUEST" != "false" ] || [ "$GRADLE_PUBLISH" == "false" ]; th
   ./gradlew build --stacktrace
 elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" == "" ] && [ "$TRAVIS_BRANCH" == "master" ]; then
   echo -e 'Build master with Snapshot'
-  ./gradlew -Prelease.travisci=true -Prelease.useLastTag=true -PbintrayUser="${bintrayUser}" -PbintrayKey="${bintrayKey}" build snapshot --stacktrace
+  ./gradlew -Prelease.travisci=true -PbintrayUser="${bintrayUser}" -PbintrayKey="${bintrayKey}" snapshot --stacktrace
 elif [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" == "" ]; then
   echo -e 'Build Branch => Branch ['$TRAVIS_BRANCH']'
   ./gradlew build --stacktrace

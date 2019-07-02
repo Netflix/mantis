@@ -15,7 +15,7 @@
  */
 
 ext {
-    mqlVersion = '3.+'
+    mqlVersion = '3.0.+'
     nettyVersion = '4.1.17.Final'
 }
 
