@@ -64,7 +64,7 @@ import org.junit.Test;
 public class JobTestMigrationTests {
 
     static ActorSystem system;
-    private static TestKit probe;
+
     
     private static final String user = "mantis";
     final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
@@ -73,7 +73,7 @@ public class JobTestMigrationTests {
     @BeforeClass
     public static void setup() {
         system = ActorSystem.create();
-        probe = new TestKit(system);
+
         TestHelpers.setupMasterConfig();
     
     }
@@ -90,6 +90,7 @@ public class JobTestMigrationTests {
     public void testWorkerMigration() {
         
         String clusterName= "testWorkerMigration";
+        TestKit probe = new TestKit(system);
         SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo, new WorkerMigrationConfig(MigrationStrategyEnum.ONE_WORKER, "{}"));
 

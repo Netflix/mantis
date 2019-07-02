@@ -1325,14 +1325,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 JobDefinition updatedJobDefn = new JobDefinition.Builder().from(resolvedJobDefn)
                         .withLabels(updatedLabels).build();
-                logger.info("Added isResubmit label");
+                logger.debug("Added isResubmit label");
                 return updatedJobDefn;
             } catch (InvalidJobException e) {
                 logger.error(e.getMessage());
                 return resolvedJobDefn;
             }
         } else {
-            logger.info("Job already has isResubmit label. Don't add new");
+            logger.debug("Job " + resolvedJobDefn.getName() + " already has isResubmit label. Don't add new");
             return resolvedJobDefn;
         }
 
