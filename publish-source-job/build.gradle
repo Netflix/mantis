@@ -15,9 +15,9 @@
  */
 
 ext {
-    mantisVersion = '1.+'
-    mantisConnectorsVersion = '0.1.+'
-    mantisPublishVersion = '0.1.+'
+    mantisVersion = '1.2.+'
+    mantisConnectorsVersion = '1.2.+'
+    mantisPublishVersion = '1.2.+'
 }
 
 dependencies {
