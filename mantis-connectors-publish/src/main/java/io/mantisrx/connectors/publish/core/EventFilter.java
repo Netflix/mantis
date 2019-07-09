@@ -77,7 +77,7 @@ public class EventFilter implements Func1<Map<String, List<String>>, Func1<Strin
 
         private List<String> terms;
 
-        public SourceEventFilter(List<String> terms) {
+        SourceEventFilter(List<String> terms) {
             this.terms = terms;
             LOGGER.info("Initiated with terms" + terms);
         }

@@ -14,3 +14,16 @@
  * limitations under the License.
  */
 
+package io.mantisrx.connectors.kafka.source.assignor;
+
+import org.apache.kafka.common.TopicPartition;
+
+import java.util.List;
+import java.util.Map;
+
+
+public interface StaticPartitionAssignor {
+    List<TopicPartition> assignPartitionsToConsumer(int consumerIndex,
+                                                    Map<String, Integer> topicPartitionCounts,
+                                                    int totalNumConsumers);
+}
