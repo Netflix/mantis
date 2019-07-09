@@ -14,9 +14,25 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connectors.kafka.source.serde;
 
-include 'mantis-connectors-job'
-include "mantis-connectors-kafka/kafka-2.2"
-include 'mantis-connectors-publish'
-project(":mantis-connectors-kafka/kafka-2.2").name = "mantis-connectors-kafka22"
+public class ParseException extends RuntimeException {
+
+    /**
+     * genreated id
+     */
+    private static final long serialVersionUID = 7066656417880807188L;
+
+    public ParseException(String message) {
+        super(message);
+    }
+
+    public ParseException(Throwable cause) {
+        super(cause);
+    }
+
+    public ParseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
