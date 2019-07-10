@@ -649,7 +649,7 @@ public class JobClusterTest {
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
-        SLA newSLA = new SLA(2,10,null,null);
+        SLA newSLA = new SLA(0,10,null,null);
         UpdateJobClusterSLARequest updateSlaReq = new UpdateJobClusterSLARequest(clusterName, newSLA.getMin(), newSLA.getMax(), "user");
         jobClusterActor.tell(updateSlaReq, probe.getRef());
         UpdateJobClusterSLAResponse resp = probe.expectMsgClass(UpdateJobClusterSLAResponse.class);
