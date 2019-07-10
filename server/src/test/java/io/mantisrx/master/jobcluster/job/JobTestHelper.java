@@ -53,6 +53,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
+import org.junit.Test;
 import rx.Observable;
 
 import java.io.File;
@@ -353,6 +354,35 @@ public class JobTestHelper {
         assertEquals(JobState.Launched,resp2.getJobMetadata().get().getState());
 
         return jobActor;
+    }
+    @Test
+    public void testCalculateRuntimeLimitForAlreadyStartedJob() {
+        Instant now = Instant.now();
+
+        Instant startedAt = now.minusSeconds(5);
+
+        assertEquals(5, JobHelper.calculateRuntimeDuration(10,startedAt));
+
+    }
+
+    @Test
+    public void testCalculateRuntimeLimitForJustStartedJob() {
+        Instant now = Instant.now();
+
+        Instant startedAt = now;
+
+        assertEquals(10, JobHelper.calculateRuntimeDuration(10,startedAt));
+
+    }
+
+    @Test
+    public void testCalculateRuntimeLimitForAlreadyExpiredJob() {
+        Instant now = Instant.now();
+
+        Instant startedAt = now.minusSeconds(15);
+
+        assertEquals(1, JobHelper.calculateRuntimeDuration(10,startedAt));
+
     }
 
 

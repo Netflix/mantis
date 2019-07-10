@@ -19,6 +19,7 @@ package io.mantisrx.master.jobcluster.job;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -105,5 +106,36 @@ public final class JobHelper {
             LOGGER.warn("Host name unknown for workerId {}", event.getWorkerId());
         }
         return host;
+    }
+
+    /**
+     * Called after a) All workers started and job goes to Launched state
+     * b) Mantis Master is restarting and its reinitializing this Job
+     * This method calculates the remaining time for this job to run.
+     * @param maxRuntimeSecs
+     * @param startedAt
+     * @return
+     */
+    public static long calculateRuntimeDuration(long maxRuntimeSecs, Instant startedAt) {
+        long terminateJobInSecs = maxRuntimeSecs;
+        if (maxRuntimeSecs > 0) {
+            Instant now = Instant.now();
+
+            if (now.isAfter(startedAt)) {
+                // Job was already running (Occurs when master was restarted)
+                long elapsedSeconds = now.getEpochSecond() - startedAt.getEpochSecond();
+                // Calculate remaining time to run
+                terminateJobInSecs = maxRuntimeSecs - elapsedSeconds;
+
+                if (terminateJobInSecs <= 0) {
+                    // Runtime has already reached terminate.
+                    // trigger terminate in a second.
+                    terminateJobInSecs = 1;
+
+                }
+            }
+
+        }
+        return terminateJobInSecs;
     }
 }

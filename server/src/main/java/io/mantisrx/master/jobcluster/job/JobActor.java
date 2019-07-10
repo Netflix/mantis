@@ -1114,11 +1114,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private void setRuntimeLimitTimersIfRequired(Instant currentTime) {
 
         long maxRuntimeSecs = mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
+        Instant startedAt = mantisJobMetaData.getStartedAtInstant().orElse(currentTime);
+
+        long terminateJobInSecs;
         if (maxRuntimeSecs > 0) {
-            LOGGER.info("Will check terminate Job {} at {} ", jobId, (Instant.now().plusSeconds(maxRuntimeSecs)));
+
+            terminateJobInSecs = JobHelper.calculateRuntimeDuration(maxRuntimeSecs,startedAt);
+
+            LOGGER.info("Will terminate Job {} at {} ", jobId, (currentTime.plusSeconds(terminateJobInSecs)));
 
             getTimers().startSingleTimer("RUNTIME_LIMIT", new JobProto.RuntimeLimitReached(),
-                    Duration.ofSeconds(maxRuntimeSecs));
+                    Duration.ofSeconds(terminateJobInSecs));
         } else {
             LOGGER.info("maxRuntime for Job {} is  {} ignore ", jobId, mantisJobMetaData.getJobDefinition()
                     .getJobSla().getRuntimeLimitSecs());
