@@ -24,7 +24,6 @@ ext {
 }
 
 dependencies {
-    api 'org.clojure:clojure:1.8.0'
     api "com.netflix:mantis-rxnetty:${rootProject.versionRxNetty}.${rootProject.versionSuffixRxNettyShaded}"
     api "io.reactivex:rxjava:$versionRxJava"
     api "io.netty:netty-codec-http:$nettyVersion"
