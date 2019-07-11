@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
 import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.mql.core.Query;
+import io.mantisrx.mql.jvm.core.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
