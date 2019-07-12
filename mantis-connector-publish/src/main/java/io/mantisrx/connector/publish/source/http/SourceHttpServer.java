@@ -14,8 +14,26 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connector.publish.source.http;
 
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+import io.mantisrx.connector.publish.core.QueryRegistry;
+import rx.subjects.Subject;
+
+
+public interface SourceHttpServer {
+
+    public static final String METRIC_GROUP = "PushServer";
+
+    enum State {
+        NOTINITED,
+        INITED,
+        RUNNING,
+        SHUTDOWN
+    }
+
+    void init(QueryRegistry registry, Subject<String, String> eventSubject, int port) throws InterruptedException;
+
+    void startServer();
+
+    void shutdownServer();
+}

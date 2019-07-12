@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connector.kafka.source.assignor;
 
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+import org.apache.kafka.common.TopicPartition;
+
+import java.util.List;
+import java.util.Map;
+
+
+public interface StaticPartitionAssignor {
+    List<TopicPartition> assignPartitionsToConsumer(int consumerIndex,
+                                                    Map<String, Integer> topicPartitionCounts,
+                                                    int totalNumConsumers);
+}
