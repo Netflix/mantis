@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connector.job.core;
 
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+import io.mantisrx.client.SinkConnectionsStatus;
+import rx.Observer;
+
+
+public interface SinkConnectionStatusObserver extends Observer<SinkConnectionsStatus> {
+
+    public abstract long getConnectedServerCount();
+
+    public abstract long getTotalServerCount();
+
+    public abstract long getReceivingDataCount();
+
+    public abstract boolean isConnectedToAllSinks();
+}

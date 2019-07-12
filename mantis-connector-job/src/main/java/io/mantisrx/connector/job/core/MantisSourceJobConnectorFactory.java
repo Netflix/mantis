@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connector.job.core;
 
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+public class MantisSourceJobConnectorFactory {
+
+    public static MantisSourceJobConnector getConnector() {
+        return new MantisSourceJobConnector();
+    }
+}
