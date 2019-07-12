@@ -17,6 +17,5 @@
 rootProject.name = 'mantis-connectors'
 
 include 'mantis-connectors-job'
-include "mantis-connectors-kafka/kafka-2.2"
+include "mantis-connector-kafka"
 include 'mantis-connectors-publish'
-project(":mantis-connectors-kafka/kafka-2.2").name = "mantis-connectors-kafka22"
