@@ -50,9 +50,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public class MantisKafka22Consumer<S> {
+public class MantisKafkaConsumer<S> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MantisKafka22Consumer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MantisKafkaConsumer.class);
 
     private final int consumerId;
     private final KafkaConsumer<String, byte[]> consumer;
@@ -65,12 +65,12 @@ public class MantisKafka22Consumer<S> {
     private volatile Subscription metricSubscription = null;
 
 
-    public MantisKafka22Consumer(final int consumerId,
-                                 final KafkaConsumer<String, byte[]> consumer,
-                                 final TopicPartitionStateManager partitionStateManager,
-                                 final CheckpointStrategy<S> strategy,
-                                 final CheckpointTrigger trigger,
-                                 final ConsumerMetrics metrics) {
+    public MantisKafkaConsumer(final int consumerId,
+                               final KafkaConsumer<String, byte[]> consumer,
+                               final TopicPartitionStateManager partitionStateManager,
+                               final CheckpointStrategy<S> strategy,
+                               final CheckpointTrigger trigger,
+                               final ConsumerMetrics metrics) {
         this.consumerId = consumerId;
         this.consumerMetrics = metrics;
         this.consumer = consumer;
@@ -202,7 +202,7 @@ public class MantisKafka22Consumer<S> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        MantisKafka22Consumer that = (MantisKafka22Consumer) o;
+        MantisKafkaConsumer that = (MantisKafkaConsumer) o;
         return consumerId == that.consumerId &&
             consumer.equals(that.consumer) &&
             strategy.equals(that.strategy) &&
@@ -218,7 +218,7 @@ public class MantisKafka22Consumer<S> {
 
     @Override
     public String toString() {
-        return "MantisKafka22Consumer{" +
+        return "MantisKafkaConsumer{" +
             "consumerId=" + consumerId +
             ", consumer=" + consumer +
             ", strategy=" + strategy +
@@ -294,7 +294,7 @@ public class MantisKafka22Consumer<S> {
             }
         }
 
-        public MantisKafka22Consumer<?> build() {
+        public MantisKafkaConsumer<?> build() {
             Preconditions.checkNotNull(context, "context");
             Preconditions.checkNotNull(kafkaSourceConfig, "kafkaSourceConfig");
             Preconditions.checkNotNull(registry, "registry");
@@ -316,20 +316,20 @@ public class MantisKafka22Consumer<S> {
             final CheckpointStrategy<?> strategy = CheckpointStrategyFactory.getNewInstance(context, consumer, kafkaSourceConfig.getCheckpointStrategy(), metrics);
 
             if (kafkaSourceConfig.getStaticPartitionAssignmentEnabled()) {
-                final Kafka22ConsumerRebalanceListener kafka22ConsumerRebalanceListener = new Kafka22ConsumerRebalanceListener(consumer, partitionStateManager, strategy);
+                final KafkaConsumerRebalanceListener kafkaConsumerRebalanceListener = new KafkaConsumerRebalanceListener(consumer, partitionStateManager, strategy);
                 kafkaSourceConfig.getTopicPartitionCounts().ifPresent(topicPartitionCounts -> {
-                    doStaticPartitionAssignment(consumer, kafka22ConsumerRebalanceListener, consumerIndex, totalNumConsumersForJob, topicPartitionCounts, registry);
+                    doStaticPartitionAssignment(consumer, kafkaConsumerRebalanceListener, consumerIndex, totalNumConsumersForJob, topicPartitionCounts, registry);
                 });
             } else {
                 if (kafkaSourceConfig.getCheckpointStrategy() != CheckpointStrategyOptions.NONE) {
                     consumer.subscribe(kafkaSourceConfig.getTopics(),
-                                       new Kafka22ConsumerRebalanceListener(consumer, partitionStateManager, strategy));
+                                       new KafkaConsumerRebalanceListener(consumer, partitionStateManager, strategy));
                 } else {
                     consumer.subscribe(kafkaSourceConfig.getTopics());
                 }
             }
             final CheckpointTrigger trigger = CheckpointTriggerFactory.getNewInstance(kafkaSourceConfig);
-            return new MantisKafka22Consumer<>(kafkaConsumerId, consumer, partitionStateManager, strategy, trigger, metrics);
+            return new MantisKafkaConsumer<>(kafkaConsumerId, consumer, partitionStateManager, strategy, trigger, metrics);
         }
 
     }

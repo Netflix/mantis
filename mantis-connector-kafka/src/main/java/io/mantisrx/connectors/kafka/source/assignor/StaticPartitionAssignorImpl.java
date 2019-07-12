@@ -27,7 +27,7 @@ import java.util.Objects;
 
 
 /**
- * Is invoked during initialization of the KafkaSource22 if Static partitioning ins enabled.
+ * Is invoked during initialization of the KafkaSource if Static partitioning ins enabled.
  */
 
 public class StaticPartitionAssignorImpl implements StaticPartitionAssignor {

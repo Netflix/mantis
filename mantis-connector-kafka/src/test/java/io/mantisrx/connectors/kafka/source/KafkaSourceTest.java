@@ -56,8 +56,8 @@ import rx.Observable;
 
 // Test ignored until kafka-unit dependency for kafka v2.2.+ is released after merging PR https://github.com/chbatey/kafka-unit/pull/69
 @Ignore
-public class KafkaSource22Test {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSource22Test.class);
+public class KafkaSourceTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSourceTest.class);
     private static final KafkaUnit kafkaServer = new KafkaUnit(5000, 9092);
     private static final Random random = new Random(System.currentTimeMillis());
     private static final AtomicInteger topicNum = new AtomicInteger(1);
@@ -85,7 +85,7 @@ public class KafkaSource22Test {
         }
 
 
-        KafkaSource22 kafkaSource = new KafkaSource22(new NoopRegistry());
+        KafkaSource kafkaSource = new KafkaSource(new NoopRegistry());
         Context context = mock(Context.class);
         Parameters params = createParameters(KafkaSourceParameters.TOPIC, testTopic,
                                              ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
@@ -125,12 +125,12 @@ public class KafkaSource22Test {
         for (int i = 0; i < numMessages; i++) {
             ProducerRecord<String, String> keyedMessage = new ProducerRecord<>(testTopic, "{\"messageNum\":"+i+"}");
             kafkaServer.sendMessages(keyedMessage);
-            ProducerRecord<String, String> keyedMessage2 = new ProducerRecord<>(testTopic, "{\"messageNum:"+i+"}");
-            kafkaServer.sendMessages(keyedMessage2);
+            ProducerRecord<String, String> invalidJsonMessage = new ProducerRecord<>(testTopic, "{\"messageNum:"+i+"}");
+            kafkaServer.sendMessages(invalidJsonMessage);
         }
 
 
-        KafkaSource22 kafkaSource = new KafkaSource22(new NoopRegistry());
+        KafkaSource kafkaSource = new KafkaSource(new NoopRegistry());
         Context context = mock(Context.class);
         Parameters params = createParameters(KafkaSourceParameters.TOPIC, testTopic,
                                              ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
@@ -176,7 +176,7 @@ public class KafkaSource22Test {
         }
 
 
-        KafkaSource22 kafkaSource = new KafkaSource22(new NoopRegistry());
+        KafkaSource kafkaSource = new KafkaSource(new NoopRegistry());
         Context context = mock(Context.class);
         Parameters params = createParameters(KafkaSourceParameters.NUM_KAFKA_CONSUMER_PER_WORKER, 2,
                                              KafkaSourceParameters.TOPIC, testTopic,
@@ -241,7 +241,7 @@ public class KafkaSource22Test {
         }
 
 
-        KafkaSource22 kafkaSource = new KafkaSource22(new NoopRegistry());
+        KafkaSource kafkaSource = new KafkaSource(new NoopRegistry());
         Context context = mock(Context.class);
         Parameters params = createParameters(KafkaSourceParameters.NUM_KAFKA_CONSUMER_PER_WORKER, numConsumers,
                                              KafkaSourceParameters.TOPIC, testTopic,

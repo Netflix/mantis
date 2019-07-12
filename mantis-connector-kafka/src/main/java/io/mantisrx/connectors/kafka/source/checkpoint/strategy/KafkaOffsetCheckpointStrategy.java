@@ -37,14 +37,14 @@ import java.util.Set;
 /**
  * Leverages the default Kafka facilities to commit offsets to Kafka using {@link KafkaConsumer#commitSync(Map) commitSync(Map)}.
  */
-public class Kafka22OffsetCheckpointStrategy implements CheckpointStrategy<OffsetAndMetadata> {
+public class KafkaOffsetCheckpointStrategy implements CheckpointStrategy<OffsetAndMetadata> {
 
-    private static Logger logger = LoggerFactory.getLogger(Kafka22OffsetCheckpointStrategy.class);
+    private static Logger logger = LoggerFactory.getLogger(KafkaOffsetCheckpointStrategy.class);
 
     private final KafkaConsumer<?, ?> consumer;
     private final ConsumerMetrics consumerMetrics;
 
-    public Kafka22OffsetCheckpointStrategy(KafkaConsumer<?, ?> consumer, ConsumerMetrics metrics) {
+    public KafkaOffsetCheckpointStrategy(KafkaConsumer<?, ?> consumer, ConsumerMetrics metrics) {
         this.consumer = consumer;
         this.consumerMetrics = metrics;
     }

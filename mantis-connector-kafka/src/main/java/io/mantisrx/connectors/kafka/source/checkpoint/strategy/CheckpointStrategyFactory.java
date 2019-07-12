@@ -44,7 +44,7 @@ public final class CheckpointStrategyFactory {
                                                        final ConsumerMetrics metrics) {
         switch (strategy) {
             case CheckpointStrategyOptions.OFFSETS_ONLY_DEFAULT:
-                final Kafka22OffsetCheckpointStrategy cs = new Kafka22OffsetCheckpointStrategy(consumer, metrics);
+                final KafkaOffsetCheckpointStrategy cs = new KafkaOffsetCheckpointStrategy(consumer, metrics);
                 cs.init(context);
                 return cs;
 

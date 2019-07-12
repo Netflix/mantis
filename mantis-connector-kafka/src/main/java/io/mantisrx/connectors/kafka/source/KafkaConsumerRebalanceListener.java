@@ -29,17 +29,17 @@ import org.slf4j.LoggerFactory;
 import io.mantisrx.connectors.kafka.source.checkpoint.strategy.CheckpointStrategy;
 
 
-public class Kafka22ConsumerRebalanceListener<S> implements ConsumerRebalanceListener {
+public class KafkaConsumerRebalanceListener<S> implements ConsumerRebalanceListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Kafka22ConsumerRebalanceListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerRebalanceListener.class);
 
     private final KafkaConsumer<?, ?> consumer;
     private final TopicPartitionStateManager partitionStateManager;
     private final CheckpointStrategy<S> checkpointStrategy;
 
-    public Kafka22ConsumerRebalanceListener(final KafkaConsumer<?, ?> consumer,
-                                            final TopicPartitionStateManager partitionStateManager,
-                                            final CheckpointStrategy<S> checkpointStrategy) {
+    public KafkaConsumerRebalanceListener(final KafkaConsumer<?, ?> consumer,
+                                          final TopicPartitionStateManager partitionStateManager,
+                                          final CheckpointStrategy<S> checkpointStrategy) {
         this.consumer = consumer;
         this.partitionStateManager = partitionStateManager;
         this.checkpointStrategy = checkpointStrategy;

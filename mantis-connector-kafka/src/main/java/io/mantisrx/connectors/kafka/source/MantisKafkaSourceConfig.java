@@ -16,7 +16,7 @@
 
 package io.mantisrx.connectors.kafka.source;
 
-import static io.mantisrx.connectors.kafka.source.MantisKafka22ConsumerConfig.DEFAULT_CHECKPOINT_INTERVAL_MS;
+import static io.mantisrx.connectors.kafka.source.MantisKafkaConsumerConfig.DEFAULT_CHECKPOINT_INTERVAL_MS;
 
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +56,7 @@ public class MantisKafkaSourceConfig {
     private final int checkpointIntervalMs;
     private final Boolean staticPartitionAssignmentEnabled;
     private final Optional<Map<String, Integer>> topicPartitionCounts;
-    private final MantisKafka22ConsumerConfig consumerConfig;
+    private final MantisKafkaConsumerConfig consumerConfig;
 
     public MantisKafkaSourceConfig(Context context) {
         final Parameters parameters = context.getParameters();
@@ -77,7 +77,7 @@ public class MantisKafkaSourceConfig {
         } else {
             this.topicPartitionCounts = Optional.empty();
         }
-        consumerConfig = new MantisKafka22ConsumerConfig(context);
+        consumerConfig = new MantisKafkaConsumerConfig(context);
         LOGGER.info("checkpointStrategy: {} numConsumerInstances: {} topics: {} consumerPollTimeoutMs: {} retryCheckpointCheckDelayMs {} consumer config: {}",
                     checkpointStrategy, numConsumerInstances, topics, consumerPollTimeoutMs, retryCheckpointCheckDelayMs, consumerConfig.values().toString());
     }
@@ -162,7 +162,7 @@ public class MantisKafkaSourceConfig {
         return topicPartitionCounts;
     }
 
-    public MantisKafka22ConsumerConfig getConsumerConfig() {
+    public MantisKafkaConsumerConfig getConsumerConfig() {
         return consumerConfig;
     }
 }

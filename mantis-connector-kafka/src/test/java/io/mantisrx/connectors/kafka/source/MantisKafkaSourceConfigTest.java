@@ -48,7 +48,7 @@ public class MantisKafkaSourceConfigTest {
 
         assertEquals(MantisKafkaSourceConfig.DEFAULT_CONSUMER_POLL_TIMEOUT_MS, mantisKafkaSourceConfig.getConsumerPollTimeoutMs());
         assertEquals(CheckpointStrategyOptions.NONE, mantisKafkaSourceConfig.getCheckpointStrategy());
-        assertEquals(MantisKafka22ConsumerConfig.DEFAULT_CHECKPOINT_INTERVAL_MS, mantisKafkaSourceConfig.getCheckpointIntervalMs());
+        assertEquals(MantisKafkaConsumerConfig.DEFAULT_CHECKPOINT_INTERVAL_MS, mantisKafkaSourceConfig.getCheckpointIntervalMs());
         assertEquals(MantisKafkaSourceConfig.DEFAULT_MAX_BYTES_IN_PROCESSING, mantisKafkaSourceConfig.getMaxBytesInProcessing());
         assertEquals(ParserType.SIMPLE_JSON.getPropName(), mantisKafkaSourceConfig.getMessageParserType());
         assertEquals(MantisKafkaSourceConfig.DEFAULT_NUM_KAFKA_CONSUMER_PER_WORKER, mantisKafkaSourceConfig.getNumConsumerInstances());

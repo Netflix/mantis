@@ -40,16 +40,16 @@ import org.slf4j.LoggerFactory;
 /**
  * Utility Class for handling Kafka ConsumerConfig defaults and Job parameter overrides
  */
-public class MantisKafka22ConsumerConfig extends ConsumerConfig {
+public class MantisKafkaConsumerConfig extends ConsumerConfig {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MantisKafka22ConsumerConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MantisKafkaConsumerConfig.class);
 
-    public MantisKafka22ConsumerConfig(Map<String, Object> props,
-                                       Context context) {
+    public MantisKafkaConsumerConfig(Map<String, Object> props,
+                                     Context context) {
         super(applyJobParamOverrides(context, props));
     }
 
-    public MantisKafka22ConsumerConfig(Context context) {
+    public MantisKafkaConsumerConfig(Context context) {
         this(defaultProps(), context);
     }
 

@@ -69,31 +69,31 @@ import static io.mantisrx.connectors.kafka.source.MantisKafkaSourceConfig.DEFAUL
  * The {@value KafkaSourceParameters#NUM_KAFKA_CONSUMER_PER_WORKER} Job param decides the number of Kafka consumer instances spawned on each Mantis worker,
  * Each kafka consumer instance runs in their own thread and poll data from kafka as part of the same consumer group
  */
-public class KafkaSource22 implements Source<KafkaAckable> {
+public class KafkaSource implements Source<KafkaAckable> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSource22.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSource.class);
 
     private final AtomicBoolean done = new AtomicBoolean();
 
-    private final Map<Integer, MantisKafka22Consumer<?>> idToConsumerMap = new HashMap<>();
+    private final Map<Integer, MantisKafkaConsumer<?>> idToConsumerMap = new HashMap<>();
     private final Registry registry;
 
     private final SerializedSubject<KafkaDataNotification, KafkaDataNotification> ackSubject =
         new SerializedSubject<>(PublishSubject.create());
 
 
-    public KafkaSource22(final Registry registry) {
+    public KafkaSource(final Registry registry) {
         this.registry = registry;
     }
 
-    private Observable<MantisKafka22Consumer<?>> createConsumers(final Context context,
-                                                                 final MantisKafkaSourceConfig kafkaSourceConfig,
-                                                                 final int totalNumWorkers) {
+    private Observable<MantisKafkaConsumer<?>> createConsumers(final Context context,
+                                                               final MantisKafkaSourceConfig kafkaSourceConfig,
+                                                               final int totalNumWorkers) {
 
-        final List<MantisKafka22Consumer<?>> consumers = new ArrayList<>();
+        final List<MantisKafkaConsumer<?>> consumers = new ArrayList<>();
         for (int i = 0; i < kafkaSourceConfig.getNumConsumerInstances(); i++) {
             final int consumerIndex = context.getWorkerInfo().getWorkerIndex() + (totalNumWorkers * i);
-            MantisKafka22Consumer<?> mantisKafkaConsumer = new MantisKafka22Consumer.Builder()
+            MantisKafkaConsumer<?> mantisKafkaConsumer = new MantisKafkaConsumer.Builder()
                 .withKafkaSourceConfig(kafkaSourceConfig)
                 .withTotalNumConsumersForJob(totalNumWorkers * kafkaSourceConfig.getNumConsumerInstances())
                 .withContext(context)
@@ -117,7 +117,7 @@ public class KafkaSource22 implements Source<KafkaAckable> {
      * @param mantisKafkaConsumer non thread-safe KafkaConsumer
      * @param kafkaSourceConfig   configuration for the Mantis Kafka Source
      */
-    private Observable<KafkaAckable> createBackPressuredConsumerObs(final MantisKafka22Consumer<?> mantisKafkaConsumer,
+    private Observable<KafkaAckable> createBackPressuredConsumerObs(final MantisKafkaConsumer<?> mantisKafkaConsumer,
                                                                     final MantisKafkaSourceConfig kafkaSourceConfig) {
         CheckpointStrategy checkpointStrategy = mantisKafkaConsumer.getStrategy();
         final CheckpointTrigger trigger = mantisKafkaConsumer.getTrigger();
@@ -262,7 +262,7 @@ public class KafkaSource22 implements Source<KafkaAckable> {
 
         return Observable.create((Observable.OnSubscribe<Observable<KafkaAckable>>) child -> {
 
-            final Observable<MantisKafka22Consumer<?>> consumers =
+            final Observable<MantisKafkaConsumer<?>> consumers =
                 createConsumers(context, mantisKafkaSourceConfig, totalNumWorkers);
 
             consumers.subscribe(consumer -> {
@@ -284,7 +284,7 @@ public class KafkaSource22 implements Source<KafkaAckable> {
     private void processAckNotification(final KafkaDataNotification notification) {
         final KafkaData kafkaData = notification.getValue();
         final TopicPartition topicPartition = new TopicPartition(kafkaData.getTopic(), kafkaData.getPartition());
-        MantisKafka22Consumer<?> mantisKafkaConsumer = idToConsumerMap.get(kafkaData.getMantisKafkaConsumerId());
+        MantisKafkaConsumer<?> mantisKafkaConsumer = idToConsumerMap.get(kafkaData.getMantisKafkaConsumerId());
 
         if (mantisKafkaConsumer != null) {
             mantisKafkaConsumer.getPartitionStateManager().recordMessageAck(topicPartition, kafkaData.getOffset());
@@ -367,7 +367,7 @@ public class KafkaSource22 implements Source<KafkaAckable> {
                        .defaultValue("")
                        .description("Configures number of partitions on a kafka topic when static partition assignment is enabled. Format <topic1>:<numPartitions Topic1>,<topic2>:<numPartitions Topic2> Example: nf_errors_log:9,clevent:450")
                        .build());
-        params.addAll(MantisKafka22ConsumerConfig.getJobParameterDefinitions());
+        params.addAll(MantisKafkaConsumerConfig.getJobParameterDefinitions());
         return params;
     }
 
