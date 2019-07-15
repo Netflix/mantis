@@ -23,5 +23,5 @@ ext {
 dependencies {
     implementation "io.mantisrx:mantis-runtime:$mantisVersion"
     implementation "io.mantisrx:mantis-publish-netty:$mantisPublishVersion"
-    implementation "io.mantisrx:mantis-connectors-publish:$mantisConnectorsVersion"
+    implementation "io.mantisrx:mantis-connector-publish:$mantisConnectorsVersion"
 }

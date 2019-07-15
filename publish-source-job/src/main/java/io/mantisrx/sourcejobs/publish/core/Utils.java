@@ -20,12 +20,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 public class Utils {
 
     public static String getEnvVariable(String envVariableName, String defaultValue) {
 
         String v = System.getenv(envVariableName);
-        if(v != null && !v.isEmpty()) {
+        if (v != null && !v.isEmpty()) {
             return v;
         }
         return defaultValue;
@@ -34,13 +35,12 @@ public class Utils {
 
     public static List<String> convertCommaSeparatedStringToList(String filterBy) {
         List<String> terms = new ArrayList<>();
-        if(filterBy != null && !filterBy.isEmpty()) {
+        if (filterBy != null && !filterBy.isEmpty()) {
             terms = Arrays.asList(filterBy.split("\\s*,\\s*"));
         }
 
         return terms;
     }
-
 
 
 }
