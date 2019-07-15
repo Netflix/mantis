@@ -17,9 +17,9 @@
 package io.mantisrx.sourcejobs.publish;
 
 import com.mantisrx.common.utils.MantisSourceJobConstants;
-import io.mantisrx.connectors.publish.core.QueryRegistry;
-import io.mantisrx.connectors.publish.source.http.PushHttpSource;
-import io.mantisrx.connectors.publish.source.http.SourceSink;
+import io.mantisrx.connector.publish.core.QueryRegistry;
+import io.mantisrx.connector.publish.source.http.PushHttpSource;
+import io.mantisrx.connector.publish.source.http.SourceSink;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJob;
 import io.mantisrx.runtime.MantisJobProvider;
