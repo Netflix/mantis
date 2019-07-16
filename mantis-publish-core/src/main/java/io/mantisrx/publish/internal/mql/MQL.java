@@ -21,9 +21,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Function;
 
-import clojure.java.api.Clojure;
-import clojure.lang.IFn;
-import io.mantisrx.mql.core.Query;
+import io.mantisrx.mql.jvm.core.Query;
+import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
+import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 public class MQL {
 
     private static final Logger LOG = LoggerFactory.getLogger(MQL.class);
-    private static IFn require = Clojure.var("clojure.core", "require");
+    private static IFn require = Clojure.var("io.mantisrx.mql.shaded.clojure.core", "require");
     private static IFn cljMakeQuery = Clojure.var("io.mantisrx.mql.jvm.interfaces.server", "make-query");
     private static IFn cljSuperset = Clojure.var("io.mantisrx.mql.jvm.interfaces.core", "queries->superset-projection");
 
