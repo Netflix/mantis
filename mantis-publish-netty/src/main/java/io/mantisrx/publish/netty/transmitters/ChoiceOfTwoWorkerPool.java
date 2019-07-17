@@ -30,11 +30,11 @@ import java.util.function.BiFunction;
 
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import io.mantisrx.publish.EventChannel;
+import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
-import io.mantisrx.publish.proto.MantisEvent;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.impl.AtomicDouble;
 import io.netty.channel.Channel;
@@ -179,8 +179,8 @@ class ChoiceOfTwoWorkerPool {
      * Runs the {@link BiFunction}, checks for failures, and increments error count for a {@link MantisWorker}.
      */
     CompletableFuture<Void> record(
-            MantisEvent event,
-            BiFunction<MantisWorker, MantisEvent, CompletableFuture<Void>> function)
+            Event event,
+            BiFunction<MantisWorker, Event, CompletableFuture<Void>> function)
             throws NonRetryableException {
         MantisWorker worker = getRandomWorker();
 

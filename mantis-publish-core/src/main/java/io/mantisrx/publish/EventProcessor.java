@@ -28,7 +28,6 @@ import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
-import io.mantisrx.publish.proto.MantisEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +68,7 @@ class EventProcessor {
      *
      * @return a {@link MantisEvent} which is an internal representation (specific to MRE) of the {@link Event}.
      */
-    public MantisEvent process(String stream, Event event) {
+    public Event process(String stream, Event event) {
         LOG.debug("Entering EventProcessor#onNext: {}", event);
 
         boolean isEnabled = config.isMREClientEnabled();
@@ -107,9 +106,9 @@ class EventProcessor {
             }
         }
 
-        MantisEvent mantisEvent = null;
+        Event projectedEvent = null;
         if (!matchingSubscriptions.isEmpty()) {
-            mantisEvent = projectSupersetEvent(stream, matchingSubscriptions, event);
+            projectedEvent = projectSupersetEvent(stream, matchingSubscriptions, event);
         } else {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("no matching subscriptions");
@@ -120,7 +119,7 @@ class EventProcessor {
             LOG.debug("Exit EventProcessor#onNext: {}", event);
         }
 
-        return mantisEvent;
+        return projectedEvent;
     }
 
     /**
@@ -157,14 +156,14 @@ class EventProcessor {
         //        }
     }
 
-    private MantisEvent projectSupersetEvent(final String streamName,
+    private Event projectSupersetEvent(final String streamName,
                                              final List<Subscription> matchingSubscriptions,
                                              final Event event) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Enter EventProcessor#projectSupersetEvent {}  event: {}", matchingSubscriptions, event);
         }
 
-        Event projectedEvent = new Event();
+        Event projectedEvent = null;
         try {
             if (!matchingSubscriptions.isEmpty()) {
                 projectedEvent = matchingSubscriptions.get(0).projectSuperset(matchingSubscriptions, event);
@@ -182,17 +181,16 @@ class EventProcessor {
                     m.getMantisQueryProjectionFailedCounter().increment());
         }
 
-        MantisEvent augmentedMantisEvent = null;
-        if (!projectedEvent.isEmpty()) {
-            Event eventWithMatchedClients = enrich(projectedEvent, streamName, matchingSubscriptions);
-            augmentedMantisEvent = new MantisEvent(1, eventWithMatchedClients.toJsonString());
+        Event augmentedEvent = null;
+        if (projectedEvent != null && !projectedEvent.isEmpty()) {
+            augmentedEvent = enrich(projectedEvent, streamName, matchingSubscriptions);
         } else {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Projected event is empty. skipping");
             }
         }
 
-        return augmentedMantisEvent;
+        return augmentedEvent;
     }
 
     private Event enrich(Event projectedEvent,

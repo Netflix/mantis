@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package io.mantisrx.publish.proto;
-
-import java.util.List;
+package io.mantisrx.publish.netty.proto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
 
 
 public class MantisEventEnvelope {

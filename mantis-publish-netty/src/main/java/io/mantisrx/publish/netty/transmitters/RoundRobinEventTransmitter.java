@@ -25,13 +25,14 @@ import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import io.mantisrx.publish.EventChannel;
 import io.mantisrx.publish.EventTransmitter;
+import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
-import io.mantisrx.publish.proto.MantisEvent;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
+import io.mantisrx.publish.netty.proto.MantisEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public class RoundRobinEventTransmitter implements EventTransmitter {
     }
 
     @Override
-    public void send(MantisEvent event, String jobCluster) {
+    public void send(Event event, String jobCluster) {
         Optional<JobDiscoveryInfo> jobDiscoveryInfo = jobDiscovery.getCurrentJobWorkers(jobCluster);
         if (jobDiscoveryInfo.isPresent()) {
             List<MantisWorker> workers = jobDiscoveryInfo.get().getIngestStageWorkers().getWorkers();

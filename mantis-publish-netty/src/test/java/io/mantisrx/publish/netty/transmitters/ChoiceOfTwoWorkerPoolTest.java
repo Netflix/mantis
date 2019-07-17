@@ -31,10 +31,10 @@ import java.util.concurrent.CompletableFuture;
 
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import io.mantisrx.publish.EventChannel;
+import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
-import io.mantisrx.publish.proto.MantisEvent;
 import com.netflix.spectator.api.NoopRegistry;
 import com.netflix.spectator.api.Registry;
 import org.junit.jupiter.api.AfterEach;
@@ -110,7 +110,7 @@ class ChoiceOfTwoWorkerPoolTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         completableFuture.completeExceptionally(new RetryableException("expected test exception"));
         workerPool.refresh(freshWorkers);
-        CompletableFuture<Void> future = workerPool.record(mock(MantisEvent.class), (w, e) -> completableFuture);
+        CompletableFuture<Void> future = workerPool.record(mock(Event.class), (w, e) -> completableFuture);
 
         future.whenComplete((v, t) -> {
             // Fresh workers haven't changed (i.e., haven't scaled up or down) and workers in the pool aren't blacklisted.
@@ -141,7 +141,7 @@ class ChoiceOfTwoWorkerPoolTest {
         completableFuture.complete(null);
         assertThrows(
                 NonRetryableException.class,
-                () -> workerPool.record(mock(MantisEvent.class), (w, e) -> completableFuture));
+                () -> workerPool.record(mock(Event.class), (w, e) -> completableFuture));
     }
 
     @Test
@@ -150,7 +150,7 @@ class ChoiceOfTwoWorkerPoolTest {
         completableFuture.complete(null);
         List<MantisWorker> freshWorkers = Collections.singletonList(mock(MantisWorker.class));
         workerPool.refresh(freshWorkers);
-        Assertions.assertDoesNotThrow(() -> workerPool.record(mock(MantisEvent.class), (w, e) -> completableFuture).get());
+        Assertions.assertDoesNotThrow(() -> workerPool.record(mock(Event.class), (w, e) -> completableFuture).get());
     }
 
     @Test
@@ -160,7 +160,7 @@ class ChoiceOfTwoWorkerPoolTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         completableFuture.completeExceptionally(new RetryableException("expected test exception"));
         workerPool.refresh(freshWorkers);
-        CompletableFuture<Void> future = workerPool.record(mock(MantisEvent.class), (w, e) -> completableFuture);
+        CompletableFuture<Void> future = workerPool.record(mock(Event.class), (w, e) -> completableFuture);
         future.whenComplete((v, t) -> assertEquals(1, workerPool.getWorkerErrors(worker)));
     }
 
@@ -175,13 +175,13 @@ class ChoiceOfTwoWorkerPoolTest {
         completableFuture.completeExceptionally(new RetryableException("expected test exception"));
         workerPool.refresh(freshWorkers);
 
-        CompletableFuture<Void> future = workerPool.record(mock(MantisEvent.class), (w, e) -> completableFuture);
+        CompletableFuture<Void> future = workerPool.record(mock(Event.class), (w, e) -> completableFuture);
         future.whenComplete((v, t) -> {
             assertEquals(1, workerPool.size());
             assertFalse(workerPool.isBlacklisted(worker));
         });
 
-        future = workerPool.record(mock(MantisEvent.class), (w, e) -> completableFuture);
+        future = workerPool.record(mock(Event.class), (w, e) -> completableFuture);
         future.whenComplete((v, t) -> assertEquals(0, workerPool.size()));
     }
 }

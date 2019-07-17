@@ -31,8 +31,8 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import io.mantisrx.publish.proto.MantisEvent;
-import io.mantisrx.publish.proto.MantisEventEnvelope;
+import io.mantisrx.publish.netty.proto.MantisEvent;
+import io.mantisrx.publish.netty.proto.MantisEventEnvelope;
 import com.netflix.spectator.api.DefaultRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;

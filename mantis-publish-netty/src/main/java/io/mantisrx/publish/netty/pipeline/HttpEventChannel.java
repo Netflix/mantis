@@ -22,10 +22,11 @@ import java.util.concurrent.TimeUnit;
 
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import io.mantisrx.publish.EventChannel;
+import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import io.mantisrx.publish.proto.MantisEvent;
+import io.mantisrx.publish.netty.proto.MantisEvent;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
@@ -90,7 +91,7 @@ public class HttpEventChannel implements EventChannel {
      * @return a {@link Future<Void>} which could indicate a Success or Retryable/NonRetryable exception.
      */
     @Override
-    public CompletableFuture<Void> send(MantisWorker worker, MantisEvent event) {
+    public CompletableFuture<Void> send(MantisWorker worker, Event event) {
         InetSocketAddress address = worker.toInetSocketAddress();
         Channel channel = channelManager.findOrCreate(address);
 
@@ -100,7 +101,8 @@ public class HttpEventChannel implements EventChannel {
                 LOG.debug("channel is writable: {} bytes remaining", channel.bytesBeforeUnwritable());
                 final long nettyStart = registry.clock().wallTime();
                 // TODO: Channel#setAttribute(future), complete (or exceptionally) in HttpEventChannelHandler.
-                channel.writeAndFlush(event).addListener(f -> {
+                MantisEvent mantisEvent = new MantisEvent(1, event.toJsonString());
+                channel.writeAndFlush(mantisEvent).addListener(f -> {
                     if (f.isSuccess()) {
                         writeSuccess.increment();
                         future.complete(null);
