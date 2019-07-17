@@ -80,7 +80,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
             if (subscription.isPresent()) {
                 streamManager.addStreamSubscription(subscription.get());
             } else {
-                LOG.debug("will not add invalid subscription {}", subToAdd);
+                LOG.info("will not add invalid subscription {}", subToAdd);
             }
         });
     }
