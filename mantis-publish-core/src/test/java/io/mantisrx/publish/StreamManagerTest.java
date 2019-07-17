@@ -53,7 +53,7 @@ class StreamManagerTest {
     @Test
     void testCreateStreamQueue() {
         final String streamName = "testStream";
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         assertFalse(streamManager.hasSubscriptions(streamName));
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
@@ -63,8 +63,8 @@ class StreamManagerTest {
         assertEquals(0, streamSubscriptions.size());
 
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
@@ -87,7 +87,7 @@ class StreamManagerTest {
         }
         assertFalse(streamManager.getQueueForStream(streamName).isPresent());
         assertFalse(streamManager.getStreamMetrics(streamName).isPresent());
-        assertTrue(streamManager.getAllStreams().isEmpty());
+        assertTrue(streamManager.getRegisteredStreams().isEmpty());
     }
 
     @Test
@@ -100,7 +100,7 @@ class StreamManagerTest {
     void testAddRemoveStreamSubscription() {
         final String streamName = "testStream";
         // create stream queue
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         // add subscription
         Optional<Subscription> subscriptionO = SubscriptionFactory
@@ -119,23 +119,23 @@ class StreamManagerTest {
         }
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         streamManager.removeStreamSubscription(subscriptionO.get());
         assertFalse(streamManager.hasSubscriptions(streamName));
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
     void testAddRemoveStreamSubscription2() {
         final String streamName = "testStream";
         // create stream queue
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         // add subscription
         Optional<Subscription> subscriptionO = SubscriptionFactory
@@ -153,8 +153,8 @@ class StreamManagerTest {
         }
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         // add subscription with duplicate subscriptionId should replace old subscription
         Optional<Subscription> subscriptionO2 = SubscriptionFactory
@@ -172,8 +172,8 @@ class StreamManagerTest {
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         // remove sub
         streamManager.removeStreamSubscription(subscriptionO.get());
@@ -182,15 +182,15 @@ class StreamManagerTest {
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
     void testAddRemoveStreamSubscriptionId() {
         final String streamName = "testStream";
         // create stream queue
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         // add subscription
         final String subId = "subId3";
@@ -210,16 +210,16 @@ class StreamManagerTest {
         }
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         streamManager.removeStreamSubscription(subId);
         assertFalse(streamManager.hasSubscriptions(streamName));
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
@@ -233,12 +233,12 @@ class StreamManagerTest {
                     String.format(SampleArchaiusMrePublishConfiguration.PER_STREAM_QUEUE_SIZE_FORMAT, streamName + "1"),
                     maxStreams);
             assertTrue(streamManager
-                    .createIfAbsentQueueForStream(streamName + i).isPresent());
+                    .registerStream(streamName + i).isPresent());
         }
         // stream should not get created since limit is reached
         assertFalse(streamManager
-                .createIfAbsentQueueForStream(streamName + "Trigger").isPresent());
-        assertEquals(maxStreams, streamManager.getAllStreams().size());
+                .registerStream(streamName + "Trigger").isPresent());
+        assertEquals(maxStreams, streamManager.getRegisteredStreams().size());
 
         // Override inactive stream duration and wait for all streams
         // to become inactive before adding new streams
@@ -249,9 +249,9 @@ class StreamManagerTest {
         Thread.sleep(inactiveMillis * 2);
         for (int i = 0; i < maxStreams; i++) {
             assertTrue(streamManager
-                    .createIfAbsentQueueForStream(streamName + "New" + i).isPresent());
+                    .registerStream(streamName + "New" + i).isPresent());
         }
-        assertEquals(maxStreams, streamManager.getAllStreams().size());
+        assertEquals(maxStreams, streamManager.getRegisteredStreams().size());
         // revert the inactive stream duration threshold
         config.setProperty(
                 SampleArchaiusMrePublishConfiguration.STREAM_INACTIVE_DURATION_THRESHOLD_NAME, 24 * 60 * 60);

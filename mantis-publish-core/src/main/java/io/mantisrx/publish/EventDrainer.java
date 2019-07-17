@@ -74,7 +74,7 @@ class EventDrainer implements Runnable {
         try {
             MDC.put(LOGGING_CONTEXT_KEY, LOGGING_CONTEXT_VALUE);
             final long startTime = clock.millis();
-            Set<String> streams = streamManager.getAllStreams();
+            Set<String> streams = streamManager.getRegisteredStreams();
 
             for (String stream : streams) {
                 final List<Event> streamEventList = new ArrayList<>();

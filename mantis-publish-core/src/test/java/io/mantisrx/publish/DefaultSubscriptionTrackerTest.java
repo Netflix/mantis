@@ -126,7 +126,7 @@ public class DefaultSubscriptionTrackerTest {
         String jobId = jobCluster + "-1";
 
         Set<String> streams = Collections.singleton(streamName);
-        when(mockStreamManager.getAllStreams()).thenReturn(streams);
+        when(mockStreamManager.getRegisteredStreams()).thenReturn(streams);
 
         // worker 1 subs list
         MantisServerSubscriptionEnvelope w1Subs = SubscriptionsHelper.createSubsEnvelope(2, 0);
@@ -190,7 +190,7 @@ public class DefaultSubscriptionTrackerTest {
         String jobId = jobCluster + "-1";
 
         Set<String> streams = Collections.singleton(streamName);
-        when(mockStreamManager.getAllStreams()).thenReturn(streams);
+        when(mockStreamManager.getRegisteredStreams()).thenReturn(streams);
 
         // worker 1 subs list
         MantisServerSubscriptionEnvelope majoritySubs = SubscriptionsHelper.createSubsEnvelope(2, 0);
@@ -269,7 +269,7 @@ public class DefaultSubscriptionTrackerTest {
         String jobId = jobCluster + "-1";
 
         Set<String> streams = Collections.singleton(streamName);
-        when(mockStreamManager.getAllStreams()).thenReturn(streams);
+        when(mockStreamManager.getRegisteredStreams()).thenReturn(streams);
 
         // worker 1 subs list
         MantisServerSubscriptionEnvelope majoritySubs = SubscriptionsHelper.createSubsEnvelope(2, 0);

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.core.SubscriptionFactory;
@@ -113,27 +114,30 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         if (mrePublishConfiguration.isMREClientEnabled()) {
             for (Map.Entry<String, String> e : mrePublishConfiguration.streamNameToJobClusterMapping().entrySet()) {
                 String streamName = e.getKey();
-                String jobCluster = e.getValue();
-
-                try {
-                    Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(streamName, jobCluster);
-                    if (subsEnvelopeO.isPresent()) {
-                        MantisServerSubscriptionEnvelope subsEnvelope = subsEnvelopeO.get();
-                        propagateSubscriptionChanges(previousSubscriptions
-                                        .getOrDefault(streamName, new StreamSubscriptions(streamName, DEFAULT_EMPTY_SUB_ENVELOPE))
-                                        .getSubsEnvelope().getSubscriptions(),
-                                subsEnvelope.getSubscriptions());
-                        LOG.debug("{} subscriptions updated to {}", streamName, subsEnvelope);
-                        previousSubscriptions.put(streamName, new StreamSubscriptions(streamName, subsEnvelope));
-                        refreshSubscriptionSuccessCount.increment();
-                    } else {
-                        // cleanup stale subsEnvelope if we haven't seen a subscription refresh for subscriptionExpiryIntervalSec from the Mantis workers
-                        cleanupStaleSubscriptions(streamName);
+                if (streamManager.getRegisteredStreams().contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
+                    String jobCluster = e.getValue();
+                    try {
+                        Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(streamName, jobCluster);
+                        if (subsEnvelopeO.isPresent()) {
+                            MantisServerSubscriptionEnvelope subsEnvelope = subsEnvelopeO.get();
+                            propagateSubscriptionChanges(previousSubscriptions
+                                            .getOrDefault(streamName, new StreamSubscriptions(streamName, DEFAULT_EMPTY_SUB_ENVELOPE))
+                                            .getSubsEnvelope().getSubscriptions(),
+                                    subsEnvelope.getSubscriptions());
+                            LOG.debug("{} subscriptions updated to {}", streamName, subsEnvelope);
+                            previousSubscriptions.put(streamName, new StreamSubscriptions(streamName, subsEnvelope));
+                            refreshSubscriptionSuccessCount.increment();
+                        } else {
+                            // cleanup stale subsEnvelope if we haven't seen a subscription refresh for subscriptionExpiryIntervalSec from the Mantis workers
+                            cleanupStaleSubscriptions(streamName);
+                            refreshSubscriptionFailedCount.increment();
+                        }
+                    } catch (Exception exc) {
+                        LOG.info("refresh subscriptions failed for {} {}", streamName, jobCluster, exc);
                         refreshSubscriptionFailedCount.increment();
                     }
-                } catch (Exception exc) {
-                    LOG.info("refresh subscriptions failed for {} {}", streamName, jobCluster, exc);
-                    refreshSubscriptionFailedCount.increment();
+                } else {
+                    LOG.debug("will not fetch subscriptions for un-registered stream {}", streamName);
                 }
             }
         }

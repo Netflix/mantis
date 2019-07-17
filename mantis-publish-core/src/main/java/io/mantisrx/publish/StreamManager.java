@@ -69,7 +69,7 @@ public class StreamManager {
         this.streamMetricsMap = new ConcurrentHashMap<>();
     }
 
-    synchronized Optional<BlockingQueue<Event>> createIfAbsentQueueForStream(
+    synchronized Optional<BlockingQueue<Event>> registerStream(
             final String streamName) {
 
         if (!streamQueuesMap.containsKey(streamName)) {
@@ -142,8 +142,7 @@ public class StreamManager {
         return subjects.stream()
                 .map(s -> {
                     if (s.toLowerCase().equals("observable") ||
-                            s.toLowerCase().equals("stream") ||
-                            s.equals(StreamJobClusterMap.DEFAULT_STREAM_KEY)) {
+                            s.toLowerCase().equals("stream")) {
                         // Translate the legacy default stream names to map to the default stream.
                         return StreamType.DEFAULT_EVENT_STREAM;
                     } else {
@@ -246,11 +245,11 @@ public class StreamManager {
     }
 
     /**
-     * Returns a list of stream names to which events are being published to
+     * Returns a list of all stream names registered from MantisEventPublisher
      *
      * @return
      */
-    Set<String> getAllStreams() {
+    Set<String> getRegisteredStreams() {
         return streamQueuesMap.keySet();
     }
 }

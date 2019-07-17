@@ -67,7 +67,7 @@ class EventDrainerTest {
 
         Set<String> streams = new HashSet<>();
         streams.add("requestEvents");
-        when(streamManager.getAllStreams()).thenReturn(streams);
+        when(streamManager.getRegisteredStreams()).thenReturn(streams);
     }
 
     @AfterEach
