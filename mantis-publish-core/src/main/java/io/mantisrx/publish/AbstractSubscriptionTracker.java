@@ -42,10 +42,10 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     private final MrePublishConfiguration mrePublishConfiguration;
     private final Registry registry;
     private final StreamManager streamManager;
-    private final Counter refreshSubscriptionsSuccessCount;
-    private final Counter refreshSubscriptionsFailedCount;
+    private final Counter refreshSubscriptionSuccessCount;
+    private final Counter refreshSubscriptionFailedCount;
+    private final Counter staleSubscriptionRemovedCount;
 
-    private final Counter staleSubscriptionsRemovedCount;
     private volatile Map<String, StreamSubscriptions> previousSubscriptions = new HashMap<>();
 
     public AbstractSubscriptionTracker(MrePublishConfiguration mrePublishConfiguration,
@@ -54,9 +54,9 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         this.mrePublishConfiguration = mrePublishConfiguration;
         this.registry = registry;
         this.streamManager = streamManager;
-        this.refreshSubscriptionsSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionsSuccessCount");
-        this.refreshSubscriptionsFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionsFailedCount");
-        this.staleSubscriptionsRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry, "staleSubscriptionsRemovedCount");
+        this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionSuccessCount");
+        this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionFailedCount");
+        this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry, "staleSubscriptionRemovedCount");
     }
 
 
@@ -93,7 +93,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
             boolean hasStaleSubscriptionsData = (System.currentTimeMillis() - streamSubscriptions.getCreateTimeMs()) > mrePublishConfiguration.subscriptionExpiryIntervalSec() * 1000;
             if (hasStaleSubscriptionsData) {
                 LOG.info("removing stale subscriptions data for stream {} ({} created {})", streamName, streamSubscriptions.getSubsEnvelope(), streamSubscriptions.getCreateTimeMs());
-                staleSubscriptionsRemovedCount.increment();
+                staleSubscriptionRemovedCount.increment();
                 StreamSubscriptions removedSubs = previousSubscriptions.remove(streamName);
                 propagateSubscriptionChanges(removedSubs.getSubsEnvelope().getSubscriptions(), Collections.emptySet());
             }
@@ -125,15 +125,15 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                                 subsEnvelope.getSubscriptions());
                         LOG.debug("{} subscriptions updated to {}", streamName, subsEnvelope);
                         previousSubscriptions.put(streamName, new StreamSubscriptions(streamName, subsEnvelope));
-                        refreshSubscriptionsSuccessCount.increment();
+                        refreshSubscriptionSuccessCount.increment();
                     } else {
                         // cleanup stale subsEnvelope if we haven't seen a subscription refresh for subscriptionExpiryIntervalSec from the Mantis workers
                         cleanupStaleSubscriptions(streamName);
-                        refreshSubscriptionsFailedCount.increment();
+                        refreshSubscriptionFailedCount.increment();
                     }
                 } catch (Exception exc) {
                     LOG.info("refresh subscriptions failed for {} {}", streamName, jobCluster, exc);
-                    refreshSubscriptionsFailedCount.increment();
+                    refreshSubscriptionFailedCount.increment();
                 }
             }
         }
