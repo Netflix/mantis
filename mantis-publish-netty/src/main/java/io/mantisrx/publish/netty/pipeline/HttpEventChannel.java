@@ -73,7 +73,7 @@ public class HttpEventChannel implements EventChannel {
                         this.registry, "writeFailure", "channel", CHANNEL_TYPE);
         this.nettyChannelDropped =
                 SpectatorUtils.buildAndRegisterCounter(
-                        this.registry, "eventsDropped", "channel", CHANNEL_TYPE, "reason", "nettyBufferFull");
+                        this.registry, "mantisEventsDropped", "channel", CHANNEL_TYPE, "reason", "nettyBufferFull");
 
         this.nettyWriteTime =
                 SpectatorUtils.buildAndRegisterTimer(

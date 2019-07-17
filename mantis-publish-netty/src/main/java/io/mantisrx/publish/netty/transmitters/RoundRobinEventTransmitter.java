@@ -57,9 +57,9 @@ public class RoundRobinEventTransmitter implements EventTransmitter {
                         registry, "sendTime", "channel", HttpEventChannel.CHANNEL_TYPE);
 
         this.noWorkersDroppedCount =
-                SpectatorUtils.buildAndRegisterCounter(registry, "eventsDropped", "reason", "noWorkers");
+                SpectatorUtils.buildAndRegisterCounter(registry, "mantisEventsDropped", "reason", "noWorkers");
         this.noDiscoveryDroppedCount =
-                SpectatorUtils.buildAndRegisterCounter(registry, "eventsDropped", "reason", "noDiscoveryInfo");
+                SpectatorUtils.buildAndRegisterCounter(registry, "mantisEventsDropped", "reason", "noDiscoveryInfo");
         this.jobDiscovery = jobDiscovery;
         this.eventChannel = eventChannel;
     }

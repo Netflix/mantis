@@ -69,12 +69,12 @@ public class ChoiceOfTwoEventTransmitter implements EventTransmitter {
         this.noWorkersDroppedCount =
                 SpectatorUtils.buildAndRegisterCounter(
                         registry,
-                        "eventsDropped",
+                        "mantisEventsDropped",
                         "reason", "transmitterNoWorkers");
         this.noDiscoveryDroppedCount =
                 SpectatorUtils.buildAndRegisterCounter(
                         registry,
-                        "eventsDropped",
+                        "mantisEventsDropped",
                         "reason", "transmitterNoDiscoveryInfo");
 
         this.jobDiscovery = jobDiscovery;

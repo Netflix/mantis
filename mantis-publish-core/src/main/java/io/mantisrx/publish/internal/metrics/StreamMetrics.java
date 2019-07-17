@@ -44,23 +44,23 @@ public class StreamMetrics {
         this.streamName = streamName;
 
         this.mantisEventsDroppedCounter = SpectatorUtils.buildAndRegisterCounter(
-                registry, "eventsDropped", "stream", streamName, "reason", "publisherQueueFull");
+                registry, "mantisEventsDropped", "stream", streamName, "reason", "publisherQueueFull");
         this.mantisEventsProcessedCounter = SpectatorUtils.buildAndRegisterCounter(
-                registry, "mantisStreamEventsProcessed", "stream", streamName);
+                registry, "mantisEventsProcessed", "stream", streamName);
         this.mantisEventsSkippedCounter = SpectatorUtils.buildAndRegisterCounter(
-                registry, "mantisStreamEventsSkippedCounter", "stream", streamName);
+                registry, "mantisEventsSkipped", "stream", streamName);
         this.mantisQueryRejectedCounter = SpectatorUtils.buildAndRegisterCounter(
-                registry, "mantisStreamQueryRejectedCounter", "stream", streamName);
+                registry, "mantisQueryRejected", "stream", streamName);
         this.mantisQueryFailedCounter = SpectatorUtils.buildAndRegisterCounter(
-                registry, "mantisStreamQueryFailedCounter", "stream", streamName);
+                registry, "mantisQueryFailed", "stream", streamName);
         this.mantisQueryProjectionFailedCounter = SpectatorUtils.buildAndRegisterCounter(
-                registry, "mantisStreamQueryProjectionFailedCounter", "stream", streamName);
+                registry, "mantisQueryProjectionFailed", "stream", streamName);
         this.mantisEventsQueuedGauge = SpectatorUtils.buildAndRegisterGauge(
-                registry, "mantisStreamEventsQueued", "stream", streamName);
+                registry, "mantisEventsQueued", "stream", streamName);
         this.mantisActiveQueryCountGauge = SpectatorUtils.buildAndRegisterGauge(
-                registry, "mantisStreamActiveQueryCount", "stream", streamName);
+                registry, "mantisActiveQueryCount", "stream", streamName);
         this.mantisEventsProcessTimeTimer = SpectatorUtils.buildAndRegisterTimer(
-                registry, "mantisStreamEventsProcessTime", "stream", streamName);
+                registry, "mantisEventsProcessTime", "stream", streamName);
 
         updateLastEventOnStreamTimestamp();
     }
