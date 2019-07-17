@@ -18,12 +18,20 @@ package io.mantisrx.publish.core;
 
 import io.mantisrx.publish.MantisEventPublisher;
 import io.mantisrx.publish.internal.mql.MQLSubscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 
 
 /**
  * A factory that creates a subscription type based on {@link MQLSubscription ).
  */
 public class SubscriptionFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(SubscriptionFactory.class);
 
     /**
      * Selects the correct implementation of {@link Subscription}.
@@ -31,9 +39,17 @@ public class SubscriptionFactory {
      * @param id        A string representing the query ids, usually {@code clientId_subscriptionId}.
      * @param criterion The query string
      *
-     * @return An instance implementing {@link Subscription} for use with the {@link MantisEventPublisher}.
+     * @return An Optional instance implementing {@link Subscription} for use with the {@link MantisEventPublisher}, empty Optional if the criterion is invalid.
      */
-    public static Subscription getSubscription(String id, String criterion) {
-        return new MQLSubscription(id, criterion);
+    public static Optional<Subscription> getSubscription(String id, String criterion) {
+        try {
+            MQLSubscription mqlSubscription = new MQLSubscription(id, criterion);
+            return ofNullable(mqlSubscription);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Failed to get Subscription object for {} {}", id, criterion, e);
+            }
+            return empty();
+        }
     }
 }

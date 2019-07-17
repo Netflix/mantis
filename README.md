@@ -42,7 +42,7 @@ Prefix: `mantis.realtime.events.publish.channel`
 | ---- | ---- | ---- | ----------- |
 | writeSuccess | channel | counter | The number of successful Netty writes into its internal buffer |
 | writeFailure | channel | counter | The number of failures in writing to Netty's internal buffer |
-| eventsDropped | channel, reason | counter | The number of events dropped as a result of the Netty channel being unwritable at the time of sending an event |
+| mantisEventsDropped | channel, reason | counter | The number of events dropped as a result of the Netty channel being unwritable at the time of sending an event |
 | writeTime | channel | timer | The time it takes to write an event into Netty's internal buffer |
 | droppedBatches | channel | counter | The number of batches dropped as a result of a non-success http response from sending an event |
 | connectionSuccess | channel | counter | The number of successful outbound connections established |

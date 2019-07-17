@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 
 import com.netflix.archaius.DefaultPropertyFactory;
@@ -52,7 +53,7 @@ class StreamManagerTest {
     @Test
     void testCreateStreamQueue() {
         final String streamName = "testStream";
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         assertFalse(streamManager.hasSubscriptions(streamName));
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
@@ -62,18 +63,19 @@ class StreamManagerTest {
         assertEquals(0, streamSubscriptions.size());
 
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
     void testAddStreamSubscription() {
         final String streamName = StreamType.DEFAULT_EVENT_STREAM;
 
-        Subscription subscription =
+        Optional<Subscription> subscriptionO =
                 SubscriptionFactory.getSubscription("subId1", "false");
 
-        streamManager.addStreamSubscription(subscription);
+        assertTrue(subscriptionO.isPresent());
+        streamManager.addStreamSubscription(subscriptionO.get());
 
         assertTrue(streamManager.hasSubscriptions(streamName));
 
@@ -81,23 +83,31 @@ class StreamManagerTest {
                 streamManager.getStreamSubscriptions(streamName);
         assertEquals(1, streamSubscriptions.size());
         for (final Subscription s : streamSubscriptions) {
-            assertEquals(s, subscription);
+            assertEquals(s, subscriptionO.get());
         }
         assertFalse(streamManager.getQueueForStream(streamName).isPresent());
         assertFalse(streamManager.getStreamMetrics(streamName).isPresent());
-        assertTrue(streamManager.getAllStreams().isEmpty());
+        assertTrue(streamManager.getRegisteredStreams().isEmpty());
+    }
+
+    @Test
+    void testInvalidSubscription() {
+        Optional<Subscription> subscriptionO = SubscriptionFactory.getSubscription("subId1", "SELECT * FROM stream WHERE true SAMPLE {\\\"strategy\\\":\\\"RANDOM\\\", \\\"threshold\\\":200}");
+        assertFalse(subscriptionO.isPresent());
     }
 
     @Test
     void testAddRemoveStreamSubscription() {
         final String streamName = "testStream";
         // create stream queue
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         // add subscription
-        Subscription subscription = SubscriptionFactory
+        Optional<Subscription> subscriptionO = SubscriptionFactory
                 .getSubscription("subId2", "SELECT a,b FROM " + streamName);
-        streamManager.addStreamSubscription(subscription);
+        assertTrue(subscriptionO.isPresent());
+
+        streamManager.addStreamSubscription(subscriptionO.get());
 
         assertTrue(streamManager.hasSubscriptions(streamName));
 
@@ -105,84 +115,90 @@ class StreamManagerTest {
                 streamManager.getStreamSubscriptions(streamName);
         assertEquals(1, streamSubscriptions.size());
         for (final Subscription s : streamSubscriptions) {
-            assertEquals(s, subscription);
+            assertEquals(s, subscriptionO.get());
         }
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
-        streamManager.removeStreamSubscription(subscription);
+        streamManager.removeStreamSubscription(subscriptionO.get());
         assertFalse(streamManager.hasSubscriptions(streamName));
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
     void testAddRemoveStreamSubscription2() {
         final String streamName = "testStream";
         // create stream queue
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         // add subscription
-        Subscription subscription = SubscriptionFactory
+        Optional<Subscription> subscriptionO = SubscriptionFactory
                 .getSubscription("subId2", "SELECT a,b FROM " + streamName);
-        streamManager.addStreamSubscription(subscription);
+        assertTrue(subscriptionO.isPresent());
+
+        streamManager.addStreamSubscription(subscriptionO.get());
 
         assertTrue(streamManager.hasSubscriptions(streamName));
 
         Set<Subscription> streamSubscriptions = streamManager.getStreamSubscriptions(streamName);
         assertEquals(1, streamSubscriptions.size());
         for (final Subscription s : streamSubscriptions) {
-            assertEquals(s, subscription);
+            assertEquals(s, subscriptionO.get());
         }
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         // add subscription with duplicate subscriptionId should replace old subscription
-        Subscription subscription2 = SubscriptionFactory
+        Optional<Subscription> subscriptionO2 = SubscriptionFactory
                 .getSubscription("subId2", "SELECT a,b,c FROM " + streamName);
-        streamManager.addStreamSubscription(subscription2);
+        assertTrue(subscriptionO2.isPresent());
+
+        streamManager.addStreamSubscription(subscriptionO2.get());
 
         assertTrue(streamManager.hasSubscriptions(streamName));
 
         Set<Subscription> streamSubscriptions2 = streamManager.getStreamSubscriptions(streamName);
         assertEquals(1, streamSubscriptions2.size());
         Iterator<Subscription> iterator = streamSubscriptions2.iterator();
-        assertEquals(subscription2, iterator.next());
+        assertEquals(subscriptionO2.get(), iterator.next());
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         // remove sub
-        streamManager.removeStreamSubscription(subscription);
+        streamManager.removeStreamSubscription(subscriptionO.get());
         assertFalse(streamManager.hasSubscriptions(streamName));
         assertEquals(0, streamManager.getStreamSubscriptions(streamName).size());
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
     void testAddRemoveStreamSubscriptionId() {
         final String streamName = "testStream";
         // create stream queue
-        streamManager.createIfAbsentQueueForStream(streamName);
+        streamManager.registerStream(streamName);
 
         // add subscription
         final String subId = "subId3";
-        Subscription subscription = SubscriptionFactory
+        Optional<Subscription> subscriptionO = SubscriptionFactory
                 .getSubscription(subId, "SELECT * FROM " + streamName);
-        streamManager.addStreamSubscription(subscription);
+        assertTrue(subscriptionO.isPresent());
+
+        streamManager.addStreamSubscription(subscriptionO.get());
 
         assertTrue(streamManager.hasSubscriptions(streamName));
 
@@ -190,20 +206,20 @@ class StreamManagerTest {
                 streamManager.getStreamSubscriptions(streamName);
         assertEquals(1, streamSubscriptions.size());
         for (final Subscription s : streamSubscriptions) {
-            assertEquals(s, subscription);
+            assertEquals(s, subscriptionO.get());
         }
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
 
         streamManager.removeStreamSubscription(subId);
         assertFalse(streamManager.hasSubscriptions(streamName));
 
         assertTrue(streamManager.getQueueForStream(streamName).isPresent());
         assertTrue(streamManager.getStreamMetrics(streamName).isPresent());
-        assertEquals(1, streamManager.getAllStreams().size());
-        assertEquals(streamName, streamManager.getAllStreams().iterator().next());
+        assertEquals(1, streamManager.getRegisteredStreams().size());
+        assertEquals(streamName, streamManager.getRegisteredStreams().iterator().next());
     }
 
     @Test
@@ -217,12 +233,12 @@ class StreamManagerTest {
                     String.format(SampleArchaiusMrePublishConfiguration.PER_STREAM_QUEUE_SIZE_FORMAT, streamName + "1"),
                     maxStreams);
             assertTrue(streamManager
-                    .createIfAbsentQueueForStream(streamName + i).isPresent());
+                    .registerStream(streamName + i).isPresent());
         }
         // stream should not get created since limit is reached
         assertFalse(streamManager
-                .createIfAbsentQueueForStream(streamName + "Trigger").isPresent());
-        assertEquals(maxStreams, streamManager.getAllStreams().size());
+                .registerStream(streamName + "Trigger").isPresent());
+        assertEquals(maxStreams, streamManager.getRegisteredStreams().size());
 
         // Override inactive stream duration and wait for all streams
         // to become inactive before adding new streams
@@ -233,9 +249,9 @@ class StreamManagerTest {
         Thread.sleep(inactiveMillis * 2);
         for (int i = 0; i < maxStreams; i++) {
             assertTrue(streamManager
-                    .createIfAbsentQueueForStream(streamName + "New" + i).isPresent());
+                    .registerStream(streamName + "New" + i).isPresent());
         }
-        assertEquals(maxStreams, streamManager.getAllStreams().size());
+        assertEquals(maxStreams, streamManager.getRegisteredStreams().size());
         // revert the inactive stream duration threshold
         config.setProperty(
                 SampleArchaiusMrePublishConfiguration.STREAM_INACTIVE_DURATION_THRESHOLD_NAME, 24 * 60 * 60);

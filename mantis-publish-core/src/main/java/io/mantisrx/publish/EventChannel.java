@@ -20,13 +20,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import com.netflix.mantis.discovery.proto.MantisWorker;
-import io.mantisrx.publish.proto.MantisEvent;
+import io.mantisrx.publish.api.Event;
 
 
 /**
  * A transport that lets users publish events into Mantis.
  * <p>
- * All I/O operations are asynchronous. This means calls to {@link EventChannel#send(MantisWorker, MantisEvent)} will
+ * All I/O operations are asynchronous. This means calls to {@link EventChannel#send(MantisWorker, Event)} will
  * return immediately without guarantee that the operation has completed. It is up to the caller to react to the
  * resulting {@link Future<Void>}.
  */
@@ -36,13 +36,13 @@ public interface EventChannel {
      * Asynchronous API to send an event to a given destination.
      *
      * @param worker a {@link MantisWorker} which represents a destination for the event.
-     * @param event  a {@link MantisEvent} which represents a set of key-value pairs with
+     * @param event  a {@link Event} which represents a set of key-value pairs with
      *               additional context.
      *
      * @return a {@link Future<Void>} which represents the action of sending an event.
      * The caller is responsible for reacting to this future.
      */
-    CompletableFuture<Void> send(MantisWorker worker, MantisEvent event);
+    CompletableFuture<Void> send(MantisWorker worker, Event event);
 
     /**
      * Returns the buffer size as a percentage utilization of the channel's internal transport.

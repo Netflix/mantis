@@ -24,12 +24,15 @@ import io.mantisrx.publish.api.EventPublisher;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.StreamMetrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * An {@link EventPublisher} that publishes events into Mantis.
  */
 public class MantisEventPublisher implements EventPublisher {
+    private static final Logger LOG = LoggerFactory.getLogger(MantisEventPublisher.class);
 
     private final MrePublishConfiguration mrePublishConfiguration;
     private final StreamManager streamManager;
@@ -51,7 +54,7 @@ public class MantisEventPublisher implements EventPublisher {
             return;
         }
 
-        final Optional<BlockingQueue<Event>> streamQ = streamManager.createIfAbsentQueueForStream(streamName);
+        final Optional<BlockingQueue<Event>> streamQ = streamManager.registerStream(streamName);
 
         if (streamQ.isPresent()) {
             final Optional<StreamMetrics> streamMetricsO = streamManager.getStreamMetrics(streamName);
@@ -74,6 +77,12 @@ public class MantisEventPublisher implements EventPublisher {
 
     @Override
     public boolean hasSubscriptions(final String streamName) {
+        if (!isEnabled()) {
+            LOG.debug("Mantis publish client is not enabled");
+            return false;
+        }
+        // register this stream for tracking subscriptions
+        streamManager.registerStream(streamName);
         return streamManager.hasSubscriptions(streamName);
     }
 

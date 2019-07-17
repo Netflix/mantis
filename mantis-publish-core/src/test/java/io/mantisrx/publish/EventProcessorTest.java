@@ -40,7 +40,6 @@ import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
-import io.mantisrx.publish.proto.MantisEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -74,10 +73,9 @@ class EventProcessorTest {
 
         Event event = new Event();
         event.set("k1", "v1");
-        MantisEvent actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
-        MantisEvent expected = new MantisEvent(1, event.toJsonString());
+        Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
         // Single event with a `select * where true` yields the single event.
-        assertEquals(expected, actual);
+        assertEquals(event, actual);
     }
 
     @Test
@@ -86,7 +84,7 @@ class EventProcessorTest {
 
         Event event = new Event();
         event.set("k1", "v1");
-        MantisEvent actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
+        Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
         // No subscriptions
         assertNull(actual);
 

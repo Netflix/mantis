@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import io.mantisrx.publish.proto.MantisEvent;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
 import org.slf4j.Logger;
@@ -75,7 +74,7 @@ class EventDrainer implements Runnable {
         try {
             MDC.put(LOGGING_CONTEXT_KEY, LOGGING_CONTEXT_VALUE);
             final long startTime = clock.millis();
-            Set<String> streams = streamManager.getAllStreams();
+            Set<String> streams = streamManager.getRegisteredStreams();
 
             for (String stream : streams) {
                 final List<Event> streamEventList = new ArrayList<>();
@@ -117,14 +116,14 @@ class EventDrainer implements Runnable {
         }
     }
 
-    private MantisEvent process(String stream, Event event) {
+    private Event process(String stream, Event event) {
         final long startTime = clock.millis();
-        MantisEvent mantisEvent = eventProcessor.process(stream, event);
+        Event processedEvent = eventProcessor.process(stream, event);
 
         final long processingTime = clock.millis() - startTime;
         streamManager.getStreamMetrics(stream)
                 .ifPresent(m -> m.getMantisEventsProcessTimeTimer().record(processingTime, TimeUnit.MILLISECONDS));
 
-        return mantisEvent;
+        return processedEvent;
     }
 }

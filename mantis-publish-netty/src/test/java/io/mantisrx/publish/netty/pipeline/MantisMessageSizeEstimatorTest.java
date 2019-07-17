@@ -18,7 +18,7 @@ package io.mantisrx.publish.netty.pipeline;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.mantisrx.publish.proto.MantisEvent;
+import io.mantisrx.publish.netty.proto.MantisEvent;
 import io.mantisrx.publish.proto.MantisServerSubscription;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;

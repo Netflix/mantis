@@ -16,7 +16,7 @@
 
 package io.mantisrx.publish.netty.pipeline;
 
-import io.mantisrx.publish.proto.MantisEvent;
+import io.mantisrx.publish.netty.proto.MantisEvent;
 import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.WriteBufferWaterMark;

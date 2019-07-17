@@ -34,7 +34,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.proto.MantisEvent;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
 import org.junit.jupiter.api.AfterEach;
@@ -68,7 +67,7 @@ class EventDrainerTest {
 
         Set<String> streams = new HashSet<>();
         streams.add("requestEvents");
-        when(streamManager.getAllStreams()).thenReturn(streams);
+        when(streamManager.getRegisteredStreams()).thenReturn(streams);
     }
 
     @AfterEach
@@ -85,12 +84,12 @@ class EventDrainerTest {
         when(streamManager.getQueueForStream(anyString()))
                 .thenReturn(Optional.of(events));
         when(processor.process(anyString(), any(Event.class)))
-                .thenReturn(mock(MantisEvent.class));
+                .thenReturn(mock(Event.class));
 
         drainer.run();
 
         verify(transmitter, times(1))
-                .send(any(MantisEvent.class), any());
+                .send(any(Event.class), any());
     }
 
     @Test
@@ -100,6 +99,6 @@ class EventDrainerTest {
         drainer.run();
 
         verify(transmitter, times(0))
-                .send(any(MantisEvent.class), any());
+                .send(any(Event.class), any());
     }
 }

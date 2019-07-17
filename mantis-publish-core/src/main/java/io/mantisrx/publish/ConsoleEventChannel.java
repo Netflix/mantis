@@ -20,7 +20,7 @@ import java.io.PrintStream;
 import java.util.concurrent.CompletableFuture;
 
 import com.netflix.mantis.discovery.proto.MantisWorker;
-import io.mantisrx.publish.proto.MantisEvent;
+import io.mantisrx.publish.api.Event;
 
 
 /**
@@ -48,8 +48,8 @@ public class ConsoleEventChannel implements EventChannel {
      * @param event the output to write to console.
      */
     @Override
-    public CompletableFuture<Void> send(MantisWorker worker, MantisEvent event) {
-        printStream.println(event);
+    public CompletableFuture<Void> send(MantisWorker worker, Event event) {
+        printStream.println(event.toJsonString());
         return CompletableFuture.completedFuture(null);
     }
 

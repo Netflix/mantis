@@ -16,13 +16,11 @@
 
 package io.mantisrx.publish;
 
-import io.mantisrx.publish.proto.MantisEvent;
-
+import io.mantisrx.publish.api.Event;
 
 public interface EventTransmitter {
-
     /**
      * Synchronous API to send an event to Mantis.
      */
-    void send(MantisEvent event, String jobCluster);
+    void send(Event event, String jobCluster);
 }

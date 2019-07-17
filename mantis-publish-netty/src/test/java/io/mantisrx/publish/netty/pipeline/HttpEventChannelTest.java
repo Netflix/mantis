@@ -25,7 +25,8 @@ import static org.mockito.Mockito.when;
 import java.net.InetSocketAddress;
 
 import com.netflix.mantis.discovery.proto.MantisWorker;
-import io.mantisrx.publish.proto.MantisEvent;
+import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.netty.proto.MantisEvent;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
 import io.netty.channel.Channel;
@@ -62,32 +63,29 @@ class HttpEventChannelTest {
 
     @Test
     void shouldWriteOverActiveAndWritableChannel() {
-        MantisEvent event = new MantisEvent(1, "");
         when(channel.isActive()).thenReturn(true);
         when(channel.isWritable()).thenReturn(true);
         when(channel.bytesBeforeUnwritable()).thenReturn(10L);
 
-        eventChannel.send(mantisWorker, event);
+        eventChannel.send(mantisWorker, new Event());
         verify(channel, times(1)).writeAndFlush(any(MantisEvent.class));
     }
 
     @Test
     void shouldNotWriteOverInactiveChannel() {
-        MantisEvent event = new MantisEvent(1, "");
         when(channel.isActive()).thenReturn(false);
         when(channel.isWritable()).thenReturn(true);
 
-        eventChannel.send(mantisWorker, event);
+        eventChannel.send(mantisWorker, new Event());
         verify(channel, times(0)).writeAndFlush(any(MantisEvent.class));
     }
 
     @Test
     void shouldNotWriteOverActiveAndUnwritableChannel() {
-        MantisEvent event = new MantisEvent(1, "");
         when(channel.isActive()).thenReturn(true);
         when(channel.isWritable()).thenReturn(false);
 
-        eventChannel.send(mantisWorker, event);
+        eventChannel.send(mantisWorker, new Event());
         verify(channel, times(0)).writeAndFlush(any(MantisEvent.class));
     }
 }

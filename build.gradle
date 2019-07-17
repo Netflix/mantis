@@ -66,6 +66,7 @@ subprojects {
         testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
         testImplementation "org.mockito:mockito-core:$mockitoVersion"
+        testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
     }
 
     test {
