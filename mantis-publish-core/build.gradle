@@ -15,21 +15,21 @@
  */
 
 ext {
-    archaiusVersion = '2.3.+'
-    jacksonVersion = '2.8.+'
-    mqlVersion = '3.+'
-    spectatorVersion = '0.82.+'
-    mantisDiscoveryVersion = '1.+'
+    archaiusVersion = 'latest.release'
+    jacksonVersion = 'latest.release'
+    mqlVersion = 'latest.release'
+    spectatorVersion = 'latest.release'
+    mantisDiscoveryVersion = '1.2.+'
 }
 
 dependencies {
     api "io.mantisrx:mql-jvm:$mqlVersion"
     api "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
 
-    api "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    api "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
-    api "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
+    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     api "com.netflix.archaius:archaius2-api:$archaiusVersion"
     api "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
