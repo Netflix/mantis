@@ -83,4 +83,3 @@ subprojects {
 }
 
 apply from: file('gradle/check.gradle')
-apply from: file('gradle/shadow.gradle')

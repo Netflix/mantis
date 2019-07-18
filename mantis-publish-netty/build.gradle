@@ -22,3 +22,5 @@ dependencies {
     implementation project(':mantis-publish-core')
     implementation "io.netty:netty-all:$nettyVersion"
 }
+
+apply from: file('../gradle/shadow.gradle')
