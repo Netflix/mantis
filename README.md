@@ -11,7 +11,7 @@ Library for publishing events into Mantis.
 
 Dynamic properties are split into two categories: user-level and internal.
 
-Prefix: `mantis.realtime.events.publish`
+Prefix: `mantis.publish`
 
 ### User-level Dynamic Properties
 
@@ -21,7 +21,7 @@ Prefix: `mantis.realtime.events.publish`
 
 ### Channel Dynamic Properties
 
-Prefix: `mantis.realtime.events.publish.channel`
+Prefix: `mantis.publish.channel`
 
 | name | type | description | default |
 | ---- | ---- | ----------- | ------- |
