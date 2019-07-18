@@ -20,7 +20,14 @@ ext {
 
 dependencies {
     implementation project(':mantis-publish-core')
+    implementation "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
     implementation "io.netty:netty-all:$nettyVersion"
+
+    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
+    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
 }
 
 apply from: file('../gradle/shadow.gradle')
