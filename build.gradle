@@ -32,6 +32,10 @@ ext {
     junitVersion = '5.3.+'
     mockitoVersion = '2.18.+'
     slf4jVersion = '1.7.+'
+    jacksonVersion = 'latest.release'
+    mantisDiscoveryVersion = '1.2.+'
+    spectatorVersion = 'latest.release'
+    archaiusVersion = 'latest.release'
 }
 
 allprojects {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-subprojects {
+project(":mantis-publish-netty") {
     shadowJar {
         classifier = null
         relocate('com.fasterxml', 'io.mantisrx.shaded.com.fasterxml')
