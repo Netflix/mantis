@@ -16,11 +16,12 @@
 
 ext {
     mqlVersion = 'latest.release'
+    mantisDiscoveryVersion = '1.2.+'
 }
 
 dependencies {
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
-    implementation "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
+    api "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
 
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"

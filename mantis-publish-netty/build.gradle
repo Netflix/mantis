@@ -20,7 +20,6 @@ ext {
 
 dependencies {
     implementation project(':mantis-publish-core')
-    implementation "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
     implementation "io.netty:netty-all:$nettyVersion"
 
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
