@@ -21,6 +21,10 @@ subprojects {
         relocate('io.netty', 'io.mantisrx.shaded.io.netty')
         relocate('META-INF/native/libnetty', 'META-INF/native/libio_mantisrx_shaded_netty')
         relocate('META-INF/native/netty', 'META-INF/native/io_mantisrx_shaded_netty')
+        exclude('com.netflix.spectator.*')
+        dependencies {
+          exclude(dependency('com.netflix.spectator:.*:.*'))
+        }
     }
 
     jar {
