@@ -131,7 +131,9 @@ public class JobAutoScaler {
                         // Clutch Official (invoked via scaling config)
                         //
 
-                        if (stageSchedulingInfo
+                        if (stageSchedulingInfo != null &&
+                                stageSchedulingInfo.getScalingPolicy() != null &&
+                                stageSchedulingInfo
                                 .getScalingPolicy()
                                 .getStrategies() != null &&
                                 stageSchedulingInfo
