@@ -81,19 +81,19 @@ public class MantisJobDiscoveryCachingImpl implements MantisJobDiscovery {
                 jobClusterDiscoveryInfoMap.put(jobClusterName, Optional.ofNullable(jobDiscoveryInfo));
                 jobDiscoveryRefreshSuccess.increment();
             } catch (InterruptedException e) {
-                logger.error("interrupted on job discovery fetch {}", jobClusterName, e);
+                logger.warn("interrupted on job discovery fetch {}", jobClusterName, e);
                 jobDiscoveryRefreshFailed.increment();
             } catch (ExecutionException e) {
                 jobDiscoveryRefreshFailed.increment();
                 if (e.getCause() instanceof NonRetryableException) {
-                    logger.error("non retryable exception on job discovery fetch {}, update cache to avoid blocking refresh in future", jobClusterName, e.getCause());
+                    logger.warn("non retryable exception on job discovery fetch {}, update cache to avoid blocking refresh in future", jobClusterName, e.getCause());
                     jobClusterDiscoveryInfoMap.put(jobClusterName, Optional.empty());
                 } else {
-                    logger.error("caught exception on job discovery fetch {}", jobClusterName, e.getCause());
+                    logger.warn("caught exception on job discovery fetch {}", jobClusterName, e.getCause());
                 }
             } catch (TimeoutException e) {
                 jobDiscoveryRefreshFailed.increment();
-                logger.error("timed out on job discovery fetch {}", jobClusterName, e);
+                logger.warn("timed out on job discovery fetch {}", jobClusterName, e);
             }
         }
     }
@@ -149,7 +149,7 @@ public class MantisJobDiscoveryCachingImpl implements MantisJobDiscovery {
                 appJobClusterMapping.put(app, appJobClustersMap);
                 jobClusterMappingRefreshSuccess.increment();
             } catch (Exception e) {
-                logger.error("exception getting job cluster mapping {}", app, e);
+                logger.warn("exception getting job cluster mapping {}", app, e);
                 jobClusterMappingRefreshFailed.increment();
             }
         }

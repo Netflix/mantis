@@ -110,7 +110,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
                     throw new CompletionException(new RetryableException("Failed to get job job cluster mapping info for " + app + " status " + status));
                 }
             } catch (IOException e) {
-                logger.error("caught exception", e);
+                logger.warn("caught exception", e);
                 throw new CompletionException(e);
             }
         });
@@ -141,7 +141,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
                     throw new CompletionException(new RetryableException("Failed to get job discovery info for " + jobClusterName + " status " + status));
                 }
             } catch (IOException e) {
-                logger.error("caught exception", e);
+                logger.warn("caught exception", e);
                 throw new CompletionException(e);
             }
         });
