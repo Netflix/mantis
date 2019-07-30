@@ -37,6 +37,8 @@ public interface MantisJobMetadata {
 
     long getSubmittedAt();
 
+    long getStartedAt();
+
     URL getJarUrl();
 
     JobSla getSla();

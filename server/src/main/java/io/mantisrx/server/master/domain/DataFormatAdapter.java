@@ -65,6 +65,7 @@ import rx.functions.Func2;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -444,7 +445,7 @@ public class DataFormatAdapter {
         }
 
         // generate job meta
-        MantisJobMetadataImpl mantisJobMetadata = new MantisJobMetadataImpl(jIdOp.get(), archJob.getSubmittedAt(), jobDefn, convertMantisJobStateToJobState(archJob.getState()), archJob.getNextWorkerNumberToUse());
+        MantisJobMetadataImpl mantisJobMetadata = new MantisJobMetadataImpl(jIdOp.get(), archJob.getSubmittedAt(), archJob.getStartedAt(), jobDefn, convertMantisJobStateToJobState(archJob.getState()), archJob.getNextWorkerNumberToUse());
 
 
         // add the stages
@@ -519,10 +520,12 @@ public class DataFormatAdapter {
 
     public static MantisJobMetadataWritable convertMantisJobMetadataToMantisJobMetadataWriteable(IMantisJobMetadata jobMetadata) {
 
+        long startedAt = (jobMetadata.getStartedAtInstant().isPresent()) ? jobMetadata.getStartedAtInstant().get().toEpochMilli() : -1;
         return new MantisJobMetadataWritable(jobMetadata.getJobId().getId(),
                 jobMetadata.getJobId().getCluster(),
                 jobMetadata.getUser(),
                 jobMetadata.getSubmittedAtInstant().toEpochMilli(),
+                startedAt,
                 jobMetadata.getJobJarUrl(),
                 jobMetadata.getTotalStages(),
                 jobMetadata.getSla().orElse(null),
@@ -536,11 +539,12 @@ public class DataFormatAdapter {
     }
 
     public static FilterableMantisJobMetadataWritable convertMantisJobMetadataToFilterableMantisJobMetadataWriteable(IMantisJobMetadata jobMetadata) {
-
+        long startedAt = (jobMetadata.getStartedAtInstant().isPresent()) ? jobMetadata.getStartedAtInstant().get().toEpochMilli() : -1;
         return new FilterableMantisJobMetadataWritable(jobMetadata.getJobId().getId(),
                 jobMetadata.getJobId().getCluster(),
                 jobMetadata.getUser(),
                 jobMetadata.getSubmittedAtInstant().toEpochMilli(),
+                startedAt,
                 jobMetadata.getJobJarUrl(),
                 jobMetadata.getTotalStages(),
                 jobMetadata.getSla().orElse(null),

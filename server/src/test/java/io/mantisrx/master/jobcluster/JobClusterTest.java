@@ -2082,7 +2082,7 @@ public class JobClusterTest {
 
             verify(jobStoreMock, times(6)).updateWorker(any());
 
-            verify(jobStoreMock, times(2)).updateJob(any());
+            verify(jobStoreMock, times(3)).updateJob(any());
 
             // initial worker and scale up worker
             verify(schedulerMock, times(3)).scheduleWorker(any());

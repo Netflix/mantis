@@ -67,6 +67,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     @JsonIgnoreProperties(ignoreUnknown=true)
     public MantisJobMetadataImpl(@JsonProperty("jobId") JobId jobId,
                                      @JsonProperty("submittedAt") long submittedAt,
+                                     @JsonProperty("startedAt") long startedAt,
                                      @JsonProperty("jobDefinition") JobDefinition jobDefinition,
                                      @JsonProperty("state") JobState state,
                                      @JsonProperty("nextWorkerNumberToUse") int nextWorkerNumberToUse
@@ -75,6 +76,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         this.jobId = jobId;
         
         this.submittedAt = submittedAt;
+        this.startedAt = startedAt;
         this.state = state==null? JobState.Accepted : state;
         this.nextWorkerNumberToUse = nextWorkerNumberToUse;
 
@@ -171,8 +173,10 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     }
     
     
-    void setStartedAt(long startedAt) {
+    void setStartedAt(long startedAt, MantisJobStore store) throws Exception {
+        logger.info("Updating job start time  to {} ", startedAt);
 		this.startedAt = startedAt;
+		store.updateJob(this);
 		
 	}
 
@@ -323,7 +327,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
   
    	@Override
 	public Optional<Instant> getStartedAtInstant() {
-		if(this.startedAt == -1) {
+		if(this.startedAt == -1 || this.startedAt == 0) {
 		    return Optional.empty();
 		} else {
 		    return Optional.of(Instant.ofEpochMilli(startedAt));
@@ -354,6 +358,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         String user;
         JobDefinition jobDefinition;
         long submittedAt;
+        long startedAt;
         JobState state;
 
         int nextWorkerNumberToUse = 1;
@@ -383,7 +388,11 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
             this.submittedAt = submittedAt.toEpochMilli();
             return this;
         }
-    	
+
+        public Builder withStartedAt(Instant startedAt) {
+    	    this.startedAt = startedAt.toEpochMilli();
+    	    return this;
+        }
     	
     	public Builder withJobState(JobState state) {
     		this.state = state;
@@ -409,20 +418,27 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     	}
 
     	public MantisJobMetadataImpl build() {
-    		return new MantisJobMetadataImpl(jobId, submittedAt, jobDefinition, state, nextWorkerNumberToUse);
+    		return new MantisJobMetadataImpl(jobId, submittedAt, startedAt, jobDefinition, state, nextWorkerNumberToUse);
     	}
     	
     	
     }
 
 
-
-	@Override
-	public String toString() {
-		return "MantisJobMetadataImpl [jobId=" + jobId + ", submittedAt=" + submittedAt + ",  state=" + state + ", nextWorkerNumberToUse=" + nextWorkerNumberToUse
-				+ ", jobDefinition=" + jobDefinition + ", stageMetadataMap=" + stageMetadataMap
-				+ ", workerNumberToStageMap=" + workerNumberToStageMap + "]";
-	}
+    @Override
+    public String toString() {
+        return "MantisJobMetadataImpl{" +
+                "jobId=" + jobId +
+                ", submittedAt=" + submittedAt +
+                ", startedAt=" + startedAt +
+                ", endedAt=" + endedAt +
+                ", state=" + state +
+                ", nextWorkerNumberToUse=" + nextWorkerNumberToUse +
+                ", jobDefinition=" + jobDefinition +
+                ", stageMetadataMap=" + stageMetadataMap +
+                ", workerNumberToStageMap=" + workerNumberToStageMap +
+                '}';
+    }
 
     @Override
     public boolean equals(Object o) {

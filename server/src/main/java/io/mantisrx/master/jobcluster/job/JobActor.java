@@ -1013,8 +1013,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // kick off max runtime timer if needed
 
                 Instant currentTime = Instant.now();
-                //this.subscriptionTracker.onJobStart();
-                mantisJobMetaData.setStartedAt(currentTime.toEpochMilli());
+                // Update start time and persist state
+                mantisJobMetaData.setStartedAt(currentTime.toEpochMilli(), jobStore);
 
                 setRuntimeLimitTimersIfRequired(currentTime);
 
@@ -1111,6 +1111,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.trace("Exit JobActor::updateStateAndPersist for Job {}", jobId);
     }
 
+    /**
+     * Always invoked after the job has transitioned to started state.
+     * @param currentTime
+     */
     private void setRuntimeLimitTimersIfRequired(Instant currentTime) {
 
         long maxRuntimeSecs = mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();

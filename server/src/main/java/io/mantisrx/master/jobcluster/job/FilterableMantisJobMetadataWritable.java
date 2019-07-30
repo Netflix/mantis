@@ -39,6 +39,7 @@ public class FilterableMantisJobMetadataWritable extends MantisJobMetadataWritab
                                                @JsonProperty("name") String name,
                                                @JsonProperty("user") String user,
                                                @JsonProperty("submittedAt") long submittedAt,
+                                               @JsonProperty("startedAt") long startedAt,
                                                @JsonProperty("jarUrl") URL jarUrl,
                                                @JsonProperty("numStages") int numStages,
                                                @JsonProperty("sla") JobSla sla,
@@ -48,7 +49,7 @@ public class FilterableMantisJobMetadataWritable extends MantisJobMetadataWritab
                                                @JsonProperty("nextWorkerNumberToUse") int nextWorkerNumberToUse,
                                                @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
                                                @JsonProperty("labels") List<Label> labels) {
-        super(jobId, name, user, submittedAt, jarUrl, numStages, sla, state, subscriptionTimeoutSecs,
+        super(jobId, name, user, submittedAt, startedAt, jarUrl, numStages, sla, state, subscriptionTimeoutSecs,
                 parameters, nextWorkerNumberToUse, migrationConfig, labels);
     }
 

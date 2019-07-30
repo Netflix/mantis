@@ -57,6 +57,7 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     private String jobId;
     private String name;
     private long submittedAt;
+    private long startedAt = -1;
     private URL jarUrl;
     private volatile MantisJobState state;
     private int numStages;
@@ -71,6 +72,7 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
                                      @JsonProperty("name") String name,
                                      @JsonProperty("user") String user,
                                      @JsonProperty("submittedAt") long submittedAt,
+                                     @JsonProperty("startedAt") long startedAt,
                                      @JsonProperty("jarUrl") URL jarUrl,
                                      @JsonProperty("numStages") int numStages,
                                      @JsonProperty("sla") JobSla sla,
@@ -84,6 +86,9 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         this.name = name;
         this.user = user;
         this.submittedAt = submittedAt;
+        if(startedAt == 0) {
+            this.startedAt = submittedAt;
+        }
         this.jarUrl = jarUrl;
         this.numStages = numStages;
         this.sla = sla;
@@ -135,6 +140,9 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     public long getSubmittedAt() {
         return submittedAt;
     }
+
+    @Override
+    public long getStartedAt() { return startedAt;}
 
     @Override
     public URL getJarUrl() {
@@ -258,96 +266,25 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         return max;
     }
 
-    public static class OldJobMetadataImpl {
-
-        private final String jobId;
-        private final String name;
-        private final long submittedAt;
-        private final URL jarUrl;
-        private final int numStages;
-        private final SlaType slaType;
-        private final MantisJobDurationType durationType;
-        private final String userProvidedType;
-        private final List<Parameter> parameters;
-        private final MantisJobState state;
-        @JsonCreator
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public OldJobMetadataImpl(@JsonProperty("jobId") String jobId, @JsonProperty("name") String name,
-                                  @JsonProperty("submittedAt") long submittedAt,
-                                  @JsonProperty("jarUrl") URL jarUrl,
-                                  @JsonProperty("numStages") int numStages,
-                                  @JsonProperty("slaType") SlaType slaType,
-                                  @JsonProperty("durationType") MantisJobDurationType durationType,
-                                  @JsonProperty("userProvidedType") String userProvidedType,
-                                  @JsonProperty("parameters") List<Parameter> parameters,
-                                  @JsonProperty("state") MantisJobState state) {
-            this.jobId = jobId;
-            this.name = name;
-            this.submittedAt = submittedAt;
-            this.jarUrl = jarUrl;
-            this.numStages = numStages;
-            this.slaType = slaType;
-            this.durationType = durationType;
-            this.userProvidedType = userProvidedType;
-            this.parameters = parameters;
-            this.state = state;
-        }
-
-        public String getJobId() {
-            return jobId;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public long getSubmittedAt() {
-            return submittedAt;
-        }
-
-        public URL getJarUrl() {
-            return jarUrl;
-        }
-
-        public int getNumStages() {
-            return numStages;
-        }
-
-        public SlaType getSlaType() {
-            return slaType;
-        }
-
-        public MantisJobDurationType getDurationType() {
-            return durationType;
-        }
-
-        public String getUserProvidedType() {
-            return userProvidedType;
-        }
-
-        public List<Parameter> getParameters() {
-            return parameters;
-        }
-
-        public MantisJobState getState() {
-            return state;
-        }
-
-        public enum SlaType {
-            Lossy
-        }
+    @Override
+    public String toString() {
+        return "MantisJobMetadataWritable{" +
+                "user='" + user + '\'' +
+                ", sla=" + sla +
+                ", subscriptionTimeoutSecs=" + subscriptionTimeoutSecs +
+                ", labels=" + labels +
+                ", stageMetadataMap=" + stageMetadataMap +
+                ", workerNumberToStageMap=" + workerNumberToStageMap +
+                ", jobId='" + jobId + '\'' +
+                ", name='" + name + '\'' +
+                ", submittedAt=" + submittedAt +
+                ", startedAt=" + startedAt +
+                ", jarUrl=" + jarUrl +
+                ", state=" + state +
+                ", numStages=" + numStages +
+                ", parameters=" + parameters +
+                ", nextWorkerNumberToUse=" + nextWorkerNumberToUse +
+                ", migrationConfig=" + migrationConfig +
+                '}';
     }
-
-    class Locker implements AutoCloseable {
-
-        public Locker() {
-            lock.lock();
-        }
-
-        @Override
-        public void close() throws Exception {
-            lock.unlock();
-        }
-    }
-
 }
