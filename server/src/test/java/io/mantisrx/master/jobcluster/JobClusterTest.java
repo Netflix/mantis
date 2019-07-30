@@ -164,7 +164,7 @@ public class JobClusterTest {
             "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
             "  loglevel = \"WARNING\"\n" +
             "  stdout-loglevel = \"WARNING\"\n" +
-            "  test.single-expect-default = 500 millis\n" +
+            "  test.single-expect-default = 1000 millis\n" +
             "}\n");
         system = ActorSystem.create("JobClusterTest", config.withFallback(ConfigFactory.load()));
 

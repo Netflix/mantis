@@ -3052,13 +3052,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @param jobStore
          */
         public void purgeOldCompletedJobs(long tooOldCutOff, MantisJobStore jobStore) {
+            long numDeleted = 0;
+            int maxJobsToPurge = ConfigurationProvider.getConfig().getMaxJobsToPurge();
+            final long startNanos = System.nanoTime();
 
-            long count = ConfigurationProvider.getConfig().getMaxJobsToPurge();
-            logger.info("In purge Old Completed Jobs. Limit set to {}", count);
-            Instant start = Instant.now();
             for(Iterator<CompletedJob> it = completedJobs.values().iterator(); it.hasNext();) {
-                if(count == 0) {
-                    logger.info("Max clean up limit of " + count + " reached. Stop clean up");
+                if(numDeleted == maxJobsToPurge) {
+                    logger.info("{} Max clean up limit of {} reached. Stop clean up", name, maxJobsToPurge);
                     break;
                 }
                 CompletedJob completedJob = it.next();
@@ -3078,15 +3078,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     } catch (Exception e) {
                         logger.warn("Unable to purge job {} due to {}", completedJob, e.getMessage());
                     }
-                    count --;
+                    numDeleted++;
                 } else {
                     if(logger.isDebugEnabled()) { logger.debug("Job {} was terminated at {} which is not older than cutoff {}",completedJob, completedJob.getTerminatedAt(), tooOldCutOff);}
                 }
             }
-            Instant end = Instant.now();
-            logger.info("Took {} millis to clean up {} jobs in cluster {} ", (end.toEpochMilli() - start.toEpochMilli()), count, this.name);
-
-
+            if (numDeleted > 0) {
+                final long endNanos = System.nanoTime();
+                logger.info("Took {} micros to clean up {} jobs in cluster {} ", (endNanos - startNanos) / 1000, numDeleted, this.name);
+            }
         }
 
         /**

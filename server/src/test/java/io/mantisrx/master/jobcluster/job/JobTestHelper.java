@@ -66,24 +66,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+
 public class JobTestHelper {
 
-    private final static String SPOOL_DIR="/tmp/MantisSpool";
-    private final static String ARCHIVE_DIR="/tmp/MantisArchive";
+    private final static String SPOOL_DIR = "/tmp/MantisSpool";
+    private final static String ARCHIVE_DIR = "/tmp/MantisArchive";
 
     public static void createDirsIfRequired() {
         File spoolDir = new File(SPOOL_DIR);
         File namedJobsDir = new File(SPOOL_DIR + "/" + "namedJobs");
         File archiveDir = new File(ARCHIVE_DIR);
-        if(!spoolDir.exists()) {
+        if (!spoolDir.exists()) {
             spoolDir.mkdir();
         }
 
-        if(!archiveDir.exists()) {
+        if (!archiveDir.exists()) {
             archiveDir.mkdir();
         }
 
-        if(!namedJobsDir.exists()) {
+        if (!namedJobsDir.exists()) {
             namedJobsDir.mkdir();
         }
     }
@@ -114,177 +115,177 @@ public class JobTestHelper {
     }
 
     public static IJobClusterDefinition generateJobClusterDefinition(String name, SchedulingInfo schedInfo) {
-		return generateJobClusterDefinition(name, schedInfo, WorkerMigrationConfig.DEFAULT);
-	}
-	
-	public static IJobClusterDefinition generateJobClusterDefinition(String name, SchedulingInfo schedInfo, WorkerMigrationConfig migrationConfig) {
-        JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
-
-                .withSchedulingInfo(schedInfo)
-                .withVersion("0.0.1")
-                .build();
-        return new JobClusterDefinitionImpl.Builder()
-                .withJobClusterConfig(clusterConfig)
-                .withName(name)
-                .withUser("user")
-				.withParameters(Lists.newArrayList())
-                .withIsReadyForJobMaster(true)
-                .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
-                .withMigrationConfig(migrationConfig)
-                .build();
+        return generateJobClusterDefinition(name, schedInfo, WorkerMigrationConfig.DEFAULT);
     }
-	
-	public static IJobClusterDefinition generateJobClusterDefinition(String name) {
-		return generateJobClusterDefinition(name, new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(0, 0, 0, 0, 0), Lists.newArrayList(), Lists.newArrayList()).build());
-	}
-	
-	public static JobDefinition generateJobDefinition(String clusterName, SchedulingInfo schedInfo) throws InvalidJobException {
-		return new JobDefinition.Builder()
-				.withName(clusterName)
-				.withParameters(Lists.newArrayList())
-				.withLabels(Lists.newArrayList())
-				.withSchedulingInfo(schedInfo)
-				.withArtifactName("myart")
-				.withSubscriptionTimeoutSecs(0)
-				.withUser("njoshi")
-				.withNumberOfStages(schedInfo.getStages().size())
-				.withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Perpetual, null))
-				.build();
-	}
-	
-	public static JobDefinition generateJobDefinition(String clusterName) throws InvalidJobException {
-		return generateJobDefinition(clusterName, new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1.0, 1.0, 1.0, 1.0, 3), Lists.newArrayList(), Lists.newArrayList()).build());
-	}
 
-	public static void sendCheckHeartBeat(final TestKit probe, final ActorRef jobActor, Instant now) {
-		jobActor.tell(new JobProto.CheckHeartBeat(now), probe.getRef());
-	}
+    public static IJobClusterDefinition generateJobClusterDefinition(String name, SchedulingInfo schedInfo, WorkerMigrationConfig migrationConfig) {
+        JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
+            .withArtifactName("myart")
 
-	public static void sendHeartBeat(final TestKit probe, final ActorRef jobActor, String jobId, int stageNo, WorkerId workerId2) {
-	    sendHeartBeat(probe, jobActor, jobId, stageNo, workerId2, System.currentTimeMillis());
-		
-	}
-	
-	public static void sendLaunchedInitiatedStartedEventsToWorker(final TestKit probe, final ActorRef jobActor, String jobId,
-            int stageNo, WorkerId workerId2) {
+            .withSchedulingInfo(schedInfo)
+            .withVersion("0.0.1")
+            .build();
+        return new JobClusterDefinitionImpl.Builder()
+            .withJobClusterConfig(clusterConfig)
+            .withName(name)
+            .withUser("user")
+            .withParameters(Lists.newArrayList())
+            .withIsReadyForJobMaster(true)
+            .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
+            .withMigrationConfig(migrationConfig)
+            .build();
+    }
+
+    public static IJobClusterDefinition generateJobClusterDefinition(String name) {
+        return generateJobClusterDefinition(name, new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(0, 0, 0, 0, 0), Lists.newArrayList(), Lists.newArrayList()).build());
+    }
+
+    public static JobDefinition generateJobDefinition(String clusterName, SchedulingInfo schedInfo) throws InvalidJobException {
+        return new JobDefinition.Builder()
+            .withName(clusterName)
+            .withParameters(Lists.newArrayList())
+            .withLabels(Lists.newArrayList())
+            .withSchedulingInfo(schedInfo)
+            .withArtifactName("myart")
+            .withSubscriptionTimeoutSecs(0)
+            .withUser("njoshi")
+            .withNumberOfStages(schedInfo.getStages().size())
+            .withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Perpetual, null))
+            .build();
+    }
+
+    public static JobDefinition generateJobDefinition(String clusterName) throws InvalidJobException {
+        return generateJobDefinition(clusterName, new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1.0, 1.0, 1.0, 1.0, 3), Lists.newArrayList(), Lists.newArrayList()).build());
+    }
+
+    public static void sendCheckHeartBeat(final TestKit probe, final ActorRef jobActor, Instant now) {
+        jobActor.tell(new JobProto.CheckHeartBeat(now), probe.getRef());
+    }
+
+    public static void sendHeartBeat(final TestKit probe, final ActorRef jobActor, String jobId, int stageNo, WorkerId workerId2) {
+        sendHeartBeat(probe, jobActor, jobId, stageNo, workerId2, System.currentTimeMillis());
+
+    }
+
+    public static void sendLaunchedInitiatedStartedEventsToWorker(final TestKit probe, final ActorRef jobActor, String jobId,
+                                                                  int stageNo, WorkerId workerId2) {
         JobTestHelper.sendWorkerLaunchedEvent(probe, jobActor, workerId2, stageNo);
 
         JobTestHelper.sendStartInitiatedEvent(probe, jobActor, stageNo, workerId2);
 
         // send started
-        JobTestHelper.sendStartedEvent(probe, jobActor, stageNo,  workerId2);
+        JobTestHelper.sendStartedEvent(probe, jobActor, stageNo, workerId2);
 
     }
-    
-//    public static void sendLaunchedInitiatedStartedEventsToWorker(final TestKit probe, final ActorRef jobActor, String jobId,
-//            int stageNo, WorkerId workerId2) {
-//        sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, stageNo, workerId2, System.currentTimeMillis() + 1000);
-//    }
 
-	
-	public static void sendHeartBeat(final TestKit probe, final ActorRef jobActor, String jobId, int stageNo, WorkerId workerId2, long time) {
-	    WorkerEvent heartBeat2 = new WorkerHeartbeat(new Status(jobId, stageNo, workerId2.getWorkerIndex(), workerId2.getWorkerNum(), TYPE.HEARTBEAT, "", MantisJobState.Started, time));
+    //    public static void sendLaunchedInitiatedStartedEventsToWorker(final TestKit probe, final ActorRef jobActor, String jobId,
+    //            int stageNo, WorkerId workerId2) {
+    //        sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, stageNo, workerId2, System.currentTimeMillis() + 1000);
+    //    }
+
+
+    public static void sendHeartBeat(final TestKit probe, final ActorRef jobActor, String jobId, int stageNo, WorkerId workerId2, long time) {
+        WorkerEvent heartBeat2 = new WorkerHeartbeat(new Status(jobId, stageNo, workerId2.getWorkerIndex(), workerId2.getWorkerNum(), TYPE.HEARTBEAT, "", MantisJobState.Started, time));
         jobActor.tell(heartBeat2, probe.getRef());
-	}
-	
-	public static  void sendWorkerTerminatedEvent(final TestKit probe, final ActorRef jobActor, String jobId,  WorkerId workerId2) {
-		WorkerEvent workerTerminated = new WorkerTerminate(workerId2, WorkerState.Failed, JobCompletedReason.Lost);
-		jobActor.tell(workerTerminated, probe.getRef());
-	}
+    }
 
-    public static  void sendWorkerCompletedEvent(final TestKit probe, final ActorRef jobActor, String jobId,  WorkerId workerId2) {
+    public static void sendWorkerTerminatedEvent(final TestKit probe, final ActorRef jobActor, String jobId, WorkerId workerId2) {
+        WorkerEvent workerTerminated = new WorkerTerminate(workerId2, WorkerState.Failed, JobCompletedReason.Lost);
+        jobActor.tell(workerTerminated, probe.getRef());
+    }
+
+    public static void sendWorkerCompletedEvent(final TestKit probe, final ActorRef jobActor, String jobId, WorkerId workerId2) {
         WorkerEvent workerCompleted = new WorkerTerminate(workerId2, WorkerState.Completed, JobCompletedReason.Normal);
         jobActor.tell(workerCompleted, probe.getRef());
     }
 
-	public static void sendStartInitiatedEvent(final TestKit probe, final ActorRef jobActor, final int stageNum, WorkerId workerId) {
-		WorkerEvent startInitEvent = new WorkerStatus(new Status(
-			workerId.getJobId(),
-			stageNum,
-			workerId.getWorkerIndex(),
-			workerId.getWorkerNum(),
-			TYPE.INFO,
-			"test START_INITIATED event",
-			MantisJobState.StartInitiated
-		));
-		jobActor.tell(startInitEvent, probe.getRef());
-	}
+    public static void sendStartInitiatedEvent(final TestKit probe, final ActorRef jobActor, final int stageNum, WorkerId workerId) {
+        WorkerEvent startInitEvent = new WorkerStatus(new Status(
+            workerId.getJobId(),
+            stageNum,
+            workerId.getWorkerIndex(),
+            workerId.getWorkerNum(),
+            TYPE.INFO,
+            "test START_INITIATED event",
+            MantisJobState.StartInitiated
+        ));
+        jobActor.tell(startInitEvent, probe.getRef());
+    }
 
-	public static void sendStartedEvent(final TestKit probe, final ActorRef jobActor, final int stageNum, WorkerId workerId) {
+    public static void sendStartedEvent(final TestKit probe, final ActorRef jobActor, final int stageNum, WorkerId workerId) {
         WorkerEvent startedEvent = new WorkerStatus(new Status(
-                workerId.getJobId(),
-                stageNum,
-                workerId.getWorkerIndex(),
-                workerId.getWorkerNum(),
-                TYPE.INFO,
-                "test STARTED event",
-                MantisJobState.Started
+            workerId.getJobId(),
+            stageNum,
+            workerId.getWorkerIndex(),
+            workerId.getWorkerNum(),
+            TYPE.INFO,
+            "test STARTED event",
+            MantisJobState.Started
         ));
         jobActor.tell(startedEvent, probe.getRef());
     }
 
-	public static void sendWorkerLaunchedEvent(final TestKit probe, final ActorRef jobActor, WorkerId workerId2, int stageNo) {
-		WorkerEvent launchedEvent2 = new WorkerLaunched(workerId2, stageNo, "host1", "vm1", Optional.empty(), new WorkerPorts(8000,9000, 9010, 9011, Lists.newArrayList(9020)));
-		jobActor.tell(launchedEvent2, probe.getRef());
-	}
-	
-	public static void killJobAndVerify(final TestKit probe, String clusterName, JobId jobId, ActorRef jobClusterActor) {
-		jobClusterActor.tell(new JobClusterProto.KillJobRequest(jobId, "test reason", JobCompletedReason.Normal,"nj", probe.getRef()), probe.getRef());
-		JobClusterManagerProto.KillJobResponse killJobResp = probe.expectMsgClass(JobClusterManagerProto.KillJobResponse.class);
-		assertEquals(SUCCESS, killJobResp.responseCode);
-	}
+    public static void sendWorkerLaunchedEvent(final TestKit probe, final ActorRef jobActor, WorkerId workerId2, int stageNo) {
+        WorkerEvent launchedEvent2 = new WorkerLaunched(workerId2, stageNo, "host1", "vm1", Optional.empty(), new WorkerPorts(8000, 9000, 9010, 9011, Lists.newArrayList(9020)));
+        jobActor.tell(launchedEvent2, probe.getRef());
+    }
 
-    public static void killJobSendWorkerTerminatedAndVerify(final TestKit probe, String clusterName, JobId jobId, ActorRef jobClusterActor, WorkerId workerId) {
-        jobClusterActor.tell(new JobClusterProto.KillJobRequest(jobId, "test reason", JobCompletedReason.Normal,"nj", probe.getRef()), probe.getRef());
+    public static void killJobAndVerify(final TestKit probe, String clusterName, JobId jobId, ActorRef jobClusterActor) {
+        jobClusterActor.tell(new JobClusterProto.KillJobRequest(jobId, "test reason", JobCompletedReason.Normal, "nj", probe.getRef()), probe.getRef());
         JobClusterManagerProto.KillJobResponse killJobResp = probe.expectMsgClass(JobClusterManagerProto.KillJobResponse.class);
-
-        sendWorkerTerminatedEvent(probe,jobClusterActor,jobId.getId(),workerId);
         assertEquals(SUCCESS, killJobResp.responseCode);
     }
 
-	public static void getJobDetailsAndVerify(final TestKit probe, ActorRef jobClusterActor, String jobId, BaseResponse.ResponseCode expectedRespCode, JobState expectedState) {
-		jobClusterActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(jobId).get()), probe.getRef());
-		JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(Duration.ofSeconds(60),JobClusterManagerProto.GetJobDetailsResponse.class);
+    public static void killJobSendWorkerTerminatedAndVerify(final TestKit probe, String clusterName, JobId jobId, ActorRef jobClusterActor, WorkerId workerId) {
+        jobClusterActor.tell(new JobClusterProto.KillJobRequest(jobId, "test reason", JobCompletedReason.Normal, "nj", probe.getRef()), probe.getRef());
+        JobClusterManagerProto.KillJobResponse killJobResp = probe.expectMsgClass(JobClusterManagerProto.KillJobResponse.class);
 
-		if(expectedRespCode == SUCCESS) {
-			assertEquals(SUCCESS, detailsResp.responseCode);
-			assertTrue(detailsResp.getJobMetadata().isPresent());
-			assertEquals(jobId, detailsResp.getJobMetadata().get().getJobId().getId());
-			assertEquals(expectedState, detailsResp.getJobMetadata().get().getState());
-		} else {
-			assertEquals(expectedRespCode, detailsResp.responseCode);
-			assertFalse(detailsResp.getJobMetadata().isPresent());
-		}
-	}
+        sendWorkerTerminatedEvent(probe, jobClusterActor, jobId.getId(), workerId);
+        assertEquals(SUCCESS, killJobResp.responseCode);
+    }
 
-	public static boolean verifyJobStatusWithPolling(final TestKit probe, final ActorRef actorRef, final String jobId1, final JobState expectedState) {
-		boolean result = false;
-		int cnt =  0;
-		// try a few times for timing issue
-		while(cnt < 100 || !result) {
-			cnt++;
-			actorRef.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(jobId1).get()), probe.getRef());
-			JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
-			if(detailsResp.getJobMetadata().isPresent() && expectedState.equals(detailsResp.getJobMetadata().get().getState())) {
-				result = true;
-				break;
-			}
-		}
-		return result;
-	}
+    public static void getJobDetailsAndVerify(final TestKit probe, ActorRef jobClusterActor, String jobId, BaseResponse.ResponseCode expectedRespCode, JobState expectedState) {
+        jobClusterActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(jobId).get()), probe.getRef());
+        JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(Duration.ofSeconds(60), JobClusterManagerProto.GetJobDetailsResponse.class);
 
-	public static void submitJobAndVerifySuccess(final TestKit probe, String clusterName, ActorRef jobClusterActor, final JobDefinition jobDefn,
-			String jobId) {
-	    submitJobAndVerifyStatus(probe, clusterName, jobClusterActor, jobDefn, jobId, SUCCESS);
-	}
-	
-	public static void submitJobAndVerifyStatus(final TestKit probe, String clusterName, ActorRef jobClusterActor, final JobDefinition jobDefn,
-            String jobId, ResponseCode code) {
-        jobClusterActor.tell(new JobClusterManagerProto.SubmitJobRequest(clusterName,"user", Optional.ofNullable(jobDefn)), probe.getRef());
+        if (expectedRespCode == SUCCESS) {
+            assertEquals(SUCCESS, detailsResp.responseCode);
+            assertTrue(detailsResp.getJobMetadata().isPresent());
+            assertEquals(jobId, detailsResp.getJobMetadata().get().getJobId().getId());
+            assertEquals(expectedState, detailsResp.getJobMetadata().get().getState());
+        } else {
+            assertEquals(expectedRespCode, detailsResp.responseCode);
+            assertFalse(detailsResp.getJobMetadata().isPresent());
+        }
+    }
+
+    public static boolean verifyJobStatusWithPolling(final TestKit probe, final ActorRef actorRef, final String jobId1, final JobState expectedState) {
+        boolean result = false;
+        int cnt = 0;
+        // try a few times for timing issue
+        while (cnt < 100 || !result) {
+            cnt++;
+            actorRef.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(jobId1).get()), probe.getRef());
+            JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+            if (detailsResp.getJobMetadata().isPresent() && expectedState.equals(detailsResp.getJobMetadata().get().getState())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public static void submitJobAndVerifySuccess(final TestKit probe, String clusterName, ActorRef jobClusterActor, final JobDefinition jobDefn,
+                                                 String jobId) {
+        submitJobAndVerifyStatus(probe, clusterName, jobClusterActor, jobDefn, jobId, SUCCESS);
+    }
+
+    public static void submitJobAndVerifyStatus(final TestKit probe, String clusterName, ActorRef jobClusterActor, final JobDefinition jobDefn,
+                                                String jobId, ResponseCode code) {
+        jobClusterActor.tell(new JobClusterManagerProto.SubmitJobRequest(clusterName, "user", Optional.ofNullable(jobDefn)), probe.getRef());
         JobClusterManagerProto.SubmitJobResponse submitResponse = probe.expectMsgClass(JobClusterManagerProto.SubmitJobResponse.class);
         assertEquals(code, submitResponse.responseCode);
-        if(jobId == null) {
+        if (jobId == null) {
             assertTrue(!submitResponse.getJobId().isPresent());
         } else {
             assertEquals(jobId, submitResponse.getJobId().get().getId());
@@ -293,22 +294,21 @@ public class JobTestHelper {
 
 
     public static ActorRef submitSingleStageScalableJob(ActorSystem system, TestKit probe, String clusterName, SchedulingInfo sInfo,
-                                                  MantisScheduler schedulerMock, MantisJobStore jobStoreMock,
-                                                  LifecycleEventPublisher lifecycleEventPublisher) throws io.mantisrx.runtime.command.InvalidJobException {
+                                                        MantisScheduler schedulerMock, MantisJobStore jobStoreMock,
+                                                        LifecycleEventPublisher lifecycleEventPublisher) throws io.mantisrx.runtime.command.InvalidJobException {
 
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 
         MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
-                .withJobId(new JobId(clusterName,1))
-                .withSubmittedAt(Instant.now())
-                .withJobState(JobState.Accepted)
+            .withJobId(new JobId(clusterName, 1))
+            .withSubmittedAt(Instant.now())
+            .withJobState(JobState.Accepted)
 
-                .withNextWorkerNumToUse(1)
-                .withJobDefinition(jobDefn)
-                .build();
+            .withNextWorkerNumToUse(1)
+            .withJobDefinition(jobDefn)
+            .build();
         final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher));
-
 
 
         jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -321,15 +321,15 @@ public class JobTestHelper {
         JobClusterManagerProto.GetJobDetailsResponse resp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
         System.out.println("resp " + resp + " msg " + resp.message);
         assertEquals(SUCCESS, resp.responseCode);
-        assertEquals(JobState.Accepted,resp.getJobMetadata().get().getState());
+        assertEquals(JobState.Accepted, resp.getJobMetadata().get().getState());
         int stageNo = 1;
         // send launched event
         int lastWorkerNum = 0;
-        JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe,jobActor,jobId,0,new WorkerId(jobId,0,++lastWorkerNum));
+        JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, 0, new WorkerId(jobId, 0, ++lastWorkerNum));
 
         //JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe,jobActor,jobId,1,new WorkerId(jobId,0,2));
 
-        for(int i=0; i<sInfo.forStage(stageNo).getNumberOfInstances();i++) {
+        for (int i = 0; i < sInfo.forStage(stageNo).getNumberOfInstances(); i++) {
 
             WorkerId workerId = new WorkerId(jobId, i, ++lastWorkerNum);
             JobTestHelper.sendWorkerLaunchedEvent(probe, jobActor, workerId, stageNo);
@@ -351,17 +351,18 @@ public class JobTestHelper {
         assertEquals(SUCCESS, resp2.responseCode);
 
         //  1 worker has started. so job has started
-        assertEquals(JobState.Launched,resp2.getJobMetadata().get().getState());
+        assertEquals(JobState.Launched, resp2.getJobMetadata().get().getState());
 
         return jobActor;
     }
+
     @Test
     public void testCalculateRuntimeLimitForAlreadyStartedJob() {
         Instant now = Instant.now();
 
         Instant startedAt = now.minusSeconds(5);
 
-        assertEquals(5, JobHelper.calculateRuntimeDuration(10,startedAt));
+        assertEquals(5, JobHelper.calculateRuntimeDuration(10, startedAt));
 
     }
 
@@ -371,7 +372,7 @@ public class JobTestHelper {
 
         Instant startedAt = now;
 
-        assertEquals(10, JobHelper.calculateRuntimeDuration(10,startedAt));
+        assertEquals(10, JobHelper.calculateRuntimeDuration(10, startedAt));
 
     }
 
@@ -381,22 +382,22 @@ public class JobTestHelper {
 
         Instant startedAt = now.minusSeconds(15);
 
-        assertEquals(1, JobHelper.calculateRuntimeDuration(10,startedAt));
+        assertEquals(1, JobHelper.calculateRuntimeDuration(10, startedAt));
 
     }
 
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
 
-        Observable.range(0,100)
-                .groupBy((i) -> i%2)
-                .flatMap((go) -> go
-                        .buffer(2)
-                        .map((lst) -> String.valueOf(lst)))
-                .toBlocking()
-                .subscribe((res) -> {
-            System.out.println("res -> " + res);
-        });
+        Observable.range(0, 100)
+            .groupBy((i) -> i % 2)
+            .flatMap((go) -> go
+                .buffer(2)
+                .map((lst) -> String.valueOf(lst)))
+            .toBlocking()
+            .subscribe((res) -> {
+                System.out.println("res -> " + res);
+            });
 
     }
 
