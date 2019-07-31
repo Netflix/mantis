@@ -22,7 +22,6 @@ import java.time.Instant;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
-import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import org.slf4j.Logger;
@@ -50,8 +49,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataImpl.class);
     private final JobId jobId;
     private final long submittedAt;
-    private long startedAt = -1;
-    private long endedAt = -1;
+    private long startedAt = DEFAULT_STARTED_AT_EPOCH;
+    private long endedAt = DEFAULT_STARTED_AT_EPOCH;
 
     private JobState state;
     private int nextWorkerNumberToUse;
@@ -67,6 +66,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     @JsonIgnoreProperties(ignoreUnknown=true)
     public MantisJobMetadataImpl(@JsonProperty("jobId") JobId jobId,
                                      @JsonProperty("submittedAt") long submittedAt,
+                                     @JsonProperty("startedAt") long startedAt,
                                      @JsonProperty("jobDefinition") JobDefinition jobDefinition,
                                      @JsonProperty("state") JobState state,
                                      @JsonProperty("nextWorkerNumberToUse") int nextWorkerNumberToUse
@@ -75,6 +75,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         this.jobId = jobId;
         
         this.submittedAt = submittedAt;
+        this.startedAt = startedAt;
         this.state = state==null? JobState.Accepted : state;
         this.nextWorkerNumberToUse = nextWorkerNumberToUse;
 
@@ -171,8 +172,10 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     }
     
     
-    void setStartedAt(long startedAt) {
+    void setStartedAt(long startedAt, MantisJobStore store) throws Exception {
+        logger.info("Updating job start time  to {} ", startedAt);
 		this.startedAt = startedAt;
+		store.updateJob(this);
 		
 	}
 
@@ -323,7 +326,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
   
    	@Override
 	public Optional<Instant> getStartedAtInstant() {
-		if(this.startedAt == -1) {
+		if(this.startedAt == DEFAULT_STARTED_AT_EPOCH) {
 		    return Optional.empty();
 		} else {
 		    return Optional.of(Instant.ofEpochMilli(startedAt));
@@ -331,29 +334,30 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 		
 	}
    	
-   	public long getStartedAt() {
+	public long getStartedAt() {
    	    return this.startedAt;
    	}
 
 	@Override
 	public Optional<Instant> getEndedAtInstant() {
-	    if(this.endedAt == -1) {
+	    if(this.endedAt == DEFAULT_STARTED_AT_EPOCH) {
             return Optional.empty();
         } else {
             return Optional.of(Instant.ofEpochMilli(endedAt));
         }
 	}
 
-    public long getEndedAt() {
+	public long getEndedAt() {
         return this.endedAt;
     }
-	
+
     public static class Builder {
     	JobId jobId;
         
         String user;
         JobDefinition jobDefinition;
         long submittedAt;
+        long startedAt;
         JobState state;
 
         int nextWorkerNumberToUse = 1;
@@ -383,7 +387,11 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
             this.submittedAt = submittedAt.toEpochMilli();
             return this;
         }
-    	
+
+        public Builder withStartedAt(Instant startedAt) {
+    	    this.startedAt = startedAt.toEpochMilli();
+    	    return this;
+        }
     	
     	public Builder withJobState(JobState state) {
     		this.state = state;
@@ -409,20 +417,27 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     	}
 
     	public MantisJobMetadataImpl build() {
-    		return new MantisJobMetadataImpl(jobId, submittedAt, jobDefinition, state, nextWorkerNumberToUse);
+    		return new MantisJobMetadataImpl(jobId, submittedAt, startedAt, jobDefinition, state, nextWorkerNumberToUse);
     	}
     	
     	
     }
 
 
-
-	@Override
-	public String toString() {
-		return "MantisJobMetadataImpl [jobId=" + jobId + ", submittedAt=" + submittedAt + ",  state=" + state + ", nextWorkerNumberToUse=" + nextWorkerNumberToUse
-				+ ", jobDefinition=" + jobDefinition + ", stageMetadataMap=" + stageMetadataMap
-				+ ", workerNumberToStageMap=" + workerNumberToStageMap + "]";
-	}
+    @Override
+    public String toString() {
+        return "MantisJobMetadataImpl{" +
+                "jobId=" + jobId +
+                ", submittedAt=" + submittedAt +
+                ", startedAt=" + startedAt +
+                ", endedAt=" + endedAt +
+                ", state=" + state +
+                ", nextWorkerNumberToUse=" + nextWorkerNumberToUse +
+                ", jobDefinition=" + jobDefinition +
+                ", stageMetadataMap=" + stageMetadataMap +
+                ", workerNumberToStageMap=" + workerNumberToStageMap +
+                '}';
+    }
 
     @Override
     public boolean equals(Object o) {

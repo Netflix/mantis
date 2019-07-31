@@ -16,7 +16,12 @@
 
 package io.mantisrx.server.master.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
@@ -690,7 +695,5 @@ public class DataFormatAdapterTest {
 
 
     }
-
-
 
 }

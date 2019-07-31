@@ -65,6 +65,7 @@ import rx.functions.Func2;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -437,14 +438,18 @@ public class DataFormatAdapter {
         Optional<String> artifactName = extractArtifactName(jarUrl);
 
         // generate job defn
-        JobDefinition jobDefn = new JobDefinition(archJob.getName(), archJob.getUser(), artifactName.orElse(""), null,archJob.getParameters(), archJob.getSla(), archJob.getSubscriptionTimeoutSecs(),schedulingInfo, archJob.getNumStages(),archJob.getLabels());
+        JobDefinition jobDefn = new JobDefinition(archJob.getName(), archJob.getUser(),
+                artifactName.orElse(""), null,archJob.getParameters(), archJob.getSla(),
+                archJob.getSubscriptionTimeoutSecs(),schedulingInfo, archJob.getNumStages(),archJob.getLabels());
         Optional<JobId> jIdOp = JobId.fromId(archJob.getJobId());
         if(!jIdOp.isPresent()) {
             throw new IllegalArgumentException("Invalid JobId " + archJob.getJobId());
         }
 
         // generate job meta
-        MantisJobMetadataImpl mantisJobMetadata = new MantisJobMetadataImpl(jIdOp.get(), archJob.getSubmittedAt(), jobDefn, convertMantisJobStateToJobState(archJob.getState()), archJob.getNextWorkerNumberToUse());
+        MantisJobMetadataImpl mantisJobMetadata = new MantisJobMetadataImpl(jIdOp.get(), archJob.getSubmittedAt(),
+                archJob.getStartedAt(), jobDefn, convertMantisJobStateToJobState(archJob.getState()),
+                archJob.getNextWorkerNumberToUse());
 
 
         // add the stages
@@ -453,12 +458,16 @@ public class DataFormatAdapter {
         }
 
 
-        if(logger.isTraceEnabled()) { logger.trace("DataFormatAdapter:Completed conversion to IMantisJobMetadata {}", mantisJobMetadata); }
+        if(logger.isTraceEnabled()) { logger.trace("DataFormatAdapter:Completed conversion to IMantisJobMetadata {}",
+                mantisJobMetadata); }
         return mantisJobMetadata;
     }
 
     private static StageSchedulingInfo generateStageSchedulingInfo(IMantisStageMetadata mantisStageMetadata) {
-        StageSchedulingInfo stageSchedulingInfo = new StageSchedulingInfo(mantisStageMetadata.getNumWorkers(),mantisStageMetadata.getMachineDefinition(),mantisStageMetadata.getHardConstraints(),mantisStageMetadata.getSoftConstraints(),mantisStageMetadata.getScalingPolicy(),mantisStageMetadata.getScalable());
+        StageSchedulingInfo stageSchedulingInfo = new StageSchedulingInfo(mantisStageMetadata.getNumWorkers(),
+                mantisStageMetadata.getMachineDefinition(),mantisStageMetadata.getHardConstraints(),
+                mantisStageMetadata.getSoftConstraints(),mantisStageMetadata.getScalingPolicy(),
+                mantisStageMetadata.getScalable());
         return stageSchedulingInfo;
     }
 
@@ -478,10 +487,11 @@ public class DataFormatAdapter {
         return schedulingInfo;
     }
 
-    public static IMantisStageMetadata convertMantisStageMetadataWriteableToMantisStageMetadata(MantisStageMetadata stageMeta,
-                                                                                                LifecycleEventPublisher eventPublisher
-                                                                                                ) {
-        return convertMantisStageMetadataWriteableToMantisStageMetadata(stageMeta,eventPublisher,false);
+    public static IMantisStageMetadata convertMantisStageMetadataWriteableToMantisStageMetadata(
+            MantisStageMetadata stageMeta,
+            LifecycleEventPublisher eventPublisher) {
+        return convertMantisStageMetadataWriteableToMantisStageMetadata(stageMeta,eventPublisher,
+                false);
     }
 
     public static IMantisStageMetadata convertMantisStageMetadataWriteableToMantisStageMetadata(MantisStageMetadata stageMeta,
@@ -519,10 +529,12 @@ public class DataFormatAdapter {
 
     public static MantisJobMetadataWritable convertMantisJobMetadataToMantisJobMetadataWriteable(IMantisJobMetadata jobMetadata) {
 
+        Instant startedAtInstant = jobMetadata.getStartedAtInstant().orElse(Instant.ofEpochMilli(0));
         return new MantisJobMetadataWritable(jobMetadata.getJobId().getId(),
                 jobMetadata.getJobId().getCluster(),
                 jobMetadata.getUser(),
                 jobMetadata.getSubmittedAtInstant().toEpochMilli(),
+                startedAtInstant.toEpochMilli(),
                 jobMetadata.getJobJarUrl(),
                 jobMetadata.getTotalStages(),
                 jobMetadata.getSla().orElse(null),
@@ -536,11 +548,12 @@ public class DataFormatAdapter {
     }
 
     public static FilterableMantisJobMetadataWritable convertMantisJobMetadataToFilterableMantisJobMetadataWriteable(IMantisJobMetadata jobMetadata) {
-
+        Instant startedAtInstant = jobMetadata.getStartedAtInstant().orElse(Instant.ofEpochMilli(0));
         return new FilterableMantisJobMetadataWritable(jobMetadata.getJobId().getId(),
                 jobMetadata.getJobId().getCluster(),
                 jobMetadata.getUser(),
                 jobMetadata.getSubmittedAtInstant().toEpochMilli(),
+                startedAtInstant.toEpochMilli(),
                 jobMetadata.getJobJarUrl(),
                 jobMetadata.getTotalStages(),
                 jobMetadata.getSla().orElse(null),

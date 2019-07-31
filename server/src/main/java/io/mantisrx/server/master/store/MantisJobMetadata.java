@@ -29,6 +29,8 @@ import io.mantisrx.runtime.parameter.Parameter;
 
 public interface MantisJobMetadata {
 
+    long DEFAULT_STARTED_AT_EPOCH = 0;
+
     String getJobId();
 
     String getName();
@@ -36,6 +38,8 @@ public interface MantisJobMetadata {
     String getUser();
 
     long getSubmittedAt();
+
+    long getStartedAt();
 
     URL getJarUrl();
 

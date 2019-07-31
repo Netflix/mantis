@@ -204,7 +204,7 @@ public class JobTestLifecycle {
 			
 			verify(jobStoreMock, times(3)).updateWorker(any());
 			
-			verify(jobStoreMock, times(2)).updateJob(any());
+			verify(jobStoreMock, times(3)).updateJob(any());
 
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
@@ -298,7 +298,9 @@ public class JobTestLifecycle {
 
             verify(jobStoreMock, times(3)).updateWorker(any());
 
-            verify(jobStoreMock, times(2)).updateJob(any());
+            verify(jobStoreMock, times(3)).updateJob(any());
+
+			//verify(jobStoreMock, times(3))
 
             verify(schedulerMock,times(1)).scheduleWorker(any());
 
@@ -443,7 +445,7 @@ public class JobTestLifecycle {
 			
 			verify(jobStoreMock, times(6)).updateWorker(any());
 			
-			verify(jobStoreMock, times(2)).updateJob(any());
+			verify(jobStoreMock, times(3)).updateJob(any());
 			
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
@@ -572,7 +574,7 @@ public class JobTestLifecycle {
 
 			verify(jobStoreMock, times(19)).updateWorker(any());
 
-			verify(jobStoreMock, times(2)).updateJob(any());
+			verify(jobStoreMock, times(3)).updateJob(any());
 
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
@@ -677,7 +679,7 @@ public class JobTestLifecycle {
 
 			verify(jobStoreMock, times(6)).updateWorker(any());
 
-			verify(jobStoreMock, times(2)).updateJob(any());
+			verify(jobStoreMock, times(3)).updateJob(any());
 
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
@@ -1031,7 +1033,9 @@ public class JobTestLifecycle {
 		
 		//MantisJobMetadataImpl mantisJobMetaMock = mock(MantisJobMetadataImpl.class);
 		JobDefinition jobDefnMock = mock(JobDefinition.class);
-		MantisJobMetadataImpl mantisJobMeta = new MantisJobMetadataImpl(JobId.fromId("job-1").get(), Instant.now().toEpochMilli(), jobDefnMock, JobState.Accepted, 0);
+		MantisJobMetadataImpl mantisJobMeta = new MantisJobMetadataImpl(JobId.fromId("job-1").get(),
+				Instant.now().toEpochMilli(),Instant.now().toEpochMilli(), jobDefnMock, JobState.Accepted,
+				0);
 
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 		WorkerNumberGenerator wng = new WorkerNumberGenerator();

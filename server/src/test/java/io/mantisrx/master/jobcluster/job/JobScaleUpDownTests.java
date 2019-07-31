@@ -128,7 +128,7 @@ public class JobScaleUpDownTests {
 
 		verify(jobStoreMock, times(6)).updateWorker(any());
 
-		verify(jobStoreMock, times(2)).updateJob(any());
+		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker + job master and scale up worker
 		verify(schedulerMock, times(3)).scheduleWorker(any());
@@ -170,7 +170,7 @@ public class JobScaleUpDownTests {
 		// 9 for worker events + 1 for scale down
 		verify(jobStoreMock, times(10)).updateWorker(any());
 
-		verify(jobStoreMock, times(2)).updateJob(any());
+		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// 1 scale down
 		verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(any(), any());
@@ -511,7 +511,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		verify(jobStoreMock, times(3)).updateWorker(any());
 
-		verify(jobStoreMock, times(2)).updateJob(any());
+		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker only
 		verify(schedulerMock, times(1)).scheduleWorker(any());
@@ -554,7 +554,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		verify(jobStoreMock, times(3)).updateWorker(any());
 
-		verify(jobStoreMock, times(2)).updateJob(any());
+		verify(jobStoreMock, times(3)).updateJob(any());
 
 		// initial worker only
 		verify(schedulerMock, times(1)).scheduleWorker(any());
