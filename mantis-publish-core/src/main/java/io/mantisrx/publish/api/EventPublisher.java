@@ -16,7 +16,6 @@
 
 package io.mantisrx.publish.api;
 
-
 import io.mantisrx.publish.core.Subscription;
 
 
@@ -27,7 +26,7 @@ public interface EventPublisher {
      *
      * @param event event data to publish to Mantis
      */
-    void publish(Event event);
+    PublishStatus publish(Event event);
 
     /**
      * Publishes an event on the given stream.
@@ -35,7 +34,7 @@ public interface EventPublisher {
      * @param streamName name of the stream to publish the event to
      * @param event      event data to publish to Mantis
      */
-    void publish(String streamName, Event event);
+    PublishStatus publish(String streamName, Event event);
 
     /**
      * Returns whether or not this event publisher has active {@link Subscription}s.

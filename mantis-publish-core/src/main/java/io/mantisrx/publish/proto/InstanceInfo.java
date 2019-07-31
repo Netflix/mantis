@@ -68,9 +68,9 @@ public class InstanceInfo {
         if (o == null || getClass() != o.getClass()) return false;
         InstanceInfo that = (InstanceInfo) o;
         return Objects.equals(getApplicationName(), that.getApplicationName()) &&
-                Objects.equals(getZone(), that.getZone()) &&
-                Objects.equals(getClusterName(), that.getClusterName()) &&
-                Objects.equals(getAutoScalingGroupName(), that.getAutoScalingGroupName());
+            Objects.equals(getZone(), that.getZone()) &&
+            Objects.equals(getClusterName(), that.getClusterName()) &&
+            Objects.equals(getAutoScalingGroupName(), that.getAutoScalingGroupName());
     }
 
     @Override
@@ -81,12 +81,12 @@ public class InstanceInfo {
     @Override
     public String toString() {
         return "InstanceInfo{" +
-                "applicationName='" + applicationName + '\'' +
-                ", zone='" + zone + '\'' +
-                ", clusterName='" + clusterName + '\'' +
-                ", autoScalingGroupName='" + autoScalingGroupName + '\'' +
-                ", instanceStatus=" + instanceStatus +
-                '}';
+            "applicationName='" + applicationName + '\'' +
+            ", zone='" + zone + '\'' +
+            ", clusterName='" + clusterName + '\'' +
+            ", autoScalingGroupName='" + autoScalingGroupName + '\'' +
+            ", instanceStatus=" + instanceStatus +
+            '}';
     }
 
     public enum InstanceStatus {
