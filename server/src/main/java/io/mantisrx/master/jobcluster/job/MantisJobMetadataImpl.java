@@ -22,7 +22,6 @@ import java.time.Instant;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
-import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import org.slf4j.Logger;
@@ -50,8 +49,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataImpl.class);
     private final JobId jobId;
     private final long submittedAt;
-    private long startedAt = NOT_SET;
-    private long endedAt = NOT_SET;
+    private long startedAt = DEFAULT_STARTED_AT_EPOCH;
+    private long endedAt = DEFAULT_STARTED_AT_EPOCH;
 
     private JobState state;
     private int nextWorkerNumberToUse;
@@ -327,7 +326,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
   
    	@Override
 	public Optional<Instant> getStartedAtInstant() {
-		if(this.startedAt == NOT_SET) {
+		if(this.startedAt == DEFAULT_STARTED_AT_EPOCH) {
 		    return Optional.empty();
 		} else {
 		    return Optional.of(Instant.ofEpochMilli(startedAt));
@@ -341,7 +340,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 
 	@Override
 	public Optional<Instant> getEndedAtInstant() {
-	    if(this.endedAt == NOT_SET) {
+	    if(this.endedAt == DEFAULT_STARTED_AT_EPOCH) {
             return Optional.empty();
         } else {
             return Optional.of(Instant.ofEpochMilli(endedAt));

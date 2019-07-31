@@ -695,5 +695,5 @@ public class DataFormatAdapterTest {
 
 
     }
-    
+
 }

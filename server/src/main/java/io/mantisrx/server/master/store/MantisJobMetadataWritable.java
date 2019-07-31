@@ -31,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
-import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
@@ -58,7 +57,7 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     private String jobId;
     private String name;
     private long submittedAt;
-    private long startedAt = NOT_SET;
+    private long startedAt = DEFAULT_STARTED_AT_EPOCH;
     private URL jarUrl;
     private volatile MantisJobState state;
     private int numStages;
