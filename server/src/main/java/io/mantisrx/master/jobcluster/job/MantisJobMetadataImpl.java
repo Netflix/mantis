@@ -50,8 +50,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataImpl.class);
     private final JobId jobId;
     private final long submittedAt;
-    private long startedAt = -1;
-    private long endedAt = -1;
+    private long startedAt = NOT_SET;
+    private long endedAt = NOT_SET;
 
     private JobState state;
     private int nextWorkerNumberToUse;
@@ -327,7 +327,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
   
    	@Override
 	public Optional<Instant> getStartedAtInstant() {
-		if(this.startedAt == -1 || this.startedAt == 0) {
+		if(this.startedAt == NOT_SET) {
 		    return Optional.empty();
 		} else {
 		    return Optional.of(Instant.ofEpochMilli(startedAt));
@@ -335,23 +335,23 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 		
 	}
    	
-   	public long getStartedAt() {
+	public long getStartedAt() {
    	    return this.startedAt;
    	}
 
 	@Override
 	public Optional<Instant> getEndedAtInstant() {
-	    if(this.endedAt == -1) {
+	    if(this.endedAt == NOT_SET) {
             return Optional.empty();
         } else {
             return Optional.of(Instant.ofEpochMilli(endedAt));
         }
 	}
 
-    public long getEndedAt() {
+	public long getEndedAt() {
         return this.endedAt;
     }
-	
+
     public static class Builder {
     	JobId jobId;
         

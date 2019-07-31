@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 public class MantisJobMetadataWritable implements MantisJobMetadata {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataWritable.class);
+
     private final String user;
     private final JobSla sla;
     private final long subscriptionTimeoutSecs;
@@ -57,7 +58,7 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     private String jobId;
     private String name;
     private long submittedAt;
-    private long startedAt = -1;
+    private long startedAt = NOT_SET;
     private URL jarUrl;
     private volatile MantisJobState state;
     private int numStages;
@@ -86,9 +87,8 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         this.name = name;
         this.user = user;
         this.submittedAt = submittedAt;
-        if(startedAt == 0) {
-            this.startedAt = submittedAt;
-        }
+        this.startedAt = startedAt;
+
         this.jarUrl = jarUrl;
         this.numStages = numStages;
         this.sla = sla;

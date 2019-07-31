@@ -37,6 +37,8 @@ import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
  */
 public interface IMantisJobMetadata {
 
+    long NOT_SET = 0;
+
     /**
      * Returns the {@link JobId}.
      * @return

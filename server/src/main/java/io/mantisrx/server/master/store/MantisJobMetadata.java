@@ -29,6 +29,8 @@ import io.mantisrx.runtime.parameter.Parameter;
 
 public interface MantisJobMetadata {
 
+    long NOT_SET = 0;
+
     String getJobId();
 
     String getName();
