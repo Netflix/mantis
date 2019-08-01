@@ -96,7 +96,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 
 import io.mantisrx.runtime.JobConstraints;
-import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
@@ -153,7 +152,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private static final String BOOKKEEPING_TIMER_KEY = "JOB_CLUSTER_BOOKKEEPING";
     private static final Integer DEFAULT_LIMIT = 100;
     private static final Integer DEFAULT_ACTIVE_JOB_LIMIT = 5000;
-    public static final String MANTIS_IS_RESUBMIT = "_mantis.isResubmit";
 
     private final Logger logger = LoggerFactory.getLogger(JobClusterActor.class);
 
@@ -1296,9 +1294,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             JobDefinition resolvedJobDefn = getResolvedJobDefinition(request.getSubmitter(),request.getJobDefinition());
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobClusterStatusEvent(LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
                 "Job submit request received", jobClusterMetadata.getJobClusterDefinition().getName()));
-            if(request.isAutoResubmit()) {
-                resolvedJobDefn = insertAutoResubmitLabel(resolvedJobDefn);
-            }
+            resolvedJobDefn = LabelManager.insertSystemLabels(resolvedJobDefn, request.isAutoResubmit());
+            
+            
             submitJob(resolvedJobDefn, sender, request.getSubmitter());
 
             numJobSubmissions.increment();
@@ -1314,29 +1312,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } 
     }
 
-    private JobDefinition insertAutoResubmitLabel(JobDefinition resolvedJobDefn) {
-        List<Label> labels = resolvedJobDefn.getLabels();
-
-        boolean alreadyHasResubmitLabel = labels.stream().anyMatch(label -> label.getName().equals(MANTIS_IS_RESUBMIT));
-
-        if(!alreadyHasResubmitLabel) {
-            List<Label> updatedLabels = new ArrayList<>(labels);
-            updatedLabels.add(new Label(MANTIS_IS_RESUBMIT, "true"));
-            try {
-                JobDefinition updatedJobDefn = new JobDefinition.Builder().from(resolvedJobDefn)
-                        .withLabels(updatedLabels).build();
-                logger.debug("Added isResubmit label");
-                return updatedJobDefn;
-            } catch (InvalidJobException e) {
-                logger.error(e.getMessage());
-                return resolvedJobDefn;
-            }
-        } else {
-            logger.debug("Job " + resolvedJobDefn.getName() + " already has isResubmit label. Don't add new");
-            return resolvedJobDefn;
-        }
-
-    }
 
     /**
      * Two cases

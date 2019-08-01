@@ -1611,9 +1611,12 @@ public class JobClusterTest {
 
             assertEquals(SUCCESS, detailsResp.responseCode);
             assertEquals(JobState.Accepted, detailsResp.getJobMetadata().get().getState());
-            assertEquals(clusterLabels.size(),detailsResp.getJobMetadata().get().getLabels().size());
+            //
+            assertEquals(clusterLabels.size() + LabelManager.numberOfMandatoryLabels(),detailsResp.getJobMetadata().get().getLabels().size());
             // confirm that the clusters labels got inherited
-            assertEquals(label, detailsResp.getJobMetadata().get().getLabels().get(0));
+            assertEquals(1, detailsResp.getJobMetadata().get()
+                    .getLabels().stream().filter(l -> l.getName().equals("clabelName")).count());
+            //assertEquals(label, detailsResp.getJobMetadata().get().getLabels().get(0));
 
 
             // Now submit another one with labels, it should not inherit cluster labels
@@ -1638,9 +1641,11 @@ public class JobClusterTest {
 
             assertEquals(SUCCESS, detailsResp2.responseCode);
             assertEquals(JobState.Accepted, detailsResp2.getJobMetadata().get().getState());
-            assertEquals(clusterLabels.size(),detailsResp2.getJobMetadata().get().getLabels().size());
+            assertEquals(clusterLabels.size()+2,detailsResp2.getJobMetadata().get().getLabels().size());
             // confirm that the clusters labels got inherited
-            assertEquals(jobLabel, detailsResp2.getJobMetadata().get().getLabels().get(0));
+            //assertEquals(jobLabel, detailsResp2.getJobMetadata().get().getLabels().get(0));
+            assertEquals(1, detailsResp2.getJobMetadata().get()
+                    .getLabels().stream().filter(l -> l.getName().equals(jobLabel.getName())).count());
 
 
         } catch (Exception e) {
