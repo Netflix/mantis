@@ -18,9 +18,12 @@ package io.mantisrx.publish;
 
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.EventPublisher;
+import io.mantisrx.publish.api.PublishStatus;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.StreamMetrics;
@@ -44,14 +47,19 @@ public class MantisEventPublisher implements EventPublisher {
     }
 
     @Override
-    public void publish(final Event event) {
-        publish(StreamType.DEFAULT_EVENT_STREAM, event);
+    public CompletionStage<PublishStatus> publish(final Event event) {
+        return publish(StreamType.DEFAULT_EVENT_STREAM, event);
     }
 
     @Override
-    public void publish(final String streamName, final Event event) {
+    public CompletionStage<PublishStatus> publish(final String streamName, final Event event) {
+
         if (!isEnabled()) {
-            return;
+            return CompletableFuture.completedFuture(PublishStatus.SKIPPED_CLIENT_NOT_ENABLED);
+        }
+
+        if (event == null || event.isEmpty()) {
+            return CompletableFuture.completedFuture(PublishStatus.SKIPPED_INVALID_EVENT);
         }
 
         final Optional<BlockingQueue<Event>> streamQ = streamManager.registerStream(streamName);
@@ -62,8 +70,11 @@ public class MantisEventPublisher implements EventPublisher {
                 boolean success = streamQ.get().offer(event);
                 if (!success) {
                     streamMetricsO.ifPresent(m -> m.getMantisEventsDroppedCounter().increment());
+                    return CompletableFuture.completedFuture(PublishStatus.FAILED_QUEUE_FULL);
                 } else {
                     streamMetricsO.ifPresent(m -> m.getMantisEventsProcessedCounter().increment());
+                    // TODO - propagate a Promise of PublishStatus with the Event and update status async after network send to Mantis
+                    return CompletableFuture.completedFuture(PublishStatus.ENQUEUED);
                 }
             } else {
                 // Don't enqueue the event if there are no active subscriptions for this stream.
@@ -71,7 +82,11 @@ public class MantisEventPublisher implements EventPublisher {
                     m.getMantisActiveQueryCountGauge().set(0.0);
                     m.getMantisEventsSkippedCounter().increment();
                 });
+                return CompletableFuture.completedFuture(PublishStatus.SKIPPED_NO_SUBSCRIPTIONS);
             }
+        } else {
+            // failed to register stream, this could happen if max stream limit is exceeded
+            return CompletableFuture.completedFuture(PublishStatus.FAILED_STREAM_NOT_REGISTERED);
         }
     }
 
