@@ -1,6 +1,6 @@
 package io.mantisrx.master.jobcluster;
 
-import static io.mantisrx.master.jobcluster.JobClusterHelper.SystemLabels.*;
+import static io.mantisrx.master.jobcluster.LabelManager.SystemLabels.*;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
-import io.mantisrx.master.jobcluster.JobClusterHelper.SystemLabels;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.command.InvalidJobException;
@@ -17,13 +16,13 @@ import io.mantisrx.server.master.domain.JobDefinition;
 import org.junit.Test;
 
 
-public class JobClusterHelperTest {
+public class LabelManagerTest {
     @Test
     public void insertResubmitLabelTest() throws InvalidJobException {
 
         JobDefinition jobDefinition = generateJobDefinition("insertResubmitLabelTest", new ArrayList<>(),
                 "art.zip", "1.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertAutoResubmitLabel(jobDefinition);
+        JobDefinition updatedJobDefn = LabelManager.insertAutoResubmitLabel(jobDefinition);
         assertEquals(1, updatedJobDefn.getLabels().size());
         Label label = updatedJobDefn.getLabels().get(0);
         assertEquals(MANTIS_IS_RESUBMIT_LABEL.name(), label.getName());
@@ -35,7 +34,7 @@ public class JobClusterHelperTest {
         labels.add(new Label(MANTIS_IS_RESUBMIT_LABEL.name(), "true"));
         JobDefinition jobDefinition = generateJobDefinition("DoNotinsertResubmitLabelIfAlreadyExistsTest",
                 labels, "art.zip", "1.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertAutoResubmitLabel(jobDefinition);
+        JobDefinition updatedJobDefn = LabelManager.insertAutoResubmitLabel(jobDefinition);
         assertEquals(1, updatedJobDefn.getLabels().size());
         Label label = updatedJobDefn.getLabels().get(0);
         assertEquals(MANTIS_IS_RESUBMIT_LABEL.name(), label.getName());
@@ -46,7 +45,7 @@ public class JobClusterHelperTest {
         String artifactName = "art.zip";
         JobDefinition jobDefinition = generateJobDefinition("insertResubmitLabelTest", new ArrayList<>(),
                 artifactName, "1.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertSystemLabels(jobDefinition, false);
+        JobDefinition updatedJobDefn = LabelManager.insertSystemLabels(jobDefinition, false);
         assertEquals(2, updatedJobDefn.getLabels().size());
 
         List<Label> labels = updatedJobDefn.getLabels().stream().filter(
@@ -65,7 +64,7 @@ public class JobClusterHelperTest {
         labels.add(new Label(MANTIS_ARTIFACT_LABEL.name(), "art0.zip"));
         JobDefinition jobDefinition = generateJobDefinition("replaceArtifactLabelTest", labels,
                 artifactName, "1.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertSystemLabels(jobDefinition, false);
+        JobDefinition updatedJobDefn = LabelManager.insertSystemLabels(jobDefinition, false);
         assertEquals(2, updatedJobDefn.getLabels().size());
 
         labels = updatedJobDefn.getLabels().stream().filter(
@@ -83,7 +82,7 @@ public class JobClusterHelperTest {
         String artifactName = "art.zip";
         JobDefinition jobDefinition = generateJobDefinition("insertVersionLabelTest", new ArrayList<>(),
                 artifactName, "1.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertSystemLabels(jobDefinition, false);
+        JobDefinition updatedJobDefn = LabelManager.insertSystemLabels(jobDefinition, false);
         assertEquals(2, updatedJobDefn.getLabels().size());
 
         List<Label> labels = updatedJobDefn.getLabels().stream().filter(
@@ -104,7 +103,7 @@ public class JobClusterHelperTest {
         labels.add(new Label(MANTIS_VERSION_LABEL.name(), v0));
         JobDefinition jobDefinition = generateJobDefinition("replaceVersionLabelTest", labels,
                 artifactName, "2.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertSystemLabels(jobDefinition, false);
+        JobDefinition updatedJobDefn = LabelManager.insertSystemLabels(jobDefinition, false);
         assertEquals(2, updatedJobDefn.getLabels().size());
 
         labels = updatedJobDefn.getLabels().stream().filter(
@@ -124,7 +123,7 @@ public class JobClusterHelperTest {
         labels.add(new Label(MANTIS_ARTIFACT_LABEL.name(), "art0.zip"));
         JobDefinition jobDefinition = generateJobDefinition("systemLabelTest", labels,
                 artifactName,"1.0");
-        JobDefinition updatedJobDefn = JobClusterHelper.insertSystemLabels(jobDefinition, true);
+        JobDefinition updatedJobDefn = LabelManager.insertSystemLabels(jobDefinition, true);
         assertEquals(3, updatedJobDefn.getLabels().size());
         for(Label l : updatedJobDefn.getLabels()) {
             if(l.getName().equals(MANTIS_ARTIFACT_LABEL.name())) {

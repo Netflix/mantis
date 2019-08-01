@@ -96,7 +96,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 
 import io.mantisrx.runtime.JobConstraints;
-import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
@@ -1295,7 +1294,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             JobDefinition resolvedJobDefn = getResolvedJobDefinition(request.getSubmitter(),request.getJobDefinition());
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobClusterStatusEvent(LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
                 "Job submit request received", jobClusterMetadata.getJobClusterDefinition().getName()));
-            resolvedJobDefn = JobClusterHelper.insertSystemLabels(resolvedJobDefn, request.isAutoResubmit());
+            resolvedJobDefn = LabelManager.insertSystemLabels(resolvedJobDefn, request.isAutoResubmit());
             
             
             submitJob(resolvedJobDefn, sender, request.getSubmitter());

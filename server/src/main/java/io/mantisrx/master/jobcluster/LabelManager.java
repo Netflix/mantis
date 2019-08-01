@@ -11,12 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class JobClusterHelper {
+public class LabelManager {
 
     public enum SystemLabels {
         MANTIS_IS_RESUBMIT_LABEL("_mantis.isResubmit"),
         MANTIS_ARTIFACT_LABEL("_mantis.artifact"),
-        MANTIS_VERSION_LABEL("_mantis.version");
+        MANTIS_VERSION_LABEL("_mantis.version"),
+        MANTIS_SUBMITTER_LABEL("_mantis.submitter"),
+        MANTIS_OWNER_EMAIL_LABEL("_mantis.ownerEmail"),
+        MANTIS_CRITIALITY_LABEL("_mantis.criticality"),
+        MANTIS_DATA_ORIGIN_LABEL("_mantis.dataOrigin"),
+        MANTIS_JOB_TYPE_LABEL("_mantis.jobType");
         public final String label;
         SystemLabels(String s) {
             this.label = s;
@@ -24,9 +29,12 @@ public class JobClusterHelper {
     };
 
 
-    private static final Logger logger = LoggerFactory.getLogger(JobClusterHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(LabelManager.class);
 
 
+    static int numberOfMandatoryLabels() {
+        return 2;
+    }
     static JobDefinition insertSystemLabels(JobDefinition resolvedJobDefn, boolean autoResubmit) {
         JobDefinition updatedJobDefn = resolvedJobDefn;
         if(autoResubmit) {

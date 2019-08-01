@@ -1611,8 +1611,8 @@ public class JobClusterTest {
 
             assertEquals(SUCCESS, detailsResp.responseCode);
             assertEquals(JobState.Accepted, detailsResp.getJobMetadata().get().getState());
-            // The + 2 is for the two system labels that are always added
-            assertEquals(clusterLabels.size() + 2,detailsResp.getJobMetadata().get().getLabels().size());
+            //
+            assertEquals(clusterLabels.size() + LabelManager.numberOfMandatoryLabels(),detailsResp.getJobMetadata().get().getLabels().size());
             // confirm that the clusters labels got inherited
             assertEquals(1, detailsResp.getJobMetadata().get()
                     .getLabels().stream().filter(l -> l.getName().equals("clabelName")).count());
