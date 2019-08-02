@@ -111,7 +111,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
 
     @Override
     public void refreshSubscriptions() {
-        if (mrePublishConfiguration.isMREClientEnabled()) {
+        // refresh subscriptions only if the Publish client is enabled and has streams registered by MantisEventPublisher
+        if (mrePublishConfiguration.isMREClientEnabled() && !streamManager.getRegisteredStreams().isEmpty()) {
             for (Map.Entry<String, String> e : mrePublishConfiguration.streamNameToJobClusterMapping().entrySet()) {
                 String streamName = e.getKey();
                 if (streamManager.getRegisteredStreams().contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -339,6 +340,43 @@ public class DefaultSubscriptionTrackerTest {
             assertTrue(subIdToSubMap2.containsKey(sub.getSubscriptionId()));
             assertEquals(sub.getQuery(), subIdToSubMap2.get(sub.getSubscriptionId()).getRawQuery());
         });
+    }
+
+    @Test
+    public void testSubsNotRefreshOnNoRegisteredStreams() throws IOException {
+        String streamName = StreamType.DEFAULT_EVENT_STREAM;
+        String jobCluster = streamJobClusterMap.get(streamName);
+        String jobId = jobCluster + "-1";
+
+        Set<String> streams = Collections.singleton(streamName);
+        when(mockStreamManager.getRegisteredStreams()).thenReturn(Collections.emptySet(), streams);
+//        when(mockStreamManager.getRegisteredStreams()).thenReturn(streams);
+
+        // worker 1 subs list
+        MantisServerSubscriptionEnvelope majoritySubs = SubscriptionsHelper.createSubsEnvelope(2, 0);
+        mantisWorker1.stubFor(get(urlMatching("/\\?jobId=.*"))
+                                  .willReturn(aResponse()
+                                                  .withStatus(200)
+                                                  .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(majoritySubs)))
+        );
+
+        JobDiscoveryInfo jdi = new JobDiscoveryInfo(jobCluster, jobId,
+                                                    Collections.singletonMap(1, new StageWorkers(jobCluster, jobId, 1, Collections.singletonList(
+                                                        new MantisWorker("127.0.0.1", mantisWorker1.port())
+                                                    ))));
+        when(mockJobDiscovery.getCurrentJobWorkers(jobCluster)).thenReturn(Optional.of(jdi));
+        for (String stream : streamJobClusterMap.keySet()) {
+            if (!stream.equals(StreamType.DEFAULT_EVENT_STREAM)) {
+                when(mockJobDiscovery.getCurrentJobWorkers(streamJobClusterMap.get(streamJobClusterMap.get(stream)))).thenReturn(Optional.empty());
+            }
+        }
+
+        subscriptionTracker.refreshSubscriptions();
+
+        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
+        assertFalse(currentSubsO.isPresent());
+        verify(mockStreamManager, times(1)).getRegisteredStreams();
+        verifyZeroInteractions(mockJobDiscovery);
     }
 
     private static class SubscriptionsHelper {
