@@ -43,6 +43,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     private final MrePublishConfiguration mrePublishConfiguration;
     private final Registry registry;
     private final StreamManager streamManager;
+    private final Counter refreshSubscriptionInvokedCount;
     private final Counter refreshSubscriptionSuccessCount;
     private final Counter refreshSubscriptionFailedCount;
     private final Counter staleSubscriptionRemovedCount;
@@ -55,6 +56,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         this.mrePublishConfiguration = mrePublishConfiguration;
         this.registry = registry;
         this.streamManager = streamManager;
+        this.refreshSubscriptionInvokedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionInvokedCount");
         this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionSuccessCount");
         this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionFailedCount");
         this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry, "staleSubscriptionRemovedCount");
@@ -111,11 +113,16 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
 
     @Override
     public void refreshSubscriptions() {
+        refreshSubscriptionInvokedCount.increment();
         // refresh subscriptions only if the Publish client is enabled and has streams registered by MantisEventPublisher
-        if (mrePublishConfiguration.isMREClientEnabled() && !streamManager.getRegisteredStreams().isEmpty()) {
-            for (Map.Entry<String, String> e : mrePublishConfiguration.streamNameToJobClusterMapping().entrySet()) {
+        boolean mantisPublishEnabled = mrePublishConfiguration.isMREClientEnabled();
+        Set<String> registeredStreams = streamManager.getRegisteredStreams();
+        if (mantisPublishEnabled && !registeredStreams.isEmpty()) {
+            Map<String, String> streamJobClusterMap = mrePublishConfiguration.streamNameToJobClusterMapping();
+            for (Map.Entry<String, String> e : streamJobClusterMap.entrySet()) {
                 String streamName = e.getKey();
-                if (streamManager.getRegisteredStreams().contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
+                LOG.debug("processing stream {}", streamName);
+                if (registeredStreams.contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
                     String jobCluster = e.getValue();
                     try {
                         Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(streamName, jobCluster);
@@ -141,6 +148,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                     LOG.debug("will not fetch subscriptions for un-registered stream {}", streamName);
                 }
             }
+        } else {
+            LOG.debug("subscription refresh skipped (client enabled {} registered streams {})", mantisPublishEnabled, registeredStreams);
         }
     }
 
