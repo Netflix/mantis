@@ -229,7 +229,7 @@ public class JobRouteTest {
                         jobRouteHandler,
                         system);
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
-                        jobClusterRouteHandler);
+                        jobClusterRouteHandler, system);
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler);

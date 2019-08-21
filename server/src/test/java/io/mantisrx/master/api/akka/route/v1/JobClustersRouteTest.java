@@ -41,6 +41,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import org.mockito.Mockito;
 import org.omg.PortableInterceptor.NON_EXISTENT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +103,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
 
-                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler);
+                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow =
                         app.createRoute(Function.identity())
                            .flow(system, materializer);

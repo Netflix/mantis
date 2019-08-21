@@ -162,7 +162,7 @@ public class JobsRouteTest extends RouteTestBase {
                         jobClusterRouteHandler,
                         jobRouteHandler);
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
-                        jobClusterRouteHandler);
+                        jobClusterRouteHandler, system);
                 final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(
                         mockAgentClusterOps);
                 final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(
