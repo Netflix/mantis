@@ -25,7 +25,7 @@ ext {
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
-    mantisVersion = '1.+'
+    mantisVersion = '1.2.+'
     mesosVersion = '1.0.1'
     rxJavaReactiveStreamsVersion = '1.+'
     testngVersion = '6.14.+'
@@ -60,16 +60,5 @@ dependencies {
 
     testCompile "com.typesafe.akka:akka-testkit_2.12:$akkaVersion"
     testCompile "junit:junit:4.+"
-    testCompile "org.testng:testng:6.+"
     testCompile "org.mockito:mockito-all:2.+"
-}
-
-task testNG(type: Test) {
-    useTestNG() {
-        suites 'src/test/resources/testng.xml'
-    }
-}
-
-test {
-    dependsOn testNG
 }
