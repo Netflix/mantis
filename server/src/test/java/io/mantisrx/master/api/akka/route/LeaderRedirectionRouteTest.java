@@ -45,7 +45,9 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -59,7 +61,7 @@ public class LeaderRedirectionRouteTest {
     private static final int serverPort = 8205;
     private static final int targetEndpointPort = serverPort;
     private static final MasterDescription fakeMasterDesc = new MasterDescription(
-        "localhost",
+        "example.com",
         "127.0.0.1", targetEndpointPort,
         targetEndpointPort + 2,
         targetEndpointPort + 4,
@@ -188,36 +190,40 @@ public class LeaderRedirectionRouteTest {
 
     @Test(dependsOnMethods = { "testMasterInfoAPIWhenLeader" })
     public void testMasterInfoAPIWhenNotLeader() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
         leadershipMgr.stopBeingLeader();
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
-        responseFuture
-            .thenCompose(r -> {
-                logger.info("headers {} {}", r.getHeaders(), r.status());
-                assertEquals(302, r.status().intValue());
-                assert(r.getHeader("Access-Control-Allow-Origin").isPresent());
-                assertEquals("*", r.getHeader("Access-Control-Allow-Origin").get().value());
-                assert(r.getHeader("Location").isPresent());
-                assertEquals("http://localhost:"+targetEndpointPort+"/api/masterinfo", r.getHeader("Location").get().value());
+        try {
+            responseFuture
+                .thenCompose(r -> {
+                    logger.info("headers {} {}", r.getHeaders(), r.status());
+                    assertEquals(302, r.status().intValue());
+                    assert(r.getHeader("Access-Control-Allow-Origin").isPresent());
+                    assertEquals("*", r.getHeader("Access-Control-Allow-Origin").get().value());
+                    assert(r.getHeader("Location").isPresent());
+                    assertEquals("http://example.com:"+targetEndpointPort+"/api/masterinfo", r.getHeader("Location").get().value());
 
-                CompletionStage<HttpEntity.Strict> strictEntity = r.entity().toStrict(1000, materializer);
-                return strictEntity.thenCompose(s ->
-                    s.getDataBytes()
-                        .runFold(ByteString.empty(), (acc, b) -> acc.concat(b), materializer)
-                        .thenApply(s2 -> s2.utf8String())
-                );
-            })
-            .whenComplete((msg, t) -> {
-                try {
-                    String responseMessage = getResponseMessage(msg, t);
-                    logger.info("got response {}", responseMessage);
-                } catch (Exception e) {
-                    fail("unexpected error "+ e.getMessage());
-                }
-                latch.countDown();
-            });
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+                    CompletionStage<HttpEntity.Strict> strictEntity = r.entity().toStrict(1000, materializer);
+                    return strictEntity.thenCompose(s ->
+                        s.getDataBytes()
+                            .runFold(ByteString.empty(), (acc, b) -> acc.concat(b), materializer)
+                            .thenApply(s2 -> s2.utf8String())
+                    );
+                })
+                .whenComplete((msg, t) -> {
+                    try {
+                        String responseMessage = getResponseMessage(msg, t);
+                        logger.info("got response {}", responseMessage);
+                    } catch (Exception e) {
+                        fail("unexpected error "+ e.getMessage());
+                    }
+                }).toCompletableFuture()
+            .get(2, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
         leadershipMgr.becomeLeader();
         testMasterInfoAPIWhenLeader();
     }
