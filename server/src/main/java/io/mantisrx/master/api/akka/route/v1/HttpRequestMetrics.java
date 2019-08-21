@@ -36,6 +36,7 @@ public class HttpRequestMetrics {
     public static class Endpoints {
         public static final String JOB_CLUSTERS = "api.v1.jobClusters";
         public static final String JOB_CLUSTER_INSTANCE = "api.v1.jobClusters.instance";
+        public static final String JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO = "api.v1.jobClusters.instance.latestJobDiscoveryInfo";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_ARTIFACT = "api.v1.jobClusters.instance.actions.updateArtifact";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_SLA = "api.v1.jobClusters.instance.actions.updateSla";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_MIGRATION_STRATEGY = "api.v1.jobClusters.instance.actions.updateMigrationStrategy";
@@ -64,6 +65,7 @@ public class HttpRequestMetrics {
         private static String[] endpoints = new String[]{
                 JOB_CLUSTERS,
                 JOB_CLUSTER_INSTANCE,
+                JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO,
                 JOB_CLUSTER_INSTANCE_ACTION_UPDATE_ARTIFACT,
                 JOB_CLUSTER_INSTANCE_ACTION_UPDATE_SLA,
                 JOB_CLUSTER_INSTANCE_ACTION_UPDATE_MIGRATION_STRATEGY,

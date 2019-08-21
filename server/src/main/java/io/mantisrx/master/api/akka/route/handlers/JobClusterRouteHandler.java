@@ -43,5 +43,7 @@ public interface JobClusterRouteHandler {
 
     CompletionStage<JobClusterManagerProto.GetJobClusterResponse> getJobClusterDetails(final JobClusterManagerProto.GetJobClusterRequest request);
 
+    CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> getLatestJobDiscoveryInfo(final JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request);
+
     CompletionStage<JobClusterManagerProto.ListJobClustersResponse> getAllJobClusters(final JobClusterManagerProto.ListJobClustersRequest request);
 }

@@ -42,16 +42,17 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
 
 
 /***
- * JobsRoute
+ * JobClustersRoute
  *  Defines the following end points:
  *  api/v1/jobsClusters                               (GET, POST)
+ *  api/v1/jobClusters/{}/latestJobDiscoveryInfo      (GET)
  *  api/v1/jobClusters/{}                             (GET, POST, PUT, DELETE)
- *  api/v1/jobClusters/{}/actions/updateArtifact      (GET, POST)
- *  api/v1/jobClusters/{}/actions/updateSla           (GET, POST)
- *  api/v1/jobClusters/{}/actions/updateMigrationStrategy       (GET, POST)
- *  api/v1/jobClusters/{}/actions/updateLabel                   (GET, POST)
- *  api/v1/jobClusters/{}/actions/enableCluster                 (GET, POST)
- *  api/v1/jobClusters/{}/actions/disableCluster                (GET, POST)
+ *  api/v1/jobClusters/{}/actions/updateArtifact      (POST)
+ *  api/v1/jobClusters/{}/actions/updateSla           (POST)
+ *  api/v1/jobClusters/{}/actions/updateMigrationStrategy       (POST)
+ *  api/v1/jobClusters/{}/actions/updateLabel                   (POST)
+ *  api/v1/jobClusters/{}/actions/enableCluster                 (POST)
+ *  api/v1/jobClusters/{}/actions/disableCluster                (POST)
  */
 public class JobClustersRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobClustersRoute.class);
@@ -95,6 +96,15 @@ public class JobClustersRoute extends BaseRoute {
                                 )
                         ),
 
+                        // api/v1/jobClusters/{}/latestJobDiscoveryInfo
+                        path(
+                            PathMatchers.segment().slash("latestJobDiscoveryInfo"),
+                            (clusterName) -> pathEndOrSingleSlash(() -> concat(
+
+                                // GET
+                                get(() -> getLatestJobDiscoveryInfo(clusterName))
+                            ))
+                         ),
                         // api/v1/jobClusters/{}/actions/updateArtifact
                         path(
                                 PathMatchers.segment().slash("actions").slash("updateArtifact"),
@@ -242,6 +252,23 @@ public class JobClustersRoute extends BaseRoute {
         });
     }
 
+    private Route getLatestJobDiscoveryInfo(String clusterName) {
+        logger.info("GET /api/v1/jobClusters/{}/latestJobDiscoveryInfo called", clusterName);
+
+        return parameterOptional(StringUnmarshallers.STRING, ParamName.PROJECTION_FIELDS, (fields) ->
+            completeAsync(
+                jobClusterRouteHandler.getLatestJobDiscoveryInfo(new GetLatestJobDiscoveryInfoRequest(clusterName)),
+                resp -> {
+                    HttpResponse httpResponse = this.toDefaultHttpResponse(resp);
+                    return complete(
+                        httpResponse.status(),
+                        resp.getDiscoveryInfo().orElse(null),
+                        Jackson.marshaller(super.parseFilter(fields.orElse(null),
+                                                             null)));
+                },
+                HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO,
+                HttpRequestMetrics.HttpVerb.GET));
+    }
 
     private Route getJobClusterInstanceRoute(String clusterName) {
         logger.info("GET /api/v1/jobClusters/{} called", clusterName);

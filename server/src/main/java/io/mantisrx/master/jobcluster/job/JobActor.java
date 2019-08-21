@@ -72,6 +72,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsR
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersResponse;
@@ -456,6 +458,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
                         new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR,
                                 genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
+                    new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR,
+                                                genUnexpectedMsg(x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class,
                         (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
@@ -521,6 +526,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
                         new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
                                 x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
+                    new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                        x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
                 .match(KillJobResponse.class, (x) -> LOGGER.info("Received Kill Job Response in"
                         + "Terminating State Ignoring"))
@@ -579,6 +587,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
                 // scheduling Info observable
                 .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
+                .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
 
@@ -625,6 +634,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
 
                 .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
+                .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
 
                 .match(JobProto.SendWorkerAssignementsIfChanged.class, this::onSendWorkerAssignments)
 
@@ -703,7 +713,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(
                         new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
                                 x.toString(), this.jobId.getId(), state), empty()), getSelf()))
-
+                // latest scheduling Info
+                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(
+                    new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
+                        x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
                 //UNEXPECTED MESSAGES END //
                 .matchAny(x -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
@@ -769,6 +782,26 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
     }
 
+    @Override
+    public void onGetLatestJobDiscoveryInfo(GetLatestJobDiscoveryInfoRequest r) {
+        LOGGER.trace("Entering onGetLatestJobDiscoveryInfo {}", r);
+        ActorRef sender = getSender();
+        if (r.getJobCluster().equals(this.jobId.getCluster())) {
+            JobSchedulingInfo schedulingInfo = workerManager.getJobStatusSubject().getValue();
+            if (schedulingInfo != null) {
+                sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SUCCESS, "",
+                                                                  of(schedulingInfo)), getSelf());
+            } else {
+                LOGGER.info("discoveryInfo from BehaviorSubject is null {}", jobId);
+                sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SERVER_ERROR, "discoveryInfo from BehaviorSubject is null " + jobId,
+                                                                  of(schedulingInfo)), getSelf());
+            }
+        } else {
+            String msg = "JobCluster in the request " + r.getJobCluster() + " does not match Job Actors job ID " + this.jobId;
+            LOGGER.warn(msg);
+            sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SERVER_ERROR, msg, empty()), getSelf());
+        }
+    }
 
     /**
      * Worker Events sent by the worker itself of the Scheduling Service.

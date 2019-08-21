@@ -23,7 +23,6 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 import com.google.common.collect.Lists;
-import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -92,6 +91,8 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobC
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitialize;
@@ -242,6 +243,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
               //  .match(JobClusterProto.KillJobResponse.class, this::onJobKillResponse)
                 .match(GetJobDetailsRequest.class, this::onGetJobDetailsRequest)
                 .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
+                .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
                 .match(ScaleStageRequest.class, this::onScaleStage)
                 .match(ResubmitWorkerRequest.class, this::onResubmitWorker)
 
@@ -293,6 +295,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(JobClusterProto.KillJobResponse.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), state)))
                 .match(GetJobDetailsRequest.class, (x) -> getSender().tell(new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), empty()), getSelf()))
                 .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), empty()), getSelf()))
+                .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), empty()), getSelf()))
                 .match(ScaleStageRequest.class, (x) -> getSender().tell(new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state), 0), getSelf()))
                 .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(WorkerEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), state)))
@@ -714,6 +717,17 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             jobClusterInfo.get().jobClusterActor.forward(request, getContext());
         } else {
             sender.tell(new GetJobSchedInfoResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "JobCluster " + request.getJobId().getCluster() + " doesn't exist", Optional.empty()), getSelf());
+        }
+    }
+
+    @Override
+    public void onGetLatestJobDiscoveryInfo(GetLatestJobDiscoveryInfoRequest request) {
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getJobCluster());
+        ActorRef sender = getSender();
+        if(jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            sender.tell(new GetLatestJobDiscoveryInfoResponse(request.requestId, CLIENT_ERROR_NOT_FOUND, "JobCluster " + request.getJobCluster() + " doesn't exist", Optional.empty()), getSelf());
         }
     }
 

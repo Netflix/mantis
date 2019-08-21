@@ -65,6 +65,8 @@ public interface IJobClustersManager {
 
     void onGetJobStatusSubject(JobClusterManagerProto.GetJobSchedInfoRequest request);
 
+    void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request);
+
     void onJobListCompleted(JobClusterManagerProto.ListCompletedJobsInClusterRequest r);
     
     void onJobList(ListJobsRequest request);

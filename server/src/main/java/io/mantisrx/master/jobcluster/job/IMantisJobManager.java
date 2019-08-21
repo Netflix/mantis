@@ -51,6 +51,13 @@ public interface IMantisJobManager {
     void onGetJobStatusSubject(JobClusterManagerProto.GetJobSchedInfoRequest r);
 
     /**
+     * Process the discovery info request from a client by responding with
+     *
+     * @param r {@link JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse} with latest discovery info for this job
+     */
+    void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest r);
+
+    /**
      * Process worker related events. Update worker state and transition worker to new states.
      *
      * @param e

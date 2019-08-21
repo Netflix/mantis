@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
+import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
@@ -51,6 +52,8 @@ import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.vm.AgentClusterOperations;
+import io.mantisrx.server.core.JobSchedulingInfo;
+import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
@@ -67,6 +70,7 @@ import org.testng.util.Strings;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
@@ -307,6 +311,14 @@ public class JobsRouteTest extends RouteTestBase {
     }
 
     @Test(dependsOnMethods = {"testJobSubmit"})
+    public void testGetLatestJobDiscoveryInfo() throws InterruptedException {
+        testGet(
+            getJobClusterLatestJobDiscoveryInfoEp(TEST_CLUSTER),
+            StatusCodes.OK,
+            this::validateSchedulingInfo);
+    }
+
+    @Test(dependsOnMethods = {"testJobSubmit"})
     public void testGetOnJobInstanceActionsEp_NotAllowed() throws InterruptedException {
 
         for (String action : new String[]{"resubmitWorker", "quickSubmit", "scaleStage"}) {
@@ -540,7 +552,6 @@ public class JobsRouteTest extends RouteTestBase {
 
             validateJobDefinition(responseObj.get("jobDefinition"));
 
-            assert responseObj.get("labels").size() == 5;
             assert responseObj.get("parameters").size() == 2;
             assert responseObj.get("clusterName").asText().equals(TEST_CLUSTER);
         } catch (IOException ex) {
@@ -561,6 +572,24 @@ public class JobsRouteTest extends RouteTestBase {
             assert false;
         }
 
+    }
+
+    private void validateSchedulingInfo(String s) {
+        try {
+            assert !Strings.isNullOrEmpty(s);
+            JobSchedulingInfo jsi = Jackson.fromJSON(s, JobSchedulingInfo.class);
+            assert jsi.getJobId().equals(TEST_JOB_ID);
+            Map<Integer, WorkerAssignments> wa = jsi.getWorkerAssignments();
+            assert wa.size() == 2;
+            assert wa.containsKey(0);
+            assert wa.get(0).getNumWorkers() == 1;
+
+            assert wa.containsKey(1);
+            assert wa.get(1).getNumWorkers() == 1;
+        } catch (IOException e) {
+            logger.error("caught unexpected exc {}", e.getMessage(), e);
+            assert false;
+        }
     }
 
     private void validateJobsListResponse(String resp, int expectedJobsCount, boolean isCompact) {
@@ -591,7 +620,7 @@ public class JobsRouteTest extends RouteTestBase {
         assert responseObj.get("jobSla").get("durationType").asText().equals("Perpetual");
         assert responseObj.get("numberOfStages").asInt() == 2;
         assert responseObj.get("schedulingInfo") != null;
-        assert responseObj.get("labels").size() == 5;
+        assert responseObj.get("labels").size() == 7;
     }
 
     private void validateJobsListItem(JsonNode responseObj, boolean isCompact) {
@@ -609,7 +638,7 @@ public class JobsRouteTest extends RouteTestBase {
             assert responseObj.get("numWorkers").asInt() == 2;
             assert responseObj.get("totCPUs").asInt() == 2;
             assert responseObj.get("totMemory").asInt() == 400;
-            assert responseObj.get("labels").size() == 5;
+            assert responseObj.get("labels").size() == 7;
             assert responseObj.get("jobId").asText().startsWith("sine-function-");
 
 
@@ -624,7 +653,7 @@ public class JobsRouteTest extends RouteTestBase {
                     "mantis-examples-sine-function-0.2.9.zip");
             assert responseObj.get("jobMetadata").get("numStages").asInt() == 2;
             assert responseObj.get("jobMetadata").get("parameters").size() == 2;
-            assert responseObj.get("jobMetadata").get("labels").size() == 5;
+            assert responseObj.get("jobMetadata").get("labels").size() == 7;
 
             assert responseObj.get("jobMetadata") != null;
             assert responseObj.get("stageMetadataList") != null;

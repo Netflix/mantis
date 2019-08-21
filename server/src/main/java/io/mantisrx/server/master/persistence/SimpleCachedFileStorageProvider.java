@@ -362,7 +362,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     //
     private void storeWorker(JobId jobId, IMantisWorkerMetadata workerMetadata, boolean rewrite)
             throws IOException {
-        System.out.println("Storing worker " + workerMetadata);
+        logger.info("Storing worker {}", workerMetadata);
         File workerFile = new File(getWorkerFilename(SPOOL_DIR, jobId.getId(), workerMetadata.getWorkerIndex(), workerMetadata.getWorkerNumber()));
         if (rewrite)
             workerFile.delete();
@@ -370,7 +370,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         try (PrintWriter pwrtr = new PrintWriter(workerFile)) {
             mapper.writeValue(pwrtr, workerMetadata);
         }
-        System.out.println("Stored worker " + workerMetadata);
+        logger.info("Stored worker {}", workerMetadata);
     }
 
     //

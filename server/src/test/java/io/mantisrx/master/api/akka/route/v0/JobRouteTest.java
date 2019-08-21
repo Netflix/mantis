@@ -95,7 +95,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -505,58 +507,62 @@ public class JobRouteTest {
 
     @Test(dependsOnMethods = {"testJobClusterGetJobDetail"})
     public void testJobClusterGetJobsCompact() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
                 HttpRequest.GET(jobAPIEndpoint("list?compact=true")));
-        responseFuture
-                .thenCompose(r -> processRespFut(r, Optional.of(200)))
-                .whenComplete((msg, t) -> {
-                    String responseMessage = getResponseMessage(msg, t);
+        try {
+            responseFuture
+                    .thenCompose(r -> processRespFut(r, Optional.of(200)))
+                    .whenComplete((msg, t) -> {
+                        String responseMessage = getResponseMessage(msg, t);
 
-                    logger.info("got response {}", responseMessage);
-                    List<CompactJobInfo> jobIdInfos = Collections.emptyList();
-                    try {
-                        jobIdInfos = Jackson.fromJSON(
-                                responseMessage,
-                                new TypeReference<List<CompactJobInfo>>() {
-                                });
-                    } catch (IOException e) {
-                        logger.error(
-                                "failed to get CompactJobInfos from json response {}",
-                                responseMessage,
-                                e);
-                        fail("compactJobInfo deser failed");
-                    }
-                    logger.info("got jobIdInfos {}", jobIdInfos);
-                    assertEquals(1, jobIdInfos.size());
+                        logger.info("got response {}", responseMessage);
+                        List<CompactJobInfo> jobIdInfos = Collections.emptyList();
+                        try {
+                            jobIdInfos = Jackson.fromJSON(
+                                    responseMessage,
+                                    new TypeReference<List<CompactJobInfo>>() {
+                                    });
+                        } catch (IOException e) {
+                            logger.error(
+                                    "failed to get CompactJobInfos from json response {}",
+                                    responseMessage,
+                                    e);
+                            fail("compactJobInfo deser failed");
+                        }
+                        logger.info("got jobIdInfos {}", jobIdInfos);
+                        assertEquals(1, jobIdInfos.size());
 
-                    CompactJobInfo jobInfo = jobIdInfos.get(0);
+                        CompactJobInfo jobInfo = jobIdInfos.get(0);
 
-                    assertEquals("sine-function-1", jobInfo.getJobId());
+                        assertEquals("sine-function-1", jobInfo.getJobId());
 
-                    assertEquals("nmahilani", jobInfo.getUser());
+                        assertEquals("nmahilani", jobInfo.getUser());
 
-                    assertEquals(5, jobInfo.getLabels().size());
-                    assertEquals(2, jobInfo.getNumStages());
-                    assertEquals(2, jobInfo.getNumWorkers());
-                    assertTrue(jobInfo.getState().equals(MantisJobState.Accepted) ||
-                               jobInfo.getState().equals(MantisJobState.Launched));
-                    assertEquals(2.0, jobInfo.getTotCPUs(), 0.0);
+                        assertEquals(7, jobInfo.getLabels().size());
+                        assertEquals(2, jobInfo.getNumStages());
+                        assertEquals(2, jobInfo.getNumWorkers());
+                        assertTrue(jobInfo.getState().equals(MantisJobState.Accepted) ||
+                                   jobInfo.getState().equals(MantisJobState.Launched));
+                        assertEquals(2.0, jobInfo.getTotCPUs(), 0.0);
 
-                    // TODO total memory is 400 for old master, 2048 for new master
-                    //assertEquals(400.0, jobInfo.getTotMemory(), 0.0);
-                    assertEquals(MantisJobDurationType.Perpetual, jobInfo.getType());
-                    assertTrue(Collections.singletonMap("Started", 2)
-                                          .equals(jobInfo.getStatesSummary()) ||
-                               Collections.singletonMap("StartInitiated", 2)
-                                          .equals(jobInfo.getStatesSummary()) ||
-                               Collections.singletonMap("Launched", 2)
-                                          .equals(jobInfo.getStatesSummary()) ||
-                               Collections.singletonMap("Accepted", 2)
-                                          .equals(jobInfo.getStatesSummary()));
-                    latch.countDown();
-                });
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+                        // TODO total memory is 400 for old master, 2048 for new master
+                        //assertEquals(400.0, jobInfo.getTotMemory(), 0.0);
+                        assertEquals(MantisJobDurationType.Perpetual, jobInfo.getType());
+                        assertTrue(Collections.singletonMap("Started", 2)
+                                              .equals(jobInfo.getStatesSummary()) ||
+                                   Collections.singletonMap("StartInitiated", 2)
+                                              .equals(jobInfo.getStatesSummary()) ||
+                                   Collections.singletonMap("Launched", 2)
+                                              .equals(jobInfo.getStatesSummary()) ||
+                                   Collections.singletonMap("Accepted", 2)
+                                              .equals(jobInfo.getStatesSummary()));
+                    }).toCompletableFuture()
+            .get(2, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test(dependsOnMethods = {"testJobClusterGetJobsCompact"})

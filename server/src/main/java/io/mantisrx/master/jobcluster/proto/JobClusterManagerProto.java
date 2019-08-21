@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
+import akka.actor.ActorRef;
 import akka.http.javadsl.model.Uri;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -42,13 +43,10 @@ import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import rx.subjects.BehaviorSubject;
-import scala.Int;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -1698,6 +1696,57 @@ public class JobClusterManagerProto {
         @Override
         public String toString() {
             return "GetJobDetailsResponse [jobMetadata=" + jobMetadata + "]";
+        }
+    }
+
+    public static final class GetLatestJobDiscoveryInfoRequest extends BaseRequest {
+
+        private final String jobCluster;
+
+        public GetLatestJobDiscoveryInfoRequest(final String jobCluster) {
+            Preconditions.checkNotNull(jobCluster, "jobCluster");
+            this.jobCluster = jobCluster;
+        }
+
+        public String getJobCluster() {
+            return jobCluster;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            GetLatestJobDiscoveryInfoRequest that = (GetLatestJobDiscoveryInfoRequest) o;
+            return Objects.equals(jobCluster, that.jobCluster);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(jobCluster);
+        }
+
+        @Override
+        public String toString() {
+            return "GetLatestJobDiscoveryInfoRequest{" +
+                "jobCluster='" + jobCluster + '\'' +
+                '}';
+        }
+    }
+
+    public static final class GetLatestJobDiscoveryInfoResponse extends BaseResponse {
+        private final Optional<JobSchedulingInfo> jobSchedulingInfo;
+
+        public GetLatestJobDiscoveryInfoResponse(
+            final long requestId,
+            final ResponseCode code,
+            final String msg,
+            final Optional<JobSchedulingInfo> jobSchedulingInfo) {
+            super(requestId, code, msg);
+            this.jobSchedulingInfo = jobSchedulingInfo;
+        }
+
+        public Optional<JobSchedulingInfo> getDiscoveryInfo() {
+            return jobSchedulingInfo;
         }
     }
 

@@ -59,6 +59,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsR
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitializeResponse;
@@ -385,6 +387,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(KillJobRequest.class, (x) -> x.requestor.tell(new KillJobResponse(x.requestId, CLIENT_ERROR, JobState.Noop, genUnexpectedMsg(x.toString(), this.name, state), x.jobId, x.user), getSelf()))
             .match(GetJobDetailsRequest.class, (x) -> getSender().tell(new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
+            .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(ListJobIdsRequest.class, (x) -> getSender().tell(new ListJobIdsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), new ArrayList()), getSelf()))
@@ -476,6 +479,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(ScaleStageRequest.class, (x) -> getSender().tell(new ScaleStageResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), 0), getSelf()))
             .match(KillJobRequest.class, (x) -> getSender().tell(new KillJobResponse(x.requestId, CLIENT_ERROR, JobState.Noop, genUnexpectedMsg(x.toString(), this.name, state), x.jobId, x.user), getSelf()))
             .match(GetJobSchedInfoRequest.class, (x) -> getSender().tell(new GetJobSchedInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
+            .match(GetLatestJobDiscoveryInfoRequest.class, (x) -> getSender().tell(new GetLatestJobDiscoveryInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(GetLastSubmittedJobIdStreamRequest.class, (x) -> getSender().tell(new GetLastSubmittedJobIdStreamResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty()), getSelf()))
             .match(ListJobIdsRequest.class, (x) -> getSender().tell(new ListJobIdsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
             .match(ListJobsRequest.class, (x) -> getSender().tell(new ListJobsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), Lists.newArrayList()), getSelf()))
@@ -564,6 +568,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(SubmitJobRequest.class, this::onJobSubmit)
                 .match(GetJobDetailsRequest.class, this::onGetJobDetailsRequest)
                 .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
+                .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
                 .match(KillJobRequest.class, this::onJobKillRequest)
                 .match(ResubmitWorkerRequest.class, this::onResubmitWorkerRequest)
                 .match(JobProto.JobInitialized.class, this::onJobInitialized)
@@ -1699,6 +1704,44 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         getSender().tell(response, getSelf());
         if(logger.isTraceEnabled()) { logger.trace("Exit GetJobDetails {}", req); }
     }
+
+    @Override
+    public void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request) {
+        if(logger.isTraceEnabled()) { logger.trace("Enter onGetLatestJobDiscoveryInfo {}", request); }
+        ActorRef sender = getSender();
+        if(this.name.equals(request.getJobCluster())) {
+            JobId latestJobId = jobIdSubmissionSubject.getValue();
+            logger.debug("[{}] latest job Id for cluster: {}", name, latestJobId);
+            if (latestJobId != null) {
+                Optional<JobInfo> jInfo = jobManager.getJobInfoForNonTerminalJob(latestJobId);
+                if (jInfo.isPresent()) {
+                   // ask job actor for discovery info
+                    jInfo.get().jobActor.forward(request, getContext());
+                } else {
+                    logger.info("job info not found for job ID when looking up discovery info: {}", latestJobId);
+                    sender.tell(new GetLatestJobDiscoveryInfoResponse(request.requestId,
+                                                                      SERVER_ERROR,
+                                                                      "JobInfo not found when looking up discovery info for " + latestJobId,
+                                                                      empty()), getSelf());
+                }
+            } else {
+                // no latest job ID found for this job cluster
+                logger.debug("no latest Job ID found for job cluster {}", name);
+                sender.tell(new GetLatestJobDiscoveryInfoResponse(request.requestId,
+                                                                  CLIENT_ERROR_NOT_FOUND,
+                                                                  "No latest jobId found for job cluster " + name,
+                                                                  empty()), getSelf());
+            }
+
+        } else {
+            String msg = "Job Cluster " + request.getJobCluster() + " In request does not match the name of this actor " + this.name;
+            logger.warn(msg);
+            sender.tell(new JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse(request.requestId, SERVER_ERROR, msg, empty()), getSelf());
+        }
+        if(logger.isTraceEnabled()) { logger.trace("Exit onGetLatestJobDiscoveryInfo {}", request); }
+
+    }
+
     @Override
     public void onGetJobStatusSubject(GetJobSchedInfoRequest request) {
         if(logger.isTraceEnabled()) { logger.trace("Enter onGetJobStatusSubject {}", request); }
