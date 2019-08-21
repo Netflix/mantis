@@ -27,6 +27,7 @@ import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERV
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -790,11 +791,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             JobSchedulingInfo schedulingInfo = workerManager.getJobStatusSubject().getValue();
             if (schedulingInfo != null) {
                 sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SUCCESS, "",
-                                                                  of(schedulingInfo)), getSelf());
+                                                                  ofNullable(schedulingInfo)), getSelf());
             } else {
                 LOGGER.info("discoveryInfo from BehaviorSubject is null {}", jobId);
                 sender.tell(new GetLatestJobDiscoveryInfoResponse(r.requestId, SERVER_ERROR, "discoveryInfo from BehaviorSubject is null " + jobId,
-                                                                  of(schedulingInfo)), getSelf());
+                                                                  empty()), getSelf());
             }
         } else {
             String msg = "JobCluster in the request " + r.getJobCluster() + " does not match Job Actors job ID " + this.jobId;

@@ -178,7 +178,7 @@ public class JobClustersRoute extends BaseRoute {
     }
 
     private Route getJobClustersRoute() {
-        logger.info("GET /api/v1/jobClusters called");
+        logger.debug("GET /api/v1/jobClusters called");
         return parameterMap(param -> extractUri(
 
                 uri -> completeAsync(
