@@ -134,4 +134,10 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
             .thenApply(JobClusterManagerProto.ListJobClustersResponse.class::cast);
         return response;
     }
+
+    @Override
+    public CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> getLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request) {
+        CompletionStage<JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse> response = ask(jobClustersManagerActor, request, timeout)
+            .thenApply(JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse.class::cast);
+        return response;    }
 }

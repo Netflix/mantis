@@ -32,31 +32,37 @@ public class LeadershipManagerLocalImpl implements ILeadershipManager {
         this.masterDescription = masterDescription;
     }
 
+    @Override
     public void becomeLeader() {
         logger.info("Becoming leader now");
         isLeader = true;
     }
 
+    @Override
     public boolean isLeader() {
         logger.debug("is leader? {}", isLeader);
         return isLeader;
     }
 
+    @Override
     public boolean isReady() {
         return isReady;
     }
 
+    @Override
     public void setLeaderReady() {
         logger.info("marking leader READY");
         isReady = true;
     }
 
+    @Override
     public void stopBeingLeader() {
         logger.info("Asked to stop being leader now");
         isReady = false;
         isLeader = false;
     }
 
+    @Override
     public MasterDescription getDescription() {
         return masterDescription;
     }

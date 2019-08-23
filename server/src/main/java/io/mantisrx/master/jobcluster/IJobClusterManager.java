@@ -83,6 +83,8 @@ public interface IJobClusterManager {
 
     void onGetJobDetailsRequest(GetJobDetailsRequest req);
 
+    void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request);
+
     void onGetJobStatusSubject(JobClusterManagerProto.GetJobSchedInfoRequest request);
 
     void onGetLastSubmittedJobIdSubject(JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest request);

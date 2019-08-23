@@ -16,11 +16,15 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import akka.actor.ActorSystem;
+import akka.http.caching.javadsl.Cache;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
+import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import com.google.common.base.Strings;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -38,20 +42,23 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import static akka.http.javadsl.server.PathMatchers.segment;
+import static akka.http.javadsl.server.directives.CachingDirectives.cache;
+import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
 
 
 /***
- * JobsRoute
+ * JobClustersRoute
  *  Defines the following end points:
  *  api/v1/jobsClusters                               (GET, POST)
+ *  api/v1/jobClusters/{}/latestJobDiscoveryInfo      (GET)
  *  api/v1/jobClusters/{}                             (GET, POST, PUT, DELETE)
- *  api/v1/jobClusters/{}/actions/updateArtifact      (GET, POST)
- *  api/v1/jobClusters/{}/actions/updateSla           (GET, POST)
- *  api/v1/jobClusters/{}/actions/updateMigrationStrategy       (GET, POST)
- *  api/v1/jobClusters/{}/actions/updateLabel                   (GET, POST)
- *  api/v1/jobClusters/{}/actions/enableCluster                 (GET, POST)
- *  api/v1/jobClusters/{}/actions/disableCluster                (GET, POST)
+ *  api/v1/jobClusters/{}/actions/updateArtifact      (POST)
+ *  api/v1/jobClusters/{}/actions/updateSla           (POST)
+ *  api/v1/jobClusters/{}/actions/updateMigrationStrategy       (POST)
+ *  api/v1/jobClusters/{}/actions/updateLabel                   (POST)
+ *  api/v1/jobClusters/{}/actions/enableCluster                 (POST)
+ *  api/v1/jobClusters/{}/actions/disableCluster                (POST)
  */
 public class JobClustersRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobClustersRoute.class);
@@ -59,10 +66,13 @@ public class JobClustersRoute extends BaseRoute {
             segment("api").slash("v1").slash("jobClusters");
 
     private final JobClusterRouteHandler jobClusterRouteHandler;
+    private final Cache<Uri, RouteResult> routeResultCache;
 
 
-    public JobClustersRoute(final JobClusterRouteHandler jobClusterRouteHandler) {
+    public JobClustersRoute(final JobClusterRouteHandler jobClusterRouteHandler,
+                            final ActorSystem actorSystem) {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
+        this.routeResultCache = createCache(actorSystem, 5, 50, 250);
     }
 
     public Route constructRoutes() {
@@ -95,6 +105,15 @@ public class JobClustersRoute extends BaseRoute {
                                 )
                         ),
 
+                        // api/v1/jobClusters/{}/latestJobDiscoveryInfo
+                        path(
+                            PathMatchers.segment().slash("latestJobDiscoveryInfo"),
+                            (clusterName) -> pathEndOrSingleSlash(() -> concat(
+
+                                // GET
+                                get(() -> getLatestJobDiscoveryInfo(clusterName))
+                            ))
+                         ),
                         // api/v1/jobClusters/{}/actions/updateArtifact
                         path(
                                 PathMatchers.segment().slash("actions").slash("updateArtifact"),
@@ -168,33 +187,36 @@ public class JobClustersRoute extends BaseRoute {
     }
 
     private Route getJobClustersRoute() {
-        logger.info("GET /api/v1/jobClusters called");
-        return parameterMap(param -> extractUri(
-
-                uri -> completeAsync(
+        logger.trace("GET /api/v1/jobClusters called");
+        return parameterMap(param ->
+                alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
+                uri -> {
+                    logger.debug("GET all job clusters");
+                    return completeAsync(
                         jobClusterRouteHandler.getAllJobClusters(
-                                new ListJobClustersRequest()),
+                            new ListJobClustersRequest()),
                         resp -> completeOK(
-                                           resp.getJobClusters(
-                                                   param.getOrDefault(
-                                                           ParamName.JOBCLUSTER_FILTER_MATCH,
-                                                           null),
-                                                   this.parseInteger(param.getOrDefault(
-                                                           ParamName.PAGINATION_LIMIT,
-                                                           null)),
-                                                   this.parseInteger(param.getOrDefault(
-                                                           ParamName.PAGINATION_OFFSET,
-                                                           null)),
-                                                   param.getOrDefault(ParamName.SORT_BY, null),
-                                                   this.parseBoolean(param.getOrDefault(
-                                                           ParamName.SORT_ASCENDING,
-                                                           null)),
-                                                   uri),
-                                           Jackson.marshaller(super.parseFilter(
-                                                   param.getOrDefault(ParamName.PROJECTION_FIELDS, null),
-                                                   null))),
+                            resp.getJobClusters(
+                                param.getOrDefault(
+                                    ParamName.JOBCLUSTER_FILTER_MATCH,
+                                    null),
+                                this.parseInteger(param.getOrDefault(
+                                    ParamName.PAGINATION_LIMIT,
+                                    null)),
+                                this.parseInteger(param.getOrDefault(
+                                    ParamName.PAGINATION_OFFSET,
+                                    null)),
+                                param.getOrDefault(ParamName.SORT_BY, null),
+                                this.parseBoolean(param.getOrDefault(
+                                    ParamName.SORT_ASCENDING,
+                                    null)),
+                                uri),
+                            Jackson.marshaller(super.parseFilter(
+                                param.getOrDefault(ParamName.PROJECTION_FIELDS, null),
+                                null))),
                         HttpRequestMetrics.Endpoints.JOB_CLUSTERS,
-                        HttpRequestMetrics.HttpVerb.GET)));
+                        HttpRequestMetrics.HttpVerb.GET);
+                })));
     }
 
     private Route postJobClustersRoute() {
@@ -242,6 +264,27 @@ public class JobClustersRoute extends BaseRoute {
         });
     }
 
+    private Route getLatestJobDiscoveryInfo(String clusterName) {
+        logger.trace("GET /api/v1/jobClusters/{}/latestJobDiscoveryInfo called", clusterName);
+
+        return parameterOptional(StringUnmarshallers.STRING, ParamName.PROJECTION_FIELDS, (fields) ->
+            cache(routeResultCache, getRequestUriKeyer, () ->
+                extractUri(uri -> {
+                    logger.debug("GET latest job discovery info for {}", clusterName);
+                    return completeAsync(
+                        jobClusterRouteHandler.getLatestJobDiscoveryInfo(new GetLatestJobDiscoveryInfoRequest(clusterName)),
+                        resp -> {
+                            HttpResponse httpResponse = this.toDefaultHttpResponse(resp);
+                            return complete(
+                                httpResponse.status(),
+                                resp.getDiscoveryInfo().orElse(null),
+                                Jackson.marshaller(super.parseFilter(fields.orElse(null),
+                                                                     null)));
+                        },
+                        HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO,
+                        HttpRequestMetrics.HttpVerb.GET);
+                })));
+    }
 
     private Route getJobClusterInstanceRoute(String clusterName) {
         logger.info("GET /api/v1/jobClusters/{} called", clusterName);

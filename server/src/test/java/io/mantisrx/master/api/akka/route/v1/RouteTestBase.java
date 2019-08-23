@@ -33,7 +33,9 @@ import org.testng.util.Strings;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -70,6 +72,13 @@ abstract class RouteTestBase {
                 "http://127.0.0.1:%d/api/v1/jobClusters/%s",
                 serverPort,
                 clusterName);
+    }
+
+    final String getJobClusterLatestJobDiscoveryInfoEp(String clusterName) {
+        return String.format(
+            "http://127.0.0.1:%d/api/v1/jobClusters/%s/latestJobDiscoveryInfo",
+            serverPort,
+            clusterName);
     }
 
     final String getJobClusterUpdateArtifactEp(String clusterName) {
@@ -294,7 +303,8 @@ abstract class RouteTestBase {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(request);
 
-        responseFuture
+        try {
+            responseFuture
                 .thenCompose(r -> processRespFut(r, expectedResponseCode.intValue()))
                 .whenComplete((msg, t) -> {
                     logger.info("got response: {}", msg);
@@ -303,8 +313,14 @@ abstract class RouteTestBase {
                         validatorFunc.validate(msg);
                     }
                     latch.countDown();
-                });
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+                })
+                .toCompletableFuture()
+                .get(2, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @FunctionalInterface

@@ -46,3 +46,12 @@ run {
     standardInput = System.in
 }
 
+task testNG(type: Test) {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+}
+
+test {
+    dependsOn testNG
+}

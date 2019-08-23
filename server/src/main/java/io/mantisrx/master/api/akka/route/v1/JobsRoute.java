@@ -216,10 +216,10 @@ public class JobsRoute extends BaseRoute {
                        parameterMultiMap(params ->  extractUri (uri -> {
                             String endpoint;
                             if (clusterName.isPresent()) {
-                                logger.info("GET /api/v1/jobClusters/{}/jobs called", clusterName);
+                                logger.debug("GET /api/v1/jobClusters/{}/jobs called", clusterName);
                                 endpoint = HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_JOBS;
                             } else {
-                                logger.info("GET /api/v1/jobs called");
+                                logger.debug("GET /api/v1/jobs called");
                                 endpoint = HttpRequestMetrics.Endpoints.JOBS;
                             }
 

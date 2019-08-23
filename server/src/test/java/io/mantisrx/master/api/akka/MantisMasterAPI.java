@@ -233,7 +233,7 @@ public class MantisMasterAPI extends AllDirectives {
                 agentClusterOperations,
                 system);
 
-        final JobClustersRoute v1JobClustersRoute = new JobClustersRoute(jobClusterRouteHandler);
+        final JobClustersRoute v1JobClustersRoute = new JobClustersRoute(jobClusterRouteHandler, system);
         final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler);
         final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
         final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(agentClusterOperations);

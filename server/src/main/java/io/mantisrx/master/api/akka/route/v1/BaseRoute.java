@@ -22,17 +22,29 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import akka.actor.ActorSystem;
+import akka.http.caching.LfuCache;
+import akka.http.caching.javadsl.Cache;
+import akka.http.caching.javadsl.CachingSettings;
+import akka.http.caching.javadsl.LfuCacheSettings;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.HttpHeader;
+import akka.http.javadsl.model.HttpMethods;
+import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.ExceptionHandler;
+import akka.http.javadsl.server.RequestContext;
 import akka.http.javadsl.server.Route;
+import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.server.directives.RouteAdapter;
+import akka.japi.JavaPartialFunction;
 import akka.japi.pf.PFBuilder;
 import akka.pattern.AskTimeoutException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -47,6 +59,7 @@ import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.concurrent.duration.Duration;
 
 
 abstract class BaseRoute extends AllDirectives {
@@ -63,6 +76,18 @@ abstract class BaseRoute extends AllDirectives {
     private static final Iterable<HttpHeader> DEFAULT_RESPONSE_HEADERS =
             Arrays.asList(ACCESS_CONTROL_ALLOW_ORIGIN_HEADER);
 
+    protected final JavaPartialFunction<RequestContext, Uri> getRequestUriKeyer = new JavaPartialFunction<RequestContext, Uri>() {
+        public Uri apply(RequestContext in, boolean isCheck) {
+            final HttpRequest request = in.getRequest();
+            final boolean isGet = request.method() == HttpMethods.GET;
+            if (isGet) {
+                return request.getUri();
+            } else {
+                throw noMatch();
+            }
+        }
+    };
+
     private String hostName;
 
     BaseRoute() {
@@ -73,6 +98,15 @@ abstract class BaseRoute extends AllDirectives {
         }
     }
 
+    protected Cache<Uri, RouteResult> createCache(ActorSystem actorSystem, int initialCapacity, int maxCapacity, int ttlMillis) {
+        final CachingSettings defaultCachingSettings = CachingSettings.create(actorSystem);
+        final LfuCacheSettings lfuCacheSettings = defaultCachingSettings.lfuCacheSettings()
+            .withInitialCapacity(initialCapacity)
+            .withMaxCapacity(maxCapacity)
+            .withTimeToLive(Duration.create(ttlMillis, TimeUnit.MILLISECONDS));
+        final CachingSettings cachingSettings = defaultCachingSettings.withLfuCacheSettings(lfuCacheSettings);
+        return LfuCache.create(cachingSettings);
+    }
 
     protected abstract Route constructRoutes();
 
@@ -242,7 +276,7 @@ abstract class BaseRoute extends AllDirectives {
         node.put("requestId", requestId);
         return node.toString();
     }
-    
+
     FilterProvider parseFilter(String fields, String target) {
         if (Strings.isNullOrEmpty(fields)) {
             return null;

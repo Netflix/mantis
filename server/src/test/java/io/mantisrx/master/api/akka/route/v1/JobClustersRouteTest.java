@@ -41,6 +41,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import org.mockito.Mockito;
+import org.omg.PortableInterceptor.NON_EXISTENT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
@@ -53,6 +55,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -100,7 +103,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
 
-                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler);
+                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow =
                         app.createRoute(Function.identity())
                            .flow(system, materializer);
@@ -161,6 +164,22 @@ public class JobClustersRouteTest extends RouteTestBase {
                         JobClusterPayloads.JOB_CLUSTER_CREATE),
                 StatusCodes.CONFLICT,
                 null);
+    }
+
+    @Test(dependsOnMethods = {"testDuplicateJobClusterCreate"})
+    public void testNonExistentJobClusterLatestJobDiscoveryInfo() throws InterruptedException {
+        testGet(
+            getJobClusterLatestJobDiscoveryInfoEp("NonExistentCluster"),
+            StatusCodes.NOT_FOUND,
+            null);
+    }
+
+    @Test(dependsOnMethods = {"testDuplicateJobClusterCreate"})
+    public void testJobClusterLatestJobDiscoveryInfoNoRunningJobs() throws InterruptedException {
+        testGet(
+            getJobClusterLatestJobDiscoveryInfoEp(TEST_CLUSTER_NAME),
+            StatusCodes.NOT_FOUND,
+            null);
     }
 
     @Test(dependsOnMethods = "testDuplicateJobClusterCreate")
