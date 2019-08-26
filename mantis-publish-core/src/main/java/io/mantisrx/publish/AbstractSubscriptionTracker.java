@@ -68,22 +68,34 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         Set<MantisServerSubscription> prevSubsNotInCurr = new HashSet<>(prev);
         prevSubsNotInCurr.removeAll(curr);
         prevSubsNotInCurr.stream().forEach(subToRemove -> {
-            Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToRemove.getSubscriptionId(), subToRemove.getQuery());
-            if (subscription.isPresent()) {
-                streamManager.removeStreamSubscription(subscription.get());
-            } else {
-                LOG.warn("unexpected to find invalid subscription to remove {}", subToRemove);
+            try {
+                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToRemove.getSubscriptionId(), subToRemove.getQuery());
+                if (subscription.isPresent()) {
+                    streamManager.removeStreamSubscription(subscription.get());
+                } else {
+                    LOG.warn("unexpected to find invalid subscription to remove {}", subToRemove);
+                }
+            } catch (Throwable t) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("failed to remove subscription {}", subToRemove, t);
+                }
             }
         });
 
         Set<MantisServerSubscription> currSubsNotInPrev = new HashSet<>(curr);
         currSubsNotInPrev.removeAll(prev);
         currSubsNotInPrev.stream().forEach(subToAdd -> {
-            Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToAdd.getSubscriptionId(), subToAdd.getQuery());
-            if (subscription.isPresent()) {
-                streamManager.addStreamSubscription(subscription.get());
-            } else {
-                LOG.info("will not add invalid subscription {}", subToAdd);
+            try {
+                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToAdd.getSubscriptionId(), subToAdd.getQuery());
+                if (subscription.isPresent()) {
+                    streamManager.addStreamSubscription(subscription.get());
+                } else {
+                    LOG.info("will not add invalid subscription {}", subToAdd);
+                }
+            } catch (Throwable t) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("failed to add subscription {}", subToAdd, t);
+                }
             }
         });
     }

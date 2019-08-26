@@ -28,6 +28,7 @@ import io.mantisrx.publish.api.EventPublisher;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.internal.mql.MQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +93,8 @@ public class MrePublishClientInitializer {
      * Starts internal components for the Mantis Realtime Events Publisher.
      */
     public void start() {
+        // eagerly load the MQL runtime
+        MQL.init();
         this.scheduledFutures.add(setupSubscriptionTracker(subscriptionsTracker));
         this.scheduledFutures.add(setupDrainer(streamManager, eventTransmitter, tee));
     }
@@ -119,17 +122,24 @@ public class MrePublishClientInitializer {
         EventDrainer eventDrainer =
                 new EventDrainer(config, streamManager, registry, eventProcessor, transmitter, Clock.systemUTC());
 
-        return DRAINER_EXECUTOR.scheduleAtFixedRate(eventDrainer::run,
-                0, config.drainerIntervalMsec(), TimeUnit.MILLISECONDS);
+        return DRAINER_EXECUTOR.scheduleAtFixedRate(() -> {
+                try {
+                    eventDrainer.run();
+                } catch (Throwable t) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("event drainer caught exception", t);
+                    }
+                }
+            }, 0, config.drainerIntervalMsec(), TimeUnit.MILLISECONDS);
     }
 
     private ScheduledFuture<?> setupSubscriptionTracker(SubscriptionTracker subscriptionsTracker) {
         return SUBSCRIPTIONS_EXECUTOR.scheduleAtFixedRate(() -> {
             try {
                 subscriptionsTracker.refreshSubscriptions();
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("failed to refresh scheduledFutures", e);
+                    LOG.debug("failed to refresh subscriptions", t);
                 }
             }
         }, 1, config.subscriptionRefreshIntervalSec(), TimeUnit.SECONDS);
