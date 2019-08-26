@@ -47,7 +47,7 @@ public class SubscriptionFactory {
             return ofNullable(mqlSubscription);
         } catch (Throwable t) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Failed to get Subscription object for {} {}", id, criterion, e);
+                LOG.debug("Failed to get Subscription object for {} {}", id, criterion, t);
             }
             return empty();
         }

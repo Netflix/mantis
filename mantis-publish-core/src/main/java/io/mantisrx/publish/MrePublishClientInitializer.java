@@ -28,6 +28,7 @@ import io.mantisrx.publish.api.EventPublisher;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.internal.mql.MQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +93,8 @@ public class MrePublishClientInitializer {
      * Starts internal components for the Mantis Realtime Events Publisher.
      */
     public void start() {
+        // eagerly load the MQL runtime
+        MQL.init();
         this.scheduledFutures.add(setupSubscriptionTracker(subscriptionsTracker));
         this.scheduledFutures.add(setupDrainer(streamManager, eventTransmitter, tee));
     }
