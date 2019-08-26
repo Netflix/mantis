@@ -119,17 +119,24 @@ public class MrePublishClientInitializer {
         EventDrainer eventDrainer =
                 new EventDrainer(config, streamManager, registry, eventProcessor, transmitter, Clock.systemUTC());
 
-        return DRAINER_EXECUTOR.scheduleAtFixedRate(eventDrainer::run,
-                0, config.drainerIntervalMsec(), TimeUnit.MILLISECONDS);
+        return DRAINER_EXECUTOR.scheduleAtFixedRate(() -> {
+                try {
+                    eventDrainer.run();
+                } catch (Throwable t) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("event drainer caught exception", t);
+                    }
+                }
+            }, 0, config.drainerIntervalMsec(), TimeUnit.MILLISECONDS);
     }
 
     private ScheduledFuture<?> setupSubscriptionTracker(SubscriptionTracker subscriptionsTracker) {
         return SUBSCRIPTIONS_EXECUTOR.scheduleAtFixedRate(() -> {
             try {
                 subscriptionsTracker.refreshSubscriptions();
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("failed to refresh scheduledFutures", e);
+                    LOG.debug("failed to refresh subscriptions", t);
                 }
             }
         }, 1, config.subscriptionRefreshIntervalSec(), TimeUnit.SECONDS);
