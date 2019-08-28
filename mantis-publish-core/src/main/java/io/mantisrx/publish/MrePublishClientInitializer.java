@@ -93,8 +93,6 @@ public class MrePublishClientInitializer {
      * Starts internal components for the Mantis Realtime Events Publisher.
      */
     public void start() {
-        // eagerly load the MQL runtime
-        MQL.init();
         this.scheduledFutures.add(setupSubscriptionTracker(subscriptionsTracker));
         this.scheduledFutures.add(setupDrainer(streamManager, eventTransmitter, tee));
     }
