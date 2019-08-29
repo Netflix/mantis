@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.mantisrx.connector.kafka.KafkaSourceParameters;
+import io.mantisrx.connector.kafka.sink.KafkaSinkJobParameters;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -111,42 +113,19 @@ public class MantisKafkaConsumerConfig extends ConsumerConfig {
 
     private static Map<String, Object> applyJobParamOverrides(Context context, Map<String, Object> parsedValues) {
         final Parameters parameters = context.getParameters();
-        Map<String, Object> defaultProps = defaultProps();
         if (!parsedValues.containsKey(ConsumerConfig.GROUP_ID_CONFIG)) {
             // set consumerGroupId if not already set
-            final String consumerGroupId = (String) parameters.get(ConsumerConfig.GROUP_ID_CONFIG, getGroupId());
+            final String consumerGroupId = (String) parameters.get(KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, getGroupId());
             parsedValues.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         }
 
-        final String bootstrapBrokers = (String) parameters.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, defaultProps.get(BOOTSTRAP_SERVERS_CONFIG));
-        parsedValues.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapBrokers);
-
-        final String autoOffsetReset = (String) parameters.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, defaultProps.get(AUTO_OFFSET_RESET_CONFIG));
-        parsedValues.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
-
-        final String autoCommitEnabled = (String) parameters.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, DEFAULT_AUTO_COMMIT_ENABLED);
-        parsedValues.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, autoCommitEnabled);
-
-        final int autoCommitIntervalMs = (int) parameters.get(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, DEFAULT_AUTO_COMMIT_INTERVAL_MS);
-        parsedValues.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, String.valueOf(autoCommitIntervalMs));
-
-        final int requestTimeoutMs = (int) parameters.get(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, DEFAULT_REQUEST_TIMEOUT_MS);
-        parsedValues.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, String.valueOf(requestTimeoutMs));
-
-        final int sessionTimeoutMs = (int) parameters.get(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, DEFAULT_SESSION_TIMEOUT_MS);
-        parsedValues.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, String.valueOf(sessionTimeoutMs));
-
-        final int heartBeatIntervalMs = (int) parameters.get(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, DEFAULT_HEARTBEAT_INTERVAL_MS);
-        parsedValues.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, String.valueOf(heartBeatIntervalMs));
-
-        final int maxPartitionFetchBytes = (int) parameters.get(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, DEFAULT_MAX_PARTITION_FETCH_BYTES);
-        parsedValues.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, String.valueOf(maxPartitionFetchBytes));
-
-        final int maxPollIntervalMs = (int) parameters.get(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, DEFAULT_MAX_POLL_INTERVAL_MS);
-        parsedValues.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollIntervalMs));
-
-        final int maxPollRecords = (int) parameters.get(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, DEFAULT_MAX_POLL_RECORDS);
-        parsedValues.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords));
+        for (String key : configNames()) {
+            Object value = parameters.get(KafkaSourceParameters.PREFIX + key, null);
+            if (value != null) {
+                LOGGER.info("job param override for key {} -> {}", key, value);
+                parsedValues.put(key, value);
+            }
+        }
         return parsedValues;
     }
 
@@ -160,9 +139,9 @@ public class MantisKafkaConsumerConfig extends ConsumerConfig {
         Map<String, Object> defaultProps = defaultProps();
         for (String key : configNames()) {
             ParameterDefinition.Builder<String> builder = new StringParameter()
-                .name(key)
+                .name(KafkaSourceParameters.PREFIX + key)
                 .validator(Validators.alwaysPass())
-                .description(key);
+                .description(KafkaSourceParameters.PREFIX + key);
             if (defaultProps.containsKey(key)) {
                 builder = builder.defaultValue((String) defaultProps.get(key));
             }

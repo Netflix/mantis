@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.mantisrx.connector.kafka.ParameterTestUtils;
 import io.mantisrx.connector.kafka.source.serde.ParserType;
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
 import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;

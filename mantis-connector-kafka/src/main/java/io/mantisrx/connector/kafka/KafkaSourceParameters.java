@@ -18,10 +18,11 @@ package io.mantisrx.connector.kafka;
 
 public class KafkaSourceParameters {
 
+    public static final String PREFIX= "kafka.source.consumer.";
     public static final String CHECKPOINT_STRATEGY = "checkpointStrategy";
     public static final String CONSUMER_POLL_TIMEOUT_MS = "consumerPollTimeoutMs";
     public static final String NUM_KAFKA_CONSUMER_PER_WORKER = "numKafkaConsumerPerWorker";
-    public static final String TOPIC = "topic";
+    public static final String TOPIC = PREFIX + "topic";
     public static final String KAFKA_VIP = "kafkaVip";
     public static final String MAX_BYTES_IN_PROCESSING = "maxBytesInProcessing";
     public static final String PARSER_TYPE = "messageParserType";
