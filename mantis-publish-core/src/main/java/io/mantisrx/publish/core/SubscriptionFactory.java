@@ -46,9 +46,7 @@ public class SubscriptionFactory {
             MQLSubscription mqlSubscription = new MQLSubscription(id, criterion);
             return ofNullable(mqlSubscription);
         } catch (Throwable t) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Failed to get Subscription object for {} {}", id, criterion, t);
-            }
+            LOG.info("Failed to get Subscription object for {} {}", id, criterion, t);
             return empty();
         }
     }
