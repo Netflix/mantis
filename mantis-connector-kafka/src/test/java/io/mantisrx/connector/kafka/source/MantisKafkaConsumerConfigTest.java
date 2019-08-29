@@ -25,11 +25,13 @@ import java.util.Arrays;
 import java.util.Map;
 
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
+import io.mantisrx.connector.kafka.ParameterTestUtils;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.Parameters;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.RangeAssignor;
 import org.apache.kafka.common.metrics.JmxReporter;
+import org.apache.kafka.common.requests.IsolationLevel;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
@@ -73,8 +75,9 @@ public class MantisKafkaConsumerConfigTest {
         String testTopic = "topic123";
         String testConsumerGroupId = "testKafkaConsumer-1";
         Parameters params = ParameterTestUtils.createParameters(KafkaSourceParameters.TOPIC, testTopic,
-                                                                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                                                                ConsumerConfig.GROUP_ID_CONFIG, testConsumerGroupId);
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, testConsumerGroupId,
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 500);
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
 
@@ -86,5 +89,6 @@ public class MantisKafkaConsumerConfigTest {
 
         assertEquals("earliest", consumerProperties.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG));
         assertEquals(testConsumerGroupId, consumerProperties.get(ConsumerConfig.GROUP_ID_CONFIG));
+        assertEquals(500, consumerProperties.get(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG));
     }
 }

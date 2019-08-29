@@ -37,6 +37,7 @@ import com.netflix.spectator.api.NoopRegistry;
 import info.batey.kafka.unit.KafkaUnit;
 import io.mantisrx.connector.kafka.KafkaAckable;
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
+import io.mantisrx.connector.kafka.ParameterTestUtils;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.WorkerInfo;
@@ -87,8 +88,8 @@ public class KafkaSourceTest {
         KafkaSource kafkaSource = new KafkaSource(new NoopRegistry());
         Context context = mock(Context.class);
         Parameters params = ParameterTestUtils.createParameters(KafkaSourceParameters.TOPIC, testTopic,
-                                                                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                                                                ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
         when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
@@ -132,8 +133,8 @@ public class KafkaSourceTest {
         KafkaSource kafkaSource = new KafkaSource(new NoopRegistry());
         Context context = mock(Context.class);
         Parameters params = ParameterTestUtils.createParameters(KafkaSourceParameters.TOPIC, testTopic,
-                                                                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                                                                ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
         when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
@@ -179,8 +180,8 @@ public class KafkaSourceTest {
         Context context = mock(Context.class);
         Parameters params = ParameterTestUtils.createParameters(KafkaSourceParameters.NUM_KAFKA_CONSUMER_PER_WORKER, 2,
                                                                 KafkaSourceParameters.TOPIC, testTopic,
-                                                                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                                                                ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
         when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
@@ -246,8 +247,8 @@ public class KafkaSourceTest {
                                                                 KafkaSourceParameters.TOPIC, testTopic,
                                                                 KafkaSourceParameters.ENABLE_STATIC_PARTITION_ASSIGN, true,
                                                                 KafkaSourceParameters.TOPIC_PARTITION_COUNTS, testTopic + ":" + numPartitions,
-                                                                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                                                                ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                                                                KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
         when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));

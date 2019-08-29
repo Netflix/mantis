@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.kafka.source;
+package io.mantisrx.connector.kafka;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +28,7 @@ import io.mantisrx.runtime.parameter.Parameters;
 
 
 public class ParameterTestUtils {
-    static Parameters createParameters(Object... params) {
+    public static Parameters createParameters(Object... params) {
         Map<String, Object> paramsMap = new HashMap();
         Set<String> requiredParams = new HashSet<>();
 
