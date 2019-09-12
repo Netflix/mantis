@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import clojure.java.api.Clojure;
-import clojure.lang.IFn;
+import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
+import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.mql.jvm.core.Query;
 import org.slf4j.Logger;
@@ -60,7 +60,7 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
     public static final String PROCESSED_COUNTER_METRIC_NAME = "processedCounter";
     public static final String DROPPED_COUNTER_METRIC_NAME = "droppedCounter";
 
-    private static IFn require = Clojure.var("clojure.core", "require");
+    private static IFn require = Clojure.var("io.mantisrx.mql.shaded.clojure.core", "require");
 
     static {
         require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.core"));
