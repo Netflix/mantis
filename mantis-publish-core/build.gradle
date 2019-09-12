@@ -15,7 +15,7 @@
  */
 
 ext {
-    mqlVersion = '3.1.5'
+    mqlVersion = '3.2.2'
     mantisDiscoveryVersion = '1.2.+'
 }
 
