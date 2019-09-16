@@ -314,12 +314,6 @@ public class KafkaSource implements Source<KafkaAckable> {
                        .validator(Validators.notNullOrEmpty())
                        .required()
                        .build());
-        params.add(new StringParameter()
-                       .name(KafkaSourceParameters.KAFKA_VIP)
-                       .description("vip address of source Kafka cluster")
-                       .validator(Validators.notNullOrEmpty())
-                       .required()
-                       .build());
         // Optional parameters
         params.add(new StringParameter()
                        .name(KafkaSourceParameters.CHECKPOINT_STRATEGY)

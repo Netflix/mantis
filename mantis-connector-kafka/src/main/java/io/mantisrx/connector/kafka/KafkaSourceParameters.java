@@ -23,7 +23,6 @@ public class KafkaSourceParameters {
     public static final String CONSUMER_POLL_TIMEOUT_MS = "consumerPollTimeoutMs";
     public static final String NUM_KAFKA_CONSUMER_PER_WORKER = "numKafkaConsumerPerWorker";
     public static final String TOPIC = PREFIX + "topic";
-    public static final String KAFKA_VIP = "kafkaVip";
     public static final String MAX_BYTES_IN_PROCESSING = "maxBytesInProcessing";
     public static final String PARSER_TYPE = "messageParserType";
     public static final String PARSE_MSG_IN_SOURCE = "parseMessageInKafkaConsumerThread";
