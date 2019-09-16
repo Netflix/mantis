@@ -109,7 +109,7 @@ public class MantisKafkaProducerConfig extends ProducerConfig {
                 .validator(Validators.alwaysPass())
                 .description(KafkaSinkJobParameters.PREFIX + key);
             if (defaultProps.containsKey(key)) {
-                builder = builder.defaultValue((String) defaultProps.get(key));
+                builder = builder.defaultValue(defaultProps.get(key).toString());
             }
             params.add(builder.build());
         }

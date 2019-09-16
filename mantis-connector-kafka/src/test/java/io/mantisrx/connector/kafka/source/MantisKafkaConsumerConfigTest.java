@@ -31,7 +31,6 @@ import io.mantisrx.runtime.parameter.Parameters;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.RangeAssignor;
 import org.apache.kafka.common.metrics.JmxReporter;
-import org.apache.kafka.common.requests.IsolationLevel;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
