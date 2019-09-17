@@ -143,7 +143,12 @@ public class MantisKafkaConsumerConfig extends ConsumerConfig {
                 .validator(Validators.alwaysPass())
                 .description(KafkaSourceParameters.PREFIX + key);
             if (defaultProps.containsKey(key)) {
-                builder = builder.defaultValue(defaultProps.get(key).toString());
+                Object value = defaultProps.get(key);
+                if (value instanceof Class) {
+                    builder = builder.defaultValue(((Class) value).getCanonicalName());
+                } else {
+                    builder = builder.defaultValue((String) value);
+                }
             }
             params.add(builder.build());
         }
