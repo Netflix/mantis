@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-source-jobs'
+ext {
+    mantisVersion = '1.2.+'
+    mantisConnectorsVersion = '1.2.5'
+    mqlVersion = '3.2.2'
+}
 
-include "kafka-source-job"
-project(":kafka-source-job").name = "mantis-source-job-kafka"
+dependencies {
+    implementation "io.mantisrx:mantis-runtime:$mantisVersion"
+    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "io.mantisrx:mantis-connector-kafka:$mantisConnectorsVersion"
 
-include "publish-source-job"
-project(":publish-source-job").name = "mantis-source-job-publish"
+    testCompile 'junit:junit'
+    testCompile "org.mockito:mockito-all:1.9.5"
+    // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69
+    testCompile 'info.batey.kafka:kafka-unit:1.0'
+}
