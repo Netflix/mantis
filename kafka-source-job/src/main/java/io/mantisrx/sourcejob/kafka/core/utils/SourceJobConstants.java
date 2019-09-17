@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-source-jobs'
+package io.mantisrx.sourcejob.kafka.core.utils;
 
-include "kafka-source-job"
-project(":kafka-source-job").name = "mantis-source-job-kafka"
+public class SourceJobConstants {
 
-include "publish-source-job"
-project(":publish-source-job").name = "mantis-source-job-publish"
+    public static final String SUBSCRIPTION_ID_PARAM_NAME = "subscriptionId";
+    public static final String CRITERION_PARAM_NAME = "criterion";
+
+    public static final String FILTER_PARAM_NAME = "filter";
+    public static final String CLIENT_ID_PARAMETER_NAME = "clientId";
+}

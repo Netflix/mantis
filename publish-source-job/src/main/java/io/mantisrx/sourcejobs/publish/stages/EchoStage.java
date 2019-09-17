@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.mantisrx.common.utils.MantisSourceJobConstants;
 import io.mantisrx.common.codec.Codecs;
-import io.mantisrx.publish.proto.MantisEventEnvelope;
+import io.mantisrx.publish.netty.proto.MantisEventEnvelope;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
