@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xl="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" version="1.1" viewBox="0 0 650 780" width="650" height="780">
+  <defs>
+    <font-face font-family="Helvetica Neue" font-size="36" panose-1="2 0 5 3 0 0 0 2 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="951.9958" descent="-212.99744" font-weight="400">
+      <font-face-src>
+        <font-face-name name="HelveticaNeue"/>
+      </font-face-src>
+    </font-face>
+    <font-face font-family="Helvetica Neue" font-size="36" panose-1="2 0 8 3 0 0 0 9 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="975.0061" descent="-216.99524" font-weight="700">
+      <font-face-src>
+        <font-face-name name="HelveticaNeue-Bold"/>
+      </font-face-src>
+    </font-face>
+    <font-face font-family="Helvetica Neue" font-size="24" panose-1="2 0 8 3 0 0 0 9 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="975.0061" descent="-216.99524" font-weight="700">
+      <font-face-src>
+        <font-face-name name="HelveticaNeue-Bold"/>
+      </font-face-src>
+    </font-face>
+    <font-face font-family="Helvetica Neue" font-size="24" panose-1="2 0 5 3 0 0 0 2 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="951.9958" descent="-212.99744" font-weight="400">
+      <font-face-src>
+        <font-face-name name="HelveticaNeue"/>
+      </font-face-src>
+    </font-face>
+  </defs>
+  <metadata> Produced by OmniGraffle 7.9.2 
+    <dc:date>2018-10-16 19:22:07 +0000</dc:date>
+  </metadata>
+  <g id="Mantis_Job" fill-opacity="1" stroke-dasharray="none" fill="none" stroke-opacity="1" stroke="none">
+    <title>Mantis Job</title>
+    <g id="Mantis_Job: Layer 1">
+      <title>Layer 1</title>
+      <g id="Graphic_2">
+        <rect x="16" y="15" width="617" height="746" fill="#ffffc0"/>
+        <rect x="16" y="15" width="617" height="746" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(21 713.492)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="214.13" y="34">Mantis Job</tspan>
+        </text>
+      </g>
+      <g id="Graphic_3">
+        <rect x="37.5" y="36.5" width="578.5" height="178.5" fill="#80ff80"/>
+        <rect x="37.5" y="36.5" width="578.5" height="178.5" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(42.5 60.71988)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="700" fill="black" x="4.476" y="35">Source:</tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" y="35"> Fetch data in a streaming, </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="4.53" y="78.04425">non-blocking, backpressure-aware </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="220.206" y="121.05225">manner.</tspan>
+        </text>
+      </g>
+      <g id="Graphic_4">
+        <rect x="37.5" y="519" width="578.5" height="178.5" fill="#80ff80"/>
+        <rect x="37.5" y="519" width="578.5" height="178.5" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(42.5 543.2199)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="700" fill="black" x="56.856" y="35">Sink:</tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" y="35"> Push the results of the </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="17.85" y="78.04425">transformation in a non-blocking, </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="102.504" y="121.05225">asynchronous manner.</tspan>
+        </text>
+      </g>
+      <g id="Graphic_5">
+        <rect x="64.5" y="259" width="556.5" height="178.5" fill="#80ffff"/>
+        <rect x="64.5" y="259" width="556.5" height="178.5" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(69.5 305.22992)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="700" fill="black" x="26.062" y="23">Stage:</tspan>
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="400" fill="black" y="23"> Transform the incoming Observable by </tspan>
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="400" fill="black" x="22.306" y="51.69617">applying RxJava operators such as map, scan, </tspan>
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="400" fill="black" x="206.338" y="80.36816">reduce, etc..</tspan>
+        </text>
+      </g>
+      <g id="Graphic_6">
+        <rect x="48" y="274" width="556.5" height="178.5" fill="#80ffff"/>
+        <rect x="48" y="274" width="556.5" height="178.5" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(53 320.22992)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="700" fill="black" x="26.062" y="23">Stage:</tspan>
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="400" fill="black" y="23"> Transform the incoming Observable by </tspan>
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="400" fill="black" x="22.306" y="51.69617">applying RxJava operators such as map, scan, </tspan>
+          <tspan font-family="Helvetica Neue" font-size="24" font-weight="400" fill="black" x="206.338" y="80.36816">reduce, etc..</tspan>
+        </text>
+      </g>
+      <g id="Graphic_7">
+        <rect x="37" y="293" width="556.5" height="178.5" fill="#80ffff"/>
+        <rect x="37" y="293" width="556.5" height="178.5" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(42 295.71588)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="700" fill="black" x="24.166" y="35">Stage:</tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" y="35"> Transform the incoming </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="18.874" y="78.04425">Observable by applying RxJava </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="34.516" y="121.05225">operators such as map, scan, </tspan>
+          <tspan font-family="Helvetica Neue" font-size="36" font-weight="400" fill="black" x="172.882" y="164.06024">reduce, etc..</tspan>
+        </text>
+      </g>
+    </g>
+  </g>
+</svg>
