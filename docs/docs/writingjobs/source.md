@@ -20,7 +20,7 @@ You can string Mantis Jobs together by using the output of one Mantis Job as the
 This is useful if you want to break up your processing into multiple, reusable components and to
 take advantage of code and data reuse.
 
-In such a case, you do not have access to the complete set of [Mantis Query Language (MQL)](/MQL)
+In such a case, you do not have access to the complete set of [Mantis Query Language (MQL)](/mantis/MQL)
 capabilities that you do in the case of a Source Job, but you can use MQL in client mode.
 
 #### Connecting to a Mantis Job
@@ -61,7 +61,7 @@ There are two advantages to this approach:
 
 1. Source Jobs handle all of the implementation details around interacting with the native data
    source.
-1. Source Jobs come with a simple query interface based on the [Mantis Query Language (MQL)](/MQL),
+1. Source Jobs come with a simple query interface based on the [Mantis Query Language (MQL)](/mantis/MQL),
    which allows you to filter the data from the source before processing it. In the case of source
    jobs that fetch data from application servers directly, this filter gets pushed all the way to
    those target servers so that no data flows unless someone is asking for it.
@@ -86,7 +86,7 @@ The difference is that you should pass in additional parameters:
 
 1. `sourceJobName` *(required)* — the name of the source Job Cluster you want to connect to
 1. `sample` *(required)* — use this if you want to [sample] the output `sample` times per second, or set this to `-1` to disable sampling
-1. `criterion` *(required)* — a query expression in [MQL](/MQL) to filter the source
+1. `criterion` *(required)* — a query expression in [MQL](/mantis/MQL) to filter the source
 1. `clientId` *(optional)* — by default, the `jobId` of the client Job; the Source Job uses this to distribute data between all the subscriptions of the client Job
 1. `enableMetaMessages` *(optional)* — the source job may occasionally inject [meta messages] (with the prefix `mantis.meta.`) that indicate things like data drops on the Source Job side.
 
