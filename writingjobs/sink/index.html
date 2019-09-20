@@ -732,17 +732,17 @@
                 
                   <h1>The Sink Component</h1>
                 
-                <p>The <a href="/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>  <a href="/glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">component</a> of a <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a> serves two purposes:</p>
+                <p>The <a href="/mantis/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>  <a href="/mantis/glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">component</a> of a <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a> serves two purposes:</p>
 <ol>
 <li>
 <p><strong>Trigger job execution when a client subscribes to a Job</strong></p>
-<p><a href="/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>  <a href="/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observables</a> have a lazy execution model. Execution begins only when someone
+<p><a href="/mantis/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>  <a href="/mantis/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observables</a> have a lazy execution model. Execution begins only when someone
 subscribes to the Observable. A Mantis Job is a complex Observable chain, and to trigger the
 execution of such a Job, somebody needs to subscribe to it. This happens in the Sink component.</p>
 </li>
 <li>
 <p><strong>Output the results of job execution in a streaming fashion</strong></p>
-<p>Once you are done processing the input stream in the <a href="/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> component, you need to
+<p>Once you are done processing the input stream in the <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> component, you need to
 figure out what to do with the results. Most jobs that write to some other system do so within
 the Processing Stage component itself (in such a case, the Sink component is usually used for
 debugging purposes).</p>
@@ -765,7 +765,7 @@ debugging purposes).</p>
 
 
 <h3 id="sse-sink">SSE Sink<a class="headerlink" href="#sse-sink" title="Permanent link">&para;</a></h3>
-<p>The <a href="/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> Sink is commonly used. It makes the results of your Stage transformation available in the
+<p>The <a href="/mantis/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> Sink is commonly used. It makes the results of your Stage transformation available in the
 form of an SSE stream.</p>
 <p>To get an SSE Sink, pass an encoder function to the <code>sse()</code> method that accepts the data to be
 streamed as input and outputs data encoded as needed. The following example attaches a sink to a

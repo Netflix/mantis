@@ -1339,7 +1339,7 @@
                   <h1>API Reference</h1>
                 
                 <p>In addition to the <a href="mantisui">Mantis UI</a>, there is a REST API with which you can maintain
-<a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> and <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Clusters</a>. This page describes the open source version of the Mantis REST
+<a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> and <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Clusters</a>. This page describes the open source version of the Mantis REST
 API.</p>
 <p>You can use the Mantis REST API to submit Jobs based on existing Job Cluster or to connect to the
 output of running Jobs. It is easier to set up or update new Job Clusters by using the Mantis UI,
@@ -1358,7 +1358,7 @@ but you can also do this with the Mantis REST API.</p>
 <tr>
 <td><a href="#get-a-list-of-clusters"><code>/api/v1/jobClusters</code></a></td>
 <td><code>GET</code></td>
-<td>Return a list of Mantis <a href="/glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">clusters</a>.</td>
+<td>Return a list of Mantis <a href="/mantis/glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">clusters</a>.</td>
 </tr>
 <tr>
 <td><a href="#create-a-new-cluster"><code>/api/v1/jobClusters</code></a></td>
@@ -1383,22 +1383,22 @@ but you can also do this with the Mantis REST API.</p>
 <tr>
 <td><a href="#update-a-clusters-artifacts"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateArtifact</code></a></td>
 <td><code>POST</code></td>
-<td>Update the job cluster <a href="/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact</a> and optionally resubmit the <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">job</a>.</td>
+<td>Update the job cluster <a href="/mantis/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact</a> and optionally resubmit the <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">job</a>.</td>
 </tr>
 <tr>
 <td><a href="#update-a-clusters-sla"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateSla</code></a></td>
 <td><code>POST</code></td>
-<td>Update cluster <a href="/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> information.</td>
+<td>Update cluster <a href="/mantis/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> information.</td>
 </tr>
 <tr>
 <td><a href="#update-a-clusters-migration-strategy"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateMigrationStrategy</code></a></td>
 <td><code>POST</code></td>
-<td>Update the cluster <a href="/glossary#migration">migration strategy</a>.</td>
+<td>Update the cluster <a href="/mantis/glossary#migration">migration strategy</a>.</td>
 </tr>
 <tr>
 <td><a href="#update-a-clusters-labels"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateLabel</code></a></td>
 <td><code>POST</code></td>
-<td>Update cluster <a href="/glossary#label" title="A label is a text key/value pair that you can add to a Job Cluster or to an individual Job to make it easier to search for or group.">labels</a>.</td>
+<td>Update cluster <a href="/mantis/glossary#label" title="A label is a text key/value pair that you can add to a Job Cluster or to an individual Job to make it easier to search for or group.">labels</a>.</td>
 </tr>
 <tr>
 <td><a href="#enable-a-cluster"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/enableCluster</code></a></td>
@@ -1475,7 +1475,7 @@ but you can also do this with the Mantis REST API.</p>
 <tr>
 <td><a href="#resubmit-a-worker"><code>/api/v1/jobs/<var>jobID</var>/actions/resubmitWorker</code></a></td>
 <td><code>POST</code></td>
-<td>Resubmit a <a href="/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a>.</td>
+<td>Resubmit a <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1492,7 +1492,7 @@ but you can also do this with the Mantis REST API.</p>
 <tr>
 <td><a href="#return-job-master-information"><code>/api/v1/masterInfo</code></a></td>
 <td><code>GET</code></td>
-<td>Return <a href="/glossary#jobmaster" title="If a job is configured with autoscaling, Mantis will add a Job Master component to it as its initial component. This component will send metrics back to Mantis to help it govern the autoscaling process.">Job Master</a> information.</td>
+<td>Return <a href="/mantis/glossary#jobmaster" title="If a job is configured with autoscaling, Mantis will add a Job Master component to it as its initial component. This component will send metrics back to Mantis to help it govern the autoscaling process.">Job Master</a> information.</td>
 </tr>
 <tr>
 <td><a href="#return-job-master-configs"><code>/api/v1/masterConfigs</code></a></td>
@@ -1537,7 +1537,7 @@ but you can also do this with the Mantis REST API.</p>
 <td>Stream Job Status Changes.</td>
 </tr>
 <tr>
-<td><a href="#stream-scheduling-information-for-a-job"><code>/api/v1/jobDiscoveryStream/<var>jobID</var></code></a> (<a href="/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a>)</td>
+<td><a href="#stream-scheduling-information-for-a-job"><code>/api/v1/jobDiscoveryStream/<var>jobID</var></code></a> (<a href="/mantis/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a>)</td>
 <td><code>GET</code></td>
 <td>Return streaming (SSE) scheduling information for a particular job.</td>
 </tr>
@@ -1660,9 +1660,9 @@ but you can also do this with the Mantis REST API.</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>Before you submit a <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a>, you must first have set up a <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>. A Job Cluster contains
+<p>Before you submit a <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a>, you must first have set up a <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>. A Job Cluster contains
 a unique name for the Job, a URL of the Job’s <code>.jar</code> or <code>.zip</code> artifact file, resource requirements
-to run your Job, and other optional information such as <a href="/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> values for minimum and maximum Jobs to
+to run your Job, and other optional information such as <a href="/mantis/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> values for minimum and maximum Jobs to
 keep active for this Cluster, or a cron-based schedule to launch a Job for this Cluster. Each new
 Job can be considered as an instance of the Job Cluster, and is given a unique ID by appending a
 number suffix to the Cluster name. The Job inherits the resource requirements from the Cluster
@@ -1845,7 +1845,7 @@ previosuly submitted Job for the Job Cluster is still running. The possible poli
 one). The default policy is <code>KEEP_EXISTING</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>If the <a href="/glossary#mantismaster" title="The Mantis Master coordinates the execution of [Mantis Jobs] and starts the services on each Worker.">Mantis Master</a> is down during a time window when cron would normally have fired, that
+<p>If the <a href="/mantis/glossary#mantismaster" title="The Mantis Master coordinates the execution of [Mantis Jobs] and starts the services on each Worker.">Mantis Master</a> is down during a time window when cron would normally have fired, that
 cron trigger time window is lost. Mantis does not check for this upon restart. The next cron
 trigger will resume normally.</p>
 </div>
@@ -1975,10 +1975,10 @@ trigger will resume normally.</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var></code> (<code>PUT</code>)</strong></li>
 </ul>
-<p>To update an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, send a <code>PUT</code> command to the Mantis REST API endpoint
+<p>To update an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, send a <code>PUT</code> command to the Mantis REST API endpoint
 <code>/api/v1/jobClusters/<var>clusterName</var></code> with the same sort of body described above
 in the case of a Job Cluster create operation. Increment the version number so as to differentiate
-your new Cluster from the previous Job <a href="/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. If you try to update an existing Job Cluster by
+your new Cluster from the previous Job <a href="/mantis/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. If you try to update an existing Job Cluster by
 reusing the version number of an existing one, the operation will fail.</p>
 <details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
   &quot;jobDefinition&quot;: {
@@ -2077,7 +2077,7 @@ reusing the version number of an existing one, the operation will fail.</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var></code> (<code>DELETE</code>)</strong></li>
 </ul>
-<p>To permanently delete an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, send a <code>DELETE</code> command to the Mantis REST API
+<p>To permanently delete an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, send a <code>DELETE</code> command to the Mantis REST API
 endpoint <code>/api/v1/jobClusters/<var>clusterName</var></code>.</p>
 <details class="question"><summary>Query Parameters</summary><table>
 <thead>
@@ -2124,10 +2124,10 @@ endpoint <code>/api/v1/jobClusters/<var>clusterName</var></code>.</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateArtifact</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>You can make a “quick update” of an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> and also submit a new <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> with the
-updated cluster <a href="/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. This lets you update the Job Cluster with minimal information, without
+<p>You can make a “quick update” of an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> and also submit a new <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> with the
+updated cluster <a href="/mantis/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. This lets you update the Job Cluster with minimal information, without
 having to specify the scheduling info, as long as at least one Job was previously submitted for this
-Job Cluster. Mantis copies the scheduling information, Job <a href="/glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a>, and so forth, from the last
+Job Cluster. Mantis copies the scheduling information, Job <a href="/mantis/glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a>, and so forth, from the last
 Job submitted.</p>
 <p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
 <code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateArtifact</code> with a body that
@@ -2179,7 +2179,7 @@ to <code>true</code> in the request body, in which case no such Job will be crea
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateSla</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>To update the <a href="/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> of a <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to submit a new version, send a <code>POST</code> command
+<p>To update the <a href="/mantis/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> of a <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to submit a new version, send a <code>POST</code> command
 to the Mantis REST API endpoint
 <code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateSla</code> with a body that matches
 the format of the following example:</p>
@@ -2215,7 +2215,7 @@ the format of the following example:</p>
 </tr>
 <tr>
 <td><code>min</code></td>
-<td>minimum number of <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> to keep running</td>
+<td>minimum number of <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> to keep running</td>
 </tr>
 <tr>
 <td><code>max</code></td>
@@ -2272,7 +2272,7 @@ should provide at minimum either <code>cronspec</code> or the combination of <co
 information for the Job Cluster.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>If a Job takes required <a href="/glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a>, the Job will not launch successfully if the Job Cluster
+<p>If a Job takes required <a href="/mantis/glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a>, the Job will not launch successfully if the Job Cluster
 does not establish defaults for those parameters. A Job launched by means of a cron trigger
 always uses these default parameters to launch the Job.</p>
 </div>
@@ -2364,7 +2364,7 @@ that are launched based on a timed schedule:</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateMigrationStrategy</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>You can quickly update the <a href="/glossary#migration">migration strategy</a> of an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to
+<p>You can quickly update the <a href="/mantis/glossary#migration">migration strategy</a> of an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to
 update the entirety of the Cluster definition. To do this, send a <code>POST</code> command to the Mantis REST
 API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateMigrationStrategy</code>
 with a body that matches the format of the following example:</p>
@@ -2416,7 +2416,7 @@ to.</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateLabel</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>You can quickly update the <a href="/glossary#label" title="A label is a text key/value pair that you can add to a Job Cluster or to an individual Job to make it easier to search for or group.">labels</a> of an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to update the
+<p>You can quickly update the <a href="/mantis/glossary#label" title="A label is a text key/value pair that you can add to a Job Cluster or to an individual Job to make it easier to search for or group.">labels</a> of an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to update the
 entirety of the Cluster definition. To do this, send a <code>POST</code> command to the Mantis REST
 API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateLabel</code> with a body
 that matches the format of the following example:</p>
@@ -2492,7 +2492,7 @@ that matches the format of the following example:</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/enableCluster</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>You can quickly change the state of an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> to <code>enabled=true</code> without having to
+<p>You can quickly change the state of an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> to <code>enabled=true</code> without having to
 update the entirety of the Cluster definition.</p>
 <p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
 <code>/api/v1/jobClusters/<var>clusterName</var>/actions/enableCluster</code> with a body that
@@ -2539,11 +2539,11 @@ matches the format of the following example:</p>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/disableCluster</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>You can quickly change the state of an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> to <code>enabled=false</code> without having to
+<p>You can quickly change the state of an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> to <code>enabled=false</code> without having to
 update the entirety of the Cluster definition.</p>
-<p>When you disable a Job Cluster Mantis will not allow new <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> submissions under that Cluster and
+<p>When you disable a Job Cluster Mantis will not allow new <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> submissions under that Cluster and
 it will terminate any Jobs from that Cluster that are currently running. Mantis will also stop
-enforcing the <a href="/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> requirements for the Cluster, including any cron setup that would otherwise
+enforcing the <a href="/mantis/glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> requirements for the Cluster, including any cron setup that would otherwise
 launch new Jobs.</p>
 <p>This is useful when a Job Cluster must be temporarily made inactive, for instance if you have
 determined that there is a problem with it.</p>
@@ -2639,7 +2639,7 @@ matches the format of the following example:</p>
 <ul>
 <li><strong><code>/api/v1/jobs</code> (<code>GET</code>)</strong></li>
 </ul>
-<p>To retrieve a JSON array of IDs of the active <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a>, issue a <code>GET</code> command to the Mantis REST API
+<p>To retrieve a JSON array of IDs of the active <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a>, issue a <code>GET</code> command to the Mantis REST API
 endpoint <code>/api/v1/jobs</code>.</p>
 <details class="question"><summary>Query Parameters</summary><table>
 <thead>
@@ -2758,7 +2758,7 @@ endpoint <code>/api/v1/jobs</code>.</p>
 <li><strong><code>/api/v1/jobs/<var>jobID</var></code> (<code>GET</code>)</strong></li>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code> (<code>GET</code>)</strong></li>
 </ul>
-<p>To retrieve a JSON record of a particular <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>GET</code> command to the Mantis REST API
+<p>To retrieve a JSON record of a particular <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>GET</code> command to the Mantis REST API
 endpoint <code>/api/v1/jobs/<var>jobID</var></code>
 or <code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code>.</p>
 <details class="question"><summary>Query Parameters</summary><table>
@@ -2814,7 +2814,7 @@ or <code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code>
 <ul>
 <li><strong><code>/api/v1/jobs/<var>jobID</var></code> (<code>DELETE</code>)</strong></li>
 </ul>
-<p>To permanently kill a particular <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>DELETE</code> command to the Mantis REST API endpoint
+<p>To permanently kill a particular <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>DELETE</code> command to the Mantis REST API endpoint
 endpoint <code>/api/v1/jobs/<var>jobID</var></code>.</p>
 <details class="question"><summary>Query Parameters</summary><table>
 <thead>
@@ -2869,7 +2869,7 @@ endpoint <code>/api/v1/jobs/<var>jobID</var></code>.</p>
 <ul>
 <li><strong><code>/api/v1/jobs/<var>jobID</var>/archivedWorkers</code> (<code>GET</code>)</strong></li>
 </ul>
-<p>To list all of the archived workers for a particular <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>GET</code> command to the Mantis REST
+<p>To list all of the archived workers for a particular <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>GET</code> command to the Mantis REST
 API endpoint endpoint <code>/api/v1/jobs/<var>jobID</var>/archivedWorkers</code>.</p>
 <details class="question"><summary>Query Parameters</summary><table>
 <thead>
@@ -2940,7 +2940,7 @@ API endpoint endpoint <code>/api/v1/jobs/<var>jobID</var>/archivedWorkers</code>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> (<code>GET</code>)</strong></li>
 </ul>
-<p>To retrieve a JSON array of IDs of the active <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> in a particular cluster, issue a <code>GET</code> command
+<p>To retrieve a JSON array of IDs of the active <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> in a particular cluster, issue a <code>GET</code> command
 to the Mantis REST API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code>.</p>
 <details class="question"><summary>Query Parameters</summary><table>
 <thead>
@@ -3058,7 +3058,7 @@ to the Mantis REST API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>
 <ul>
 <li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>To submit a new <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> based on a <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, issue a <code>POST</code> command to the
+<p>To submit a new <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> based on a <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, issue a <code>POST</code> command to the
 <code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> endpoint with a
 request body like the following:</p>
 <details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
@@ -3143,8 +3143,8 @@ request body like the following:</p>
 <ul>
 <li><strong><code>/api/v1/jobs/actions/quickSubmit</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>You can make a “quick update” of an existing <a href="/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> and also submit a new <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> with the
-updated cluster <a href="/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. This lets you update the Job Cluster with minimal information, without
+<p>You can make a “quick update” of an existing <a href="/mantis/glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> and also submit a new <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> with the
+updated cluster <a href="/mantis/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. This lets you update the Job Cluster with minimal information, without
 having to specify the scheduling info, as long as at least one Job was previously submitted for this
 Job Cluster.</p>
 <p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
@@ -3259,7 +3259,7 @@ of the following example:</p>
 <ul>
 <li><strong><code>/api/v1/jobs/<var>jobID</var>/actions/scaleStage</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>To manually scale a <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>  <a href="/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a>, that is, to alter the number of <a href="/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a> assigned to
+<p>To manually scale a <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>  <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a>, that is, to alter the number of <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a> assigned to
 that stage, send a <code>POST</code> command to the Mantis REST API endpoint
 <code>/api/v1/jobs/<var>jobID</var>/actions/scaleStage</code> with a request body in the following
 format:</p>
@@ -3314,7 +3314,7 @@ number of workers in the stage).</p>
 <ul>
 <li><strong><code>/api/v1/jobs/<var>jobID</var>/actions/resubmitWorker</code> (<code>POST</code>)</strong></li>
 </ul>
-<p>To resubmit a particular <a href="/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a> for a particular <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, send a <code>POST</code> command to the Mantis REST
+<p>To resubmit a particular <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a> for a particular <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, send a <code>POST</code> command to the Mantis REST
 API endpoint <code>/api/v1/jobs/<var>jobID</var>/actions/resubmitWorker</code> with a request body
 resembling the following:</p>
 <details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{

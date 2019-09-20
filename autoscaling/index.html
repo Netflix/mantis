@@ -704,7 +704,7 @@
                 
                   <h1>Mantis Job Autoscaling</h1>
                 
-                <p>Mantis provides <a href="/glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a> for the <a href="/glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Cluster</a> and for each <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>. You can define a policy for your
+                <p>Mantis provides <a href="/mantis/glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a> for the <a href="/mantis/glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Cluster</a> and for each <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>. You can define a policy for your
 Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
 the input data they process. </p>
 <p>This provides two benefits:</p>
@@ -713,10 +713,10 @@ the input data they process. </p>
 <li>Mantis uses cluster resources optimally without leaving resources idle.</li>
 </ol>
 <h2 id="horizontal-scaling">Horizontal Scaling<a class="headerlink" href="#horizontal-scaling" title="Permanent link">&para;</a></h2>
-<p>Your Mantis Jobs are composed of in part of <a href="/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stages</a>, with each stage responsible for a
+<p>Your Mantis Jobs are composed of in part of <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stages</a>, with each stage responsible for a
 different stream processing task. Because different stages may have different computational needs,
 each stage has its own autoscaling policy.</p>
-<p>A Processing Stage is further subdivided into <a href="/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a>. A worker is the smallest unit of work that
+<p>A Processing Stage is further subdivided into <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a>. A worker is the smallest unit of work that
 is scheduled. Each worker requests a certain number of CPUs, some amount of memory, and a certain
 amount of network bandwidth.</p>
 <p>When a Processing Stage scales, the number of workers in that stage increases or decreases (the
@@ -725,7 +725,7 @@ scaling).</p>
 <h2 id="scaling-a-processing-stage-manually">Scaling a Processing Stage Manually<a class="headerlink" href="#scaling-a-processing-stage-manually" title="Permanent link">&para;</a></h2>
 <p>You may define a Processing Stage as scalable without defining an autoscaling policy for it. In such
 a case the stage is considered <em>manually scalable</em> and you can scale it by means of
-<a href="/mantisui">the Mantis UI</a> or the <a href="/mantisapi/rest/#horizontally-scale-a-stage">Mantis API</a>.</p>
+<a href="/mantis/mantisui">the Mantis UI</a> or the <a href="/mantis/mantisapi/rest#horizontally-scale-a-stage">Mantis API</a>.</p>
 <h2 id="setting-an-autoscaling-policy">Setting an Autoscaling Policy<a class="headerlink" href="#setting-an-autoscaling-policy" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -768,14 +768,14 @@ scale-down trigger.</p>
 </div>
 <p>The following example shows how you might establish the autoscaling policy for a stage in the Mantis
 UI:</p>
-<p><img alt="Autoscaling a Stage in the Mantis UI" src="/images/autoscale.png" /></p>
+<p><img alt="Autoscaling a Stage in the Mantis UI" src="/mantis/images/autoscale.png" /></p>
 <p>The illustration above shows a stage with an autoscaling policy that specifies a minimum of 5 and a
 maximum of 20 workers. It uses a single strategy, that of network bandwidth usage.</p>
 <h2 id="autoscaling-scenarios">Autoscaling Scenarios<a class="headerlink" href="#autoscaling-scenarios" title="Permanent link">&para;</a></h2>
 <p>There are four varieties of autoscaling scenarios that you should consider for your Mantis Job:</p>
 <ol>
 <li>
-<p>The Processing Stage connects to a <a href="/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold</a>  <a href="/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a>, such as a <a href="/glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> topic.</p>
+<p>The Processing Stage connects to a <a href="/mantis/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold</a>  <a href="/mantis/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a>, such as a <a href="/mantis/glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> topic.</p>
 <p>Autoscaling works well for this type of stage (the initial stage in a Job that connects to the
 Source). For example, if your stage connects to a Kafka source, a change in the number of
 workers in the first stage of your Mantis Job causes the Kafka client to redistribute the
@@ -784,7 +784,7 @@ partitions of the topic among the new number of workers.</p>
 <li>
 <p>The Processing Stage connects to a hot source, such as a working server.</p>
 <p>The Source stage (stage #1) will have to re-partition the Source servers after an autoscale
-event on the Processing Stage. This is mainly a concern for <a href="/glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a>. Upon receipt of a
+event on the Processing Stage. This is mainly a concern for <a href="/mantis/glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a>. Upon receipt of a
 modified number of workers, each worker re-partitions the current servers into its own index of
 the new total. This results in a new list of servers to connect to (for both scale up and scale
 down), some of which may be already connected. Making a new connection to a Source server evicts
@@ -797,14 +797,14 @@ sent to a Mantis Job. (The solution for this scenario is currently in developmen
 <p>In this case, the initial Processing Stage in a Job that connects to the output of the previous
 Mantis Job has strong connectivity into the Source Job via the use of Mantis Java client. In suc
 a case, all workers from this Processing Stage connect to all workers of the source Job’s
-<a href="/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>. Therefore, autoscaling this type of Job works well. </p>
+<a href="/mantis/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>. Therefore, autoscaling this type of Job works well. </p>
 </li>
 <li>
 <p>The Processing Stage connects to a previous Processing Stage in the same Mantis Job.</p>
 <p>Each Processing Stage is strongly connected to its previous Processing Stage. Therefore,
 autoscaling of this type typically works well. However, a Processing Stage following a
-<em><a href="/glossary#grouped" title="Grouped data is distinguished from scalar data in that each datum is accompanied by a key that indicates what group it belongs to. Grouped data can be processed by a RxJava GroupedObservable or by a MantisGroup.">grouped</a></em> stage (a Processing Stage that does a <code>group by</code> operation) receives a grouped
-<a href="/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> or <code>MantisGroup</code>. When Mantis scales such a grouped stage, these groups are
+<em><a href="/mantis/glossary#grouped" title="Grouped data is distinguished from scalar data in that each datum is accompanied by a key that indicates what group it belongs to. Grouped data can be processed by a RxJava GroupedObservable or by a MantisGroup.">grouped</a></em> stage (a Processing Stage that does a <code>group by</code> operation) receives a grouped
+<a href="/mantis/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> or <code>MantisGroup</code>. When Mantis scales such a grouped stage, these groups are
 repartitioned on to the new number of workers. The Processing Stage following such a grouped
 stage must, therefore, be prepared to potentially receive a different set of groups after a
 rescale operation.</p>
@@ -817,21 +817,21 @@ a single worker in the subsequent processing stage. When that second stage scale
 another worker, that worker remains idle and does not assist in processing data because there
 are not enough groups to distribute among the larger number of workers.</p>
 <p><strong>Before autoscaling:</strong>
-<img alt="Before autoscaling" src="/images/scaling_prescale.svg" /></p>
+<img alt="Before autoscaling" src="/mantis/images/scaling_prescale.svg" /></p>
 <p><strong>After autoscaling:</strong>
-<img alt="After autoscaling" src="/images/scaling_postscale.svg" /></p>
+<img alt="After autoscaling" src="/mantis/images/scaling_postscale.svg" /></p>
 </li>
 </ol>
 <h2 id="updating-autoscalable-jobs">Updating Autoscalable Jobs<a class="headerlink" href="#updating-autoscalable-jobs" title="Permanent link">&para;</a></h2>
-<p>To upload a Mantis Job when you have new code to push, upload the <code>.jar</code> or <code>.zip</code> <a href="/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact file</a>
+<p>To upload a Mantis Job when you have new code to push, upload the <code>.jar</code> or <code>.zip</code> <a href="/mantis/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact file</a>
 to Mantis, and make any necessary adjustments to its behavior and policies by using the Mantis UI.</p>
 <p>You can also do this in two ways via the Mantis API:</p>
 <ol>
-<li><a href="/mantisapi/rest/#change-information-about-a-cluster">Update the Job Cluster</a> with a new version
+<li><a href="/mantis/mantisapi/rest#change-information-about-a-cluster">Update the Job Cluster</a> with a new version
    for its artifact file along with new scheduling information. This updated JAR and scheduling info
    are available to use with the next Job submission. However, currently-running Jobs continue to
    run with whatever artifact file they were started with.</li>
-<li><a href="/mantisapi/rest/#update-a-clusters-artifacts">Quick update the Job Cluster</a> with only a new
+<li><a href="/mantis/mantisapi/rest#update-a-clusters-artifacts">Quick update the Job Cluster</a> with only a new
    artifact file version and submit a new Job with it. The new Job is submitted by using the
    scheduling info from the last Job submitted. </li>
 </ol>

@@ -651,7 +651,7 @@
                   <h1>Introduction</h1>
                 
                 <p>Mantis Query Language (MQL) is a dialect of SQL implemented as an abstraction over
-<a href="/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>  <a href="/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observables</a>. The purpose of MQL is to make it easy for Mantis users to query, transform,
+<a href="/mantis/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>  <a href="/mantis/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observables</a>. The purpose of MQL is to make it easy for Mantis users to query, transform,
 and analyze data flowing through Mantis. MQL maintains high fidelity to SQL syntax while adding
 capabilities for dealing with JSON structure, as well as a rich set of aggregates for answering
 analytical queries about the data in question.</p>
@@ -674,9 +674,9 @@ analytical queries about the data in question.</p>
 </ul>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <p>To use MQL, include the <a href="https://search.maven.org/search?q=a:mql-jvm">mql-jvm</a> library in your dependencies.</p>
-<p>Refer to the example below for a minimalist getting started guide. Imagine we have a <a href="/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">source</a> of
+<p>Refer to the example below for a minimalist getting started guide. Imagine we have a <a href="/mantis/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">source</a> of
 <code>Map&lt;String, Object&gt;</code> representing your data (recall that Mantis events can be easily parsed as
-such). Executing a query against that <a href="/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> is only a matter of putting that <code>Observable</code>
+such). Executing a query against that <a href="/mantis/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> is only a matter of putting that <code>Observable</code>
 into a <code>Map&lt;String, Observable&gt;</code> to represent the context and calling <code>evalMql</code> against said
 context. The result will be an <code>Observable</code> that represents the results of the query:</p>
 <div class="codehilite"><pre><span></span><span class="kn">package</span> <span class="nn">my.package</span><span class="o">;</span>

@@ -760,9 +760,9 @@
                 
                   <h1>Operators</h1>
                 
-                <p>This page introduces the <a href="/glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> operators, including a syntax summary, usage examples, and a brief
+                <p>This page introduces the <a href="/mantis/glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> operators, including a syntax summary, usage examples, and a brief
 description of each operator.</p>
-<p>For the most part these operations use their <a href="/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> analogs:</p>
+<p>For the most part these operations use their <a href="/mantis/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> analogs:</p>
 <table>
 <thead>
 <tr>
@@ -799,10 +799,10 @@ description of each operator.</p>
 </table>
 <p>For this reason you may find <a href="http://reactivex.io/intro.html">the ReactiveX documentation</a> useful as
 well, though it is a goal of MQL to provide you with a layer of abstraction such that you will not
-need to use or think about <a href="/glossary#reactivex" title="ReactiveX is a software technique for transforming, combining, reacting to, and managing streams of data. RxJava is an example of a library that implements this technique.">ReactiveX</a> when writing queries.</p>
+need to use or think about <a href="/mantis/glossary#reactivex" title="ReactiveX is a software technique for transforming, combining, reacting to, and managing streams of data. RxJava is an example of a library that implements this technique.">ReactiveX</a> when writing queries.</p>
 <p>MQL attempts to stay true to the SQL syntax in order to reduce friction for new users writing
 queries and to allow them to leverage their experiences with SQL.</p>
-<p>An essential concept in MQL is the “<a href="/glossary#property" title="A property is a particular named data value found within events in an event stream.">property</a>,” which can take on one of several forms:</p>
+<p>An essential concept in MQL is the “<a href="/mantis/glossary#property" title="A property is a particular named data value found within events in an event stream.">property</a>,” which can take on one of several forms:</p>
 <ul>
 <li><code>property.name.here</code></li>
 <li><code>e["this"]["accesses"]["nested"]["properties"]</code></li>
@@ -811,7 +811,7 @@ queries and to allow them to leverage their experiences with SQL.</p>
 </ul>
 <p>Most of the MQL operators use these forms to refer to properties within the event stream, as well as
 string and numeric literals.</p>
-<p>The last detail of note concerns unbounded vs. discrete streams. ReactiveX <a href="/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observables</a> that are
+<p>The last detail of note concerns unbounded vs. discrete streams. ReactiveX <a href="/mantis/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observables</a> that are
 not expected to close are an unbounded stream and must be bounded/discretized in order for certain
 operators to function with them. The <code>window</code> operator is useful for partitioning unbounded streams
 into discrete bounded streams for operators such as aggregate, group by, or order by.</p>
@@ -869,7 +869,7 @@ computes average latency on a per-node basis in 10 second windows.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Aggregates require that the stream on which they operate be discretized. You can ensure this
-either by feeding MQL a <a href="/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> in its context or by using the <code>window</code> operator on an
+either by feeding MQL a <a href="/mantis/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> in its context or by using the <code>window</code> operator on an
 unbounded stream.</p>
 </div>
 <p>You can use the <code>distinct</code> operator on a property to operate only on unique items within the window.
@@ -935,7 +935,7 @@ windows:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The <code>group by</code> clause requires that the stream on which it operates be discretized. You can
-ensure this either by feeding MQL a <a href="/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> in its context or by using the <code>window</code>
+ensure this either by feeding MQL a <a href="/mantis/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> in its context or by using the <code>window</code>
 operator on an unbounded stream.</p>
 </div>
 <h2 id="order-by"><code>order by</code><a class="headerlink" href="#order-by" title="Permanent link">&para;</a></h2>
@@ -951,7 +951,7 @@ would be ordered by their latency property.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The <code>order by</code> clause requires that the stream on which it operates be discretized. You can
-ensure this either by feeding MQL a <a href="/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> in its context or by using the <code>window</code>
+ensure this either by feeding MQL a <a href="/mantis/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> in its context or by using the <code>window</code>
 operator on an unbounded stream.</p>
 </div>
 <h2 id="limit"><code>limit</code><a class="headerlink" href="#limit" title="Permanent link">&para;</a></h2>
