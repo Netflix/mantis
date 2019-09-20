@@ -1,5 +1,5 @@
 site_name: Mantis
-nav:
+pages:
   - 'Welcome': 'index.md'
   - User Guides:
     - Writing Mantis Jobs:
