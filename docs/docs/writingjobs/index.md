@@ -4,11 +4,11 @@ another Observable stream.
 
 [RxJava] Observables can be visualized by using “marble diagrams”:
 
-![RxJava Observables can be represented by “marble diagrams”](/images/observables.svg)
+![RxJava Observables can be represented by “marble diagrams”](/mantis/images/observables.svg)
 
 You can combine multiple RxJava operators to transform an Observable stream of items in many ways:
 
-![An incoming stream is processed by a Mantis Job composed of the operators map and merge, to compose an output stream](/images/complex.svg)
+![An incoming stream is processed by a Mantis Job composed of the operators map and merge, to compose an output stream](/mantis/images/complex.svg)
 
 The above diagram shows a Mantis Job composed of two operators that process an input stream to
 compose an output stream. The first operator, `map`, emits a new Observable for each item emitted by
@@ -22,7 +22,7 @@ If the volume of data to be processed is too large for a single [worker] to hand
 and conquer” by grouping and dividing the operators across various [processing stages], as in the
 following diagram:
 
-![An incoming stream is processed by a Mantis Job composed of three stages, one composed of the groupBy operator, the second by the window and reduce operators, and the third composed of the merge operator, together resulting in an output stream](/images/stages.svg)
+![An incoming stream is processed by a Mantis Job composed of three stages, one composed of the groupBy operator, the second by the window and reduce operators, and the third composed of the merge operator, together resulting in an output stream](/mantis/images/stages.svg)
 
 ## Mantis Job Clusters
 
@@ -48,7 +48,7 @@ documentation:
 
 1. [**Sink**](sink) — Pushes the resulting Observable out in the form of a fresh stream.
 
-![A Mantis Job is composed of three components: the “Source” fetches data in a streaming, non-blocking, back-pressure-aware manner; the “Stage” transforms the incoming stream by applying high-level functions such as map, scan, reduce, et cetera; the “Sink” pushes the results of the transformation in a non-blocking, asynchronous manner.](/images/job-components.svg)
+![A Mantis Job is composed of three components: the “Source” fetches data in a streaming, non-blocking, back-pressure-aware manner; the “Stage” transforms the incoming stream by applying high-level functions such as map, scan, reduce, et cetera; the “Sink” pushes the results of the transformation in a non-blocking, asynchronous manner.](/mantis/images/job-components.svg)
 
 ## Directory Structure of a Mantis Job
 
