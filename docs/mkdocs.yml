@@ -1,27 +1,27 @@
 site_name: Mantis
 nav:
-  - 'Welcome': 'index.md'
+  - 'Welcome to Mantis': 'index.md'
   - Writing Mantis Jobs:
-    - 'Introduction': 'writingjobs/index.md'
+    - 'Introduction to Mantis Jobs': 'writingjobs/index.md'
     - 'The Source Component': 'writingjobs/source.md'
     - 'The Processing Stage Component': 'writingjobs/stage.md'
     - 'The Sink Component': 'writingjobs/sink.md'
-  - MQL:
-    - 'Introduction': 'MQL/index.md'
+  - Mantis Query Language:
+    - 'Introduction to MQL': 'MQL/index.md'
     - 'Operators': 'MQL/operators.md'
     - 'Sampling': 'MQL/sampling.md'
     - 'Scaling Limits': 'MQL/aggregation-scaling-limits.md'
   - 'Mantis Job Autoscaling': 'autoscaling.md'
   - 'Publishing Events to Mantis': 'internals/mre.md'
   - The Mantis API:
-      - 'API Reference': 'mantisapi/index.md'
+      - 'Mantis API Reference': 'mantisapi/index.md'
       - 'Mantis Websocket API': 'mantisapi/websocket.md'
   - 'The Mantis CLI': 'cli.md'
   - Mantis Internals:
       - 'Mantis Source Jobs': 'internals/sourcejobs.md'
       - 'Mantis Runtime': 'internals/runtime.md'
   - 'Mantis Job Capacity Planning & Sizing': 'capacity.md'
-  - 'FAQ': 'faq.md'
+  - 'Mantis FAQ': 'faq.md'
   - 'Glossary': 'glossary.md'
 theme:
   name: material
