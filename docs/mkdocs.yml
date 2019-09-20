@@ -1,0 +1,65 @@
+site_name: Mantis
+pages:
+  - 'Welcome': 'index.md'
+  - User Guides:
+    - Writing Mantis Jobs:
+      - 'Introduction': 'writingjobs/index.md'
+      - 'The Source Component': 'writingjobs/source.md'
+      - 'The Processing Stage Component': 'writingjobs/stage.md'
+      - 'The Sink Component': 'writingjobs/sink.md'
+    - MQL:
+      - 'Introduction': 'MQL/index.md'
+      - 'Operators': 'MQL/operators.md'
+      - 'Sampling': 'MQL/sampling.md'
+      - 'Scaling Limits': 'MQL/aggregation-scaling-limits.md'
+    - 'Mantis Job Autoscaling': 'autoscaling.md'
+    - 'Publishing Events to Mantis': 'internals/mre.md'
+    - The Mantis API:
+        - 'API Reference': 'mantisapi/index.md'
+        - 'Mantis Websocket API': 'mantisapi/websocket.md'
+    - 'The Mantis CLI': 'cli.md'
+    - Mantis Internals:
+        - 'Mantis Source Jobs': 'internals/sourcejobs.md'
+        - 'Mantis Runtime': 'internals/runtime.md'
+    - 'Mantis Job Capacity Planning & Sizing': 'capacity.md'
+  - 'FAQ': 'faq.md'
+  - 'Glossary': 'glossary.md'
+theme:
+  name: material
+  custom_dir: custom_theme/
+  favicon: 'images/favicon.ico'
+  palette:
+#    primary: 'deep orange'
+#    accent: 'deep purple'
+    primary: 'blue grey'
+    accent: 'indigo'
+  logo: 'images/logo.png'
+  font-family:
+    text: '"Helvetica Neue",Helvetica,Arial,sans-serif'
+extra:
+  social:
+    - type: 'twitter'
+      link: 'https://twitter.com/NetflixOSS'
+    - type: 'github'
+      link: 'https://netflix.github.io/'
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.details
+  - pymdownx.keys:
+      key_map: {"return" : "return",
+                "enter" : "return",
+                "?" : "?"}
+  - pymdownx.superfences
+  - def_list
+  - extra
+extra_css:
+  - css/extra.css
+extra_javascript:
+  - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
+repo_name: 'Github'
+repo_url: 'https://github.com/netflix/mantis'
