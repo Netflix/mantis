@@ -25,7 +25,7 @@ scaling).
 
 You may define a Processing Stage as scalable without defining an autoscaling policy for it. In such
 a case the stage is considered *manually scalable* and you can scale it by means of
-[the Mantis UI](/mantisui) or the [Mantis API](/mantisapi/rest/#horizontally-scale-a-stage).
+[the Mantis UI](/mantis/mantisui) or the [Mantis API](/mantis/mantisapi/rest#horizontally-scale-a-stage).
 
 ## Setting an Autoscaling Policy
 
@@ -67,7 +67,7 @@ You define the autoscaling policy for a Processing Stage by setting the followin
 The following example shows how you might establish the autoscaling policy for a stage in the Mantis
 UI:
 
-![Autoscaling a Stage in the Mantis UI](/images/autoscale.png)
+![Autoscaling a Stage in the Mantis UI](/mantis/images/autoscale.png)
 
 The illustration above shows a stage with an autoscaling policy that specifies a minimum of 5 and a
 maximum of 20 workers. It uses a single strategy, that of network bandwidth usage.
@@ -123,10 +123,10 @@ There are four varieties of autoscaling scenarios that you should consider for y
     are not enough groups to distribute among the larger number of workers.
 
     **Before autoscaling:**
-    ![Before autoscaling](/images/scaling_prescale.svg)
+    ![Before autoscaling](/mantis/images/scaling_prescale.svg)
 
     **After autoscaling:**
-    ![After autoscaling](/images/scaling_postscale.svg)
+    ![After autoscaling](/mantis/images/scaling_postscale.svg)
     
 
 ## Updating Autoscalable Jobs
@@ -136,11 +136,11 @@ to Mantis, and make any necessary adjustments to its behavior and policies by us
 
 You can also do this in two ways via the Mantis API:
 
-1. [Update the Job Cluster](/mantisapi/rest/#change-information-about-a-cluster) with a new version
+1. [Update the Job Cluster](/mantis/mantisapi/rest#change-information-about-a-cluster) with a new version
    for its artifact file along with new scheduling information. This updated JAR and scheduling info
    are available to use with the next Job submission. However, currently-running Jobs continue to
    run with whatever artifact file they were started with.
-1. [Quick update the Job Cluster](/mantisapi/rest/#update-a-clusters-artifacts) with only a new
+1. [Quick update the Job Cluster](/mantis/mantisapi/rest#update-a-clusters-artifacts) with only a new
    artifact file version and submit a new Job with it. The new Job is submitted by using the
    scheduling info from the last Job submitted. 
 

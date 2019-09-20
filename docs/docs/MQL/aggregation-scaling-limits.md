@@ -1,8 +1,8 @@
-[MQL] Queries that implement [aggregates (`COUNT`, `SUM`, etc.)](/MQL/operators/#aggregates), as
-well as those that use windowing (like [`window`](/MQL/operators/#window) or
-[`group by`](/MQL/operators/#group-by)), must necessarily maintain state.
+[MQL] Queries that implement [aggregates (`COUNT`, `SUM`, etc.)](/mantis/MQL/operators#aggregates), as
+well as those that use windowing (like [`window`](/mantis/MQL/operators#window) or
+[`group by`](/mantis/MQL/operators#group-by)), must necessarily maintain state.
 
-[The Mantis Publish library)](/glossary#mantispublish) and the [Source Jobs] do not perform MQL
+[The Mantis Publish library)](/mantis/glossary#mantispublish) and the [Source Jobs] do not perform MQL
 aggregation on the server side; consequently this must take place on the client side. This limits
 the blast radius if a client runs a long window or runs an aggregate against a large amount of data.
 However this creates potential scaling problems on the client side. This page will help you address

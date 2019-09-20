@@ -69,7 +69,7 @@ is aware of the subscription, it will start pushing events downstream into the S
     The Mantis Publish library not only handles subscriptions, but also takes care of discovering Source Job workers
     so you do not have to worry about Source Job rebalancing/autoscaling.
     For more information about Source Jobs see
-    [Mantis Internals: Mantis Source Jobs](/internals/sourcejobs).
+    [Mantis Internals: Mantis Source Jobs](/mantis/internals/sourcejobs).
 
 #### Creating Stream Subscriptions
 
@@ -115,7 +115,7 @@ Transformation includes the following steps:
 !!! note
     More Mantis Publish configuration options can be found [here](https://github.com/Netflix/mantis-publish/blob/d69d549335cd74149395e9a48780dd702bbc1b82/mantis-publish-core/src/main/java/io/mantisrx/publish/config/MrePublishConfiguration.java).
 
-![RequestEventProcessor includes all RequestEvent fields requested by any subscriber in the results it gives to all subscribers](/images/RequestEventProcessor.svg)
+![RequestEventProcessor includes all RequestEvent fields requested by any subscriber in the results it gives to all subscribers](/mantis/images/RequestEventProcessor.svg)
 
 ### Phase 3: Event Delivery
 

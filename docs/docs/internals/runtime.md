@@ -5,7 +5,7 @@ The Mantis Runtime is consists of two components:
    time, and produce streams of events as output.
 
 This page assumes familiarity with Mantis Job high-level concepts. An introduction can be found in
-[Writing Mantis Jobs](/writingjobs). This page presents internal details for Mantis Jobs.
+[Writing Mantis Jobs](/mantis/writingjobs). This page presents internal details for Mantis Jobs.
 
 ## Mantis Job Components
 A Mantis Job consists of three [components]. Each one is based on a [cold Observable] that emits

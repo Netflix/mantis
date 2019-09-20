@@ -4,7 +4,7 @@
 Yes.
 There is a sampling parameter called `factor`, `10000` by default, which determines the effective threshold via the formula $\frac{threshold}{factor}$.
 If you have reduced `threshold` as far as you can (to `1`), you can continue to reduce the *effective* threshold by increasing the value of `factor`.
-See [Random Sampling](/MQL/sampling#random-sampling) for more details.
+See [Random Sampling](/mantis/MQL/sampling#random-sampling) for more details.
 
 ## Is it possible to use the second [stage] of a three-stage [Mantis Job] as the [source job] for another [MQL] job?
 

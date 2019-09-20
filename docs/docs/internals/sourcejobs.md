@@ -2,7 +2,7 @@ Mantis Source Jobs are [Mantis Jobs] that fetch data from external sources. Ther
 Source Jobs:
 
 1. **Mantis Publish Source Jobs**
-   read from their sources by using [Mantis Publish](mre). As such, they do not apply [MQL](/mql) on events
+   read from their sources by using [Mantis Publish](mre). As such, they do not apply [MQL](/mantis/mql) on events
    themselves. Instead, they propagate the MQL queries upstream to Mantis Publish running on the external
    source, which then applies the MQL queries to the events it produces and only then pushes those
    events downstream to the Request Source Job.
@@ -52,7 +52,7 @@ The next stage in this Job is the Processing Stage which enriches events with [m
     - Each event is enriched with fields specified by the projections of a subscription’s MQL query,
       as in the following illustration:
 
-        ![If an event matches multiple subscriptions, then the event will be enriched with projections from every subscription’s MQL query.](/images/RequestEventProcessor.svg)
+        ![If an event matches multiple subscriptions, then the event will be enriched with projections from every subscription’s MQL query.](/mantis/images/RequestEventProcessor.svg)
 
 ### Sink (RxAction)
 In order for a consumer to consume events from a Source Job, the consumer connects to the Job’s Sink.
