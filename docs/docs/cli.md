@@ -9,7 +9,7 @@ You can install the Mantis CLI locally in your development environment by follow
 on the [Mantis CLI Readme](https://github.com/netflix/mantis-cli#getting-started).
 
 Additionally, you can install the Mantis CLI onto your system as a package by following instructions
-on the [Mantis CLI Release](https://github.com/netflix/mantis-cli#releasing) section of the readme.
+on the [Mantis CLI Releasing](https://github.com/netflix/mantis-cli#releasing) section of the readme.
 
 ## Mantis Commands
 
@@ -69,10 +69,10 @@ To do this issue the following command:
 
 By default, the Mantis CLI bootstrap command is interactive and will prompt you for provisioning choices. Additionally, you can pass the following command-line parameters to skip some of the prompts from the `mantis aws:bootstrap` command:
 
-| prompt                           | parameter                        | valid inputs |
-| -------------------------------- | -------------------------------- | ------------ |
-| **select a region**              | [`-r`\|`--region`] *`region`*    | us-east-1, us-east-2, us-west-2  |
-| **confirm**                      | -y                               | n/a |
+| prompt                 | parameter                        | valid inputs |
+| ---------------------- | -------------------------------- | ------------ |
+| **select a region**    | [`-r`\|`--region`] *`region`*    | `us-east-1`, `us-east-2`, `us-west-2` |
+| **confirm**            | `-y`                             | n/a |
 
 After you have finished executing the `mantis aws:bootstrap` command, you can submit [Jobs] into the
 Mantis cluster that it creates.

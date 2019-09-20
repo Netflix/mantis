@@ -1,4 +1,4 @@
-In addition to the [Mantis UI](mantisui), there is a REST API with which you can maintain
+In addition to the Mantis UI, there is a REST API with which you can maintain
 [Mantis Jobs] and [Job Clusters]. This page describes the open source version of the Mantis REST
 API.
 
