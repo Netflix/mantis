@@ -2,16 +2,16 @@ artifact file {#artifact}
 :   Each [Mantis Job] has an associated artifact file that contains its source code and JSON configuration.
 
 autoscaling {#autoscaling}
-:   You can establish an autoscaling policy for each [component] of your [Mantis Job] that governs how Mantis adjusts the number of [workers] assigned to that component as its workload changes.<br />⇒ See [Mantis Job Autoscaling](/autoscaling)
+:   You can establish an autoscaling policy for each [component] of your [Mantis Job] that governs how Mantis adjusts the number of [workers] assigned to that component as its workload changes.<br />⇒ See [Mantis Job Autoscaling](/mantis/autoscaling)
 
 backpressure {#backpressure}
 :   Backpressure refers to a set of possible strategies for coping with [ReactiveX]  [Observables] that produce items more rapidly than their observers consume them.<br />⇒ See [ReactiveX.io: backpressure operators](http://reactivex.io/documentation/operators/backpressure.html)
 
 Binary compression {#binarycompression}
-:   <span class="tbd">has a particular meaning in the Mantis context... see (Connecting to a Source Job)[/writingjobs/source/#connecting-to-a-source-job]</span>
+:   <span class="tbd">has a particular meaning in the Mantis context... see (Connecting to a Source Job)[/writingjobs/source#connecting-to-a-source-job]</span>
 
 Broadcast mode {#broadcast}
-:   In broadcast mode, each [worker] of your [Mantis Job] gets all the data from all workers of the [Source Job] rather than having that data distributed equally among the workers of your Job.<br />⇒ See [Source Job Sources: Broadcast Mode](/writingjobs/source/#broadcast-mode)
+:   In broadcast mode, each [worker] of your [Mantis Job] gets all the data from all workers of the [Source Job] rather than having that data distributed equally among the workers of your Job.<br />⇒ See [Source Job Sources: Broadcast Mode](/mantis/writingjobs/source#broadcast-mode)
 
 Cassandra {#cassandra}
 :   Apache Cassandra is an open source, distributed database management system.<br />⇒ See [Apache Cassandra Documentation](http://cassandra.apache.org/doc/latest/).
@@ -48,7 +48,7 @@ JMC {#jmc}
 :   **Java Mission Control** is a tool from Oracle with which developers can monitor and manage Java applications.<br />⇒ See [Java Components](https://docs.oracle.com/javacomponents/index.html)
 
 Job {#job}
-:   A Mantis Job takes in a stream of data, transforms it by using [RxJava] operators, and then outputs the results as another stream. It is composed of a [Source], one or more [Processing Stages], and a [Sink].<br />⇒ See [Writing Mantis Jobs](/writingjobs)
+:   A Mantis Job takes in a stream of data, transforms it by using [RxJava] operators, and then outputs the results as another stream. It is composed of a [Source], one or more [Processing Stages], and a [Sink].<br />⇒ See [Writing Mantis Jobs](/mantis/writingjobs)
 
 Job Cluster {#jobcluster}
 :   *see [Cluster]*
@@ -87,10 +87,10 @@ migration strategy {#migration}
 :   <span class="tbd">define</span>
 
 Mantis Publish {#mantispublish}
-:   Mantis Publish (internally at Netflix known as Mantis Realtime Events or MRE) is a library that your application can use to stream events into Mantis while respecting [MQL] filters.<br />⇒ See [MQL](/MQL).
+:   Mantis Publish (internally at Netflix known as Mantis Realtime Events or MRE) is a library that your application can use to stream events into Mantis while respecting [MQL] filters.<br />⇒ See [MQL](/mantis/MQL).
 
 MQL {#mql}
-:   You use **Mantis Query Language** to define filters and other data processing that Mantis applies to a [Source] data stream at its point of origin, so as to reduce the amount of data going over the wire.<br />⇒ See [MQL](/MQL).
+:   You use **Mantis Query Language** to define filters and other data processing that Mantis applies to a [Source] data stream at its point of origin, so as to reduce the amount of data going over the wire.<br />⇒ See [MQL](/mantis/MQL).
 
 Observable {#observable}
 :   In [ReactiveX] an `Observable` is the method of processing a stream of data in a way that facilitates its [transformation] and consumption by observers. Observables come in [hot] and [cold] varieties. There is also a `GroupedObservable` that is specialized to [grouped] data.<br />⇒ See [ReactiveX.io: Observable](http://reactivex.io/documentation/observable.html).
@@ -99,7 +99,7 @@ Parameter {#parameter}
 :   A [Mantis Job] may accept parameters that modify its behavior. You can define these in your [Job Cluster] definition, and set their values on a per-Job basis.
 
 Processing Stage {#stage}
-:   A Processing Stage component of a Mantis [Job] transforms the [RxJava]  [Observables] it obtains from the [Source] component. A Job with only one Processing Stage is called a single-stage Job.<br />⇒ See [The Processing Stage Component](/writingjobs/stage)
+:   A Processing Stage component of a Mantis [Job] transforms the [RxJava]  [Observables] it obtains from the [Source] component. A Job with only one Processing Stage is called a single-stage Job.<br />⇒ See [The Processing Stage Component](/mantis/writingjobs/stage)
 
 property {#property}
 :   A property is a particular named data value found within events in an event stream.
@@ -114,22 +114,22 @@ RxJava {#rxjava}
 :   RxJava is the Java implementation of [ReactiveX], a software technique for transforming, combining, reacting to, and managing streams of data.<br />⇒ See [reactivex.io](http://reactivex.io/).
 
 sampling {#sampling}
-:   Sampling is an MQL strategy for mitigating data volume issues. There are two sampling strategies: Random and Sticky. Random sampling uniformly downsamples the source stream to a percentage of its original volume. Sticky sampling selectively samples data from the source stream based on key values.<br />⇒ See [MQL: Sampling](/MQL/sampling)
+:   Sampling is an MQL strategy for mitigating data volume issues. There are two sampling strategies: Random and Sticky. Random sampling uniformly downsamples the source stream to a percentage of its original volume. Sticky sampling selectively samples data from the source stream based on key values.<br />⇒ See [MQL: Sampling](/mantis/MQL/sampling)
 
 scalar data {#scalar}
 :   Scalar data is distinguished from keyed or [grouped] data in that it is not categorized into groups by key. Scalar data can be processed by an ordinary [ReactiveX]  [Observable].
 
 Sink {#sink}
-:   The Sink is the final component of a Mantis [Job]. It takes the [Observables] that has been transformed by the [Processing Stage] and outputs it in the form of a new data stream.<br />⇒ See [The Sink Component](/writingjobs/sink)
+:   The Sink is the final component of a Mantis [Job]. It takes the [Observables] that has been transformed by the [Processing Stage] and outputs it in the form of a new data stream.<br />⇒ See [The Sink Component](/mantis/writingjobs/sink)
 
 SLA {#sla}
 :   A **service-level agreement**, in the Mantis context, is defined on a per-[Cluster] basis. You use it to configure how many [Jobs] in the cluster will be in operation at any time, among other things.
 
 Source {#source}
-:   The Source component of a Mantis [Job] fetches data from a source outside of Mantis and makes it available to the [Processing Stage] component in the form of an [RxJava]  [Observable]. There are two varieties of Source: a [Source Job] and a [custom source].<br />⇒ See [The Source Component](/writingjobs/source)
+:   The Source component of a Mantis [Job] fetches data from a source outside of Mantis and makes it available to the [Processing Stage] component in the form of an [RxJava]  [Observable]. There are two varieties of Source: a [Source Job] and a [custom source].<br />⇒ See [The Source Component](/mantis/writingjobs/source)
 
 Source Job {#sourcejob}
-:   A Source Job is a Mantis [Job] that you can use as a [Source], which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.<br />⇒ See [Mantis Source Jobs](/internals/sourcejobs)
+:   A Source Job is a Mantis [Job] that you can use as a [Source], which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.<br />⇒ See [Mantis Source Jobs](/mantis/internals/sourcejobs)
 
 server-sent events {#sse}
 :   Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE [Sink].<br />⇒ See [Wikipedia: Server-sent events](https://en.wikipedia.org/wiki/Server-sent_events)
