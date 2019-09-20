@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xl="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" version="1.1" viewBox="0 0 585 635" width="585" height="635">
+  <defs>
+    <font-face font-family="Courier New" font-size="16" panose-1="2 7 3 9 2 2 5 2 4 4" units-per-em="1000" underline-position="-232.91016" underline-thickness="41.015625" slope="0" x-height="422.85156" cap-height="571.28906" ascent="832.5195" descent="-300.29297" font-weight="400">
+      <font-face-src>
+        <font-face-name name="CourierNewPSMT"/>
+      </font-face-src>
+    </font-face>
+    <font-face font-family="Helvetica Neue" font-size="16" panose-1="2 0 5 3 0 0 0 2 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="951.9958" descent="-212.99744" font-weight="400">
+      <font-face-src>
+        <font-face-name name="HelveticaNeue"/>
+      </font-face-src>
+    </font-face>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-1 -4 10 8" markerWidth="10" markerHeight="8" color="#ff2f92">
+      <g>
+        <path d="M 8 0 L 0 -3 L 0 3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker_2" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-9 -4 10 8" markerWidth="10" markerHeight="8" color="black">
+      <g>
+        <path d="M -8 0 L 0 3 L 0 -3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker_3" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-9 -4 10 8" markerWidth="10" markerHeight="8" color="#0432ff">
+      <g>
+        <path d="M -8 0 L 0 3 L 0 -3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+    <font-face font-family="Courier New" font-size="13" panose-1="2 7 3 9 2 2 5 2 4 4" units-per-em="1000" underline-position="-232.91016" underline-thickness="41.015625" slope="0" x-height="422.85156" cap-height="571.28906" ascent="832.5195" descent="-300.29297" font-weight="400">
+      <font-face-src>
+        <font-face-name name="CourierNewPSMT"/>
+      </font-face-src>
+    </font-face>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="FilledArrow_Marker_4" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-9 -4 10 8" markerWidth="10" markerHeight="8" color="#ff2f92">
+      <g>
+        <path d="M -8 0 L 0 3 L 0 -3 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+  </defs>
+  <metadata> Produced by OmniGraffle 7.9.2 
+    <dc:date>2018-10-17 16:53:38 +0000</dc:date>
+  </metadata>
+  <g id="RequestEventProcessor" fill-opacity="1" stroke-dasharray="none" fill="none" stroke-opacity="1" stroke="none">
+    <title>RequestEventProcessor</title>
+    <g id="RequestEventProcessor: Layer 1">
+      <title>Layer 1</title>
+      <g id="Graphic_2">
+        <rect x="8" y="7" width="567.5" height="75" fill="#ffffc0"/>
+        <rect x="8" y="7" width="567.5" height="75" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(13 17.052002)" fill="black">
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="254.7461" y="13">myJob</tspan>
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="142.43" y="33">Uses as Its Source an Application that</tspan>
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="85.246" y="51.448">Generates Mantis RequestEvents with the MRE library</tspan>
+        </text>
+      </g>
+      <g id="Graphic_3">
+        <path d="M 234.975 114.5 L 348.025 114.5 C 361.3972 114.5 372.25 136.452 372.25 163.5 C 372.25 190.548 361.3972 212.5 348.025 212.5 L 234.975 212.5 C 221.6028 212.5 210.75 190.548 210.75 163.5 C 210.75 136.452 221.6028 114.5 234.975 114.5 Z" fill="#c0ffc0"/>
+        <path d="M 234.975 114.5 L 348.025 114.5 C 361.3972 114.5 372.25 136.452 372.25 163.5 C 372.25 190.548 361.3972 212.5 348.025 212.5 L 234.975 212.5 C 221.6028 212.5 210.75 190.548 210.75 163.5 C 210.75 136.452 221.6028 114.5 234.975 114.5 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(231.9 118.5)" fill="black">
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="13">{</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="31">   foo : 1,</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="49">   bar : 2,</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="67">   baz : 3</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="85">}</tspan>
+        </text>
+      </g>
+      <g id="Graphic_4">
+        <path d="M 235.225 352.5 L 348.275 352.5 C 361.6472 352.5 372.5 374.452 372.5 401.5 C 372.5 428.548 361.6472 450.5 348.275 450.5 L 235.225 450.5 C 221.8528 450.5 211 428.548 211 401.5 C 211 374.452 221.8528 352.5 235.225 352.5 Z" fill="#c0ffc0"/>
+        <path d="M 235.225 352.5 L 348.275 352.5 C 361.6472 352.5 372.5 374.452 372.5 401.5 C 372.5 428.548 361.6472 450.5 348.275 450.5 L 235.225 450.5 C 221.8528 450.5 211 428.548 211 401.5 C 211 374.452 221.8528 352.5 235.225 352.5 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(232.15 365.5)" fill="black">
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="13">{</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="31">   foo : 1,</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="49">   bar : 2</tspan>
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="0" y="67">}</tspan>
+        </text>
+      </g>
+      <g id="Graphic_5">
+        <rect x="8" y="245" width="567.5" height="75" fill="#ffffc0"/>
+        <rect x="8" y="245" width="567.5" height="75" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(13 273.5)" fill="black">
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x="177.9336" y="13">RequestEventProcessor</tspan>
+        </text>
+      </g>
+      <g id="Line_6">
+        <line x1="291.61607" y1="82" x2="291.53536" y2="104.60006" marker-end="url(#FilledArrow_Marker)" stroke="#ff2f92" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_7">
+        <line x1="291.5" y1="212.5" x2="291.67385" y2="235.1003" marker-end="url(#FilledArrow_Marker)" stroke="#ff2f92" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_9">
+        <text transform="translate(34 154)" fill="black">
+          <tspan font-family="Courier New" font-size="16" font-weight="400" fill="black" x=".390625" y="13">RequestEvent</tspan>
+        </text>
+      </g>
+      <g id="Line_10">
+        <line x1="200.85034" y1="163.41852" x2="150" y2="163" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_11">
+        <line x1="291.75" y1="320" x2="291.75" y2="342.6" marker-end="url(#FilledArrow_Marker)" stroke="#ff2f92" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_12">
+        <rect x="6.75" y="553.5" width="140.25" height="75" fill="#ffffc0"/>
+        <rect x="6.75" y="553.5" width="140.25" height="75" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(11.75 581.776)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="26.309" y="15">Subscriber</tspan>
+        </text>
+      </g>
+      <g id="Graphic_13">
+        <rect x="435.25" y="553.5" width="140.25" height="75" fill="#ffffc0"/>
+        <rect x="435.25" y="553.5" width="140.25" height="75" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(440.25 581.776)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="26.309" y="15">Subscriber</tspan>
+        </text>
+      </g>
+      <g id="Line_14">
+        <path d="M 94.58609 325.84152 C 74.665355 341.0784 23.631233 384.54632 12.5 437.5 C -1.4055539 503.6517 53.5 553.5 53.5 553.5" marker-start="url(#FilledArrow_Marker_3)" stroke="#0432ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_15">
+        <text transform="translate(20 449.776)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="38.568" y="15">MQL Query:</tspan>
+          <tspan font-family="Courier New" font-size="13" font-weight="400" fill="black" x=".08666992" y="29.447998">select foo from myJob</tspan>
+        </text>
+      </g>
+      <g id="Line_16">
+        <path d="M 489.255 325.33386 C 508.04026 338.16227 552.86266 373.5735 563.5 425.5 C 577.0514 491.6517 528.75 553.5 528.75 553.5" marker-start="url(#FilledArrow_Marker_3)" stroke="#0432ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_17">
+        <text transform="translate(391 449.776)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="38.568" y="15">MQL Query:</tspan>
+          <tspan font-family="Courier New" font-size="13" font-weight="400" fill="black" x=".08666992" y="29.447998">select bar from myJob</tspan>
+        </text>
+      </g>
+      <g id="Line_18">
+        <path d="M 425.37234 604.1384 C 407.8945 604.3318 370.53016 600.5182 340.5 568.5 C 299.84573 525.15433 291.75 450.5 291.75 450.5" marker-start="url(#FilledArrow_Marker_4)" stroke="#ff2f92" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_19">
+        <path d="M 156.88122 604.1376 C 174.46002 604.3418 212.1682 600.56055 242.5 568.5 C 283.5084 525.15433 291.75 450.5 291.75 450.5" marker-start="url(#FilledArrow_Marker_4)" stroke="#ff2f92" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_20">
+        <line x1="34.66336" y1="406.34637" x2="77.37296" y2="444.5" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_21">
+        <line x1="539.65366" y1="390.60908" x2="492.3222" y2="444.5" marker-start="url(#FilledArrow_Marker_2)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.0,4.0" stroke-width="1"/>
+      </g>
+    </g>
+  </g>
+</svg>

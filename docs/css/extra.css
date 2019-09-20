@@ -1,0 +1,204 @@
+/************************************************************************
+ * create a variety of code block that allows for distinct metasyntactic
+ * variables
+ ************************************************************************/
+div.codeblock {
+  padding: 0.25em;
+  padding-left: 0.5em;
+  background-color: #ececec;
+  font-family: "Share Tech Mono","Roboto Mono","Courier New",Courier,monospace;
+  font-size: 85%;
+  white-space: pre;
+  overflow: auto;
+}
+div.codeblock var {
+  font-family: serif;
+  font-style: italic;
+  font-size: 115%;
+}
+div.codeblock.i1 {
+  margin-inline-start: 40px;
+}
+div.codeblock.i2 {
+  margin-inline-start: 80px;
+}
+
+/************************************************************************
+ * allow nav header to scroll away; helps anchor links work correctly
+ ************************************************************************/
+.md-header {
+  position: inherit;
+}
+
+/************************************************************************
+ * override dull coloring of hyperlinks
+ ************************************************************************/
+[data-md-color-primary="blue-grey"] .md-typeset a { color: #00c; }
+
+/************************************************************************
+ * make missing / TBD / fixme sections visually distinct to flag them for
+ * editors
+ ************************************************************************/
+.tbd { display: none; }  /* hide this line during review phase */
+.tbd { color: #800; background-color: #ff0; }
+span.tbd::before { content: "TBD: "; }
+a[href*="fixme"] { color: #800; background-color: #ff0; }
+
+/************************************************************************
+ * make hyperlinked code-styled sections visually distinct
+ ************************************************************************/
+a code, code a,
+ a .codehilite, .codehilite a,
+ .md-typeset a .codehilite, .md-typeset .codehilite a
+ { color: #00c; }
+
+/************************************************************************
+ * prevent syntactically ambiguous hyphenation & line-breaks in code
+ * sections
+ ************************************************************************/
+.md-header {
+  position: inherit;
+}
+
+/************************************************************************
+ * override dull coloring of hyperlinks
+ ************************************************************************/
+[data-md-color-primary="blue-grey"] .md-typeset a { color: #00c; }
+
+/************************************************************************
+ * make missing / TBD / fixme sections visually distinct to flag them for
+ * editors
+ ************************************************************************/
+.tbd { display: none; }  /* hide this line during review phase */
+.tbd { color: #800; background-color: #ff0; }
+span.tbd::before { content: "TBD: "; }
+a[href*="fixme"] { color: #800; background-color: #ff0; }
+
+/************************************************************************
+ * make hyperlinked code-styled sections visually distinct
+ ************************************************************************/
+a code, code a,
+ a .codehilite, .codehilite a,
+ .md-typeset a .codehilite, .md-typeset .codehilite a
+ { color: #00c; }
+
+/************************************************************************
+ * prevent syntactically ambiguous hyphenation & line-breaks in code
+ * sections
+ ************************************************************************/
+code {
+       hyphens: none; -webkit-hyphens: none; -moz-hyphens: none; -epub-hyphens: none;
+       line-break: strict;
+       word-break: keep-all;
+}
+div.td code, td code { white-space: nowrap; }
+div.td code, td code { white-space: nowrap; }
+div.marked-table div.td code, div.marked-table td code {
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+/************************************************************************
+ * prevent automatic ligature formation in code and pre sections
+ ************************************************************************/
+code, pre {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+/************************************************************************
+ * style command-line interaction blocks:
+ * - distinguish input from output
+ * - make input more-easily copy/pasteable
+ * - allow for metasyntactic variables
+ * - allow for commentary that is visually distinct from input/output
+ ************************************************************************/
+
+code i, var {
+  font-family: serif;
+  font-style: italic;
+  font-size: 115%;
+}
+.md-typeset em code {
+  font-family: serif;
+  font-style: italic;
+  font-size: 100%;
+}
+div.commandline {
+  background: hsla(0,0%,93%,.5);
+  color: #37474f;
+  font-family: "Roboto Mono","Courier New",Courier,monospace;
+  font-size: 85%;
+  padding: 0.5em;
+  margin: 0.5em 0 0.5em 0;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  white-space: nowrap;
+  overflow: auto;
+}
+div.commandline + p {
+  margin-top: .5em;
+}
+div.commandline + table {
+  margin-top: .5em;
+}
+div.commandline span.command {
+  font-weight: bold;
+}
+div.commandline span.comment {
+  font-family: Prompt, 'Helvetica Neue', Helvetica, sans-serif;
+  font-weight: normal;
+  color: #808;
+  padding-left: 0.1em;
+  padding-right: 0.1em;
+}
+div.commandline span.variable, div.commandline var {
+  font-family: serif;
+  font-style: italic;
+  font-size: 110%;
+}
+div.commandline pre {
+  background-color: transparent;
+  color: #37474f;
+  font-family: "Roboto Mono","Courier New",Courier,monospace;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+div.commandline span.prompted::before {
+  content: "$ ";
+  font-weight: normal;
+}
+div.commandline span.container::before {
+  content: "# ";
+}
+div.commandline + div.codehilite {
+  margin-top: -0.5em;
+}
+div.codehilite + div.commandline {
+  margin-top: -1.7rem;
+}
+
+/************************************************************************
+ * make glossary links visually distinct from other links
+ ************************************************************************/
+a[href*="glossary"], a[title*="Glossary"] {
+  color: #ce00d8;
+}
+
+.md-main a[href*="glossary"] {
+  color: #ce00d8;
+  cursor: help;
+  /* font-weight: bold; */
+}
+.md-main a[href*="glossary"]:hover {
+  text-decoration: underline;
+}
+
+dt[id] {
+   background: #fef;
+   color: #a7b;
+   font-weight: bold;
+   padding-left: 0.5em;
+   border-top: 3px solid #b8c;
+}
