@@ -1,0 +1,940 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+    
+    
+      
+        <title>Mantis Source Jobs - Mantis</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="indigo">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#composition-of-a-source-job" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Mantis" class="md-header-nav__button md-logo">
+          
+            <img src="../../images/logo.png" width="24" height="24">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Mantis
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Mantis Source Jobs
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Mantis" class="md-nav__button md-logo">
+      
+        <img src="../../images/logo.png" width="48" height="48">
+      
+    </a>
+    Mantis
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Welcome" class="md-nav__link">
+      Welcome
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      User Guides
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        User Guides
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Writing Mantis Jobs
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        Writing Mantis Jobs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../writingjobs/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../writingjobs/source/" title="The Source Component" class="md-nav__link">
+      The Source Component
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../writingjobs/stage/" title="The Processing Stage Component" class="md-nav__link">
+      The Processing Stage Component
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../writingjobs/sink/" title="The Sink Component" class="md-nav__link">
+      The Sink Component
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2">
+    
+    <label class="md-nav__link" for="nav-2-2">
+      MQL
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        MQL
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../MQL/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../MQL/operators/" title="Operators" class="md-nav__link">
+      Operators
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../MQL/sampling/" title="Sampling" class="md-nav__link">
+      Sampling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../MQL/aggregation-scaling-limits/" title="Scaling Limits" class="md-nav__link">
+      Scaling Limits
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../autoscaling/" title="Mantis Job Autoscaling" class="md-nav__link">
+      Mantis Job Autoscaling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../mre/" title="Publishing Events to Mantis" class="md-nav__link">
+      Publishing Events to Mantis
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      The Mantis API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        The Mantis API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../mantisapi/" title="API Reference" class="md-nav__link">
+      API Reference
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../mantisapi/websocket/" title="Mantis Websocket API" class="md-nav__link">
+      Mantis Websocket API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../cli/" title="The Mantis CLI" class="md-nav__link">
+      The Mantis CLI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-7" type="checkbox" id="nav-2-7" checked>
+    
+    <label class="md-nav__link" for="nav-2-7">
+      Mantis Internals
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-7">
+        Mantis Internals
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Mantis Source Jobs
+      </label>
+    
+    <a href="./" title="Mantis Source Jobs" class="md-nav__link md-nav__link--active">
+      Mantis Source Jobs
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#composition-of-a-source-job" class="md-nav__link">
+    Composition of a Source Job
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-rxfunction" class="md-nav__link">
+    Source (RxFunction)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processing-stage-rxfunction" class="md-nav__link">
+    Processing Stage (RxFunction)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sink-rxaction" class="md-nav__link">
+    Sink (RxAction)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caveats" class="md-nav__link">
+    Caveats
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../runtime/" title="Mantis Runtime" class="md-nav__link">
+      Mantis Runtime
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../capacity/" title="Mantis Job Capacity Planning & Sizing" class="md-nav__link">
+      Mantis Job Capacity Planning & Sizing
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../glossary/" title="Glossary" class="md-nav__link">
+      Glossary
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#composition-of-a-source-job" class="md-nav__link">
+    Composition of a Source Job
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-rxfunction" class="md-nav__link">
+    Source (RxFunction)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processing-stage-rxfunction" class="md-nav__link">
+    Processing Stage (RxFunction)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sink-rxaction" class="md-nav__link">
+    Sink (RxAction)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caveats" class="md-nav__link">
+    Caveats
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/internals/sourcejobs.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>Mantis Source Jobs</h1>
+                
+                <p>Mantis Source Jobs are <a href="/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> that fetch data from external sources. There are four types of
+Source Jobs:</p>
+<ol>
+<li>
+<p><strong>Mantis Publish Source Jobs</strong>
+   read from their sources by using <a href="mre">Mantis Publish</a>. As such, they do not apply <a href="/mql">MQL</a> on events
+   themselves. Instead, they propagate the MQL queries upstream to Mantis Publish running on the external
+   source, which then applies the MQL queries to the events it produces and only then pushes those
+   events downstream to the Request Source Job.</p>
+</li>
+<li>
+<p><strong>Kafka Source Jobs</strong>
+   consume events from <a href="/glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> and apply MQL to each incoming event.</p>
+</li>
+</ol>
+<h2 id="composition-of-a-source-job">Composition of a Source Job<a class="headerlink" href="#composition-of-a-source-job" title="Permanent link">&para;</a></h2>
+<p>A Source Job is composed of three components:</p>
+<ol>
+<li>the default <a href="/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a></li>
+<li>custom <a href="/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stages</a> including a tagging operator</li>
+<li>the default <a href="/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a> consisting of an <a href="/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> operator</li>
+</ol>
+<p>For example, here is how you might declare a Kafka Source Job:</p>
+<div class="codehilite"><pre><span></span><span class="n">MantisJob</span>
+<span class="hll">  <span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="n">KafkaSource</span><span class="o">)</span>
+</span><span class="hll">  <span class="o">.</span><span class="na">stage</span><span class="o">(</span>
+</span><span class="hll">     <span class="n">getAckableTaggingStage</span><span class="o">(),</span>
+</span><span class="hll">     <span class="n">CustomizedAutoAckTaggingStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+</span><span class="hll">  <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="k">new</span> <span class="n">TaggedDataSourceSink</span><span class="o">(</span>
+</span><span class="hll">     <span class="k">new</span> <span class="n">QueryRequestPreProcessor</span><span class="o">(),</span>
+</span><span class="hll">     <span class="k">new</span> <span class="n">QueryRequestPostProcessor</span><span class="o">()))</span>
+</span>  <span class="o">.</span><span class="na">lifecycle</span><span class="o">(...)</span>
+  <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+</pre></div>
+
+
+<h3 id="source-rxfunction">Source (RxFunction)<a class="headerlink" href="#source-rxfunction" title="Permanent link">&para;</a></h3>
+<p>The Source in this example contains code that creates and manages connections to Kafka using the
+0.10 high level consumer. It creates an <a href="/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> with <a href="/glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a> semantics by leveraging the
+<a href="http://reactivex.io/RxJava/javadoc/rx/observables/SyncOnSubscribe.html"><code>SyncOnSubscribe</code></a> class.</p>
+<h3 id="processing-stage-rxfunction">Processing Stage (RxFunction)<a class="headerlink" href="#processing-stage-rxfunction" title="Permanent link">&para;</a></h3>
+<p>The next stage in this Job is the Processing Stage which enriches events with <a href="/glossary#metadata" title="Mantis inserts metadata into its Job payload. This may include information about where the data came from, for instance. You can define additional metadata to include in the payload when you establish the Job Cluster.">metadata</a>. This stage
+<a href="/glossary#transformation" title="A transformation acts on each datum from a stream or Observables of data, changing it in some manner before passing it along as a new stream or Observable. Transformations may change data between scalar and grouped forms.">transforms</a> events in the following way:</p>
+<ol>
+<li>Applies a user-defined pre-mapping function.<ul>
+<li>This is a Groovy function that takes a <code>Map&lt;String, Object&gt;</code> and returns a
+  <code>Map&lt;String, Object&gt;</code> referenced by a variable named <code>e</code>.</li>
+</ul>
+</li>
+<li>Filters out empty events.</li>
+<li>Inspects its internal subscription registry and enriches each event with all matching
+   subscriptions.<ul>
+<li>Subscriptions are represented by an MQL query and are registered when a consumer (e.g. Mantis
+  Job) subscribes to the Source Job.</li>
+<li>
+<p>Each event is enriched with fields specified by the projections of a subscription’s MQL query,
+  as in the following illustration:</p>
+<p><img alt="If an event matches multiple subscriptions, then the event will be enriched with projections from every subscription’s MQL query." src="/images/RequestEventProcessor.svg" /></p>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="sink-rxaction">Sink (RxAction)<a class="headerlink" href="#sink-rxaction" title="Permanent link">&para;</a></h3>
+<p>In order for a consumer to consume events from a Source Job, the consumer connects to the Job’s Sink.</p>
+<p>Consumers subscribe to a Source Job by sending a subscription request over HTTP to the Source Job’s Sink.</p>
+<p>When a consumer connects to a Sink, the consumer must provide three query parameters:</p>
+<ol>
+<li><code>criterion</code> — An MQL query string</li>
+<li><code>clientId</code> — This is automatically generated if you use the Mantis client library; it defaults to
+   the Mantis Job ID</li>
+<li><code>subscriptionId</code> — This is used as a load-balancing mechanism for <code>clientId</code></li>
+</ol>
+<p>A consumer (represented as a client through <code>clientId</code>) may have many consumer instances
+(represented as susbcriptions through <code>subscriptionId</code>). Source Jobs use <code>clientId</code> and
+<code>subscriptionId</code> to <strong>broadcast</strong> and/or <strong>load balance</strong> events to consumers.</p>
+<p>Source Jobs will <strong>broadcast</strong> an event to all <code>clientId</code>s. This means that consumer instances with
+different <code>clientId</code>s will each receive the same event.</p>
+<p>However, Source Jobs will <strong>load balance</strong> an event within a <code>clientId</code>. This means that consumer
+instances with the same <code>clientId</code> but different <code>subscriptionId</code>s are effectively grouped together.
+Events with the same <code>clientId</code> are load balanced among its <code>subscriptionId</code>s.</p>
+<div class="commandline">
+ <span class="comment">Example of subscribing to a Source Job’s Sink which outputs the results of a sine wave function:</span><br />
+ <span class="command prompted">curl "http://<var>instance-address</var>:<var>port</var>?clientId=<var>myId</var>&subscriptionId=<var>mySubscription</var>&criterion=select%20*%20where%20true"</span><br /><pre>
+
+data: {"x": 60.000000, "y": -3.048106}
+
+data: {"x": 100.000000, "y": -5.063656}
+
+data: {"x": 26.000000, "y": 7.625585}
+
+⋮</pre>
+</div>
+
+<p>Sinks have a pre-processor (<code>QueryRequestPreProcessor</code>), a post-processor
+(<code>QueryRequestPostProcessor</code>), and a router:</p>
+<ul>
+<li>
+<p>The <strong>pre-processor</strong> is an RxFunction that registers the consumer’s query, with their <code>clientId</code>
+  and <code>subscriptionId</code>, into an in-memory cache called a <code>QueryRefCountMap</code> when a consumer instance
+  connects to the Sink. This registers queries so that the Source Job can apply them to events as
+  those events are ingested by the Source Job.</p>
+</li>
+<li>
+<p>The <strong>post-processor</strong> is an RxFunction that de-registers subscriptions from the
+  <code>QueryRefCountMap</code> when a consumer instance disconnects from the Sink. The Source Job removes
+  removes the <code>clientId</code> entirely from the <code>QueryRefCountMap</code> only when all of its <code>subscriptionId</code>s
+  have been removed.</p>
+</li>
+<li>
+<p>The <strong>router</strong> routes incoming events for a <code>clientId</code>s to its subscriptions. It does this by
+  using a <strong>drainer</strong> called a <code>ChunkProcessor</code> to drain events from an internal queue on an
+  interval and randomly distribute the events to subscriptions.</p>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Typically, subscriptions to a Source Job come from other Mantis Jobs. However, because
+subscriptions are SSE endpoints, you can subscribe to Source Jobs over that same SSE endpoint to
+view the Job’s output for debugging purposes.</p>
+</div>
+<h2 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">&para;</a></h2>
+<p>Source Jobs are single-stage Mantis Jobs that perform projection and filtering operations. MQL
+queries containing <code>groupBy</code>, <code>orderBy</code>, and <code>window</code> are ignored. These clauses are interpreted
+into <a href="/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> operations and run by downstream Mantis Jobs.</p>
+<p>Mantis Publish-based Source Jobs do not <a href="/glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscale</a>. Autoscaling Mantis Publish-based Source Jobs requires future work to
+reshuffle connections among all Source Job instances and their upstream Mantis Publish connections.</p>
+<!-- Do not edit below this line -->
+
+<!-- START -->
+
+<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
+
+<!-- END -->
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../cli/" title="The Mantis CLI" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                The Mantis CLI
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../runtime/" title="Mantis Runtime" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Mantis Runtime
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://twitter.com/NetflixOSS" class="md-footer-social__link fa fa-twitter"></a>
+    
+      <a href="https://netflix.github.io/" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xl="http://www.w3.org/1999/xlink" version="1.1" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="0 0 745 525" width="745" height="525">
+  <defs>
+    <filter id="Shadow" filterUnits="userSpaceOnUse" x="0" y="0">
+      <feGaussianBlur in="SourceAlpha" result="blur" stdDeviation="1.308"/>
+      <feOffset in="blur" result="offset" dx="0" dy="2"/>
+      <feFlood flood-color="black" flood-opacity=".5" result="flood"/>
+      <feComposite in="flood" in2="offset" operator="in"/>
+    </filter>
+    <marker orient="auto" overflow="visible" markerUnits="strokeWidth" id="StickArrow_Marker" stroke-linejoin="miter" stroke-miterlimit="10" viewBox="-1 -4 10 8" markerWidth="10" markerHeight="8" color="black">
+      <g>
+        <path d="M 7.466667 0 L 0 0 M 0 -2.8 L 7.466667 0 L 0 2.8" fill="none" stroke="currentColor" stroke-width="1"/>
+      </g>
+    </marker>
+    <radialGradient cx="0" cy="0" r="1" id="Gradient" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white"/>
+      <stop offset=".5" stop-color="#fffc00"/>
+      <stop offset="1" stop-color="black"/>
+    </radialGradient>
+    <radialGradient id="Obj_Gradient" xl:href="#Gradient" gradientTransform="translate(118.5257 16.52553) scale(26.945902)"/>
+    <radialGradient cx="0" cy="0" r="1" id="Gradient_2" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white"/>
+      <stop offset=".5" stop-color="#ff40ff"/>
+      <stop offset="1" stop-color="black"/>
+    </radialGradient>
+    <radialGradient id="Obj_Gradient_2" xl:href="#Gradient_2" gradientTransform="translate(201.10134 17.193325) scale(26.945902)"/>
+    <radialGradient cx="0" cy="0" r="1" id="Gradient_3" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white"/>
+      <stop offset=".5" stop-color="#00fdff"/>
+      <stop offset="1" stop-color="black"/>
+    </radialGradient>
+    <radialGradient id="Obj_Gradient_3" xl:href="#Gradient_3" gradientTransform="translate(323.7454 16.621377) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_4" xl:href="#Gradient_2" gradientTransform="translate(36.86092 15.865102) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_5" xl:href="#Gradient_3" gradientTransform="translate(77.44001 16.193268) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_6" xl:href="#Gradient" gradientTransform="translate(160.70616 16.866647) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_7" xl:href="#Gradient_2" gradientTransform="translate(486.54683 17.937963) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_8" xl:href="#Gradient_2" gradientTransform="translate(403.9176 17.269735) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_9" xl:href="#Gradient_3" gradientTransform="translate(362.8855 16.937905) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_10" xl:href="#Gradient" gradientTransform="translate(446.15166 17.611284) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_11" xl:href="#Gradient" gradientTransform="translate(480.82485 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_12" xl:href="#Gradient_2" gradientTransform="translate(75.46789 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_13" xl:href="#Gradient_3" gradientTransform="translate(303.41674 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_14" xl:href="#Gradient_2" gradientTransform="translate(30.86092 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_15" xl:href="#Gradient_3" gradientTransform="translate(260.80977 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_16" xl:href="#Gradient" gradientTransform="translate(521.82485 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_17" xl:href="#Gradient_2" gradientTransform="translate(164.68182 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_18" xl:href="#Gradient_2" gradientTransform="translate(120.07485 263.7047) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_19" xl:href="#Gradient_3" gradientTransform="translate(346.0237 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_20" xl:href="#Gradient" gradientTransform="translate(441.32485 263.37653) scale(26.945902)"/>
+    <radialGradient cx="0" cy="0" r="1" id="Gradient_4" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white"/>
+      <stop offset=".5" stop-color="#d6d6d6"/>
+      <stop offset="1" stop-color="black"/>
+    </radialGradient>
+    <radialGradient id="Obj_Gradient_21" xl:href="#Gradient_4" gradientTransform="translate(284.02467 489.78425) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_22" xl:href="#Gradient_4" gradientTransform="translate(468.4317 489.78425) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_23" xl:href="#Gradient_4" gradientTransform="translate(101.60411 490.4892) scale(26.945902)"/>
+    <font-face font-family="Arial" font-size="16" panose-1="2 11 6 4 2 2 2 2 2 4" units-per-em="1000" underline-position="-105.95703" underline-thickness="73.24219" slope="0" x-height="518.5547" cap-height="716.3086" ascent="905.2734" descent="-211.91406" font-weight="400">
+      <font-face-src>
+        <font-face-name name="ArialMT"/>
+      </font-face-src>
+    </font-face>
+    <radialGradient id="Obj_Gradient_24" xl:href="#Gradient" gradientTransform="translate(118.5257 16.52553) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_25" xl:href="#Gradient_2" gradientTransform="translate(201.10134 17.193325) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_26" xl:href="#Gradient_3" gradientTransform="translate(323.7454 16.621377) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_27" xl:href="#Gradient_2" gradientTransform="translate(36.86092 15.865102) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_28" xl:href="#Gradient_3" gradientTransform="translate(77.44001 16.193268) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_29" xl:href="#Gradient" gradientTransform="translate(160.70616 16.866647) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_30" xl:href="#Gradient_2" gradientTransform="translate(486.54683 17.937963) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_31" xl:href="#Gradient_2" gradientTransform="translate(403.9176 17.269735) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_32" xl:href="#Gradient_3" gradientTransform="translate(362.8855 16.937905) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_33" xl:href="#Gradient" gradientTransform="translate(446.15166 17.611284) scale(26.945902)"/>
+    <font-face font-family="Arial" font-size="18" panose-1="2 11 6 4 2 2 2 2 2 4" units-per-em="1000" underline-position="-105.95703" underline-thickness="73.24219" slope="0" x-height="518.5547" cap-height="716.3086" ascent="905.2734" descent="-211.91406" font-weight="400">
+      <font-face-src>
+        <font-face-name name="ArialMT"/>
+      </font-face-src>
+    </font-face>
+    <radialGradient id="Obj_Gradient_34" xl:href="#Gradient" gradientTransform="translate(480.82485 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_35" xl:href="#Gradient_2" gradientTransform="translate(75.46789 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_36" xl:href="#Gradient_3" gradientTransform="translate(303.41674 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_37" xl:href="#Gradient_2" gradientTransform="translate(30.86092 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_38" xl:href="#Gradient_3" gradientTransform="translate(260.80977 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_39" xl:href="#Gradient" gradientTransform="translate(521.82485 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_40" xl:href="#Gradient_2" gradientTransform="translate(164.68182 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_41" xl:href="#Gradient_2" gradientTransform="translate(120.07485 263.7047) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_42" xl:href="#Gradient_3" gradientTransform="translate(346.0237 264.37807) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_43" xl:href="#Gradient" gradientTransform="translate(441.32485 263.37653) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_44" xl:href="#Gradient_4" gradientTransform="translate(284.02467 489.78425) scale(26.945902)"/>
+    <font-face font-family="Helvetica" font-size="25" units-per-em="1000" underline-position="-75.68359" underline-thickness="49.316406" slope="0" x-height="522.9492" cap-height="717.28516" ascent="770.0195" descent="-229.98047" font-weight="400">
+      <font-face-src>
+        <font-face-name name="Helvetica"/>
+      </font-face-src>
+    </font-face>
+    <radialGradient id="Obj_Gradient_45" xl:href="#Gradient_4" gradientTransform="translate(468.4317 489.78425) scale(26.945902)"/>
+    <radialGradient id="Obj_Gradient_46" xl:href="#Gradient_4" gradientTransform="translate(101.60411 490.4892) scale(26.945902)"/>
+    <font-face font-family="Helvetica Neue" font-size="16" panose-1="2 0 5 3 0 0 0 2 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="951.9958" descent="-212.99744" font-weight="400">
+      <font-face-src>
+        <font-face-name name="HelveticaNeue"/>
+      </font-face-src>
+    </font-face>
+    <font-face font-family="PingFang SC" font-size="16" panose-1="2 11 4 0 0 0 0 0 0 0" units-per-em="1000" underline-position="-150" underline-thickness="58" slope="0" x-height="600" cap-height="860" ascent="1060.0021" descent="-340.0007" font-weight="400">
+      <font-face-src>
+        <font-face-name name="PingFangSC-Regular"/>
+      </font-face-src>
+    </font-face>
+  </defs>
+  <metadata> Produced by OmniGraffle 7.9.2 
+    <dc:date>2018-10-31 16:30:20 +0000</dc:date>
+  </metadata>
+  <g id="postscale" stroke-dasharray="none" fill-opacity="1" fill="none" stroke="none" stroke-opacity="1">
+    <title>postscale</title>
+    <g id="postscale: Layer 1">
+      <title>Layer 1</title>
+      <g id="Line_81_shadow" filter="url(#Shadow)">
+        <line x1="422.5" y1="275.2352" x2="557.9008" y2="276.25626" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_80_shadow" filter="url(#Shadow)">
+        <line x1="245.4677" y1="275.2352" x2="385.8678" y2="275.5757" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_79_shadow" filter="url(#Shadow)">
+        <line x1="8.967711" y1="274.64144" x2="205.86798" y2="275.52046" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_77_shadow" filter="url(#Shadow)">
+        <line x1="299.9677" y1="27.244638" x2="543.3686" y2="29.213037" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_76_shadow" filter="url(#Shadow)">
+        <line x1="14.522214" y1="26.5" x2="257.9231" y2="28.4684" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_75_shadow" filter="url(#Shadow)">
+        <circle cx="123.66855" cy="27.382674" r="15.0000239685284" fill="url(#Obj_Gradient)"/>
+        <circle cx="123.66855" cy="27.382674" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_74_shadow" filter="url(#Shadow)">
+        <circle cx="206.2442" cy="28.05047" r="15.0000239685284" fill="url(#Obj_Gradient_2)"/>
+        <circle cx="206.2442" cy="28.05047" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_73_shadow" filter="url(#Shadow)">
+        <circle cx="328.88826" cy="27.47852" r="15.0000239685284" fill="url(#Obj_Gradient_3)"/>
+        <circle cx="328.88826" cy="27.47852" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_72_shadow" filter="url(#Shadow)">
+        <circle cx="42.003777" cy="26.722245" r="15.0000239685284" fill="url(#Obj_Gradient_4)"/>
+        <circle cx="42.003777" cy="26.722245" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_71_shadow" filter="url(#Shadow)">
+        <circle cx="82.58287" cy="27.05041" r="15.0000239685284" fill="url(#Obj_Gradient_5)"/>
+        <circle cx="82.58287" cy="27.05041" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_70_shadow" filter="url(#Shadow)">
+        <circle cx="165.84902" cy="27.72379" r="15.0000239685284" fill="url(#Obj_Gradient_6)"/>
+        <circle cx="165.84902" cy="27.72379" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_69_shadow" filter="url(#Shadow)">
+        <path d="M 242.84978 16.838413 L 242.84978 39.838413 C 242.84978 40.3907 242.40207 40.838413 241.84978 40.838413 L 241.84978 40.838413 C 241.2975 40.838413 240.84978 40.3907 240.84978 39.838413 L 240.84978 16.838413 C 240.84978 16.286128 241.2975 15.838413 241.84978 15.838413 L 241.84978 15.838413 C 242.40207 15.838413 242.84978 16.286128 242.84978 16.838413 Z" fill="black"/>
+        <path d="M 242.84978 16.838413 L 242.84978 39.838413 C 242.84978 40.3907 242.40207 40.838413 241.84978 40.838413 L 241.84978 40.838413 C 241.2975 40.838413 240.84978 40.3907 240.84978 39.838413 L 240.84978 16.838413 C 240.84978 16.286128 241.2975 15.838413 241.84978 15.838413 L 241.84978 15.838413 C 242.40207 15.838413 242.84978 16.286128 242.84978 16.838413 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_68_shadow" filter="url(#Shadow)">
+        <circle cx="491.6897" cy="28.795106" r="15.0000239685284" fill="url(#Obj_Gradient_7)"/>
+        <circle cx="491.6897" cy="28.795106" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_67_shadow" filter="url(#Shadow)">
+        <circle cx="409.06044" cy="28.126878" r="15.0000239685284" fill="url(#Obj_Gradient_8)"/>
+        <circle cx="409.06044" cy="28.126878" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_66_shadow" filter="url(#Shadow)">
+        <circle cx="368.02837" cy="27.79505" r="15.0000239685284" fill="url(#Obj_Gradient_9)"/>
+        <circle cx="368.02837" cy="27.79505" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_65_shadow" filter="url(#Shadow)">
+        <circle cx="451.2945" cy="28.468428" r="15.0000239685284" fill="url(#Obj_Gradient_10)"/>
+        <circle cx="451.2945" cy="28.468428" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_64_shadow" filter="url(#Shadow)">
+        <path d="M 528.2953 17.58305 L 528.2953 40.58305 C 528.2953 41.135336 527.84757 41.58305 527.2953 41.58305 L 527.2953 41.58305 C 526.743 41.58305 526.2953 41.135336 526.2953 40.58305 L 526.2953 17.58305 C 526.2953 17.030766 526.743 16.58305 527.2953 16.58305 L 527.2953 16.58305 C 527.84757 16.58305 528.2953 17.030766 528.2953 17.58305 Z" fill="black"/>
+        <path d="M 528.2953 17.58305 L 528.2953 40.58305 C 528.2953 41.135336 527.84757 41.58305 527.2953 41.58305 L 527.2953 41.58305 C 526.743 41.58305 526.2953 41.135336 526.2953 40.58305 L 526.2953 17.58305 C 526.2953 17.030766 526.743 16.58305 527.2953 16.58305 L 527.2953 16.58305 C 527.84757 16.58305 528.2953 17.030766 528.2953 17.58305 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_51_shadow" filter="url(#Shadow)">
+        <circle cx="485.9677" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_11)"/>
+        <circle cx="485.9677" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_50_shadow" filter="url(#Shadow)">
+        <circle cx="80.61074" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_12)"/>
+        <circle cx="80.61074" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_49_shadow" filter="url(#Shadow)">
+        <circle cx="308.5596" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_13)"/>
+        <circle cx="308.5596" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_48_shadow" filter="url(#Shadow)">
+        <circle cx="36.003777" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_14)"/>
+        <circle cx="36.003777" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_47_shadow" filter="url(#Shadow)">
+        <circle cx="265.95263" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_15)"/>
+        <circle cx="265.95263" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_46_shadow" filter="url(#Shadow)">
+        <circle cx="526.9677" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_16)"/>
+        <circle cx="526.9677" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_45_shadow" filter="url(#Shadow)">
+        <path d="M 378.9611 264.32744 L 378.9611 287.1399 C 378.9611 287.74397 378.4714 288.23367 377.8673 288.23367 C 377.8673 288.23367 377.8673 288.23367 377.8673 288.23367 L 377.8673 288.23367 C 377.26323 288.23367 376.77353 287.74397 376.77353 287.1399 L 376.77353 264.32744 C 376.77353 263.72337 377.26323 263.23367 377.8673 263.23367 C 377.8673 263.23367 377.8673 263.23367 377.8673 263.23367 L 377.8673 263.23367 C 378.4714 263.23367 378.9611 263.72337 378.9611 264.32744 Z" fill="black"/>
+        <path d="M 378.9611 264.32744 L 378.9611 287.1399 C 378.9611 287.74397 378.4714 288.23367 377.8673 288.23367 C 377.8673 288.23367 377.8673 288.23367 377.8673 288.23367 L 377.8673 288.23367 C 377.26323 288.23367 376.77353 287.74397 376.77353 287.1399 L 376.77353 264.32744 C 376.77353 263.72337 377.26323 263.23367 377.8673 263.23367 C 377.8673 263.23367 377.8673 263.23367 377.8673 263.23367 L 377.8673 263.23367 C 378.4714 263.23367 378.9611 263.72337 378.9611 264.32744 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_44_shadow" filter="url(#Shadow)">
+        <circle cx="169.82468" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_17)"/>
+        <circle cx="169.82468" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_43_shadow" filter="url(#Shadow)">
+        <circle cx="125.21771" cy="274.56183" r="15.0000239685284" fill="url(#Obj_Gradient_18)"/>
+        <circle cx="125.21771" cy="274.56183" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_42_shadow" filter="url(#Shadow)">
+        <circle cx="351.16656" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_19)"/>
+        <circle cx="351.16656" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_41_shadow" filter="url(#Shadow)">
+        <circle cx="446.4677" cy="274.23367" r="15.0000239685284" fill="url(#Obj_Gradient_20)"/>
+        <circle cx="446.4677" cy="274.23367" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_40_shadow" filter="url(#Shadow)">
+        <path d="M 552.9677 264.2352 L 552.9677 287.2352 C 552.9677 287.7875 552.52 288.2352 551.9677 288.2352 L 551.9677 288.2352 C 551.4154 288.2352 550.9677 287.7875 550.9677 287.2352 L 550.9677 264.2352 C 550.9677 263.68293 551.4154 263.2352 551.9677 263.2352 L 551.9677 263.2352 C 552.52 263.2352 552.9677 263.68293 552.9677 264.2352 Z" fill="black"/>
+        <path d="M 552.9677 264.2352 L 552.9677 287.2352 C 552.9677 287.7875 552.52 288.2352 551.9677 288.2352 L 551.9677 288.2352 C 551.4154 288.2352 550.9677 287.7875 550.9677 287.2352 L 550.9677 264.2352 C 550.9677 263.68293 551.4154 263.2352 551.9677 263.2352 L 551.9677 263.2352 C 552.52 263.2352 552.9677 263.68293 552.9677 264.2352 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_39_shadow" filter="url(#Shadow)">
+        <path d="M 198.6192 263.829 L 198.6192 286.64144 C 198.6192 287.2455 198.1295 287.7352 197.52542 287.7352 L 197.52542 287.7352 C 196.92134 287.7352 196.43164 287.2455 196.43164 286.64144 L 196.43164 263.829 C 196.43164 263.2249 196.92134 262.7352 197.52542 262.7352 L 197.52542 262.7352 C 198.1295 262.7352 198.6192 263.2249 198.6192 263.829 Z" fill="black"/>
+        <path d="M 198.6192 263.829 L 198.6192 286.64144 C 198.6192 287.2455 198.1295 287.7352 197.52542 287.7352 L 197.52542 287.7352 C 196.92134 287.7352 196.43164 287.2455 196.43164 286.64144 L 196.43164 263.829 C 196.43164 263.2249 196.92134 262.7352 197.52542 262.7352 L 197.52542 262.7352 C 198.1295 262.7352 198.6192 263.2249 198.6192 263.829 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_14_shadow" filter="url(#Shadow)">
+        <line x1="232.38826" y1="500.1565" x2="348.7731" y2="501.15044" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_13_shadow" filter="url(#Shadow)">
+        <circle cx="289.16752" cy="500.6414" r="15.0000239685284" fill="url(#Obj_Gradient_21)"/>
+        <circle cx="289.16752" cy="500.6414" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_12_shadow" filter="url(#Shadow)">
+        <path d="M 335.8655 490.0679 L 335.8655 512.8803 C 335.8655 513.4844 335.3758 513.9741 334.7717 513.9741 C 334.7717 513.9741 334.7717 513.9741 334.7717 513.9741 L 334.7717 513.9741 C 334.16764 513.9741 333.67794 513.4844 333.67794 512.8803 L 333.67794 490.0679 C 333.67794 489.4638 334.16764 488.9741 334.7717 488.9741 C 334.7717 488.9741 334.7717 488.9741 334.7717 488.9741 L 334.7717 488.9741 C 335.3758 488.9741 335.8655 489.4638 335.8655 490.0679 Z" fill="black"/>
+        <path d="M 335.8655 490.0679 L 335.8655 512.8803 C 335.8655 513.4844 335.3758 513.9741 334.7717 513.9741 C 334.7717 513.9741 334.7717 513.9741 334.7717 513.9741 L 334.7717 513.9741 C 334.16764 513.9741 333.67794 513.4844 333.67794 512.8803 L 333.67794 490.0679 C 333.67794 489.4638 334.16764 488.9741 334.7717 488.9741 C 334.7717 488.9741 334.7717 488.9741 334.7717 488.9741 L 334.7717 488.9741 C 335.3758 488.9741 335.8655 489.4638 335.8655 490.0679 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_11_shadow" filter="url(#Shadow)">
+        <line x1="416.7953" y1="500.1565" x2="533.1801" y2="501.15044" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_10_shadow" filter="url(#Shadow)">
+        <circle cx="473.57454" cy="500.6414" r="15.0000239685285" fill="url(#Obj_Gradient_22)"/>
+        <circle cx="473.57454" cy="500.6414" r="15.0000239685285" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_9_shadow" filter="url(#Shadow)">
+        <path d="M 520.744 489.36295 L 520.744 512.1754 C 520.744 512.7795 520.2543 513.2692 519.6502 513.2692 L 519.6502 513.2692 C 519.04615 513.2692 518.55645 512.7795 518.55645 512.1754 L 518.55645 489.36295 C 518.55645 488.7589 519.04615 488.2692 519.6502 488.2692 L 519.6502 488.2692 C 520.2543 488.2692 520.744 488.7589 520.744 489.36295 Z" fill="black"/>
+        <path d="M 520.744 489.36295 L 520.744 512.1754 C 520.744 512.7795 520.2543 513.2692 519.6502 513.2692 L 519.6502 513.2692 C 519.04615 513.2692 518.55645 512.7795 518.55645 512.1754 L 518.55645 489.36295 C 518.55645 488.7589 519.04615 488.2692 519.6502 488.2692 L 519.6502 488.2692 C 520.2543 488.2692 520.744 488.7589 520.744 489.36295 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_8_shadow" filter="url(#Shadow)">
+        <line x1="49.96771" y1="500.8614" x2="166.35255" y2="501.85537" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_7_shadow" filter="url(#Shadow)">
+        <circle cx="106.74697" cy="501.3463" r="15.0000239685284" fill="url(#Obj_Gradient_23)"/>
+        <circle cx="106.74697" cy="501.3463" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_6_shadow" filter="url(#Shadow)">
+        <path d="M 153.91644 490.0679 L 153.91644 512.8803 C 153.91644 513.4844 153.42674 513.9741 152.82266 513.9741 L 152.82266 513.9741 C 152.21858 513.9741 151.72888 513.4844 151.72888 512.8803 L 151.72888 490.0679 C 151.72888 489.4638 152.21858 488.9741 152.82266 488.9741 L 152.82266 488.9741 C 153.42674 488.9741 153.91644 489.4638 153.91644 490.0679 Z" fill="black"/>
+        <path d="M 153.91644 490.0679 L 153.91644 512.8803 C 153.91644 513.4844 153.42674 513.9741 152.82266 513.9741 L 152.82266 513.9741 C 152.21858 513.9741 151.72888 513.4844 151.72888 512.8803 L 151.72888 490.0679 C 151.72888 489.4638 152.21858 488.9741 152.82266 488.9741 L 152.82266 488.9741 C 153.42674 488.9741 153.91644 489.4638 153.91644 490.0679 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_83_shadow" filter="url(#Shadow)">
+        <ellipse cx="659.75" cy="500.6414" rx="44.2500707071589" ry="15.0000239685285" fill="white"/>
+        <ellipse cx="659.75" cy="500.6414" rx="44.2500707071589" ry="15.0000239685285" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_81">
+        <line x1="422.5" y1="275.2352" x2="557.9008" y2="276.25626" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_80">
+        <line x1="245.4677" y1="275.2352" x2="385.8678" y2="275.5757" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_79">
+        <line x1="8.967711" y1="274.64144" x2="205.86798" y2="275.52046" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_78">
+        <rect x="8.967711" y="71.96061" width="718.0323" height="144" fill="#ffffc0"/>
+        <rect x="8.967711" y="71.96061" width="718.0323" height="144" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(13.967711 76.96061)" fill="black">
+          <tspan font-family="Arial" font-size="16" font-weight="400" fill="black" x="0" y="14">Processing Stage</tspan>
+        </text>
+      </g>
+      <g id="Line_77">
+        <line x1="299.9677" y1="27.244638" x2="543.3686" y2="29.213037" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Line_76">
+        <line x1="14.522214" y1="26.5" x2="257.9231" y2="28.4684" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_75">
+        <circle cx="123.66855" cy="27.382674" r="15.0000239685284" fill="url(#Obj_Gradient_24)"/>
+        <circle cx="123.66855" cy="27.382674" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_74">
+        <circle cx="206.2442" cy="28.05047" r="15.0000239685284" fill="url(#Obj_Gradient_25)"/>
+        <circle cx="206.2442" cy="28.05047" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_73">
+        <circle cx="328.88826" cy="27.47852" r="15.0000239685284" fill="url(#Obj_Gradient_26)"/>
+        <circle cx="328.88826" cy="27.47852" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_72">
+        <circle cx="42.003777" cy="26.722245" r="15.0000239685284" fill="url(#Obj_Gradient_27)"/>
+        <circle cx="42.003777" cy="26.722245" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_71">
+        <circle cx="82.58287" cy="27.05041" r="15.0000239685284" fill="url(#Obj_Gradient_28)"/>
+        <circle cx="82.58287" cy="27.05041" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_70">
+        <circle cx="165.84902" cy="27.72379" r="15.0000239685284" fill="url(#Obj_Gradient_29)"/>
+        <circle cx="165.84902" cy="27.72379" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_69">
+        <path d="M 242.84978 16.838413 L 242.84978 39.838413 C 242.84978 40.3907 242.40207 40.838413 241.84978 40.838413 L 241.84978 40.838413 C 241.2975 40.838413 240.84978 40.3907 240.84978 39.838413 L 240.84978 16.838413 C 240.84978 16.286128 241.2975 15.838413 241.84978 15.838413 L 241.84978 15.838413 C 242.40207 15.838413 242.84978 16.286128 242.84978 16.838413 Z" fill="black"/>
+        <path d="M 242.84978 16.838413 L 242.84978 39.838413 C 242.84978 40.3907 242.40207 40.838413 241.84978 40.838413 L 241.84978 40.838413 C 241.2975 40.838413 240.84978 40.3907 240.84978 39.838413 L 240.84978 16.838413 C 240.84978 16.286128 241.2975 15.838413 241.84978 15.838413 L 241.84978 15.838413 C 242.40207 15.838413 242.84978 16.286128 242.84978 16.838413 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_68">
+        <circle cx="491.6897" cy="28.795106" r="15.0000239685284" fill="url(#Obj_Gradient_30)"/>
+        <circle cx="491.6897" cy="28.795106" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_67">
+        <circle cx="409.06044" cy="28.126878" r="15.0000239685284" fill="url(#Obj_Gradient_31)"/>
+        <circle cx="409.06044" cy="28.126878" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_66">
+        <circle cx="368.02837" cy="27.79505" r="15.0000239685284" fill="url(#Obj_Gradient_32)"/>
+        <circle cx="368.02837" cy="27.79505" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_65">
+        <circle cx="451.2945" cy="28.468428" r="15.0000239685284" fill="url(#Obj_Gradient_33)"/>
+        <circle cx="451.2945" cy="28.468428" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_64">
+        <path d="M 528.2953 17.58305 L 528.2953 40.58305 C 528.2953 41.135336 527.84757 41.58305 527.2953 41.58305 L 527.2953 41.58305 C 526.743 41.58305 526.2953 41.135336 526.2953 40.58305 L 526.2953 17.58305 C 526.2953 17.030766 526.743 16.58305 527.2953 16.58305 L 527.2953 16.58305 C 527.84757 16.58305 528.2953 17.030766 528.2953 17.58305 Z" fill="black"/>
+        <path d="M 528.2953 17.58305 L 528.2953 40.58305 C 528.2953 41.135336 527.84757 41.58305 527.2953 41.58305 L 527.2953 41.58305 C 526.743 41.58305 526.2953 41.135336 526.2953 40.58305 L 526.2953 17.58305 C 526.2953 17.030766 526.743 16.58305 527.2953 16.58305 L 527.2953 16.58305 C 527.84757 16.58305 528.2953 17.030766 528.2953 17.58305 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_63">
+        <path d="M 74.34271 105.96061 L 188.0927 105.96061 C 201.5477 105.96061 212.4677 126.12061 212.4677 150.96061 C 212.4677 175.8006 201.5477 195.9606 188.0927 195.9606 L 74.34271 195.9606 C 60.88771 195.9606 49.96771 175.8006 49.96771 150.96061 C 49.96771 126.12061 60.88771 105.96061 74.34271 105.96061 Z" fill="#c0ffc0"/>
+        <path d="M 74.34271 105.96061 L 188.0927 105.96061 C 201.5477 105.96061 212.4677 126.12061 212.4677 150.96061 C 212.4677 175.8006 201.5477 195.9606 188.0927 195.9606 L 74.34271 195.9606 C 60.88771 195.9606 49.96771 175.8006 49.96771 150.96061 C 49.96771 126.12061 60.88771 105.96061 74.34271 105.96061 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(71.21771 119.87174)" fill="black">
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="18.651855" y="16">Worker #1</tspan>
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x=".9770508" y="57.58887">groupBy(color)</tspan>
+        </text>
+      </g>
+      <g id="Graphic_62">
+        <path d="M 360.8427 105.96061 L 474.5927 105.96061 C 488.0477 105.96061 498.9677 126.12061 498.9677 150.96061 C 498.9677 175.8006 488.0477 195.9606 474.5927 195.9606 L 360.8427 195.9606 C 347.3877 195.9606 336.4677 175.8006 336.4677 150.96061 C 336.4677 126.12061 347.3877 105.96061 360.8427 105.96061 Z" fill="#c0ffc0"/>
+        <path d="M 360.8427 105.96061 L 474.5927 105.96061 C 488.0477 105.96061 498.9677 126.12061 498.9677 150.96061 C 498.9677 175.8006 488.0477 195.9606 474.5927 195.9606 L 360.8427 195.9606 C 347.3877 195.9606 336.4677 175.8006 336.4677 150.96061 C 336.4677 126.12061 347.3877 105.96061 360.8427 105.96061 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(357.7177 119.87174)" fill="black">
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="18.651855" y="16">Worker #2</tspan>
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x=".9770508" y="57.58887">groupBy(color)</tspan>
+        </text>
+      </g>
+      <g id="Line_61">
+        <line x1="43.96771" y1="42.218423" x2="131.21771" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_60">
+        <line x1="81.96771" y1="43.795106" x2="131.21771" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_59">
+        <line x1="123.96771" y1="43.46843" x2="130.67121" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_58">
+        <line x1="165.96771" y1="43.795106" x2="131.21771" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_57">
+        <line x1="201.9677" y1="43.46843" x2="131.21771" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_56">
+        <line x1="330.9677" y1="43.46843" x2="417.7177" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_55">
+        <line x1="369.9677" y1="43.795106" x2="417.7177" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_54">
+        <line x1="408.9677" y1="43.795106" x2="417.7177" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_53">
+        <line x1="453.9677" y1="43.795106" x2="417.7177" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_52">
+        <line x1="492.9677" y1="43.795106" x2="417.7177" y2="105.96061" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Graphic_51">
+        <circle cx="485.9677" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_34)"/>
+        <circle cx="485.9677" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_50">
+        <circle cx="80.61074" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_35)"/>
+        <circle cx="80.61074" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_49">
+        <circle cx="308.5596" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_36)"/>
+        <circle cx="308.5596" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_48">
+        <circle cx="36.003777" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_37)"/>
+        <circle cx="36.003777" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_47">
+        <circle cx="265.95263" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_38)"/>
+        <circle cx="265.95263" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_46">
+        <circle cx="526.9677" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_39)"/>
+        <circle cx="526.9677" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_45">
+        <path d="M 378.9611 264.32744 L 378.9611 287.1399 C 378.9611 287.74397 378.4714 288.23367 377.8673 288.23367 C 377.8673 288.23367 377.8673 288.23367 377.8673 288.23367 L 377.8673 288.23367 C 377.26323 288.23367 376.77353 287.74397 376.77353 287.1399 L 376.77353 264.32744 C 376.77353 263.72337 377.26323 263.23367 377.8673 263.23367 C 377.8673 263.23367 377.8673 263.23367 377.8673 263.23367 L 377.8673 263.23367 C 378.4714 263.23367 378.9611 263.72337 378.9611 264.32744 Z" fill="black"/>
+        <path d="M 378.9611 264.32744 L 378.9611 287.1399 C 378.9611 287.74397 378.4714 288.23367 377.8673 288.23367 C 377.8673 288.23367 377.8673 288.23367 377.8673 288.23367 L 377.8673 288.23367 C 377.26323 288.23367 376.77353 287.74397 376.77353 287.1399 L 376.77353 264.32744 C 376.77353 263.72337 377.26323 263.23367 377.8673 263.23367 C 377.8673 263.23367 377.8673 263.23367 377.8673 263.23367 L 377.8673 263.23367 C 378.4714 263.23367 378.9611 263.72337 378.9611 264.32744 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_44">
+        <circle cx="169.82468" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_40)"/>
+        <circle cx="169.82468" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_43">
+        <circle cx="125.21771" cy="274.56183" r="15.0000239685284" fill="url(#Obj_Gradient_41)"/>
+        <circle cx="125.21771" cy="274.56183" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_42">
+        <circle cx="351.16656" cy="275.2352" r="15.0000239685284" fill="url(#Obj_Gradient_42)"/>
+        <circle cx="351.16656" cy="275.2352" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_41">
+        <circle cx="446.4677" cy="274.23367" r="15.0000239685284" fill="url(#Obj_Gradient_43)"/>
+        <circle cx="446.4677" cy="274.23367" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_40">
+        <path d="M 552.9677 264.2352 L 552.9677 287.2352 C 552.9677 287.7875 552.52 288.2352 551.9677 288.2352 L 551.9677 288.2352 C 551.4154 288.2352 550.9677 287.7875 550.9677 287.2352 L 550.9677 264.2352 C 550.9677 263.68293 551.4154 263.2352 551.9677 263.2352 L 551.9677 263.2352 C 552.52 263.2352 552.9677 263.68293 552.9677 264.2352 Z" fill="black"/>
+        <path d="M 552.9677 264.2352 L 552.9677 287.2352 C 552.9677 287.7875 552.52 288.2352 551.9677 288.2352 L 551.9677 288.2352 C 551.4154 288.2352 550.9677 287.7875 550.9677 287.2352 L 550.9677 264.2352 C 550.9677 263.68293 551.4154 263.2352 551.9677 263.2352 L 551.9677 263.2352 C 552.52 263.2352 552.9677 263.68293 552.9677 264.2352 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Graphic_39">
+        <path d="M 198.6192 263.829 L 198.6192 286.64144 C 198.6192 287.2455 198.1295 287.7352 197.52542 287.7352 L 197.52542 287.7352 C 196.92134 287.7352 196.43164 287.2455 196.43164 286.64144 L 196.43164 263.829 C 196.43164 263.2249 196.92134 262.7352 197.52542 262.7352 L 197.52542 262.7352 C 198.1295 262.7352 198.6192 263.2249 198.6192 263.829 Z" fill="black"/>
+        <path d="M 198.6192 263.829 L 198.6192 286.64144 C 198.6192 287.2455 198.1295 287.7352 197.52542 287.7352 L 197.52542 287.7352 C 196.92134 287.7352 196.43164 287.2455 196.43164 286.64144 L 196.43164 263.829 C 196.43164 263.2249 196.92134 262.7352 197.52542 262.7352 L 197.52542 262.7352 C 198.1295 262.7352 198.6192 263.2249 198.6192 263.829 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_38">
+        <line x1="131.21771" y1="195.9606" x2="38.96771" y2="259.23367" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_37">
+        <line x1="131.21771" y1="195.9606" x2="82.96771" y2="259.56183" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_36">
+        <line x1="417.7177" y1="195.9606" x2="123.96771" y2="258.4606" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_35">
+        <line x1="417.7177" y1="195.9606" x2="173.96771" y2="259.23367" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_34">
+        <line x1="417.7177" y1="195.9606" x2="266.9677" y2="259.56183" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_33">
+        <line x1="417.7177" y1="195.9606" x2="353.02837" y2="256.4606" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_32">
+        <line x1="131.21771" y1="195.9606" x2="313.88826" y2="259.4606" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_31">
+        <line x1="131.21771" y1="195.9606" x2="448.9677" y2="259.23367" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_30">
+        <line x1="139.53403" y1="197.61663" x2="528.2953" y2="259.4606" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_29">
+        <line x1="417.7177" y1="195.9606" x2="486.9677" y2="259.23367" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Graphic_28">
+        <rect x="8.967711" y="319.9774" width="718.0323" height="127.98321" fill="#ffffc0"/>
+        <rect x="8.967711" y="319.9774" width="718.0323" height="127.98321" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(13.967711 324.9774)" fill="black">
+          <tspan font-family="Arial" font-size="16" font-weight="400" fill="black" x="0" y="14">Processing Stage</tspan>
+        </text>
+      </g>
+      <g id="Graphic_27">
+        <path d="M 59.89271 353.9774 L 143.54271 353.9774 C 153.43731 353.9774 161.46771 371.55764 161.46771 393.219 C 161.46771 414.88037 153.43731 432.4606 143.54271 432.4606 L 59.89271 432.4606 C 49.99811 432.4606 41.96771 414.88037 41.96771 393.219 C 41.96771 371.55764 49.99811 353.9774 59.89271 353.9774 Z" fill="#c0ffc0"/>
+        <path d="M 59.89271 353.9774 L 143.54271 353.9774 C 153.43731 353.9774 161.46771 371.55764 161.46771 393.219 C 161.46771 414.88037 153.43731 432.4606 143.54271 432.4606 L 59.89271 432.4606 C 49.99811 432.4606 41.96771 414.88037 41.96771 393.219 C 41.96771 371.55764 49.99811 353.9774 59.89271 353.9774 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(58.91771 362.13014)" fill="black">
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="1.4518555" y="16">Worker #1</tspan>
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="14.789258" y="57.58887">count()</tspan>
+        </text>
+      </g>
+      <g id="Graphic_26">
+        <path d="M 242.31326 352.7358 L 325.96326 352.7358 C 335.85786 352.7358 343.88826 370.31604 343.88826 391.9774 C 343.88826 413.63877 335.85786 431.219 325.96326 431.219 L 242.31326 431.219 C 232.41866 431.219 224.38826 413.63877 224.38826 391.9774 C 224.38826 370.31604 232.41866 352.7358 242.31326 352.7358 Z" fill="#c0ffc0"/>
+        <path d="M 242.31326 352.7358 L 325.96326 352.7358 C 335.85786 352.7358 343.88826 370.31604 343.88826 391.9774 C 343.88826 413.63877 335.85786 431.219 325.96326 431.219 L 242.31326 431.219 C 232.41866 431.219 224.38826 413.63877 224.38826 391.9774 C 224.38826 370.31604 232.41866 352.7358 242.31326 352.7358 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(241.33826 360.88853)" fill="black">
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="1.4518555" y="16">Worker #2</tspan>
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="14.789258" y="57.58887">count()</tspan>
+        </text>
+      </g>
+      <g id="Line_25">
+        <line x1="36.96771" y1="291.48522" x2="101.71771" y2="353.9774" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_24">
+        <line x1="77.96771" y1="291.48522" x2="101.71771" y2="353.9774" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_23">
+        <line x1="120.48366" y1="291.4606" x2="101.71771" y2="353.9774" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_22">
+        <line x1="163.96771" y1="290.2352" x2="101.71771" y2="353.9774" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_21">
+        <line x1="263.9677" y1="291.4606" x2="284.13826" y2="352.7358" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_20">
+        <line x1="306.9677" y1="291.4606" x2="284.13826" y2="352.7358" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_19">
+        <line x1="343.88826" y1="291.4606" x2="284.13826" y2="352.7358" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Graphic_18">
+        <path d="M 426.7203 352.5098 L 510.3703 352.5098 C 520.2649 352.5098 528.2953 370.09006 528.2953 391.7514 C 528.2953 413.4128 520.2649 430.99303 510.3703 430.99303 L 426.7203 430.99303 C 416.8257 430.99303 408.7953 413.4128 408.7953 391.7514 C 408.7953 370.09006 416.8257 352.5098 426.7203 352.5098 Z" fill="#c0ffc0"/>
+        <path d="M 426.7203 352.5098 L 510.3703 352.5098 C 520.2649 352.5098 528.2953 370.09006 528.2953 391.7514 C 528.2953 413.4128 520.2649 430.99303 510.3703 430.99303 L 426.7203 430.99303 C 416.8257 430.99303 408.7953 413.4128 408.7953 391.7514 C 408.7953 370.09006 416.8257 352.5098 426.7203 352.5098 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(425.7453 360.66255)" fill="black">
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="1.4518555" y="16">Worker #3</tspan>
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="14.789258" y="57.58887">count()</tspan>
+        </text>
+      </g>
+      <g id="Line_17">
+        <line x1="528.2953" y1="292.4606" x2="468.5453" y2="352.5098" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_16">
+        <line x1="483.9677" y1="290.2352" x2="468.5453" y2="352.5098" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_15">
+        <line x1="443.9677" y1="290.2352" x2="468.5453" y2="352.5098" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_14">
+        <line x1="232.38826" y1="500.1565" x2="348.7731" y2="501.15044" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_13">
+        <circle cx="289.16752" cy="500.6414" r="15.0000239685284" fill="url(#Obj_Gradient_44)"/>
+        <circle cx="289.16752" cy="500.6414" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <text transform="translate(277.16752 485.6414)" fill="black">
+          <tspan font-family="Helvetica" font-size="25" font-weight="400" fill="black" x="5.048096" y="24">3</tspan>
+        </text>
+      </g>
+      <g id="Graphic_12">
+        <path d="M 335.8655 490.0679 L 335.8655 512.8803 C 335.8655 513.4844 335.3758 513.9741 334.7717 513.9741 C 334.7717 513.9741 334.7717 513.9741 334.7717 513.9741 L 334.7717 513.9741 C 334.16764 513.9741 333.67794 513.4844 333.67794 512.8803 L 333.67794 490.0679 C 333.67794 489.4638 334.16764 488.9741 334.7717 488.9741 C 334.7717 488.9741 334.7717 488.9741 334.7717 488.9741 L 334.7717 488.9741 C 335.3758 488.9741 335.8655 489.4638 335.8655 490.0679 Z" fill="black"/>
+        <path d="M 335.8655 490.0679 L 335.8655 512.8803 C 335.8655 513.4844 335.3758 513.9741 334.7717 513.9741 C 334.7717 513.9741 334.7717 513.9741 334.7717 513.9741 L 334.7717 513.9741 C 334.16764 513.9741 333.67794 513.4844 333.67794 512.8803 L 333.67794 490.0679 C 333.67794 489.4638 334.16764 488.9741 334.7717 488.9741 C 334.7717 488.9741 334.7717 488.9741 334.7717 488.9741 L 334.7717 488.9741 C 335.3758 488.9741 335.8655 489.4638 335.8655 490.0679 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_11">
+        <line x1="416.7953" y1="500.1565" x2="533.1801" y2="501.15044" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_10">
+        <circle cx="473.57454" cy="500.6414" r="15.0000239685285" fill="url(#Obj_Gradient_45)"/>
+        <circle cx="473.57454" cy="500.6414" r="15.0000239685285" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <text transform="translate(461.57454 485.6414)" fill="black">
+          <tspan font-family="Helvetica" font-size="25" font-weight="400" fill="black" x="5.048096" y="24">3</tspan>
+        </text>
+      </g>
+      <g id="Graphic_9">
+        <path d="M 520.744 489.36295 L 520.744 512.1754 C 520.744 512.7795 520.2543 513.2692 519.6502 513.2692 L 519.6502 513.2692 C 519.04615 513.2692 518.55645 512.7795 518.55645 512.1754 L 518.55645 489.36295 C 518.55645 488.7589 519.04615 488.2692 519.6502 488.2692 L 519.6502 488.2692 C 520.2543 488.2692 520.744 488.7589 520.744 489.36295 Z" fill="black"/>
+        <path d="M 520.744 489.36295 L 520.744 512.1754 C 520.744 512.7795 520.2543 513.2692 519.6502 513.2692 L 519.6502 513.2692 C 519.04615 513.2692 518.55645 512.7795 518.55645 512.1754 L 518.55645 489.36295 C 518.55645 488.7589 519.04615 488.2692 519.6502 488.2692 L 519.6502 488.2692 C 520.2543 488.2692 520.744 488.7589 520.744 489.36295 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_8">
+        <line x1="49.96771" y1="500.8614" x2="166.35255" y2="501.85537" marker-end="url(#StickArrow_Marker)" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_7">
+        <circle cx="106.74697" cy="501.3463" r="15.0000239685284" fill="url(#Obj_Gradient_46)"/>
+        <circle cx="106.74697" cy="501.3463" r="15.0000239685284" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <text transform="translate(94.74697 486.3463)" fill="black">
+          <tspan font-family="Helvetica" font-size="25" font-weight="400" fill="black" x="5.048096" y="24">4</tspan>
+        </text>
+      </g>
+      <g id="Graphic_6">
+        <path d="M 153.91644 490.0679 L 153.91644 512.8803 C 153.91644 513.4844 153.42674 513.9741 152.82266 513.9741 L 152.82266 513.9741 C 152.21858 513.9741 151.72888 513.4844 151.72888 512.8803 L 151.72888 490.0679 C 151.72888 489.4638 152.21858 488.9741 152.82266 488.9741 L 152.82266 488.9741 C 153.42674 488.9741 153.91644 489.4638 153.91644 490.0679 Z" fill="black"/>
+        <path d="M 153.91644 490.0679 L 153.91644 512.8803 C 153.91644 513.4844 153.42674 513.9741 152.82266 513.9741 L 152.82266 513.9741 C 152.21858 513.9741 151.72888 513.4844 151.72888 512.8803 L 151.72888 490.0679 C 151.72888 489.4638 152.21858 488.9741 152.82266 488.9741 L 152.82266 488.9741 C 153.42674 488.9741 153.91644 489.4638 153.91644 490.0679 Z" stroke="black" stroke-linecap="square" stroke-linejoin="round" stroke-width="1"/>
+      </g>
+      <g id="Line_5">
+        <line x1="101.71771" y1="432.4606" x2="105.5455" y2="484.88984" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_4">
+        <line x1="284.13826" y1="431.219" x2="287.9753" y2="484.18425" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Line_3">
+        <line x1="652.9523" y1="432.4606" x2="658.10595" y2="484.15156" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+      <g id="Graphic_82">
+        <path d="M 611.1273 353.9774 L 694.7773 353.9774 C 704.6719 353.9774 712.7023 371.55764 712.7023 393.219 C 712.7023 414.88037 704.6719 432.4606 694.7773 432.4606 L 611.1273 432.4606 C 601.2327 432.4606 593.2023 414.88037 593.2023 393.219 C 593.2023 371.55764 601.2327 353.9774 611.1273 353.9774 Z" fill="#c0ffc0"/>
+        <path d="M 611.1273 353.9774 L 694.7773 353.9774 C 704.6719 353.9774 712.7023 371.55764 712.7023 393.219 C 712.7023 414.88037 704.6719 432.4606 694.7773 432.4606 L 611.1273 432.4606 C 601.2327 432.4606 593.2023 414.88037 593.2023 393.219 C 593.2023 371.55764 601.2327 353.9774 611.1273 353.9774 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(610.1523 362.13014)" fill="black">
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="1.4518555" y="16">Worker #4</tspan>
+          <tspan font-family="Arial" font-size="18" font-weight="400" fill="black" x="14.789258" y="57.58887">count()</tspan>
+        </text>
+      </g>
+      <g id="Graphic_83">
+        <ellipse cx="659.75" cy="500.6414" rx="44.2500707071589" ry="15.0000239685285" fill="white"/>
+        <ellipse cx="659.75" cy="500.6414" rx="44.2500707071589" ry="15.0000239685285" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+        <text transform="translate(624.35 489.6414)" fill="black">
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" x="6.376" y="17">¯\_(</tspan>
+          <tspan font-family="PingFang SC" font-size="16" font-weight="400" fill="black" y="17">ツ</tspan>
+          <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="black" y="17">)_/¯</tspan>
+        </text>
+      </g>
+      <g id="Line_84">
+        <line x1="468.5453" y1="430.99303" x2="472.38616" y2="484.18397" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.0,4.0" stroke-width="1"/>
+      </g>
+    </g>
+  </g>
+</svg>
