@@ -146,9 +146,9 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
     }
 
     private ClutchControllerOutput findDominatingResource(Tuple3<ClutchControllerOutput, ClutchControllerOutput, ClutchControllerOutput> triple) {
-        if (triple._1.scale > triple._2.scale && triple._1.scale > triple._3.scale) {
+        if (triple._1.scale >= triple._2.scale && triple._1.scale >= triple._3.scale) {
             return triple._1;
-        } else if (triple._2.scale > triple._1.scale && triple._2.scale > triple._3.scale) {
+        } else if (triple._2.scale >= triple._1.scale && triple._2.scale >= triple._3.scale) {
             return triple._2;
         } else {
             return triple._3;
