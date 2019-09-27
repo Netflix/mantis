@@ -20,7 +20,7 @@ import rx.Observable;
 import rx.Subscriber;
 
 /**
- * The Feedback Principle: Constantly compare the actual output to the 
+ * The Feedback Principle: Constantly compare the actual output to the
  * setpoint; then apply a corrective action in the proper direction and
  * approximately of the correct size.
  *
@@ -32,7 +32,14 @@ public abstract class IController implements Observable.Operator<Double, Double>
 
   private final IController parent = this;
 
-  abstract protected Double processStep(Double error);
+  /**
+   * Implementation method for Controller components. Surrounding RxJava machinery will call this method.
+   *
+   * @param value Input from previous stage of control loop processing.
+   * @return Output intended for next stage of control loop processing.
+   */
+  protected abstract Double processStep(Double value);
+
 
   @Override
   public Subscriber<? super Double> call(final Subscriber<? super Double> s) {
@@ -40,14 +47,14 @@ public abstract class IController implements Observable.Operator<Double, Double>
     return new Subscriber<Double>(s) {
       @Override
       public void onCompleted() {
-        if(!s.isUnsubscribed()) {
+        if (!s.isUnsubscribed()) {
           s.onCompleted();
         }
       }
 
       @Override
       public void onError(Throwable t) {
-        if(!s.isUnsubscribed()) {
+        if (!s.isUnsubscribed()) {
           s.onError(t);
         }
       }
@@ -55,7 +62,7 @@ public abstract class IController implements Observable.Operator<Double, Double>
       @Override
       public void onNext(Double error) {
         Double controlAction = parent.processStep(error);
-        if(!s.isUnsubscribed()) {
+        if (!s.isUnsubscribed()) {
           s.onNext(controlAction);
         }
       }

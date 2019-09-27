@@ -39,9 +39,9 @@ public class MantisJobActuator extends IActuator {
         this.jobId = jobId;
         this.stageNumber = stageNumber;
 
-        this.url = "staging".equals(stack.toLowerCase()) ?
-                "https://mantisapi.staging." + region + "." + environ + ".netflix.net" :
-                "https://mantisapi." + region + "." + environ + ".netflix.net";
+        this.url = "staging".equals(stack.toLowerCase())
+            ? "https://mantisapi.staging." + region + "." + environ + ".netflix.net"
+            : "https://mantisapi." + region + "." + environ + ".netflix.net";
 
         logger.debug("Using scaling endpoint: " + url);
     }
@@ -54,13 +54,13 @@ public class MantisJobActuator extends IActuator {
 
     @Override
     protected Double processStep(Double input) {
-        Long numWorkers = ((Double)Math.ceil(input)).longValue();
+        Long numWorkers = ((Double) Math.ceil(input)).longValue();
 
         if (numWorkers != lastValue) {
             logger.info("Scaling " + this.jobId + " to " + numWorkers + " workers.");
 
-            String payload = "{\"JobId\":\"" + this.jobId + "\",\"StageNumber\":" +
-                    this.stageNumber + ",\"NumWorkers\":\"" + numWorkers + "\"}";
+            String payload = "{\"JobId\":\"" + this.jobId + "\",\"StageNumber\":"
+              + this.stageNumber + ",\"NumWorkers\":\"" + numWorkers + "\"}";
 
             try {
                 HttpResponse<String> resp = Unirest.post(url + scaleEndPoint)

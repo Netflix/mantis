@@ -27,17 +27,31 @@ import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.netflix.control.controllers.ControlLoop;
 
 /**
- Clutch is our domain specific autoscaler which adopts many elements from control theory but allows us to fully
- encapsulate our desired autoscaling behavior.
-
- - Multiple Metric handled automatically identifying the dominant metric.
- - Handles dampening to prevent oscillation.
- - Handles a resistance metric if users want to provide feedback to the scaler itself.
+ * Clutch is our domain specific autoscaler which adopts many elements from control theory but allows us to fully
+ * encapsulate our desired autoscaling behavior.
+ *
+ * - Multiple Metric handled automatically identifying the dominant metric.
+ * - Handles dampening to prevent oscillation.
+ * - Handles a resistance metric if users want to provide feedback to the scaler itself.
  **/
 public class Clutch implements Observable.Transformer<Event, Object> {
 
+    /** Specifies all the Metrics clutch is capable of dealing with. */
     public enum Metric {
-        CPU, MEMORY, NETWORK, LAG, DROPS, RESISTANCE, UserDefined
+        /** CPU Resource Metric. */
+        CPU,
+        /** Memory Resource Metric. */
+        MEMORY,
+        /** Network Resource Metric. */
+        NETWORK,
+        /** Messages left unpolled, typically Kafka lag. */
+        LAG,
+        /** Messages dropped. */
+        DROPS,
+        /** Hypothetical metric which causes the controller to slow down. Currently unused. */
+        RESISTANCE,
+        /** A user defined resource metric provided by the job under control. Receives priority. */
+        UserDefined
     }
 
     private final IActuator actuator;
@@ -63,7 +77,8 @@ public class Clutch implements Observable.Transformer<Event, Object> {
         this.dampener = new AtomicDouble(1.0);
     }
 
-    public Clutch(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize, Integer loggingIntervalMins) {
+    public Clutch(IActuator actuator, Integer initialSize,
+        Integer minSize, Integer maxSize, Integer loggingIntervalMins) {
         this(actuator, initialSize, minSize, maxSize);
         this.loggingIntervalMins = loggingIntervalMins;
     }
@@ -73,7 +88,7 @@ public class Clutch implements Observable.Transformer<Event, Object> {
         final Observable<Event> events = eventObservable.share();
 
         return events
-                .compose(new ClutchConfigurator(new IClutchMetricsRegistry() {}, minSize,
+                .compose(new ClutchConfigurator(new IClutchMetricsRegistry() { }, minSize,
                       maxSize, timer, this.loggingIntervalMins))
                 .flatMap(config -> events.compose(new ControlLoop(config, this.actuator,
                         this.initialSize.doubleValue(), dampener, this.loggingIntervalMins))

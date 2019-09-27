@@ -27,12 +27,18 @@ import rx.functions.Func1;
  */
 public abstract class IActuator extends IController {
 
+    /**
+     * Static factory method for constructing an instance of IAcuator.
+     *
+     * @param fn A function which presumably side-effects for actuation. Should return its input.
+     * @return An IActuator which calls fn with the value.
+     */
     public static IActuator of(Func1<Double, Double> fn) {
 
        return new IActuator() {
            @Override
-           protected Double processStep(Double error) {
-               return fn.call(error);
+           protected Double processStep(Double value) {
+               return fn.call(value);
            }
        };
     }

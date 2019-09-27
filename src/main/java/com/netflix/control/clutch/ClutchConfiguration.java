@@ -22,20 +22,33 @@ import io.vavr.Tuple2;
 import lombok.Builder;
 import lombok.Value;
 
-public @Builder @Value class ClutchConfiguration {
+/**
+ * Represents the overall configuration of a Clutch control loop.
+ */
+@Builder @Value public class ClutchConfiguration {
 
+    /** The Metric for which this configuration is intended. */
     public final Clutch.Metric metric;
+    /** The setPoint will be the value for the metric tracked by the controller. */
     public final double setPoint;
 
+    /** Proportional controller gain. */
     public final double kp;
+    /** Integral controller gain. */
     public final double ki;
+    /** Derivative controller gain. */
     public final double kd;
 
+    /** Minimum size for autoscaling. */
     public final int minSize;
+    /** Maximum size for autoscaling */
     public final int maxSize;
 
+    /** Region of Practical Equivalence. Value below and above setPoint which is treated as equal to the setPoint. */
     public final Tuple2<Double, Double> rope;
 
+    /** Cooldown interval for the autoscaler. */
     public final long cooldownInterval;
+    /** Cooldown time units for the autoscaler. */
     public final TimeUnit cooldownUnits;
 }
