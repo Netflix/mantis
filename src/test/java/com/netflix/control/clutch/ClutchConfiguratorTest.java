@@ -48,4 +48,6 @@ public class ClutchConfiguratorTest {
 
         assertThat(sketch.getQuantile(0.99)).isLessThan(76.0);
     }
+
+    // TODO: What guarantees do I want to make about the configurator?
 }

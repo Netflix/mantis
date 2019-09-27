@@ -37,7 +37,7 @@ import com.netflix.control.controllers.ControlLoop;
 public class Clutch implements Observable.Transformer<Event, Object> {
 
     public enum Metric {
-        CPU, MEMORY, NETWORK, LAG, DROPS, RESISTANCE
+        CPU, MEMORY, NETWORK, LAG, DROPS, RESISTANCE, UserDefined
     }
 
     private final IActuator actuator;
@@ -45,6 +45,7 @@ public class Clutch implements Observable.Transformer<Event, Object> {
     private final Integer minSize;
     private final Integer maxSize;
     private final AtomicDouble dampener;
+    private Integer loggingIntervalMins = 60;
     private final Observable<Long> timer = Observable.interval(1, TimeUnit.DAYS).share();
 
     /**
@@ -62,15 +63,20 @@ public class Clutch implements Observable.Transformer<Event, Object> {
         this.dampener = new AtomicDouble(1.0);
     }
 
+    public Clutch(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize, Integer loggingIntervalMins) {
+        this(actuator, initialSize, minSize, maxSize);
+        this.loggingIntervalMins = loggingIntervalMins;
+    }
+
     @Override
     public Observable<Object> call(Observable<Event> eventObservable) {
         final Observable<Event> events = eventObservable.share();
 
         return events
                 .compose(new ClutchConfigurator(new IClutchMetricsRegistry() {}, minSize,
-                      maxSize, timer))
+                      maxSize, timer, this.loggingIntervalMins))
                 .flatMap(config -> events.compose(new ControlLoop(config, this.actuator,
-                        this.initialSize.doubleValue(), dampener))
+                        this.initialSize.doubleValue(), dampener, this.loggingIntervalMins))
                         .takeUntil(timer)) // takeUntil tears down this control loop when a new config is produced.
                 .lift(new OscillationDetector(60, x -> this.dampener.set(Math.pow(x, 3))));
     }

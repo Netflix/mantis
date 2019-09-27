@@ -23,4 +23,12 @@ public class Event {
         this.metric = metric;
         this.value = value;
     }
+
+    public Clutch.Metric getMetric() {
+        return metric;
+    }
+
+    public double getValue() {
+        return value;
+    }
 }
