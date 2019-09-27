@@ -172,4 +172,32 @@ public class ControlLoopTest {
         assertThat(subscriber.getOnNextEvents()).anySatisfy(x -> assertThat(x).isLessThan(5.0));
         assertThat(subscriber.getOnNextEvents()).anySatisfy(x -> assertThat(x).isGreaterThan(5.0));
     }
+
+    @Test public void shouldScaleUpAndDownWithValuesInDifferentRange() {
+        ClutchConfiguration config = ClutchConfiguration.builder()
+                .cooldownInterval(0L)
+                .cooldownUnits(TimeUnit.MILLISECONDS)
+                .metric(Clutch.Metric.CPU)
+                .kd(0.01)
+                .kp(0.05)
+                .kd(0.01)
+                .maxSize(10)
+                .minSize(3)
+                .rope(Tuple.of(0.0, 0.0))
+                .setPoint(60.0)
+                .build();
+
+        TestSubscriber<Double> subscriber = new TestSubscriber<>();
+
+        Observable.range(0, 1000)
+                .map(tick -> new Event(Clutch.Metric.CPU, (tick % 60.0) + 30.0))
+                .compose(new ControlLoop(config, IActuator.of(Math::ceil), 5.0))
+                .toBlocking()
+                .subscribe(subscriber);
+
+        subscriber.assertNoErrors();
+        subscriber.assertCompleted();
+        assertThat(subscriber.getOnNextEvents()).anySatisfy(x -> assertThat(x).isLessThan(5.0));
+        assertThat(subscriber.getOnNextEvents()).anySatisfy(x -> assertThat(x).isGreaterThan(5.0));
+    }
 }

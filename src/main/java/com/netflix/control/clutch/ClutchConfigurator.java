@@ -55,7 +55,7 @@ import rx.schedulers.Schedulers;
 public class ClutchConfigurator implements Observable.Transformer<Event, ClutchConfiguration> {
 
     private static double DEFAULT_SETPOINT = 60.0;
-    private static Tuple2<Double, Double> DEFAULT_ROPE = Tuple.of(0.25, 0.00);
+    private static Tuple2<Double, Double> DEFAULT_ROPE = Tuple.of(25.0, 0.00);
     private static int DEFAULT_K = 1024;
     private static double DEFAULT_QUANTILE = 0.99;
 
