@@ -34,6 +34,7 @@ public class Util {
         case DataDrop:
         case KafkaLag:
         case UserDefined:
+        case KafkaProcessed:
             return value;
         case Network:
             // value is in bytes, multiply by 8, divide by M

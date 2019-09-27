@@ -67,6 +67,7 @@ public class JobAutoScaler {
         metricMap.put(StageScalingPolicy.ScalingReason.Network, Clutch.Metric.NETWORK);
         metricMap.put(StageScalingPolicy.ScalingReason.KafkaLag, Clutch.Metric.LAG);
         metricMap.put(StageScalingPolicy.ScalingReason.DataDrop, Clutch.Metric.DROPS);
+        metricMap.put(StageScalingPolicy.ScalingReason.UserDefined, Clutch.Metric.UserDefined);
     }
 
     private final String jobId;
