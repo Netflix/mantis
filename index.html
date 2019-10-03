@@ -721,8 +721,8 @@ not natively provide this capability.</p>
 </ol>
 <p>At the edge, we have services such as stateless APIs or stateful data pipelines. These services are instrumented with a Mantis Publisher client which enables developers to send events from their services into Mantis.</p>
 <p>Within the Mantis infrastructure there are two fundamental processing components: Mantis Jobs and Source Jobs.</p>
-<p><em>Mantis Jobs</em> process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.</p>
-<p><em>Source Jobs</em> then make the data available for downstream subscriptions in a cost-effective way.</p>
+<p>Mantis Jobs process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.</p>
+<p>Source Jobs then make the data available for downstream subscriptions in a cost-effective way.</p>
 <p>To make subscriptions easy to understand, we also developed an SQL-like event stream query language called the Mantis Query Language (MQL) which gives users the ability to ask broad questions against data in these events streams. Although subscriptions may come directly from users, subscriptions may also come from other Mantis Jobs as Mantis supports Job Chaining. In fact, all Jobs can subscribe to any Job within Mantis.</p>
 <p>Mantis Jobs connect to one another through source and sink Connectors. Mantis Jobs can use connectors to move data to and from other Mantis Jobs or systems external to Mantis such as Kafka, S3, and Hive.</p>
 <p>Lastly, Mantis treats autoscaling as a first class citizen in the infrastructure. Mantis Jobs leverage Mantis' built in autoscaling mechanism to relieve operation overhead from running large or complex Mantis Jobs.</p>
