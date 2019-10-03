@@ -2,34 +2,50 @@
 
 > Install [Docker for Mac](https://docs.docker.com/docker-for-mac/install/)
 
-> For running the new Mantis Master, build the docker image from new mantis master repo and execute docker-compose-new-master.yml instead
-
-1. Build Docker image for Mantis Master
+1. Clone the Mantis repo:
 
 ```bash
-export MANTIS_INSTALL_DIR=<path to Mantis>
-cd $MANTIS_INSTALL_DIR/mantis-server/mantis-server-master
-./buildDockerImage.sh
+$ git clone git@github.com:netflix/mantis.git
+```
+
+1. Build Docker image for Mantis Control Plane
+
+Clone the Mantis Control Plane:
+
+```bash
+$ git clone git@github.com:netflix/mantis-control-plane.git
+```
+
+```bash
+$ cd mantis-control-plane/
+$ ./buildDockerImage.sh
 ```
 
 2. Build Docker image for Mantis Worker
+
+Clone the Mantis examples:
+
+```bash
+$ git clone git@github.com:netflix/mantis-examples.git
+```
+
 ```bash
 # Create a sine-function artifact
-cd $MANTIS_INSTALL_DIR/mantis-sdk/examples/sine-function
-../../../gradlew clean mantisZipArtifact -Pversion=1.0
+$ cd mantis-examples/
+$ ./gradlew clean mantis-examples-sine-function:mantisZipArtifact
 
 # Copy to conf/ that is mounted on the mantis worker Docker image
-$MANTIS_INSTALL_DIR/mantis-sdk/examples/sine-function# cp build/distributions/sine-function-1.0.zip ../../../mantis-localdev/conf
+$ cp sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip <path to mantis repo>/localdev/conf/
 
 # Build the Worker docker image
-cd $MANTIS_INSTALL_DIR/mantis-server/mantis-server-worker
+$ cd <path to mantis repo>/mantis-server/mantis-server-worker
 ./buildDockerImage.sh
 ```
 
 3. Start the Mantis cluster with following command
 ```bash
-cd $MANTIS_INSTALL_DIR
-docker-compose -f docker-compose.yml up
+cd <path to mantis repo>
+docker-compose -f docker-compose-new-master.yml up
 ```
 This starts up the following Docker containers:
 - Zookeeper
@@ -51,6 +67,6 @@ docker exec -it mantisoss_mantisagent_1 bash
 
 5. To teardown the Mantis cluster, issue the following command
 ```bash
-cd <path to Mantis>
-docker-compose -f docker-compose.yml down
+cd <path to mantis repo>
+docker-compose -f docker-compose-new-master.yml down
 ```
