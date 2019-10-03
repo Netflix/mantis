@@ -55,6 +55,32 @@ Mantis *does not* work if…
 
 * …you need to write Jobs in non-JVM languages.
 
+## Major Components of Mantis
+
+There are seven major components in Mantis:
+
+1. [Mantis Publisher client](https://github.com/netflix/mantis-publish)
+1. [Source Jobs](https://github.com/netflix/mantis-source-jobs)
+1. [Jobs](https://github.com/netflix/mantis-examples)
+1. [Mantis Query Language (MQL)](https://github.com/netflix/mantis-mql)
+1. Job Chaining
+1. [Connectors](https://github.com/netflix/mantis-connectors)
+1. Autoscaling
+
+At the edge, we have services such as stateless APIs or stateful data pipelines. These services are instrumented with a Mantis Publisher client which enables developers to send events from their services into Mantis.
+
+Within the Mantis infrastructure there are two fundamental processing components: Mantis Jobs and Source Jobs.
+
+*Mantis Jobs* process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.
+
+*Source Jobs* then make the data available for downstream subscriptions in a cost-effective way.
+
+To make subscriptions easy to understand, we also developed an SQL-like event stream query language called the Mantis Query Language (MQL) which gives users the ability to ask broad questions against data in these events streams. Although subscriptions may come directly from users, subscriptions may also come from other Mantis Jobs as Mantis supports Job Chaining. In fact, all Jobs can subscribe to any Job within Mantis.
+
+Mantis Jobs connect to one another through source and sink Connectors. Mantis Jobs can use connectors to move data to and from other Mantis Jobs or systems external to Mantis such as Kafka, S3, and Hive.
+
+Lastly, Mantis treats autoscaling as a first class citizen in the infrastructure. Mantis Jobs leverage Mantis' built in autoscaling mechanism to relieve operation overhead from running large or complex Mantis Jobs.
+
 ## Next Steps
  
 For a detailed Programming Guide on writing Mantis Jobs, refer to the [Writing Mantis Jobs](writingjobs) chapters.

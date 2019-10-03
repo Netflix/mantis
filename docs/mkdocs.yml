@@ -1,4 +1,5 @@
 site_name: Mantis
+nav:
   - 'Welcome to Mantis': 'index.md'
   - Writing Mantis Jobs:
     - 'Introduction to Mantis Jobs': 'writingjobs/index.md'
