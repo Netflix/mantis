@@ -71,9 +71,9 @@ At the edge, we have services such as stateless APIs or stateful data pipelines.
 
 Within the Mantis infrastructure there are two fundamental processing components: Mantis Jobs and Source Jobs.
 
-*Mantis Jobs* process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.
+Mantis Jobs process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.
 
-*Source Jobs* then make the data available for downstream subscriptions in a cost-effective way.
+Source Jobs then make the data available for downstream subscriptions in a cost-effective way.
 
 To make subscriptions easy to understand, we also developed an SQL-like event stream query language called the Mantis Query Language (MQL) which gives users the ability to ask broad questions against data in these events streams. Although subscriptions may come directly from users, subscriptions may also come from other Mantis Jobs as Mantis supports Job Chaining. In fact, all Jobs can subscribe to any Job within Mantis.
 
