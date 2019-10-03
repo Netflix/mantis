@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href=".." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href=".." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -312,11 +312,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -327,8 +327,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -423,8 +423,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -572,8 +572,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="../faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -651,9 +651,9 @@
                   <h1>Mantis Job Capacity Planning & Sizing</h1>
                 
                 <h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
-<p><a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> consist of one or more independent <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stages</a>. Since stages are independent of one
+<p><a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> consist of one or more independent <a href="../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stages</a>. Since stages are independent of one
 another, they are also sized independently.</p>
-<p>Stages have one or more <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a>, which are the fundamental unit of parallelism for a stage.
+<p>Stages have one or more <a href="../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a>, which are the fundamental unit of parallelism for a stage.
 Workers execute individual instances of a stage and are each allocated CPU, memory, disk, and
 network resources. Workers are also isolated from one another, which means they process events
 independently of each other using their own dedicated resources.</p>
@@ -683,7 +683,7 @@ resources</strong> will be a bottleneck in your processing. You should increase:
 </ul>
 <p>For <strong>processing parallelism</strong>, you must choose between <strong>serial</strong> or <strong>concurrent input</strong>
 processing for each stage.</p>
-<p><strong>Serial input</strong> processing means your <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> will receive and process events within a
+<p><strong>Serial input</strong> processing means your <a href="../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> will receive and process events within a
 single thread. With serial input, you lose parallelism but your processing logic becomes
 straightforward without race conditions.</p>
 <div class="codehilite"><pre><span></span><span class="c1">// Specifying serial input for a stage.</span>
@@ -695,7 +695,7 @@ straightforward without race conditions.</p>
 </pre></div>
 
 
-<p><strong>Concurrent input</strong> means your <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> will have multiple threads which each receive and
+<p><strong>Concurrent input</strong> means your <a href="../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> will have multiple threads which each receive and
 process events. With concurrent input enabled, race conditions must be considered because the stage’s
 threads operate independently from one another and may process events at different speeds.</p>
 <div class="codehilite"><pre><span></span><span class="c1">// Specifying concurrent input for a stage.</span>
@@ -712,10 +712,10 @@ threads operate independently from one another and may process events at differe
 <p>Workers use serial input by default.</p>
 </div>
 <h2 id="kafka-source-jobs">Kafka Source Jobs<a class="headerlink" href="#kafka-source-jobs" title="Permanent link">&para;</a></h2>
-<p><a href="/mantis/glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a>  <a href="/mantis/glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> are Mantis Jobs that share the same properties described above, except Kafka
-Source Jobs use concurrent input processing by default. There are additional job <a href="/mantis/glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a> to
+<p><a href="../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a>  <a href="../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> are Mantis Jobs that share the same properties described above, except Kafka
+Source Jobs use concurrent input processing by default. There are additional job <a href="../glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a> to
 consider when tuning Kafka Source Jobs: <code>numConsumerInstances</code> and <code>stageConcurrency</code>.</p>
-<p>The <code>numConsumerInstances</code> <a href="/mantis/glossary#property" title="A property is a particular named data value found within events in an event stream.">property</a> <!-- "property" or "parameter" (see previous paragraph)? --> determines how many Kafka consumers will be created for
+<p>The <code>numConsumerInstances</code> <a href="../glossary#property" title="A property is a particular named data value found within events in an event stream.">property</a> <!-- "property" or "parameter" (see previous paragraph)? --> determines how many Kafka consumers will be created for
 each worker. For example, if you have <code>numConsumerInstances</code> set to <code>2</code> and have 5 workers,
 then you will have 10 Kafka consumers in total for your Mantis Job consuming from a Kafka topic.</p>
 <p>The <code>stageConcurrency</code> property determines a pool of threads which receive events by the
@@ -784,13 +784,13 @@ workers to your Kafka Source Job will not have any positive effect.</p>
           </a>
         
         
-          <a href="../faq/" title="FAQ" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../faq/" title="Mantis FAQ" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                FAQ
+                Mantis FAQ
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

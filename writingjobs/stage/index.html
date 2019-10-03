@@ -220,8 +220,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../.." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href="../.." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -253,8 +253,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -317,11 +317,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -332,8 +332,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -428,8 +428,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../../mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -529,8 +529,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="../../faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -564,27 +564,27 @@
                 
                   <h1>The Processing Stage Component</h1>
                 
-                <p>A <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a>  <a href="/mantis/glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">component</a> of a <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a> processes the stream of data by [transforming]
+                <p>A <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a>  <a href="../../glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">component</a> of a <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a> processes the stream of data by [transforming]
 it in some way. You can combine multiple Processing Stages into a single Job, or you can create a
 Job that consists of a single Processing Stage.</p>
-<p>In its simplest form, a Processing Stage is a chain of <a href="/mantis/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>
-<a href="http://reactivex.io/documentation/operators.html">operators</a> operating on the <a href="/mantis/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> provided
-by the <a href="/mantis/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a> component.</p>
-<p>Transformations can be broadly categorized into two types: <a href="/mantis/glossary#scalar" title="Scalar data is distinguished from keyed or grouped data in that it is not categorized into groups by key. Scalar data can be processed by an ordinary ReactiveX Observable.">Scalar</a> or <a href="/mantis/glossary#grouped" title="Grouped data is distinguished from scalar data in that each datum is accompanied by a key that indicates what group it belongs to. Grouped data can be processed by a RxJava GroupedObservable or by a MantisGroup.">Grouped</a>. There are four
+<p>In its simplest form, a Processing Stage is a chain of <a href="../../glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>
+<a href="http://reactivex.io/documentation/operators.html">operators</a> operating on the <a href="../../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> provided
+by the <a href="../../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a> component.</p>
+<p>Transformations can be broadly categorized into two types: <a href="../../glossary#scalar" title="Scalar data is distinguished from keyed or grouped data in that it is not categorized into groups by key. Scalar data can be processed by an ordinary ReactiveX Observable.">Scalar</a> or <a href="../../glossary#grouped" title="Grouped data is distinguished from scalar data in that each datum is accompanied by a key that indicates what group it belongs to. Grouped data can be processed by a RxJava GroupedObservable or by a MantisGroup.">Grouped</a>. There are four
 varieties of Processing Stage, based on what type of transformation they accomplish:</p>
 <ol>
-<li><strong>Scalar-to-Scalar</strong> — Also known as “narrow transformation,” this variety of Stage converts an <code>Observable&lt;T&gt;</code> into an <code>Observable&lt;R&gt;</code>. Such a Stage extends <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToScalar.java">the <code>ScalarToScalar</code> class</a>. <br /><img alt="the Scalar-to-Scalar stage" src="/mantis/images/scalarToScalar.svg" /></li>
-<li><strong>Scalar-to-Key</strong>/<strong>Scalar-to-Group</strong> — Also known as “widening transformation,” this variety of Stage groups each element emitted by the source Observable by key. Typically you use such a Stage when you build a map/reduce-style job in which you need to perform stateful computations but the volume of data is too large to fit on a single worker. In such a model, the incoming data is divided into multiple streams, one per group. A subsequent State will typically to the stateful computation (for instance, calculating percentiles for the group). The purpose of this Scalar-to-Key State is to tag each incoming element with the group that it belongs to. Mantis then takes care of routing all traffic for the same group to the same <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a> in the subsequent stage.<br /><img alt="the Scalar-to-Key stage" src="/mantis/images/scalarToKey.svg" /><ol>
+<li><strong>Scalar-to-Scalar</strong> — Also known as “narrow transformation,” this variety of Stage converts an <code>Observable&lt;T&gt;</code> into an <code>Observable&lt;R&gt;</code>. Such a Stage extends <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToScalar.java">the <code>ScalarToScalar</code> class</a>. <br /><img alt="the Scalar-to-Scalar stage" src="../../images/scalarToScalar.svg" /></li>
+<li><strong>Scalar-to-Key</strong>/<strong>Scalar-to-Group</strong> — Also known as “widening transformation,” this variety of Stage groups each element emitted by the source Observable by key. Typically you use such a Stage when you build a map/reduce-style job in which you need to perform stateful computations but the volume of data is too large to fit on a single worker. In such a model, the incoming data is divided into multiple streams, one per group. A subsequent State will typically to the stateful computation (for instance, calculating percentiles for the group). The purpose of this Scalar-to-Key State is to tag each incoming element with the group that it belongs to. Mantis then takes care of routing all traffic for the same group to the same <a href="../../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a> in the subsequent stage.<br /><img alt="the Scalar-to-Key stage" src="../../images/scalarToKey.svg" /><ol>
 <li><strong>Scalar-to-Key</strong> — This is the legacy way of grouping data (it is more elegant but comes with a performance penalty). You extend <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToKey.java">the <code>ScalarToKey</code> class</a> and transform an <code>Observable&lt;T&gt;</code> into an <code>Observable&lt;GroupedObservable&lt;K,R&gt;&gt;</code> (where <code>K</code> is the key). See <a href="http://reactivex.io/documentation/operators/groupby.html">the RxJava <code>groupBy</code> operator</a> for more information.</li>
 <li><strong>Scalar-to-Group</strong> — This is a more efficient way to group data. You extend <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToGroup.java">the <code>ScalarToGroup</code> class</a> and transform an <code>Observable&lt;T&gt;</code> into an <code>Observable&lt;MantisGroup&lt;K,R&gt;&gt;</code> (where <code>K</code> is the key). This avoids the overhead associated with creating a <code>GroupedObservable</code> which can limit the number of groups it is possible to create.</li>
 </ol>
 </li>
-<li><strong>Key-to-Scalar</strong>/<strong>Group-to-Scalar</strong> — Once you have split a stream, you need a stage that can take grouped data and return it to a scalar form.<br /><img alt="the Key-to-Scalar stage" src="/mantis/images/keyToScalar.svg" /><ol>
+<li><strong>Key-to-Scalar</strong>/<strong>Group-to-Scalar</strong> — Once you have split a stream, you need a stage that can take grouped data and return it to a scalar form.<br /><img alt="the Key-to-Scalar stage" src="../../images/keyToScalar.svg" /><ol>
 <li><strong>Key-to-Scalar</strong> — This is the legacy method and is designed for streams that have been split via a <code>ScalarToKey</code> Stage. You extend <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/KeyToScalar.java">the <code>KeyToScalar</code> class</a> and transform a <code>GroupedObservable&lt;K,T&gt;</code> into an <code>Observable&lt;T&gt;</code>.</li>
 <li><strong>Group-to-Scalar</strong> — This is the newer, faster method. It is less elegant, in that you must transform an <code>Observable&lt;MantisGroup&gt;</code> that contains payloads from all groups, and you must therefore manage the per-group state. Typically you would do this via a map that holds per-group state and evicts entries that haven’t been touched recently. This method has much better performance than the Key-to-Scalar method because it omits the overhead around RxJava’s <code>GroupedObservable</code>.</li>
 </ol>
 </li>
-<li><strong>Key-to-Key</strong>/<strong>Group-to-Group</strong> — You can further split a keyed stream by grouping it again if you have some use case that requires this.<br /><img alt="the Key-to-Key stage" src="/mantis/images/keyToKey.svg" /></li>
+<li><strong>Key-to-Key</strong>/<strong>Group-to-Group</strong> — You can further split a keyed stream by grouping it again if you have some use case that requires this.<br /><img alt="the Key-to-Key stage" src="../../images/keyToKey.svg" /></li>
 </ol>
 <!-- Do not edit below this line -->
 

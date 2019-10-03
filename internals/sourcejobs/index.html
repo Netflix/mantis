@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../.." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href="../.." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -312,11 +312,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -327,8 +327,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -423,8 +423,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../../mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -594,8 +594,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="../../faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -692,27 +692,27 @@
                 
                   <h1>Mantis Source Jobs</h1>
                 
-                <p>Mantis Source Jobs are <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> that fetch data from external sources. There are four types of
+                <p>Mantis Source Jobs are <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> that fetch data from external sources. There are four types of
 Source Jobs:</p>
 <ol>
 <li>
 <p><strong>Mantis Publish Source Jobs</strong>
-   read from their sources by using <a href="mre">Mantis Publish</a>. As such, they do not apply <a href="/mantis/mql">MQL</a> on events
+   read from their sources by using <a href="../mre">Mantis Publish</a>. As such, they do not apply <a href="../MQL">MQL</a> on events
    themselves. Instead, they propagate the MQL queries upstream to Mantis Publish running on the external
    source, which then applies the MQL queries to the events it produces and only then pushes those
    events downstream to the Request Source Job.</p>
 </li>
 <li>
 <p><strong>Kafka Source Jobs</strong>
-   consume events from <a href="/mantis/glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> and apply MQL to each incoming event.</p>
+   consume events from <a href="../../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> and apply MQL to each incoming event.</p>
 </li>
 </ol>
 <h2 id="composition-of-a-source-job">Composition of a Source Job<a class="headerlink" href="#composition-of-a-source-job" title="Permanent link">&para;</a></h2>
 <p>A Source Job is composed of three components:</p>
 <ol>
-<li>the default <a href="/mantis/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a></li>
-<li>custom <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stages</a> including a tagging operator</li>
-<li>the default <a href="/mantis/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a> consisting of an <a href="/mantis/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> operator</li>
+<li>the default <a href="../../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a></li>
+<li>custom <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stages</a> including a tagging operator</li>
+<li>the default <a href="../../glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a> consisting of an <a href="../../glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> operator</li>
 </ol>
 <p>For example, here is how you might declare a Kafka Source Job:</p>
 <div class="codehilite"><pre><span></span><span class="n">MantisJob</span>
@@ -730,11 +730,11 @@ Source Jobs:</p>
 
 <h3 id="source-rxfunction">Source (RxFunction)<a class="headerlink" href="#source-rxfunction" title="Permanent link">&para;</a></h3>
 <p>The Source in this example contains code that creates and manages connections to Kafka using the
-0.10 high level consumer. It creates an <a href="/mantis/glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> with <a href="/mantis/glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a> semantics by leveraging the
+0.10 high level consumer. It creates an <a href="../../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> with <a href="../../glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a> semantics by leveraging the
 <a href="http://reactivex.io/RxJava/javadoc/rx/observables/SyncOnSubscribe.html"><code>SyncOnSubscribe</code></a> class.</p>
 <h3 id="processing-stage-rxfunction">Processing Stage (RxFunction)<a class="headerlink" href="#processing-stage-rxfunction" title="Permanent link">&para;</a></h3>
-<p>The next stage in this Job is the Processing Stage which enriches events with <a href="/mantis/glossary#metadata" title="Mantis inserts metadata into its Job payload. This may include information about where the data came from, for instance. You can define additional metadata to include in the payload when you establish the Job Cluster.">metadata</a>. This stage
-<a href="/mantis/glossary#transformation" title="A transformation acts on each datum from a stream or Observables of data, changing it in some manner before passing it along as a new stream or Observable. Transformations may change data between scalar and grouped forms.">transforms</a> events in the following way:</p>
+<p>The next stage in this Job is the Processing Stage which enriches events with <a href="../../glossary#metadata" title="Mantis inserts metadata into its Job payload. This may include information about where the data came from, for instance. You can define additional metadata to include in the payload when you establish the Job Cluster.">metadata</a>. This stage
+<a href="../../glossary#transformation" title="A transformation acts on each datum from a stream or Observables of data, changing it in some manner before passing it along as a new stream or Observable. Transformations may change data between scalar and grouped forms.">transforms</a> events in the following way:</p>
 <ol>
 <li>Applies a user-defined pre-mapping function.<ul>
 <li>This is a Groovy function that takes a <code>Map&lt;String, Object&gt;</code> and returns a
@@ -749,7 +749,7 @@ Source Jobs:</p>
 <li>
 <p>Each event is enriched with fields specified by the projections of a subscription’s MQL query,
   as in the following illustration:</p>
-<p><img alt="If an event matches multiple subscriptions, then the event will be enriched with projections from every subscription’s MQL query." src="/mantis/images/RequestEventProcessor.svg" /></p>
+<p><img alt="If an event matches multiple subscriptions, then the event will be enriched with projections from every subscription’s MQL query." src="../../images/RequestEventProcessor.svg" /></p>
 </li>
 </ul>
 </li>
@@ -815,8 +815,8 @@ view the Job’s output for debugging purposes.</p>
 <h2 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">&para;</a></h2>
 <p>Source Jobs are single-stage Mantis Jobs that perform projection and filtering operations. MQL
 queries containing <code>groupBy</code>, <code>orderBy</code>, and <code>window</code> are ignored. These clauses are interpreted
-into <a href="/mantis/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> operations and run by downstream Mantis Jobs.</p>
-<p>Mantis Publish-based Source Jobs do not <a href="/mantis/glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscale</a>. Autoscaling Mantis Publish-based Source Jobs requires future work to
+into <a href="../../glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> operations and run by downstream Mantis Jobs.</p>
+<p>Mantis Publish-based Source Jobs do not <a href="../../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscale</a>. Autoscaling Mantis Publish-based Source Jobs requires future work to
 reshuffle connections among all Source Job instances and their upstream Mantis Publish connections.</p>
 <!-- Do not edit below this line -->
 

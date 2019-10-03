@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../.." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href="../.." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -312,11 +312,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -327,8 +327,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -423,8 +423,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../../mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -600,8 +600,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="../../faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -706,45 +706,45 @@
                 
                 <p>The Mantis Runtime is consists of two components:</p>
 <ol>
-<li>A single <strong><a href="/mantis/glossary#mantismaster" title="The Mantis Master coordinates the execution of [Mantis Jobs] and starts the services on each Worker.">Mantis Master</a></strong> which coordinates the execution of <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a>.</li>
-<li>Independent <strong>Mantis Jobs</strong> which receive streams of events as input, <a href="/mantis/glossary#transformation" title="A transformation acts on each datum from a stream or Observables of data, changing it in some manner before passing it along as a new stream or Observable. Transformations may change data between scalar and grouped forms.">transform</a> events one at a
+<li>A single <strong><a href="../../glossary#mantismaster" title="The Mantis Master coordinates the execution of [Mantis Jobs] and starts the services on each Worker.">Mantis Master</a></strong> which coordinates the execution of <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a>.</li>
+<li>Independent <strong>Mantis Jobs</strong> which receive streams of events as input, <a href="../../glossary#transformation" title="A transformation acts on each datum from a stream or Observables of data, changing it in some manner before passing it along as a new stream or Observable. Transformations may change data between scalar and grouped forms.">transform</a> events one at a
    time, and produce streams of events as output.</li>
 </ol>
 <p>This page assumes familiarity with Mantis Job high-level concepts. An introduction can be found in
-<a href="/mantis/writingjobs">Writing Mantis Jobs</a>. This page presents internal details for Mantis Jobs.</p>
+<a href="../writingjobs">Writing Mantis Jobs</a>. This page presents internal details for Mantis Jobs.</p>
 <h2 id="mantis-job-components">Mantis Job Components<a class="headerlink" href="#mantis-job-components" title="Permanent link">&para;</a></h2>
-<p>A Mantis Job consists of three <a href="/mantis/glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">components</a>. Each one is based on a <a href="/mantis/glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> that emits
+<p>A Mantis Job consists of three <a href="../../glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">components</a>. Each one is based on a <a href="../../glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> that emits
 events to the next Observer in the Observable chain:</p>
 <ol>
 <li>
 <p><strong>Source</strong></p>
-<p>The <a href="/mantis/glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a> component is an <code>RxFunction</code> that consumes data in a streaming, non-blocking,
-<a href="/mantis/glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a>-aware manner from an external service.</p>
+<p>The <a href="../../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a> component is an <code>RxFunction</code> that consumes data in a streaming, non-blocking,
+<a href="../../glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a>-aware manner from an external service.</p>
 </li>
 <li>
 <p><strong>Processing Stage</strong></p>
-<p>A <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> component is based on an <code>RxFunction</code>. This is where
+<p>A <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> component is based on an <code>RxFunction</code>. This is where
 event transformations take place. There can be many Processing Stages in a Mantis Job.</p>
 </li>
 <li>
 <p><strong>Sink</strong></p>
-<p>The <a href="/mantis/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a> component is based on an <code>RxAction</code>. It asynchronously emits results of the
+<p>The <a href="../../glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a> component is based on an <code>RxAction</code>. It asynchronously emits results of the
 final Processing Stage to an external service.</p>
 </li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Mantis Jobs can consume events from typical external services such as APIs, databases, and
-<a href="/mantis/glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> topics. Mantis Jobs can also consume events emitted by other Mantis Jobs. This is
+<a href="../../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> topics. Mantis Jobs can also consume events emitted by other Mantis Jobs. This is
 referred to in Mantis as <strong>job chaining</strong>.</p>
 </div>
 <h2 id="runtime-lifecycle">Runtime Lifecycle<a class="headerlink" href="#runtime-lifecycle" title="Permanent link">&para;</a></h2>
-<p>The entry point for a Mantis Job is the Mantis <a href="/mantis/glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">Worker</a>. The Mantis Master starts three primary
+<p>The entry point for a Mantis Job is the Mantis <a href="../../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">Worker</a>. The Mantis Master starts three primary
 services on a Mantis Worker when the Master boots the Worker up:</p>
 <ol>
 <li>
 <p>The <strong>virtual machine worker</strong> service interacts with the underlying substrate, currently
-   <a href="/mantis/glossary#mesos" title="Apache Mesos is an open-source technique for balancing resources across frameworks in clusters.">Mesos</a>. This service subscribes to task updates and registers the Mantis Worker with Mesos
+   <a href="../../glossary#mesos" title="Apache Mesos is an open-source technique for balancing resources across frameworks in clusters.">Mesos</a>. This service subscribes to task updates and registers the Mantis Worker with Mesos
    executor callbacks to launch Mantis Jobs.</p>
 </li>
 <li>
@@ -753,17 +753,17 @@ services on a Mantis Worker when the Master boots the Worker up:</p>
 </li>
 <li>
 <p>The <strong>stage executor</strong> dynamically loads bytecode for a Mantis Job, creates an in-memory
-   representation of all the <a href="/mantis/glossary#metadata" title="Mantis inserts metadata into its Job payload. This may include information about where the data came from, for instance. You can define additional metadata to include in the payload when you establish the Job Cluster.">metadata</a> required to execute events for that Mantis Job, and
+   representation of all the <a href="../../glossary#metadata" title="Mantis inserts metadata into its Job payload. This may include information about where the data came from, for instance. You can define additional metadata to include in the payload when you establish the Job Cluster.">metadata</a> required to execute events for that Mantis Job, and
    processes events for the current Processing Stage.</p>
 </li>
 </ol>
 <h3 id="job-master-stage">Job Master Stage<a class="headerlink" href="#job-master-stage" title="Permanent link">&para;</a></h3>
-<p>The <a href="/mantis/glossary#jobmaster" title="If a job is configured with autoscaling, Mantis will add a Job Master component to it as its initial component. This component will send metrics back to Mantis to help it govern the autoscaling process.">Job Master</a>  <a href="/mantis/glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscales</a> Processing Stages. It can autoscale such stages independently of each
+<p>The <a href="../../glossary#jobmaster" title="If a job is configured with autoscaling, Mantis will add a Job Master component to it as its initial component. This component will send metrics back to Mantis to help it govern the autoscaling process.">Job Master</a>  <a href="../../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscales</a> Processing Stages. It can autoscale such stages independently of each
 other. If the configuration of a Job indicates that any Processing Stage is autoscalable, Mantis
 will automatically add a Job Master as the initial processing stage of the Job. This is a hidden
 stage that Job owners do not explicitly manage; instead, Mantis will create and configure a
 <code>JobMasterService</code>. This service creates a subscription to worker metrics via the
-<code>WorkerMetricHandler</code> and a <code>MetricsClient</code> which receives metrics over HTTP via <a href="/mantis/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> and sends
+<code>WorkerMetricHandler</code> and a <code>MetricsClient</code> which receives metrics over HTTP via <a href="../../glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> and sends
 them over to the <code>JobAutoScaler</code>.</p>
 <h4 id="job-autoscaler">Job Autoscaler<a class="headerlink" href="#job-autoscaler" title="Permanent link">&para;</a></h4>
 <p>The Job autoscaler is based on a <a href="https://en.wikipedia.org/wiki/PID_controller">PID controller</a>.

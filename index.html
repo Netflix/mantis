@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Welcome
+                Welcome to Mantis
               
             </span>
           
@@ -233,11 +233,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Welcome
+        Welcome to Mantis
       </label>
     
-    <a href="." title="Welcome" class="md-nav__link md-nav__link--active">
-      Welcome
+    <a href="." title="Welcome to Mantis" class="md-nav__link md-nav__link--active">
+      Welcome to Mantis
     </a>
     
       
@@ -253,6 +253,13 @@
         <li class="md-nav__item">
   <a href="#mantis-use-cases" class="md-nav__link">
     Mantis Use Cases
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#major-components-of-mantis" class="md-nav__link">
+    Major Components of Mantis
   </a>
   
 </li>
@@ -300,8 +307,8 @@
 
 
   <li class="md-nav__item">
-    <a href="writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -357,11 +364,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -372,8 +379,8 @@
 
 
   <li class="md-nav__item">
-    <a href="MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -468,8 +475,8 @@
 
 
   <li class="md-nav__item">
-    <a href="mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -569,8 +576,8 @@
 
 
   <li class="md-nav__item">
-    <a href="faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -615,6 +622,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#major-components-of-mantis" class="md-nav__link">
+    Major Components of Mantis
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     Next Steps
   </a>
@@ -641,14 +655,14 @@
                 
                 
                 <h1 id="mantis">Mantis<a class="headerlink" href="#mantis" title="Permanent link">&para;</a></h1>
-<p>Mantis is a <a href="/mantis/glossary#reactivestreams" title="Reactive Streams is the latest advance of the ReactiveX project. It is an API for manipulating streams of asynchronous data in a non-blocking fashion, with backpressure.">Reactive Stream</a> processing platform that makes it easy for developers to build real-time, cost-effective, operations-focused applications. 
+<p>Mantis is a <a href="../glossary#reactivestreams" title="Reactive Streams is the latest advance of the ReactiveX project. It is an API for manipulating streams of asynchronous data in a non-blocking fashion, with backpressure.">Reactive Stream</a> processing platform that makes it easy for developers to build real-time, cost-effective, operations-focused applications. 
 Developers can build applications and higher-level platforms on top of Mantis which help their production services uphold high operational guarantees. 
 It was <a href="https://medium.com/netflix-techblog/stream-processing-with-mantis-78af913f51a6">designed by Netflix</a>.</p>
 <p>Mantis covers a variety of operational insight use cases, including real-time dashboarding,
 alerting, anomaly detection, metric generation, and ad-hoc interactive exploration of streaming
 data. It operates as a cloud-native service and supports on-demand, interactive jobs in addition to
 long-running service-style jobs.</p>
-<p>Mantis is built on top of <a href="/mantis/glossary#mesos" title="Apache Mesos is an open-source technique for balancing resources across frameworks in clusters.">Apache Mesos</a> and uses the <a href="/mantis/glossary#fenzo" title="Fenzo is a Java library that implements a generic task scheduler for Mesos frameworks.">Fenzo</a> scheduler. The system is designed to operate
+<p>Mantis is built on top of <a href="../glossary#mesos" title="Apache Mesos is an open-source technique for balancing resources across frameworks in clusters.">Apache Mesos</a> and uses the <a href="../glossary#fenzo" title="Fenzo is a Java library that implements a generic task scheduler for Mesos frameworks.">Fenzo</a> scheduler. The system is designed to operate
 across many datacenters using an island model.</p>
 <h2 id="mantis-use-cases">Mantis Use Cases<a class="headerlink" href="#mantis-use-cases" title="Permanent link">&para;</a></h2>
 <p>Mantis is great for you if…</p>
@@ -661,13 +675,13 @@ operational use cases, but applies to other use cases as well.</p>
 </li>
 <li>
 <p><strong>…you are cost sensitive.</strong></p>
-<p>Streaming on demand, <a href="/mantis/glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a>, and reuse of existing <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> all help keep your streaming
+<p>Streaming on demand, <a href="../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a>, and reuse of existing <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> all help keep your streaming
 costs down.</p>
 </li>
 <li>
 <p><strong>…you want to run on top of a service.</strong></p>
 <p>Mantis runs as a cloud-native service that takes care of much of the underlying infrastructure,
-including scheduling, autoscaling, cost-effective data access, <a href="/mantis/glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact</a> management, and <a href="/mantis/glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a>.</p>
+including scheduling, autoscaling, cost-effective data access, <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact</a> management, and <a href="../glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a>.</p>
 </li>
 <li>
 <p><strong>…you want to compose multiple microservices as a stream processing application.</strong></p>
@@ -694,6 +708,24 @@ not natively provide this capability.</p>
 <ul>
 <li>…you need to write Jobs in non-JVM languages.</li>
 </ul>
+<h2 id="major-components-of-mantis">Major Components of Mantis<a class="headerlink" href="#major-components-of-mantis" title="Permanent link">&para;</a></h2>
+<p>There are seven major components in Mantis:</p>
+<ol>
+<li><a href="https://github.com/netflix/mantis-publish">Mantis Publisher client</a></li>
+<li><a href="https://github.com/netflix/mantis-source-jobs">Source Jobs</a></li>
+<li><a href="https://github.com/netflix/mantis-examples">Jobs</a></li>
+<li><a href="https://github.com/netflix/mantis-mql">Mantis Query Language (MQL)</a></li>
+<li>Job Chaining</li>
+<li><a href="https://github.com/netflix/mantis-connectors">Connectors</a></li>
+<li>Autoscaling</li>
+</ol>
+<p>At the edge, we have services such as stateless APIs or stateful data pipelines. These services are instrumented with a Mantis Publisher client which enables developers to send events from their services into Mantis.</p>
+<p>Within the Mantis infrastructure there are two fundamental processing components: Mantis Jobs and Source Jobs.</p>
+<p><em>Mantis Jobs</em> process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.</p>
+<p><em>Source Jobs</em> then make the data available for downstream subscriptions in a cost-effective way.</p>
+<p>To make subscriptions easy to understand, we also developed an SQL-like event stream query language called the Mantis Query Language (MQL) which gives users the ability to ask broad questions against data in these events streams. Although subscriptions may come directly from users, subscriptions may also come from other Mantis Jobs as Mantis supports Job Chaining. In fact, all Jobs can subscribe to any Job within Mantis.</p>
+<p>Mantis Jobs connect to one another through source and sink Connectors. Mantis Jobs can use connectors to move data to and from other Mantis Jobs or systems external to Mantis such as Kafka, S3, and Hive.</p>
+<p>Lastly, Mantis treats autoscaling as a first class citizen in the infrastructure. Mantis Jobs leverage Mantis' built in autoscaling mechanism to relieve operation overhead from running large or complex Mantis Jobs.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <p>For a detailed Programming Guide on writing Mantis Jobs, refer to the <a href="writingjobs">Writing Mantis Jobs</a> chapters.</p>
 <!-- Do not edit below this line -->
@@ -724,13 +756,13 @@ not natively provide this capability.</p>
       <nav class="md-footer-nav__inner md-grid">
         
         
-          <a href="writingjobs/" title="Introduction" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="writingjobs/" title="Introduction to Mantis Jobs" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Introduction
+                Introduction to Mantis Jobs
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

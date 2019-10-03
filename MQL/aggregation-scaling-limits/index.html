@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../.." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href="../.." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -314,11 +314,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -329,8 +329,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -486,8 +486,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../../mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -587,8 +587,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="../../faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -678,10 +678,10 @@
                 
                   <h1>Scaling Limits</h1>
                 
-                <p><a href="/mantis/glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> Queries that implement <a href="/mantis/MQL/operators#aggregates">aggregates (<code>COUNT</code>, <code>SUM</code>, etc.)</a>, as
-well as those that use windowing (like <a href="/mantis/MQL/operators#window"><code>window</code></a> or
-<a href="/mantis/MQL/operators#group-by"><code>group by</code></a>), must necessarily maintain state.</p>
-<p><a href="/mantis/glossary#mantispublish">The Mantis Publish library)</a> and the <a href="/mantis/glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> do not perform MQL
+                <p><a href="../../glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> Queries that implement <a href="../MQL/operators#aggregates">aggregates (<code>COUNT</code>, <code>SUM</code>, etc.)</a>, as
+well as those that use windowing (like <a href="../MQL/operators#window"><code>window</code></a> or
+<a href="../MQL/operators#group-by"><code>group by</code></a>), must necessarily maintain state.</p>
+<p><a href="../glossary#mantispublish">The Mantis Publish library)</a> and the <a href="../../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> do not perform MQL
 aggregation on the server side; consequently this must take place on the client side. This limits
 the blast radius if a client runs a long window or runs an aggregate against a large amount of data.
 However this creates potential scaling problems on the client side. This page will help you address
@@ -690,7 +690,7 @@ such problems.</p>
 <p>There are two primary technical concerns in these cases:</p>
 <ol>
 <li>Windowing must necessarily buffer the output until the end of the window.</li>
-<li><code>group by</code> cannot run multithreaded as <a href="/mantis/glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> does not guarantee pairs with the same key end up
+<li><code>group by</code> cannot run multithreaded as <a href="../../glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> does not guarantee pairs with the same key end up
    on the same thread.</li>
 </ol>
 <p>In the first case, as a client you’re simply facing a memory issue as you must have enough memory to
@@ -712,7 +712,7 @@ determine if if requires single-threading and handle it appropriately if so.</p>
 serialized behavior will suffer the performance penalty.</p>
 <h3 id="solution-b-tbd">Solution B (TBD?)<a class="headerlink" href="#solution-b-tbd" title="Permanent link">&para;</a></h3>
 <p>A more scalable solution would be to enable MQL to emit additional formats. An example of this would
-be a Mantis topology backend that could emit multi-<a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stage</a> Mantis <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> that implement the desired
+be a Mantis topology backend that could emit multi-<a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stage</a> Mantis <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> that implement the desired
 operation in a scalable fashion. A group-by stage that distributes values to downstream workers
 using consistent hashing would be able to scale horizontally based on the number of groups (still
 vertically for window size).</p>

@@ -36,7 +36,7 @@
     
     
       
-        <title>FAQ - Mantis</title>
+        <title>Mantis FAQ - Mantis</title>
       
     
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                FAQ
+                Mantis FAQ
               
             </span>
           
@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href=".." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href=".." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -312,11 +312,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -327,8 +327,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -423,8 +423,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../mantisapi/" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../mantisapi/" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -531,11 +531,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        FAQ
+        Mantis FAQ
       </label>
     
-    <a href="./" title="FAQ" class="md-nav__link md-nav__link--active">
-      FAQ
+    <a href="./" title="Mantis FAQ" class="md-nav__link md-nav__link--active">
+      Mantis FAQ
     </a>
     
       
@@ -634,15 +634,15 @@
                   <a href="https://github.com/netflix/mantis/edit/master/docs/faq.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>FAQ</h1>
+                  <h1>Mantis FAQ</h1>
                 
-                <h2 id="is-it-possible-to-set-a-sample-threshold-value-lower-than-1-in-an-mql-query">Is it possible to set a sample threshold value lower than 1 in an <a href="/mantis/glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> query?<a class="headerlink" href="#is-it-possible-to-set-a-sample-threshold-value-lower-than-1-in-an-mql-query" title="Permanent link">&para;</a></h2>
+                <h2 id="is-it-possible-to-set-a-sample-threshold-value-lower-than-1-in-an-mql-query">Is it possible to set a sample threshold value lower than 1 in an <a href="../glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> query?<a class="headerlink" href="#is-it-possible-to-set-a-sample-threshold-value-lower-than-1-in-an-mql-query" title="Permanent link">&para;</a></h2>
 <p>Yes.
 There is a sampling parameter called <code>factor</code>, <code>10000</code> by default, which determines the effective threshold via the formula <span><span class="MathJax_Preview">\frac{threshold}{factor}</span><script type="math/tex">\frac{threshold}{factor}</script></span>.
 If you have reduced <code>threshold</code> as far as you can (to <code>1</code>), you can continue to reduce the <em>effective</em> threshold by increasing the value of <code>factor</code>.
-See <a href="/mantis/MQL/sampling#random-sampling">Random Sampling</a> for more details.</p>
-<h2 id="is-it-possible-to-use-the-second-stage-of-a-three-stage-mantis-job-as-the-source-job-for-another-mql-job">Is it possible to use the second <a href="/mantis/glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stage</a> of a three-stage <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a> as the <a href="/mantis/glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">source job</a> for another <a href="/mantis/glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> job?<a class="headerlink" href="#is-it-possible-to-use-the-second-stage-of-a-three-stage-mantis-job-as-the-source-job-for-another-mql-job" title="Permanent link">&para;</a></h2>
-<p>Jobs connect to the <a href="/mantis/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">sink</a> stage of other jobs by default, so while it may be technically possible
+See <a href="MQL/sampling#random-sampling">Random Sampling</a> for more details.</p>
+<h2 id="is-it-possible-to-use-the-second-stage-of-a-three-stage-mantis-job-as-the-source-job-for-another-mql-job">Is it possible to use the second <a href="../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stage</a> of a three-stage <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a> as the <a href="../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">source job</a> for another <a href="../glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> job?<a class="headerlink" href="#is-it-possible-to-use-the-second-stage-of-a-three-stage-mantis-job-as-the-source-job-for-another-mql-job" title="Permanent link">&para;</a></h2>
+<p>Jobs connect to the <a href="../glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">sink</a> stage of other jobs by default, so while it may be technically possible
 to rig up a solution where you connect to an intermediate stage instead, this is not supported as
 an out-of-the-box solution. You may instead want to reorganize your original job, perhaps splitting
 it into two jobs.</p>

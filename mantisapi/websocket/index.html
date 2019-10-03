@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../.." title="Welcome" class="md-nav__link">
-      Welcome
+    <a href="../.." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../writingjobs/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
     </a>
   </li>
 
@@ -312,11 +312,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
-      MQL
+      Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
       <label class="md-nav__title" for="nav-3">
-        MQL
+        Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -327,8 +327,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../MQL/" title="Introduction" class="md-nav__link">
-      Introduction
+    <a href="../../MQL/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
     </a>
   </li>
 
@@ -425,8 +425,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../" title="API Reference" class="md-nav__link">
-      API Reference
+    <a href="../" title="Mantis API Reference" class="md-nav__link">
+      Mantis API Reference
     </a>
   </li>
 
@@ -587,8 +587,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../faq/" title="FAQ" class="md-nav__link">
-      FAQ
+    <a href="../../faq/" title="Mantis FAQ" class="md-nav__link">
+      Mantis FAQ
     </a>
   </li>
 
@@ -678,8 +678,8 @@
                 
                   <h1>Mantis Websocket API</h1>
                 
-                <p>Some desktops have trouble dealing with <a href="/mantis/glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a>. In such a case you can use <a href="/mantis/glossary#websocket" title="WebSocket is a two-way, interactive communication channel that works over HTTP. In the Mantis context, it is an alternative to SSE.">WebSocket</a> to connect to
-a <a href="/mantis/glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> (other API features are only available via the Mantis REST API).</p>
+                <p>Some desktops have trouble dealing with <a href="../../glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a>. In such a case you can use <a href="../../glossary#websocket" title="WebSocket is a two-way, interactive communication channel that works over HTTP. In the Mantis context, it is an alternative to SSE.">WebSocket</a> to connect to
+a <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> (other API features are only available via the Mantis REST API).</p>
 <p>The WebSocket API runs from the same servers as the Mantis REST API, and you can reach it by using
 the <code>ws://</code> or <code>wss://</code> protocol and port 7102.</p>
 <h2 id="connecting-to-job-output-sink">Connecting to Job Output (Sink)<a class="headerlink" href="#connecting-to-job-output-sink" title="Permanent link">&para;</a></h2>
@@ -693,7 +693,7 @@ the <code>ws://</code> or <code>wss://</code> protocol and port 7102.</p>
 </ul>
 <p>Upon connecting, the server starts writing messages that are coming in from the corresponding Jobs. </p>
 <p>You can append query parameters to the WebSocket URI (preceded by “<code>?</code>”) as is the case in a REST
-API. Use this to pass any <a href="/mantis/glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>  <a href="/mantis/glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a> your Job accepts. All Jobs accept the
+API. Use this to pass any <a href="../../glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>  <a href="../../glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a> your Job accepts. All Jobs accept the
 “<code>sampleMSec=<var>mSecs</var></code>” Sink parameter which limits the rate at which the Sink output
 is sampled by the server.</p>
 <h2 id="submitting-and-connecting-to-job-output">Submitting and Connecting to Job Output<a class="headerlink" href="#submitting-and-connecting-to-job-output" title="Permanent link">&para;</a></h2>
@@ -836,7 +836,7 @@ is sampled by the server.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../" title="API Reference" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../" title="Mantis API Reference" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -845,7 +845,7 @@ is sampled by the server.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                API Reference
+                Mantis API Reference
               </span>
             </div>
           </a>
