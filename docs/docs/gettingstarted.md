@@ -112,7 +112,7 @@ UI running locally.
 Once you have the UI running, open a browser to `localhost:8080` and input the Mantis API
 and Mesos Master URLs along with other information.
 
-![Fresh Mantis UI](../images/fresh_ui.png)
+![Fresh Mantis UI](./images/fresh_ui.png)
 
 #### Tearing down your cluster
 
