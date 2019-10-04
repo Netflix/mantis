@@ -36,7 +36,7 @@
     
     
       
-        <title>Introduction to MQL - Mantis</title>
+        <title>Getting Started - Mantis</title>
       
     
     
@@ -87,7 +87,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#getting-started" tabindex="1" class="md-skip">
+      <a href="#getting-started-with-mantis" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Introduction to MQL
+                Getting Started
               
             </span>
           
@@ -234,11 +234,110 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../gettingstarted/" title="Getting Started" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Getting Started
+      </label>
+    
+    <a href="./" title="Getting Started" class="md-nav__link md-nav__link--active">
       Getting Started
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-mantis-cli-to-spin-up-your-first-mantis-cluster" class="md-nav__link">
+    Using the Mantis CLI to spin up your first Mantis Cluster
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrapping-your-first-mantis-cluster-in-aws" class="md-nav__link">
+    Bootstrapping your first Mantis cluster in AWS
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-and-install-the-mantis-cli" class="md-nav__link">
+    Download and install the Mantis CLI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-aws-credentials" class="md-nav__link">
+    Configure AWS credentials
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrap-your-cluster" class="md-nav__link">
+    Bootstrap your cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-mantis-ui" class="md-nav__link">
+    Using the Mantis UI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tearing-down-your-cluster" class="md-nav__link">
+    Tearing down your cluster
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -318,12 +417,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
     
     <label class="md-nav__link" for="nav-4">
       Mantis Query Language
@@ -339,45 +436,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Introduction to MQL
-      </label>
-    
-    <a href="./" title="Introduction to MQL" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../MQL/" title="Introduction to MQL" class="md-nav__link">
       Introduction to MQL
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
-    Getting Started
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
         
@@ -387,7 +450,7 @@
 
 
   <li class="md-nav__item">
-    <a href="operators/" title="Operators" class="md-nav__link">
+    <a href="../MQL/operators/" title="Operators" class="md-nav__link">
       Operators
     </a>
   </li>
@@ -399,7 +462,7 @@
 
 
   <li class="md-nav__item">
-    <a href="sampling/" title="Sampling" class="md-nav__link">
+    <a href="../MQL/sampling/" title="Sampling" class="md-nav__link">
       Sampling
     </a>
   </li>
@@ -411,7 +474,7 @@
 
 
   <li class="md-nav__item">
-    <a href="aggregation-scaling-limits/" title="Scaling Limits" class="md-nav__link">
+    <a href="../MQL/aggregation-scaling-limits/" title="Scaling Limits" class="md-nav__link">
       Scaling Limits
     </a>
   </li>
@@ -616,14 +679,77 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
-    Getting Started
+  <a href="#using-the-mantis-cli-to-spin-up-your-first-mantis-cluster" class="md-nav__link">
+    Using the Mantis CLI to spin up your first Mantis Cluster
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrapping-your-first-mantis-cluster-in-aws" class="md-nav__link">
+    Bootstrapping your first Mantis cluster in AWS
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-and-install-the-mantis-cli" class="md-nav__link">
+    Download and install the Mantis CLI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-aws-credentials" class="md-nav__link">
+    Configure AWS credentials
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrap-your-cluster" class="md-nav__link">
+    Bootstrap your cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-mantis-ui" class="md-nav__link">
+    Using the Mantis UI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tearing-down-your-cluster" class="md-nav__link">
+    Tearing down your cluster
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -643,67 +769,109 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/netflix/mantis/edit/master/docs/MQL/index.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/gettingstarted.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Introduction to MQL</h1>
-                
-                <p>Mantis Query Language (MQL) is a dialect of SQL implemented as an abstraction over
-<a href="../glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a>  <a href="../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observables</a>. The purpose of MQL is to make it easy for Mantis users to query, transform,
-and analyze data flowing through Mantis. MQL maintains high fidelity to SQL syntax while adding
-capabilities for dealing with JSON structure, as well as a rich set of aggregates for answering
-analytical queries about the data in question.</p>
-<p>MQL currently supports the following SQL clauses:</p>
-<ul>
-<li><code>SELECT</code><ul>
-<li>Aggregates (<code>Min</code>, <code>Max</code>, <code>Average</code>, <code>Count</code>, <code>Sum</code>, <code>Percentiles</code>, <code>List</code>)</li>
-</ul>
-</li>
-<li><code>FROM</code></li>
-<li><code>WHERE</code></li>
-<li><code>GROUP BY</code></li>
-<li><code>ORDER BY</code></li>
-<li><code>LIMIT</code></li>
-<li><code>WINDOW</code></li>
-<li><code>HAVING</code></li>
-<li><code>JOIN</code></li>
-<li><code>SAMPLE</code></li>
-<li><code>ANOMALY</code></li>
-</ul>
-<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<p>To use MQL, include the <a href="https://search.maven.org/search?q=a:mql-jvm">mql-jvm</a> library in your dependencies.</p>
-<p>Refer to the example below for a minimalist getting started guide. Imagine we have a <a href="../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">source</a> of
-<code>Map&lt;String, Object&gt;</code> representing your data (recall that Mantis events can be easily parsed as
-such). Executing a query against that <a href="../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> is only a matter of putting that <code>Observable</code>
-into a <code>Map&lt;String, Observable&gt;</code> to represent the context and calling <code>evalMql</code> against said
-context. The result will be an <code>Observable</code> that represents the results of the query:</p>
-<div class="codehilite"><pre><span></span><span class="kn">package</span> <span class="nn">my.package</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
-
-<span class="kd">class</span> <span class="nc">MqlExample</span> <span class="o">{</span>
-<span class="hll">    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-</span><span class="hll">        <span class="c1">// Create a test observable source of x, y coordinates.</span>
-</span><span class="hll">        <span class="n">Observable</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">source</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="o">{</span>
-</span><span class="hll">            <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
-</span><span class="hll">            <span class="n">d</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;x&quot;</span><span class="o">,</span> <span class="n">x</span><span class="o">);</span>
-</span><span class="hll">            <span class="n">d</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;y&quot;</span><span class="o">,</span> <span class="n">x</span><span class="o">);</span>
-</span><span class="hll">        <span class="o">});</span>
-</span><span class="hll">
-</span><span class="hll">        <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">context</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
-</span><span class="hll">        <span class="n">context</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;observations&quot;</span><span class="o">,</span> <span class="n">source</span><span class="o">);</span>
-</span><span class="hll">        <span class="c1">// You don&#39;t have to block, and shouldn&#39;t. It is just to keep the example running.</span>
-</span><span class="hll">        <span class="n">io</span><span class="o">.</span><span class="na">mantisrx</span><span class="o">.</span><span class="na">mql</span><span class="o">.</span><span class="na">Core</span><span class="o">.</span><span class="na">evalMql</span><span class="o">(</span><span class="s">&quot;select y from observations where x &gt; 50 OR y == 10&quot;</span><span class="o">,</span> <span class="n">context</span><span class="o">).</span><span class="na">toBlocking</span><span class="o">().</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span><span class="o">}</span>
+                <h1 id="getting-started-with-mantis">Getting Started with Mantis<a class="headerlink" href="#getting-started-with-mantis" title="Permanent link">&para;</a></h1>
+<p>You can get started with Mantis in a number of ways: spinning up a minimal Mantis
+cluster on AWS using the <a href="https://github.com/netflix/mantis-cli">Mantis CLI</a> or
+local development using Docker.</p>
+<h2 id="using-the-mantis-cli-to-spin-up-your-first-mantis-cluster">Using the Mantis CLI to spin up your first Mantis Cluster<a class="headerlink" href="#using-the-mantis-cli-to-spin-up-your-first-mantis-cluster" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<p>The Mantis CLI currently supports AWS by spinning up a minimal cluster using T2 micro
+instances. This is meant for basic testing and not meant to run production traffic.</p>
+<p>In order for you to spin up a cluster in AWS, you will need to create or use an
+existing AWS account. You can follow AWS's <a href="https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/">account creation instructions</a> for more information.</p>
+<p>Once your account is created, you will need to create and download your AWS <a href="https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys">Access Keys</a>.
+You can follow AWS's instructions on <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey">creating access keys</a> for more information.</p>
+<p>Now that you have your AWS account and access keys on hand, you're ready to bootstrap your first
+Mantis cluster using the Mantis CLI.</p>
+<h3 id="bootstrapping-your-first-mantis-cluster-in-aws">Bootstrapping your first Mantis cluster in AWS<a class="headerlink" href="#bootstrapping-your-first-mantis-cluster-in-aws" title="Permanent link">&para;</a></h3>
+<h4 id="download-and-install-the-mantis-cli">Download and install the Mantis CLI<a class="headerlink" href="#download-and-install-the-mantis-cli" title="Permanent link">&para;</a></h4>
+<p>First, you'll need to download the Mantis CLI app.</p>
+<p>If you're on Mac OS, it's recommended that you download and install using the <a href="https://github.com/Netflix/mantis-cli/blob/master/dist/macos/mantis-v0.1.0.pkg">Mac package</a>.</p>
+<p>If you're on other systems such as Linux or Windows, choose the appropriate package from the <a href="https://github.com/Netflix/mantis-cli/tree/master/dist/mantis-v0.1.0">package list</a>.</p>
+<h4 id="configure-aws-credentials">Configure AWS credentials<a class="headerlink" href="#configure-aws-credentials" title="Permanent link">&para;</a></h4>
+<p>Now that you have the Mantis CLI installed, you'll need to tell it about your AWS credentials:</p>
+<div class="codehilite"><pre><span></span>$ mantis aws:configure
+AWS access key id: &lt;input access key id&gt;
+AWS secret access key: &lt;input secret access key&gt;
+Configuring AWS credentials... <span class="k">done</span>
 </pre></div>
 
 
-<!-- Do not edit below this line -->
+<p>This command stores your AWS credentials in the same exact format and location as the AWS SDK.
+More on this at the <a href="/cli#setting-up-your-aws-credentials">Mantis CLI page</a>.</p>
+<h4 id="bootstrap-your-cluster">Bootstrap your cluster<a class="headerlink" href="#bootstrap-your-cluster" title="Permanent link">&para;</a></h4>
+<p>With AWS credentials configured, you can bootstrap your cluster in a single command:</p>
+<div class="codehilite"><pre><span></span>$ mantis aws:bootstrap
+? <span class="k">select</span> a region us-east-2
+? Proceed with Mantis cluster creation? <span class="o">(</span>Y/n<span class="o">)</span> Y
+  ↓ Create key pair <span class="o">[</span>skipped<span class="o">]</span>
+    → Key-pair file already exists <span class="o">(</span>mantis-us-east-2<span class="o">)</span>
+  ↓ Create default VPC <span class="o">[</span>skipped<span class="o">]</span>
+    → Default VPC already exists
+  ↓ Create zookeeper security group <span class="o">[</span>skipped<span class="o">]</span>
+    → Security group already exists <span class="o">(</span>zookeeper<span class="o">)</span>
+  ↓ Authorize zookeeper security group ssh port ingress <span class="o">[</span>skipped<span class="o">]</span>
+    → Ingress rule already exists
+  ↓ Authorize zookeeper security group zookeeper port ingress <span class="o">[</span>skipped<span class="o">]</span>
+    → Ingress rule already exists
+  ✔ Bootstrap Zookeeper node
+  ↓ Create mesos-master security group <span class="o">[</span>skipped<span class="o">]</span>
+    → Security group already exists <span class="o">(</span>mesos-master<span class="o">)</span>
+  ↓ Authorize mesos-master security group ssh port ingress <span class="o">[</span>skipped<span class="o">]</span>
+    → Ingress rule already exists
+  ⠹ Authorize mesos-master security group mesos-master port <span class="m">5050</span> ingress
+    Bootstrap Mesos Master node
+    Create mesos-slave security group
+    Authorize mesos-slave security group ssh port ingress
+    Authorize mesos-slave security group mantis-agent port <span class="m">7104</span> ingress
+    Authorize mesos-slave security group mantis-agent port <span class="m">7150</span>-7400 ingress
+    Authorize mesos-slave security group mesos-slave resource port ingress
+    Bootstrap Mesos Slave node
+    Create mantis-control-plane security group
+    Authorize mantis-control-plane security group ssh port ingress
+    Authorize mantis-control-plane security group remote debug port <span class="m">5050</span> ingress
+    Authorize mantis-control-plane security group api port <span class="m">8100</span> ingress
+    Authorize mantis-control-plane security group api v2 port <span class="m">8075</span> ingress
+    Authorize mantis-control-plane security group scheduling info port <span class="m">8076</span> ingress
+    Authorize mantis-control-plane security group metrics port <span class="m">8082</span> ingress
+    Authorize mantis-control-plane security group console port <span class="m">9090</span> ingress
+    Bootstrap Mantis Control Plane service
+    Create mantis-api security group
+    Authorize mantis-api security group ssh port ingress
+    Authorize mantis-api security group web port <span class="m">80</span> ingress
+    Authorize mantis-api security group ssl port <span class="m">443</span> ingress
+    Authorize mantis-api security group api port <span class="m">7101</span> ingress
+    Authorize mantis-api security group websocket port <span class="m">7102</span> ingress
+    Authorize mantis-api security group tunnel port <span class="m">7001</span> ingress
+  ✔ Bootstrap Mantis API service
+Mantis API will be provisioned in a few minutes
+    with public DNS available at &lt;ec2 address&gt;:7101
+    Input this URL into your <span class="nb">local</span> Mantis UI to connect to the Mantis cluster.
+Mesos Master will be provisioned in a few minutes
+    with public DNS available at &lt;ec2 address&gt;:5050
+    Input this URL into your <span class="nb">local</span> Mantis UI so it can connect to Mesos logs.
+</pre></div>
 
-<!-- START -->
 
-<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
-
-<!-- END -->
+<p>This will launch and configure 5 AWS EC2 instances. Notice at the end of the bootstrap
+are 2 EC2 address. You will need these to input into the Mantis UI.</p>
+<h4 id="using-the-mantis-ui">Using the Mantis UI<a class="headerlink" href="#using-the-mantis-ui" title="Permanent link">&para;</a></h4>
+<p>To use the Mantis UI, first follow the instructions on the
+<a href="https://github.com/Netflix/mantis-ui/blob/master/README.md">Mantis UI README</a> to get the
+UI running locally.</p>
+<p>Once you have the UI running, open a browser to <code>localhost:8080</code> and input the Mantis API
+and Mesos Master URLs along with other information.</p>
+<p><img alt="Fresh Mantis UI" src="/images/fresh_ui.png" /></p>
+<h4 id="tearing-down-your-cluster">Tearing down your cluster<a class="headerlink" href="#tearing-down-your-cluster" title="Permanent link">&para;</a></h4>
+<p>Once you're done, you can clean up all of your AWS resources by tearing down instances and deleting security groups.</p>
+<div class="codehilite"><pre><span></span>$ aws:teardown
+? <span class="k">select</span> a region us-east-2
+? Proceed with Mantis cluster creation? <span class="o">(</span>Y/n<span class="o">)</span> Y
+  ✔ Terminate instances
+</pre></div>
                 
                   
                 
@@ -724,7 +892,7 @@ context. The result will be an <code>Observable</code> that represents the resul
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../writingjobs/sink/" title="The Sink Component" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href=".." title="Welcome to Mantis" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -733,19 +901,19 @@ context. The result will be an <code>Observable</code> that represents the resul
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                The Sink Component
+                Welcome to Mantis
               </span>
             </div>
           </a>
         
         
-          <a href="operators/" title="Operators" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../writingjobs/" title="Introduction to Mantis Jobs" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Operators
+                Introduction to Mantis Jobs
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
