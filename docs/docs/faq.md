@@ -1,4 +1,3 @@
-
 ## Is it possible to set a sample threshold value lower than 1 in an [MQL] query?
 
 Yes.
