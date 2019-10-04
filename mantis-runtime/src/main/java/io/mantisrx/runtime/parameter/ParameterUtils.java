@@ -293,7 +293,7 @@ public class ParameterUtils {
                     logger.info("mantis runtime parameter " + name + " used, looking up definition >>>");
                     definition = systemParams.get(name);
                 } else {
-                    logger.info("No parameter definition for parameter with name: {}, will skip parameter", name);
+                    logger.warn("No parameter definition for parameter with name: {}, will skip parameter", name);
                     continue;
                 }
             }
