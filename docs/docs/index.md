@@ -57,14 +57,15 @@ Mantis *does not* work if…
 
 ## Major Components of Mantis
 
-There are seven major components in Mantis:
+There are the major components of Mantis:
 
-1. [Mantis Publisher client](https://github.com/netflix/mantis-publish)
+1. [Runtime (this repo)](https://github.com/netflix/mantis)
+1. [Control Plane](https://github.com/netflix/mantis-control-plane)
+1. [Publisher Client](https://github.com/netflix/mantis-publish)
 1. [Source Jobs](https://github.com/netflix/mantis-source-jobs)
-1. [Jobs](https://github.com/netflix/mantis-examples)
+1. [Connectors](https://github.com/netflix/mantis-connectors)
 1. [Mantis Query Language (MQL)](https://github.com/netflix/mantis-mql)
 1. Job Chaining
-1. [Connectors](https://github.com/netflix/mantis-connectors)
 1. Autoscaling
 
 At the edge, we have services such as stateless APIs or stateful data pipelines. These services are instrumented with a Mantis Publisher client which enables developers to send events from their services into Mantis.

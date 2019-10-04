@@ -1,6 +1,7 @@
 site_name: Mantis
 nav:
   - 'Welcome to Mantis': 'index.md'
+  - 'Getting Started': 'gettingstarted.md'
   - Writing Mantis Jobs:
     - 'Introduction to Mantis Jobs': 'writingjobs/index.md'
     - 'The Source Component': 'writingjobs/source.md'
@@ -21,6 +22,7 @@ nav:
       - 'Mantis Source Jobs': 'internals/sourcejobs.md'
       - 'Mantis Runtime': 'internals/runtime.md'
   - 'Mantis Job Capacity Planning & Sizing': 'capacity.md'
+  - 'Community': 'community.md'
   - 'Mantis FAQ': 'faq.md'
   - 'Glossary': 'glossary.md'
 theme:
