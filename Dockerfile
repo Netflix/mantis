@@ -1,5 +1,5 @@
 FROM java:8
-MAINTAINER Mantis Developers <mantisdev@netflix.com>
+MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
     echo "deb http://repos.mesosphere.io/ubuntu trusty main" | tee /etc/apt/sources.list.d/mesosphere.list && \
