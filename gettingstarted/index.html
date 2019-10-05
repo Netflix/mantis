@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
     
     
       
@@ -264,7 +264,7 @@
       
         <li class="md-nav__item">
   <a href="#using-local-docker-images-on-your-desktop" class="md-nav__link">
-    Using local docker images on your desktop
+    Using local Docker images on your desktop
   </a>
   
     <nav class="md-nav">
@@ -278,8 +278,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#bootstraping-your-first-mantis-cluster" class="md-nav__link">
-    Bootstraping your first Mantis Cluster
+  <a href="#bootstraping-your-first-mantis-cluster-in-docker" class="md-nav__link">
+    Bootstraping your first Mantis Cluster in Docker
   </a>
   
     <nav class="md-nav">
@@ -321,8 +321,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#use-the-mantis-ui" class="md-nav__link">
-    Use the Mantis UI
+  <a href="#using-the-mantis-ui" class="md-nav__link">
+    Using the Mantis UI
   </a>
   
 </li>
@@ -382,8 +382,15 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-the-mantis-ui" class="md-nav__link">
+  <a href="#using-the-mantis-ui_1" class="md-nav__link">
     Using the Mantis UI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#launching-a-mantis-job" class="md-nav__link">
+    Launching a Mantis Job
   </a>
   
 </li>
@@ -762,7 +769,7 @@
       
         <li class="md-nav__item">
   <a href="#using-local-docker-images-on-your-desktop" class="md-nav__link">
-    Using local docker images on your desktop
+    Using local Docker images on your desktop
   </a>
   
     <nav class="md-nav">
@@ -776,8 +783,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#bootstraping-your-first-mantis-cluster" class="md-nav__link">
-    Bootstraping your first Mantis Cluster
+  <a href="#bootstraping-your-first-mantis-cluster-in-docker" class="md-nav__link">
+    Bootstraping your first Mantis Cluster in Docker
   </a>
   
     <nav class="md-nav">
@@ -819,8 +826,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#use-the-mantis-ui" class="md-nav__link">
-    Use the Mantis UI
+  <a href="#using-the-mantis-ui" class="md-nav__link">
+    Using the Mantis UI
   </a>
   
 </li>
@@ -880,8 +887,15 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-the-mantis-ui" class="md-nav__link">
+  <a href="#using-the-mantis-ui_1" class="md-nav__link">
     Using the Mantis UI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#launching-a-mantis-job" class="md-nav__link">
+    Launching a Mantis Job
   </a>
   
 </li>
@@ -926,12 +940,12 @@
 <p>You can get started with Mantis in a couple of easy ways: spinning up a minimal Mantis
 cluster on AWS using the <a href="https://github.com/netflix/mantis-cli">Mantis CLI</a> or
 if you prefer to not setup an AWS account using local Docker containers.</p>
-<h2 id="using-local-docker-images-on-your-desktop">Using local docker images on your desktop<a class="headerlink" href="#using-local-docker-images-on-your-desktop" title="Permanent link">&para;</a></h2>
+<h2 id="using-local-docker-images-on-your-desktop">Using local Docker images on your desktop<a class="headerlink" href="#using-local-docker-images-on-your-desktop" title="Permanent link">&para;</a></h2>
 <h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
 <blockquote>
 <p>Install <a href="https://docs.docker.com/docker-for-mac/install/">Docker for Mac</a></p>
 </blockquote>
-<h3 id="bootstraping-your-first-mantis-cluster">Bootstraping your first Mantis Cluster<a class="headerlink" href="#bootstraping-your-first-mantis-cluster" title="Permanent link">&para;</a></h3>
+<h3 id="bootstraping-your-first-mantis-cluster-in-docker">Bootstraping your first Mantis Cluster in Docker<a class="headerlink" href="#bootstraping-your-first-mantis-cluster-in-docker" title="Permanent link">&para;</a></h3>
 <h4 id="build-a-docker-image-for-mantis-control-plane-master">Build a Docker image for Mantis Control Plane (Master)<a class="headerlink" href="#build-a-docker-image-for-mantis-control-plane-master" title="Permanent link">&para;</a></h4>
 <p>Clone the Mantis Control Plane:</p>
 <div class="codehilite"><pre><span></span>$ git clone git@github.com:netflix/mantis-control-plane.git
@@ -947,7 +961,7 @@ $ ./buildDockerImage.sh
 <p>Clone the main Mantis repository:</p>
 <div class="codehilite"><pre><span></span>$ git clone git@github.com:netflix/mantis.git
 
-<span class="c1">#Set an environment variable called MANTIS_INSTALL_DIR to the root of this project</span>
+<span class="c1"># Set an environment variable called MANTIS_INSTALL_DIR to the root of this project</span>
 $ <span class="nb">export</span> <span class="nv">MANTIS_INSTALL_DIR</span><span class="o">=</span>/Users/user/mantis
 </pre></div>
 
@@ -966,7 +980,7 @@ $ cp sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPS
 
 <span class="c1"># Build the Worker docker image</span>
 $ <span class="nb">cd</span> &lt;path to mantis repo&gt;/mantis-server/mantis-server-worker
-./buildDockerImage.sh
+$ ./buildDockerImage.sh
 </pre></div>
 
 
@@ -982,41 +996,43 @@ $ ./buildDockerImage.sh
 
 
 <h4 id="start-the-mantis-cluster">Start the Mantis cluster<a class="headerlink" href="#start-the-mantis-cluster" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span><span class="nb">cd</span> &lt;path to mantis repo&gt;
-docker-compose -f docker-compose-new-master.yml up
+<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;path to mantis repo&gt;
+$ docker-compose -f docker-compose-new-master.yml up
 </pre></div>
 
 
-<p>This starts up the following Docker containers:
-- Zookeeper
-- Mesos Master
-- Mantis Master
-- Mantis API
-- Mesos Slave and Mantis Worker run on a single container (mantisagent)</p>
+<p>This starts up the following Docker containers:</p>
+<ul>
+<li>Zookeeper</li>
+<li>Mesos Master</li>
+<li>Mantis Master</li>
+<li>Mantis API</li>
+<li>Mesos Slave and Mantis Worker run on a single container (mantisagent)</li>
+</ul>
 <h4 id="create-and-submit-the-sine-function-job-cluster-via-cli">Create and submit the sine-function Job Cluster via CLI<a class="headerlink" href="#create-and-submit-the-sine-function-job-cluster-via-cli" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>curl -X POST http://127.0.0.1:8100/api/namedjob/create --silent --data @<span class="nv">$MANTIS_INSTALL_DIR</span>/localdev/conf/namedJob-template -vvv
+<div class="codehilite"><pre><span></span>$ curl -X POST http://127.0.0.1:8100/api/namedjob/create --silent --data @<span class="nv">$MANTIS_INSTALL_DIR</span>/localdev/conf/namedJob-template -vvv
 
-curl -X POST http://127.0.0.1:8100/api/submit --silent --data @<span class="nv">$MANTIS_INSTALL_DIR</span>/localdev/conf/submitJob-template -vvv
+$ curl -X POST http://127.0.0.1:8100/api/submit --silent --data @<span class="nv">$MANTIS_INSTALL_DIR</span>/localdev/conf/submitJob-template -vvv
 </pre></div>
 
 
 <p>To get a shell on a running container:</p>
-<div class="codehilite"><pre><span></span>docker <span class="nb">exec</span> -it mantis_mantisagent_1 bash
+<div class="codehilite"><pre><span></span>$ docker <span class="nb">exec</span> -it mantis_mantisagent_1 bash
 
-job logs can be found here 
-<span class="nb">cd</span> mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/MantisFramework/executors
+<span class="c1"># Job logs can be found here.</span>
+$ <span class="nb">cd</span> mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/MantisFramework/executors
 </pre></div>
 
 
-<h4 id="use-the-mantis-ui">Use the Mantis UI<a class="headerlink" href="#use-the-mantis-ui" title="Permanent link">&para;</a></h4>
+<h4 id="using-the-mantis-ui">Using the Mantis UI<a class="headerlink" href="#using-the-mantis-ui" title="Permanent link">&para;</a></h4>
 <p>Clone the Mantis UI project:</p>
 <div class="codehilite"><pre><span></span>$ git clone git@github.com:netflix/mantis-ui.git
 </pre></div>
 
 
 <p>Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:</p>
-<div class="codehilite"><pre><span></span>yarn
-yarn serve
+<div class="codehilite"><pre><span></span>$ yarn
+$ yarn serve
 </pre></div>
 
 
@@ -1027,12 +1043,14 @@ yarn serve
 
 
 <p>Point your browser to the above URL and fill out the Registration form as follows</p>
-<p><img alt="Fresh Mantis UI" src="../images/fresh_ui.png" />
-1. Name : Example
-2. Email : example@example.com
-3. Master Name : Example
-4. Mantis Master API URL : http://localhost:7101
-5. Mesos URL : http://localhost:5050</p>
+<p><img alt="Fresh Mantis UI" src="../images/fresh_ui.png" /></p>
+<ol>
+<li><strong>Name:</strong> <code>Example</code></li>
+<li><strong>Email:</strong> <code>example@example.com</code></li>
+<li><strong>Master Name:</strong> <code>Example</code></li>
+<li><strong>Mantis API URL:</strong> <code>http://localhost:7101</code></li>
+<li><strong>Mesos URL:</strong> <code>http://localhost:5050</code></li>
+</ol>
 <p>Click on <code>Create</code></p>
 <p>The Mantis Admin page should have no Job clusters currently.</p>
 <p><img alt="Create first Cluster" src="../images/create_cluster0.png" /></p>
@@ -1040,12 +1058,10 @@ yarn serve
 <p>Click on the <code>Create New Job Cluster</code> button on the top right.</p>
 <p>Specify the cluster name as <code>MySine</code></p>
 <p>Click on <code>Upload file</code> and drag and drop the these two files</p>
-<div class="codehilite"><pre><span></span>`mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip`
-and 
-`mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.json`
-</pre></div>
-
-
+<ol>
+<li><code>mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip</code></li>
+<li><code>mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.json</code></li>
+</ol>
 <p><img alt="Create Cluster" src="../images/create_cluster.png" /></p>
 <p>Under the section <code>Stage 1 - Scheduling Information</code> click on <code>Edit</code> and reduce the Disk and Network requirements
 for this worker to <code>10</code> and <code>12</code> respectively.</p>
@@ -1063,8 +1079,8 @@ as well as parameter values.</p>
 <p><img alt="Submit Job1" src="../images/submit_job1.png" /></p>
 <p>Let us skip all that and scroll directly to the bottom and hit the <code>Submit</code> button on the bottom left.</p>
 <p><img alt="Submit Job" src="../images/submit_job.png" /></p>
-<p>View output of the job
-If all goes well your job would go into 'Launched' state.</p>
+<p>View output of the job</p>
+<p>If all goes well your job would go into <code>Launched</code> state.</p>
 <p><img alt="Job Launched" src="../images/job_launched.png" /></p>
 <p>Scroll to the bottom and in the <code>Job Output</code> section click on <code>Start</code></p>
 <p>You should see output of the Sine function job being streamed below</p>
@@ -1076,8 +1092,8 @@ If all goes well your job would go into 'Launched' state.</p>
 <ol>
 <li>To teardown the Mantis cluster, issue the following command</li>
 </ol>
-<div class="codehilite"><pre><span></span><span class="nb">cd</span> &lt;path to mantis repo&gt;
-docker-compose -f docker-compose-new-master.yml down
+<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;path to mantis repo&gt;
+$ docker-compose -f docker-compose-new-master.yml down
 </pre></div>
 
 
@@ -1163,13 +1179,52 @@ Mesos Master will be provisioned in a few minutes
 
 <p>This will launch and configure 5 AWS EC2 instances. Notice at the end of the bootstrap
 are 2 EC2 address. You will need these to input into the Mantis UI.</p>
-<h4 id="using-the-mantis-ui">Using the Mantis UI<a class="headerlink" href="#using-the-mantis-ui" title="Permanent link">&para;</a></h4>
-<p>To use the Mantis UI, first follow the instructions on the
-<a href="https://github.com/Netflix/mantis-ui/blob/master/README.md">Mantis UI README</a> to get the
-UI running locally.</p>
-<p>Once you have the UI running, open a browser to <code>localhost:8080</code> and input the Mantis API
-and Mesos Master URLs along with other information.</p>
+<h4 id="using-the-mantis-ui_1">Using the Mantis UI<a class="headerlink" href="#using-the-mantis-ui_1" title="Permanent link">&para;</a></h4>
+<p>Clone the Mantis UI project:</p>
+<div class="codehilite"><pre><span></span>$ git clone git@github.com:netflix/mantis-ui.git
+</pre></div>
+
+
+<p>Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:</p>
+<div class="codehilite"><pre><span></span>$ yarn
+$ yarn serve
+</pre></div>
+
+
+<p>Once the node server is up it should print something like:</p>
+<div class="codehilite"><pre><span></span> App running at:
+ Local:   http://localhost:8080/
+</pre></div>
+
+
+<p>Point your browser to the above URL and fill out the Registration form as follows:</p>
 <p><img alt="Fresh Mantis UI" src="../images/fresh_ui.png" /></p>
+<ol>
+<li><strong>Name:</strong> <code>Example</code></li>
+<li><strong>Email:</strong> <code>example@example.com</code></li>
+<li><strong>Master Name:</strong> <code>Example</code></li>
+<li><strong>Mantis API URL:</strong> <code>&lt;your ec2 Mantis API URL outputted from the Mantis CLI&gt;</code></li>
+<li><strong>Mesos URL:</strong> <code>&lt;your ec2 Mesos URL outputted from the Mantis CLI&gt;</code></li>
+</ol>
+<h4 id="launching-a-mantis-job">Launching a Mantis Job<a class="headerlink" href="#launching-a-mantis-job" title="Permanent link">&para;</a></h4>
+<p>When you go into the UI, you'll notice that the Mantis CLI has automatically preloaded a Job Cluster for you to try out.
+Simply click on the <code>SineTest</code> Job Cluster to go into the cluster details page.</p>
+<p><img alt="Preloaded Job Cluster" src="../images/preloaded_job_cluster.png" /></p>
+<p>Once in the cluster details page, click on the green <code>Submit latest version</code> button on the top right to bring
+you to the Job Submit page.</p>
+<p><img alt="Submit latest version" src="../images/cluster_details.png" /></p>
+<p>On the Job Submit page, everything has already been configured for you. All you have to do is hit the
+green <code>Submit to Mantis</code> button at the bottom of the page to launch your first Mantis Job.</p>
+<p><img alt="Submit Job" src="../images/submit_job.png" /></p>
+<p>Now you can view the output of this job.</p>
+<p>If all goes well your job would go into <code>Launched</code> state.</p>
+<p><img alt="Job Launched" src="../images/job_output.png" /></p>
+<p>Scroll to the bottom and in the <code>Job Output</code> section click on <code>Start</code></p>
+<p>You should see output of the Sine function job being streamed below</p>
+<div class="codehilite"><pre><span></span>Oct 4 2019, 03:55:39.338 PM - {&quot;x&quot;: 26.000000, &quot;y&quot;: 7.625585}
+</pre></div>
+
+
 <h4 id="tearing-down-your-cluster">Tearing down your cluster<a class="headerlink" href="#tearing-down-your-cluster" title="Permanent link">&para;</a></h4>
 <p>Once you're done, you can clean up all of your AWS resources by tearing down instances and deleting security groups.</p>
 <div class="codehilite"><pre><span></span>$ aws:teardown
@@ -1255,7 +1310,7 @@ and Mesos Master URLs along with other information.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="../assets/javascripts/application.c648116f.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
