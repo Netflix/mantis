@@ -12,7 +12,6 @@ if you prefer to not setup an AWS account using local Docker containers.
 
 ### Bootstraping your first Mantis Cluster
 
-
 #### Build a Docker image for Mantis Control Plane (Master)
 
 Clone the Mantis Control Plane:
@@ -33,7 +32,7 @@ Clone the main Mantis repository:
 ```bash
 $ git clone git@github.com:netflix/mantis.git
 
-#Set an environment variable called MANTIS_INSTALL_DIR to the root of this project
+# Set an environment variable called MANTIS_INSTALL_DIR to the root of this project
 $ export MANTIS_INSTALL_DIR=/Users/user/mantis
 ```
  
@@ -53,7 +52,7 @@ $ cp sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPS
 
 # Build the Worker docker image
 $ cd <path to mantis repo>/mantis-server/mantis-server-worker
-./buildDockerImage.sh
+$ ./buildDockerImage.sh
 ```
 
 #### Build Docker image for Mantis API
@@ -70,10 +69,12 @@ $ ./buildDockerImage.sh
 #### Start the Mantis cluster
 
 ```bash
-cd <path to mantis repo>
-docker-compose -f docker-compose-new-master.yml up
+$ cd <path to mantis repo>
+$ docker-compose -f docker-compose-new-master.yml up
 ```
+
 This starts up the following Docker containers:
+
 - Zookeeper
 - Mesos Master
 - Mantis Master
@@ -81,32 +82,36 @@ This starts up the following Docker containers:
 - Mesos Slave and Mantis Worker run on a single container (mantisagent)
 
 #### Create and submit the sine-function Job Cluster via CLI
+
 ```bash
+$ curl -X POST http://127.0.0.1:8100/api/namedjob/create --silent --data @$MANTIS_INSTALL_DIR/localdev/conf/namedJob-template -vvv
 
-curl -X POST http://127.0.0.1:8100/api/namedjob/create --silent --data @$MANTIS_INSTALL_DIR/localdev/conf/namedJob-template -vvv
-
-curl -X POST http://127.0.0.1:8100/api/submit --silent --data @$MANTIS_INSTALL_DIR/localdev/conf/submitJob-template -vvv
+$ curl -X POST http://127.0.0.1:8100/api/submit --silent --data @$MANTIS_INSTALL_DIR/localdev/conf/submitJob-template -vvv
 ```
 
 To get a shell on a running container:
-```bash
-docker exec -it mantis_mantisagent_1 bash
 
-job logs can be found here 
-cd mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/MantisFramework/executors
+```bash
+$ docker exec -it mantis_mantisagent_1 bash
+
+# Job logs can be found here.
+$ cd mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/MantisFramework/executors
 ```
 #### Use the Mantis UI
 
 Clone the Mantis UI project:
+
 ```bash
 $ git clone git@github.com:netflix/mantis-ui.git
 ```
 
 Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:
+
+```bash
+$ yarn
+$ yarn serve
 ```
-yarn
-yarn serve
-```
+
 Once the node server is up it should print something like
 
 ```
@@ -117,6 +122,7 @@ Once the node server is up it should print something like
 Point your browser to the above URL and fill out the Registration form as follows
 
 ![Fresh Mantis UI](./images/fresh_ui.png)
+
 1. Name : Example
 2. Email : example@example.com
 3. Master Name : Example
@@ -136,11 +142,10 @@ Click on the `Create New Job Cluster` button on the top right.
 Specify the cluster name as `MySine`
 
 Click on `Upload file` and drag and drop the these two files
-```
-`mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip`
-and 
-`mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.json`
-```
+
+1. `mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip`
+1. `mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.json`
+
 ![Create Cluster](./images/create_cluster.png)
 
 Under the section `Stage 1 - Scheduling Information` click on `Edit` and reduce the Disk and Network requirements
@@ -184,14 +189,15 @@ You should see output of the Sine function job being streamed below
 ```
 Oct 4 2019, 03:55:39.338 PM - {"x": 26.000000, "y": 7.625585}
 ```
+
 ![Running Job](./images/running_job.png)
 
 8. To teardown the Mantis cluster, issue the following command
-```bash
-cd <path to mantis repo>
-docker-compose -f docker-compose-new-master.yml down
-```
 
+```bash
+$ cd <path to mantis repo>
+$ docker-compose -f docker-compose-new-master.yml down
+```
 
 ## Using the Mantis CLI to spin up your first Mantis Cluster
 
