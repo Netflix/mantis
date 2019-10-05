@@ -342,7 +342,7 @@ public class JobsRoute extends BaseRoute {
                             r,
                             resp -> complete(
                                     StatusCodes.CREATED,
-                                    resp.getJobMetadata().get(),
+                                    resp.getJobMetadata().map(metaData -> new MantisJobMetadataView(metaData, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), false)),
                                     Jackson.marshaller()),
                             endpoint,
                             HttpRequestMetrics.HttpVerb.POST);
@@ -512,7 +512,7 @@ public class JobsRoute extends BaseRoute {
                             response,
                             resp -> complete(
                                     StatusCodes.CREATED,
-                                    resp.getJobMetadata().get(),
+                                    resp.getJobMetadata().map(metaData -> new MantisJobMetadataView(metaData, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), false)),
                                     Jackson.marshaller()
                             ),
                             HttpRequestMetrics.Endpoints.JOBS_ACTION_QUICKSUBMIT,

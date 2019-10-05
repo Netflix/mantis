@@ -547,13 +547,14 @@ public class JobsRouteTest extends RouteTestBase {
             assert !Strings.isNullOrEmpty(resp);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode responseObj = mapper.readTree(resp);
-            assert responseObj.get("jobId").get("cluster").asText().equals(TEST_CLUSTER);
-            assert responseObj.get("jobId").get("id").asText().startsWith("sine-function-");
+            assert responseObj.get("jobMetadata").get("name").asText().equals(TEST_CLUSTER);
+            assert responseObj.get("jobMetadata").get("jobId").asText().startsWith("sine-function-");
+            assert responseObj.get("jobMetadata").get("sla") != null;
+            assert responseObj.get("jobMetadata").get("labels") != null;
 
-            validateJobDefinition(responseObj.get("jobDefinition"));
+            assert responseObj.get("stageMetadataList") != null;
+            assert responseObj.get("workerMetadataList") != null;
 
-            assert responseObj.get("parameters").size() == 2;
-            assert responseObj.get("clusterName").asText().equals(TEST_CLUSTER);
         } catch (IOException ex) {
             logger.error("Failed to validate job response: " + ex.getMessage());
             assert false;
