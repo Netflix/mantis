@@ -97,7 +97,7 @@ $ docker exec -it mantis_mantisagent_1 bash
 # Job logs can be found here.
 $ cd mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/MantisFramework/executors
 ```
-#### Use the Mantis UI
+#### Using the Mantis UI
 
 Clone the Mantis UI project:
 
@@ -123,11 +123,11 @@ Point your browser to the above URL and fill out the Registration form as follow
 
 ![Fresh Mantis UI](./images/fresh_ui.png)
 
-1. Name : Example
-2. Email : example@example.com
-3. Master Name : Example
-4. Mantis Master API URL : http://localhost:7101
-5. Mesos URL : http://localhost:5050
+1. **Name:** `Example`
+2. **Email:** `example@example.com`
+3. **Master Name:** `Example`
+4. **Mantis API URL:** `http://localhost:7101`
+5. **Mesos URL:** `http://localhost:5050`
 
 Click on `Create`
 
@@ -176,9 +176,9 @@ Let us skip all that and scroll directly to the bottom and hit the `Submit` butt
 
 ![Submit Job](./images/submit_job.png)
 
-
 View output of the job
-If all goes well your job would go into 'Launched' state.
+
+If all goes well your job would go into `Launched` state.
 
 ![Job Launched](./images/job_launched.png)
 
@@ -300,14 +300,66 @@ are 2 EC2 address. You will need these to input into the Mantis UI.
 
 #### Using the Mantis UI
 
-To use the Mantis UI, first follow the instructions on the
-[Mantis UI README](https://github.com/Netflix/mantis-ui/blob/master/README.md) to get the
-UI running locally.
+Clone the Mantis UI project:
 
-Once you have the UI running, open a browser to `localhost:8080` and input the Mantis API
-and Mesos Master URLs along with other information.
+```bash
+$ git clone git@github.com:netflix/mantis-ui.git
+```
+
+Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:
+
+```bash
+$ yarn
+$ yarn serve
+```
+
+Once the node server is up it should print something like:
+
+```
+ App running at:
+ Local:   http://localhost:8080/
+```
+
+Point your browser to the above URL and fill out the Registration form as follows:
 
 ![Fresh Mantis UI](./images/fresh_ui.png)
+
+1. **Name:** `Example`
+2. **Email:** `example@example.com`
+3. **Master Name:** `Example`
+4. **Mantis API URL:** `<your ec2 Mantis API URL outputted from the Mantis CLI>`
+5. **Mesos URL:** `<your ec2 Mesos URL outputted from the Mantis CLI>`
+
+#### Launching a Mantis Job
+
+When you go into the UI, you'll notice that the Mantis CLI has automatically preloaded a Job Cluster for you to try out.
+Simply click on the `SineTest` Job Cluster to go into the cluster details page.
+
+![Preloaded Job Cluster](./images/preloaded_job_cluster.png)
+
+Once in the cluster details page, click on the green `Submit latest version` button on the top right to bring
+you to the Job Submit page.
+
+![Submit latest version](./images/cluster_details.png)
+
+On the Job Submit page, everything has already been configured for you. All you have to do is hit the
+green `Submit to Mantis` button at the bottom of the page to launch your first Mantis Job.
+
+![Submit Job](./images/submit_job.png)
+
+Now you can view the output of this job.
+
+If all goes well your job would go into `Launched` state.
+
+![Job Launched](./images/job_output.png)
+
+Scroll to the bottom and in the `Job Output` section click on `Start`
+
+You should see output of the Sine function job being streamed below
+
+```
+Oct 4 2019, 03:55:39.338 PM - {"x": 26.000000, "y": 7.625585}
+```
 
 #### Tearing down your cluster
 
