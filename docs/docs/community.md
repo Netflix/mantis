@@ -16,5 +16,5 @@ on the repo's `CONTRIBUTING.md` file.
 
 Mantis has two mailing lists:
 
-1. **Developers**: mantis-oss-dev@netflix.com - used for discussing Mantis development.
-1. **Users**: mantis-oss-users@netflix.com - used for community discussions.
+1. **Developers**: [mantis-oss-dev@googlegroups.com](https://groups.google.com/forum/#!forum/mantis-oss-dev) - used for discussing Mantis development.
+1. **Users**: [mantis-oss-users@googlegroups.com](https://groups.google.com/forum/#!forum/mantis-oss-users) - used for community discussions.
