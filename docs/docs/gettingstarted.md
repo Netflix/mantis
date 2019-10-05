@@ -4,13 +4,13 @@ You can get started with Mantis in a couple of easy ways: spinning up a minimal 
 cluster on AWS using the [Mantis CLI](https://github.com/netflix/mantis-cli) or
 if you prefer to not setup an AWS account using local Docker containers.
 
-## Using local docker images on your desktop
+## Using local Docker images on your desktop
 
 ### Prerequisites
 
 > Install [Docker for Mac](https://docs.docker.com/docker-for-mac/install/)
 
-### Bootstraping your first Mantis Cluster
+### Bootstraping your first Mantis Cluster in Docker
 
 #### Build a Docker image for Mantis Control Plane (Master)
 
