@@ -5,6 +5,7 @@
 ### Prerequisites
 
 1. python
+1. mkdocs material theme (`pip install mkdocs-material`)
 1. pymdownx.arithmatex (`pip install pymdown-extensions`)
 1. mkdocs (`pip install mkdocs`)
 
