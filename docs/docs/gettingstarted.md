@@ -1,8 +1,68 @@
 # Getting Started with Mantis
 
-You can get started with Mantis in a couple of easy ways: spinning up a minimal Mantis
-cluster on AWS using the [Mantis CLI](https://github.com/netflix/mantis-cli) or
-if you prefer to not setup an AWS account using local Docker containers.
+You can get started with Mantis in a few easy ways:
+
+1. Explore Mantis Job Examples in your IDE 
+
+2. Spin up the complete Mantis topology using locally built Docker images
+
+3. Spin up a minimal Mantis topology on AWS using the [Mantis CLI](https://github.com/netflix/mantis-cli) 
+
+## Running a Mantis job locally.
+
+### Prerequisites
+
+JDK 8 or higher
+
+### Build and run the sine-function sample.
+
+Clone the mantis-examples repo
+
+```bash
+$ git clone git@github.com:netflix/mantis-examples.git
+```
+
+Run the sine-function sample via gradle
+
+```bash
+$ cd mantis-examples
+$ ../gradlew execute
+```
+
+```bash
+This will launch the job and you would see output like
+2019-10-05 16:18:19 INFO  StageExecutors:326 main - Setting up ScalarToScalar stage with input type: SERIAL
+2019-10-05 16:18:19 INFO  StageExecutors:229 main - initializing io.mantisrx.mantis.examples.sinefunction.stages.SinePointGeneratorStage
+2019-10-05 16:18:19 INFO  SinkPublisher:82 main - Got sink subscription, onSubscribe=null
+2019-10-05 16:18:19 INFO  ServerSentEventsSink:141 main - Serving modern HTTP SSE server sink on port: 8538
+2019-10-05 16:18:19 INFO  ServerSentEventsSink:180 main - Read fast property mantis.sse.batchInterval100
+2019-10-05 16:18:21 WARN  ServerBootstrap:146 main - Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x5e0ace3e]'
+2019-10-05 16:18:21 INFO  AbstractServer:95 main - Rx server started at port: 8538
+```
+
+The default Mantis sink is a ServerSentEvent sink that opens a port allowing anyone to connect
+to it and stream the results of the job.
+Look for a line like
+```bash
+Serving modern HTTP SSE server sink on port: 8538
+```
+
+In another terminal window curl this port
+```bash
+$ curl localhost:8358
+```
+
+The results of this job which are x and y coordinates of a sine wave can be seen
+
+```bash
+data: {"x": 196.000000, "y": 9.395301}
+
+data: {"x": 198.000000, "y": -0.795786}
+```
+
+Next. Import the project into your IDE to explore the code.
+
+You can see more examples under the [Mantis examples repository](https://github.com/netflix/mantis-examples)
 
 ## Using local Docker images on your desktop
 
