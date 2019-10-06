@@ -402,6 +402,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#debugging-your-cluster" class="md-nav__link">
+    Debugging your cluster
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -907,6 +914,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#debugging-your-cluster" class="md-nav__link">
+    Debugging your cluster
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1232,6 +1246,29 @@ green <code>Submit to Mantis</code> button at the bottom of the page to launch y
 ? Proceed with Mantis cluster creation? <span class="o">(</span>Y/n<span class="o">)</span> Y
   ✔ Terminate instances
 </pre></div>
+
+
+<h4 id="debugging-your-cluster">Debugging your cluster<a class="headerlink" href="#debugging-your-cluster" title="Permanent link">&para;</a></h4>
+<p>You can debug your cluster by looking at the logs. To look at the logs, you'll need to go into your AWS EC2 Console
+and find instances with the <code>Application: Mantis</code> tag.</p>
+<p><img alt="AWS EC2 Mantis Instances" src="../images/ec2_mantis_instances.png" /></p>
+<p>From there, you can look at the instances with the following
+security groups:</p>
+<ol>
+<li>zookeeper</li>
+<li>mesos-slave</li>
+<li>mesos-master</li>
+<li>mantis-control-plane</li>
+<li>mantis-api</li>
+</ol>
+<p>You can connect to your EC2 instances by following instructions from the <code>Connect</code> button at the top.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Mantis CLI puts your EC2 <code>.pem</code> keys in the same folder as your AWS credentials, typically
+located in <code>$HOME/.aws</code>.</p>
+</div>
+<p>Application logs, e.g. Mantis-related or Zookeeper, for all instances will be located in <code>/logs</code>.</p>
+<p>Mesos-related logs for <code>mesos-master</code> and <code>mesos-slave</code> will be located in <code>/var/run/mesos</code>.</p>
                 
                   
                 
