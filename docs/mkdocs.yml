@@ -2,6 +2,7 @@ site_name: Mantis
 nav:
   - 'Welcome to Mantis': 'index.md'
   - 'Getting Started': 'gettingstarted.md'
+  - 'Infrastructure Overview': 'infrastructure.md'
   - Writing Mantis Jobs:
     - 'Introduction to Mantis Jobs': 'writingjobs/index.md'
     - 'The Source Component': 'writingjobs/source.md'
