@@ -371,3 +371,29 @@ $ aws:teardown
 ? Proceed with Mantis cluster creation? (Y/n) Y
   ✔ Terminate instances
 ```
+
+#### Debugging your cluster
+
+You can debug your cluster by looking at the logs. To look at the logs, you'll need to go into your AWS EC2 Console
+and find instances with the `Application: Mantis` tag.
+
+![AWS EC2 Mantis Instances](./images/ec2_mantis_instances.png)
+
+From there, you can look at the instances with the following
+security groups:
+
+1. zookeeper
+1. mesos-slave
+1. mesos-master
+1. mantis-control-plane
+1. mantis-api
+
+You can connect to your EC2 instances by following instructions from the `Connect` button at the top.
+
+!!! note
+    The Mantis CLI puts your EC2 `.pem` keys in the same folder as your AWS credentials, typically
+    located in `$HOME/.aws`.
+
+Application logs, e.g. Mantis-related or Zookeeper, for all instances will be located in `/logs`.
+
+Mesos-related logs for `mesos-master` and `mesos-slave` will be located in `/var/run/mesos`.
