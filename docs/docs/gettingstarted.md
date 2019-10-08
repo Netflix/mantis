@@ -19,7 +19,7 @@ JDK 8 or higher
 Clone the mantis-examples repo
 
 ```bash
-$ git clone git@github.com:netflix/mantis-examples.git
+$ git clone https://github.com/Netflix/mantis-examples.git
 ```
 
 Run the synthetic-sourcejob sample via gradle
@@ -83,7 +83,7 @@ You can see more examples under the [Mantis examples repository](https://github.
 Clone the Mantis Control Plane:
 
 ```bash
-$ git clone git@github.com:netflix/mantis-control-plane.git
+$ git clone https://github.com/Netflix/mantis-control-plane.git
 ```
 
 ```bash
@@ -96,7 +96,7 @@ $ ./buildDockerImage.sh
 Clone the main Mantis repository:
 
 ```bash
-$ git clone git@github.com:netflix/mantis.git
+$ git clone https://github.com/Netflix/mantis.git
 
 # Set an environment variable called MANTIS_INSTALL_DIR to the root of this project
 $ export MANTIS_INSTALL_DIR=/Users/user/mantis
@@ -105,7 +105,7 @@ $ export MANTIS_INSTALL_DIR=/Users/user/mantis
 Clone the Mantis examples:
 
 ```bash
-$ git clone git@github.com:netflix/mantis-examples.git
+$ git clone https://github.com/Netflix/mantis-examples.git
 ```
 
 ```bash
@@ -125,7 +125,7 @@ $ ./buildDockerImage.sh
 
 Clone the Mantis API project:
 ```bash
-$ git clone git@github.com:netflix/mantis-api.git
+$ git clone https://github.com/Netflix/mantis-api.git
 ```
 ```bash
 $ cd mantis-api/
@@ -168,7 +168,7 @@ $ cd mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/Man
 Clone the Mantis UI project:
 
 ```bash
-$ git clone git@github.com:netflix/mantis-ui.git
+$ git clone https://github.com/Netflix/mantis-ui.git
 ```
 
 Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:
@@ -369,7 +369,7 @@ are 2 EC2 address. You will need these to input into the Mantis UI.
 Clone the Mantis UI project:
 
 ```bash
-$ git clone git@github.com:netflix/mantis-ui.git
+$ git clone https://github.com/Netflix/mantis-ui.git
 ```
 
 Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:
