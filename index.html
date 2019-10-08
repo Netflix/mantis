@@ -251,8 +251,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mantis-use-cases" class="md-nav__link">
-    Mantis Use Cases
+  <a href="#guiding-principles-behind-building-mantis" class="md-nav__link">
+    Guiding Principles Behind Building Mantis
   </a>
   
 </li>
@@ -651,8 +651,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mantis-use-cases" class="md-nav__link">
-    Mantis Use Cases
+  <a href="#guiding-principles-behind-building-mantis" class="md-nav__link">
+    Guiding Principles Behind Building Mantis
   </a>
   
 </li>
@@ -692,60 +692,19 @@
                 
                 <h1 id="mantis">Mantis<a class="headerlink" href="#mantis" title="Permanent link">&para;</a></h1>
 <p>Mantis is a platform which helps engineers better understand the behavior of their applications to ensure
-the highest operational standards for the critical production systems.</p>
-<p>Mantis is a <a href="../glossary#reactivestreams" title="Reactive Streams is the latest advance of the ReactiveX project. It is an API for manipulating streams of asynchronous data in a non-blocking fashion, with backpressure.">Reactive Stream</a> processing platform that makes it easy for developers to build real-time, cost-effective, operations-focused applications. 
-Developers can build applications and higher-level platforms on top of Mantis which help their production services uphold high operational guarantees. 
+production systems operate with the highest quality. Engineers are able to build applications on top of
+the Mantis platform to quickly identify issues, trigger alerts, and apply remediations to completely
+avoid or minimize downtime. Mantis puts native capabilities in the hands of engineers to minimize the costs of
+operating monitoring systems without having to compromise on required and opportunistic insights.
 It was <a href="https://medium.com/netflix-techblog/stream-processing-with-mantis-78af913f51a6">designed by Netflix</a>.</p>
-<p>Mantis covers a variety of operational insight use cases, including real-time dashboarding,
-alerting, anomaly detection, metric generation, and ad-hoc interactive exploration of streaming
-data. It operates as a cloud-native service and supports on-demand, interactive jobs in addition to
-long-running service-style jobs.</p>
-<p>Mantis is built on top of <a href="../glossary#mesos" title="Apache Mesos is an open-source technique for balancing resources across frameworks in clusters.">Apache Mesos</a> and uses the <a href="../glossary#fenzo" title="Fenzo is a Java library that implements a generic task scheduler for Mesos frameworks.">Fenzo</a> scheduler. The system is designed to operate
-across many datacenters using an island model.</p>
-<h2 id="mantis-use-cases">Mantis Use Cases<a class="headerlink" href="#mantis-use-cases" title="Permanent link">&para;</a></h2>
-<p>Mantis is great for you if…</p>
-<ul>
-<li>
-<p><strong>…you want streaming on demand.</strong></p>
-<p>Mantis allows for ad-hoc/interactive querying of streaming data, especially in cases where the
-high volume of data would make streaming of all of it cost-prohibitive. This is often true for
-operational use cases, but applies to other use cases as well.</p>
-</li>
-<li>
-<p><strong>…you are cost sensitive.</strong></p>
-<p>Streaming on demand, <a href="../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a>, and reuse of existing <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> all help keep your streaming
-costs down.</p>
-</li>
-<li>
-<p><strong>…you want to run on top of a service.</strong></p>
-<p>Mantis runs as a cloud-native service that takes care of much of the underlying infrastructure,
-including scheduling, autoscaling, cost-effective data access, <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact</a> management, and <a href="../glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a>.</p>
-</li>
-<li>
-<p><strong>…you want to compose multiple microservices as a stream processing application.</strong></p>
-<p>Mantis lets you connect to existing Jobs. All you have to do is connect your own Job and start
-streaming. Mantis also natively supports job chaining and allows you to compose multiple Jobs, 
-just like in a microservices architecture. Mantis will take care of Job-specific backpressure
-for you (i.e., if a slower Job connects to the same Job you’re reading from, you won’t be slowed down).</p>
-</li>
-</ul>
-<p>Mantis is not currently the best solution if…</p>
-<ul>
-<li>
-<p><strong>…you need effectively-once processing.</strong></p>
-<p>Developers can build applications on Mantis to satisfy this delivery guarantee, but Mantis does 
-not natively provide this capability.</p>
-</li>
-<li>
-<p><strong>…you need checkpointing in multi-stage Jobs.</strong></p>
-<p>Mantis currently has native checkingpointing support for single-stage Jobs.</p>
-</li>
-</ul>
-<p>You can still use it in such cases, but it’s more complicated.</p>
-<p>Mantis <em>does not</em> work if…</p>
-<ul>
-<li>…you need to write Jobs in non-JVM languages.</li>
-</ul>
+<h2 id="guiding-principles-behind-building-mantis">Guiding Principles Behind Building Mantis<a class="headerlink" href="#guiding-principles-behind-building-mantis" title="Permanent link">&para;</a></h2>
+<p>The following are the guiding principles behind building Mantis:</p>
+<ol>
+<li><strong>We should have access to raw events.</strong> Applications that publish events into Mantis should be free to publish every single event. If we reduce the dataset at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.</li>
+<li><strong>We should be able to access this data in realtime.</strong> Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.</li>
+<li><strong>We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.</strong> It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.</li>
+<li><strong>We should be able to do all of the above in a cost-effective way.</strong> As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.</li>
+</ol>
 <h2 id="major-components-of-mantis">Major Components of Mantis<a class="headerlink" href="#major-components-of-mantis" title="Permanent link">&para;</a></h2>
 <p>There are the major components of Mantis:</p>
 <ol>
@@ -766,7 +725,9 @@ not natively provide this capability.</p>
 <p>Mantis Jobs connect to one another through source and sink Connectors. Mantis Jobs can use connectors to move data to and from other Mantis Jobs or systems external to Mantis such as Kafka, S3, and Hive.</p>
 <p>Lastly, Mantis treats autoscaling as a first class citizen in the infrastructure. Mantis Jobs leverage Mantis' built in autoscaling mechanism to relieve operation overhead from running large or complex Mantis Jobs.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
-<p>For a detailed Programming Guide on writing Mantis Jobs, refer to the <a href="writingjobs">Writing Mantis Jobs</a> chapters.</p>
+<p>To learn more about Mantis, visit the <a href="gettingstarted">Getting Started guide</a> or check out the <a href="infrastructure">Infrastructure Overview</a>.
+To get involved with community, visit the <a href="community">Community page</a> where you can subscribe to one of our mailing lists.
+For a detailed Programming Guide on writing Mantis Jobs, refer to the <a href="writingjobs">Writing Mantis Jobs</a> chapters.</p>
 <!-- Do not edit below this line -->
 
 <!-- START -->
