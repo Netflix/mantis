@@ -1,59 +1,20 @@
 # Mantis
 
-Mantis is a [Reactive Stream] processing platform that makes it easy for developers to build real-time, cost-effective, operations-focused applications. 
-Developers can build applications and higher-level platforms on top of Mantis which help their production services uphold high operational guarantees. 
+Mantis is a platform which helps engineers better understand the behavior of their applications to ensure
+production systems operate with the highest quality. Engineers are able to build applications on top of
+the Mantis platform to quickly identify issues, trigger alerts, and apply remediations to completely
+avoid or minimize downtime. Mantis puts native capabilities in the hands of engineers to minimize the costs of
+operating monitoring systems without having to compromise on required and opportunistic insights.
 It was [designed by Netflix](https://medium.com/netflix-techblog/stream-processing-with-mantis-78af913f51a6).
 
-Mantis covers a variety of operational insight use cases, including real-time dashboarding,
-alerting, anomaly detection, metric generation, and ad-hoc interactive exploration of streaming
-data. It operates as a cloud-native service and supports on-demand, interactive jobs in addition to
-long-running service-style jobs.
+## Guiding Principles Behind Building Mantis
 
-Mantis is built on top of [Apache Mesos] and uses the [Fenzo] scheduler. The system is designed to operate
-across many datacenters using an island model.
+The following are the guiding principles behind building Mantis:
 
-## Mantis Use Cases
-Mantis is great for you if…
-
-* **…you want streaming on demand.**
-
-    Mantis allows for ad-hoc/interactive querying of streaming data, especially in cases where the
-    high volume of data would make streaming of all of it cost-prohibitive. This is often true for
-    operational use cases, but applies to other use cases as well.
-
-* **…you are cost sensitive.**
-
-    Streaming on demand, [autoscaling], and reuse of existing [Jobs] all help keep your streaming
-    costs down.
-
-* **…you want to run on top of a service.**
-
-    Mantis runs as a cloud-native service that takes care of much of the underlying infrastructure,
-    including scheduling, autoscaling, cost-effective data access, [artifact] management, and [backpressure].
-
-* **…you want to compose multiple microservices as a stream processing application.**
-
-    Mantis lets you connect to existing Jobs. All you have to do is connect your own Job and start
-    streaming. Mantis also natively supports job chaining and allows you to compose multiple Jobs, 
-    just like in a microservices architecture. Mantis will take care of Job-specific backpressure
-    for you (i.e., if a slower Job connects to the same Job you’re reading from, you won’t be slowed down).
-
-Mantis is not currently the best solution if…
-
-* **…you need effectively-once processing.**
-
-    Developers can build applications on Mantis to satisfy this delivery guarantee, but Mantis does 
-    not natively provide this capability.
-
-* **…you need checkpointing in multi-stage Jobs.**
-
-    Mantis currently has native checkingpointing support for single-stage Jobs.
-
-You can still use it in such cases, but it’s more complicated.
-
-Mantis *does not* work if…
-
-* …you need to write Jobs in non-JVM languages.
+1. **We should have access to raw events.** Applications that publish events into Mantis should be free to publish every single event. If we reduce the dataset at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.
+1. **We should be able to access this data in realtime.** Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.
+1. **We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.** It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.
+1. **We should be able to do all of the above in a cost-effective way.** As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.
 
 ## Major Components of Mantis
 
@@ -84,6 +45,8 @@ Lastly, Mantis treats autoscaling as a first class citizen in the infrastructure
 
 ## Next Steps
  
+To learn more about Mantis, visit the [Getting Started guide](gettingstarted) or check out the [Infrastructure Overview](infrastructure).
+To get involved with community, visit the [Community page](community) where you can subscribe to one of our mailing lists.
 For a detailed Programming Guide on writing Mantis Jobs, refer to the [Writing Mantis Jobs](writingjobs) chapters.
 
 <!-- Do not edit below this line -->
