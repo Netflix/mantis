@@ -247,15 +247,27 @@
       
 
 
+  <li class="md-nav__item">
+    <a href="../infrastructure/" title="Infrastructure Overview" class="md-nav__link">
+      Infrastructure Overview
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
     
-    <label class="md-nav__link" for="nav-3">
+    <label class="md-nav__link" for="nav-4">
       Writing Mantis Jobs
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+      <label class="md-nav__title" for="nav-4">
         Writing Mantis Jobs
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -321,13 +333,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
     
-    <label class="md-nav__link" for="nav-4">
+    <label class="md-nav__link" for="nav-5">
       Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+      <label class="md-nav__title" for="nav-5">
         Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -419,13 +431,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-8" type="checkbox" id="nav-8" checked>
     
-    <label class="md-nav__link" for="nav-7">
+    <label class="md-nav__link" for="nav-8">
       The Mantis API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-7">
+      <label class="md-nav__title" for="nav-8">
         The Mantis API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -857,13 +869,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-9" type="checkbox" id="nav-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-10" type="checkbox" id="nav-10">
     
-    <label class="md-nav__link" for="nav-9">
+    <label class="md-nav__link" for="nav-10">
       Mantis Internals
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-9">
+      <label class="md-nav__title" for="nav-10">
         Mantis Internals
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1342,6 +1354,10 @@ API.</p>
 <p>You can use the Mantis REST API to submit Jobs based on existing Job Cluster or to connect to the
 output of running Jobs. It is easier to set up or update new Job Clusters by using the Mantis UI,
 but you can also do this with the Mantis REST API.</p>
+<div class="admonition note">
+<p class="admonition-title">Response Content Type</p>
+<p>Mantis API endpoints always return JSON, and do not respect content-type headers in API requests.</p>
+</div>
 <h2 id="summary-of-rest-api">Summary of REST API<a class="headerlink" href="#summary-of-rest-api" title="Permanent link">&para;</a></h2>
 <h3 id="cluster-apis">Cluster APIs<a class="headerlink" href="#cluster-apis" title="Permanent link">&para;</a></h3>
 <table>
@@ -3060,30 +3076,44 @@ to the Mantis REST API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>
 <code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> endpoint with a
 request body like the following:</p>
 <details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
-  &quot;name&quot;: &quot;SPaaSBackpressureDemp&quot;,
+  &quot;name&quot;: &quot;myClusterName&quot;,
   &quot;user&quot;: &quot;jschmoe&quot;,
-  &quot;jobJarFileLocation&quot;: &quot;&quot;,
+  &quot;jobJarFileLocation&quot;: null,
   &quot;version&quot;: &quot;0.0.1 2019-02-06 13:30:07&quot;,
+  &quot;subscriptionTimeoutSecs&quot;: 0,
   &quot;jobSla&quot;: {
-    &quot;durationType&quot;: &quot;Perpetual&quot;,
     &quot;runtimeLimitSecs&quot;: &quot;0&quot;,
-    &quot;minRuntimeSecs&quot;: &quot;0&quot;,
+    &quot;slaType&quot;: &quot;Lossy&quot;,
+    &quot;durationType&quot;: &quot;Perpetual&quot;,
     &quot;userProvidedType&quot;: &quot;&quot;
   },
   &quot;schedulingInfo&quot;: {
     &quot;stages&quot;: {
+      &quot;0&quot;: {
+        &quot;numberOfInstances&quot;: 1,
+        &quot;machineDefinition&quot;: {
+          &quot;cpuCores&quot;: 0.35,
+          &quot;memoryMB&quot;: 600,
+          &quot;networkMbps&quot;: 30,
+          &quot;diskMB&quot;: 100,
+          &quot;numPorts&quot;: 1
+        },
+        &quot;hardConstraints&quot;: null,
+        &quot;softConstraints&quot;: null,
+        &quot;scalable&quot;: false
+      },
       &quot;1&quot;: {
         &quot;numberOfInstances&quot;: 1,
         &quot;machineDefinition&quot;: {
-          &quot;cpuCores&quot;: 8,
-          &quot;memoryMB&quot;: 28000,
-          &quot;diskMB&quot;: 20000,
-          &quot;networkMbps&quot;: 1024,
-          &quot;numPorts&quot;: &quot;1&quot;
+          &quot;cpuCores&quot;: 0.35,
+          &quot;memoryMB&quot;: 600,
+          &quot;networkMbps&quot;: 30,
+          &quot;diskMB&quot;: 100,
+          &quot;numPorts&quot;: 1
         },
-        &quot;scalable&quot;: true,
-        &quot;softConstraints&quot;: [],
-        &quot;hardConstraints&quot;: []
+        &quot;hardConstraints&quot;: null,
+        &quot;softConstraints&quot;: null,
+        &quot;scalable&quot;: true
       }
     }
   },
