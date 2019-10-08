@@ -6,6 +6,9 @@ You can use the Mantis REST API to submit Jobs based on existing Job Cluster or 
 output of running Jobs. It is easier to set up or update new Job Clusters by using the Mantis UI,
 but you can also do this with the Mantis REST API.
 
+!!!note "Response Content Type"
+    Mantis API endpoints always return JSON, and do not respect content-type headers in API requests.
+
 ## Summary of REST API
 
 ### Cluster APIs
@@ -996,30 +999,44 @@ request body like the following:
 
 ???abstract "Example Request Body"
         {
-          "name": "SPaaSBackpressureDemp",
+          "name": "myClusterName",
           "user": "jschmoe",
-          "jobJarFileLocation": "",
+          "jobJarFileLocation": null,
           "version": "0.0.1 2019-02-06 13:30:07",
+          "subscriptionTimeoutSecs": 0,
           "jobSla": {
-            "durationType": "Perpetual",
             "runtimeLimitSecs": "0",
-            "minRuntimeSecs": "0",
+            "slaType": "Lossy",
+            "durationType": "Perpetual",
             "userProvidedType": ""
           },
           "schedulingInfo": {
             "stages": {
+              "0": {
+                "numberOfInstances": 1,
+                "machineDefinition": {
+                  "cpuCores": 0.35,
+                  "memoryMB": 600,
+                  "networkMbps": 30,
+                  "diskMB": 100,
+                  "numPorts": 1
+                },
+                "hardConstraints": null,
+                "softConstraints": null,
+                "scalable": false
+              },
               "1": {
                 "numberOfInstances": 1,
                 "machineDefinition": {
-                  "cpuCores": 8,
-                  "memoryMB": 28000,
-                  "diskMB": 20000,
-                  "networkMbps": 1024,
-                  "numPorts": "1"
+                  "cpuCores": 0.35,
+                  "memoryMB": 600,
+                  "networkMbps": 30,
+                  "diskMB": 100,
+                  "numPorts": 1
                 },
-                "scalable": true,
-                "softConstraints": [],
-                "hardConstraints": []
+                "hardConstraints": null,
+                "softConstraints": null,
+                "scalable": true
               }
             }
           },
