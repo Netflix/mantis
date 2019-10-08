@@ -6,6 +6,9 @@ You can use the Mantis REST API to submit Jobs based on existing Job Cluster or 
 output of running Jobs. It is easier to set up or update new Job Clusters by using the Mantis UI,
 but you can also do this with the Mantis REST API.
 
+!!!note "Response Content Type"
+    Mantis API endpoints always return JSON, and do not respect content-type headers in API requests.
+
 ## Summary of REST API
 
 ### Cluster APIs
