@@ -20,9 +20,13 @@ Mantis cluster using the Mantis CLI.
 
 First, you'll need to download the Mantis CLI app.
 
-If you're on Mac OS, it's recommended that you download and install using the [Mac package](https://github.com/Netflix/mantis-cli/releases/download/v0.1.0/mantis-v0.1.0.pkg).
+If you're on Mac OS, it's recommended that you download and install using the Mac package:
 
-If you're on other systems such as Linux or Windows, choose the appropriate package from the latest release [Assets](https://github.com/Netflix/mantis-cli/releases).
+- [mantis-v0.1.0.pkg](https://github.com/Netflix/mantis-cli/releases/download/v0.1.0/mantis-v0.1.0.pkg)
+
+If you're on other systems such as Linux or Windows, choose the appropriate package from the Release Assets:
+
+- [v0.1.0 Release Assets](https://github.com/Netflix/mantis-cli/releases/tag/v0.1.0)
 
 ### Configure AWS credentials
 
@@ -36,7 +40,7 @@ Configuring AWS credentials... done
 ```
 
 This command stores your AWS credentials in the same exact format and location as the AWS SDK.
-More on this at the [Mantis CLI page](/cli#setting-up-your-aws-credentials).
+More on this at the [Mantis CLI page](/cli/#setting-up-your-aws-credentials).
 
 ### Bootstrap your cluster
 
@@ -99,27 +103,11 @@ are 2 EC2 address. You will need these to input into the Mantis UI.
 
 ### Using the Mantis UI
 
-Clone the Mantis UI project:
+On your browser, navigate to the Mantis UI at:
 
-```bash
-$ git clone https://github.com/Netflix/mantis-ui.git
-```
+[https://netflix.github.io/mantis-ui](https://netflix.github.io/mantis-ui)
 
-Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:
-
-```bash
-$ yarn
-$ yarn serve
-```
-
-Once the node server is up it should print something like:
-
-```
- App running at:
- Local:   http://localhost:8080/
-```
-
-Point your browser to the above URL and fill out the Registration form as follows:
+And fill out the Registration form as follows:
 
 ![Fresh Mantis UI](../images/fresh_ui.png)
 
