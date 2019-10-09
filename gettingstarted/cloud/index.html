@@ -861,8 +861,14 @@ Mantis cluster using the Mantis CLI.</p>
 <h2 id="bootstrapping-your-first-mantis-cluster-in-aws">Bootstrapping your first Mantis cluster in AWS<a class="headerlink" href="#bootstrapping-your-first-mantis-cluster-in-aws" title="Permanent link">&para;</a></h2>
 <h3 id="download-and-install-the-mantis-cli">Download and install the Mantis CLI<a class="headerlink" href="#download-and-install-the-mantis-cli" title="Permanent link">&para;</a></h3>
 <p>First, you'll need to download the Mantis CLI app.</p>
-<p>If you're on Mac OS, it's recommended that you download and install using the <a href="https://github.com/Netflix/mantis-cli/releases/download/v0.1.0/mantis-v0.1.0.pkg">Mac package</a>.</p>
-<p>If you're on other systems such as Linux or Windows, choose the appropriate package from the latest release <a href="https://github.com/Netflix/mantis-cli/releases">Assets</a>.</p>
+<p>If you're on Mac OS, it's recommended that you download and install using the Mac package:</p>
+<ul>
+<li><a href="https://github.com/Netflix/mantis-cli/releases/download/v0.1.0/mantis-v0.1.0.pkg">mantis-v0.1.0.pkg</a></li>
+</ul>
+<p>If you're on other systems such as Linux or Windows, choose the appropriate package from the Release Assets:</p>
+<ul>
+<li><a href="https://github.com/Netflix/mantis-cli/releases/tag/v0.1.0">v0.1.0 Release Assets</a></li>
+</ul>
 <h3 id="configure-aws-credentials">Configure AWS credentials<a class="headerlink" href="#configure-aws-credentials" title="Permanent link">&para;</a></h3>
 <p>Now that you have the Mantis CLI installed, you'll need to tell it about your AWS credentials:</p>
 <div class="codehilite"><pre><span></span>$ mantis aws:configure
@@ -873,7 +879,7 @@ Configuring AWS credentials... <span class="k">done</span>
 
 
 <p>This command stores your AWS credentials in the same exact format and location as the AWS SDK.
-More on this at the <a href="/cli#setting-up-your-aws-credentials">Mantis CLI page</a>.</p>
+More on this at the <a href="/cli/#setting-up-your-aws-credentials">Mantis CLI page</a>.</p>
 <h3 id="bootstrap-your-cluster">Bootstrap your cluster<a class="headerlink" href="#bootstrap-your-cluster" title="Permanent link">&para;</a></h3>
 <p>With AWS credentials configured, you can bootstrap your cluster in a single command:</p>
 <div class="codehilite"><pre><span></span>$ mantis aws:bootstrap
@@ -931,24 +937,9 @@ Mesos Master will be provisioned in a few minutes
 <p>This will launch and configure 5 AWS EC2 instances. Notice at the end of the bootstrap
 are 2 EC2 address. You will need these to input into the Mantis UI.</p>
 <h3 id="using-the-mantis-ui">Using the Mantis UI<a class="headerlink" href="#using-the-mantis-ui" title="Permanent link">&para;</a></h3>
-<p>Clone the Mantis UI project:</p>
-<div class="codehilite"><pre><span></span>$ git clone https://github.com/Netflix/mantis-ui.git
-</pre></div>
-
-
-<p>Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:</p>
-<div class="codehilite"><pre><span></span>$ yarn
-$ yarn serve
-</pre></div>
-
-
-<p>Once the node server is up it should print something like:</p>
-<div class="codehilite"><pre><span></span> App running at:
- Local:   http://localhost:8080/
-</pre></div>
-
-
-<p>Point your browser to the above URL and fill out the Registration form as follows:</p>
+<p>On your browser, navigate to the Mantis UI at:</p>
+<p><a href="https://netflix.github.io/mantis-ui">https://netflix.github.io/mantis-ui</a></p>
+<p>And fill out the Registration form as follows:</p>
 <p><img alt="Fresh Mantis UI" src="../../images/fresh_ui.png" /></p>
 <ol>
 <li><strong>Name:</strong> <code>Example</code></li>
