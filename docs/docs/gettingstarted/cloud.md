@@ -105,7 +105,7 @@ are 2 EC2 address. You will need these to input into the Mantis UI.
 
 On your browser, navigate to the Mantis UI at:
 
-[https://netflix.github.io/mantis-ui](https://netflix.github.io/mantis-ui)
+- [https://netflix.github.io/mantis-ui](https://netflix.github.io/mantis-ui)
 
 And fill out the Registration form as follows:
 
