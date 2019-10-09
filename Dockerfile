@@ -1,10 +1,15 @@
 FROM java:8
 MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 
+RUN echo "deb [check-valid-until=no] http://cdn-fastly.deb.debian.org/debian jessie main" > /etc/apt/sources.list.d/jessie.list
+RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/jessie-backports.list
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
+RUN apt-get -o Acquire::Check-Valid-Until=false update
+
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
-    echo "deb http://repos.mesosphere.io/ubuntu trusty main" | tee /etc/apt/sources.list.d/mesosphere.list && \
-    apt-get update && \
-    apt-get install --no-install-recommends -y --force-yes mesos=1.0.1-2.0.93.ubuntu1404 && \
+    echo "deb http://repos.mesosphere.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/mesosphere.list && \
+    apt-get -o Acquire::Check-Valid-Until=false -y update && \
+    apt-get install -y mesos=1.0.1-2.0.94.ubuntu1604 && \
     apt-get clean
 
 COPY ./server/build/install/mantis-control-plane-server/bin/* /apps/mantis/mantis-control-plane-server/bin/
