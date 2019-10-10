@@ -18,6 +18,9 @@ Prefix: `mantis.publish`
 | name | type | description | default |
 | ---- | ---- | ----------- | ------- |
 | enabled | boolean | Enables the Mantis publisher client| true |
+|mantis.publish.discovery.api.hostname| ip address | Host name of Mantis API discovery service |127.0.0.1 |
+|mantis.publish.discovery.api.port | int | port number of Mantis API discovery service | 80 |
+|mantis.publish.app.name | string | Name of application to be used to scope queries | unknown |
 
 ### Channel Dynamic Properties
 
@@ -54,3 +57,18 @@ Prefix: `mantis.publish.channel`
 | batchFlushTime | channel | timer | The time it takes to send a batch of events out of Netty's internal buffer and over the network |
 | flushSuccess | channel | counter | The number of successful in Netty flushes |
 | flushFailure | channel | counter | The number of failures in Netty flushes |
+
+## Guice
+
+The mantis-publish client can be injected into a guice enabled application using
+the MantisRealtimeEventsPublishModule. Add a gradle dependency to mantis-publish-netty-guice
+Note: You would also need to inject the ArchaiusModule and the SpectatorModule.
+
+E.g 
+```
+Injector injector = Guice.createInjector(new ArchaiusModule(),
+                    new MantisRealtimeEventsPublishModule(), new SpectatorModule());
+EventPublisher publisher = injector.getInstance(EventPublisher.class);
+publisher.publish(event);
+```
+

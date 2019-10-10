@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class MantisServerSubscriptionEnvelope {
 
     private final List<MantisServerSubscription> subscriptionList;
@@ -63,4 +62,5 @@ public class MantisServerSubscriptionEnvelope {
                 + " subscriptionList=" + subscriptionList
                 + '}';
     }
+
 }

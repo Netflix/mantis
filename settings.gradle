@@ -18,3 +18,4 @@ rootProject.name = 'mantis-publish'
 
 include 'mantis-publish-core'
 include 'mantis-publish-netty'
+include 'mantis-publish-netty-guice'
