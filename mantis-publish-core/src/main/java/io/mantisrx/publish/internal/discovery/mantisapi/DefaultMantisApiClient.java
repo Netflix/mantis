@@ -76,11 +76,9 @@ public class DefaultMantisApiClient implements MantisApiClient {
         DefaultMantisApiClient defaultMantisApiClient = new DefaultMantisApiClient(new SampleArchaiusMrePublishConfiguration(props), HttpClient.create(registry));
         CompletableFuture<JobDiscoveryInfo> jobDiscoveryInfoCompletableFuture = defaultMantisApiClient.jobDiscoveryInfo("MREPushSourceJob");
         JobDiscoveryInfo jobDiscoveryInfo = jobDiscoveryInfoCompletableFuture.get(1, TimeUnit.SECONDS);
-        System.out.println(jobDiscoveryInfo.toString());
 
         CompletableFuture<AppJobClustersMap> jobClusterMapping = defaultMantisApiClient.getJobClusterMapping(Optional.of("testApp"));
         AppJobClustersMap appJobClustersMap = jobClusterMapping.get(1, TimeUnit.SECONDS);
-        System.out.println(appJobClustersMap.toString());
     }
 
     @Override
@@ -90,8 +88,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
             StringBuilder uriBuilder = new StringBuilder(String.format(JOB_CLUSTER_MAPPING_URL_FORMAT, mrePublishConfiguration.discoveryApiHostname(), mrePublishConfiguration.discoveryApiPort()));
             app.ifPresent(appName -> uriBuilder.append("?app=").append(appName));
             String uri = uriBuilder.toString();
-            logger.debug("job cluster mapping fetch url {}", uri);
-            System.out.println("job cluster mapping fetch url " + uri);
+            logger.info("job cluster mapping fetch url {}", uri);
             try {
                 HttpResponse response = httpClient.get(URI.create(uri))
                         .withConnectTimeout(CONNECT_TIMEOUT_MS)
@@ -101,7 +98,6 @@ public class DefaultMantisApiClient implements MantisApiClient {
                 if (status >= 200 && status < 300) {
                     AppJobClustersMap appJobClustersMap = mapper.readValue(response.entityAsString(), AppJobClustersMap.class);
                     logger.debug(appJobClustersMap.toString());
-                    System.out.println(appJobClustersMap.toString());
                     return appJobClustersMap;
                 } else if (status >= 300 && status < 500) {
                     // TODO: handle redirects
@@ -123,7 +119,6 @@ public class DefaultMantisApiClient implements MantisApiClient {
         return CompletableFuture.supplyAsync(() -> {
             String uri = String.format(JOB_DISCOVERY_URL_FORMAT, mrePublishConfiguration.discoveryApiHostname(), mrePublishConfiguration.discoveryApiPort(), jobClusterName);
             logger.debug("discovery info fetch url {}", uri);
-            System.out.println("discovery info fetch url" + uri);
             try {
                 HttpResponse response = httpClient.get(URI.create(uri))
                         .withConnectTimeout(CONNECT_TIMEOUT_MS)

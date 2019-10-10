@@ -121,7 +121,6 @@ public class MantisJobDiscoveryCachingImpl implements MantisJobDiscovery {
 
 
     void refreshJobClusterMapping(String app) {
-        System.out.println("Refreshing job cluster mapping for app" + app);
         CompletableFuture<AppJobClustersMap> jobClusterMappingF = mantisApiClient.getJobClusterMapping(Optional.ofNullable(app));
         AppJobClustersMap cachedMapping = appJobClusterMapping.get(app);
         if (cachedMapping != null) {
