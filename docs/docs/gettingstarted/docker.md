@@ -89,7 +89,7 @@ To get a shell on a running container:
 $ docker exec -it mantis_mantisagent_1 bash
 
 # Job logs can be found here.
-$ cd mesos_workdir/slaves/c4079175-cb01-4990-a963-fc8fa7c0b516-S0/frameworks/MantisFramework/executors
+$ cd /tmp/mesos_workdir/slaves/<frameworkid>/frameworks/MantisFramework/executors
 ```
 ### Using the Mantis UI
 

@@ -12,15 +12,22 @@ Clone the mantis-examples repo
 $ git clone https://github.com/Netflix/mantis-examples.git
 ```
 
-Run the synthetic-sourcejob sample via gradle
+Run the synthetic-sourcejob sample via gradle.
 
+This job outputs request events sourced from an imaginary service. The RequestEvent data
+has information such as uri, status, userId, country etc.
+Data Source Jobs are mantis jobs that allow consumers to filter the raw stream down to just the events 
+they are interested in. 
+This filtering is done by specifying an [MQL query](../MQL/index.md) while connecting to the sink.
+
+To run the sample execute the following command.
 ```bash
 $ cd mantis-examples/synthetic-sourcejob
 $ ../gradlew execute
 ```
-
-```bash
 This will launch the job and you would see output like
+```bash
+
 2019-10-06 14:14:07 INFO  StageExecutors:254 main - initializing io.mantisrx.sourcejob.synthetic.stage.TaggingStage
 2019-10-06 14:14:07 INFO  SinkPublisher:82 main - Got sink subscription, onSubscribe=null
 2019-10-06 14:14:07 INFO  ServerSentEventsSink:141 main - Serving modern HTTP SSE server sink on port: 8436
@@ -33,11 +40,9 @@ Look for a line like
 Serving modern HTTP SSE server sink on port: 8436
 ```
 The source job is now up and ready to serve data.
-This job streams request events sourced from an imaginary service. The RequestEvent data
-has information such as uri, status, userId, country etc.
 
-Let us find requests from countries where the status code is 500
-Such a MQL query would look like this
+Let us query for requests from countries where the status code is 500. 
+Such an MQL query would like like this. 
 ```bash
 select country from stream where status==500
 ```
@@ -45,6 +50,8 @@ In another terminal window curl this port
 ```bash
 $ curl "localhost:8436?subscriptionId=nj&criterion=select%20country%20from%20stream%20where%20status%3D%3D500&clientId=nj2"
 ```
+Here the subscriptionId and clientId are any valid strings. They are used to tag events that match the query.
+The criterion parameter is the URLEncoded MQL query.
 
 You should see events matching your query appear in your terminal
 
