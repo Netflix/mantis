@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -735,14 +735,20 @@
 </pre></div>
 
 
-<p>Run the synthetic-sourcejob sample via gradle</p>
+<p>Run the synthetic-sourcejob sample via gradle.</p>
+<p>This job outputs request events sourced from an imaginary service. The RequestEvent data
+has information such as uri, status, userId, country etc.
+Data Source Jobs are mantis jobs that allow consumers to filter the raw stream down to just the events 
+they are interested in. 
+This filtering is done by specifying an <a href="../../MQL/">MQL query</a> while connecting to the sink.</p>
+<p>To run the sample execute the following command.</p>
 <div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> mantis-examples/synthetic-sourcejob
 $ ../gradlew execute
 </pre></div>
 
 
-<div class="codehilite"><pre><span></span>This will launch the job and you would see output like
-<span class="m">2019</span>-10-06 <span class="m">14</span>:14:07 INFO  StageExecutors:254 main - initializing io.mantisrx.sourcejob.synthetic.stage.TaggingStage
+<p>This will launch the job and you would see output like</p>
+<div class="codehilite"><pre><span></span><span class="m">2019</span>-10-06 <span class="m">14</span>:14:07 INFO  StageExecutors:254 main - initializing io.mantisrx.sourcejob.synthetic.stage.TaggingStage
 <span class="m">2019</span>-10-06 <span class="m">14</span>:14:07 INFO  SinkPublisher:82 main - Got sink subscription, <span class="nv">onSubscribe</span><span class="o">=</span>null
 <span class="m">2019</span>-10-06 <span class="m">14</span>:14:07 INFO  ServerSentEventsSink:141 main - Serving modern HTTP SSE server sink on port: <span class="m">8436</span>
 </pre></div>
@@ -755,11 +761,9 @@ Look for a line like</p>
 </pre></div>
 
 
-<p>The source job is now up and ready to serve data.
-This job streams request events sourced from an imaginary service. The RequestEvent data
-has information such as uri, status, userId, country etc.</p>
-<p>Let us find requests from countries where the status code is 500
-Such a MQL query would look like this</p>
+<p>The source job is now up and ready to serve data.</p>
+<p>Let us query for requests from countries where the status code is 500. 
+Such an MQL query would like like this. </p>
 <div class="codehilite"><pre><span></span><span class="k">select</span> country from stream where <span class="nv">status</span><span class="o">==</span><span class="m">500</span>
 </pre></div>
 
@@ -769,6 +773,8 @@ Such a MQL query would look like this</p>
 </pre></div>
 
 
+<p>Here the subscriptionId and clientId are any valid strings. They are used to tag events that match the query.
+The criterion parameter is the URLEncoded MQL query.</p>
 <p>You should see events matching your query appear in your terminal</p>
 <div class="codehilite"><pre><span></span>data: <span class="o">{</span><span class="s2">&quot;country&quot;</span>:<span class="s2">&quot;Ecuador&quot;</span>,<span class="s2">&quot;mantis.meta.sourceName&quot;</span>:<span class="s2">&quot;SyntheticRequestSource&quot;</span>,<span class="s2">&quot;mantis.meta.timestamp&quot;</span>:1570396602599,<span class="s2">&quot;status&quot;</span>:500<span class="o">}</span>
 
@@ -858,7 +864,7 @@ data: <span class="o">{</span><span class="s2">&quot;country&quot;</span>:<span 
       
     </div>
     
-      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
