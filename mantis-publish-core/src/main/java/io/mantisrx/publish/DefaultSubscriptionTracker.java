@@ -70,6 +70,7 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
                 uri = String.format(SUBSCRIPTIONS_URL_FORMAT, worker.getHost(), worker.getPort(), jobId);
             }
             LOG.trace("Subscription fetch URL: {}", uri);
+            System.out.println("Subscription fetch URL: {}"+ uri);
             HttpResponse response = httpClient
                     .get(URI.create(uri))
                     .withConnectTimeout(1000)
@@ -79,9 +80,11 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
                 MantisServerSubscriptionEnvelope subscriptionEnvelope =
                         DefaultObjectMapper.getInstance().readValue(response.entityAsString(), MantisServerSubscriptionEnvelope.class);
                 LOG.debug("got subs {} from Mantis worker {}", subscriptionEnvelope, worker);
+                System.out.println("got subs {} from Mantis worker {}" + subscriptionEnvelope +  worker);
                 return Optional.ofNullable(subscriptionEnvelope);
             } else {
                 LOG.info("got {} {} response from Mantis worker {}", response.status(), response.entityAsString(), worker);
+                System.out.println("got {} {} response from Mantis worker {}"+ response.status()+ response.entityAsString() + worker);
                 fetchSubscriptionsNon200Count.increment();
                 return Optional.empty();
             }

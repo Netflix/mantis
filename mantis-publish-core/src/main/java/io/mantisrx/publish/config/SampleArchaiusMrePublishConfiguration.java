@@ -29,7 +29,7 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
     public static final String PROP_PREFIX = "mantis.publish";
     public static final String PUBLISH_JOB_CLUSTER_PROP_PREFIX = PROP_PREFIX + ".jobcluster.";
     public static final String MRE_CLIENT_ENABLED_PROP = PROP_PREFIX + ".enabled";
-    public static final String MRE_CLIENT_APP_NAME_PROP = PROP_PREFIX + "app.name";
+    public static final String MRE_CLIENT_APP_NAME_PROP = PROP_PREFIX + ".app.name";
     public static final String MRE_CLIENT_TEE_ENABLED_PROP = PROP_PREFIX + "tee.enabled";
     public static final String MRE_CLIENT_TEE_STREAM_NAME_PROP = PROP_PREFIX + "tee.stream";
     public static final String MRE_CLIENT_BLACKLIST_KEYS_PROP = PROP_PREFIX + ".blacklist";
@@ -136,7 +136,7 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
                         .orElse(20);
 
         jobClusterByStreamType.put(StreamType.DEFAULT_EVENT_STREAM, propRepo.get(PUBLISH_JOB_CLUSTER_PROP_PREFIX + StreamType.DEFAULT_EVENT_STREAM, String.class)
-                .orElse("SharedPushRequestEventSource"));
+                .orElse("SharedMrePublishEventSource"));
         jobClusterByStreamType.put(StreamType.LOG_EVENT_STREAM, propRepo.get(PUBLISH_JOB_CLUSTER_PROP_PREFIX + StreamType.LOG_EVENT_STREAM, String.class)
                 .orElse("SharedPushLogEventSource"));
         this.drainerIntervalMSecProp = propRepo.get(DRAINER_INTERVAL_MSEC_PROP, Integer.class)
