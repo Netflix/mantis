@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.mantisrx.common.utils.MantisSourceJobConstants;
 import io.mantisrx.common.codec.Codecs;
-import io.mantisrx.publish.proto.MantisEventEnvelope;
+import io.mantisrx.publish.netty.proto.MantisEventEnvelope;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
@@ -69,25 +69,25 @@ public class EchoStage implements ScalarComputation<String, String> {
     public Observable<String> call(Context context,
                                    Observable<String> events) {
         return events
-                .buffer(bufferDuration, TimeUnit.MILLISECONDS)
-                .flatMapIterable(i -> i)
-                .filter((event) -> !event.isEmpty())
-                .flatMap((envelopeStr) -> {
-                    try {
-                        MantisEventEnvelope envelope = mantisEventEnvelopeReader.readValue(envelopeStr);
-                        return Observable.from(envelope.getEventList())
-                                .map((event) -> event.getData());
-                    } catch (IOException e) {
-                        LOGGER.error(e.getMessage());
-                        // Could not parse just send it along.
-                        return Observable.just(envelopeStr);
-                    }
-                })
-                .map(this::insertSourceJobName)
-                .onErrorResumeNext((t1) -> {
-                    LOGGER.error("Exception occurred in : " + clusterName + " error is " + t1.getMessage());
-                    return Observable.empty();
-                });
+            .buffer(bufferDuration, TimeUnit.MILLISECONDS)
+            .flatMapIterable(i -> i)
+            .filter((event) -> !event.isEmpty())
+            .flatMap((envelopeStr) -> {
+                try {
+                    MantisEventEnvelope envelope = mantisEventEnvelopeReader.readValue(envelopeStr);
+                    return Observable.from(envelope.getEventList())
+                        .map((event) -> event.getData());
+                } catch (IOException e) {
+                    LOGGER.error(e.getMessage());
+                    // Could not parse just send it along.
+                    return Observable.just(envelopeStr);
+                }
+            })
+            .map(this::insertSourceJobName)
+            .onErrorResumeNext((t1) -> {
+                LOGGER.error("Exception occurred in : " + clusterName + " error is " + t1.getMessage());
+                return Observable.empty();
+            });
     }
 
     public static List<ParameterDefinition<?>> getParameters() {
@@ -95,19 +95,19 @@ public class EchoStage implements ScalarComputation<String, String> {
 
         // buffer duration
         params.add(new IntParameter()
-                .name(MantisSourceJobConstants.ECHO_STAGE_BUFFER_MILLIS)
-                .description("buffer time in millis")
-                .validator(Validators.range(100, 10000))
-                .defaultValue(250)
-                .build());
+                       .name(MantisSourceJobConstants.ECHO_STAGE_BUFFER_MILLIS)
+                       .description("buffer time in millis")
+                       .validator(Validators.range(100, 10000))
+                       .defaultValue(250)
+                       .build());
 
         return params;
     }
 
     public static ScalarToScalar.Config<String, String> config() {
         return new ScalarToScalar.Config<String, String>()
-                .codec(Codecs.string())
-                .concurrentInput()
-                .withParameters(getParameters());
+            .codec(Codecs.string())
+            .concurrentInput()
+            .withParameters(getParameters());
     }
 }

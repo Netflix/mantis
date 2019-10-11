@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-ext {
-    mantisVersion = '1.2.+'
-    mantisConnectorsVersion = '1.2.+'
-    mantisPublishVersion = '1.2.+'
-}
+package io.mantisrx.sourcejob.kafka.core.utils;
 
-dependencies {
-    implementation "io.mantisrx:mantis-runtime:$mantisVersion"
-    implementation "io.mantisrx:mantis-publish-netty:$mantisPublishVersion"
-    implementation "io.mantisrx:mantis-connector-publish:$mantisConnectorsVersion"
+public class SourceJobConstants {
+
+    public static final String SUBSCRIPTION_ID_PARAM_NAME = "subscriptionId";
+    public static final String CRITERION_PARAM_NAME = "criterion";
+
+    public static final String FILTER_PARAM_NAME = "filter";
+    public static final String CLIENT_ID_PARAMETER_NAME = "clientId";
 }

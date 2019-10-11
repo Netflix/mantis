@@ -16,12 +16,17 @@
 
 ext {
     mantisVersion = '1.2.+'
-    mantisConnectorsVersion = '1.2.+'
-    mantisPublishVersion = '1.2.+'
+    mantisConnectorsVersion = '1.2.5'
+    mqlVersion = '3.2.2'
 }
 
 dependencies {
     implementation "io.mantisrx:mantis-runtime:$mantisVersion"
-    implementation "io.mantisrx:mantis-publish-netty:$mantisPublishVersion"
-    implementation "io.mantisrx:mantis-connector-publish:$mantisConnectorsVersion"
+    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation "io.mantisrx:mantis-connector-kafka:$mantisConnectorsVersion"
+
+    testCompile 'junit:junit'
+    testCompile "org.mockito:mockito-all:1.9.5"
+    // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69
+    testCompile 'info.batey.kafka:kafka-unit:1.0'
 }

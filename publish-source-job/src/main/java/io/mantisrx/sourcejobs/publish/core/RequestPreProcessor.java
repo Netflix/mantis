@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.mantisrx.common.utils.MantisSourceJobConstants;
-import io.mantisrx.connectors.publish.core.QueryRegistry;
+import io.mantisrx.connector.publish.core.QueryRegistry;
 import io.mantisrx.runtime.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

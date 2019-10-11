@@ -16,9 +16,8 @@
 
 rootProject.name = 'mantis-source-jobs'
 
-[
-    'publish-source-job',
-].each {
-    include "${it}"
-    project(":${it}").name = "${rootProject.name}-${it}".replace('/', '-')
-}
+include "kafka-source-job"
+project(":kafka-source-job").name = "mantis-source-job-kafka"
+
+include "publish-source-job"
+project(":publish-source-job").name = "mantis-source-job-publish"
