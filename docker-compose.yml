@@ -31,23 +31,23 @@ services:
 
   # MantisMaster local build
   mantismaster:
-    image: dev/mantismaster
+    image: netflixoss/mantiscontrolplaneserver
     ports:
       - "8100:8100"
-      - "9090:9090"
-      - "8076:8076"
       - "5005:5005"
     depends_on:
       - mesos-master
     environment:
       JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dmantis.zookeeper.connectString=zookeeper:2181 -Dmesos.master.location=mesos-master:5050 -Dmantis.master.exit.on.losing.leader=false"
+    volumes:
+          - ./localdev/conf/:/apps/mantis/mantis-control-plane-server/localconf/
     networks:
       mantis_net:
         ipv4_address: 172.16.186.5
 
   # Start Mantis executor
   mantisagent:
-    image: dev/mantisagent
+    image: netflixoss/mantisagent
     ports:
       - "5051:5051"
     privileged: true
@@ -58,31 +58,32 @@ services:
         --work_dir=/tmp/mesos_workdir                        \
         --logging_level=INFO                                 \
         --hostname=mantisagent                                \
-        --resources="network:1000"                           \
+        --resources="ports:[7150-7400];ephemeral_ports:[32768-57344];network:1000"                           \
         --attributes="region:laptop;asg:mantisagent-laptop-v001;stack:laptop;zone:laptopd;itype:macbook.pro;cluster:mantisagent-laptop;id:l-deadbeef;res:ResourceSet-ENIs-7-29"
     depends_on:
       - zookeeper
     volumes:
-      - ./mantis-localdev/conf/:/mnt/local/mantisWorkerInstall/jobs/
+      - ./localdev/conf/:/mnt/local/mantisWorkerInstall/jobs/
+#      - ./mantis-server/mantis-server-worker/src/main/resources/startup_docker.sh:/mnt/local/mantisWorkerInstall/bin/startup_docker.sh
     networks:
       mantis_net:
         ipv4_address: 172.16.186.6
 #
-#  mantisapi:
-#    image: dev/mantisapi
-#    ports:
-#      - "7101:7101"
-#      - "5006:5006"
-#    environment:
-#      JAVA_OPTS: "-Dmantis.zookeeper.connectString=zookeeper:2181 -Dmantissapi.master.host=mantismaster -Dmantisapi.master.ip=172.16.186.5 -Dmantisapi.master.port=8100"
-##      NETFLIX_ENVIRONMENT: test
-##      NETFLIX_ACCOUNT: test
-##      NETFLIX_STACK: desktop
-#    depends_on:
-#      - mantismaster
-#    networks:
-#      mantis_net:
-#        ipv4_address: 172.16.186.7
+  mantisapi:
+    image: netflixoss/mantisapi
+    ports:
+      - "7101:7101"
+      - "5006:5006"
+    environment:
+      JAVA_OPTS: "-Dmantis.zookeeper.connectString=zookeeper:2181 -Dmantissapi.master.host=mantismaster -Dmantisapi.master.ip=172.16.186.5 -Dmantisapi.master.port=8100"
+      NETFLIX_ENVIRONMENT: test
+      NETFLIX_ACCOUNT: test
+      NETFLIX_STACK: desktop
+    depends_on:
+      - mantismaster
+    networks:
+      mantis_net:
+        ipv4_address: 172.16.186.7
 
 networks:
     mantis_net:
