@@ -1,8 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 set -x
-
+#172.16.186.7:7101 mantis api host port in docker
 echo "Executing script to download file at: ${JOB_URL}, storing in /tmp/mantis-jobs/${JOB_NAME}/lib"
+ARTIFACT_NAME=$(echo ${JOB_URL:7})
+JOB_URL=`echo \${JOB_URL} | sed 's|http://|&172.16.186.7:7101/api/v1/artifacts/|g'`
+echo "Executing script to download file at: ${JOB_URL}, storing in /tmp/mantis-jobs/${JOB_NAME}/lib"
+
 mkdir -p /tmp/mantis-jobs/${JOB_NAME}/lib
 mkdir -p /logs/mantisjobs/${JOB_NAME}/${JOB_ID}/${WORKER_NUMBER}
 
@@ -24,18 +28,22 @@ JAVA_OPTS=" $EXTRA_OPTS \
 JVM_CLASSPATH="${WORKER_LIB_DIR}/*"
 JOB_JARS_DIR="/tmp/mantis-jobs/${JOB_NAME}/lib"
 JOB_PROVIDER_CLASS=""
-
-#java -cp $JVM_CLASSPATH io.mantisrx.server.worker.DownloadJob ${JOB_URL} ${JOB_NAME} /tmp/mantis-jobs
-cp -r /mnt/local/mantisWorkerInstall/jobs/* "/tmp/mantis-jobs/${JOB_NAME}/lib"
+wget -v $JOB_URL -P "/tmp/mantis-jobs/${JOB_NAME}/lib"
+#java -cp $JVM_CLASSPATH io.mantisrx.server.worker.DownloadJob ${JOB_URL} ${JOB_NAME} /tmp/mantis-jobs/${JOB_NAME}/lib
+#cp -r /mnt/local/mantisWorkerInstall/jobs/* "/tmp/mantis-jobs/${JOB_NAME}/lib"
+# Link worker.properties
+cp -s /mnt/local/mantisWorkerInstall/jobs/* "/tmp/mantis-jobs/${JOB_NAME}/lib"
+# Link mantis-worker.jar
+cp -s /mnt/local/mantisWorkerInstall/libs/* "/tmp/mantis-jobs/${JOB_NAME}/lib"
 cd $JOB_JARS_DIR
 
-zipexists=`ls -l *.zip 2>/dev/null | wc -l`
+zipexists=`ls -l $ARTIFACT_NAME 2>/dev/null | wc -l`
 
 if [ $zipexists = 1 ]
 then
     sudo apt install -y unzip
     mkdir zipExtract
-    unzip *.zip -d zipExtract
+    unzip $ARTIFACT_NAME -d zipExtract
     JOB_PROVIDER_CLASS=`cat zipExtract/*/config/io.mantisrx.runtime.MantisJobProvider`
     echo "job provider class $JOB_PROVIDER_CLASS"
     ZIP_LIB_DIR=`echo $JOB_JARS_DIR/zipExtract/*/lib`
