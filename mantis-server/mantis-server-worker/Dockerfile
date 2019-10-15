@@ -19,6 +19,8 @@ RUN sudo apt-get install -y --no-install-recommends software-properties-common
 RUN sudo apt-get install -y python-software-properties debconf-utils
 RUN sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
 RUN sudo apt-add-repository "deb http://repos.azulsystems.com/ubuntu stable main"
+RUN sudo apt-get install -y unzip
+RUN sudo apt-get install wget
 RUN sudo apt-get update
 RUN sudo apt-get install -y zulu-8
 
