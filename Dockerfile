@@ -22,6 +22,14 @@ RUN mkdir -p /apps/mantis/mantis-control-plane-server/logs
 RUN mkdir -p /tmp/MantisSpool/namedJobs
 RUN mkdir -p /tmp/MantisArchive
 
+COPY docker/SharedMrePublishEventSource /tmp/MantisSpool/namedJobs
+COPY docker/SineFunction /tmp/MantisSpool/namedJobs
+COPY docker/SyntheticSourceJob /tmp/MantisSpool/namedJobs
+COPY docker/TwitterSample /tmp/MantisSpool/namedJobs
+COPY docker/GroupBySample /tmp/MantisSpool/namedJobs
+COPY docker/JobConnectorSample /tmp/MantisSpool/namedJobs
+COPY docker/KafkaSourceJob /tmp/MantisSpool/namedJobs
+
 WORKDIR /apps/mantis/mantis-control-plane-server
 
 ENTRYPOINT [ "bin/mantis-control-plane-server", "-p", "conf/master-docker.properties" ]
