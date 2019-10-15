@@ -613,8 +613,7 @@ public class MantisMasterClientApi {
         return masterMonitor.getMasterObservable()
                 .filter((md) -> md != null)
                 .retryWhen(retryLogic)
-                .switchMap((md) -> getRxnettyWebSocketClient(md.getHostname(), md.getConsolePort(),
-                      md.getHostname() + ":" + md.getConsolePort() + "/job/status/" + jobId)
+                .switchMap((md) -> getRxnettyWebSocketClient(md.getHostname(), md.getConsolePort(), "/job/status/" + jobId)
                         .connect()
                         .flatMap((ObservableConnection<TextWebSocketFrame, TextWebSocketFrame> connection) -> connection.getInput()
                                 .map((TextWebSocketFrame webSocketFrame) -> webSocketFrame.text())));
