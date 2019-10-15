@@ -24,10 +24,16 @@ import java.util.List;
 
 public class MantisEventEnvelope {
 
-    private final String originServer;
-    private final List<MantisEvent> eventList;
+    private String originServer;
+    private List<MantisEvent> eventList;
     private long ts;
 
+    /**
+     * For JSON serde
+     */
+    public MantisEventEnvelope() {
+
+    }
     @JsonCreator
     public MantisEventEnvelope(@JsonProperty("ts") long ts, @JsonProperty("originServer") String originServer,
                                @JsonProperty("events") List<MantisEvent> eventList) {
@@ -54,5 +60,14 @@ public class MantisEventEnvelope {
 
     public void addEvent(MantisEvent event) {
         eventList.add(event);
+    }
+
+    @Override
+    public String toString() {
+        return "MantisEventEnvelope{" +
+                "originServer='" + originServer + '\'' +
+                ", eventList=" + eventList +
+                ", ts=" + ts +
+                '}';
     }
 }
