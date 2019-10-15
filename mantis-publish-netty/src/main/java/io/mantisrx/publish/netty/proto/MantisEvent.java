@@ -63,4 +63,12 @@ public class MantisEvent {
     public int hashCode() {
         return Objects.hash(getId(), getData());
     }
+
+    @Override
+    public String toString() {
+        return "MantisEvent{" +
+                "id=" + id +
+                ", data='" + data + '\'' +
+                '}';
+    }
 }
