@@ -43,6 +43,7 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobAssignmentResult;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
+import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.netty.buffer.ByteBuf;
@@ -613,7 +614,8 @@ public class MantisMasterClientApi {
         return masterMonitor.getMasterObservable()
                 .filter((md) -> md != null)
                 .retryWhen(retryLogic)
-                .switchMap((md) -> getRxnettyWebSocketClient(md.getHostname(), md.getConsolePort(), "/job/status/" + jobId)
+                .switchMap((md) -> getRxnettyWebSocketClient(md.getHostname(), md.getConsolePort(),
+                       "ws://" + md.getHostname() + ":" + md.getApiPort() + "/job/status/" + jobId)
                         .connect()
                         .flatMap((ObservableConnection<TextWebSocketFrame, TextWebSocketFrame> connection) -> connection.getInput()
                                 .map((TextWebSocketFrame webSocketFrame) -> webSocketFrame.text())));
@@ -722,5 +724,4 @@ public class MantisMasterClientApi {
 
         return Observable.merge(reconciliator.observables());
     }
-
 }
