@@ -618,7 +618,8 @@ public class MantisMasterClientApi {
                        "ws://" + md.getHostname() + ":" + md.getApiPort() + "/job/status/" + jobId)
                         .connect()
                         .flatMap((ObservableConnection<TextWebSocketFrame, TextWebSocketFrame> connection) -> connection.getInput()
-                                .map((TextWebSocketFrame webSocketFrame) -> webSocketFrame.text())));
+                                .map((TextWebSocketFrame webSocketFrame) -> webSocketFrame.text())))
+                .onErrorResumeNext(Observable.empty());
     }
 
     /**
