@@ -18,6 +18,9 @@ nav:
     - 'The Source Component': 'writingjobs/source.md'
     - 'The Processing Stage Component': 'writingjobs/stage.md'
     - 'The Sink Component': 'writingjobs/sink.md'
+    - 'Writing Your First Job': 'writingjobs/wordcount.md'
+    - 'Writing Your Second Job': 'writingjobs/twitter.md'
+    - 'Writing Your Third Job': 'writingjobs/groupby.md'
   - Mantis Query Language:
     - 'Introduction to MQL': 'MQL/index.md'
     - 'Operators': 'MQL/operators.md'
