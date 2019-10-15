@@ -293,7 +293,8 @@ public class ParameterUtils {
                     logger.info("mantis runtime parameter " + name + " used, looking up definition >>>");
                     definition = systemParams.get(name);
                 } else {
-                    throw new IllegalArgumentException("No parameter definition for parameter with name: " + name);
+                    logger.warn("No parameter definition for parameter with name: {}, will skip parameter", name);
+                    continue;
                 }
             }
             Func1 validator = definition.getValidator().getValidator();
