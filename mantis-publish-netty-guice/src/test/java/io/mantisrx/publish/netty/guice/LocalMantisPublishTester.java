@@ -19,11 +19,17 @@ package io.mantisrx.publish.netty.guice;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletionStage;
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.archaius.guice.ArchaiusModule;
 import com.netflix.spectator.nflx.SpectatorModule;
+import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.EventPublisher;
+import io.mantisrx.publish.api.PublishStatus;
 import org.junit.jupiter.api.Test;
 
 
@@ -36,6 +42,18 @@ public class LocalMantisPublishTester {
                     new MantisRealtimeEventsPublishModule(), new SpectatorModule());
 
             EventPublisher publisher = injector.getInstance(EventPublisher.class);
+            /// FOR local testing uncomment
+//            for(int i=0; i<100; i++) {
+//                Map<String,Object> event = new HashMap<>();
+//                event.put("id",i);
+//                CompletionStage<PublishStatus> sendStatus = publisher.publish("requestEventStream", new Event(event));
+//                sendStatus.whenCompleteAsync((status, throwable) -> {
+//                    System.out.println("Send status => " + status);
+//                });
+//                Thread.sleep(1000);
+//            }
+
+
             assertNotNull(publisher);
         } catch(Exception e) {
             fail();

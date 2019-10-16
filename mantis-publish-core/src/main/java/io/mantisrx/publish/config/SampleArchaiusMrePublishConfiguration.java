@@ -22,6 +22,9 @@ import java.util.Map;
 import com.netflix.archaius.api.Property;
 import com.netflix.archaius.api.PropertyRepository;
 import io.mantisrx.publish.api.StreamType;
+import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class SampleArchaiusMrePublishConfiguration implements MrePublishConfiguration {
@@ -104,8 +107,11 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
     private final Property<Integer> workerPoolWorkerErrorQuota;
     private final Property<Integer> workerPoolWorkerErrorTimeoutSec;
 
+    private static final Logger LOG = LoggerFactory.getLogger(SampleArchaiusMrePublishConfiguration.class);
+
     public SampleArchaiusMrePublishConfiguration(final PropertyRepository propertyRepository) {
         this.propRepo = propertyRepository;
+
         this.mreClientEnabled =
                 propertyRepository.get(MRE_CLIENT_ENABLED_PROP, Boolean.class)
                         .orElse(true);
@@ -146,7 +152,7 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
         this.jobClusterMappingRefreshIntervalSecProp = propRepo.get(JOB_CLUSTER_MAPPING_REFRESH_INTERVAL_SEC_PROP, Integer.class)
                 .orElse(60);
         this.subscriptionRefreshIntervalSecProp = propRepo.get(SUBS_REFRESH_INTERVAL_SEC_PROP, Integer.class)
-                .orElse(10);
+                .orElse(1);
         this.subscriptionExpiryIntervalSecProp = propRepo.get(SUBS_EXPIRY_INTERVAL_SEC_PROP, Integer.class)
                 .orElse(5 * 60);
         this.subsFetchQueryParamStr = propRepo.get(SUBS_FETCH_QUERY_PARAMS_STR_PROP, String.class)
@@ -261,10 +267,14 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
 
     @Override
     public Map<String, String> streamNameToJobClusterMapping() {
+
         Map<String, String> mapping = new HashMap<>();
         // TBD: call discovery api to fetch mappings from stream to job cluster for current app
         mapping.put(StreamType.DEFAULT_EVENT_STREAM, mantisJobCluster(StreamType.DEFAULT_EVENT_STREAM));
         mapping.put(StreamType.LOG_EVENT_STREAM, mantisJobCluster(StreamType.LOG_EVENT_STREAM));
+        mapping.put(StreamType.REQUEST_EVENT_STREAM, mantisJobCluster(StreamType.DEFAULT_EVENT_STREAM));
+       // mapping.put(StreamJobClusterMap.DEFAULT_STREAM_KEY,mantisJobCluster(StreamType.DEFAULT_EVENT_STREAM));
+
         return mapping;
     }
 

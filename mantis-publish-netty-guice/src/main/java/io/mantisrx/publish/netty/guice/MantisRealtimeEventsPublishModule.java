@@ -38,6 +38,7 @@ import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscoveryCachingImpl;
+import io.mantisrx.publish.internal.discovery.MantisJobDiscoveryStaticImpl;
 import io.mantisrx.publish.internal.discovery.mantisapi.DefaultMantisApiClient;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannelManager;
@@ -188,7 +189,7 @@ public class MantisRealtimeEventsPublishModule extends AbstractModule {
 
         @Inject
         private PropertyRepository propertyRepository;
-
+        
         @Override
         public MrePublishConfiguration get() {
             return new SampleArchaiusMrePublishConfiguration(propertyRepository);
@@ -207,6 +208,9 @@ public class MantisRealtimeEventsPublishModule extends AbstractModule {
         public MantisJobDiscovery get() {
             return new MantisJobDiscoveryCachingImpl(configuration, registry,
                     new DefaultMantisApiClient(configuration, HttpClient.create(registry)));
+            // for local testing swap in the static impl.
+            //return new MantisJobDiscoveryStaticImpl("127.0.0.1",9090);
+
         }
     }
 

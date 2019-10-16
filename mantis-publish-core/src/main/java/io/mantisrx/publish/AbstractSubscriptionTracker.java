@@ -129,12 +129,14 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         // refresh subscriptions only if the Publish client is enabled and has streams registered by MantisEventPublisher
         boolean mantisPublishEnabled = mrePublishConfiguration.isMREClientEnabled();
         Set<String> registeredStreams = streamManager.getRegisteredStreams();
+        boolean subscriptionsFetchedForStream = false;
         if (mantisPublishEnabled && !registeredStreams.isEmpty()) {
             Map<String, String> streamJobClusterMap = mrePublishConfiguration.streamNameToJobClusterMapping();
             for (Map.Entry<String, String> e : streamJobClusterMap.entrySet()) {
                 String streamName = e.getKey();
-                LOG.debug("processing stream {}", streamName);
+                LOG.debug("processing stream {} and currently registered Streams", streamName, registeredStreams);
                 if (registeredStreams.contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
+                    subscriptionsFetchedForStream = true;
                     String jobCluster = e.getValue();
                     try {
                         Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(streamName, jobCluster);
@@ -159,6 +161,9 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                 } else {
                     LOG.debug("will not fetch subscriptions for un-registered stream {}", streamName);
                 }
+            }
+            if(!subscriptionsFetchedForStream) {
+                LOG.warn("No server side mappings found for one or more streams {} ", registeredStreams);
             }
         } else {
             LOG.debug("subscription refresh skipped (client enabled {} registered streams {})", mantisPublishEnabled, registeredStreams);
