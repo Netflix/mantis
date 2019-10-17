@@ -63,6 +63,11 @@ data: {"country":"Solomon Islands","mantis.meta.sourceName":"SyntheticRequestSou
 data: {"country":"Liberia","mantis.meta.sourceName":"SyntheticRequestSource","mantis.meta.timestamp":1570396603844,"status":500}
 ```
 
-Next. Import the project into your IDE to explore the code.
 
-You can see more examples under the [Mantis examples repository](https://github.com/netflix/mantis-examples)
+Next Steps
+
+* Import the project into your IDE to explore the code.
+* Try out other samples from the [Mantis examples repository](https://github.com/netflix/mantis-examples)
+* [Setup Mantis locally using Docker](docker.md) and run the samples
+* [Setup Mantis in AWS](cloud.md) and run the samples
+* Learn to write your own Mantis Jobs
