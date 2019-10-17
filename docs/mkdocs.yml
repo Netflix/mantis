@@ -29,6 +29,7 @@ nav:
   - Mantis Internals:
       - 'Mantis Source Jobs': 'internals/sourcejobs.md'
       - 'Mantis Runtime': 'internals/runtime.md'
+      - 'Local Development': 'localdevelopment/localdockersetup.md'
   - 'Mantis Job Capacity Planning & Sizing': 'capacity.md'
   - 'Community': 'community.md'
   - 'Mantis FAQ': 'faq.md'
