@@ -36,7 +36,7 @@
     
     
       
-        <title>Mantis Cluster using Docker - Mantis</title>
+        <title>Local Mantis platform development using docker. - Mantis</title>
       
     
     
@@ -87,7 +87,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#spinning-up-your-first-mantis-cluster-using-docker" tabindex="1" class="md-skip">
+      <a href="#local-mantis-platform-development-using-docker" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Mantis Cluster using Docker
+                Local Mantis platform development using docker.
               
             </span>
           
@@ -234,12 +234,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
     
     <label class="md-nav__link" for="nav-2">
       Getting Started
@@ -257,7 +255,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../local/" title="Explore a Mantis Job locally" class="md-nav__link">
+    <a href="../../gettingstarted/local/" title="Explore a Mantis Job locally" class="md-nav__link">
       Explore a Mantis Job locally
     </a>
   </li>
@@ -267,83 +265,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Mantis Cluster using Docker
-      </label>
-    
-    <a href="./" title="Mantis Cluster using Docker" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/docker/" title="Mantis Cluster using Docker" class="md-nav__link">
       Mantis Cluster using Docker
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    Prerequisites
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bootstraping-your-first-mantis-cluster-in-docker" class="md-nav__link">
-    Bootstraping your first Mantis Cluster in Docker
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#download-the-docker-compose-file" class="md-nav__link">
-    Download the docker-compose file
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mantis-admin-ui" class="md-nav__link">
-    Mantis Admin UI
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#try-out-mantis-jobs" class="md-nav__link">
-    Try out Mantis Jobs
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
         
@@ -353,7 +279,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../cloud/" title="Mantis Cluster in the cloud" class="md-nav__link">
+    <a href="../../gettingstarted/cloud/" title="Mantis Cluster in the cloud" class="md-nav__link">
       Mantis Cluster in the cloud
     </a>
   </li>
@@ -728,8 +654,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bootstraping-your-first-mantis-cluster-in-docker" class="md-nav__link">
-    Bootstraping your first Mantis Cluster in Docker
+  <a href="#bootstraping-the-mantis-cluster-in-docker" class="md-nav__link">
+    Bootstraping the Mantis Cluster in Docker
   </a>
   
     <nav class="md-nav">
@@ -743,15 +669,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#mantis-admin-ui" class="md-nav__link">
-    Mantis Admin UI
+  <a href="#build-a-docker-image-for-mantis-control-plane-master" class="md-nav__link">
+    Build a Docker image for Mantis Control Plane (Master)
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#try-out-mantis-jobs" class="md-nav__link">
-    Try out Mantis Jobs
+  <a href="#build-docker-image-for-mantis-worker" class="md-nav__link">
+    Build Docker image for Mantis Worker
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-docker-image-for-mantis-api" class="md-nav__link">
+    Build Docker image for Mantis API
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-the-mantis-cluster" class="md-nav__link">
+    Start the Mantis cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-and-submit-the-sine-function-job-cluster-via-cli" class="md-nav__link">
+    Create and submit the sine-function Job Cluster via CLI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-mantis-ui" class="md-nav__link">
+    Using the Mantis UI
   </a>
   
 </li>
@@ -777,23 +731,73 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/netflix/mantis/edit/master/docs/gettingstarted/docker.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/localdevelopment/localdockersetup.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="spinning-up-your-first-mantis-cluster-using-docker">Spinning up your first Mantis cluster using Docker<a class="headerlink" href="#spinning-up-your-first-mantis-cluster-using-docker" title="Permanent link">&para;</a></h1>
+                <h1 id="local-mantis-platform-development-using-docker">Local Mantis platform development using docker.<a class="headerlink" href="#local-mantis-platform-development-using-docker" title="Permanent link">&para;</a></h1>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Install Docker on your local machine (if you don't already have it) 
-1. <a href="https://docs.docker.com/docker-for-mac/install/">Mac</a>
-2. <a href="https://docs.docker.com/docker-for-windows/install">Windows</a>
-3. <a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">Linux</a></p>
++ <a href="https://docs.docker.com/docker-for-mac/install/">Mac</a>
++ <a href="https://docs.docker.com/docker-for-windows/install">Windows</a>
++ <a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">Linux</a></p>
 </blockquote>
-<h2 id="bootstraping-your-first-mantis-cluster-in-docker">Bootstraping your first Mantis Cluster in Docker<a class="headerlink" href="#bootstraping-your-first-mantis-cluster-in-docker" title="Permanent link">&para;</a></h2>
+<h2 id="bootstraping-the-mantis-cluster-in-docker">Bootstraping the Mantis Cluster in Docker<a class="headerlink" href="#bootstraping-the-mantis-cluster-in-docker" title="Permanent link">&para;</a></h2>
 <h3 id="download-the-docker-compose-file">Download the docker-compose file<a class="headerlink" href="#download-the-docker-compose-file" title="Permanent link">&para;</a></h3>
-<p>Download the <a href="https://github.com/Netflix/mantis/blob/master/docker-compose.yml">docker-compose.yml</a>
+<p>Download the <a href="https://github.com/Netflix/mantis/blob/master/docker-compose-local.yml">docker-compose-local.yml</a>
 to a local folder <em>mantis</em></p>
-<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;mantis&gt;
-$ docker-compose -f docker-compose.yml up 
+<h3 id="build-a-docker-image-for-mantis-control-plane-master">Build a Docker image for Mantis Control Plane (Master)<a class="headerlink" href="#build-a-docker-image-for-mantis-control-plane-master" title="Permanent link">&para;</a></h3>
+<p>Clone the Mantis Control Plane:</p>
+<div class="codehilite"><pre><span></span>$ git clone https://github.com/Netflix/mantis-control-plane.git
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> mantis-control-plane/
+$ ./buildDockerImage.sh
+</pre></div>
+
+
+<h3 id="build-docker-image-for-mantis-worker">Build Docker image for Mantis Worker<a class="headerlink" href="#build-docker-image-for-mantis-worker" title="Permanent link">&para;</a></h3>
+<p>Clone the main Mantis repository:</p>
+<div class="codehilite"><pre><span></span>$ git clone https://github.com/Netflix/mantis.git
+
+<span class="c1"># Set an environment variable called MANTIS_INSTALL_DIR to the root of this project</span>
+$ <span class="nb">export</span> <span class="nv">MANTIS_INSTALL_DIR</span><span class="o">=</span>/Users/user/mantis
+</pre></div>
+
+
+<p>Clone the Mantis examples:</p>
+<div class="codehilite"><pre><span></span>$ git clone https://github.com/Netflix/mantis-examples.git
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span><span class="c1"># Create a sine-function artifact</span>
+$ <span class="nb">cd</span> mantis-examples/
+$ ./gradlew clean mantis-examples-sine-function:mantisZipArtifact
+
+<span class="c1"># Copy to conf/ that is mounted on the mantis worker Docker image</span>
+$ cp sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip &lt;path to mantis repo&gt;/localdev/conf/
+
+<span class="c1"># Build the Worker docker image</span>
+$ <span class="nb">cd</span> &lt;path to mantis repo&gt;/mantis-server/mantis-server-worker
+$ ./buildDockerImage.sh
+</pre></div>
+
+
+<h3 id="build-docker-image-for-mantis-api">Build Docker image for Mantis API<a class="headerlink" href="#build-docker-image-for-mantis-api" title="Permanent link">&para;</a></h3>
+<p>Clone the Mantis API project:</p>
+<div class="codehilite"><pre><span></span>$ git clone https://github.com/Netflix/mantis-api.git
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> mantis-api/
+$ ./buildDockerImage.sh
+</pre></div>
+
+
+<h3 id="start-the-mantis-cluster">Start the Mantis cluster<a class="headerlink" href="#start-the-mantis-cluster" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;path to mantis repo&gt;
+$ docker-compose -f docker-compose-new-master.yml up
 </pre></div>
 
 
@@ -804,13 +808,41 @@ $ docker-compose -f docker-compose.yml up
 <li>Mantis Master</li>
 <li>Mantis API</li>
 <li>Mesos Slave and Mantis Worker run on a single container (mantisagent)</li>
-<li>A simple hello world web application that sends events to Mantis</li>
-<li>A simple Java application that sends events to Manits</li>
 </ul>
-<h3 id="mantis-admin-ui">Mantis Admin UI<a class="headerlink" href="#mantis-admin-ui" title="Permanent link">&para;</a></h3>
-<p>The Mantis Admin UI allows you to manage your Mantis Jobs.</p>
-<p>Open the <a href="https://netflix.github.io/mantis-ui/">Mantis UI</a> in a new browser window.</p>
-<p>Fill out the Registration form as follows</p>
+<h3 id="create-and-submit-the-sine-function-job-cluster-via-cli">Create and submit the sine-function Job Cluster via CLI<a class="headerlink" href="#create-and-submit-the-sine-function-job-cluster-via-cli" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>$ curl -X POST http://127.0.0.1:8100/api/namedjob/create --silent --data @<span class="nv">$MANTIS_INSTALL_DIR</span>/localdev/conf/namedJob-template -vvv
+
+$ curl -X POST http://127.0.0.1:8100/api/submit --silent --data @<span class="nv">$MANTIS_INSTALL_DIR</span>/localdev/conf/submitJob-template -vvv
+</pre></div>
+
+
+<p>To get a shell on a running container:</p>
+<div class="codehilite"><pre><span></span>$ docker <span class="nb">exec</span> -it mantis_mantisagent_1 bash
+
+<span class="c1"># Job logs can be found here.</span>
+$ <span class="nb">cd</span> /tmp/mesos_workdir/slaves/&lt;frameworkid&gt;/frameworks/MantisFramework/executors
+</pre></div>
+
+
+<h3 id="using-the-mantis-ui">Using the Mantis UI<a class="headerlink" href="#using-the-mantis-ui" title="Permanent link">&para;</a></h3>
+<p>Clone the Mantis UI project:</p>
+<div class="codehilite"><pre><span></span>$ git clone https://github.com/Netflix/mantis-ui.git
+</pre></div>
+
+
+<p>Run the following commands (in the root directory of this project) to get all dependencies installed and to start the server:</p>
+<div class="codehilite"><pre><span></span>$ yarn
+$ yarn serve
+</pre></div>
+
+
+<p>Once the node server is up it should print something like</p>
+<div class="codehilite"><pre><span></span> App running at:
+ Local:   http://localhost:8080/
+</pre></div>
+
+
+<p>Point your browser to the above URL and fill out the Registration form as follows</p>
 <p><img alt="Fresh Mantis UI" src="../../images/fresh_ui.png" /></p>
 <ol>
 <li><strong>Name:</strong> <code>Example</code></li>
@@ -820,31 +852,48 @@ $ docker-compose -f docker-compose.yml up
 <li><strong>Mesos URL:</strong> <code>http://localhost:5050</code></li>
 </ol>
 <p>Click on <code>Create</code></p>
-<p>The Mantis Admin page should be pre-populated with all the Mantis examples.</p>
-<p><img alt="Clusters" src="../../images/clusterpage.png" /></p>
-<h3 id="try-out-mantis-jobs">Try out Mantis Jobs<a class="headerlink" href="#try-out-mantis-jobs" title="Permanent link">&para;</a></h3>
-<p>Now that you have setup a Mantis cluster locally try running some of the preconfigured
-Mantis samples</p>
+<p>The Mantis Admin page should have no Job clusters currently.</p>
+<p><img alt="Create first Cluster" src="../../images/create_cluster0.png" /></p>
+<p>Create a new Job Cluster</p>
+<p>Click on the <code>Create New Job Cluster</code> button on the top right.</p>
+<p>Specify the cluster name as <code>MySine</code></p>
+<p>Click on <code>Upload file</code> and drag and drop the these two files</p>
 <ol>
-<li>
-<p><a href="../samples/sinesample/">Sine Function Sample</a> - A simple job that generates x and y
-coordinates of a sine wave.</p>
-</li>
-<li>
-<p><a href="../samples/twittersample/">Twitter Sample</a> - Connects to a twitter stream using consumer and token
-keys specified and performs a streaming word count.</p>
-</li>
-<li>
-<p><a href="../samples/publishsample/">On Demand sourcing data from external apps sample</a> - Demonstrates
-how Mantis Jobs can pull events on demand from external applications.</p>
-</li>
+<li><code>mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.zip</code></li>
+<li><code>mantis-examples/sine-function/build/distributions/mantis-examples-sine-function-0.1.0-SNAPSHOT.json</code></li>
 </ol>
-<p>Next steps. 
-* <a href="../cloud/">Setup Mantis in AWS</a> and run the samples
-* Learn to write your own Mantis Jobs</p>
-<p>To teardown the Mantis cluster, issue the following command</p>
-<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;mantis&gt;
-$ docker-compose -f docker-compose.yml down
+<p><img alt="Create Cluster" src="../../images/create_cluster.png" /></p>
+<p>Under the section <code>Stage 1 - Scheduling Information</code> click on <code>Edit</code> and reduce the Disk and Network requirements
+for this worker to <code>10</code> and <code>12</code> respectively.</p>
+<p><img alt="Update job resources" src="../../images/update_job_resources.png" /></p>
+<p>Under the section <code>Parameters</code> click on <code>Override Defaults</code>
+Here you can override values for Job parameters. Let us override the parameter <code>useRandom</code> to <code>true</code></p>
+<p><img alt="Override job param" src="../../images/override_job_param.png" /></p>
+<p>Click <code>Create Job Cluster</code> on the bottom left</p>
+<p><img alt="Create Job Cluster" src="../../images/create_job_cluster3.png" /></p>
+<p>This will create the job cluster</p>
+<p><img alt="Job Cluster created" src="../../images/job_cluster_created.png" /></p>
+<p>Now let us submit a new Job for our Job Cluster
+Click the <code>Submit</code> green button this will open up a submit screen that will allow you to override Resource configurations
+as well as parameter values.</p>
+<p><img alt="Submit Job1" src="../../images/submit_job1.png" /></p>
+<p>Let us skip all that and scroll directly to the bottom and hit the <code>Submit</code> button on the bottom left.</p>
+<p><img alt="Submit Job" src="../../images/submit_job.png" /></p>
+<p>View output of the job</p>
+<p>If all goes well your job would go into <code>Launched</code> state.</p>
+<p><img alt="Job Launched" src="../../images/job_launched.png" /></p>
+<p>Scroll to the bottom and in the <code>Job Output</code> section click on <code>Start</code></p>
+<p>You should see output of the Sine function job being streamed below</p>
+<div class="codehilite"><pre><span></span>Oct 4 2019, 03:55:39.338 PM - {&quot;x&quot;: 26.000000, &quot;y&quot;: 7.625585}
+</pre></div>
+
+
+<p><img alt="Running Job" src="../../images/running_job.png" /></p>
+<ol>
+<li>To teardown the Mantis cluster, issue the following command</li>
+</ol>
+<div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;path to mantis repo&gt;
+$ docker-compose -f docker-compose-new-master.yml down
 </pre></div>
                 
                   
@@ -862,41 +911,6 @@ $ docker-compose -f docker-compose.yml down
       
         
 <footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../local/" title="Explore a Mantis Job locally" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Explore a Mantis Job locally
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../cloud/" title="Mantis Cluster in the cloud" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Mantis Cluster in the cloud
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
