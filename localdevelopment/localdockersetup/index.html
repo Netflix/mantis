@@ -36,7 +36,7 @@
     
     
       
-        <title>Local Mantis platform development using docker. - Mantis</title>
+        <title>Local Development - Mantis</title>
       
     
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Local Mantis platform development using docker.
+                Local Development
               
             </span>
           
@@ -594,10 +594,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-10" type="checkbox" id="nav-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-10" type="checkbox" id="nav-10" checked>
     
     <label class="md-nav__link" for="nav-10">
       Mantis Internals
@@ -630,6 +632,118 @@
     <a href="../../internals/runtime/" title="Mantis Runtime" class="md-nav__link">
       Mantis Runtime
     </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Local Development
+      </label>
+    
+    <a href="./" title="Local Development" class="md-nav__link md-nav__link--active">
+      Local Development
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bootstraping-the-mantis-cluster-in-docker" class="md-nav__link">
+    Bootstraping the Mantis Cluster in Docker
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-the-docker-compose-file" class="md-nav__link">
+    Download the docker-compose file
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-a-docker-image-for-mantis-control-plane-master" class="md-nav__link">
+    Build a Docker image for Mantis Control Plane (Master)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-docker-image-for-mantis-worker" class="md-nav__link">
+    Build Docker image for Mantis Worker
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-docker-image-for-mantis-api" class="md-nav__link">
+    Build Docker image for Mantis API
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-the-mantis-cluster" class="md-nav__link">
+    Start the Mantis cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-and-submit-the-sine-function-job-cluster-via-cli" class="md-nav__link">
+    Create and submit the sine-function Job Cluster via CLI
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-mantis-ui" class="md-nav__link">
+    Using the Mantis UI
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -971,6 +1085,41 @@ $ docker-compose -f docker-compose-new-master.yml down
       
         
 <footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../internals/runtime/" title="Mantis Runtime" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Mantis Runtime
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../../capacity/" title="Mantis Job Capacity Planning & Sizing" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Mantis Job Capacity Planning & Sizing
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
