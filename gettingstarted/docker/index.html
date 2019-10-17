@@ -359,6 +359,66 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Mantis Samples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Mantis Samples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../samples/sinesample/" title="Sine Function" class="md-nav__link">
+      Sine Function
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../samples/twittersample/" title="Twitter Sample" class="md-nav__link">
+      Twitter Sample
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../samples/publishsample/" title="Publish to Mantis Sample" class="md-nav__link">
+      Publish to Mantis Sample
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -783,10 +843,12 @@
                 <h1 id="spinning-up-your-first-mantis-cluster-using-docker">Spinning up your first Mantis cluster using Docker<a class="headerlink" href="#spinning-up-your-first-mantis-cluster-using-docker" title="Permanent link">&para;</a></h1>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>Install Docker on your local machine (if you don't already have it) 
-1. <a href="https://docs.docker.com/docker-for-mac/install/">Mac</a>
-2. <a href="https://docs.docker.com/docker-for-windows/install">Windows</a>
-3. <a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">Linux</a></p>
+<p>Install Docker on your local machine (if you don't already have it) </p>
+<ol>
+<li><a href="https://docs.docker.com/docker-for-mac/install/">Mac</a></li>
+<li><a href="https://docs.docker.com/docker-for-windows/install">Windows</a></li>
+<li><a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/">Linux</a></li>
+</ol>
 </blockquote>
 <h2 id="bootstraping-your-first-mantis-cluster-in-docker">Bootstraping your first Mantis Cluster in Docker<a class="headerlink" href="#bootstraping-your-first-mantis-cluster-in-docker" title="Permanent link">&para;</a></h2>
 <h3 id="download-the-docker-compose-file">Download the docker-compose file<a class="headerlink" href="#download-the-docker-compose-file" title="Permanent link">&para;</a></h3>
@@ -839,9 +901,15 @@ keys specified and performs a streaming word count.</p>
 how Mantis Jobs can pull events on demand from external applications.</p>
 </li>
 </ol>
-<p>Next steps. 
-* <a href="../cloud/">Setup Mantis in AWS</a> and run the samples
-* Learn to write your own Mantis Jobs</p>
+<p>Next steps. </p>
+<ul>
+<li>
+<p><a href="../cloud/">Setup Mantis in AWS</a> and run the samples</p>
+</li>
+<li>
+<p>Learn to <a href="../writingjobs">write</a> your own Mantis Jobs</p>
+</li>
+</ul>
 <p>To teardown the Mantis cluster, issue the following command</p>
 <div class="codehilite"><pre><span></span>$ <span class="nb">cd</span> &lt;mantis&gt;
 $ docker-compose -f docker-compose.yml down

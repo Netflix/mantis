@@ -36,7 +36,7 @@
     
     
       
-        <title>Twitter sample - Mantis</title>
+        <title>Twitter Sample - Mantis</title>
       
     
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Twitter sample
+                Twitter Sample
               
             </span>
           
@@ -234,10 +234,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
     
     <label class="md-nav__link" for="nav-2">
       Getting Started
@@ -282,6 +284,133 @@
     <a href="../../cloud/" title="Mantis Cluster in the cloud" class="md-nav__link">
       Mantis Cluster in the cloud
     </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" checked>
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Mantis Samples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Mantis Samples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../sinesample/" title="Sine Function" class="md-nav__link">
+      Sine Function
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Twitter Sample
+      </label>
+    
+    <a href="./" title="Twitter Sample" class="md-nav__link md-nav__link--active">
+      Twitter Sample
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-sample" class="md-nav__link">
+    Running the sample
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-output-of-the-job" class="md-nav__link">
+    View output of the job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terminate-the-job" class="md-nav__link">
+    Terminate the job
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../publishsample/" title="Publish to Mantis Sample" class="md-nav__link">
+      Publish to Mantis Sample
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -658,6 +787,19 @@
     Running the sample
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-output-of-the-job" class="md-nav__link">
+    View output of the job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -690,10 +832,19 @@
 <p>The Twitter sample demonstrates sourcing data from an external source (twitter in this case) and 
 calculates the number of occurrences of a word within a hopping window. </p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
-<p>Twitter credentials to be used to connect to Twitter.
-If you don't already have a twitter application
-You can create one here <a href="https://developer.twitter.com/en/apps">here</a></p>
-<p>The <em>Keys and Tokens</em> section should list the credentials needed for this application. </p>
+<p>A <code>TwitterSample</code> Job Cluster exists.</p>
+<blockquote>
+<p><strong>Note</strong> If you are following the <a href="../../docker/">Mantis Cluster using Docker</a> instructions this
+should be already setup. </p>
+</blockquote>
+<p>Twitter credentials to be used to connect to Twitter.</p>
+<blockquote>
+<blockquote>
+<p>If you don't already have a twitter application
+You can create one here <a href="https://developer.twitter.com/en/apps">here</a>
+The <em>Keys and Tokens</em> section should list the credentials needed for this application. </p>
+</blockquote>
+</blockquote>
 <h2 id="running-the-sample">Running the sample<a class="headerlink" href="#running-the-sample" title="Permanent link">&para;</a></h2>
 <p>Let us try submitting this job.</p>
 <ol>
@@ -715,13 +866,21 @@ allow you to override Resource configurations as well as parameter values.</p>
 <li>Twitter token </li>
 <li>Twitter token secret </li>
 </ul>
-<p>View output of the job</p>
+<h3 id="view-output-of-the-job">View output of the job<a class="headerlink" href="#view-output-of-the-job" title="Permanent link">&para;</a></h3>
 <p>If all goes well your job would go into <code>Launched</code> state.
 Scroll to the bottom and click on <code>Start</code>
 You should see output of the Twitter job being streamed below</p>
 <p><img alt="Job Launched" src="../../../images/twitter-running.png" /></p>
 <h2 id="terminate-the-job">Terminate the job<a class="headerlink" href="#terminate-the-job" title="Permanent link">&para;</a></h2>
 <p>To stop the job click on the red <code>Kill Job</code> button on the top right corner.</p>
+<ul>
+<li>
+<p>Explore the <a href="https://github.com/Netflix/mantis-examples/tree/master/twitter-sample">code</a></p>
+</li>
+<li>
+<p>Checkout out the other samples</p>
+</li>
+</ul>
                 
                   
                 
@@ -738,6 +897,41 @@ You should see output of the Twitter job being streamed below</p>
       
         
 <footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../sinesample/" title="Sine Function" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Sine Function
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../publishsample/" title="Publish to Mantis Sample" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Publish to Mantis Sample
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">

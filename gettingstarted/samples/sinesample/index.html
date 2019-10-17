@@ -36,7 +36,7 @@
     
     
       
-        <title>Sine Function sample - Mantis</title>
+        <title>Sine Function - Mantis</title>
       
     
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Sine Function sample
+                Sine Function
               
             </span>
           
@@ -234,10 +234,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
     
     <label class="md-nav__link" for="nav-2">
       Getting Started
@@ -282,6 +284,127 @@
     <a href="../../cloud/" title="Mantis Cluster in the cloud" class="md-nav__link">
       Mantis Cluster in the cloud
     </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" checked>
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Mantis Samples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Mantis Samples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Sine Function
+      </label>
+    
+    <a href="./" title="Sine Function" class="md-nav__link md-nav__link--active">
+      Sine Function
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-sample" class="md-nav__link">
+    Running the sample
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terminate-the-job" class="md-nav__link">
+    Terminate the job
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    Next Steps
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../twittersample/" title="Twitter Sample" class="md-nav__link">
+      Twitter Sample
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../publishsample/" title="Publish to Mantis Sample" class="md-nav__link">
+      Publish to Mantis Sample
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -643,6 +766,43 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-sample" class="md-nav__link">
+    Running the sample
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terminate-the-job" class="md-nav__link">
+    Terminate the job
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    Next Steps
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -658,14 +818,21 @@
                 
                 <h1 id="sine-function-sample">Sine Function sample<a class="headerlink" href="#sine-function-sample" title="Permanent link">&para;</a></h1>
 <p>The Sine function sample is a very simple job that generates a set of x and y coordinates of a sine
-wave. 
-Let us try submitting this job.</p>
+wave. </p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<p>A SineFunction Job Cluster exists.</p>
+<blockquote>
+<p><strong>Note</strong> If you are following the <a href="../../docker/">Mantis Cluster using Docker</a> instructions this
+should be already setup. </p>
+</blockquote>
+<h2 id="running-the-sample">Running the sample<a class="headerlink" href="#running-the-sample" title="Permanent link">&para;</a></h2>
 <ol>
 <li>
-<p>Click on SineFunction</p>
+<p>Go to the <a href="https://netflix.github.io/mantis-ui/#/clusters">clusters page</a> page and 
+Click on <code>SineFunction</code></p>
 </li>
 <li>
-<p>Click the <code>Submit</code> green button on the top right.</p>
+<p>On the Job Cluster detail page. Click the <code>Submit</code> green button on the top right.</p>
 <p>This will open up a submit screen that will 
 allow you to override Resource configurations as well as parameter values.</p>
 </li>
@@ -683,6 +850,17 @@ allow you to override Resource configurations as well as parameter values.</p>
 
 
 <p><img alt="Running Job" src="../../../images/running_job.png" /></p>
+<h2 id="terminate-the-job">Terminate the job<a class="headerlink" href="#terminate-the-job" title="Permanent link">&para;</a></h2>
+<p>To stop the job click on the red <code>Kill Job</code> button on the top right corner.</p>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>Explore the <a href="https://github.com/Netflix/mantis-examples/tree/master/sine-function">code</a></p>
+</li>
+<li>
+<p>Checkout out the other samples</p>
+</li>
+</ul>
                 
                   
                 
@@ -699,6 +877,41 @@ allow you to override Resource configurations as well as parameter values.</p>
       
         
 <footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../cloud/" title="Mantis Cluster in the cloud" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Mantis Cluster in the cloud
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../twittersample/" title="Twitter Sample" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Twitter Sample
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
