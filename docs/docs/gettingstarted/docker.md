@@ -3,6 +3,7 @@
 ## Prerequisites
 
 > Install Docker on your local machine (if you don't already have it) 
+>
 1. [Mac](https://docs.docker.com/docker-for-mac/install/)
 2. [Windows](https://docs.docker.com/docker-for-windows/install)
 3. [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
@@ -65,8 +66,10 @@ how Mantis Jobs can pull events on demand from external applications.
 
 
 Next steps. 
+
 * [Setup Mantis in AWS](cloud.md) and run the samples
-* Learn to write your own Mantis Jobs
+
+* Learn to [write](../writingjobs) your own Mantis Jobs
 
 To teardown the Mantis cluster, issue the following command
 

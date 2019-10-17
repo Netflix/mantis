@@ -2,11 +2,20 @@
 
 The Sine function sample is a very simple job that generates a set of x and y coordinates of a sine
 wave. 
-Let us try submitting this job.
 
-1. Click on SineFunction
+## Prerequisites
 
-2. Click the `Submit` green button on the top right.
+A SineFunction Job Cluster exists.
+
+> **Note** If you are following the [Mantis Cluster using Docker](../docker.md) instructions this
+>should be already setup. 
+
+## Running the sample
+
+1. Go to the [clusters page](https://netflix.github.io/mantis-ui/#/clusters) page and 
+Click on `SineFunction`
+
+2. On the Job Cluster detail page. Click the `Submit` green button on the top right.
 
     This will open up a submit screen that will 
     allow you to override Resource configurations as well as parameter values.
@@ -32,3 +41,12 @@ Oct 4 2019, 03:55:39.338 PM - {"x": 26.000000, "y": 7.625585}
 ```
 
 ![Running Job](../../images/running_job.png)
+
+## Terminate the job
+To stop the job click on the red `Kill Job` button on the top right corner.
+
+## Next Steps
+
+* Explore the [code](https://github.com/Netflix/mantis-examples/tree/master/sine-function)
+
+* Checkout out the other samples

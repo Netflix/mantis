@@ -5,6 +5,10 @@ nav:
     - 'Explore a Mantis Job locally': 'gettingstarted/local.md'
     - 'Mantis Cluster using Docker': 'gettingstarted/docker.md'
     - 'Mantis Cluster in the cloud': 'gettingstarted/cloud.md'
+    - 'Mantis Samples':
+        - 'Sine Function': 'gettingstarted/samples/sinesample.md'
+        - 'Twitter Sample': 'gettingstarted/samples/twittersample.md'
+        - 'Publish to Mantis Sample': 'gettingstarted/samples/publishsample.md'
   - 'Infrastructure Overview': 'infrastructure.md'
   - Writing Mantis Jobs:
     - 'Introduction to Mantis Jobs': 'writingjobs/index.md'

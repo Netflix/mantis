@@ -13,13 +13,22 @@ This end-to-end example highlights two powerful Mantis concepts
 
 2. Job Chaining where one Job connects to the output of another job.
 
+## Prerequisites
+
+* `SharedMrePublishEventSource` Job Cluster exists.
+* `JobConnectorSample` Job cluster exists
+
+> **Note** If you are following the [Mantis Cluster using Docker](../docker.md) instructions this
+>should be already setup. 
+
+
 ## Publishing data to Mantis
 
 In a nutshell this involves adding a build dependency to the mantis-publish library, injecting
 the Mantis Module and finally calling the publish API.
 
 >  **Note**: The local docker setup has already preconfigured a simple [Java Sample](https://github.com/Netflix/mantis-examples/tree/master/mantis-publish-sample) application to publish events
-to Mantis. So you can skip this section if you are not instrumenting your own application.
+to Mantis. So you can **skip** this section if you are not instrumenting your own application.
 
 ### Adding build dependency
 
