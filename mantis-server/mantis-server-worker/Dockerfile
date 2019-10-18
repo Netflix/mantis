@@ -5,11 +5,12 @@ MAINTAINER Mantis Developers <mantisd-oss-dev@netflix.com>
 # Setup mantis-agent environment
 RUN mkdir -p /mnt/local/mantisWorkerInstall/bin/
 RUN mkdir -p /mnt/local/mantisWorkerInstall/libs/
+RUN mkdir -p /mnt/local/mantisWorkerInstall/jobs/
 
 # NOTE: Assumes you're building in the mantis-server-worker directory
 COPY ./src/main/resources/startup_docker.sh /mnt/local/mantisWorkerInstall/bin/
 COPY ./build/libs/mantis-server-worker*.jar /mnt/local/mantisWorkerInstall/libs/
-
+COPY worker-docker.properties /mnt/local/mantisWorkerInstall/jobs/
 # Set up Java 8
 #ENV DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
 #ENV CODENAME=$(lsb_release -cs)
