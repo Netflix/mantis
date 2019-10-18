@@ -1076,22 +1076,24 @@ Say we want to look at all events that are failing i.e have <code>status=500</co
 </li>
 <li>
 <p>On the Job submit page scroll down and click on <code>Override Defaults</code> to configure our query.</p>
-</li>
-</ol>
-<p>Enter the following as the value for parameter <code>target</code></p>
-<p><code>json
-    {"targets":[{"sourceJobName":"SharedMrePublishEventSource","criterion":"select * from defaultStream where status==500"}]}</code></p>
+<p>Enter the following as the value for parameter <code>target</code>:</p>
+<div class="codehilite"><pre><span></span>{&quot;targets&quot;:[{&quot;sourceJobName&quot;:&quot;SharedMrePublishEventSource&quot;,&quot;criterion&quot;:&quot;select * from defaultStream where status==500&quot;}]}
+</pre></div>
+
+
 <p>and hit submit. </p>
 <p><img alt="Submit Job" src="../../../images/jobconnectorsubmit.png" />   </p>
 <p>Two key things to note:</p>
 <ul>
 <li>We set the <code>sourceJobName</code> to <code>SharedMrePublishEventSource</code> which is the source job we configured in the
-   previous step.</li>
+previous step.</li>
 <li>We set the <code>criterion</code> key in the payload to our MQL query <code>select * from defaultStream where status==500</code></li>
 </ul>
-<p>Click on Submit.</p>
+<p>Click on <strong>Submit</strong>.</p>
+</li>
+</ol>
 <p>On the Job Detail page scroll down to the <code>Job Output</code> section and click on Start.
-   In a few seconds you should see events matching our query flow through.</p>
+In a few seconds you should see events matching our query flow through.</p>
 <p><img alt="Running Job" src="../../../images/jobconnectorrunning.png" /> </p>
 <p>If you go back to the shell that is running the docker images you should now see output like</p>
 <div class="codehilite"><pre><span></span>mantispublish_1     <span class="p">|</span> <span class="m">2019</span>-10-16 <span class="m">17</span>:58:32 INFO  SampleDataPublisher:56 - Mantis publish JavaApp send event <span class="nv">status</span> <span class="o">=</span>&gt; ENQUEUED<span class="o">(</span>SENDING<span class="o">)</span>
