@@ -1,24 +1,50 @@
 # Mantis
 
-Mantis is a platform which helps engineers better understand the behavior of their applications to ensure
-production systems operate with the highest quality. Engineers are able to build applications on top of
+Mantis is a platform to build an ecosystem of realtime stream processing applications.
+Mantis can be used to build powerful and cost-effective streaming applications (jobs) that can help engineers get better insight into their production systems. 
+
+to ensure
+production systems operate with the highest quality. Engineers are able to build applications (Mantis jobs) on top of
 the Mantis platform to quickly identify issues, trigger alerts, and apply remediations to completely
 avoid or minimize downtime. Mantis puts native capabilities in the hands of engineers to minimize the costs of
 operating monitoring systems without having to compromise on required and opportunistic insights.
 It was [designed by Netflix](https://medium.com/netflix-techblog/stream-processing-with-mantis-78af913f51a6).
 
-## Guiding Principles Behind Building Mantis
+At its core Mantis is a managed streaming data processing platform. It provides a framework for users to source data
+from external services at low latency and process it using an execution environment coupled with a functional programming model. 
+By providing stream processing as a service the application developers are relieved of the burden of operating and managing
+their own resources. Mantis takes care of managing the life cycle of the jobs and their resources. Being cloud-native and elastic
+in nature Mantis jobs can react to sudden changes in the environment like increased data volume or task failures innately.
 
-The following are the guiding principles behind building Mantis:
+## Why we built Mantis?
 
-1. **We should have access to raw events.** Applications that publish events into Mantis should be free to publish every single event. If we reduce the dataset at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.
-1. **We should be able to access this data in realtime.** Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.
-1. **We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.** It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.
-1. **We should be able to do all of the above in a cost-effective way.** As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.
+Mantis evolved from the need to get better (faster and in-depth) operational insights in a rapidly growing complex micro-service ecosystem at Netflix. 
+
+<Insert image>
+
+As complexity of a system increases, our comprehension of the system rapidly decreases. In order to counter this complexity we need newer approaches to
+operational insights.
+
+* We need to change the way we generate and collect operational data:
+
+    1. **We should have access to raw events.** Applications should be free to publish every single event. If we reduce the granularity at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.
+    1. **We should be able to access this data in realtime.** Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.
+    1. **We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.** It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.
+ 
+* We need a new kind of execution environment:
+ 
+    1. **Can Process high volume data at low latency**  
+    1. **Has low Operational burden** We need a managed platform where most of the operational tasks are handled automatically on behalf of the user. We don't need the additional overhead of operating our monitoring system.
+    1. **Is Elastic and Resilient** We need a highly reliable system that can automatically recover from node failures and be able to scale the resources dynamically based on the data volume.
+    1. **Ecosystem of Streaming services** A lot of use-cases often need the same data, Allowing streaming services to discover each other and collaborate together by sharing data and results we can build rich applications that maximise code and data re-use.  
+    
+We should be able to do all of the above in a *cost-effective way*. As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.
+
+
 
 ## Major Components of Mantis
 
-There are the major components of Mantis:
+These are the major components of Mantis:
 
 1. [Runtime (this repo)](https://github.com/netflix/mantis)
 1. [Control Plane](https://github.com/netflix/mantis-control-plane)
@@ -27,7 +53,7 @@ There are the major components of Mantis:
 1. [Connectors](https://github.com/netflix/mantis-connectors)
 1. [Mantis Query Language (MQL)](https://github.com/netflix/mantis-mql)
 1. Job Chaining
-1. Autoscaling
+1. [Autoscaling](autoscaling.md)
 
 At the edge, we have services such as stateless APIs or stateful data pipelines. These services are instrumented with a Mantis Publisher client which enables developers to send events from their services into Mantis.
 
