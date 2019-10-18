@@ -22,11 +22,11 @@ First, you'll need to download the Mantis CLI app.
 
 If you're on Mac OS, it's recommended that you download and install using the Mac package:
 
-- [mantis-v0.1.0.pkg](https://github.com/Netflix/mantis-cli/releases/download/v0.1.0/mantis-v0.1.0.pkg)
+- [mantis-v0.1.1.pkg](https://github.com/Netflix/mantis-cli/releases/download/v0.1.1/mantis-v0.1.1.pkg)
 
 If you're on other systems such as Linux or Windows, choose the appropriate package from the Release Assets:
 
-- [v0.1.0 Release Assets](https://github.com/Netflix/mantis-cli/releases/tag/v0.1.0)
+- [v0.1.1 Release Assets](https://github.com/Netflix/mantis-cli/releases/tag/v0.1.1)
 
 ### Configure AWS credentials
 
