@@ -85,6 +85,26 @@ services:
       mantis_net:
         ipv4_address: 172.16.186.7
 
+  mantispublishweb:
+    image: netflixoss/mantispublishweb
+    ports:
+      - "80:8080"
+    depends_on:
+      - mantisapi
+    networks:
+      mantis_net:
+        ipv4_address: 172.16.186.8
+
+  mantispublish:
+    image: netflixoss/mantispublish
+    ports:
+      - "81:8180"
+    depends_on:
+      - mantisapi
+    networks:
+      mantis_net:
+        ipv4_address: 172.16.186.9
+
 networks:
     mantis_net:
       driver: bridge
