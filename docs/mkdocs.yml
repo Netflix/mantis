@@ -10,6 +10,8 @@ nav:
         - 'Twitter Sample': 'gettingstarted/samples/twittersample.md'
         - 'Publish to Mantis Sample': 'gettingstarted/samples/publishsample.md'
   - 'Infrastructure Overview': 'infrastructure.md'
+  - 'Mantis Concepts': 'concepts.md'
+  - 'Use cases' : 'usecases.md'
   - Writing Mantis Jobs:
     - 'Introduction to Mantis Jobs': 'writingjobs/index.md'
     - 'The Source Component': 'writingjobs/source.md'

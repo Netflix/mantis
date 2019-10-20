@@ -13,6 +13,8 @@ This end-to-end example highlights two powerful Mantis concepts
 
 2. Job Chaining where one Job connects to the output of another job.
 
+![mantis publish](../../images/mantispublish.png)
+
 ## Prerequisites
 
 * `SharedMrePublishEventSource` Job Cluster exists.
