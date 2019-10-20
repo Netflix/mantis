@@ -409,8 +409,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tasks-worker" class="md-nav__link">
-    Tasks (Worker)
+  <a href="#worker" class="md-nav__link">
+    Worker
   </a>
   
 </li>
@@ -858,8 +858,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tasks-worker" class="md-nav__link">
-    Tasks (Worker)
+  <a href="#worker" class="md-nav__link">
+    Worker
   </a>
   
 </li>
@@ -956,7 +956,7 @@ A developer writes a job using Mantis primitives and builds an artifact which is
 execution. 
 Each Mantis Job belongs to exactly one Mantis Job Cluster.</p>
 <p>Lets take a closer look at a Mantis Job.</p>
-<h2 id="tasks-worker">Tasks (Worker)<a class="headerlink" href="#tasks-worker" title="Permanent link">&para;</a></h2>
+<h2 id="worker">Worker<a class="headerlink" href="#worker" title="Permanent link">&para;</a></h2>
 <p><img alt="worker running" src="../images/sine_worker_running.png" /></p>
 <p>A worker is the smallest unit of execution in Mantis. Physically a worker executes in a resource isolated
 Mesos container on the Mantis Agent fleet of servers. </p>
@@ -994,6 +994,7 @@ logic to move state to new workers. In cases where the state can be rebuilt rapi
 Downstream jobs connect to the Sink (Server Sent Event) of the Source job with an MQL query which denotes what data the job is interested in.
 Each event flowing through the Source job is evaluated against these MQL queries.
 Events matching a particular query are then streamed to the corresponding downstream job.</p>
+<p><img alt="kafka source job" src="../images/kafka-source-job.png" /></p>
 <p>The source jobs have several advantages</p>
 <ul>
 <li>
@@ -1065,7 +1066,7 @@ The OSS version ships with a sample file based store. For production deployments
 <p>The Master is built using <a href="https://akka.io/">Akka</a> principles, where each Job Cluster, Job etc are modelled as Actors.
 For scheduling of resources Mantis relies on the Mesos Framework
 The Master registers itself as a <a href="https://mesos.apache.org/">Mesos Framework</a>. It receives resource offers from Mesos
-and uses <a href="https://github.com/Netflix/Fenzo/">Fenzo</a> to optimally match tasks to these offers. </p>
+and uses <a href="https://github.com/Netflix/Fenzo/">Fenzo</a> to optimally match workers to these offers. </p>
 <h2 id="mantis-api">Mantis API<a class="headerlink" href="#mantis-api" title="Permanent link">&para;</a></h2>
 <p>The <a href="../mantisapi/">Mantis API</a> is almost like a traditional API server which proxies request to the Mantis Master. 
 But has additional capabilities like 

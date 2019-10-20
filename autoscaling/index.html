@@ -87,7 +87,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#horizontal-scaling" tabindex="1" class="md-skip">
+      <a href="#autoscaling-in-mantis" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -541,6 +541,8 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
         Mantis Job Autoscaling
@@ -553,6 +555,8 @@
       
 <nav class="md-nav md-nav--secondary">
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
@@ -798,6 +802,8 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
@@ -856,14 +862,14 @@
                   <a href="https://github.com/netflix/mantis/edit/master/docs/autoscaling.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Mantis Job Autoscaling</h1>
-                
-                <p>Mantis provides <a href="../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a> for the <a href="../glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Cluster</a> and for each <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>. You can define a policy for your
-Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
+                <h1 id="autoscaling-in-mantis">Autoscaling in Mantis<a class="headerlink" href="#autoscaling-in-mantis" title="Permanent link">&para;</a></h1>
+<p>Being a cloud-native platform Mantis supports <a href="../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a> out-of-the-box. Both the agent cluster and the Mantis Jobs
+can be configured to autoscale. </p>
+<p>You can define a policy for your Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
 the input data they process. </p>
 <p>This provides two benefits:</p>
 <ol>
-<li>You can define Jobs to process data without planning ahead for peak usage.</li>
+<li>You can define Jobs to process data without provisioning for peak usage all the time.</li>
 <li>Mantis uses cluster resources optimally without leaving resources idle.</li>
 </ol>
 <h2 id="horizontal-scaling">Horizontal Scaling<a class="headerlink" href="#horizontal-scaling" title="Permanent link">&para;</a></h2>
