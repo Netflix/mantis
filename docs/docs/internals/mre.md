@@ -1,8 +1,8 @@
-The Mantis Publish library (known internally to Netflix as Mantis Realtime Events, or MRE) allows your application to stream events into Mantis.
-The library supports JVM and Node.js applications.
+The Mantis Publish library allows your application to stream events into Mantis on-demand.
+Currently on the JVM based library is available in Open Source Mantis.
 
 Mantis Publish takes care of filtering the events you send into Mantis, and it will only transmit them over the
-network if a Mantis client that is interested in such events is currently subscribed.
+network if a downstream consumer that is interested in such events is currently subscribed.
 
 Mantis Publish contains a subscription registry where each client subscription is represented by its
 corresponding [Mantis Query Language] (MQL) query. Mantis Publish evaluates all MQL queries from its

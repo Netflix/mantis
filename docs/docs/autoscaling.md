@@ -1,10 +1,14 @@
-Mantis provides [autoscaling] for the [Cluster] and for each [Job]. You can define a policy for your
-Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
+# Autoscaling in Mantis
+
+Being a cloud-native platform Mantis supports [autoscaling] out-of-the-box. Both the agent cluster and the Mantis Jobs
+can be configured to autoscale. 
+
+You can define a policy for your Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
 the input data they process. 
 
 This provides two benefits:
 
-1. You can define Jobs to process data without planning ahead for peak usage.
+1. You can define Jobs to process data without provisioning for peak usage all the time.
 1. Mantis uses cluster resources optimally without leaving resources idle.
 
 ## Horizontal Scaling

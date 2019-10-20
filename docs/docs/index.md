@@ -48,7 +48,7 @@ Mantis has been in production at Netflix since 2014. It processes trillions of e
 
 As a streaming microservices ecosystem, the Mantis platform provides engineers with capabilities to minimize 
 the costs of observing and operating complex distributed systems without compromising on operational insights. 
-Engineers have built cost-efficient real-time applications on top of Mantis to quickly identify issues, trigger alerts, 
+Engineers can build cost-efficient real-time applications on top of Mantis to quickly identify issues, trigger alerts, 
 and apply remediations to minimize or completely avoid downtime to the Netflix service.
 
 

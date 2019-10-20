@@ -34,7 +34,7 @@ Each Mantis Job belongs to exactly one Mantis Job Cluster.
 
 Lets take a closer look at a Mantis Job.
 
-## Tasks (Worker)
+## Worker
 
 ![worker running](./images/sine_worker_running.png)
 
@@ -85,6 +85,8 @@ A source job is a type of Mantis Job that makes data available to other Mantis J
 Downstream jobs connect to the Sink (Server Sent Event) of the Source job with an MQL query which denotes what data the job is interested in.
 Each event flowing through the Source job is evaluated against these MQL queries.
 Events matching a particular query are then streamed to the corresponding downstream job.
+
+![kafka source job](./images/kafka-source-job.png)
 
 The source jobs have several advantages
 
@@ -161,7 +163,7 @@ The OSS version ships with a sample file based store. For production deployments
 The Master is built using [Akka](https://akka.io/) principles, where each Job Cluster, Job etc are modelled as Actors.
 For scheduling of resources Mantis relies on the Mesos Framework
 The Master registers itself as a [Mesos Framework](https://mesos.apache.org/). It receives resource offers from Mesos
-and uses [Fenzo](https://github.com/Netflix/Fenzo/) to optimally match tasks to these offers. 
+and uses [Fenzo](https://github.com/Netflix/Fenzo/) to optimally match workers to these offers. 
 
 ## Mantis API
 
