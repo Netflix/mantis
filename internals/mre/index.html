@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -367,15 +367,39 @@
       
 
 
+  <li class="md-nav__item">
+    <a href="../../concepts/" title="Mantis Concepts" class="md-nav__link">
+      Mantis Concepts
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../usecases/" title="Use cases" class="md-nav__link">
+      Use cases
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
     
-    <label class="md-nav__link" for="nav-4">
+    <label class="md-nav__link" for="nav-6">
       Writing Mantis Jobs
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
+      <label class="md-nav__title" for="nav-6">
         Writing Mantis Jobs
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -441,13 +465,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7">
     
-    <label class="md-nav__link" for="nav-5">
+    <label class="md-nav__link" for="nav-7">
       Mantis Query Language
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
+      <label class="md-nav__title" for="nav-7">
         Mantis Query Language
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -558,6 +582,26 @@
     How to Stream Events Into Mantis
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-the-client" class="md-nav__link">
+    Setting up the client.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuring-where-to-send-data" class="md-nav__link">
+    Configuring where to send data
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -645,13 +689,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-8" type="checkbox" id="nav-8">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-10" type="checkbox" id="nav-10">
     
-    <label class="md-nav__link" for="nav-8">
+    <label class="md-nav__link" for="nav-10">
       The Mantis API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-8">
+      <label class="md-nav__title" for="nav-10">
         The Mantis API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -705,13 +749,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-10" type="checkbox" id="nav-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-12" type="checkbox" id="nav-12">
     
-    <label class="md-nav__link" for="nav-10">
+    <label class="md-nav__link" for="nav-12">
       Mantis Internals
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-10">
+      <label class="md-nav__title" for="nav-12">
         Mantis Internals
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -836,6 +880,26 @@
     How to Stream Events Into Mantis
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-the-client" class="md-nav__link">
+    Setting up the client.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuring-where-to-send-data" class="md-nav__link">
+    Configuring where to send data
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -942,16 +1006,40 @@ you can freely produce events without incurring the cost until an active subscri
 <h2 id="how-to-add-the-mantis-publish-library">How to Add the Mantis Publish Library<a class="headerlink" href="#how-to-add-the-mantis-publish-library" title="Permanent link">&para;</a></h2>
 <p>To add this library to your application, include <a href="https://search.maven.org/search?q=a:mantis-publish-netty">mantis-publish-netty</a>
 in your application’s dependencies.</p>
+<div class="codehilite"><pre><span></span>compile <span class="s1">&#39;io.mantisrx:mantis-publish-netty:1.2.+&#39;</span>
+</pre></div>
+
+
+<p>If your application is guice enabled you can do the following</p>
+<div class="codehilite"><pre><span></span>compile <span class="s1">&#39;io.mantisrx:mantis-publish-netty-guice:1.2.+&#39;</span>
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A spring based module is coming soon.</p>
+</div>
 <h2 id="how-to-stream-events-into-mantis">How to Stream Events Into Mantis<a class="headerlink" href="#how-to-stream-events-into-mantis" title="Permanent link">&para;</a></h2>
-<p>If your application wants to stream events into Mantis, you can use the Mantis Publish library directly by
-instantiating a <code>MantisEventPublisher</code> in your application code. In order to create a <code>MantisEventPublisher</code>,
+<h3 id="setting-up-the-client">Setting up the client.<a class="headerlink" href="#setting-up-the-client" title="Permanent link">&para;</a></h3>
+<p>To stream events into Mantis</p>
+<p><strong><em>Without dependency injection</em></strong>:</p>
+<p>Directly instantiate a <code>MantisEventPublisher</code> in your application code. In order to create a <code>MantisEventPublisher</code>,
 you will have to inject a few parameters. An example of which parameters are required and how to inject them
-can be found in <a href="https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java">here</a>.</p>
-<p>Once injected, either manually via constructor or an injection framework such as Guice or Spring,
-you must use the <code>MrePublishClientInitializer</code> class and call <code>MrePublishClientInitializer#start</code> to start all
-the underlying components. From there, you can get an event publisher by calling <code>MrePublishClientInitializer#getEventPublisher</code>.
-An example of this can be found <a href="https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java#L123-L133">here</a>.</p>
-<p>Then, for each event your application generates, create a <code>Event</code> object with your desired event fields,
+can be found in <a href="https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java">here</a>.
+Next, you must use the <code>MrePublishClientInitializer</code> class and call <code>MrePublishClientInitializer#start</code> to start all
+the underlying components</p>
+<p><strong><em>With Guice</em></strong>:</p>
+<p>Inject the <code>MantisRealtimeEventsPublishModule</code> into your application.
+In addition to injecting <code>MantisRealtimeEventsPublishModule</code> you will also need to add the 
+<code>ArchaiusModule</code> and the <code>SpectatorModule</code> if not already injected.</p>
+<div class="codehilite"><pre><span></span>    <span class="n">Injector</span> <span class="n">injector</span> <span class="o">=</span> <span class="n">Guice</span><span class="o">.</span><span class="na">createInjector</span><span class="o">(</span><span class="k">new</span> <span class="n">BasicModule</span><span class="o">(),</span> <span class="k">new</span> <span class="n">ArchaiusModule</span><span class="o">(),</span>
+                <span class="k">new</span> <span class="n">MantisRealtimeEventsPublishModule</span><span class="o">(),</span> <span class="k">new</span> <span class="n">SpectatorModule</span><span class="o">());</span>
+</pre></div>
+
+
+<p>Once injected, either manually via constructor or an injection framework such as Guice or Spring, the mantis-publish
+library is ready for use.</p>
+<p>For each event your application wishes to send to Mantis, create a <code>Event</code> object with your desired event fields,
 and pass that <code>Event</code> to the <code>MantisEventPublisher#publish</code> method. For example:</p>
 <div class="codehilite"><pre><span></span><span class="c1">// Create an `Event` for Mantis Publish using your application event.</span>
 <span class="kd">final</span> <span class="n">Event</span> <span class="n">event</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Event</span><span class="o">();</span>
@@ -961,6 +1049,19 @@ and pass that <code>Event</code> to the <code>MantisEventPublisher#publish</code
 <span class="c1">// Note: This event will only be dispatched over the network</span>
 <span class="c1">// if a subscription with a matching MQL query exists.</span>
 <span class="n">eventPublisher</span><span class="o">.</span><span class="na">publish</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+</pre></div>
+
+
+<h3 id="configuring-where-to-send-data">Configuring where to send data<a class="headerlink" href="#configuring-where-to-send-data" title="Permanent link">&para;</a></h3>
+<p>We need to configure the location of the Mantis API server for the mantis-publish library to bootstrap</p>
+<p>Add the following properties to your <code>application.properties</code></p>
+<div class="codehilite"><pre><span></span>mantis.publish.discovery.api.hostname<span class="o">=</span>&lt;IP of Mantis API&gt;
+
+<span class="c1"># mantis api port</span>
+mantis.publish.discovery.api.port<span class="o">=</span>&lt;port <span class="k">for</span> Mantis API&gt;
+
+<span class="c1"># This application&#39;s name</span>
+mantis.publish.app.name<span class="o">=</span>JavaApp
 </pre></div>
 
 
@@ -1114,7 +1215,7 @@ the Event Publisher delivers the event using non-blocking I/O.</p>
       
     </div>
     
-      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

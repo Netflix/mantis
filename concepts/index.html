@@ -36,7 +36,7 @@
     
     
       
-        <title>Mantis Job Autoscaling - Mantis</title>
+        <title>Mantis Concepts - Mantis</title>
       
     
     
@@ -87,7 +87,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#horizontal-scaling" tabindex="1" class="md-skip">
+      <a href="#mantis-concepts" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -113,7 +113,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Mantis Job Autoscaling
+                Mantis Concepts
               
             </span>
           
@@ -366,11 +366,112 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../concepts/" title="Mantis Concepts" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Mantis Concepts
+      </label>
+    
+    <a href="./" title="Mantis Concepts" class="md-nav__link md-nav__link--active">
       Mantis Concepts
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-job-cluster" class="md-nav__link">
+    Mantis Job Cluster
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-jobs" class="md-nav__link">
+    Mantis Jobs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tasks-worker" class="md-nav__link">
+    Tasks (Worker)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stages-group-of-workers" class="md-nav__link">
+    Stages (Group of workers)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-runtime" class="md-nav__link">
+    Mantis Runtime
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-job" class="md-nav__link">
+    Source Job
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-chaining" class="md-nav__link">
+    Job Chaining
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-query-language-mql" class="md-nav__link">
+    Mantis Query Language (MQL)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-master" class="md-nav__link">
+    Mantis Master
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-api" class="md-nav__link">
+    Mantis API
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -534,73 +635,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Mantis Job Autoscaling
-      </label>
-    
-    <a href="./" title="Mantis Job Autoscaling" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../autoscaling/" title="Mantis Job Autoscaling" class="md-nav__link">
       Mantis Job Autoscaling
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#horizontal-scaling" class="md-nav__link">
-    Horizontal Scaling
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scaling-a-processing-stage-manually" class="md-nav__link">
-    Scaling a Processing Stage Manually
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#setting-an-autoscaling-policy" class="md-nav__link">
-    Setting an Autoscaling Policy
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#autoscaling-scenarios" class="md-nav__link">
-    Autoscaling Scenarios
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#updating-autoscalable-jobs" class="md-nav__link">
-    Updating Autoscalable Jobs
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
     
@@ -798,41 +837,78 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#horizontal-scaling" class="md-nav__link">
-    Horizontal Scaling
+  <a href="#mantis-job-cluster" class="md-nav__link">
+    Mantis Job Cluster
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#scaling-a-processing-stage-manually" class="md-nav__link">
-    Scaling a Processing Stage Manually
+  <a href="#mantis-jobs" class="md-nav__link">
+    Mantis Jobs
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#setting-an-autoscaling-policy" class="md-nav__link">
-    Setting an Autoscaling Policy
+  <a href="#tasks-worker" class="md-nav__link">
+    Tasks (Worker)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#autoscaling-scenarios" class="md-nav__link">
-    Autoscaling Scenarios
+  <a href="#stages-group-of-workers" class="md-nav__link">
+    Stages (Group of workers)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#updating-autoscalable-jobs" class="md-nav__link">
-    Updating Autoscalable Jobs
+  <a href="#mantis-runtime" class="md-nav__link">
+    Mantis Runtime
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-job" class="md-nav__link">
+    Source Job
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-chaining" class="md-nav__link">
+    Job Chaining
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-query-language-mql" class="md-nav__link">
+    Mantis Query Language (MQL)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-master" class="md-nav__link">
+    Mantis Master
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mantis-api" class="md-nav__link">
+    Mantis API
   </a>
   
 </li>
@@ -853,153 +929,149 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/netflix/mantis/edit/master/docs/autoscaling.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/concepts.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Mantis Job Autoscaling</h1>
-                
-                <p>Mantis provides <a href="../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscaling</a> for the <a href="../glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Cluster</a> and for each <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>. You can define a policy for your
-Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
-the input data they process. </p>
-<p>This provides two benefits:</p>
-<ol>
-<li>You can define Jobs to process data without planning ahead for peak usage.</li>
-<li>Mantis uses cluster resources optimally without leaving resources idle.</li>
-</ol>
-<h2 id="horizontal-scaling">Horizontal Scaling<a class="headerlink" href="#horizontal-scaling" title="Permanent link">&para;</a></h2>
-<p>Your Mantis Jobs are composed of in part of <a href="../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stages</a>, with each stage responsible for a
-different stream processing task. Because different stages may have different computational needs,
-each stage has its own autoscaling policy.</p>
-<p>A Processing Stage is further subdivided into <a href="../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a>. A worker is the smallest unit of work that
-is scheduled. Each worker requests a certain number of CPUs, some amount of memory, and a certain
-amount of network bandwidth.</p>
-<p>When a Processing Stage scales, the number of workers in that stage increases or decreases (the
-resources that Mantis allocates to an individual worker in the stage do not change as a result of
-scaling).</p>
-<h2 id="scaling-a-processing-stage-manually">Scaling a Processing Stage Manually<a class="headerlink" href="#scaling-a-processing-stage-manually" title="Permanent link">&para;</a></h2>
-<p>You may define a Processing Stage as scalable without defining an autoscaling policy for it. In such
-a case the stage is considered <em>manually scalable</em> and you can scale it by means of
-<a href="mantisui">the Mantis UI</a> or the <a href="mantisapi/rest#horizontally-scale-a-stage">Mantis API</a>.</p>
-<h2 id="setting-an-autoscaling-policy">Setting an Autoscaling Policy<a class="headerlink" href="#setting-an-autoscaling-policy" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>You should take care that your autoscaling strategies do not contradict each other. For example,
-if you set a CPU-based strategy and a network-based strategy, one may want to trigger a scale-up
-and the other a scale-down at the same time.</p>
-</div>
-<p>You define the autoscaling policy for a Processing Stage by setting the following parameters:</p>
-<ul>
-<li><strong>Min and Max number of workers</strong> — This sets how many workers Mantis will guarantee to be working
-  within the Processing Stage at any particular time.</li>
-<li><strong>Increment and decrement values</strong> — This indicates how many workers are added to or removed from
-  a stage each time the stage autoscales up or down.</li>
-<li><strong>Cooldown seconds</strong> — This indicates how many seconds to wait after a scaling operation has been
-  completed before beginning another scaling operation.</li>
-<li><strong>Stragtegies</strong> — An autoscaling policy has the following strategy parameters:<ul>
-<li><strong>Type</strong> — CPU, memory, network, or data drop</li>
-<li><strong>Scale down below percentage</strong> — When the average value for all workers falls below this
-  value, the stage will scale down. This value is calculated as actual usage divided by
-  requested amounts (for data drop, as the number of data items dropped divided by the total
-  number of data items, dropped+processed).</li>
-<li><strong>Scale up above percentage</strong> — When the average value for all workers rises above this value,
-  the stage will scale up.</li>
-<li><strong>Rolling count</strong> — This value helps to keep jitter out of the autoscaling process. Instead of
-  scaling immediately the first time values fall outside of the scale-down and scale-up
-  percentage thresholds you define, Mantis will wait until the thresholds are exceeded a certain
-  number of times within a certain window. For example, a rolling count of “6 of 10” means that
-  only if in ten consecutive observations six or more of the observations fall below the
-  scale-down threshold will the stage be scaled down.</li>
-</ul>
-</li>
-</ul>
+                <h1 id="mantis-concepts">Mantis Concepts<a class="headerlink" href="#mantis-concepts" title="Permanent link">&para;</a></h1>
+<p>Mantis provides Stream-processing-As-a-Service. It is a self contained platform that manages all tasks associated
+with running thousands of stream processing jobs. </p>
+<p>Take a look at <a href="../infrastructure/">Infrastructure Overview</a> to get an understanding of the physical components
+of the Mantis Platform.</p>
+<p>Let us walk through some of the key concepts and terminologies used in Mantis.</p>
+<h2 id="mantis-job-cluster">Mantis Job Cluster<a class="headerlink" href="#mantis-job-cluster" title="Permanent link">&para;</a></h2>
+<p><img alt="Job Cluster" src="../images/sharedmresourcecluster.png" /></p>
+<p>A Mantis Job cluster represents metadata (artifact, configuration, resource requirements) associated with a job.
+A job can be thought of as a running instance of Job Cluster (like a Java Object is an instance of a Java class).
+A Job cluster can have 0 or more running instances of a job at any given time. 
+Users can control how many jobs can be running at any given time by specifying the SLA for this cluster. </p>
+<p>E.g
+SLA of Min 1 / Max 1 means there is exactly one instance of job running at any given time.
+Users can also setup a Cron spec that can be used to submit jobs periodically.</p>
+<h2 id="mantis-jobs">Mantis Jobs<a class="headerlink" href="#mantis-jobs" title="Permanent link">&para;</a></h2>
+<p><img alt="Job running" src="../images/sine_job_running.png" /></p>
+<p>At the core of Mantis is the Mantis Job.
+Stream processing applications in Mantis are called Mantis Jobs. 
+Logically a job represents the business logic to transform a stream of events from one or more sources and generate results.
+A developer writes a job using Mantis primitives and builds an artifact which is then deployed into the Mantis platform for
+execution. 
+Each Mantis Job belongs to exactly one Mantis Job Cluster.</p>
+<p>Lets take a closer look at a Mantis Job.</p>
+<h2 id="tasks-worker">Tasks (Worker)<a class="headerlink" href="#tasks-worker" title="Permanent link">&para;</a></h2>
+<p><img alt="worker running" src="../images/sine_worker_running.png" /></p>
+<p>A worker is the smallest unit of execution in Mantis. Physically a worker executes in a resource isolated
+Mesos container on the Mantis Agent fleet of servers. </p>
+<p>Each worker is assigned a unique monotonically increasing <code>MantisWorkerIndex</code> and a unique <code>MantisWorkerNumber</code>
+If a Mantis worker terminates abnormally, Mantis ensures a replacement worker gets launched with the same
+<code>MantisWorkerIndex</code> and a new <code>MantisWorkerNumber</code>. </p>
+<p>The resources like CPU, Memory, Network allocated to a worker are configured at Job submit time and cannot
+be updated later.</p>
+<p>Each Worker belongs to exactly one Mantis Stage.</p>
+<h2 id="stages-group-of-workers">Stages (Group of workers)<a class="headerlink" href="#stages-group-of-workers" title="Permanent link">&para;</a></h2>
+<p>A Mantis job is logically divided into one or more <a href="../writingjobs/stage/">stages</a>. A stage is a collection
+of homogeneous Mantis Workers that perform the same computation. A typical map-reduce style
+job would be represented by three stages in Mantis (shuffle, window/aggregate and collect)</p>
+<p>Workers belonging to a stage establish network connections with all workers of the previous stage (if one exists)
+Workers of the same stage do not connect to each other.</p>
+<p>The presence of multiple stages imply network hops which allows users to distribute the job logic across several workers
+allowing for more scalability.</p>
+<p>Mantis allows each stage to dynamically scale the number of workers in the stage independently with the help of an
+<a href="../autoscaling/">autoscaling</a> policy.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Ideally, there should be zero data drop, so there isn’t an elegant way to express “scale down
-below percentage” for data drop. Specifying “0%” as the “scale down below percentage”
-effectively means the data drop percentage never trigger a scale down. For this reason, it is
-best to use the data drop strategy in conjunction with another strategy that provides the
-scale-down trigger.</p>
+<p>Autoscaling is only recommended on stateless stages. For stateful stages the user would need to implement
+logic to move state to new workers. In cases where the state can be rebuilt rapidly this is not a concern.  </p>
 </div>
-<p>The following example shows how you might establish the autoscaling policy for a stage in the Mantis
-UI:</p>
-<p><img alt="Autoscaling a Stage in the Mantis UI" src="../images/autoscale.png" /></p>
-<p>The illustration above shows a stage with an autoscaling policy that specifies a minimum of 5 and a
-maximum of 20 workers. It uses a single strategy, that of network bandwidth usage.</p>
-<h2 id="autoscaling-scenarios">Autoscaling Scenarios<a class="headerlink" href="#autoscaling-scenarios" title="Permanent link">&para;</a></h2>
-<p>There are four varieties of autoscaling scenarios that you should consider for your Mantis Job:</p>
+<h2 id="mantis-runtime">Mantis Runtime<a class="headerlink" href="#mantis-runtime" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/netflix/mantis">Mantis runtime</a> is execution environment for Mantis Jobs. </p>
+<p>Broadly speaking it covers all aspects of the running a Mantis Job which includes</p>
+<ul>
+<li>Operators based Reactive Extensions used by Jobs to implement their business logic. </li>
+<li>Job topology management which builds and maintains the job execution DAG</li>
+<li>Exchanging control messages with the Mantis Master including heartbeats among other things. </li>
+</ul>
+<h2 id="source-job">Source Job<a class="headerlink" href="#source-job" title="Permanent link">&para;</a></h2>
+<p>A source job is a type of Mantis Job that makes data available to other Mantis Jobs via an <a href="../MQL/">MQL</a> interface.
+Downstream jobs connect to the Sink (Server Sent Event) of the Source job with an MQL query which denotes what data the job is interested in.
+Each event flowing through the Source job is evaluated against these MQL queries.
+Events matching a particular query are then streamed to the corresponding downstream job.</p>
+<p>The source jobs have several advantages</p>
+<ul>
+<li>
+<p><strong>Pluggable source</strong>: By abstracting out where the data is coming from, the source jobs allow the downstream jobs to
+focus on just their processing logic. The same job can then work with data from different sources by simply connecting
+to a different source jobs.
+E.g There can be one source job (say A) backed by a Kafka topic and another backed by S3 (say B)
+and the downstream job can either connect to A or B based on whether they want to process realtime data or historical data.</p>
+</li>
+<li>
+<p><strong>Data re-use</strong>: Often a lot of jobs are interested in data from the same source. Just that they maybe interested
+in different subsets of this data. Instead of each job having to re-fetch the same data again and again from the same external 
+source, The source jobs fetch the data once and then make it available for any other job to use.</p>
+</li>
+<li>
+<p><strong>Cost Efficiency</strong>: A direct consequence of data re-use is fewer resources are required. </p>
+<p>E.g Let us assume there are 3 jobs interested in processing data from the same Kafka topic. But each is interested in different
+subsets of this data. Traditionally, each job would have to read the topic in its entirety and then filter out the 
+data they are not interested in. This means 3x fanout on Kafka, and additionally each job now has to have enough
+resources to process the entire topic. If this topic is high volume then these jobs would have to be sufficiently 
+scaled to keep up. All while throwing away large portions of the data.
+With a source job the Kafka fan out is just 1 and the three downstream jobs need to be scaled just enough to process
+their anticipated subset of the stream.</p>
+</li>
+<li>
+<p><strong>Less operational load</strong>: Source jobs are stateless and thus good candidates for Autoscaling. With autoscaling
+enabled the Mantis administrators do not have to worry about right sizing the resources, the job will just adapt its size
+to meet the demands.</p>
+</li>
+</ul>
+<p>Mantis OSS comes with the following source jobs</p>
 <ol>
 <li>
-<p>The Processing Stage connects to a <a href="../glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold</a>  <a href="../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a>, such as a <a href="../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> topic.</p>
-<p>Autoscaling works well for this type of stage (the initial stage in a Job that connects to the
-Source). For example, if your stage connects to a Kafka source, a change in the number of
-workers in the first stage of your Mantis Job causes the Kafka client to redistribute the
-partitions of the topic among the new number of workers.</p>
+<p><a href="https://github.com/Netflix/mantis-source-jobs/tree/master/kafka-source-job">Kafka Source job</a>: 
+Reads data from one or more Kafka topics and makes it available for downstream consumers to query via MQL.</p>
 </li>
 <li>
-<p>The Processing Stage connects to a hot source, such as a working server.</p>
-<p>The Source stage (stage #1) will have to re-partition the Source servers after an autoscale
-event on the Processing Stage. This is mainly a concern for <a href="../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a>. Upon receipt of a
-modified number of workers, each worker re-partitions the current servers into its own index of
-the new total. This results in a new list of servers to connect to (for both scale up and scale
-down), some of which may be already connected. Making a new connection to a Source server evicts
-any old existing connection from the same Job. This guarantees that no duplicate messages are
-sent to a Mantis Job. (The solution for this scenario is currently in development.)</p>
-<p><span class="tbd">Rewrite this; it’s not very clear.</span></p>
-</li>
-<li>
-<p>The Processing Stage connects to another Mantis Job.</p>
-<p>In this case, the initial Processing Stage in a Job that connects to the output of the previous
-Mantis Job has strong connectivity into the Source Job via the use of Mantis Java client. In suc
-a case, all workers from this Processing Stage connect to all workers of the source Job’s
-<a href="../glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a>. Therefore, autoscaling this type of Job works well. </p>
-</li>
-<li>
-<p>The Processing Stage connects to a previous Processing Stage in the same Mantis Job.</p>
-<p>Each Processing Stage is strongly connected to its previous Processing Stage. Therefore,
-autoscaling of this type typically works well. However, a Processing Stage following a
-<em><a href="../glossary#grouped" title="Grouped data is distinguished from scalar data in that each datum is accompanied by a key that indicates what group it belongs to. Grouped data can be processed by a RxJava GroupedObservable or by a MantisGroup.">grouped</a></em> stage (a Processing Stage that does a <code>group by</code> operation) receives a grouped
-<a href="../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> or <code>MantisGroup</code>. When Mantis scales such a grouped stage, these groups are
-repartitioned on to the new number of workers. The Processing Stage following such a grouped
-stage must, therefore, be prepared to potentially receive a different set of groups after a
-rescale operation.</p>
-<p><span class="tbd">How does a subsequent stage learn that the previous stage has autoscaled?</span></p>
-<p>Note that the number of groups resulting from a <code>group by</code> operation is the maximum limit on the
-number of workers that can be expected to work on such groups (unless a subsequent processing
-stage subdivides those groups). In the following illustrations, a processing stage that does a
-<code>group by</code> operation groups the incoming data into three groups, each one of which is handled by
-a single worker in the subsequent processing stage. When that second stage scales up and adds
-another worker, that worker remains idle and does not assist in processing data because there
-are not enough groups to distribute among the larger number of workers.</p>
-<p><strong>Before autoscaling:</strong>
-<img alt="Before autoscaling" src="../images/scaling_prescale.svg" /></p>
-<p><strong>After autoscaling:</strong>
-<img alt="After autoscaling" src="../images/scaling_postscale.svg" /></p>
+<p><a href="https://github.com/Netflix/mantis-source-jobs/tree/master/publish-source-job">Publish Source Job</a>:
+Works the the mantis-publish library to fetch data on-demand from external applications and make it
+available to downstream consumers. See the <a href="../gettingstarted/samples/publishsample/">Mantis Publish example</a> to see
+this in action.</p>
 </li>
 </ol>
-<h2 id="updating-autoscalable-jobs">Updating Autoscalable Jobs<a class="headerlink" href="#updating-autoscalable-jobs" title="Permanent link">&para;</a></h2>
-<p>To upload a Mantis Job when you have new code to push, upload the <code>.jar</code> or <code>.zip</code> <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact file</a>
-to Mantis, and make any necessary adjustments to its behavior and policies by using the Mantis UI.</p>
-<p>You can also do this in two ways via the Mantis API:</p>
-<ol>
-<li><a href="mantisapi/rest#change-information-about-a-cluster">Update the Job Cluster</a> with a new version
-   for its artifact file along with new scheduling information. This updated JAR and scheduling info
-   are available to use with the next Job submission. However, currently-running Jobs continue to
-   run with whatever artifact file they were started with.</li>
-<li><a href="mantisapi/rest#update-a-clusters-artifacts">Quick update the Job Cluster</a> with only a new
-   artifact file version and submit a new Job with it. The new Job is submitted by using the
-   scheduling info from the last Job submitted. </li>
-</ol>
-<p>The latter of the above two is convenient not only because you provide the minimal information
-needed to update the Job. But, also, because when it picks up the scheduling info from the last Job
-submitted, if it is running, the new Job is started with the same number of workers as the last one.
-That is, if it had scaled up, the new Job starts scaled up as well.</p>
-<!-- Do not edit below this line -->
+<p>Users can also build their own source jobs see the <a href="https://github.com/Netflix/mantis-examples/tree/master/synthetic-sourcejob">Synthetic Source Job</a> example.</p>
+<h2 id="job-chaining">Job Chaining<a class="headerlink" href="#job-chaining" title="Permanent link">&para;</a></h2>
+<p>One of the unique capabilities of Mantis is the ability for Jobs to communicate with each other to form a kind of
+streaming microservices architecture. The Source Job -&gt; Downstream job flow is an example of this Job chaining. 
+In this case the <code>source</code> of the downstream job is the output of the upstream Data source job. 
+All a job needs to do to connect to the sink of another job is to include the in-built <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java">Job Connnector</a></p>
+<p>See the <a href="https://github.com/Netflix/mantis-examples/tree/master/jobconnector-sample">Job Connector Sample</a> to see this in action.</p>
+<p>These job to job communications happen directly via in memory socket connections with no intermediate disk persistence.
+If buffering/persistence of results is desired then it is recommended to sink the data into persistence queue like Kafka using
+the <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-kafka/src/main/java/io/mantisrx/connector/kafka/sink/KafkaSink.java">Kafka Connector</a></p>
+<p>Job chaining has proven to be extremely useful while operating at scale. It is widely used in the Netflix deployment of Mantis.</p>
+<h2 id="mantis-query-language-mql">Mantis Query Language (MQL)<a class="headerlink" href="#mantis-query-language-mql" title="Permanent link">&para;</a></h2>
+<p><a href="../MQL/">MQL</a> is a SQL like language that allows users to work with streaming data without having to write Java code.</p>
+<p>Example MQL query:</p>
+<div class="codehilite"><pre><span></span><span class="k">select</span> * from defaultStream where <span class="nv">status</span><span class="o">==</span><span class="m">500</span>
+</pre></div>
 
-<!-- START -->
 
-<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
-
-<!-- END -->
+<p>MQL is used in various parts of Mantis platform including the mantis-publish library, Source Jobs and sometimes directly
+as a library within a Job that can benefit from the query and aggregation features it brings.</p>
+<h2 id="mantis-master">Mantis Master<a class="headerlink" href="#mantis-master" title="Permanent link">&para;</a></h2>
+<p>The <a href="https://github.com/netflix/mantis-control-plane">Mantis Master</a> is a leader elected control plane for the Mantis platform.
+It is responsible for managing the life cycle of Job Clusters, Jobs and workers. It also acts as a Resource scheduler
+to optimally allocate and schedule resources required by the Jobs. The master stores its meta-data into an external source.
+The OSS version ships with a sample file based store. For production deployments a highly available store is recommended.</p>
+<p>The Master is built using <a href="https://akka.io/">Akka</a> principles, where each Job Cluster, Job etc are modelled as Actors.
+For scheduling of resources Mantis relies on the Mesos Framework
+The Master registers itself as a <a href="https://mesos.apache.org/">Mesos Framework</a>. It receives resource offers from Mesos
+and uses <a href="https://github.com/Netflix/Fenzo/">Fenzo</a> to optimally match tasks to these offers. </p>
+<h2 id="mantis-api">Mantis API<a class="headerlink" href="#mantis-api" title="Permanent link">&para;</a></h2>
+<p>The <a href="../mantisapi/">Mantis API</a> is almost like a traditional API server which proxies request to the Mantis Master. 
+But has additional capabilities like 
+- Allowing users to stream the output of a job via web sockets (/api/v1/jobConnectbyid/jobID API)
+- Acts as a discovery server for Jobs, allowing consumers to get a stream of scheduling information (like host, port for
+workers belonging to a job)</p>
                 
                   
                 
@@ -1020,7 +1092,7 @@ That is, if it had scaled up, the new Job starts scaled up as well.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../MQL/aggregation-scaling-limits/" title="Scaling Limits" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../infrastructure/" title="Infrastructure Overview" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1029,19 +1101,19 @@ That is, if it had scaled up, the new Job starts scaled up as well.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Scaling Limits
+                Infrastructure Overview
               </span>
             </div>
           </a>
         
         
-          <a href="../internals/mre/" title="Publishing Events to Mantis" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../usecases/" title="Use cases" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Publishing Events to Mantis
+                Use cases
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
