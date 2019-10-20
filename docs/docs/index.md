@@ -1,51 +1,61 @@
 # Mantis
 
-Mantis is a platform which helps engineers better understand the behavior of their applications to ensure
-production systems operate with the highest quality. Engineers are able to build applications on top of
-the Mantis platform to quickly identify issues, trigger alerts, and apply remediations to completely
-avoid or minimize downtime. Mantis puts native capabilities in the hands of engineers to minimize the costs of
-operating monitoring systems without having to compromise on required and opportunistic insights.
+## Introduction
+
+Mantis is a platform to build an ecosystem of realtime stream processing applications.
+
+Similar to micro-services deployed in a cloud. Mantis applications (jobs) are deployed on the Mantis platform.
+The Mantis platform provides the APIs to manage the life cycle of jobs (like deploy, update and terminate), manages the underlying
+resources by containerizing a common pool of servers and similar to a traditional micro-service cloud allows jobs to discover and communicate with
+other jobs.
+
+By providing stream processing As-a-Service, Mantis allows developers to simply focus on their business logic to build powerful and
+cost-effective streaming applications. 
+
+## Why we built Mantis?
+
+Mantis evolved from the need to get better (faster and in-depth) operational insights in a rapidly growing complex micro-service ecosystem at Netflix. 
+
+![understanding-complexity](./images/understand-complexity.png)
+
+As complexity of a system increases, our comprehension of the system rapidly decreases. In order to counter this complexity we need newer approaches to
+operational insights.
+
+We need to change the way we **generate and collect** operational data:
+
+- **We should have access to raw events.** Applications should be free to publish every single event. If we reduce the granularity at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.
+- **We should be able to access this data in realtime.** Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.
+- **We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.** It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.
+ 
+We need a new kind of **execution environment**:
+ 
+- **Can Process high volume data at low latency**  
+- **Has low Operational burden** We need a managed platform where most of the operational tasks are handled automatically on behalf of the user. We don't need the additional overhead of operating our monitoring system.
+- **Is Elastic and Resilient** We need a highly reliable system that can automatically recover from node failures and be able to scale the resources dynamically based on the data volume.
+- **Ecosystem of Streaming services** A lot of use-cases often need the same data, Allowing jobs to discover each other and collaborate together by sharing data and results we can build cost-effective jobs that maximise code and data re-use.  
+    
+We should be able to do all of the above in a *cost-effective way*. As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.
+
+Mantis was built to meet all the above needs.
 It was [designed by Netflix](https://medium.com/netflix-techblog/stream-processing-with-mantis-78af913f51a6).
 
-## Guiding Principles Behind Building Mantis
+## How can Mantis be used ?
 
-The following are the guiding principles behind building Mantis:
+Mantis provides a robust, scalable platform that is ideally suited for high volume, low latency use cases like 
+anomaly detection and alerting. 
 
-1. **We should have access to raw events.** Applications that publish events into Mantis should be free to publish every single event. If we reduce the dataset at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.
-1. **We should be able to access this data in realtime.** Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.
-1. **We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.** It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.
-1. **We should be able to do all of the above in a cost-effective way.** As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.
+Mantis has been in production at Netflix since 2014. It processes trillions of events and peta-bytes of data every day.
 
-## Major Components of Mantis
+As a streaming microservices ecosystem, the Mantis platform provides engineers with capabilities to minimize 
+the costs of observing and operating complex distributed systems without compromising on operational insights. 
+Engineers have built cost-efficient real-time applications on top of Mantis to quickly identify issues, trigger alerts, 
+and apply remediations to minimize or completely avoid downtime to the Netflix service.
 
-There are the major components of Mantis:
-
-1. [Runtime (this repo)](https://github.com/netflix/mantis)
-1. [Control Plane](https://github.com/netflix/mantis-control-plane)
-1. [Publisher Client](https://github.com/netflix/mantis-publish)
-1. [Source Jobs](https://github.com/netflix/mantis-source-jobs)
-1. [Connectors](https://github.com/netflix/mantis-connectors)
-1. [Mantis Query Language (MQL)](https://github.com/netflix/mantis-mql)
-1. Job Chaining
-1. Autoscaling
-
-At the edge, we have services such as stateless APIs or stateful data pipelines. These services are instrumented with a Mantis Publisher client which enables developers to send events from their services into Mantis.
-
-Within the Mantis infrastructure there are two fundamental processing components: Mantis Jobs and Source Jobs.
-
-Mantis Jobs process events one at a time and can perform various operations on an event stream such as windowing, grouping, aggregations, and other transformations. Source Jobs are a special type of Mantis Job which are used to subscribe to services publishing events into Mantis on demand.
-
-Source Jobs then make the data available for downstream subscriptions in a cost-effective way.
-
-To make subscriptions easy to understand, we also developed an SQL-like event stream query language called the Mantis Query Language (MQL) which gives users the ability to ask broad questions against data in these events streams. Although subscriptions may come directly from users, subscriptions may also come from other Mantis Jobs as Mantis supports Job Chaining. In fact, all Jobs can subscribe to any Job within Mantis.
-
-Mantis Jobs connect to one another through source and sink Connectors. Mantis Jobs can use connectors to move data to and from other Mantis Jobs or systems external to Mantis such as Kafka, S3, and Hive.
-
-Lastly, Mantis treats autoscaling as a first class citizen in the infrastructure. Mantis Jobs leverage Mantis' built in autoscaling mechanism to relieve operation overhead from running large or complex Mantis Jobs.
 
 ## Next Steps
  
-To learn more about Mantis, visit the [Getting Started guide](gettingstarted) or check out the [Infrastructure Overview](infrastructure).
+To learn more about Mantis, visit the [Getting Started guide](gettingstarted) or check out the [Concepts overview](concepts.md) or
+browse through the list of [use cases](usecases.md) powered by Mantis.
 To get involved with community, visit the [Community page](community) where you can subscribe to one of our mailing lists.
 For a detailed Programming Guide on writing Mantis Jobs, refer to the [Writing Mantis Jobs](writingjobs) chapters.
 

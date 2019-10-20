@@ -19,19 +19,44 @@ you can freely produce events without incurring the cost until an active subscri
 To add this library to your application, include [mantis-publish-netty](https://search.maven.org/search?q=a:mantis-publish-netty)
 in your application’s dependencies.
 
+```bash
+compile 'io.mantisrx:mantis-publish-netty:1.2.+'
+```
+
+If your application is guice enabled you can do the following
+```bash
+compile 'io.mantisrx:mantis-publish-netty-guice:1.2.+'
+```
+!!! note
+    A spring based module is coming soon.
+
 ## How to Stream Events Into Mantis
 
-If your application wants to stream events into Mantis, you can use the Mantis Publish library directly by
-instantiating a `MantisEventPublisher` in your application code. In order to create a `MantisEventPublisher`,
+### Setting up the client.
+To stream events into Mantis
+
+***Without dependency injection***:
+
+Directly instantiate a `MantisEventPublisher` in your application code. In order to create a `MantisEventPublisher`,
 you will have to inject a few parameters. An example of which parameters are required and how to inject them
 can be found in [here](https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java).
+Next, you must use the `MrePublishClientInitializer` class and call `MrePublishClientInitializer#start` to start all
+the underlying components
 
-Once injected, either manually via constructor or an injection framework such as Guice or Spring,
-you must use the `MrePublishClientInitializer` class and call `MrePublishClientInitializer#start` to start all
-the underlying components. From there, you can get an event publisher by calling `MrePublishClientInitializer#getEventPublisher`.
-An example of this can be found [here](https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java#L123-L133).
+***With Guice***:
 
-Then, for each event your application generates, create a `Event` object with your desired event fields,
+Inject the `MantisRealtimeEventsPublishModule` into your application.
+In addition to injecting `MantisRealtimeEventsPublishModule` you will also need to add the 
+`ArchaiusModule` and the `SpectatorModule` if not already injected.
+```java
+    Injector injector = Guice.createInjector(new BasicModule(), new ArchaiusModule(),
+                new MantisRealtimeEventsPublishModule(), new SpectatorModule());
+```
+
+Once injected, either manually via constructor or an injection framework such as Guice or Spring, the mantis-publish
+library is ready for use.
+
+For each event your application wishes to send to Mantis, create a `Event` object with your desired event fields,
 and pass that `Event` to the `MantisEventPublisher#publish` method. For example:
 
 ```java hl_lines="9 18"
@@ -44,6 +69,23 @@ event.set("testKey", "testValue");
 // if a subscription with a matching MQL query exists.
 eventPublisher.publish(event);
 ```
+
+### Configuring where to send data
+
+We need to configure the location of the Mantis API server for the mantis-publish library to bootstrap
+
+Add the following properties to your `application.properties`
+
+```bash
+mantis.publish.discovery.api.hostname=<IP of Mantis API>
+
+# mantis api port
+mantis.publish.discovery.api.port=<port for Mantis API>
+
+# This application's name
+mantis.publish.app.name=JavaApp
+``` 
+
 
 ## The Runtime Flow of Mantis Publish
 

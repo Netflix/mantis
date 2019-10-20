@@ -39,8 +39,8 @@ services:
       - mesos-master
     environment:
       JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dmantis.zookeeper.connectString=zookeeper:2181 -Dmesos.master.location=mesos-master:5050 -Dmantis.master.exit.on.losing.leader=false"
-   # volumes:
-   #       - ./localdev/conf/:/apps/mantis/mantis-control-plane-server/localconf/
+    volumes:
+          - ./localdev/conf/:/apps/mantis/mantis-control-plane-server/localconf/
     networks:
       mantis_net:
         ipv4_address: 172.16.186.5
@@ -62,8 +62,8 @@ services:
         --attributes="region:laptop;asg:mantisagent-laptop-v001;stack:laptop;zone:laptopd;itype:macbook.pro;cluster:mantisagent-laptop;id:l-deadbeef;res:ResourceSet-ENIs-7-29"
     depends_on:
       - zookeeper
-#    volumes:
-#      - ./localdev/conf/:/mnt/local/mantisWorkerInstall/jobs/
+    volumes:
+      - ./localdev/conf/:/mnt/local/mantisWorkerInstall/jobs/
 #      - ./mantis-server/mantis-server-worker/src/main/resources/startup_docker.sh:/mnt/local/mantisWorkerInstall/bin/startup_docker.sh
     networks:
       mantis_net:
