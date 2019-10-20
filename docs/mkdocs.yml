@@ -2,6 +2,7 @@ site_name: Mantis
 nav:
   - 'Welcome to Mantis': 'index.md'
   - 'Getting Started':
+    - 'Getting Started Guide' : 'gettingstarted/index.md'
     - 'Explore a Mantis Job locally': 'gettingstarted/local.md'
     - 'Mantis Cluster using Docker': 'gettingstarted/docker.md'
     - 'Mantis Cluster in the cloud': 'gettingstarted/cloud.md'
