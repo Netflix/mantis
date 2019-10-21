@@ -19,7 +19,7 @@ As Netflix has grown over the years so has the number of microservices. Getting 
 is often not sufficient to root-cause issues. Engineers need to understand what is happening with downstream and upstream services
 as well to be able to quickly narrow down the root of the issue.
 
-The [Contextual alerting application](https://docs.google.com/document/d/1Wcymyg-in-17bV_BD6pVKPnP-R3Q-l63TZBIwag2Kbg/edit#) analyzes millions of interactions between dozens of Netflix microservices in realtime to 
+The [Contextual alerting application](https://www.youtube.com/watch?v=6UwcqiNsZ8U) analyzes millions of interactions between dozens of Netflix microservices in realtime to 
 identify anomalies and provide operators with rich and relevant context. 
 The realtime nature of these Mantis-backed aggregations allows the Mean-Time-To-Detect to be cut down from tens of minutes to a few seconds. 
 Given the scale of Netflix this makes a huge impact.
@@ -31,7 +31,7 @@ is green. In such cases there is a need to explore events associated with the us
 a smoking gun. With the potential of a user request landing across thousands of servers it is often a laborious task
 to find the right servers and inspect their logs.
 
-The [Raven](https://docs.google.com/document/d/1Wcymyg-in-17bV_BD6pVKPnP-R3Q-l63TZBIwag2Kbg/edit#) applications makes this task trivial, The raven jobs work with the mantis-publish library to _look_ for events
+The [Raven](https://www.youtube.com/watch?v=uODxUJ5Jwis) applications makes this task trivial, The raven jobs work with the mantis-publish library to _look_ for events
 matching a certain criterion (user-id/device-id etc) right at the server and stream matching results in realtime.
 It provides an intuitive UI that allows SREs to construct and submit simple MQL queries. 
 
