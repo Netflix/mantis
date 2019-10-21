@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
     
     
       
@@ -251,22 +251,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    Introduction
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#why-we-built-mantis" class="md-nav__link">
-    Why we built Mantis?
+    Why We Built Mantis
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#how-can-mantis-be-used" class="md-nav__link">
-    How can Mantis be used ?
+    How Can Mantis Be Used?
   </a>
   
 </li>
@@ -850,22 +843,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    Introduction
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#why-we-built-mantis" class="md-nav__link">
-    Why we built Mantis?
+    Why We Built Mantis
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#how-can-mantis-be-used" class="md-nav__link">
-    How can Mantis be used ?
+    How Can Mantis Be Used?
   </a>
   
 </li>
@@ -897,36 +883,35 @@
                 
                 
                 <h1 id="mantis">Mantis<a class="headerlink" href="#mantis" title="Permanent link">&para;</a></h1>
-<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Mantis is a platform to build an ecosystem of realtime stream processing applications.</p>
-<p>Similar to micro-services deployed in a cloud. Mantis applications (jobs) are deployed on the Mantis platform.
-The Mantis platform provides the APIs to manage the life cycle of jobs (like deploy, update and terminate), manages the underlying
-resources by containerizing a common pool of servers and similar to a traditional micro-service cloud allows jobs to discover and communicate with
+<p>Similar to micro-services deployed in a cloud, Mantis applications (jobs) are deployed on the Mantis platform.
+The Mantis platform provides the APIs to manage the life cycle of jobs (like deploy, update, and terminate), manages the underlying
+resources by containerizing a common pool of servers, and, similar to a traditional micro-service cloud, allows jobs to discover and communicate with
 other jobs.</p>
 <p>By providing stream processing As-a-Service, Mantis allows developers to simply focus on their business logic to build powerful and
 cost-effective streaming applications. </p>
-<h2 id="why-we-built-mantis">Why we built Mantis?<a class="headerlink" href="#why-we-built-mantis" title="Permanent link">&para;</a></h2>
-<p>Mantis evolved from the need to get better (faster and in-depth) operational insights in a rapidly growing complex micro-service ecosystem at Netflix. </p>
+<h2 id="why-we-built-mantis">Why We Built Mantis<a class="headerlink" href="#why-we-built-mantis" title="Permanent link">&para;</a></h2>
+<p>Mantis evolved from the need to get better (faster and in-depth) operational insights in a rapidly growing, complex, micro-service ecosystem at Netflix. </p>
 <p><img alt="understanding-complexity" src="images/understand-complexity.png" /></p>
-<p>As complexity of a system increases, our comprehension of the system rapidly decreases. In order to counter this complexity we need newer approaches to
+<p>As complexity of a system increases, our comprehension of the system rapidly decreases. In order to counter this complexity we need new approaches to
 operational insights.</p>
 <p>We need to change the way we <strong>generate and collect</strong> operational data:</p>
 <ul>
-<li><strong>We should have access to raw events.</strong> Applications should be free to publish every single event. If we reduce the granularity at this stage, such as pre-aggregating or sampling, then we're already at a disadvantage when it comes to getting insight since the data in its original form is already lost.</li>
-<li><strong>We should be able to access this data in realtime.</strong> Operational use cases are inherently time sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.</li>
-<li><strong>We should be able to ask new questions of this data without necessarily having to add new instrumentation to your applications.</strong> It's not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it's important that we can derive new insights with this data.</li>
+<li><strong>We should have access to raw events.</strong> Applications should be free to publish every single event. If we reduce the granularity at this stage, such as by pre-aggregating or sampling, then we’re already at a disadvantage when it comes to getting insight since the data in its original form is already lost.</li>
+<li><strong>We should be able to access this data in realtime.</strong> Operational use cases are inherently time-sensitive by nature. This becomes increasingly important with scale as the impact becomes much larger in less time.</li>
+<li><strong>We should be able to ask new questions of this data without necessarily having to add new instrumentation to our applications.</strong> It’s not possible to know ahead of time every single possible failure mode our systems might encounter despite all the rigor built in to make these systems resilient. When these failures do inevitably occur, it’s important that we can derive new insights with this data.</li>
 </ul>
 <p>We need a new kind of <strong>execution environment</strong>:</p>
 <ul>
 <li><strong>Can Process high volume data at low latency</strong>  </li>
-<li><strong>Has low Operational burden</strong> We need a managed platform where most of the operational tasks are handled automatically on behalf of the user. We don't need the additional overhead of operating our monitoring system.</li>
+<li><strong>Has low Operational burden</strong> We need a managed platform where most of the operational tasks are handled automatically on behalf of the user. We don’t need the additional overhead of operating our monitoring system.</li>
 <li><strong>Is Elastic and Resilient</strong> We need a highly reliable system that can automatically recover from node failures and be able to scale the resources dynamically based on the data volume.</li>
-<li><strong>Ecosystem of Streaming services</strong> A lot of use-cases often need the same data, Allowing jobs to discover each other and collaborate together by sharing data and results we can build cost-effective jobs that maximise code and data re-use.  </li>
+<li><strong>Ecosystem of Streaming services</strong> A lot of use-cases often need the same data. By allowing jobs to discover each other and collaborate together by sharing data and results we can build cost-effective jobs that maximise code and data re-use.  </li>
 </ul>
-<p>We should be able to do all of the above in a <em>cost-effective way</em>. As our business critical systems scale, we need to make sure the systems in support of these business critical systems don't end up costing more than the business critical systems themselves.</p>
+<p>We should be able to do all of the above in a <em>cost-effective way</em>. As our business critical systems scale, we need to make sure the systems in support of these business critical systems don’t end up costing more than the business critical systems themselves.</p>
 <p>Mantis was built to meet all the above needs.
 It was <a href="https://medium.com/netflix-techblog/stream-processing-with-mantis-78af913f51a6">designed by Netflix</a>.</p>
-<h2 id="how-can-mantis-be-used">How can Mantis be used ?<a class="headerlink" href="#how-can-mantis-be-used" title="Permanent link">&para;</a></h2>
+<h2 id="how-can-mantis-be-used">How Can Mantis Be Used?<a class="headerlink" href="#how-can-mantis-be-used" title="Permanent link">&para;</a></h2>
 <p>Mantis provides a robust, scalable platform that is ideally suited for high volume, low latency use cases like 
 anomaly detection and alerting. </p>
 <p>Mantis has been in production at Netflix since 2014. It processes trillions of events and peta-bytes of data every day.</p>
@@ -935,7 +920,7 @@ the costs of observing and operating complex distributed systems without comprom
 Engineers can build cost-efficient real-time applications on top of Mantis to quickly identify issues, trigger alerts, 
 and apply remediations to minimize or completely avoid downtime to the Netflix service.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
-<p>To learn more about Mantis, visit the <a href="gettingstarted">Getting Started guide</a> or check out the <a href="concepts/">Concepts overview</a> or
+<p>To learn more about Mantis, visit the <a href="gettingstarted/local">Getting Started guide</a> or check out the <a href="concepts/">Concepts overview</a> or
 browse through the list of <a href="usecases/">use cases</a> powered by Mantis.
 To get involved with community, visit the <a href="community">Community page</a> where you can subscribe to one of our mailing lists.
 For a detailed Programming Guide on writing Mantis Jobs, refer to the <a href="writingjobs">Writing Mantis Jobs</a> chapters.</p>
@@ -1010,7 +995,7 @@ For a detailed Programming Guide on writing Mantis Jobs, refer to the <a href="w
       
     </div>
     
-      <script src="assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="assets/javascripts/application.c648116f.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"."}})</script>
       
