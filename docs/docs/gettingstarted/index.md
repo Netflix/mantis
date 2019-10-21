@@ -8,9 +8,9 @@ There is no one best way of getting started with Mantis here are a few things to
 - Setup the Mantis platform on [AWS](cloud.md)
 - Visit the [FAQ](../faq.md)
 - Checkout job writing tutorials
-   - Write a [word count](../writingjobs/wordcount.md) job.
-   - Extend word count to process a twitter stream [Twitter word count](../writingjobs/twitter.md).
-   - Learn to write a [scalable aggregate/groupby](../writingjobs/groupby.md) job.
+    - Write a [word count](../writingjobs/wordcount.md) job.
+    - Extend word count to process a twitter stream [Twitter word count](../writingjobs/twitter.md).
+    - Learn to write a [scalable aggregate/groupby](../writingjobs/groupby.md) job.
 - Dig deeper into [writing jobs](../writingjobs/index.md)
 
  
