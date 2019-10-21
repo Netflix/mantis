@@ -4,6 +4,10 @@
 [![OSS Lifecycle](https://img.shields.io/osslifecycle/Netflix/mantis.svg)](https://github.com/Netflix/mantis)
 [![License](https://img.shields.io/github/license/Netflix/mantis.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
+## Mantis Documentation
+
+Checkout the [documentation](https://netflix.github.io/mantis/) 
+
 ## Mantis Components
 
 1. [Runtime (this repo)](https://github.com/netflix/mantis)
