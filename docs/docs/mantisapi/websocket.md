@@ -3,7 +3,7 @@ Some desktops have trouble dealing with [SSE]. In such a case you can use [WebSo
 a [Job] (other API features are only available via the Mantis REST API).
 
 The WebSocket API runs from the same servers as the Mantis REST API, and you can reach it by using
-the `ws://` or `wss://` protocol and port 7102.
+the `ws://` protocol on port 7102 or the `wss://` protocol on port 7103.
 
 ## Connecting to Job Output (Sink)
 
