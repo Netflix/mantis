@@ -1,6 +1,10 @@
 language: java
 dist: bionic
 jdk: openjdk13
+arch:
+ - amd64
+ - arm64
+
 install: "./installViaTravis.sh"
 script: "./buildViaTravis.sh"
 cache:
