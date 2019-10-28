@@ -6,7 +6,7 @@ JDK 8 or higher
 
 ## Build and run the synthetic-sourcejob sample
 
-Clone the mantis-examples repo
+Clone the mantis-examples repo:
 
 ```bash
 $ git clone https://github.com/Netflix/mantis-examples.git
@@ -67,7 +67,7 @@ data: {"country":"Liberia","mantis.meta.sourceName":"SyntheticRequestSource","ma
 Next Steps
 
 * Import the project into your IDE to explore the code.
-* Try out other samples from the [Mantis examples repository](https://github.com/netflix/mantis-examples)
-* [Setup Mantis locally using Docker](docker.md) and run the samples
-* [Setup Mantis in AWS](cloud.md) and run the samples
-* Learn to write your own Mantis Jobs
+* Try out other samples from the [Mantis examples repository](https://github.com/netflix/mantis-examples).
+* [Set up Mantis locally using Docker](docker.md) and run the samples.
+* [Set up Mantis in AWS](cloud.md) and run the samples.
+* Learn to write your own Mantis Jobs.
