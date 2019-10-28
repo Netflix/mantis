@@ -1,9 +1,11 @@
 language: java
-dist: bionic
-jdk: openjdk13
-arch:
- - amd64
- - arm64
+
+jobs:
+  include:
+    - jdk: openjdk8
+    - jdk: openjdk8
+      arch: arm64
+    - jdk: openjdk13
 
 install: "./installViaTravis.sh"
 script: "./buildViaTravis.sh"
