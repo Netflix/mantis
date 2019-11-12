@@ -25,9 +25,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.netflix.archaius.DefaultPropertyFactory;
@@ -66,7 +64,11 @@ class EventProcessorTest {
     @Test
     void shouldReturnEnrichedEventForStream() throws Exception {
         when(streamManager.hasSubscriptions(anyString())).thenReturn(true);
-        Subscription subscription = new MQLSubscription("id", "select * where true");
+        SettableConfig config = new DefaultSettableConfig();
+        PropertyRepository repository =
+                DefaultPropertyFactory.from(config);
+        MrePublishConfiguration mrePublishConfiguration = new SampleArchaiusMrePublishConfiguration(repository);
+        Subscription subscription = new MQLSubscription("id", "select * where true", mrePublishConfiguration);
         Set<Subscription> subscriptions = new ConcurrentSkipListSet<>();
         subscriptions.add(subscription);
         when(streamManager.getStreamSubscriptions(anyString())).thenReturn(subscriptions);
@@ -75,7 +77,11 @@ class EventProcessorTest {
         event.set("k1", "v1");
         Event actual = eventProcessor.process(StreamType.DEFAULT_EVENT_STREAM, event);
         // Single event with a `select * where true` yields the single event.
-        assertEquals(event, actual);
+        assertEquals(actual.get("mantisStream"), StreamType.DEFAULT_EVENT_STREAM);
+        assertEquals(actual.get("type"), "EVENT");
+        assertEquals(actual.get("k1"), "v1");
+        assertEquals(((ArrayList)actual.get("matched-clients")).size(), 1);
+        assertEquals(((ArrayList)actual.get("matched-clients")).get(0), "id");
     }
 
     @Test
@@ -103,7 +109,7 @@ class EventProcessorTest {
         Map<String, Object> data = new HashMap<>();
         data.put("param.password", "hunter2");
         data.put("myname", "mantis");
-        Event re = new Event(data);
+        Event re = new Event(data, true);
 
         eventProcessor.maskSensitiveFields(re);
         assertSame("***", re.get("param.password"));

@@ -31,6 +31,7 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
 
     public static final String PROP_PREFIX = "mantis.publish";
     public static final String PUBLISH_JOB_CLUSTER_PROP_PREFIX = PROP_PREFIX + ".jobcluster.";
+    public static final String DEEPCOPY_EVENT_MAP_ENABLED_PROP = PROP_PREFIX + ".deepcopy.eventmap.enabled";
     public static final String MRE_CLIENT_ENABLED_PROP = PROP_PREFIX + ".enabled";
     public static final String MRE_CLIENT_APP_NAME_PROP = PROP_PREFIX + ".app.name";
     public static final String MRE_CLIENT_TEE_ENABLED_PROP = PROP_PREFIX + "tee.enabled";
@@ -81,6 +82,7 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
     private final Property<Integer> ioThreads;
     private final Property<Integer> compressionThreads;
 
+    private final Property<Boolean> deepCopyEventMapEnabled;
     private final Property<Boolean> mreClientEnabled;
     private final Property<String> appName;
     private final Property<Boolean> mreClientTeeEnabled;
@@ -140,6 +142,9 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
         this.maxSubscriptionCount =
                 propertyRepository.get(MAX_SUBSCRIPTIONS_COUNT_PROP, Integer.class)
                         .orElse(20);
+        this.deepCopyEventMapEnabled =
+                propertyRepository.get(DEEPCOPY_EVENT_MAP_ENABLED_PROP, Boolean.class)
+                                  .orElse(true);
 
         jobClusterByStreamType.put(StreamType.DEFAULT_EVENT_STREAM, propRepo.get(PUBLISH_JOB_CLUSTER_PROP_PREFIX + StreamType.DEFAULT_EVENT_STREAM, String.class)
                 .orElse("SharedMrePublishEventSource"));
@@ -245,6 +250,11 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
     @Override
     public int maxSubscriptionCount() {
         return maxSubscriptionCount.get();
+    }
+
+    @Override
+    public boolean isDeepCopyEventMapEnabled() {
+        return deepCopyEventMapEnabled.get();
     }
 
     @Override

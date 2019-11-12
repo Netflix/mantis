@@ -70,6 +70,8 @@ public interface MrePublishConfiguration {
 
     int jobClusterMappingRefreshIntervalSec();
 
+    boolean isDeepCopyEventMapEnabled();
+
     /**
      * Discovery API hostname to
      * - retrieve Job Cluster configured to receive events from this MRE publish client

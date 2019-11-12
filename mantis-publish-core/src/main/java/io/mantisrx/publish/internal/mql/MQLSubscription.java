@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import io.mantisrx.mql.jvm.core.Query;
 import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ public class MQLSubscription implements Subscription, Comparable {
     protected final Query query;
     private AtomicBoolean matcherErrorLoggingEnabled;
     private AtomicBoolean projectorErrorLoggingEnabled;
+    private MrePublishConfiguration configuration;
 
     private ConcurrentHashMap<
             HashSet<Query>,
@@ -49,11 +51,12 @@ public class MQLSubscription implements Subscription, Comparable {
                     Map<String, Object>,
                     Map<String, Object>>> superSetProjectorCache;
 
-    public MQLSubscription(String subId, String criterion) {
+    public MQLSubscription(String subId, String criterion, MrePublishConfiguration configuration) {
         this.superSetProjectorCache = new ConcurrentHashMap<>();
         this.matcherErrorLoggingEnabled = new AtomicBoolean(true);
         this.projectorErrorLoggingEnabled = new AtomicBoolean(true);
         this.query = MQL.query(subId, MQL.preprocess(criterion));
+        this.configuration = configuration;
     }
 
     private Map<String, Object> projectSuperSet(
@@ -85,7 +88,7 @@ public class MQLSubscription implements Subscription, Comparable {
         }
 
         try {
-            return new Event(projectSuperSet(queries, event.getMap()));
+            return new Event(projectSuperSet(queries, event.getMap()), configuration != null ? configuration.isDeepCopyEventMapEnabled() : true);
         } catch (Exception e) {
             if (projectorErrorLoggingEnabled.get()) {
                 LOG.error("MQL projector produced an exception on queries: {}\ndatum: {}.",

@@ -17,6 +17,7 @@
 package io.mantisrx.publish.core;
 
 import io.mantisrx.publish.MantisEventPublisher;
+import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.mql.MQLSubscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +42,9 @@ public class SubscriptionFactory {
      *
      * @return An Optional instance implementing {@link Subscription} for use with the {@link MantisEventPublisher}, empty Optional if the criterion is invalid.
      */
-    public static Optional<Subscription> getSubscription(String id, String criterion) {
+    public static Optional<Subscription> getSubscription(String id, String criterion, MrePublishConfiguration mrePublishConfiguration) {
         try {
-            MQLSubscription mqlSubscription = new MQLSubscription(id, criterion);
+            MQLSubscription mqlSubscription = new MQLSubscription(id, criterion, mrePublishConfiguration);
             return ofNullable(mqlSubscription);
         } catch (Throwable t) {
             LOG.info("Failed to get Subscription object for {} {}", id, criterion, t);

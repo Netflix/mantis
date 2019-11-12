@@ -80,7 +80,7 @@ public class MantisEventPublisherTest {
     }
 
     private Event testEvent() {
-        return new Event(new HashMap<>(Collections.singletonMap("k", "v")));
+        return new Event(new HashMap<>(Collections.singletonMap("k", "v")), true);
     }
 
     @Test
