@@ -42,7 +42,7 @@ public class Event {
     }
 
     public Event(Map<String, Object> attributes) {
-        this(attributes, true);
+        this(attributes, false);
     }
 
     public Event(Map<String, Object> attributes, boolean deepCopy) {

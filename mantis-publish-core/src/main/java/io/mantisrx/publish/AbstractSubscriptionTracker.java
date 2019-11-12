@@ -69,7 +69,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         prevSubsNotInCurr.removeAll(curr);
         prevSubsNotInCurr.stream().forEach(subToRemove -> {
             try {
-                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToRemove.getSubscriptionId(), subToRemove.getQuery(), mrePublishConfiguration);
+                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToRemove.getSubscriptionId(), subToRemove.getQuery());
                 if (subscription.isPresent()) {
                     streamManager.removeStreamSubscription(subscription.get());
                 } else {
@@ -86,7 +86,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         currSubsNotInPrev.removeAll(prev);
         currSubsNotInPrev.stream().forEach(subToAdd -> {
             try {
-                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToAdd.getSubscriptionId(), subToAdd.getQuery(), mrePublishConfiguration);
+                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToAdd.getSubscriptionId(), subToAdd.getQuery());
                 if (subscription.isPresent()) {
                     streamManager.addStreamSubscription(subscription.get());
                 } else {

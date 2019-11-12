@@ -68,7 +68,7 @@ class EventProcessorTest {
         PropertyRepository repository =
                 DefaultPropertyFactory.from(config);
         MrePublishConfiguration mrePublishConfiguration = new SampleArchaiusMrePublishConfiguration(repository);
-        Subscription subscription = new MQLSubscription("id", "select * where true", mrePublishConfiguration);
+        Subscription subscription = new MQLSubscription("id", "select * where true");
         Set<Subscription> subscriptions = new ConcurrentSkipListSet<>();
         subscriptions.add(subscription);
         when(streamManager.getStreamSubscriptions(anyString())).thenReturn(subscriptions);
@@ -109,7 +109,7 @@ class EventProcessorTest {
         Map<String, Object> data = new HashMap<>();
         data.put("param.password", "hunter2");
         data.put("myname", "mantis");
-        Event re = new Event(data, true);
+        Event re = new Event(data);
 
         eventProcessor.maskSensitiveFields(re);
         assertSame("***", re.get("param.password"));

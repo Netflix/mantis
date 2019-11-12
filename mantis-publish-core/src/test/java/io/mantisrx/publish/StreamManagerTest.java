@@ -72,7 +72,7 @@ class StreamManagerTest {
         final String streamName = StreamType.DEFAULT_EVENT_STREAM;
 
         Optional<Subscription> subscriptionO =
-                SubscriptionFactory.getSubscription("subId1", "false", null);
+                SubscriptionFactory.getSubscription("subId1", "false");
 
         assertTrue(subscriptionO.isPresent());
         streamManager.addStreamSubscription(subscriptionO.get());
@@ -92,7 +92,7 @@ class StreamManagerTest {
 
     @Test
     void testInvalidSubscription() {
-        Optional<Subscription> subscriptionO = SubscriptionFactory.getSubscription("subId1", "SELECT * FROM stream WHERE true SAMPLE {\\\"strategy\\\":\\\"RANDOM\\\", \\\"threshold\\\":200}", null);
+        Optional<Subscription> subscriptionO = SubscriptionFactory.getSubscription("subId1", "SELECT * FROM stream WHERE true SAMPLE {\\\"strategy\\\":\\\"RANDOM\\\", \\\"threshold\\\":200}");
         assertFalse(subscriptionO.isPresent());
     }
 
@@ -104,7 +104,7 @@ class StreamManagerTest {
 
         // add subscription
         Optional<Subscription> subscriptionO = SubscriptionFactory
-                .getSubscription("subId2", "SELECT a,b FROM " + streamName, null);
+                .getSubscription("subId2", "SELECT a,b FROM " + streamName);
         assertTrue(subscriptionO.isPresent());
 
         streamManager.addStreamSubscription(subscriptionO.get());
@@ -139,7 +139,7 @@ class StreamManagerTest {
 
         // add subscription
         Optional<Subscription> subscriptionO = SubscriptionFactory
-                .getSubscription("subId2", "SELECT a,b FROM " + streamName, null);
+                .getSubscription("subId2", "SELECT a,b FROM " + streamName);
         assertTrue(subscriptionO.isPresent());
 
         streamManager.addStreamSubscription(subscriptionO.get());
@@ -158,7 +158,7 @@ class StreamManagerTest {
 
         // add subscription with duplicate subscriptionId should replace old subscription
         Optional<Subscription> subscriptionO2 = SubscriptionFactory
-                .getSubscription("subId2", "SELECT a,b,c FROM " + streamName, null);
+                .getSubscription("subId2", "SELECT a,b,c FROM " + streamName);
         assertTrue(subscriptionO2.isPresent());
 
         streamManager.addStreamSubscription(subscriptionO2.get());
@@ -195,7 +195,7 @@ class StreamManagerTest {
         // add subscription
         final String subId = "subId3";
         Optional<Subscription> subscriptionO = SubscriptionFactory
-                .getSubscription(subId, "SELECT * FROM " + streamName, null);
+                .getSubscription(subId, "SELECT * FROM " + streamName);
         assertTrue(subscriptionO.isPresent());
 
         streamManager.addStreamSubscription(subscriptionO.get());
