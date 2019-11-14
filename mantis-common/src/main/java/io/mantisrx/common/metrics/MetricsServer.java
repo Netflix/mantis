@@ -151,7 +151,8 @@ public class MetricsServer {
                                     logger.error("Failed to map metrics to JSON", e);
                                 }
                                 if (event != null) {
-                                    return response.writeAndFlush(event);
+                                    response.write(event);
+                                    return response.writeStringAndFlush("\n");
                                 }
                                 return null;
                             }
