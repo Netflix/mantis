@@ -16,18 +16,27 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import akka.actor.ActorSystem;
+import akka.http.caching.LfuCache;
+import akka.http.caching.javadsl.Cache;
+import akka.http.caching.javadsl.CachingSettings;
+import akka.http.caching.javadsl.LfuCacheSettings;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
+import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.server.directives.RouteAdapter;
 import akka.japi.pf.PFBuilder;
 import akka.pattern.AskTimeoutException;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 abstract class BaseRoute extends AllDirectives {
@@ -103,5 +112,15 @@ abstract class BaseRoute extends AllDirectives {
                             "{\"error\": \"" + ex.getMessage() + "\"}");
                     })
                     .build()).get());
+    }
+
+    protected Cache<Uri, RouteResult> createCache(ActorSystem actorSystem, int initialCapacity, int maxCapacity, int ttlMillis) {
+        final CachingSettings defaultCachingSettings = CachingSettings.create(actorSystem);
+        final LfuCacheSettings lfuCacheSettings = defaultCachingSettings.lfuCacheSettings()
+                .withInitialCapacity(initialCapacity)
+                .withMaxCapacity(maxCapacity)
+                .withTimeToLive(Duration.create(ttlMillis, TimeUnit.MILLISECONDS));
+        final CachingSettings cachingSettings = defaultCachingSettings.withLfuCacheSettings(lfuCacheSettings);
+        return LfuCache.create(cachingSettings);
     }
 }

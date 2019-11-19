@@ -38,6 +38,8 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.vm.AgentClusterOperations;
+import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +77,9 @@ public class AgentClusterRoute extends BaseRoute {
     public AgentClusterRoute(final AgentClusterOperations agentClusterOperations, final ActorSystem actorSystem) {
         Preconditions.checkNotNull(agentClusterOperations, "agentClusterOperations");
         this.agentClusterOps = agentClusterOperations;
-        this.cache = routeCache(CachingSettings.create(actorSystem));
+        MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
+                config.getApiCacheTtlMilliseconds());
 
         Metrics m = new Metrics.Builder()
             .id("V0AgentClusterRoute")

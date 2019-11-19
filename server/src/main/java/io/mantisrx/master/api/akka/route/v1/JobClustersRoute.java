@@ -33,6 +33,8 @@ import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.runtime.NamedJobDefinition;
+import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,11 +70,12 @@ public class JobClustersRoute extends BaseRoute {
     private final JobClusterRouteHandler jobClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
 
-
     public JobClustersRoute(final JobClusterRouteHandler jobClusterRouteHandler,
                             final ActorSystem actorSystem) {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
-        this.routeResultCache = createCache(actorSystem, 5, 50, 250);
+        MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
+                config.getApiCacheTtlMilliseconds());
     }
 
     public Route constructRoutes() {

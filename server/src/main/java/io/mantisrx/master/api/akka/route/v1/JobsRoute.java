@@ -16,11 +16,11 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import akka.actor.ActorSystem;
+import akka.http.caching.javadsl.Cache;
 import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.server.PathMatcher0;
-import akka.http.javadsl.server.PathMatcher1;
-import akka.http.javadsl.server.PathMatchers;
-import akka.http.javadsl.server.Route;
+import akka.http.javadsl.model.Uri;
+import akka.http.javadsl.server.*;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.japi.Pair;
 import com.google.common.base.Strings;
@@ -38,6 +38,7 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
@@ -56,6 +57,8 @@ import static akka.http.javadsl.server.PathMatchers.segment;
 import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobsRequest;
 import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createWorkerStatusRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest.DEFAULT_LIST_ARCHIVED_WORKERS_LIMIT;
+import static akka.http.javadsl.server.directives.CachingDirectives.cache;
+import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
 
 /***
  * JobsRoute
@@ -82,12 +85,17 @@ public class JobsRoute extends BaseRoute {
 
     private final JobRouteHandler jobRouteHandler;
     private final JobClusterRouteHandler clusterRouteHandler;
+    private final MasterConfiguration config;
+    private final Cache<Uri, RouteResult> routeResultCache;
 
     public JobsRoute(
             final JobClusterRouteHandler clusterRouteHandler,
-            final JobRouteHandler jobRouteHandler) {
+            final JobRouteHandler jobRouteHandler,
+            final ActorSystem actorSystem) {
         this.jobRouteHandler = jobRouteHandler;
         this.clusterRouteHandler = clusterRouteHandler;
+        this.config = ConfigurationProvider.getConfig();
+        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(), config.getApiCacheTtlMilliseconds());
     }
 
 
@@ -213,7 +221,8 @@ public class JobsRoute extends BaseRoute {
                     parameterOptional(StringUnmarshallers.STRING, ParamName.PROJECTION_TARGET, (target) ->
                      parameterOptional(StringUnmarshallers.BOOLEAN, ParamName.JOB_COMPACT, (isCompact) ->
                       parameterOptional(StringUnmarshallers.STRING, ParamName.JOB_FILTER_MATCH, (matching) ->
-                       parameterMultiMap(params ->  extractUri (uri -> {
+                       parameterMultiMap(params ->
+                               alwaysCache(routeResultCache, getRequestUriKeyer , () -> extractUri(uri -> {
                             String endpoint;
                             if (clusterName.isPresent()) {
                                 logger.debug("GET /api/v1/jobClusters/{}/jobs called", clusterName);
@@ -227,6 +236,7 @@ public class JobsRoute extends BaseRoute {
                                     params,
                                     clusterName.map(s -> Optional.of("^" + s + "$")).orElse(matching),
                                     true);
+
 
                               return completeAsync(
                                     jobRouteHandler.listJobs(listJobsRequest),
@@ -252,7 +262,7 @@ public class JobsRoute extends BaseRoute {
                                     endpoint,
                                     HttpRequestMetrics.HttpVerb.GET
                             );
-                        }))))))))));
+                        })))))))))));
 
     }
 

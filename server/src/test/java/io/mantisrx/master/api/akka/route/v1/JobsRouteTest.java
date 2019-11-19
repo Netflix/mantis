@@ -160,7 +160,8 @@ public class JobsRouteTest extends RouteTestBase {
 
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
-                        jobRouteHandler);
+                        jobRouteHandler,
+                        system);
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
                         jobClusterRouteHandler, system);
                 final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(

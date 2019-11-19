@@ -282,4 +282,16 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.job.master.scheduling.info.diskMB")
     @Default("100.0")
     double getJobMasterDiskMB();
+
+    @Config("mantis.master.api.cache.ttl.milliseconds")
+    @Default("250")
+    int getApiCacheTtlMilliseconds();
+
+    @Config("mantis.master.api.cache.size.max")
+    @Default("50")
+    int getApiCacheMaxSize();
+
+    @Config("mantis.master.api.cache.size.min")
+    @Default("5")
+    int getApiCacheMinSize();
 }

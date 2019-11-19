@@ -232,7 +232,8 @@ public class JobRouteTest {
                         jobClusterRouteHandler, system);
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
-                        jobRouteHandler);
+                        jobRouteHandler,
+                        system);
                 final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
 
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);

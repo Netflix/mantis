@@ -52,6 +52,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.duration.Duration;
@@ -132,7 +133,9 @@ public class JobClusterRoute extends BaseRoute {
                              final ActorSystem actorSystem) {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
-        this.cache = createCache(actorSystem);
+        MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
+                config.getApiCacheTtlMilliseconds());
 
         Metrics m = new Metrics.Builder()
                 .id("V0JobClusterRoute")

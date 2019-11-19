@@ -156,7 +156,7 @@ public class MasterApiAkkaService extends BaseService {
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
         final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem);
-        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler);
+        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
         final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
         final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(agentClusterOperations);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);

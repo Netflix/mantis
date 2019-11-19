@@ -49,6 +49,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorker
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
 import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -100,7 +101,9 @@ public class JobRoute extends BaseRoute {
 
     public JobRoute(final JobRouteHandler jobRouteHandler, final ActorSystem actorSystem) {
         this.jobRouteHandler = jobRouteHandler;
-        this.cache = routeCache(CachingSettings.create(actorSystem));
+        MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
+                config.getApiCacheTtlMilliseconds());
 
         Metrics m = new Metrics.Builder()
             .id("V0JobRoute")
