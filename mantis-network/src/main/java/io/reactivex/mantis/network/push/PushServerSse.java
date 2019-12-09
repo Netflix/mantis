@@ -27,6 +27,7 @@ import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
 import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.mql.jvm.core.Query;
+import io.netty.channel.WriteBufferWaterMark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -313,9 +314,8 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                     }
                 })
                 .pipelineConfigurator(PipelineConfigurators.serveSseConfigurator())
+                .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
 
-                .channelOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 5 * 1024 * 1024)
-                .channelOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 1024 * 1024)
                 .build();
         return server;
     }
