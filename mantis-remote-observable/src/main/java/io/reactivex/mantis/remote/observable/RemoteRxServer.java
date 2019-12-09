@@ -25,6 +25,7 @@ import java.util.Set;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.WriteBufferWaterMark;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.compression.JdkZlibDecoder;
@@ -104,8 +105,8 @@ public class RemoteRxServer {
 
                             }
                         }, new BatchedRxEventPipelineConfigurator()))
-                .channelOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 5 * 1024 * 1024)
-                .channelOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 1024 * 1024)
+                .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
+
                 .build();
 
         this.server = server;
