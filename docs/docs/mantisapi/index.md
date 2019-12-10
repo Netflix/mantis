@@ -441,7 +441,7 @@ reusing the version number of an existing one, the operation will fail.
         }
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function Job cluster updated
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -500,7 +500,7 @@ matches the format of the following example:
         }
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function Job cluster updated
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -573,7 +573,7 @@ you reformulate your cron specification, also set `forceenable` to `"true"` in t
 send via `POST` to <code>/api/v2/jobClusters/<var>clusterName</var>/actions/updateSla</code>.
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function SLA updated
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -659,7 +659,7 @@ You will receive in the response the migration strategy config that you have upd
 to.
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function worker migration config updated
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -716,7 +716,7 @@ that matches the format of the following example:
         }
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function labels updated
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -745,7 +745,7 @@ matches the format of the following example:
         }
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function enabled
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -782,7 +782,7 @@ matches the format of the following example:
         }
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    sine-function disabled
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -854,9 +854,121 @@ endpoint <code>/api/v1/jobs</code>.
     | `workerNumber` (optional)  | The `workerNumber` field (integer). |
     | `workerState` (optional)   | The `workerState` field (`Noop`, `Active` (default), or `Terminal`) |
 
-???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+<p class="tbd">describe</p>
 
+???abstract "Example Response Format"
+        {
+                "list": [
+                    {
+                        "jobMetadata": {
+                            "jobId": "sine-test-4",
+                            "name": "sine-test",
+                            "user": "someuser",
+                            "submittedAt": 1574188324276,
+                            "startedAt": 1574188354708,
+                            "jarUrl": "http://mantis-examples-sine-function-0.2.9.zip",
+                            "numStages": 1,
+                            "sla": {
+                                "runtimeLimitSecs": 0,
+                                "minRuntimeSecs": 0,
+                                "slaType": "Lossy",
+                                "durationType": "Perpetual",
+                                "userProvidedType": ""
+                            },
+                            "state": "Launched",
+                            "subscriptionTimeoutSecs": 0,
+                            "parameters": [
+                                {
+                                    "name": "useRandom",
+                                    "value": "True"
+                                }
+                            ],
+                            "nextWorkerNumberToUse": 40,
+                            "migrationConfig": {
+                                "strategy": "PERCENTAGE",
+                                "configString": "{\"percentToMove\":25,\"intervalMs\":60000}"
+                            },
+                            "labels": [
+                                {
+                                    "name": "_mantis.user",
+                                    "value": "zxu"
+                                },
+                                {
+                                    "name": "_mantis.ownerEmail",
+                                    "value": "zxu@netflix.com"
+                                },
+                                {
+                                    "name": "_mantis.artifact.version",
+                                    "value": "0.2.9"
+                                },
+                                {
+                                    "name": "_mantis.artifact",
+                                    "value": "mantis-examples-sine-function-0.2.9.zip"
+                                },
+                                {
+                                    "name": "_mantis.version",
+                                    "value": "0.2.9 2019-03-19 17:01:36"
+                                }
+                            ]
+                        },
+                        "stageMetadataList": [
+                            {
+                                "jobId": "sine-test-4",
+                                "stageNum": 1,
+                                "numStages": 1,
+                                "machineDefinition": {
+                                    "cpuCores": 1.0,
+                                    "memoryMB": 1024.0,
+                                    "networkMbps": 128.0,
+                                    "diskMB": 1024.0,
+                                    "numPorts": 1
+                                },
+                                "numWorkers": 1,
+                                "hardConstraints": [],
+                                "softConstraints": [],
+                                "scalingPolicy": null,
+                                "scalable": false
+                            }
+                        ],
+                        "workerMetadataList": [
+                            {
+                                "workerIndex": 0,
+                                "workerNumber": 31,
+                                "jobId": "sine-test-4",
+                                "stageNum": 1,
+                                "numberOfPorts": 5,
+                                "metricsPort": 7150,
+                                "consolePort": 7152,
+                                "debugPort": 7151,
+                                "customPort": 7153,
+                                "ports": [
+                                    7154
+                                ],
+                                "state": "Started",
+                                "slave": "100.82.168.140",
+                                "slaveID": "f39108b0-da43-45df-8b12-c132d85de7c0-S1",
+                                "cluster": "mantisagent-staging-m5.2xlarge-1",
+                                "acceptedAt": 1575675900626,
+                                "launchedAt": 1575675996506,
+                                "startingAt": 1575676025493,
+                                "startedAt": 1575676026661,
+                                "completedAt": -1,
+                                "reason": "Normal",
+                                "resubmitOf": 22,
+                                "totalResubmitCount": 4
+                            }
+                        ],
+                        "version": null
+                    }
+                ],
+                "prev": null,
+                "next": null,
+                "total": 1
+            }
+
+
+
+    
 ???info "Possible Response Codes"
     | Response Code | Reason |
     | ------------- | ------ |
@@ -880,8 +992,140 @@ or <code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code>
     | `fields` (optional)   | By default this endpoint will return all of the fields in the payload. You can set `fields` to a comma-delimited series of payload fields, in which case this endpoint will return only those fields in the response. |
     | `archived` (optional) | By default only information about an active job will be returned. Set this to `true` if you want information about the job returned even if it is an archived inactive job. |
 
+<p class="tbd">describe</p>
+
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+        {
+                    "jobMetadata": {
+                        "jobId": "sine-function-7531",
+                        "name": "sine-function",
+                        "user": "someuser",
+                        "submittedAt": 1576002266997,
+                        "startedAt": 0,
+                        "jarUrl": "http://mantis-examples-sine-function-0.2.9.zip",
+                        "numStages": 2,
+                        "sla": {
+                            "runtimeLimitSecs": 0,
+                            "minRuntimeSecs": 0,
+                            "slaType": "Lossy",
+                            "durationType": "Perpetual",
+                            "userProvidedType": ""
+                        },
+                        "state": "Accepted",
+                        "subscriptionTimeoutSecs": 0,
+                        "parameters": [
+                            {
+                                "name": "useRandom",
+                                "value": "False"
+                            }
+                        ],
+                        "nextWorkerNumberToUse": 10,
+                        "migrationConfig": {
+                            "strategy": "PERCENTAGE",
+                            "configString": "{\"percentToMove\":25,\"intervalMs\":60000}"
+                        },
+                        "labels": [
+                            {
+                                "name": "_mantis.artifact",
+                                "value": "mantis-examples-sine-function-0.2.9.zip"
+                            },
+                            {
+                                "name": "_mantis.version",
+                                "value": "0.2.9 2018-04-23 13:22:02"
+                            }
+                        ]
+                    },
+                    "stageMetadataList": [
+                        {
+                            "jobId": "sine-function-7531",
+                            "stageNum": 0,
+                            "numStages": 2,
+                            "machineDefinition": {
+                                "cpuCores": 2.0,
+                                "memoryMB": 4096.0,
+                                "networkMbps": 128.0,
+                                "diskMB": 1024.0,
+                                "numPorts": 1
+                            },
+                            "numWorkers": 1,
+                            "hardConstraints": [],
+                            "softConstraints": [],
+                            "scalingPolicy": null,
+                            "scalable": false
+                        },
+                        {
+                            "jobId": "sine-function-7531",
+                            "stageNum": 1,
+                            "numStages": 2,
+                            "machineDefinition": {
+                                "cpuCores": 1.0,
+                                "memoryMB": 1024.0,
+                                "networkMbps": 128.0,
+                                "diskMB": 1024.0,
+                                "numPorts": 1
+                            },
+                            "numWorkers": 1,
+                            "hardConstraints": [],
+                            "softConstraints": [],
+                            "scalingPolicy": null,
+                            "scalable": false
+                        }
+                    ],
+                    "workerMetadataList": [
+                        {
+                            "workerIndex": 0,
+                            "workerNumber": 1,
+                            "jobId": "sine-function-7531",
+                            "stageNum": 0,
+                            "numberOfPorts": 5,
+                            "metricsPort": -1,
+                            "consolePort": -1,
+                            "debugPort": -1,
+                            "customPort": -1,
+                            "ports": [],
+                            "state": "Accepted",
+                            "slave": null,
+                            "slaveID": null,
+                            "cluster": null,
+                            "acceptedAt": 1576002267005,
+                            "launchedAt": -1,
+                            "startingAt": -1,
+                            "startedAt": -1,
+                            "completedAt": -1,
+                            "reason": "Normal",
+                            "resubmitOf": 0,
+                            "totalResubmitCount": 0
+                        },
+                        {
+                            "workerIndex": 0,
+                            "workerNumber": 2,
+                            "jobId": "sine-function-7531",
+                            "stageNum": 1,
+                            "numberOfPorts": 5,
+                            "metricsPort": -1,
+                            "consolePort": -1,
+                            "debugPort": -1,
+                            "customPort": -1,
+                            "ports": [],
+                            "state": "Accepted",
+                            "slave": null,
+                            "slaveID": null,
+                            "cluster": null,
+                            "acceptedAt": 1576002267007,
+                            "launchedAt": -1,
+                            "startingAt": -1,
+                            "startedAt": -1,
+                            "completedAt": -1,
+                            "reason": "Normal",
+                            "resubmitOf": 0,
+                            "totalResubmitCount": 0
+                        }
+                    ],
+                    "version": "0.2.9 2018-04-23 13:22:02"
+                }
+
+
+    
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -906,7 +1150,8 @@ endpoint <code>/api/v1/jobs/<var>jobID</var></code>.
     | `user` (required)     | Specify which user is initiating this request. |
 
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+    <p class="tbd">empty</p>
+    No response
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -934,8 +1179,42 @@ API endpoint endpoint <code>/api/v1/jobs/<var>jobID</var>/archivedWorkers</code>
     | `pageSize` (optional)  | The maximum number of records to return in this request (default = 0, which means all records). See [Pagination](#pagination) for more details. |
     | `sortBy` (optional)    | You can set this to the name of any payload field whose values are `Comparable` and this endpoint will return its results sorted by that field. |
 
+<p class="tbd">describe</p>
+
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+        {
+                "list": [
+                    {
+                        "workerIndex": 0,
+                        "workerNumber": 2,
+                        "jobId": "sine-function-7532",
+                        "stageNum": 1,
+                        "numberOfPorts": 5,
+                        "metricsPort": 7155,
+                        "consolePort": 7157,
+                        "debugPort": 7156,
+                        "customPort": 7158,
+                        "ports": [
+                            7159
+                        ],
+                        "state": "Failed",
+                        "slave": "100.85.130.224",
+                        "slaveID": "079f4fa6-f910-4247-b5d0-f5574f36cace-S5274",
+                        "cluster": "mantisagent-main-m5.2xlarge-1",
+                        "acceptedAt": 1576003739758,
+                        "launchedAt": 1576003739861,
+                        "startingAt": 1576003748544,
+                        "startedAt": 1576003750069,
+                        "completedAt": 1576003959366,
+                        "reason": "Relaunched",
+                        "resubmitOf": 0,
+                        "totalResubmitCount": 0
+                    }
+                ],
+                "prev": null,
+                "next": null,
+                "total": 1
+            }
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -977,8 +1256,152 @@ to the Mantis REST API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>
     | `workerNumber` (optional)  | The `workerNumber` field (integer). |
     | `workerState` (optional)   | The `workerState` field (`Noop`, `Active` (default), or `Terminal`) |
 
+<p class="tbd">describe</p>
+
 ???abstract "Example Response Format"
-    <p class="tbd">TBD</p>
+        {
+                "list": [
+                    {
+                        "jobMetadata": {
+                            "jobId": "sine-function-7532",
+                            "name": "sine-function",
+                            "user": "someuser",
+                            "submittedAt": 1576003739750,
+                            "startedAt": 1576003750076,
+                            "jarUrl": "http://mantis-examples-sine-function-0.2.9.zip",
+                            "numStages": 2,
+                            "sla": {
+                                "runtimeLimitSecs": 0,
+                                "minRuntimeSecs": 0,
+                                "slaType": "Lossy",
+                                "durationType": "Perpetual",
+                                "userProvidedType": ""
+                            },
+                            "state": "Launched",
+                            "subscriptionTimeoutSecs": 0,
+                            "parameters": [
+                                {
+                                    "name": "useRandom",
+                                    "value": "False"
+                                }
+                            ],
+                            "nextWorkerNumberToUse": 10,
+                            "migrationConfig": {
+                                "strategy": "PERCENTAGE",
+                                "configString": "{\"percentToMove\":25,\"intervalMs\":60000}"
+                            },
+                            "labels": [
+                                {
+                                    "name": "_mantis.isResubmit",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "_mantis.artifact",
+                                    "value": "mantis-examples-sine-function-0.2.9.zip"
+                                },
+                                {
+                                    "name": "_mantis.version",
+                                    "value": "0.2.9 2018-04-23 13:22:02"
+                                }
+                            ]
+                        },
+                        "stageMetadataList": [
+                            {
+                                "jobId": "sine-function-7532",
+                                "stageNum": 0,
+                                "numStages": 2,
+                                "machineDefinition": {
+                                    "cpuCores": 2.0,
+                                    "memoryMB": 4096.0,
+                                    "networkMbps": 128.0,
+                                    "diskMB": 1024.0,
+                                    "numPorts": 1
+                                },
+                                "numWorkers": 1,
+                                "hardConstraints": [],
+                                "softConstraints": [],
+                                "scalingPolicy": null,
+                                "scalable": false
+                            },
+                            {
+                                "jobId": "sine-function-7532",
+                                "stageNum": 1,
+                                "numStages": 2,
+                                "machineDefinition": {
+                                    "cpuCores": 1.0,
+                                    "memoryMB": 1024.0,
+                                    "networkMbps": 128.0,
+                                    "diskMB": 1024.0,
+                                    "numPorts": 1
+                                },
+                                "numWorkers": 1,
+                                "hardConstraints": [],
+                                "softConstraints": [],
+                                "scalingPolicy": null,
+                                "scalable": false
+                            }
+                        ],
+                        "workerMetadataList": [
+                            {
+                                "workerIndex": 0,
+                                "workerNumber": 1,
+                                "jobId": "sine-function-7532",
+                                "stageNum": 0,
+                                "numberOfPorts": 5,
+                                "metricsPort": 7150,
+                                "consolePort": 7152,
+                                "debugPort": 7151,
+                                "customPort": 7153,
+                                "ports": [
+                                    7154
+                                ],
+                                "state": "Started",
+                                "slave": "100.85.130.224",
+                                "slaveID": "079f4fa6-f910-4247-b5d0-f5574f36cace-S5274",
+                                "cluster": "mantisagent-main-m5.2xlarge-1",
+                                "acceptedAt": 1576003739756,
+                                "launchedAt": 1576003739861,
+                                "startingAt": 1576003748558,
+                                "startedAt": 1576003749967,
+                                "completedAt": -1,
+                                "reason": "Normal",
+                                "resubmitOf": 0,
+                                "totalResubmitCount": 0
+                            },
+                            {
+                                "workerIndex": 0,
+                                "workerNumber": 3,
+                                "jobId": "sine-function-7532",
+                                "stageNum": 1,
+                                "numberOfPorts": 5,
+                                "metricsPort": 7165,
+                                "consolePort": 7167,
+                                "debugPort": 7166,
+                                "customPort": 7168,
+                                "ports": [
+                                    7169
+                                ],
+                                "state": "Started",
+                                "slave": "100.85.130.224",
+                                "slaveID": "079f4fa6-f910-4247-b5d0-f5574f36cace-S5274",
+                                "cluster": "mantisagent-main-m5.2xlarge-1",
+                                "acceptedAt": 1576003959366,
+                                "launchedAt": 1576003959407,
+                                "startingAt": 1576003961542,
+                                "startedAt": 1576003962822,
+                                "completedAt": -1,
+                                "reason": "Normal",
+                                "resubmitOf": 2,
+                                "totalResubmitCount": 1
+                            }
+                        ],
+                        "version": "0.2.9 2018-04-23 13:22:02"
+                    }
+                ],
+                "prev": null,
+                "next": null,
+                "total": 1
+            }
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
@@ -1059,7 +1482,7 @@ request body like the following:
 
 ???abstract "Example Response Format"
     <span class="tbd">(Same as "Get Information about a Job" below)</span>
-
+    (Same as "Get Information about a Job" above)
 ???info "Possible Response Codes"
     | Response Code | Reason |
     | ------------- | ------ |
@@ -1095,7 +1518,7 @@ of the following example:
         }
 
 ???abstract "Example Response Format"
-    You will receive in the response the Job ID of the newly submitted Job. <span class="tbd">sample response body?</span>
+    You will receive in the response the Job ID of the newly submitted Job. E.g sine-test-5  <span class="tbd">sample response body?</span>
 
 ???info "Possible Response Codes"
     | Response Code | Reason |
