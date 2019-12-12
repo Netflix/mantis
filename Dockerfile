@@ -7,9 +7,9 @@ RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt
 RUN apt-get -o Acquire::Check-Valid-Until=false update
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
-    echo "deb http://repos.mesosphere.com/ubuntu trusty main" | tee /etc/apt/sources.list.d/mesosphere.list && \
+    echo "deb http://repos.mesosphere.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/mesosphere.list && \
     apt-get -o Acquire::Check-Valid-Until=false -y update && \
-    apt-get install -y mesos=1.0.1-2.0.93.ubuntu1404 && \
+    apt-get install -y mesos=1.1.3-2.0.1 && \
     apt-get clean
 
 COPY ./server/build/install/mantis-control-plane-server/bin/* /apps/mantis/mantis-control-plane-server/bin/
