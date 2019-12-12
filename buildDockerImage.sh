@@ -4,6 +4,6 @@
 ./gradlew clean installDist
 
 # build the Docker image that packages mantis-control-plane
-docker build -t dev/mantiscontrolplaneserver .
+docker build -t netflixoss/mantiscontrolplaneserver .
 
-echo "Created Docker image 'dev/mantiscontrolplaneserver'"
+echo "Created Docker image 'netflixoss/mantiscontrolplaneserver'"
