@@ -1,6 +1,10 @@
-FROM mesosphere/mesos-slave-dind:0.2.4_mesos-1.0.1_docker-1.12.1_ubuntu-14.04.5
+FROM mesosphere/mesos-slave:1.1.3
 
 MAINTAINER Mantis Developers <mantisd-oss-dev@netflix.com>
+
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+ENV MESOS_SYSTEMD_ENABLE_SUPPORT false
 
 # Setup mantis-agent environment
 RUN mkdir -p /mnt/local/mantisWorkerInstall/bin/
@@ -11,19 +15,17 @@ RUN mkdir -p /mnt/local/mantisWorkerInstall/jobs/
 COPY ./src/main/resources/startup_docker.sh /mnt/local/mantisWorkerInstall/bin/
 COPY ./build/libs/mantis-server-worker*.jar /mnt/local/mantisWorkerInstall/libs/
 COPY worker-docker.properties /mnt/local/mantisWorkerInstall/jobs/
-# Set up Java 8
-#ENV DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
-#ENV CODENAME=$(lsb_release -cs)
 
-RUN sudo apt-get update
-RUN sudo apt-get install -y --no-install-recommends software-properties-common
-RUN sudo apt-get install -y python-software-properties debconf-utils
-RUN sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
-RUN sudo apt-add-repository "deb http://repos.azulsystems.com/ubuntu stable main"
-RUN sudo apt-get install -y unzip
-RUN sudo apt-get install wget
-RUN sudo apt-get update
-RUN sudo apt-get install -y zulu-8
+# Set up Java 8
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends software-properties-common
+RUN apt-get install -y python3-software-properties debconf-utils
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
+RUN apt-add-repository "deb http://repos.azulsystems.com/ubuntu stable main"
+RUN apt-get install -y unzip
+RUN apt-get install wget
+RUN apt-get update
+RUN apt-get install -y zulu-8
 
 
 # Make it look like we're running in VPC to test networking
