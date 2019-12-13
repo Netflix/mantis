@@ -19,7 +19,7 @@ services:
 
   # Start mesos-master
   mesos-master:
-    image: mesosphere/mesos-master:1.0.1-2.0.93.ubuntu1404
+    image: mesosphere/mesos-master:1.1.3
     ports:
       - "5050:5050"
     command: mesos-master --zk=zk://zookeeper:2181/mantis/mesos/nmahilani --work_dir=/tmp/master --log_dir=/var/log/mesos --logging_level=INFO --quorum=1
