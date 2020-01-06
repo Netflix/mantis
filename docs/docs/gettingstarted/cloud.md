@@ -40,7 +40,7 @@ Configuring AWS credentials... done
 ```
 
 This command stores your AWS credentials in the same exact format and location as the AWS SDK.
-More on this at the [Mantis CLI page](/cli/#setting-up-your-aws-credentials).
+More on this at the [Mantis CLI page](../../developing/cli/#setting-up-your-aws-credentials).
 
 ### Bootstrap your cluster
 

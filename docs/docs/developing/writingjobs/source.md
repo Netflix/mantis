@@ -1,136 +1,150 @@
+To implement a [Mantis Job]  [Source]  [component], you must implement the
+`io.mantisrx.runtime.Source` interface. A Source returns `Observable<Observable<T>>`, that is, an
+[Observable] that emits Observables. Each of the emitted Observables represents a stream of data
+from a single target server.
 
-Some desktops have trouble dealing with [SSE]. In such a case you can use [WebSocket] to connect to
-a [Job] (other API features are only available via the Mantis REST API).
+## Varieties of Sources
 
-The WebSocket API runs from the same servers as the Mantis REST API, and you can reach it by using
-the `ws://` protocol on port 7102 or the `wss://` protocol on port 7103.
+Sources can be roughly divided into two categories:
 
-## Connecting to Job Output (Sink)
+1. Sources that read data from the output of other Mantis Jobs
+    1. this may include [Source Jobs] (more on this below)
+    1. or ordinary Mantis Jobs
+1. Custom sources that read data directly from Amazon S3, SQS, Apache [Kafka], etc.
 
-* Append this to the WebSocket URI to connect to a Job by name: <code>/jobconnectbyname/<var>JobName</var></code>
+<!-- You can find more information on sources in [Mantis Data Sources](https://confluence.netflix.com/display/API/Mantis+Data+Sources) <span class="tbd">Incorporate that document into this docs set or omit the link.</span> -->
 
-* Append this to the WebSocket URI to connect to a specific running Job ID: <code>/jobconnectbyid/<var>JobID</var></code>
+### Mantis Job Sources
 
-Upon connecting, the server starts writing messages that are coming in from the corresponding Jobs. 
+You can string Mantis Jobs together by using the output of one Mantis Job as the input to another.
+This is useful if you want to break up your processing into multiple, reusable components and to
+take advantage of code and data reuse.
 
-You can append query parameters to the WebSocket URI (preceded by “`?`”) as is the case in a REST
-API. Use this to pass any [Sink]  [parameters] your Job accepts. All Jobs accept the
-“<code>sampleMSec=<var>mSecs</var></code>” Sink parameter which limits the rate at which the Sink output
-is sampled by the server.
+In such a case, you do not have access to the complete set of [Mantis Query Language (MQL)](../../mql)
+capabilities that you do in the case of a Source Job, but you can use MQL in client mode.
 
-## Submitting and Connecting to Job Output
+#### Connecting to a Mantis Job
 
-* Append this to the WebSocket URI to submit and connect to the submitted Job: `/jobsubmitandconnect`
+To connect to a Mantis Job,
+use a [`JobSource`](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java) when you call `MantisJob.create()` — declare the following parameters when you use this class:
 
-Note that you will have to send one message on the WebSocket, which is the same JSON payload that
-you would send as a POST body for
-[the equivalent REST API](index.md#submitting-a-job-based-on-a-job-cluster). The server then submits
-the Job and then starts writing messages into the WebSocket as it gets output from the Job.
+1. `sourceJobName` *(required)* — the name of any valid [Job Cluster] (not necessarily a “Source Job”) <!-- MANTIS_SOURCEJOB_NAME_PARAM -->
+1. `sample` *(optional)* — use this if you want to [sample] the output `sample` times per second, or set this to `-1` to disable sampling <!-- MANTIS_SOURCEJOB_SAMPLE_PER_SEC_KEY -->
 
-You can append query parameters to the WebSocket URI (preceded by “`?`”) as is the case in a REST
-API. Use this to pass any Sink parameters your Job accepts. All Jobs accept the
-“<code>sampleMSec=<var>mSecs</var></code>” sink parameter which limits the rate at which the Sink output
-is sampled by the server.
+For example:
 
-### Example: Javascript to Connect a Job
-```html
-<!DOCTYPE html>  
-<meta charset="utf-8" />  
-<title>WebSocket Test</title>  
-<script language="javascript" type="text/javascript">  
-var wsUri = "ws://your-domain.com/jobconnectbyname/YourJobName?sampleMSec=2000";
-var output;  
-function init() { 
-  output = document.getElementById("output"); 
-  testWebSocket(); 
-}
-function testWebSocket() { 
-  websocket = new WebSocket(wsUri);
-  websocket.onopen = function(evt) { onOpen(evt) }; 
-  websocket.onclose = function(evt) { onClose(evt) }; 
-  websocket.onmessage = function(evt) { onMessage(evt) }; 
-  websocket.onerror = function(evt) { onError(evt) }; 
-}  
-function onOpen(evt) {
-  writeToScreen("CONNECTED"); 
-}
-function onClose(evt) { 
-  writeToScreen("DISCONNECTED"); 
-}
-function onMessage(evt) {
-  writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
-}
-function onError(evt) {
-  writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
-}
-function doSend(message) { 
-  websocket.send(message); 
-}
-function writeToScreen(message) { 
-  var pre = document.createElement("p"); 
-  pre.style.wordWrap = "break-word"; 
-  pre.innerHTML = message; output.appendChild(pre); 
-}
-window.addEventListener("load", init, true);  
-</script>  
-<h2>WebSocket Test</h2>  
-<div id="output"></div>
+```java
+MantisJob.source(new JobSource())
+         .stage(…)
+         .sink(…)
+         .parameterDefinition(new StringParameter().name("sourceJobName")
+            .description("The name of the job")
+            .validator(Validators.notNullOrEmpty())
+            .defaultValue("MyDefaultJob")
+            .build())
+         .parameterDefinition(new IntParameter().name("sample")
+            .description("The number of samples per second")
+            .validator(Validators.range(-1, 10000))
+            .defaultValue(-1)
+            .build())
+         .lifecycle(…)
+         .metadata(…)
+         .create();
 ```
 
-### Example: Javascript to Submit a Job and Connect to It
-```html
-<!DOCTYPE html>  
-<meta charset="utf-8" />  
-<title>WebSocket Test</title>  
-<script language="javascript" type="text/javascript">  
-var wsUri = "ws://your-domain.com/jobsubmitandconnect/"; 
-var output;  
-function init() { 
-  output = document.getElementById("output"); 
-  testWebSocket(); 
-}
-function testWebSocket() { 
-  websocket = new WebSocket(wsUri);
-  websocket.onopen = function(evt) { onOpen(evt) }; 
-  websocket.onclose = function(evt) { onClose(evt) }; 
-  websocket.onmessage = function(evt) { onMessage(evt) }; 
-  websocket.onerror = function(evt) { onError(evt) }; 
-}  
-function onOpen(evt) { 
-  writeToScreen("CONNECTED"); 
-  // Change this to your job's submit json content.
-  // See job submit REST API above for another example.
-  doSend("{\n" +
-                "  \"name\":\"Outliers-mock3\",\n" +
-                "  \"version\":\"\",\n" +
-                "  \"parameters\":[],\n" +
-                "  \"jobSla\":{\"runtimeLimitSecs\":0,\"durationType\":\"Transient\",\"userProvidedType\":\"{\\\"unique\\\":\\\"foobar\\\"}\"},\n" +
-                "  \"subscriptionTimeoutSecs\":\"90\",\n" +
-                "  \"jobJarFileLocation\":null,\n" +
-                "  \"schedulingInfo\":{\"stages\":{\"1\":{\"numberOfInstances\":1,\"machineDefinition\":{\"cpuCores\":1.0,\"memoryMB\":2048.0,\"diskMB\":1.0,\"scalable\":\"true\"}}}\n" +
-                "}");
-}  
-function onClose(evt) { 
-  writeToScreen("DISCONNECTED"); 
-}
-function onMessage(evt) {
-  writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
-}
-function onError(evt) {
-  writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
-}
-function doSend(message) { 
-  websocket.send(message); 
-}
-function writeToScreen(message) { 
-  var pre = document.createElement("p"); 
-  pre.style.wordWrap = "break-word"; 
-  pre.innerHTML = message; output.appendChild(pre); 
-}
-window.addEventListener("load", init, true);  
-</script>  
-<h2>WebSocket Test</h2>  
-<div id="output"></div>
+### Source Job Sources
+
+Mantis has a concept of [Source Jobs] which are Mantis [Jobs] with added conveniences and efficiences
+that simplify accessing data from certain sources. Your job can simply connect to a source job as its
+data source rather than trying to retrieve the data from its native home.
+There are two advantages to this approach:
+
+1. Source Jobs handle all of the implementation details around interacting with the native data
+   source.
+1. Source Jobs come with a simple query interface based on the [Mantis Query Language (MQL)](../../mql),
+   which allows you to filter the data from the source before processing it. In the case of source
+   jobs that fetch data from application servers directly, this filter gets pushed all the way to
+   those target servers so that no data flows unless someone is asking for it.
+1. Source Jobs reuse data so that multiple matching MQL queries are forwarded downstream instead of
+   paying the cost to fetch and serialize/deserialize the same data multiple times from the upstream
+   source.
+
+#### Broadcast Mode
+
+By default, Mantis will distribute the data that is output from the Source Job among the various
+workers in the processing stage of your Mantis Job. Each of those workers will get a subset of the
+complete data from the Source Job.
+
+You can override this by instructing the Source Job to use “broadcast mode”. If you do this, Mantis
+will send the complete set of data from the Source Job to *every* worker in your Job.
+
+#### Connecting to a Source Job
+
+Since Source Jobs are fundamentally Mantis Jobs, you should
+use a [`JobSource`](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java) when you call `MantisJob.create()` to connect to a particular Source Job.
+The difference is that you should pass in additional parameters:
+
+1. `sourceJobName` *(required)* — the name of the source Job Cluster you want to connect to
+1. `sample` *(required)* — use this if you want to [sample] the output `sample` times per second, or set this to `-1` to disable sampling
+1. `criterion` *(required)* — a query expression in [MQL](../../mql) to filter the source
+1. `clientId` *(optional)* — by default, the `jobId` of the client Job; the Source Job uses this to distribute data between all the subscriptions of the client Job
+1. `enableMetaMessages` *(optional)* — the source job may occasionally inject [meta messages] (with the prefix `mantis.meta.`) that indicate things like data drops on the Source Job side.
+
+For example:
+
+```java
+MantisJob.source(new JobSource())
+         .stage(…)
+         .sink(…)
+         .parameterDefinition(new StringParameter().name("sourceJobName")
+            .description("The name of the job")
+            .validator(Validators.notNullOrEmpty())
+            .defaultValue("MyDefaultSourceJob")
+            .build())
+         .parameterDefinition(new IntParameter().name("sample")
+            .description("The number of samples per second")
+            .validator(Validators.range(-1, 10000))
+            .defaultValue(-1)
+            .build())
+         .parameterDefinition(new StringParameter().name("criterion")
+            .description("Filter the source with this MQL statement")
+            .validator(Validators.notNullOrEmpty())
+            .defaultValue("true")
+            .build())
+         .parameterDefinition(new StringParameter().name("clientId")
+            .description("the ID of the client job")
+            .validator(Validators.alwaysPass())
+            .build())
+         .parameterDefinition(new BooleanParameter().name("enableMetaMessages")
+            .description("Is the source allowed to inject meta messages")
+            .validator(Validators.alwaysPass())
+            .defaultValue("true")
+            .build())
+         .lifecycle(…)
+         .metadata(…)
+         .create();
+```
+
+### Custom Sources
+
+[Custom sources] may be implemented and used to access data sources for which Mantis does not have a Source Job.
+Implementers are free to implement the [Source](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java) interface to fetch data from an external source.
+[Here](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-kafka/src/main/java/io/mantisrx/connector/kafka/source/KafkaSource.java) is an example in a source which implements the Source interface to consume data from Kafka.
+
+## Learning When Source Data is Incomplete
+
+You may want to know whether or not the stream you are receiving from your [source] is complete.
+Streams may be incomplete for a number of reasons:
+
+1. A connection to one or more of the [Source Job]  [workers] is lost.
+2. A connection exists but no data is flowing.
+3. Data is intentionally dropped from a source because of the [backpressure] strategy you are using.
+
+You can use the following `boolean` method within your `JobSource#call` method to determine whether or not all of your client
+connections are complete:
+
+```java
+DefaultSinkConnectionStatusObserver.getInstance(true).isConnectedToAllSinks()
 ```
 
 <!-- Do not edit below this line -->

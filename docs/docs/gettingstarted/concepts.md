@@ -3,27 +3,28 @@
 Mantis provides Stream-processing-As-a-Service. It is a self contained platform that manages all tasks associated
 with running thousands of stream processing jobs. 
 
-Take a look at [Infrastructure Overview](infrastructure.md) to get an understanding of the physical components
+Take a look at [Infrastructure Overview](../internals/infrastructure.md) to get an understanding of the physical components
 of the Mantis Platform.
  
 Let us walk through some of the key concepts and terminologies used in Mantis.
 
 ## Mantis Job Cluster
 
-![Job Cluster](./images/sharedmresourcecluster.png)
+![Job Cluster](../images/sharedmresourcecluster.png)
 
 A Mantis Job cluster represents metadata (artifact, configuration, resource requirements) associated with a job.
 A job can be thought of as a running instance of Job Cluster (like a Java Object is an instance of a Java class).
 A Job cluster can have 0 or more running instances of a job at any given time. 
 Users can control how many jobs can be running at any given time by specifying the SLA for this cluster. 
 
-E.g
+E.g.
+
 SLA of Min 1 / Max 1 means there is exactly one instance of job running at any given time.
 Users can also setup a Cron spec that can be used to submit jobs periodically.
 
 ## Mantis Jobs
 
-![Job running](./images/sine_job_running.png)
+![Job running](../images/sine_job_running.png)
 
 At the core of Mantis is the Mantis Job.
 Stream processing applications in Mantis are called Mantis Jobs. 
@@ -36,7 +37,7 @@ Lets take a closer look at a Mantis Job.
 
 ## Worker
 
-![worker running](./images/sine_worker_running.png)
+![worker running](../images/sine_worker_running.png)
 
 A worker is the smallest unit of execution in Mantis. Physically a worker executes in a resource isolated
 Mesos container on the Mantis Agent fleet of servers. 
@@ -52,7 +53,7 @@ Each Worker belongs to exactly one Mantis Stage.
 
 ## Stages (Group of workers)
 
-A Mantis job is logically divided into one or more [stages](writingjobs/stage.md). A stage is a collection
+A Mantis job is logically divided into one or more [stages](../developing/writingjobs/stage.md). A stage is a collection
 of homogeneous Mantis Workers that perform the same computation. A typical map-reduce style
 job would be represented by three stages in Mantis (shuffle, window/aggregate and collect)
 
@@ -63,7 +64,7 @@ The presence of multiple stages imply network hops which allows users to distrib
 allowing for more scalability.
  
 Mantis allows each stage to dynamically scale the number of workers in the stage independently with the help of an
-[autoscaling](./autoscaling.md) policy.
+[autoscaling](../production/autoscaling.md) policy.
 
 !!! note
     Autoscaling is only recommended on stateless stages. For stateful stages the user would need to implement
@@ -71,7 +72,7 @@ Mantis allows each stage to dynamically scale the number of workers in the stage
 
 ## Mantis Runtime
 
-[Mantis runtime](https://github.com/netflix/mantis) is execution environment for Mantis Jobs. 
+The [Mantis runtime](https://github.com/netflix/mantis) is execution environment for Mantis Jobs. 
 
 Broadly speaking it covers all aspects of the running a Mantis Job which includes
 
@@ -81,12 +82,12 @@ Broadly speaking it covers all aspects of the running a Mantis Job which include
 
 ## Source Job
 
-A source job is a type of Mantis Job that makes data available to other Mantis Jobs via an [MQL](./MQL/index.md) interface.
+A source job is a type of Mantis Job that makes data available to other Mantis Jobs via an [MQL](../developing/mql/index.md) interface.
 Downstream jobs connect to the Sink (Server Sent Event) of the Source job with an MQL query which denotes what data the job is interested in.
 Each event flowing through the Source job is evaluated against these MQL queries.
 Events matching a particular query are then streamed to the corresponding downstream job.
 
-![kafka source job](./images/kafka-source-job.png)
+![kafka source job](../images/kafka-source-job.png)
 
 The source jobs have several advantages
 
@@ -121,7 +122,7 @@ Reads data from one or more Kafka topics and makes it available for downstream c
 
 2. [Publish Source Job](https://github.com/Netflix/mantis-source-jobs/tree/master/publish-source-job):
 Works the the mantis-publish library to fetch data on-demand from external applications and make it
-available to downstream consumers. See the [Mantis Publish example](./gettingstarted/samples/publishsample.md) to see
+available to downstream consumers. See the [Mantis Publish example](./samples/publishsample.md) to see
 this in action.
 
 Users can also build their own source jobs see the [Synthetic Source Job](https://github.com/Netflix/mantis-examples/tree/master/synthetic-sourcejob) example.
@@ -143,7 +144,7 @@ Job chaining has proven to be extremely useful while operating at scale. It is w
   
 ## Mantis Query Language (MQL)
  
-[MQL](./MQL/index.md) is a SQL like language that allows users to work with streaming data without having to write Java code.
+[MQL](../developing/mql/index.md) is a SQL like language that allows users to work with streaming data without having to write Java code.
 
 Example MQL query:
 ```bash
@@ -167,10 +168,9 @@ and uses [Fenzo](https://github.com/Netflix/Fenzo/) to optimally match workers t
 
 ## Mantis API
 
-The [Mantis API](mantisapi/index.md) is almost like a traditional API server which proxies request to the Mantis Master. 
-But has additional capabilities like 
-- Allowing users to stream the output of a job via web sockets (/api/v1/jobConnectbyid/jobID API)
+The [Mantis API](../developing/api/index.md) is almost like a traditional API server which proxies request to the Mantis Master. 
+But has additional capabilities such as:
+ 
+- Allowing users to stream the output of a job via web sockets (`/api/v1/jobConnectbyid/jobID` API)
 - Acts as a discovery server for Jobs, allowing consumers to get a stream of scheduling information (like host, port for
 workers belonging to a job)
-
-

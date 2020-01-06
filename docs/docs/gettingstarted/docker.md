@@ -69,7 +69,7 @@ Next steps.
 
 * [Setup Mantis in AWS](cloud.md) and run the samples
 
-* Learn to [write](../writingjobs) your own Mantis Jobs
+* Learn to [write](../developing/writingjobs/index.md) your own Mantis Jobs
 
 To teardown the Mantis cluster, issue the following command
 

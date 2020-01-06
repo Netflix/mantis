@@ -5,7 +5,7 @@ The Mantis Runtime is consists of two components:
    time, and produce streams of events as output.
 
 This page assumes familiarity with Mantis Job high-level concepts. An introduction can be found in
-[Writing Mantis Jobs](../writingjobs). This page presents internal details for Mantis Jobs.
+[Writing Mantis Jobs](../../developing/writingjobs). This page presents internal details for Mantis Jobs.
 
 ## Mantis Job Components
 A Mantis Job consists of three [components]. Each one is based on a [cold Observable] that emits
@@ -135,8 +135,8 @@ its transformations.
 [migration strategies]:    ../../glossary#migration
 [MRE]:                     ../../glossary#mre               "Mantis Publish (a.k.a. Mantis Realtime Events, or MRE) is a library that your application can use to stream events into Mantis while respecting MQL filters."
 [Mantis Publish]:          ../../glossary#mantispublish     "Mantis Publish is a library that your application can use to stream events into Mantis while respecting MQL filters."
-[Mantis Query Language]:   ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
-[MQL]:                     ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[Mantis Query Language]:   ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[MQL]:                     ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
 [Observable]:              ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [Observables]:             ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [parameter]:               ../../glossary#parameter         "A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis."
