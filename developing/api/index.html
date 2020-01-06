@@ -1,0 +1,4688 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+    
+    
+      
+        <title>API Reference - Mantis</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="indigo">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#summary-of-rest-api" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Mantis" class="md-header-nav__button md-logo">
+          
+            <img src="../../images/logo.png" width="24" height="24">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Mantis
+            </span>
+            <span class="md-header-nav__topic">
+              
+                API Reference
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Mantis" class="md-nav__button md-logo">
+      
+        <img src="../../images/logo.png" width="48" height="48">
+      
+    </a>
+    Mantis
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Welcome to Mantis" class="md-nav__link">
+      Welcome to Mantis
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Getting Started
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Getting Started
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/" title="Getting Started Guide" class="md-nav__link">
+      Getting Started Guide
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/concepts/" title="Mantis Concepts" class="md-nav__link">
+      Mantis Concepts
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/usecases/" title="Use cases" class="md-nav__link">
+      Use cases
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/local/" title="Explore a Mantis Job locally" class="md-nav__link">
+      Explore a Mantis Job locally
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/docker/" title="Mantis Cluster using Docker" class="md-nav__link">
+      Mantis Cluster using Docker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/cloud/" title="Mantis Cluster in the cloud" class="md-nav__link">
+      Mantis Cluster in the cloud
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-7" type="checkbox" id="nav-2-7">
+    
+    <label class="md-nav__link" for="nav-2-7">
+      Mantis Samples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-7">
+        Mantis Samples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/samples/sinesample/" title="Sine Function" class="md-nav__link">
+      Sine Function
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/samples/twittersample/" title="Twitter Sample" class="md-nav__link">
+      Twitter Sample
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../gettingstarted/samples/publishsample/" title="Publish to Mantis Sample" class="md-nav__link">
+      Publish to Mantis Sample
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      Developing with Mantis
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Developing with Mantis
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../mre/" title="Publishing Events into Mantis" class="md-nav__link">
+      Publishing Events into Mantis
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
+    
+    <label class="md-nav__link" for="nav-3-2">
+      Writing Mantis Jobs
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        Writing Mantis Jobs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/" title="Introduction to Mantis Jobs" class="md-nav__link">
+      Introduction to Mantis Jobs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/source/" title="The Source Component" class="md-nav__link">
+      The Source Component
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/stage/" title="The Processing Stage Component" class="md-nav__link">
+      The Processing Stage Component
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/sink/" title="The Sink Component" class="md-nav__link">
+      The Sink Component
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/wordcount/" title="Writing Your First Job" class="md-nav__link">
+      Writing Your First Job
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/twitter/" title="Writing Your Second Job" class="md-nav__link">
+      Writing Your Second Job
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../writingjobs/groupby/" title="Writing Your Third Job" class="md-nav__link">
+      Writing Your Third Job
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+    
+    <label class="md-nav__link" for="nav-3-3">
+      Querying Streams in Mantis
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        Querying Streams in Mantis
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../mql/" title="Introduction to MQL" class="md-nav__link">
+      Introduction to MQL
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../mql/operators/" title="Operators" class="md-nav__link">
+      Operators
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../mql/sampling/" title="Sampling" class="md-nav__link">
+      Sampling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../mql/aggregation-scaling-limits/" title="Scaling Limits" class="md-nav__link">
+      Scaling Limits
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4" checked>
+    
+    <label class="md-nav__link" for="nav-3-4">
+      The Mantis API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-4">
+        The Mantis API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        API Reference
+      </label>
+    
+    <a href="./" title="API Reference" class="md-nav__link md-nav__link--active">
+      API Reference
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary-of-rest-api" class="md-nav__link">
+    Summary of REST API
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster-apis" class="md-nav__link">
+    Cluster APIs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-apis" class="md-nav__link">
+    Job APIs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin-apis" class="md-nav__link">
+    Admin APIs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streaming-websocketsse-apis" class="md-nav__link">
+    Streaming WebSocket/SSE APIs
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster-tasks" class="md-nav__link">
+    Cluster Tasks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-clusters" class="md-nav__link">
+    Get a List of Clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-a-new-cluster" class="md-nav__link">
+    Create a New Cluster
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setting-jobs-to-launch-at-particular-times" class="md-nav__link">
+    Setting Jobs to Launch at Particular Times
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-information-about-a-cluster" class="md-nav__link">
+    Get Information about a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-information-about-a-cluster" class="md-nav__link">
+    Change Information about a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-a-cluster" class="md-nav__link">
+    Delete a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-artifacts" class="md-nav__link">
+    Update a Cluster’s Artifacts
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-sla" class="md-nav__link">
+    Update a Cluster’s SLA
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-migration-strategy" class="md-nav__link">
+    Update a Cluster’s Migration Strategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-labels" class="md-nav__link">
+    Update a Cluster’s Labels
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable-a-cluster" class="md-nav__link">
+    Enable a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-a-cluster" class="md-nav__link">
+    Disable a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-map-of-mantis-publish-push-based-streams-to-clusters" class="md-nav__link">
+    Get a Map of Mantis Publish Push-Based Streams to Clusters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-tasks" class="md-nav__link">
+    Job Tasks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-jobs" class="md-nav__link">
+    Get a List of Jobs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-information-about-a-particular-job" class="md-nav__link">
+    Get Information About a Particular Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kill-a-job" class="md-nav__link">
+    Kill a Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-the-archived-workers-for-a-job" class="md-nav__link">
+    List the Archived Workers for a Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-jobs-for-a-particular-cluster" class="md-nav__link">
+    Get a List of Jobs for a Particular Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submit-a-new-job-for-a-particular-cluster" class="md-nav__link">
+    Submit a New Job for a Particular Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-job-cluster-and-submit-a-new-job-at-the-same-time" class="md-nav__link">
+    Update a Job Cluster and Submit a New Job at the Same Time
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-job-heartbeat-status" class="md-nav__link">
+    Post Job Heartbeat Status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#horizontally-scale-a-stage" class="md-nav__link">
+    Horizontally Scale a Stage
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resubmit-a-worker" class="md-nav__link">
+    Resubmit a Worker
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#administrative-tasks" class="md-nav__link">
+    Administrative Tasks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#return-job-master-information" class="md-nav__link">
+    Return Job Master Information
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#return-job-master-configs" class="md-nav__link">
+    Return Job Master Configs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-information-about-agent-clusters" class="md-nav__link">
+    Get Information about Agent Clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#activate-or-deactivate-an-agent-cluster" class="md-nav__link">
+    Activate or Deactivate an Agent Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieve-the-agent-cluster-scaling-policy" class="md-nav__link">
+    Retrieve the Agent Cluster Scaling Policy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-jobs-and-host-information-for-an-agent-cluster" class="md-nav__link">
+    Get Jobs and Host Information for an Agent Cluster
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streaming-websocketsse-tasks" class="md-nav__link">
+    Streaming WebSocket/SSE Tasks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stream-job-status-changes" class="md-nav__link">
+    Stream Job Status Changes
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stream-scheduling-information-for-a-job" class="md-nav__link">
+    Stream Scheduling Information for a Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-streaming-sse-discovery-info-for-a-cluster" class="md-nav__link">
+    Get Streaming (SSE) Discovery Info for a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream-job-information-for-a-cluster" class="md-nav__link">
+    Stream Job Information for a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream-job-sink-messages" class="md-nav__link">
+    Stream Job Sink Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submit-job-and-stream-job-sink-messages" class="md-nav__link">
+    Submit Job and Stream Job Sink Messages
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    Pagination
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="websocket/" title="Websocket API" class="md-nav__link">
+      Websocket API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../cli/" title="The Mantis CLI" class="md-nav__link">
+      The Mantis CLI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Mantis in Production
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Mantis in Production
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../production/capacity/" title="Mantis Job Capacity Planning & Sizing" class="md-nav__link">
+      Mantis Job Capacity Planning & Sizing
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../production/autoscaling/" title="Mantis Job Autoscaling" class="md-nav__link">
+      Mantis Job Autoscaling
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+    
+    <label class="md-nav__link" for="nav-5">
+      Mantis Internals
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Mantis Internals
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/infrastructure/" title="Infrastructure Overview" class="md-nav__link">
+      Infrastructure Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/sourcejobs/" title="Mantis Source Jobs" class="md-nav__link">
+      Mantis Source Jobs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/runtime/" title="Mantis Runtime" class="md-nav__link">
+      Mantis Runtime
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/localdockersetup/" title="Local Development" class="md-nav__link">
+      Local Development
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../community/" title="Community" class="md-nav__link">
+      Community
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../glossary/" title="Glossary" class="md-nav__link">
+      Glossary
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary-of-rest-api" class="md-nav__link">
+    Summary of REST API
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cluster-apis" class="md-nav__link">
+    Cluster APIs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-apis" class="md-nav__link">
+    Job APIs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin-apis" class="md-nav__link">
+    Admin APIs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streaming-websocketsse-apis" class="md-nav__link">
+    Streaming WebSocket/SSE APIs
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cluster-tasks" class="md-nav__link">
+    Cluster Tasks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-clusters" class="md-nav__link">
+    Get a List of Clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-a-new-cluster" class="md-nav__link">
+    Create a New Cluster
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setting-jobs-to-launch-at-particular-times" class="md-nav__link">
+    Setting Jobs to Launch at Particular Times
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-information-about-a-cluster" class="md-nav__link">
+    Get Information about a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-information-about-a-cluster" class="md-nav__link">
+    Change Information about a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-a-cluster" class="md-nav__link">
+    Delete a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-artifacts" class="md-nav__link">
+    Update a Cluster’s Artifacts
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-sla" class="md-nav__link">
+    Update a Cluster’s SLA
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-migration-strategy" class="md-nav__link">
+    Update a Cluster’s Migration Strategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-clusters-labels" class="md-nav__link">
+    Update a Cluster’s Labels
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable-a-cluster" class="md-nav__link">
+    Enable a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-a-cluster" class="md-nav__link">
+    Disable a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-map-of-mantis-publish-push-based-streams-to-clusters" class="md-nav__link">
+    Get a Map of Mantis Publish Push-Based Streams to Clusters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-tasks" class="md-nav__link">
+    Job Tasks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-jobs" class="md-nav__link">
+    Get a List of Jobs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-information-about-a-particular-job" class="md-nav__link">
+    Get Information About a Particular Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kill-a-job" class="md-nav__link">
+    Kill a Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-the-archived-workers-for-a-job" class="md-nav__link">
+    List the Archived Workers for a Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-jobs-for-a-particular-cluster" class="md-nav__link">
+    Get a List of Jobs for a Particular Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submit-a-new-job-for-a-particular-cluster" class="md-nav__link">
+    Submit a New Job for a Particular Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-a-job-cluster-and-submit-a-new-job-at-the-same-time" class="md-nav__link">
+    Update a Job Cluster and Submit a New Job at the Same Time
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-job-heartbeat-status" class="md-nav__link">
+    Post Job Heartbeat Status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#horizontally-scale-a-stage" class="md-nav__link">
+    Horizontally Scale a Stage
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resubmit-a-worker" class="md-nav__link">
+    Resubmit a Worker
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#administrative-tasks" class="md-nav__link">
+    Administrative Tasks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#return-job-master-information" class="md-nav__link">
+    Return Job Master Information
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#return-job-master-configs" class="md-nav__link">
+    Return Job Master Configs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-information-about-agent-clusters" class="md-nav__link">
+    Get Information about Agent Clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#activate-or-deactivate-an-agent-cluster" class="md-nav__link">
+    Activate or Deactivate an Agent Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieve-the-agent-cluster-scaling-policy" class="md-nav__link">
+    Retrieve the Agent Cluster Scaling Policy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-jobs-and-host-information-for-an-agent-cluster" class="md-nav__link">
+    Get Jobs and Host Information for an Agent Cluster
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streaming-websocketsse-tasks" class="md-nav__link">
+    Streaming WebSocket/SSE Tasks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stream-job-status-changes" class="md-nav__link">
+    Stream Job Status Changes
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stream-scheduling-information-for-a-job" class="md-nav__link">
+    Stream Scheduling Information for a Job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-streaming-sse-discovery-info-for-a-cluster" class="md-nav__link">
+    Get Streaming (SSE) Discovery Info for a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream-job-information-for-a-cluster" class="md-nav__link">
+    Stream Job Information for a Cluster
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream-job-sink-messages" class="md-nav__link">
+    Stream Job Sink Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submit-job-and-stream-job-sink-messages" class="md-nav__link">
+    Submit Job and Stream Job Sink Messages
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pagination" class="md-nav__link">
+    Pagination
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/developing/api/index.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>API Reference</h1>
+                
+                <p>In addition to the Mantis UI, there is a REST API with which you can maintain
+<a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> and <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Clusters</a>. This page describes the open source version of the Mantis REST
+API.</p>
+<p>You can use the Mantis REST API to submit Jobs based on existing Job Cluster or to connect to the
+output of running Jobs. It is easier to set up or update new Job Clusters by using the Mantis UI,
+but you can also do this with the Mantis REST API.</p>
+<div class="admonition note">
+<p class="admonition-title">Response Content Type</p>
+<p>Mantis API endpoints always return JSON, and do not respect content-type headers in API requests.</p>
+</div>
+<h2 id="summary-of-rest-api">Summary of REST API<a class="headerlink" href="#summary-of-rest-api" title="Permanent link">&para;</a></h2>
+<h3 id="cluster-apis">Cluster APIs<a class="headerlink" href="#cluster-apis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>endpoint</th>
+<th>verb</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#get-a-list-of-clusters"><code>/api/v1/jobClusters</code></a></td>
+<td><code>GET</code></td>
+<td>Return a list of Mantis <a href="../glossary#cluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">clusters</a>.</td>
+</tr>
+<tr>
+<td><a href="#create-a-new-cluster"><code>/api/v1/jobClusters</code></a></td>
+<td><code>POST</code></td>
+<td>Create a new cluster.</td>
+</tr>
+<tr>
+<td><a href="#get-information-about-a-cluster"><code>/api/v1/jobClusters/<var>clusterName</var></code></a></td>
+<td><code>GET</code></td>
+<td>Return information about a single cluster by name.</td>
+</tr>
+<tr>
+<td><a href="#change-information-about-a-cluster"><code>/api/v1/jobClusters/<var>clusterName</var></code></a></td>
+<td><code>PUT</code></td>
+<td>Update the information about a particular cluster.</td>
+</tr>
+<tr>
+<td><a href="#delete-a-cluster"><code>/api/v1/jobClusters/<var>clusterName</var></code></a></td>
+<td><code>DELETE</code></td>
+<td>Permanently delete a paticular cluster.</td>
+</tr>
+<tr>
+<td><a href="#update-a-clusters-artifacts"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateArtifact</code></a></td>
+<td><code>POST</code></td>
+<td>Update the job cluster <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifact</a> and optionally resubmit the <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">job</a>.</td>
+</tr>
+<tr>
+<td><a href="#update-a-clusters-sla"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateSla</code></a></td>
+<td><code>POST</code></td>
+<td>Update cluster <a href="../glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> information.</td>
+</tr>
+<tr>
+<td><a href="#update-a-clusters-migration-strategy"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateMigrationStrategy</code></a></td>
+<td><code>POST</code></td>
+<td>Update the cluster <a href="../glossary#migration">migration strategy</a>.</td>
+</tr>
+<tr>
+<td><a href="#update-a-clusters-labels"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateLabel</code></a></td>
+<td><code>POST</code></td>
+<td>Update cluster <a href="../glossary#label" title="A label is a text key/value pair that you can add to a Job Cluster or to an individual Job to make it easier to search for or group.">labels</a>.</td>
+</tr>
+<tr>
+<td><a href="#enable-a-cluster"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/enableCluster</code></a></td>
+<td><code>POST</code></td>
+<td>Enable a disabled cluster.</td>
+</tr>
+<tr>
+<td><a href="#disable-a-cluster"><code>/api/v1/jobClusters/<var>clusterName</var>/actions/disableCluster</code></a></td>
+<td><code>POST</code></td>
+<td>Disable a cluster.</td>
+</tr>
+<tr>
+<td><a href="#get-a-map-of-mantis-publish-push-based--streams-to-clusters"><code>/api/v1/mantis/publish/streamJobClusterMap</code></a></td>
+<td><code>GET</code></td>
+<td>Return a mapping of Mantis Publish push-based streams to clusters.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="job-apis">Job APIs<a class="headerlink" href="#job-apis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>endpoint</th>
+<th>verb</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#get-a-list-of-jobs"><code>/api/v1/jobs</code></a></td>
+<td><code>GET</code></td>
+<td>Return a list of jobs.</td>
+</tr>
+<tr>
+<td><a href="#get-a-list-of-jobs-for-a-particular-cluster"><code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code></a></td>
+<td><code>GET</code></td>
+<td>Return a list of jobs for a particular cluster.</td>
+</tr>
+<tr>
+<td><a href="#get-information-about-a-particular-job"><code>/api/v1/jobs/<var>jobID</var></code></a></td>
+<td><code>GET</code></td>
+<td>Return information about a particular job.</td>
+</tr>
+<tr>
+<td><a href="#get-information-about-a-particular-job"><code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code></a></td>
+<td><code>GET</code></td>
+<td>Return information about a particular job.</td>
+</tr>
+<tr>
+<td><a href="#kill-a-job"><code>/api/v1/jobs/<var>jobID</var></code></a></td>
+<td><code>DELETE</code></td>
+<td>Permanently kill a particular job.</td>
+</tr>
+<tr>
+<td><a href="#submit-a-new-job-for-a-particular-cluster"><code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code></a></td>
+<td><code>POST</code></td>
+<td>Submit a new job.</td>
+</tr>
+<tr>
+<td><a href="#update-a-job-cluster-and-submit-a-new-job-at-the-same-time"><code>/api/v1/jobs/actions/quickSubmit</code></a></td>
+<td><code>POST</code></td>
+<td>Update a job cluster and submit a new job at the same time.</td>
+</tr>
+<tr>
+<td><a href="#post-job-heartbeat-status"><code>/api/v1/jobs/<var>jobID</var>/actions/postJobStatus</code></a></td>
+<td><code>POST</code></td>
+<td>Post job heartbeat status.</td>
+</tr>
+<tr>
+<td><a href="#horizontally-scale-a-stage"><code>/api/v1/jobs/<var>jobID</var>/actions/scaleStage</code></a></td>
+<td><code>POST</code></td>
+<td>Horizontally scale a stage.</td>
+</tr>
+<tr>
+<td><a href="#resubmit-a-worker"><code>/api/v1/jobs/<var>jobID</var>/actions/resubmitWorker</code></a></td>
+<td><code>POST</code></td>
+<td>Resubmit a <a href="../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="admin-apis">Admin APIs<a class="headerlink" href="#admin-apis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>endpoint</th>
+<th>verb</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#return-job-master-information"><code>/api/v1/masterInfo</code></a></td>
+<td><code>GET</code></td>
+<td>Return <a href="../glossary#jobmaster" title="If a job is configured with autoscaling, Mantis will add a Job Master component to it as its initial component. This component will send metrics back to Mantis to help it govern the autoscaling process.">Job Master</a> information.</td>
+</tr>
+<tr>
+<td><a href="#return-job-master-configs"><code>/api/v1/masterConfigs</code></a></td>
+<td><code>GET</code></td>
+<td>Return Job Master configs.</td>
+</tr>
+<tr>
+<td><a href="#get-information-about-agent-clusters"><code>/api/v1/agentClusters/</code></a></td>
+<td><code>GET</code></td>
+<td>Get information about active agent clusters.</td>
+</tr>
+<tr>
+<td><a href="##activate-or-deactivate-an-agent-cluster"><code>/api/v1/agentClusters/</code></a></td>
+<td><code>POST</code></td>
+<td>Activate or deactivate an agent cluster.</td>
+</tr>
+<tr>
+<td><a href="#get-jobs-and-host-information-for-an-agent-cluster"><code>/api/v1/agentClusters/jobs</code></a></td>
+<td><code>GET</code></td>
+<td>Get jobs and host information for an agent cluster.</td>
+</tr>
+<tr>
+<td><a href="#retrieve-the-agent-cluster-scaling-policy"><code>/api/v1/agentClusters/autoScalePolicy</code></a></td>
+<td><code>GET</code></td>
+<td>Retrieve the Agent Cluster Scaling Policy.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="streaming-websocketsse-apis">Streaming WebSocket/SSE APIs<a class="headerlink" href="#streaming-websocketsse-apis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>endpoint</th>
+<th>verb</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#stream-job-status-changes"><code>ws://<var>masterHost</var>:7101/api/v1/jobStatusStream/<var>jobID</var></code></a></td>
+<td>n/a</td>
+<td>Stream Job Status Changes.</td>
+</tr>
+<tr>
+<td><a href="#stream-scheduling-information-for-a-job"><code>/api/v1/jobDiscoveryStream/<var>jobID</var></code></a> (<a href="../glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a>)</td>
+<td><code>GET</code></td>
+<td>Return streaming (SSE) scheduling information for a particular job.</td>
+</tr>
+<tr>
+<td><a href="#stream-scheduling-information-for-a-job"><code>/api/v1/jobs/schedulingInfo/<var>jobID</var></code></a> (SSE)</td>
+<td><code>GET</code></td>
+<td>Return streaming (SSE) scheduling information for a particular job.</td>
+</tr>
+<tr>
+<td><a href="#get-streaming-sse-discovery-info-for-a-cluster"><code>/api/v1/jobClusters/discoveryInfoStream/<var>clusterName</var></code></a> (SSE)</td>
+<td><code>GET</code></td>
+<td>Return streaming (SSE) discovery info for the given job cluster.</td>
+</tr>
+<tr>
+<td><a href="#stream-job-information-for-a-cluster"><code>/api/v1/lastSubmittedJobIdStream/<var>clusterName</var></code></a> (SSE)</td>
+<td><code>GET</code></td>
+<td>Return streaming (SSE) job information for a particular cluster.</td>
+</tr>
+<tr>
+<td><a href="#stream-job-sink-messages"><code>/api/v1/jobConnectbyid/<var>jobID</var></code></a> (SSE)</td>
+<td>n/a</td>
+<td>Collect messages from the job sinks and merge them into a single websocket or SSE stream.</td>
+</tr>
+<tr>
+<td><a href="#stream-job-sink-messages"><code>/api/v1/jobConnectbyname/<var>jobName</var></code></a> (SSE)</td>
+<td>n/a</td>
+<td>Collect messages from the job sinks and merge them into a single websocket or SSE stream.</td>
+</tr>
+<tr>
+<td><a href="#submit-job-and-stream-job-sink-messages"><code>/api/v1/jobsubmitandconnect</code></a> (SSE)</td>
+<td><code>POST</code></td>
+<td>Submit a job, collect messages from the job sinks, and merge them into a single websocket or SSE stream.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="cluster-tasks">Cluster Tasks<a class="headerlink" href="#cluster-tasks" title="Permanent link">&para;</a></h2>
+<p class="tbd">TBD</p>
+
+<h3 id="get-a-list-of-clusters">Get a List of Clusters<a class="headerlink" href="#get-a-list-of-clusters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters</code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve a list of JSON objects that include details about the available Job Clusters, issue a <code>GET</code> command to the Mantis REST API endpoint <code>/api/v1/jobClusters/</code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ascending</code> (optional)</td>
+<td>You can use this to indicate whether or not to sort the records in ascending order (<code>true</code></td>
+</tr>
+<tr>
+<td><code>fields</code> (optional)</td>
+<td>By default this endpoint will return all of the fields in the payload. You can set <code>fields</code> to a comma-delimited series of payload fields, in which case this endpoint will return only those fields of the payload. For example <code>?fields=name</code>.</td>
+</tr>
+<tr>
+<td><code>offset</code> (optional)</td>
+<td>The record number to begin with in the set of records to return in this request (use this with <code>pageSize</code> to get records by the page). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>pageSize</code> (optional)</td>
+<td>The maximum number of records to return in this request (default = 0, which means all records). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>sortBy</code> (optional)</td>
+<td>You can set this to the name of any payload field whose values are <code>Comparable</code> and this endpoint will return its results sorted by that field.</td>
+</tr>
+<tr>
+<td><code>matching</code> (optional)</td>
+<td>You can set this to a regular expression, and Mantis will filter the list of Job Clusters on the server side, and will return only those that match this expression.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><strong><code>GET /api/v1/jobClusters?pageSize=5&amp;fields=name&amp;sortBy=name&amp;ascending=false</code></strong></p>
+<div class="codehilite"><pre><span></span>{
+  &quot;list&quot;:
+    [{&quot;name&quot;:&quot;jschmoeSLATest&quot;},
+     {&quot;name&quot;:&quot;sinefn&quot;},
+     {&quot;name&quot;:&quot;Validation_ZV93BAWR2&quot;},
+     {&quot;name&quot;:&quot;Validation_Z8NB06L1A&quot;},
+     {&quot;name&quot;:&quot;Validation_Y828QAI01&quot;}],
+  &quot;prev&quot;:null,
+  &quot;next&quot;:&quot;/api/v1/jobClusters?pageSize=5&amp;fields=name&amp;sortBy=name&amp;ascending=false&amp;offset=5&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="create-a-new-cluster">Create a New Cluster<a class="headerlink" href="#create-a-new-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>Before you submit a <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a>, you must first have set up a <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>. A Job Cluster contains
+a unique name for the Job, a URL of the Job’s <code>.jar</code> or <code>.zip</code> artifact file, resource requirements
+to run your Job, and other optional information such as <a href="../glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> values for minimum and maximum Jobs to
+keep active for this Cluster, or a cron-based schedule to launch a Job for this Cluster. Each new
+Job can be considered as an instance of the Job Cluster, and is given a unique ID by appending a
+number suffix to the Cluster name. The Job inherits the resource requirements from the Cluster
+unless whoever submits the Job overrides these at submit time.</p>
+<p>A Job Cluster name must match this regular expression: <code>^[A-Za-z]+[A-Za-z0-9+-_=:;]*</code></p>
+<p>To create a new Job Cluster, issue a POST command to the Mantis REST API endpoint
+<code>/api/v1/jobClusters</code> with a request body that matches format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;jobDefinition&quot;: {
+    &quot;name&quot;: &quot;jschmoe_validation&quot;,
+    &quot;user&quot;: &quot;jschmoe&quot;,
+    &quot;jobJarFileLocation&quot;: &quot;https://some.host/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip&quot;,
+    &quot;version&quot;: &quot;0.2.9 2019-03-19 17:01:36&quot;,
+    &quot;schedulingInfo&quot;: {
+      &quot;stages&quot;: {
+        &quot;1&quot;: {
+          &quot;numberOfInstances&quot;: &quot;1&quot;,
+          &quot;machineDefinition&quot;: {
+            &quot;cpuCores&quot;: &quot;1&quot;,
+            &quot;memoryMB&quot;: &quot;1024&quot;,
+            &quot;diskMB&quot;: &quot;1024&quot;,
+            &quot;networkMbps&quot;: &quot;128&quot;,
+            &quot;numPorts&quot;: &quot;1&quot;
+          },
+          &quot;scalable&quot;: false,
+          &quot;softConstraints&quot;: [],
+          &quot;hardConstraints&quot;: []
+        }
+      }
+    },
+    &quot;parameters&quot;: [],
+    &quot;labels&quot;: [
+      {
+        &quot;name&quot;: &quot;_mantis.user&quot;,
+        &quot;value&quot;: &quot;jschmoe&quot;
+      },
+      {
+        &quot;name&quot;: &quot;_mantis.ownerEmail&quot;,
+        &quot;value&quot;: &quot;jschmoe@netflix.com&quot;
+      },
+      {
+        &quot;name&quot;: &quot;_mantis.artifact&quot;,
+        &quot;value&quot;: &quot;mantis-examples-sine-function&quot;
+      },
+      {
+        &quot;name&quot;: &quot;_mantis.artifact.version&quot;,
+        &quot;value&quot;: &quot;0.2.9&quot;
+      }
+    ],
+    &quot;migrationConfig&quot;: {
+      &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+      &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:25,\&quot;intervalMs\&quot;:60000}&quot;
+    },
+    &quot;slaMin&quot;: &quot;0&quot;,
+    &quot;slaMax&quot;: &quot;0&quot;,
+    &quot;cronSpec&quot;: null,
+    &quot;cronPolicy&quot;: &quot;KEEP_EXISTING&quot;
+  },
+  &quot;owner&quot;: {
+    &quot;contactEmail&quot;: &quot;jschmoe@netflix.com&quot;,
+    &quot;description&quot;: &quot;&quot;,
+    &quot;name&quot;: &quot;Joe Schmoe&quot;,
+    &quot;repo&quot;: &quot;&quot;,
+    &quot;teamName&quot;: &quot;&quot;
+  }
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;jschmoe_validation1&quot;,
+  &quot;jars&quot;: [
+    {
+      &quot;url&quot;: &quot;https://mantis.us-east-1.prod.netflix.net/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip&quot;,
+      &quot;uploadedAt&quot;: 1553040262171,
+      &quot;version&quot;: &quot;0.2.9 2019-03-19 17:01:36&quot;,
+      &quot;schedulingInfo&quot;: {
+        &quot;stages&quot;: {
+          &quot;1&quot;: {
+            &quot;numberOfInstances&quot;: 1,
+            &quot;machineDefinition&quot;: {
+              &quot;cpuCores&quot;: 1,
+              &quot;memoryMB&quot;: 1024,
+              &quot;networkMbps&quot;: 128,
+              &quot;diskMB&quot;: 1024,
+              &quot;numPorts&quot;: 1
+            },
+            &quot;hardConstraints&quot;: [],
+            &quot;softConstraints&quot;: [],
+            &quot;scalingPolicy&quot;: null,
+            &quot;scalable&quot;: false
+          }
+        }
+      }
+    }
+  ],
+  &quot;sla&quot;: {
+    &quot;min&quot;: 0,
+    &quot;max&quot;: 0,
+    &quot;cronSpec&quot;: null,
+    &quot;cronPolicy&quot;: null
+  },
+  &quot;parameters&quot;: [],
+  &quot;owner&quot;: {
+    &quot;name&quot;: &quot;Joe Schmoe&quot;,
+    &quot;teamName&quot;: &quot;&quot;,
+    &quot;description&quot;: &quot;&quot;,
+    &quot;contactEmail&quot;: &quot;jschmoe@netflix.com&quot;,
+    &quot;repo&quot;: &quot;&quot;
+  },
+  &quot;lastJobCount&quot;: 0,
+  &quot;disabled&quot;: false,
+  &quot;isReadyForJobMaster&quot;: false,
+  &quot;migrationConfig&quot;: {
+    &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+    &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:25,\&quot;intervalMs\&quot;:60000}&quot;
+  },
+  &quot;labels&quot;: [
+    {
+      &quot;name&quot;: &quot;_mantis.user&quot;,
+      &quot;value&quot;: &quot;jschmoe&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.ownerEmail&quot;,
+      &quot;value&quot;: &quot;jschmoe@netflix.com&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.artifact&quot;,
+      &quot;value&quot;: &quot;mantis-examples-sine-function&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.artifact.version&quot;,
+      &quot;value&quot;: &quot;0.2.9&quot;
+    }
+  ],
+  &quot;cronActive&quot;: false,
+  &quot;latestVersion&quot;: &quot;0.2.9 2019-03-19 17:01:36&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>201</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>cluster name already exists</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<h4 id="setting-jobs-to-launch-at-particular-times">Setting Jobs to Launch at Particular Times<a class="headerlink" href="#setting-jobs-to-launch-at-particular-times" title="Permanent link">&para;</a></h4>
+<p>You can use the <code>cronSpec</code> field in the body of this request to specify when to launch the Jobs in
+the Cluster. By default this is blank (<code>""</code>).</p>
+<p>If you set <code>cronSpec</code> to a non-blank value, this also sets the <code>min</code> and <code>max</code> values for the Job
+Cluster to 0 and 1 respectively. That is to say, you can have no more than one Job running at any
+one time for that Cluster.</p>
+<p>Optionally, you can provide a policy (<code>cronpolicy</code>) to use when a cron trigger fires while a
+previosuly submitted Job for the Job Cluster is still running. The possible policy values are
+<code>KEEP_EXISTING</code> (do not replace the current Job) and <code>KEEP_NEW</code> (replace the current Job with a new
+one). The default policy is <code>KEEP_EXISTING</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <a href="../glossary#mantismaster" title="The Mantis Master coordinates the execution of [Mantis Jobs] and starts the services on each Worker.">Mantis Master</a> is down during a time window when cron would normally have fired, that
+cron trigger time window is lost. Mantis does not check for this upon restart. The next cron
+trigger will resume normally.</p>
+</div>
+<hr />
+<h3 id="get-information-about-a-cluster">Get Information about a Cluster<a class="headerlink" href="#get-information-about-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var></code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve a JSON object that includes details about a Job Cluster, issue a <code>GET</code> command to the Mantis REST API endpoint <code>/api/v1/jobClusters/<var>clusterName</var></code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fields</code> (optional)</td>
+<td>By default this endpoint will return all of the fields in the payload. You can set <code>fields</code> to a comma-delimited series of payload fields, in which case this endpoint will return only those fields of the payload.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;jschmoe_validation1&quot;,
+  &quot;jars&quot;: [
+    {
+      &quot;url&quot;: &quot;https://mantis.us-east-1.prod.netflix.net/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip&quot;,
+      &quot;uploadedAt&quot;: 1553040262171,
+      &quot;version&quot;: &quot;0.2.9 2019-03-19 17:01:36&quot;,
+      &quot;schedulingInfo&quot;: {
+        &quot;stages&quot;: {
+          &quot;1&quot;: {
+            &quot;numberOfInstances&quot;: 1,
+            &quot;machineDefinition&quot;: {
+              &quot;cpuCores&quot;: 1,
+              &quot;memoryMB&quot;: 1024,
+              &quot;networkMbps&quot;: 128,
+              &quot;diskMB&quot;: 1024,
+              &quot;numPorts&quot;: 1
+            },
+            &quot;hardConstraints&quot;: [],
+            &quot;softConstraints&quot;: [],
+            &quot;scalingPolicy&quot;: null,
+            &quot;scalable&quot;: false
+          }
+        }
+      }
+    }
+  ],
+  &quot;sla&quot;: {
+    &quot;min&quot;: 0,
+    &quot;max&quot;: 0,
+    &quot;cronSpec&quot;: null,
+    &quot;cronPolicy&quot;: null
+  },
+  &quot;parameters&quot;: [],
+  &quot;owner&quot;: {
+    &quot;name&quot;: &quot;Joe Schmoe&quot;,
+    &quot;teamName&quot;: &quot;&quot;,
+    &quot;description&quot;: &quot;&quot;,
+    &quot;contactEmail&quot;: &quot;jschmoe@netflix.com&quot;,
+    &quot;repo&quot;: &quot;&quot;
+  },
+  &quot;lastJobCount&quot;: 0,
+  &quot;disabled&quot;: false,
+  &quot;isReadyForJobMaster&quot;: false,
+  &quot;migrationConfig&quot;: {
+    &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+    &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:25,\&quot;intervalMs\&quot;:60000}&quot;
+  },
+  &quot;labels&quot;: [
+    {
+      &quot;name&quot;: &quot;_mantis.user&quot;,
+      &quot;value&quot;: &quot;jschmoe&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.ownerEmail&quot;,
+      &quot;value&quot;: &quot;jschmoe@netflix.com&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.artifact&quot;,
+      &quot;value&quot;: &quot;mantis-examples-sine-function&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.artifact.version&quot;,
+      &quot;value&quot;: &quot;0.2.9&quot;
+    }
+  ],
+  &quot;cronActive&quot;: false,
+  &quot;latestVersion&quot;: &quot;0.2.9 2019-03-19 17:01:36&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with that cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="change-information-about-a-cluster">Change Information about a Cluster<a class="headerlink" href="#change-information-about-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var></code> (<code>PUT</code>)</strong></li>
+</ul>
+<p>To update an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, send a <code>PUT</code> command to the Mantis REST API endpoint
+<code>/api/v1/jobClusters/<var>clusterName</var></code> with the same sort of body described above
+in the case of a Job Cluster create operation. Increment the version number so as to differentiate
+your new Cluster from the previous Job <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. If you try to update an existing Job Cluster by
+reusing the version number of an existing one, the operation will fail.</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;jobDefinition&quot;: {
+    &quot;name&quot;: &quot;Validation_jschmoe&quot;,
+    &quot;user&quot;: &quot;validator&quot;,
+    &quot;jobJarFileLocation&quot;: &quot;https://some.host/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip&quot;,
+    &quot;parameters&quot;: [
+      {
+        &quot;name&quot;: &quot;useRandom&quot;,
+        &quot;value&quot;: false
+      }
+    ],
+    &quot;schedulingInfo&quot;: {
+      &quot;stages&quot;: {
+        &quot;0&quot;: {
+          &quot;numberOfInstances&quot;: 1,
+          &quot;machineDefinition&quot;: {
+            &quot;cpuCores&quot;: 2,
+            &quot;memoryMB&quot;: 4096,
+            &quot;diskMB&quot;: 10,
+            &quot;numPorts&quot;: 1
+          },
+          &quot;hardConstraints&quot;: null,
+          &quot;softConstraints&quot;: null,
+          &quot;scalable&quot;: false
+        },
+        &quot;1&quot;: {
+          &quot;numberOfInstances&quot;: 1,
+          &quot;machineDefinition&quot;: {
+            &quot;cpuCores&quot;: 2,
+            &quot;memoryMB&quot;: 4096,
+            &quot;diskMB&quot;: 10,
+            &quot;numPorts&quot;: 1
+          },
+          &quot;hardConstraints&quot;: null,
+          &quot;softConstraints&quot;: null,
+          &quot;scalable&quot;: false
+        }
+      }
+    },
+    &quot;slaMin&quot;: 0,
+    &quot;slaMax&quot;: 0,
+    &quot;cronSpec&quot;: null,
+    &quot;cronPolicy&quot;: &quot;KEEP_EXISTING&quot;,
+    &quot;migrationConfig&quot;: {
+      &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:60, \&quot;intervalMs\&quot;:30000}&quot;,
+      &quot;strategy&quot;: &quot;PERCENTAGE&quot;
+    }
+  },
+  &quot;owner&quot;: {
+    &quot;name&quot;: &quot;validator&quot;,
+    &quot;teamName&quot;: &quot;Mantis&quot;,
+    &quot;description&quot;: &quot;integration validator&quot;,
+    &quot;contactEmail&quot;: &quot;mantisteam@netflix.com&quot;
+  }
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function Job cluster updated</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>client failure</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no existing cluster with that cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>PUT</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="delete-a-cluster">Delete a Cluster<a class="headerlink" href="#delete-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var></code> (<code>DELETE</code>)</strong></li>
+</ul>
+<p>To permanently delete an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, send a <code>DELETE</code> command to the Mantis REST API
+endpoint <code>/api/v1/jobClusters/<var>clusterName</var></code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user</code> (required)</td>
+<td>Must match the original user in the cluster payload.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><p class="tbd">TBD</p></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>202</code></td>
+<td>normal response: asynchronous delete has been scheduled</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>DELETE</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="update-a-clusters-artifacts">Update a Cluster’s Artifacts<a class="headerlink" href="#update-a-clusters-artifacts" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateArtifact</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>You can make a “quick update” of an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> and also submit a new <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> with the
+updated cluster <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. This lets you update the Job Cluster with minimal information, without
+having to specify the scheduling info, as long as at least one Job was previously submitted for this
+Job Cluster. Mantis copies the scheduling information, Job <a href="../glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a>, and so forth, from the last
+Job submitted.</p>
+<p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
+<code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateArtifact</code> with a body that
+matches the format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;ValidatorDemo&quot;,
+  &quot;version&quot;: &quot;0.0.1 2019-02-06 11:30:49&quot;,
+  &quot;url&quot;: &quot;mantis-artifacts/demo-0.0.1-dev201901231434.zip&quot;,
+  &quot;skipsubmit&quot;: false,
+  &quot;user&quot;: &quot;jschmoe&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function Job cluster updated</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p>You will receive in the response the Job ID of the newly submitted Job (unless you set <code>skipsubmit</code>
+to <code>true</code> in the request body, in which case no such Job will be created).</p>
+<hr />
+<h3 id="update-a-clusters-sla">Update a Cluster’s SLA<a class="headerlink" href="#update-a-clusters-sla" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateSla</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>To update the <a href="../glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> of a <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to submit a new version, send a <code>POST</code> command
+to the Mantis REST API endpoint
+<code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateSla</code> with a body that matches
+the format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{ 
+  &quot;user&quot;: &quot;YourUserName&quot;,
+  &quot;name&quot;: &quot;Foo&quot;,
+  &quot;min&quot;: 0,
+  &quot;max&quot;: 2,
+  &quot;cronspec&quot;: &quot;5 * * * * ?&quot;,
+  &quot;cronpolicy&quot;: &quot;KEEP_EXISTING&quot;,
+  &quot;forceenable&quot;: true
+}
+</pre></div>
+
+
+</details>
+<p>The fields of this body are as follows:</p>
+<table>
+<thead>
+<tr>
+<th>SLA Field</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user</code></td>
+<td>(required) name of the user calling this endpoint</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>(required) name of the Job Cluster</td>
+</tr>
+<tr>
+<td><code>min</code></td>
+<td>minimum number of <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> to keep running</td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td>maximum number of Jobs to allow running simultaneously</td>
+</tr>
+<tr>
+<td><code>cronspec</code></td>
+<td>cron specification, see below for format and examples</td>
+</tr>
+<tr>
+<td><code>cronpolicy</code></td>
+<td>either <code>KEEP_EXISTING</code> or <code>KEEP_NEW</code> (see above for details)</td>
+</tr>
+<tr>
+<td><code>forceenable</code></td>
+<td>either <code>true</code> or <code>false</code>; reenable the Job Cluster if it is in the disabled state</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While <code>min</code>, <code>max</code>, <code>cronspec</code>, <code>cronpolicy</code>, and <code>forceenable</code> are all optional fields, you
+should provide at minimum either <code>cronspec</code> or the combination of <code>min</code> &amp; <code>max</code>.</p>
+</div>
+<p>The cron specification string is defined by <a href="http://www.quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger">Quartz CronTrigger</a>. Here are some examples:</p>
+<details class="example"><summary>Examples of <code>cronspec</code> Values</summary><table>
+<thead>
+<tr>
+<th>example <code>cronspec</code> value</th>
+<th>resulting job trigger time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code style="white-space:nowrap">"0 0 12 * * ?"</code></td>
+<td>Fire at 12&nbsp;p.m. (noon) every day.</td>
+</tr>
+<tr>
+<td><code style="white-space:nowrap">"0 15 10 ? * *"</code></td>
+<td>Fire at 10:15&nbsp;a.m. every day.</td>
+</tr>
+<tr>
+<td><code style="white-space:nowrap">"0 15 10 * * ?"</code></td>
+<td>Fire at 10:15&nbsp;a.m. every day.</td>
+</tr>
+<tr>
+<td><code style="white-space:nowrap">"0 0-5 14 * * ?"</code></td>
+<td>Fire every minute starting at 2&nbsp;p.m. and ending at 2:05&nbsp;p.m., every day.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p>Scheduling information for Jobs launched by means of cron triggers is inherited from the scheduling
+information for the Job Cluster.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If a Job takes required <a href="../glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a>, the Job will not launch successfully if the Job Cluster
+does not establish defaults for those parameters. A Job launched by means of a cron trigger
+always uses these default parameters to launch the Job.</p>
+</div>
+<p>If you provide an invalid cron specification, this will disable the Job Cluster. To fix this, when
+you reformulate your cron specification, also set <code>forceenable</code> to <code>"true"</code> in the body that you
+send via <code>POST</code> to <code>/api/v2/jobClusters/<var>clusterName</var>/actions/updateSla</code>.</p>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function SLA updated</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="example"><summary>Example: Creating a Job Cluster with a cron Specification</summary><p>The following <code>POST</code> body to
+<code>/api/v2/jobClusters/<var>clusterName</var>/actions/updateSla</code> would specify Jobs
+that are launched based on a timed schedule:</p>
+<div class="codehilite"><pre><span></span>{
+  &quot;jobDefinition&quot;: {
+    &quot;name&quot;: &quot;Foo&quot;,
+    &quot;user&quot;: &quot;YourUserName&quot;,
+    &quot;version&quot;: &quot;1.0&quot;,
+    &quot;parameters&quot;: [
+      {
+        &quot;name&quot;: &quot;param1&quot;,
+        &quot;value&quot;: &quot;value1&quot;
+      },
+      {
+        &quot;name&quot;: &quot;param2&quot;,
+        &quot;value&quot;: &quot;value2&quot;
+      }
+    ],
+    &quot;schedulingInfo&quot;: {
+      &quot;stages&quot;: {
+        &quot;1&quot;: {
+          &quot;numberOfInstances&quot;: 1,
+          &quot;machineDefinition&quot;: {
+            &quot;cpuCores&quot;: 2,
+            &quot;memoryMB&quot;: 4096,
+            &quot;diskMB&quot;: 10
+          },
+          &quot;hardConstraints&quot;: null,
+          &quot;softConstraints&quot;: null,
+          &quot;scalable&quot;: false
+        }
+      }
+    },
+    &quot;slaMin&quot;: 0,
+    &quot;slaMax&quot;: 0,
+    &quot;cronSpec&quot;: &quot;2 * * * * ?&quot;,
+    &quot;cronPolicy&quot;:&quot;KEEP_EXISTING&quot;,
+    &quot;jobJarFileLocation&quot;: &quot;http://www.jobjars.com/foo&quot;
+  },
+  &quot;owner&quot;: {
+    &quot;name&quot;: &quot;MyName&quot;,
+    &quot;teamName&quot;: &quot;myTeam&quot;,
+    &quot;description&quot;: &quot;description&quot;,
+    &quot;contactEmail&quot;: &quot;email@company.com&quot;,
+    &quot;repo&quot;: &quot;http://repos.com/myproject.git&quot;
+  }
+}
+</pre></div>
+
+
+</details>
+<hr />
+<h3 id="update-a-clusters-migration-strategy">Update a Cluster’s Migration Strategy<a class="headerlink" href="#update-a-clusters-migration-strategy" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateMigrationStrategy</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>You can quickly update the <a href="../glossary#migration">migration strategy</a> of an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to
+update the entirety of the Cluster definition. To do this, send a <code>POST</code> command to the Mantis REST
+API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateMigrationStrategy</code>
+with a body that matches the format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;NameOfJobCluster&quot;,
+  &quot;migrationConfig&quot;: {
+    &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+    &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:10, \&quot;intervalMs\&quot;:1000}&quot;
+  },
+  &quot;user&quot;: &quot;YourUserName&quot;
+}
+</pre></div>
+
+
+</details>
+<p>You will receive in the response the migration strategy config that you have updated the Job Cluster
+to.</p>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function worker migration config updated</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="update-a-clusters-labels">Update a Cluster’s Labels<a class="headerlink" href="#update-a-clusters-labels" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateLabel</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>You can quickly update the <a href="../glossary#label" title="A label is a text key/value pair that you can add to a Job Cluster or to an individual Job to make it easier to search for or group.">labels</a> of an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> without having to update the
+entirety of the Cluster definition. To do this, send a <code>POST</code> command to the Mantis REST
+API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>/actions/updateLabel</code> with a body
+that matches the format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;SPaaSBackpressureDemp&quot;,
+  &quot;labels&quot;: [
+    {
+      &quot;name&quot;: &quot;_mantis.user&quot;,
+      &quot;value&quot;: &quot;jschmoe&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.ownerEmail&quot;,
+      &quot;value&quot;: &quot;jschmoe@netflix.com&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.artifact&quot;,
+      &quot;value&quot;: &quot;backpressure-demo-aggregator-0.0.1&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.artifact.version&quot;,
+      &quot;value&quot;: &quot;dev201901231434&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.jobType&quot;,
+      &quot;value&quot;: &quot;aggregator&quot;
+    },
+    {
+      &quot;name&quot;: &quot;_mantis.criticality&quot;,
+      &quot;value&quot;: &quot;medium&quot;
+    },
+    {
+      &quot;name&quot;: &quot;myTestLabel&quot;,
+      &quot;value&quot;: &quot;bingo&quot;
+    }
+  ],
+  &quot;user&quot;: &quot;jschmoe&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function labels updated</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="enable-a-cluster">Enable a Cluster<a class="headerlink" href="#enable-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/enableCluster</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>You can quickly change the state of an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> to <code>enabled=true</code> without having to
+update the entirety of the Cluster definition.</p>
+<p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
+<code>/api/v1/jobClusters/<var>clusterName</var>/actions/enableCluster</code> with a body that
+matches the format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;SPaaSBackpressureDemp&quot;,
+  &quot;user&quot;: &quot;jschmoe&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function enabled</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="disable-a-cluster">Disable a Cluster<a class="headerlink" href="#disable-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/actions/disableCluster</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>You can quickly change the state of an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> to <code>enabled=false</code> without having to
+update the entirety of the Cluster definition.</p>
+<p>When you disable a Job Cluster Mantis will not allow new <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> submissions under that Cluster and
+it will terminate any Jobs from that Cluster that are currently running. Mantis will also stop
+enforcing the <a href="../glossary#sla" title="A service-level agreement, in the Mantis context, is defined on a per-Cluster basis. You use it to configure how many Jobs in the cluster will be in operation at any time, among other things.">SLA</a> requirements for the Cluster, including any cron setup that would otherwise
+launch new Jobs.</p>
+<p>This is useful when a Job Cluster must be temporarily made inactive, for instance if you have
+determined that there is a problem with it.</p>
+<p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
+<code>/api/v1/jobClusters/<var>clusterName</var>/actions/disableCluster</code> with a body that
+matches the format of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;SPaaSBackpressureDemp&quot;,
+  &quot;user&quot;: &quot;jschmoe&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p>sine-function disabled</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="get-a-map-of-mantis-publish-push-based-streams-to-clusters">Get a Map of Mantis Publish Push-Based Streams to Clusters<a class="headerlink" href="#get-a-map-of-mantis-publish-push-based-streams-to-clusters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/mantis/publish/streamJobClusterMap</code> (<code>GET</code>)</strong></li>
+</ul>
+<p class="tbd">describe</p>
+
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+  &quot;version&quot;: &quot;1&quot;,
+  &quot;timestamp&quot;: 2,
+  &quot;mappings&quot;: {
+    &quot;__default__&quot;: {
+      &quot;requestEventStream&quot;: &quot;SharedMantisPublishEventSource&quot;,
+      &quot;__default__&quot;: &quot;SharedMantisPublishEventSource&quot;
+    }
+  }
+}
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="job-tasks">Job Tasks<a class="headerlink" href="#job-tasks" title="Permanent link">&para;</a></h2>
+<p class="tbd">TBD</p>
+
+<h3 id="get-a-list-of-jobs">Get a List of Jobs<a class="headerlink" href="#get-a-list-of-jobs" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs</code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve a JSON array of IDs of the active <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a>, issue a <code>GET</code> command to the Mantis REST API
+endpoint <code>/api/v1/jobs</code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ascending</code> (optional)</td>
+<td>You can use this to indicate whether or not to sort the records in ascending order (<code>true</code></td>
+</tr>
+<tr>
+<td><code>compact</code> (optional)</td>
+<td>Ask the server to return compact responses (<code>true</code></td>
+</tr>
+<tr>
+<td><code>fields</code> (optional)</td>
+<td>By default this endpoint will return all of the fields in the payload. You can set <code>fields</code> to a comma-delimited series of payload fields, in which case this endpoint will return only those fields in the response.</td>
+</tr>
+<tr>
+<td><code>limit</code> (optional)</td>
+<td>The maximum record size to return (default = no limit).</td>
+</tr>
+<tr>
+<td><code>offset</code> (optional)</td>
+<td>The record number to begin with in the set of records to return in this request (use this with <code>pageSize</code> to get records by the page). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>pageSize</code> (optional)</td>
+<td>The maximum number of records to return in this request (default = 0, which means all records). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>sortBy</code> (optional)</td>
+<td>You can set this to the name of any payload field whose values are <code>Comparable</code> and this endpoint will return its results sorted by that field.</td>
+</tr>
+</tbody>
+</table>
+<p>There is also a series of query parameters that you can use to set server-side filters that will restrict the jobs represented in the resulting list of jobs to only those jobs that match the filters:</p>
+<table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>What It Filters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activeOnly</code> (optional)</td>
+<td>The <code>activeOnly</code> field (boolean). By default, this is <code>true</code>.</td>
+</tr>
+<tr>
+<td><code>jobState</code> (optional)</td>
+<td>Job state, <code>Active</code> or <code>Terminal</code>. By default, this endpoint filters on <code>jobState=Active</code>. This query parameter has precedence over the <code>activeOnly</code> parameter.</td>
+</tr>
+<tr>
+<td><code>labels</code> (optional)</td>
+<td>Labels in the <code>labels</code> array. You can express this by setting this parameter to a comma-delimited list of label strings.</td>
+</tr>
+<tr>
+<td><code>labels.op</code> (optional)</td>
+<td>Use this parameter to tell the server whether to treat the list of <code>labels</code> you have provided as an <code>or</code> (default: a job that contains <em>any</em> of the labels will be returned in the list), or an <code>and</code> (only jobs that contain <em>all</em> of the labels will be returned). Set this to <code>or</code> or <code>and</code>.</td>
+</tr>
+<tr>
+<td><code>matching</code> (optional)</td>
+<td>The cluster name. Set this to a regex string. You can also use the <code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> endpoint if you mean to match a specific cluster name and do not need the flexibility of a regex filter.</td>
+</tr>
+<tr>
+<td><code>stageNumber</code> (optional)</td>
+<td>Stage number (integer). This filters the list to contain only those jobs corresponding to workers that are relevant to the specified stage.</td>
+</tr>
+<tr>
+<td><code>workerIndex</code> (optional)</td>
+<td>The <code>workerIndex</code> field (integer).</td>
+</tr>
+<tr>
+<td><code>workerNumber</code> (optional)</td>
+<td>The <code>workerNumber</code> field (integer).</td>
+</tr>
+<tr>
+<td><code>workerState</code> (optional)</td>
+<td>The <code>workerState</code> field (<code>Noop</code>, <code>Active</code> (default), or <code>Terminal</code>)</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p class="tbd">describe</p>
+
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+        &quot;list&quot;: [
+            {
+                &quot;jobMetadata&quot;: {
+                    &quot;jobId&quot;: &quot;sine-test-4&quot;,
+                    &quot;name&quot;: &quot;sine-test&quot;,
+                    &quot;user&quot;: &quot;someuser&quot;,
+                    &quot;submittedAt&quot;: 1574188324276,
+                    &quot;startedAt&quot;: 1574188354708,
+                    &quot;jarUrl&quot;: &quot;http://mantis-examples-sine-function-0.2.9.zip&quot;,
+                    &quot;numStages&quot;: 1,
+                    &quot;sla&quot;: {
+                        &quot;runtimeLimitSecs&quot;: 0,
+                        &quot;minRuntimeSecs&quot;: 0,
+                        &quot;slaType&quot;: &quot;Lossy&quot;,
+                        &quot;durationType&quot;: &quot;Perpetual&quot;,
+                        &quot;userProvidedType&quot;: &quot;&quot;
+                    },
+                    &quot;state&quot;: &quot;Launched&quot;,
+                    &quot;subscriptionTimeoutSecs&quot;: 0,
+                    &quot;parameters&quot;: [
+                        {
+                            &quot;name&quot;: &quot;useRandom&quot;,
+                            &quot;value&quot;: &quot;True&quot;
+                        }
+                    ],
+                    &quot;nextWorkerNumberToUse&quot;: 40,
+                    &quot;migrationConfig&quot;: {
+                        &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+                        &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:25,\&quot;intervalMs\&quot;:60000}&quot;
+                    },
+                    &quot;labels&quot;: [
+                        {
+                            &quot;name&quot;: &quot;_mantis.user&quot;,
+                            &quot;value&quot;: &quot;zxu&quot;
+                        },
+                        {
+                            &quot;name&quot;: &quot;_mantis.ownerEmail&quot;,
+                            &quot;value&quot;: &quot;zxu@netflix.com&quot;
+                        },
+                        {
+                            &quot;name&quot;: &quot;_mantis.artifact.version&quot;,
+                            &quot;value&quot;: &quot;0.2.9&quot;
+                        },
+                        {
+                            &quot;name&quot;: &quot;_mantis.artifact&quot;,
+                            &quot;value&quot;: &quot;mantis-examples-sine-function-0.2.9.zip&quot;
+                        },
+                        {
+                            &quot;name&quot;: &quot;_mantis.version&quot;,
+                            &quot;value&quot;: &quot;0.2.9 2019-03-19 17:01:36&quot;
+                        }
+                    ]
+                },
+                &quot;stageMetadataList&quot;: [
+                    {
+                        &quot;jobId&quot;: &quot;sine-test-4&quot;,
+                        &quot;stageNum&quot;: 1,
+                        &quot;numStages&quot;: 1,
+                        &quot;machineDefinition&quot;: {
+                            &quot;cpuCores&quot;: 1.0,
+                            &quot;memoryMB&quot;: 1024.0,
+                            &quot;networkMbps&quot;: 128.0,
+                            &quot;diskMB&quot;: 1024.0,
+                            &quot;numPorts&quot;: 1
+                        },
+                        &quot;numWorkers&quot;: 1,
+                        &quot;hardConstraints&quot;: [],
+                        &quot;softConstraints&quot;: [],
+                        &quot;scalingPolicy&quot;: null,
+                        &quot;scalable&quot;: false
+                    }
+                ],
+                &quot;workerMetadataList&quot;: [
+                    {
+                        &quot;workerIndex&quot;: 0,
+                        &quot;workerNumber&quot;: 31,
+                        &quot;jobId&quot;: &quot;sine-test-4&quot;,
+                        &quot;stageNum&quot;: 1,
+                        &quot;numberOfPorts&quot;: 5,
+                        &quot;metricsPort&quot;: 7150,
+                        &quot;consolePort&quot;: 7152,
+                        &quot;debugPort&quot;: 7151,
+                        &quot;customPort&quot;: 7153,
+                        &quot;ports&quot;: [
+                            7154
+                        ],
+                        &quot;state&quot;: &quot;Started&quot;,
+                        &quot;slave&quot;: &quot;100.82.168.140&quot;,
+                        &quot;slaveID&quot;: &quot;f39108b0-da43-45df-8b12-c132d85de7c0-S1&quot;,
+                        &quot;cluster&quot;: &quot;mantisagent-staging-m5.2xlarge-1&quot;,
+                        &quot;acceptedAt&quot;: 1575675900626,
+                        &quot;launchedAt&quot;: 1575675996506,
+                        &quot;startingAt&quot;: 1575676025493,
+                        &quot;startedAt&quot;: 1575676026661,
+                        &quot;completedAt&quot;: -1,
+                        &quot;reason&quot;: &quot;Normal&quot;,
+                        &quot;resubmitOf&quot;: 22,
+                        &quot;totalResubmitCount&quot;: 4
+                    }
+                ],
+                &quot;version&quot;: null
+            }
+        ],
+        &quot;prev&quot;: null,
+        &quot;next&quot;: null,
+        &quot;total&quot;: 1
+    }
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="get-information-about-a-particular-job">Get Information About a Particular Job<a class="headerlink" href="#get-information-about-a-particular-job" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/<var>jobID</var></code> (<code>GET</code>)</strong></li>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve a JSON record of a particular <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>GET</code> command to the Mantis REST API
+endpoint <code>/api/v1/jobs/<var>jobID</var></code>
+or <code>/api/v1/jobClusters/<var>clusterName</var>/jobs/<var>jobID</var></code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fields</code> (optional)</td>
+<td>By default this endpoint will return all of the fields in the payload. You can set <code>fields</code> to a comma-delimited series of payload fields, in which case this endpoint will return only those fields in the response.</td>
+</tr>
+<tr>
+<td><code>archived</code> (optional)</td>
+<td>By default only information about an active job will be returned. Set this to <code>true</code> if you want information about the job returned even if it is an archived inactive job.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p class="tbd">describe</p>
+
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+            &quot;jobMetadata&quot;: {
+                &quot;jobId&quot;: &quot;sine-function-7531&quot;,
+                &quot;name&quot;: &quot;sine-function&quot;,
+                &quot;user&quot;: &quot;someuser&quot;,
+                &quot;submittedAt&quot;: 1576002266997,
+                &quot;startedAt&quot;: 0,
+                &quot;jarUrl&quot;: &quot;http://mantis-examples-sine-function-0.2.9.zip&quot;,
+                &quot;numStages&quot;: 2,
+                &quot;sla&quot;: {
+                    &quot;runtimeLimitSecs&quot;: 0,
+                    &quot;minRuntimeSecs&quot;: 0,
+                    &quot;slaType&quot;: &quot;Lossy&quot;,
+                    &quot;durationType&quot;: &quot;Perpetual&quot;,
+                    &quot;userProvidedType&quot;: &quot;&quot;
+                },
+                &quot;state&quot;: &quot;Accepted&quot;,
+                &quot;subscriptionTimeoutSecs&quot;: 0,
+                &quot;parameters&quot;: [
+                    {
+                        &quot;name&quot;: &quot;useRandom&quot;,
+                        &quot;value&quot;: &quot;False&quot;
+                    }
+                ],
+                &quot;nextWorkerNumberToUse&quot;: 10,
+                &quot;migrationConfig&quot;: {
+                    &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+                    &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:25,\&quot;intervalMs\&quot;:60000}&quot;
+                },
+                &quot;labels&quot;: [
+                    {
+                        &quot;name&quot;: &quot;_mantis.artifact&quot;,
+                        &quot;value&quot;: &quot;mantis-examples-sine-function-0.2.9.zip&quot;
+                    },
+                    {
+                        &quot;name&quot;: &quot;_mantis.version&quot;,
+                        &quot;value&quot;: &quot;0.2.9 2018-04-23 13:22:02&quot;
+                    }
+                ]
+            },
+            &quot;stageMetadataList&quot;: [
+                {
+                    &quot;jobId&quot;: &quot;sine-function-7531&quot;,
+                    &quot;stageNum&quot;: 0,
+                    &quot;numStages&quot;: 2,
+                    &quot;machineDefinition&quot;: {
+                        &quot;cpuCores&quot;: 2.0,
+                        &quot;memoryMB&quot;: 4096.0,
+                        &quot;networkMbps&quot;: 128.0,
+                        &quot;diskMB&quot;: 1024.0,
+                        &quot;numPorts&quot;: 1
+                    },
+                    &quot;numWorkers&quot;: 1,
+                    &quot;hardConstraints&quot;: [],
+                    &quot;softConstraints&quot;: [],
+                    &quot;scalingPolicy&quot;: null,
+                    &quot;scalable&quot;: false
+                },
+                {
+                    &quot;jobId&quot;: &quot;sine-function-7531&quot;,
+                    &quot;stageNum&quot;: 1,
+                    &quot;numStages&quot;: 2,
+                    &quot;machineDefinition&quot;: {
+                        &quot;cpuCores&quot;: 1.0,
+                        &quot;memoryMB&quot;: 1024.0,
+                        &quot;networkMbps&quot;: 128.0,
+                        &quot;diskMB&quot;: 1024.0,
+                        &quot;numPorts&quot;: 1
+                    },
+                    &quot;numWorkers&quot;: 1,
+                    &quot;hardConstraints&quot;: [],
+                    &quot;softConstraints&quot;: [],
+                    &quot;scalingPolicy&quot;: null,
+                    &quot;scalable&quot;: false
+                }
+            ],
+            &quot;workerMetadataList&quot;: [
+                {
+                    &quot;workerIndex&quot;: 0,
+                    &quot;workerNumber&quot;: 1,
+                    &quot;jobId&quot;: &quot;sine-function-7531&quot;,
+                    &quot;stageNum&quot;: 0,
+                    &quot;numberOfPorts&quot;: 5,
+                    &quot;metricsPort&quot;: -1,
+                    &quot;consolePort&quot;: -1,
+                    &quot;debugPort&quot;: -1,
+                    &quot;customPort&quot;: -1,
+                    &quot;ports&quot;: [],
+                    &quot;state&quot;: &quot;Accepted&quot;,
+                    &quot;slave&quot;: null,
+                    &quot;slaveID&quot;: null,
+                    &quot;cluster&quot;: null,
+                    &quot;acceptedAt&quot;: 1576002267005,
+                    &quot;launchedAt&quot;: -1,
+                    &quot;startingAt&quot;: -1,
+                    &quot;startedAt&quot;: -1,
+                    &quot;completedAt&quot;: -1,
+                    &quot;reason&quot;: &quot;Normal&quot;,
+                    &quot;resubmitOf&quot;: 0,
+                    &quot;totalResubmitCount&quot;: 0
+                },
+                {
+                    &quot;workerIndex&quot;: 0,
+                    &quot;workerNumber&quot;: 2,
+                    &quot;jobId&quot;: &quot;sine-function-7531&quot;,
+                    &quot;stageNum&quot;: 1,
+                    &quot;numberOfPorts&quot;: 5,
+                    &quot;metricsPort&quot;: -1,
+                    &quot;consolePort&quot;: -1,
+                    &quot;debugPort&quot;: -1,
+                    &quot;customPort&quot;: -1,
+                    &quot;ports&quot;: [],
+                    &quot;state&quot;: &quot;Accepted&quot;,
+                    &quot;slave&quot;: null,
+                    &quot;slaveID&quot;: null,
+                    &quot;cluster&quot;: null,
+                    &quot;acceptedAt&quot;: 1576002267007,
+                    &quot;launchedAt&quot;: -1,
+                    &quot;startingAt&quot;: -1,
+                    &quot;startedAt&quot;: -1,
+                    &quot;completedAt&quot;: -1,
+                    &quot;reason&quot;: &quot;Normal&quot;,
+                    &quot;resubmitOf&quot;: 0,
+                    &quot;totalResubmitCount&quot;: 0
+                }
+            ],
+            &quot;version&quot;: &quot;0.2.9 2018-04-23 13:22:02&quot;
+        }
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no job with that ID was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="kill-a-job">Kill a Job<a class="headerlink" href="#kill-a-job" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/<var>jobID</var></code> (<code>DELETE</code>)</strong></li>
+</ul>
+<p>To permanently kill a particular <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>DELETE</code> command to the Mantis REST API endpoint
+endpoint <code>/api/v1/jobs/<var>jobID</var></code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reason</code> (required)</td>
+<td>Specify why you are killing this job.</td>
+</tr>
+<tr>
+<td><code>user</code> (required)</td>
+<td>Specify which user is initiating this request.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><p class="tbd">empty</p>
+No response</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>202</code></td>
+<td>the kill request has been accepted and is being processed asynchronously</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no job with that ID was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>DELETE</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="list-the-archived-workers-for-a-job">List the Archived Workers for a Job<a class="headerlink" href="#list-the-archived-workers-for-a-job" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/<var>jobID</var>/archivedWorkers</code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To list all of the archived workers for a particular <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, issue a <code>GET</code> command to the Mantis REST
+API endpoint endpoint <code>/api/v1/jobs/<var>jobID</var>/archivedWorkers</code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ascending</code> (optional)</td>
+<td>You can use this to indicate whether or not to sort the records in ascending order (<code>true</code></td>
+</tr>
+<tr>
+<td><code>fields</code> (optional)</td>
+<td>By default this endpoint will return all of the fields in the payload. You can set <code>fields</code> to a comma-delimited series of payload fields, in which case this endpoint will return only those fields in the response.</td>
+</tr>
+<tr>
+<td><code>limit</code> (optional)</td>
+<td>The maximum record size to return (default = no limit).</td>
+</tr>
+<tr>
+<td><code>offset</code> (optional)</td>
+<td>The record number to begin with in the set of records to return in this request (use this with <code>pageSize</code> to get records by the page). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>pageSize</code> (optional)</td>
+<td>The maximum number of records to return in this request (default = 0, which means all records). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>sortBy</code> (optional)</td>
+<td>You can set this to the name of any payload field whose values are <code>Comparable</code> and this endpoint will return its results sorted by that field.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p class="tbd">describe</p>
+
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+        &quot;list&quot;: [
+            {
+                &quot;workerIndex&quot;: 0,
+                &quot;workerNumber&quot;: 2,
+                &quot;jobId&quot;: &quot;sine-function-7532&quot;,
+                &quot;stageNum&quot;: 1,
+                &quot;numberOfPorts&quot;: 5,
+                &quot;metricsPort&quot;: 7155,
+                &quot;consolePort&quot;: 7157,
+                &quot;debugPort&quot;: 7156,
+                &quot;customPort&quot;: 7158,
+                &quot;ports&quot;: [
+                    7159
+                ],
+                &quot;state&quot;: &quot;Failed&quot;,
+                &quot;slave&quot;: &quot;100.85.130.224&quot;,
+                &quot;slaveID&quot;: &quot;079f4fa6-f910-4247-b5d0-f5574f36cace-S5274&quot;,
+                &quot;cluster&quot;: &quot;mantisagent-main-m5.2xlarge-1&quot;,
+                &quot;acceptedAt&quot;: 1576003739758,
+                &quot;launchedAt&quot;: 1576003739861,
+                &quot;startingAt&quot;: 1576003748544,
+                &quot;startedAt&quot;: 1576003750069,
+                &quot;completedAt&quot;: 1576003959366,
+                &quot;reason&quot;: &quot;Relaunched&quot;,
+                &quot;resubmitOf&quot;: 0,
+                &quot;totalResubmitCount&quot;: 0
+            }
+        ],
+        &quot;prev&quot;: null,
+        &quot;next&quot;: null,
+        &quot;total&quot;: 1
+    }
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no job with that ID was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="get-a-list-of-jobs-for-a-particular-cluster">Get a List of Jobs for a Particular Cluster<a class="headerlink" href="#get-a-list-of-jobs-for-a-particular-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve a JSON array of IDs of the active <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> in a particular cluster, issue a <code>GET</code> command
+to the Mantis REST API endpoint <code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ascending</code> (optional)</td>
+<td>You can use this to indicate whether or not to sort the records in ascending order (<code>true</code></td>
+</tr>
+<tr>
+<td><code>compact</code> (optional)</td>
+<td>Ask the server to return compact responses (<code>true</code></td>
+</tr>
+<tr>
+<td><code>fields</code> (optional)</td>
+<td>By default this endpoint will return all of the fields in the payload. You can set <code>fields</code> to a comma-delimited series of payload fields, in which case this endpoint will return only those fields in the response.</td>
+</tr>
+<tr>
+<td><code>limit</code> (optional)</td>
+<td>The maximum record size to return (default = no limit).</td>
+</tr>
+<tr>
+<td><code>offset</code> (optional)</td>
+<td>The record number to begin with in the set of records to return in this request (use this with <code>pageSize</code> to get records by the page). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>pageSize</code> (optional)</td>
+<td>The maximum number of records to return in this request (default = 0, which means all records). See <a href="#pagination">Pagination</a> for more details.</td>
+</tr>
+<tr>
+<td><code>sortBy</code> (optional)</td>
+<td>You can set this to the name of any payload field whose values are <code>Comparable</code> and this endpoint will return its results sorted by that field.</td>
+</tr>
+</tbody>
+</table>
+<p>There is also a series of query parameters that you can use to set server-side filters that will restrict the jobs represented in the resulting list of jobs to only those jobs that match the filters:</p>
+<table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>What It Filters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>activeOnly</code> (optional)</td>
+<td>The <code>activeOnly</code> field (boolean). By default, this is <code>true</code>.</td>
+</tr>
+<tr>
+<td><code>jobState</code> (optional)</td>
+<td>Job state, <code>Active</code> or <code>Terminal</code>. By default, this endpoint filters on <code>jobState=Active</code>. This query parameter has precedence over the <code>activeOnly</code> parameter.</td>
+</tr>
+<tr>
+<td><code>labels</code> (optional)</td>
+<td>Labels in the <code>labels</code> array. You can express this by setting this parameter to a comma-delimited list of label strings.</td>
+</tr>
+<tr>
+<td><code>labels.op</code> (optional)</td>
+<td>Use this parameter to tell the server whether to treat the list of <code>labels</code> you have provided as an <code>or</code> (default: a job that contains <em>any</em> of the labels will be returned in the list), or an <code>and</code> (only jobs that contain <em>all</em> of the labels will be returned). Set this to <code>or</code> or <code>and</code>.</td>
+</tr>
+<tr>
+<td><code>stageNumber</code> (optional)</td>
+<td>Stage number (integer). This filters the list to contain only those jobs corresponding to workers that are relevant to the specified stage.</td>
+</tr>
+<tr>
+<td><code>workerIndex</code> (optional)</td>
+<td>The <code>workerIndex</code> field (integer).</td>
+</tr>
+<tr>
+<td><code>workerNumber</code> (optional)</td>
+<td>The <code>workerNumber</code> field (integer).</td>
+</tr>
+<tr>
+<td><code>workerState</code> (optional)</td>
+<td>The <code>workerState</code> field (<code>Noop</code>, <code>Active</code> (default), or <code>Terminal</code>)</td>
+</tr>
+</tbody>
+</table>
+</details>
+<p class="tbd">describe</p>
+
+<details class="abstract"><summary>Example Response Format</summary><div class="codehilite"><pre><span></span>{
+        &quot;list&quot;: [
+            {
+                &quot;jobMetadata&quot;: {
+                    &quot;jobId&quot;: &quot;sine-function-7532&quot;,
+                    &quot;name&quot;: &quot;sine-function&quot;,
+                    &quot;user&quot;: &quot;someuser&quot;,
+                    &quot;submittedAt&quot;: 1576003739750,
+                    &quot;startedAt&quot;: 1576003750076,
+                    &quot;jarUrl&quot;: &quot;http://mantis-examples-sine-function-0.2.9.zip&quot;,
+                    &quot;numStages&quot;: 2,
+                    &quot;sla&quot;: {
+                        &quot;runtimeLimitSecs&quot;: 0,
+                        &quot;minRuntimeSecs&quot;: 0,
+                        &quot;slaType&quot;: &quot;Lossy&quot;,
+                        &quot;durationType&quot;: &quot;Perpetual&quot;,
+                        &quot;userProvidedType&quot;: &quot;&quot;
+                    },
+                    &quot;state&quot;: &quot;Launched&quot;,
+                    &quot;subscriptionTimeoutSecs&quot;: 0,
+                    &quot;parameters&quot;: [
+                        {
+                            &quot;name&quot;: &quot;useRandom&quot;,
+                            &quot;value&quot;: &quot;False&quot;
+                        }
+                    ],
+                    &quot;nextWorkerNumberToUse&quot;: 10,
+                    &quot;migrationConfig&quot;: {
+                        &quot;strategy&quot;: &quot;PERCENTAGE&quot;,
+                        &quot;configString&quot;: &quot;{\&quot;percentToMove\&quot;:25,\&quot;intervalMs\&quot;:60000}&quot;
+                    },
+                    &quot;labels&quot;: [
+                        {
+                            &quot;name&quot;: &quot;_mantis.isResubmit&quot;,
+                            &quot;value&quot;: &quot;true&quot;
+                        },
+                        {
+                            &quot;name&quot;: &quot;_mantis.artifact&quot;,
+                            &quot;value&quot;: &quot;mantis-examples-sine-function-0.2.9.zip&quot;
+                        },
+                        {
+                            &quot;name&quot;: &quot;_mantis.version&quot;,
+                            &quot;value&quot;: &quot;0.2.9 2018-04-23 13:22:02&quot;
+                        }
+                    ]
+                },
+                &quot;stageMetadataList&quot;: [
+                    {
+                        &quot;jobId&quot;: &quot;sine-function-7532&quot;,
+                        &quot;stageNum&quot;: 0,
+                        &quot;numStages&quot;: 2,
+                        &quot;machineDefinition&quot;: {
+                            &quot;cpuCores&quot;: 2.0,
+                            &quot;memoryMB&quot;: 4096.0,
+                            &quot;networkMbps&quot;: 128.0,
+                            &quot;diskMB&quot;: 1024.0,
+                            &quot;numPorts&quot;: 1
+                        },
+                        &quot;numWorkers&quot;: 1,
+                        &quot;hardConstraints&quot;: [],
+                        &quot;softConstraints&quot;: [],
+                        &quot;scalingPolicy&quot;: null,
+                        &quot;scalable&quot;: false
+                    },
+                    {
+                        &quot;jobId&quot;: &quot;sine-function-7532&quot;,
+                        &quot;stageNum&quot;: 1,
+                        &quot;numStages&quot;: 2,
+                        &quot;machineDefinition&quot;: {
+                            &quot;cpuCores&quot;: 1.0,
+                            &quot;memoryMB&quot;: 1024.0,
+                            &quot;networkMbps&quot;: 128.0,
+                            &quot;diskMB&quot;: 1024.0,
+                            &quot;numPorts&quot;: 1
+                        },
+                        &quot;numWorkers&quot;: 1,
+                        &quot;hardConstraints&quot;: [],
+                        &quot;softConstraints&quot;: [],
+                        &quot;scalingPolicy&quot;: null,
+                        &quot;scalable&quot;: false
+                    }
+                ],
+                &quot;workerMetadataList&quot;: [
+                    {
+                        &quot;workerIndex&quot;: 0,
+                        &quot;workerNumber&quot;: 1,
+                        &quot;jobId&quot;: &quot;sine-function-7532&quot;,
+                        &quot;stageNum&quot;: 0,
+                        &quot;numberOfPorts&quot;: 5,
+                        &quot;metricsPort&quot;: 7150,
+                        &quot;consolePort&quot;: 7152,
+                        &quot;debugPort&quot;: 7151,
+                        &quot;customPort&quot;: 7153,
+                        &quot;ports&quot;: [
+                            7154
+                        ],
+                        &quot;state&quot;: &quot;Started&quot;,
+                        &quot;slave&quot;: &quot;100.85.130.224&quot;,
+                        &quot;slaveID&quot;: &quot;079f4fa6-f910-4247-b5d0-f5574f36cace-S5274&quot;,
+                        &quot;cluster&quot;: &quot;mantisagent-main-m5.2xlarge-1&quot;,
+                        &quot;acceptedAt&quot;: 1576003739756,
+                        &quot;launchedAt&quot;: 1576003739861,
+                        &quot;startingAt&quot;: 1576003748558,
+                        &quot;startedAt&quot;: 1576003749967,
+                        &quot;completedAt&quot;: -1,
+                        &quot;reason&quot;: &quot;Normal&quot;,
+                        &quot;resubmitOf&quot;: 0,
+                        &quot;totalResubmitCount&quot;: 0
+                    },
+                    {
+                        &quot;workerIndex&quot;: 0,
+                        &quot;workerNumber&quot;: 3,
+                        &quot;jobId&quot;: &quot;sine-function-7532&quot;,
+                        &quot;stageNum&quot;: 1,
+                        &quot;numberOfPorts&quot;: 5,
+                        &quot;metricsPort&quot;: 7165,
+                        &quot;consolePort&quot;: 7167,
+                        &quot;debugPort&quot;: 7166,
+                        &quot;customPort&quot;: 7168,
+                        &quot;ports&quot;: [
+                            7169
+                        ],
+                        &quot;state&quot;: &quot;Started&quot;,
+                        &quot;slave&quot;: &quot;100.85.130.224&quot;,
+                        &quot;slaveID&quot;: &quot;079f4fa6-f910-4247-b5d0-f5574f36cace-S5274&quot;,
+                        &quot;cluster&quot;: &quot;mantisagent-main-m5.2xlarge-1&quot;,
+                        &quot;acceptedAt&quot;: 1576003959366,
+                        &quot;launchedAt&quot;: 1576003959407,
+                        &quot;startingAt&quot;: 1576003961542,
+                        &quot;startedAt&quot;: 1576003962822,
+                        &quot;completedAt&quot;: -1,
+                        &quot;reason&quot;: &quot;Normal&quot;,
+                        &quot;resubmitOf&quot;: 2,
+                        &quot;totalResubmitCount&quot;: 1
+                    }
+                ],
+                &quot;version&quot;: &quot;0.2.9 2018-04-23 13:22:02&quot;
+            }
+        ],
+        &quot;prev&quot;: null,
+        &quot;next&quot;: null,
+        &quot;total&quot;: 1
+    }
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="submit-a-new-job-for-a-particular-cluster">Submit a New Job for a Particular Cluster<a class="headerlink" href="#submit-a-new-job-for-a-particular-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>To submit a new <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> based on a <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a>, issue a <code>POST</code> command to the
+<code>/api/v1/jobClusters/<var>clusterName</var>/jobs</code> endpoint with a
+request body like the following:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;myClusterName&quot;,
+  &quot;user&quot;: &quot;jschmoe&quot;,
+  &quot;jobJarFileLocation&quot;: null,
+  &quot;version&quot;: &quot;0.0.1 2019-02-06 13:30:07&quot;,
+  &quot;subscriptionTimeoutSecs&quot;: 0,
+  &quot;jobSla&quot;: {
+    &quot;runtimeLimitSecs&quot;: &quot;0&quot;,
+    &quot;slaType&quot;: &quot;Lossy&quot;,
+    &quot;durationType&quot;: &quot;Perpetual&quot;,
+    &quot;userProvidedType&quot;: &quot;&quot;
+  },
+  &quot;schedulingInfo&quot;: {
+    &quot;stages&quot;: {
+      &quot;0&quot;: {
+        &quot;numberOfInstances&quot;: 1,
+        &quot;machineDefinition&quot;: {
+          &quot;cpuCores&quot;: 0.35,
+          &quot;memoryMB&quot;: 600,
+          &quot;networkMbps&quot;: 30,
+          &quot;diskMB&quot;: 100,
+          &quot;numPorts&quot;: 1
+        },
+        &quot;hardConstraints&quot;: null,
+        &quot;softConstraints&quot;: null,
+        &quot;scalable&quot;: false
+      },
+      &quot;1&quot;: {
+        &quot;numberOfInstances&quot;: 1,
+        &quot;machineDefinition&quot;: {
+          &quot;cpuCores&quot;: 0.35,
+          &quot;memoryMB&quot;: 600,
+          &quot;networkMbps&quot;: 30,
+          &quot;diskMB&quot;: 100,
+          &quot;numPorts&quot;: 1
+        },
+        &quot;hardConstraints&quot;: null,
+        &quot;softConstraints&quot;: null,
+        &quot;scalable&quot;: true
+      }
+    }
+  },
+  &quot;parameters&quot;: [
+    {
+      &quot;name&quot;: &quot;criterion&quot;,
+      &quot;value&quot;: &quot;mock&quot;
+    },
+    {
+      &quot;name&quot;: &quot;sourceJobName&quot;,
+      &quot;value&quot;: &quot;RequestSource&quot;
+    },
+    {
+      &quot;name&quot;: &quot;spaasJobId&quot;,
+      &quot;value&quot;: &quot;spaasjschmoe-clsessionizer_backpressuretest&quot;
+    }
+  ],
+  &quot;isReadyForJobMaster&quot;: false
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><span class="tbd">(Same as "Get Information about a Job" below)</span>
+(Same as "Get Information about a Job" above)</p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>201</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster with the given cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="update-a-job-cluster-and-submit-a-new-job-at-the-same-time">Update a Job Cluster and Submit a New Job at the Same Time<a class="headerlink" href="#update-a-job-cluster-and-submit-a-new-job-at-the-same-time" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/actions/quickSubmit</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>You can make a “quick update” of an existing <a href="../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> and also submit a new <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a> with the
+updated cluster <a href="../glossary#artifact" title="Each Mantis Job has an associated artifact file that contains its source code and JSON configuration.">artifacts</a>. This lets you update the Job Cluster with minimal information, without
+having to specify the scheduling info, as long as at least one Job was previously submitted for this
+Job Cluster.</p>
+<p>To do this, send a <code>POST</code> command to the Mantis REST API endpoint
+<code>/api/v1/jobs/actions/quickSubmit</code> with a body that matches the format
+of the following example:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;NameOfJobCluster&quot;,
+  &quot;user&quot;: &quot;myusername&quot;,
+  &quot;jobSla&quot;: {
+    &quot;durationType&quot;: &quot;Perpetual&quot;,
+    &quot;runtimeLimitSecs&quot;: &quot;0&quot;,
+    &quot;minRuntimeSecs&quot;: &quot;0&quot;,
+    &quot;userProvidedType&quot;: &quot;&quot;
+  }
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p>You will receive in the response the Job ID of the newly submitted Job. E.g sine-test-5  <span class="tbd">sample response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>201</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no cluster was found with a cluster name matching the value of <code>name</code> from the request body</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="post-job-heartbeat-status">Post Job Heartbeat Status<a class="headerlink" href="#post-job-heartbeat-status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/actions/postJobStatus</code> (<code>POST</code>)</strong></li>
+</ul>
+<details class="question"><summary>Query Parameters</summary><p><p class="tbd">TBD</p></p>
+</details>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;jobId&quot;: &quot;sine-function-1&quot;,
+  &quot;status&quot;: {
+    &quot;jobId&quot;: &quot;sine-function-1&quot;,
+    &quot;stageNum&quot;: 1,
+    &quot;workerIndex&quot;: 0,
+    &quot;workerNumber&quot;: 2,
+    &quot;type&quot;: &quot;HEARTBEAT&quot;,
+    &quot;message&quot;: &quot;heartbeat&quot;,
+    &quot;state&quot;: &quot;Noop&quot;,
+    &quot;hostname&quot;: null,
+    &quot;timestamp&quot;: 1525813363585,
+    &quot;reason&quot;: &quot;Normal&quot;,
+    &quot;payloads&quot;: [
+      {
+        &quot;type&quot;: &quot;SubscriptionState&quot;,
+        &quot;data&quot;: &quot;false&quot;
+      },
+      {
+        &quot;type&quot;: &quot;IncomingDataDrop&quot;,
+        &quot;data&quot;: &quot;{\&quot;onNextCount\&quot;:0,\&quot;droppedCount\&quot;:0}&quot;
+      }
+    ]
+  }
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><p class="tbd">TBD</p></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="horizontally-scale-a-stage">Horizontally Scale a Stage<a class="headerlink" href="#horizontally-scale-a-stage" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/<var>jobID</var>/actions/scaleStage</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>To manually scale a <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>  <a href="../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a>, that is, to alter the number of <a href="../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a> assigned to
+that stage, send a <code>POST</code> command to the Mantis REST API endpoint
+<code>/api/v1/jobs/<var>jobID</var>/actions/scaleStage</code> with a request body in the following
+format:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can only manually scale a Processing Stage if the Job was submitted with the <code>scalable</code> flag
+turned on.</p>
+</div>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;JobId&quot;: &quot;ValidatorDemo-33&quot;,
+  &quot;StageNumber&quot;: 1,
+  &quot;NumWorkers&quot;: 3
+}
+</pre></div>
+
+
+<p><code>NumWorkers</code> here is the <em>number</em> of workers you want to be assigned to the stage after the
+scaling action takes place (that is, it is <em>not</em> the <em>delta</em> by which you want to change the
+number of workers in the stage).</p>
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><p class="tbd">TBD</p></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>204</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no Job with that Job ID was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="resubmit-a-worker">Resubmit a Worker<a class="headerlink" href="#resubmit-a-worker" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobs/<var>jobID</var>/actions/resubmitWorker</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>To resubmit a particular <a href="../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">worker</a> for a particular <a href="../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Job</a>, send a <code>POST</code> command to the Mantis REST
+API endpoint <code>/api/v1/jobs/<var>jobID</var>/actions/resubmitWorker</code> with a request body
+resembling the following:</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;user&quot;: &quot;jschmoe&quot;,
+  &quot;workerNumber&quot;: 5,
+  &quot;reason&quot;: &quot;test worker resubmit&quot;
+}
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>workerNumber</code> is the worker <em>number</em> not the worker <em>index</em>.</p>
+</div>
+</details>
+<details class="abstract"><summary>Example Response Format</summary><p><p class="tbd">TBD</p></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no Job with that Job ID was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="administrative-tasks">Administrative Tasks<a class="headerlink" href="#administrative-tasks" title="Permanent link">&para;</a></h2>
+<p class="tbd">TBD</p>
+
+<h3 id="return-job-master-information">Return Job Master Information<a class="headerlink" href="#return-job-master-information" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/masterInfo</code> (<code>GET</code>)</strong></li>
+</ul>
+<p class="tbd">TBD</p>
+
+<details class="abstract"><summary>Example Response Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;hostname&quot;: &quot;100.86.121.198&quot;,
+  &quot;hostIP&quot;: &quot;100.86.121.198&quot;,
+  &quot;apiPort&quot;: 7101,
+  &quot;schedInfoPort&quot;: 7101,
+  &quot;apiPortV2&quot;: 7075,
+  &quot;apiStatusUri&quot;: &quot;api/v1/jobs/actions/postJobStatus&quot;,
+  &quot;consolePort&quot;: 7101,
+  &quot;createTime&quot;: 1548803881867,
+  &quot;fullApiStatusUri&quot;: &quot;http://100.86.121.198:7101/api/v1/jobs/actions/postJobStatus&quot;
+}
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="return-job-master-configs">Return Job Master Configs<a class="headerlink" href="#return-job-master-configs" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/masterConfigs</code> (<code>GET</code>)</strong></li>
+</ul>
+<p class="tbd">TBD</p>
+
+<details class="abstract"><summary>Example Response Body</summary><div class="codehilite"><pre><span></span>[
+  {
+    &quot;name&quot;: &quot;JobConstraints&quot;,
+    &quot;value&quot;: &quot;[\&quot;UniqueHost\&quot;,\&quot;ExclusiveHost\&quot;,\&quot;ZoneBalance\&quot;,\&quot;M4Cluster\&quot;,\&quot;M3Cluster\&quot;,\&quot;M5Cluster\&quot;]&quot;
+  },
+  {
+    &quot;name&quot;: &quot;ScalingReason&quot;,
+    &quot;value&quot;: &quot;[\&quot;CPU\&quot;,\&quot;Memory\&quot;,\&quot;Network\&quot;,\&quot;DataDrop\&quot;,\&quot;KafkaLag\&quot;,\&quot;UserDefined\&quot;,\&quot;KafkaProcessed\&quot;]&quot;
+  },
+  {
+    &quot;name&quot;: &quot;MigrationStrategyEnum&quot;,
+    &quot;value&quot;: &quot;[\&quot;ONE_WORKER\&quot;,\&quot;PERCENTAGE\&quot;]&quot;
+  },
+  {
+    &quot;name&quot;: &quot;WorkerResourceLimits&quot;,
+    &quot;value&quot;: &quot;{\&quot;maxCpuCores\&quot;:8,\&quot;maxMemoryMB\&quot;:28000,\&quot;maxNetworkMbps\&quot;:1024}&quot;
+  }
+]
+</pre></div>
+
+
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="get-information-about-agent-clusters">Get Information about Agent Clusters<a class="headerlink" href="#get-information-about-agent-clusters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/agentClusters/</code> (<code>GET</code>)</strong></li>
+</ul>
+<p>Returns information about active agent clusters (agent clusters are physical <a href="javascript:void(0)" title="Amazon Web Services">AWS</a> resources that
+Mantis connects to).</p>
+<details class="abstract"><summary>Example Response Body</summary><p><span class="tbd">response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="activate-or-deactivate-an-agent-cluster">Activate or Deactivate an Agent Cluster<a class="headerlink" href="#activate-or-deactivate-an-agent-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/agentClusters/</code> (<code>POST</code>)</strong></li>
+</ul>
+<p class="tbd">TBD</p>
+
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>[&quot;mantisagent-staging-cl1-m5.2xlarge-1-v00&quot;]
+</pre></div>
+
+
+<p>(an array of active clusters)</p>
+</details>
+<details class="abstract"><summary>Example Response Body</summary><p><span class="tbd">response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>client failure</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>POST</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="retrieve-the-agent-cluster-scaling-policy">Retrieve the Agent Cluster Scaling Policy<a class="headerlink" href="#retrieve-the-agent-cluster-scaling-policy" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/agentClusters/autoScalePolicy</code> (<code>GET</code>)</strong></li>
+</ul>
+<p class="tbd">TBD</p>
+
+<details class="abstract"><summary>Example Response Body</summary><p><span class="tbd">response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="get-jobs-and-host-information-for-an-agent-cluster">Get Jobs and Host Information for an Agent Cluster<a class="headerlink" href="#get-jobs-and-host-information-for-an-agent-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/agentClusters/jobs</code> (<code>GET</code>)</strong></li>
+</ul>
+<p class="tbd">TBD</p>
+
+<details class="abstract"><summary>Example Response Body</summary><p><span class="tbd">response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="streaming-websocketsse-tasks">Streaming WebSocket/SSE Tasks<a class="headerlink" href="#streaming-websocketsse-tasks" title="Permanent link">&para;</a></h2>
+<p class="tbd">TBD: introduction</p>
+
+<h2 id="stream-job-status-changes">Stream Job Status Changes<a class="headerlink" href="#stream-job-status-changes" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><code>ws://<var>masterHost</var>:7101/api/v1/jobStatusStream/<var>jobID</var></code></strong></li>
+</ul>
+<p class="tbd">TBD: description</p>
+
+<p class="tbd">See also: mantisapi/websocket/</p>
+
+<details class="abstract"><summary>Example Response Stream Excerpt</summary><div class="codehilite"><pre><span></span>{
+  &quot;status&quot;: {
+    &quot;jobId&quot;: &quot;SPaaSBackpressureDemp-26&quot;,
+    &quot;stageNum&quot;: 1,
+    &quot;workerIndex&quot;: 0,
+    &quot;workerNumber&quot;: 7,
+    &quot;type&quot;: &quot;INFO&quot;,
+    &quot;message&quot;: &quot;SPaaSBackpressureDemp-26-worker-0-7 worker status update&quot;,
+    &quot;state&quot;: &quot;StartInitiated&quot;,
+    &quot;hostname&quot;: null,
+    &quot;timestamp&quot;: 1549404217065,
+    &quot;reason&quot;: &quot;Normal&quot;,
+    &quot;payloads&quot;: []
+  }
+}
+</pre></div>
+
+
+</details>
+<hr />
+<h3 id="stream-scheduling-information-for-a-job">Stream Scheduling Information for a Job<a class="headerlink" href="#stream-scheduling-information-for-a-job" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobDiscoveryStream/<var>jobID</var></code> (<code>GET</code>)</strong></li>
+<li><strong><code>/api/v1/jobs/schedulingInfo/<var>jobID</var></code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve an SSE stream of scheduling information for a particular job, send an HTTP <code>GET</code> command
+to either the Mantis REST API endpoint <code>/api/v1/jobDiscoveryStream/<var>jobID</var></code> or <code>/api/v1/jobs/schedulingInfo/<var>jobID</var></code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th><code>jobDiscoveryStream</code> Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sendHB</code> (optional)</td>
+<td>Indicate whether or not to send heartbeats (default=<code>false</code>).</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><code>jobs/schedulingInfo</code> Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jobId</code> (required)</td>
+<td>The job ID of the job for which scheduling information is to be streamed.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="abstract"><summary>Example Response Stream Excerpt</summary><p><span class="tbd">response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no Job with that Job ID was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="get-streaming-sse-discovery-info-for-a-cluster">Get Streaming (SSE) Discovery Info for a Cluster<a class="headerlink" href="#get-streaming-sse-discovery-info-for-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobClusters/discoveryInfoStream/<var>clusterName</var></code> (<code>GET</code>)</strong></li>
+</ul>
+<p class="tbd">describe</p>
+
+<details class="abstract"><summary>Example Response Format</summary><p><p class="tbd">TBD</p></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="stream-job-information-for-a-cluster">Stream Job Information for a Cluster<a class="headerlink" href="#stream-job-information-for-a-cluster" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/lastSubmittedJobIdStream/<var>clusterName</var></code> (<code>GET</code>)</strong></li>
+</ul>
+<p>To retrieve an SSE stream of job information for a particular cluster, send an HTTP <code>GET</code> command
+to the Mantis REST API endpoint
+<code>/api/v1/lastSubmittedJobIdStream/<var>clusterName</var></code>.</p>
+<details class="question"><summary>Query Parameters</summary><table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sendHB</code></td>
+<td>Indicate whether or not to send heartbeats.</td>
+</tr>
+</tbody>
+</table>
+</details>
+<details class="abstract"><summary>Example Response Stream Excerpt</summary><p><span class="tbd">response body?</span></p>
+</details>
+<details class="info"><summary>Possible Response Codes</summary><table>
+<thead>
+<tr>
+<th>Response Code</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>normal response</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>no Cluster with that Cluster name was found</td>
+</tr>
+<tr>
+<td><code>405</code></td>
+<td>incorrect HTTP verb (use <code>GET</code> instead)</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>unknown server error</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h3 id="stream-job-sink-messages">Stream Job Sink Messages<a class="headerlink" href="#stream-job-sink-messages" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobConnectbyid/<var>jobID</var></code> (SSE)</strong></li>
+<li><strong><code>/api/v1/jobConnectbyname/<var>jobName</var></code> (SSE)</strong></li>
+</ul>
+<p>Collect messages from the job sinks and merge them into a single websocket or SSE stream.</p>
+<details class="abstract"><summary>Example Response Stream Excerpt</summary><div class="codehilite"><pre><span></span>data: {&quot;x&quot;: 928400.000000, &quot;y&quot;: 3.139934}
+data: {&quot;x&quot;: 928402.000000, &quot;y&quot;: -9.939772}
+data: {&quot;x&quot;: 928404.000000, &quot;y&quot;: 5.132876}
+data: {&quot;x&quot;: 928406.000000, &quot;y&quot;: 5.667712}
+</pre></div>
+
+
+</details>
+<hr />
+<h3 id="submit-job-and-stream-job-sink-messages">Submit Job and Stream Job Sink Messages<a class="headerlink" href="#submit-job-and-stream-job-sink-messages" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/api/v1/jobsubmitandconnect</code> (<code>POST</code>)</strong></li>
+</ul>
+<p>To submit a job and then collect messages from the job sinks and merge them into a single websocket or SSE stream, send a <code>POST</code> request to <code>/api/v1/jobsubmitandconnect</code> with a request body that describes the job.</p>
+<details class="abstract"><summary>Example Request Body</summary><div class="codehilite"><pre><span></span>{
+  &quot;name&quot;: &quot;ValidatorDemo&quot;,
+  &quot;user&quot;: &quot;jschmoe&quot;,
+  &quot;jobSla&quot;: {
+    &quot;durationType&quot;: &quot;Perpetual&quot;,
+    &quot;runtimeLimitSecs&quot;: &quot;0&quot;,
+    &quot;minRuntimeSecs&quot;: &quot;0&quot;,
+    &quot;userProvidedType&quot;: &quot;&quot;
+  }
+}
+</pre></div>
+
+
+</details>
+<details class="abstract"><summary>Example Response Stream Excerpt</summary><div class="codehilite"><pre><span></span>data: {&quot;x&quot;: 928400.000000, &quot;y&quot;: 3.139934}
+data: {&quot;x&quot;: 928402.000000, &quot;y&quot;: -9.939772}
+data: {&quot;x&quot;: 928404.000000, &quot;y&quot;: 5.132876}
+data: {&quot;x&quot;: 928406.000000, &quot;y&quot;: 5.667712}
+</pre></div>
+
+
+</details>
+<hr />
+<h2 id="pagination">Pagination<a class="headerlink" href="#pagination" title="Permanent link">&para;</a></h2>
+<p>You can configure some endpoints to return their responses in <em>pages</em>. This is to say that rather
+than returning all of the data responsive to a request all at once, the endpoint can return a
+specific subset of the data at a time.</p>
+<p>An endpoint that supports pagination will typically do so by means of two query parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pageSize</code></td>
+<td>the maximum number of records to return in this request (default = 0, which means all records)</td>
+</tr>
+<tr>
+<td><code>offset</code></td>
+<td>the record number to begin with in the set of records to return in this request</td>
+</tr>
+</tbody>
+</table>
+<p>So, for example, you might make consecutive requests for…</p>
+<ol>
+<li><code><var>endpoint</var>?pageSize=10&amp;offset=0</code></li>
+<li><code><var>endpoint</var>?pageSize=10&amp;offset=10</code></li>
+<li><code><var>endpoint</var>?pageSize=10&amp;offset=20</code></li>
+</ol>
+<p>…and so forth, until you reach the final page of records.</p>
+<p>When you request records in a paginated fashion like this, the Mantis API will enclose them in a
+JSON structure like the following:</p>
+<div class="codeblock">
+{
+  "list": [
+    {
+      "Id": <var>originalOffset</var>,
+      ⋮
+    },
+    {
+      "Id": <var>originalOffset+1</var>,
+      ⋮
+    },
+    ⋮
+  ],
+  "prev": "/api/v1/<var>endpoint</var>?pageSize=<var>pageSize</var>&offset=<var>originalOffset+pageSize</var>",
+  "next": "/api/v1/<var>endpoint</var>?pageSize=<var>pageSize</var>&offset=<var>originalOffset−pageSize</var>"
+}
+</div>
+
+<p>For example:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;list&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;Id&quot;</span><span class="p">:</span> <span class="mi">101</span><span class="p">,</span>
+      <span class="err">⋮</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;Id&quot;</span><span class="p">:</span> <span class="mi">102</span><span class="p">,</span>
+      <span class="err">⋮</span>
+    <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;next&quot;</span><span class="p">:</span> <span class="s2">&quot;/api/v1/someResource?pageSize=20&amp;offset=120&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;prev&quot;</span><span class="p">:</span> <span class="s2">&quot;/api/v1/someResource?pageSize=20&amp;offset=80&quot;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p><code>prev</code> and/or <code>next</code> will be <code>null</code> if there is no previous or next page, that is, if you are at the
+first and/or last page in the pagination.</p>
+<!-- Do not edit below this line -->
+
+<!-- START -->
+
+<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
+
+<!-- END -->
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../mql/aggregation-scaling-limits/" title="Scaling Limits" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Scaling Limits
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="websocket/" title="Websocket API" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Websocket API
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://twitter.com/NetflixOSS" class="md-footer-social__link fa fa-twitter"></a>
+    
+      <a href="https://netflix.github.io/" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
