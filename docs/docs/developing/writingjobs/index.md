@@ -1,81 +1,178 @@
-## Introduction
+A [Mantis Job] is a JVM-based stream processing application that takes in an [Observable] stream of
+data items, [transforms] this stream by using [RxJava] operators, and then outputs the results as
+another Observable stream.
 
-You can interact with Mantis [Job Clusters] by means of a command-line interface (CLI). This page
-explains how to install and use this interface.
+[RxJava] Observables can be visualized by using “marble diagrams”:
 
-## Installation
+![RxJava Observables can be represented by “marble diagrams”](../../images/observables.svg)
 
-You can install the Mantis CLI locally in your development environment by following the instructions
-on the [Mantis CLI Readme](https://github.com/netflix/mantis-cli#getting-started).
+You can combine multiple RxJava operators to transform an Observable stream of items in many ways:
 
-Additionally, you can install the Mantis CLI onto your system as a package by following instructions
-on the [Mantis CLI Releasing](https://github.com/netflix/mantis-cli#releasing) section of the readme.
+![An incoming stream is processed by a Mantis Job composed of the operators map and merge, to compose an output stream](../../images/complex.svg)
 
-## Mantis Commands
+The above diagram shows a Mantis Job composed of two operators that process an input stream to
+compose an output stream. The first operator, `map`, emits a new Observable for each item emitted by
+the source Observable. The second operator, `merge`, emits each item emitted by those Observables
+as a fresh Observable stream.
 
-A Mantis command takes the following form:
+There is an enormous wealth of ways in which you can transform streams of data by using RxJava
+Observable operators.
 
-<div class="commandline">
- <span class="command prompted">mantis <var>command</var></span>
-</div>
+If the volume of data to be processed is too large for a single [worker] to handle, you can “divide
+and conquer” by grouping and dividing the operators across various [processing stages], as in the
+following diagram:
 
-You can also issue the following command to learn about the various Mantis commands available to you
-from the command line:
+![An incoming stream is processed by a Mantis Job composed of three stages, one composed of the groupBy operator, the second by the window and reduce operators, and the third composed of the merge operator, together resulting in an output stream](../../images/stages.svg)
 
-<div class="commandline">
- <span class="command prompted">mantis --help</span>
-</div>
+## Mantis Job Clusters
 
-Or you can issue the following command to learn about the use of a specific Mantis command:
+You define a [Job Cluster] before you submit [Jobs]. A Job Cluster is a containing entity for Jobs.
+It defines [metadata] and certain service-level agreements ([SLA]s). Job Clusters ease Job lifecycle
+management and Job revisioning.
 
-<div class="commandline">
- <span class="command prompted">mantis <var>command</var> --help</span>
-</div>
+For example, by setting the SLA of a Job Cluster to Min=1 and Max=1, you ensure that exactly one Job
+instance is always running for that Cluster. The Job Cluster also has default Job [parameters] that
+any new Jobs submitted to the Cluster inherit. You can update new Job [artifacts] into the Job
+Cluster so that the next Job submission picks up the latest version.
 
-## Setting Up Your AWS Credentials
-Mantis can operate natively on different clouds. By default, Mantis provides CLI facilities for
-operating Mantis in the Amazon AWS environment.
+## Components of a Mantis Job
 
-Before you can use the Mantis CLI to interact with Mantis Clusters in AWS, you must first establish
-your AWS credentials with Mantis. To do this, first obtain your AWS access key and secret access
-key, then issue the following command:
+A Mantis Job has three [components], each of which has a corresponding chapter in this
+documentation:
 
-<div class="commandline">
- <span class="command prompted">mantis aws:configure <span class="comment">[</span>-k<span class="comment">|</span>--key=<var>access-key</var><span class="comment">]</span> <span class="comment">[</span>-s<span class="comment">|</span>--secret=<var>secret-access-key</var><span class="comment">]</span></span>
-</div>
+1. [**Source**](source) — Fetches data from an external source and makes it available in the form of
+   an Observable.
 
-This command will store your AWS credentials to the same location and with the same file format as the [Amazon AWS CLI](https://aws.amazon.com/cli/).
+1. [**Processing Stage**](stage) — Transforms the Observable stream by means of a variety of
+   operators.
 
-## Bootstrapping a Mantis Cluster in AWS
-You can use the Mantis CLI to bootstrap a Mantis Cluster in AWS. This will create the following:
+1. [**Sink**](sink) — Pushes the resulting Observable out in the form of a fresh stream.
 
-1. AWS key pair
-2. Default VPC
-3. Security groups
-4. Single [Zookeeper] EC2 instance backed by EBS volume
-5. Single Mesos Master EC2 instance backed by EBS volume
-6. Single Mesos Agent EC2 instance backed by EBS volume
-7. Single Mantis Master EC2 instance backed by EBS volume
-8. Single Mantis API EC2 instance backed by EBS volume
+![A Mantis Job is composed of three components: the “Source” fetches data in a streaming, non-blocking, back-pressure-aware manner; the “Stage” transforms the incoming stream by applying high-level functions such as map, scan, reduce, et cetera; the “Sink” pushes the results of the transformation in a non-blocking, asynchronous manner.](../../images/job-components.svg)
 
-To do this issue the following command:
-<div class="commandline">
- <span class="command prompted">mantis aws:bootstrap</span>
-</div>
+## Directory Structure of a Mantis Job
 
-!!! note
-    Before you issue the `mantis aws:bootstrap` command you must have first set up your AWS
-    credentials. You can do that with the `mantis aws:configure` command (see above).
+In addition to the source files, Mantis requires some meta-files to be present in the Job artifact.
 
-By default, the Mantis CLI bootstrap command is interactive and will prompt you for provisioning choices. Additionally, you can pass the following command-line parameters to skip some of the prompts from the `mantis aws:bootstrap` command:
+Here is a sample directory structure:
+```
+src/
+  - main/
+    - java/
+      - com/
+        - myorg/
+          - MyJob.java
+    - resources/
+      - META-INF/
+        - services/
+          - io.mantisrx.runtime.MantisJobProvider
+      - job.properties
+      - job-test.properties
+```
 
-| prompt                 | parameter                        | valid inputs |
-| ---------------------- | -------------------------------- | ------------ |
-| **select a region**    | [`-r`\|`--region`] *`region`*    | `us-east-1`, `us-east-2`, `us-west-2` |
-| **confirm**            | `-y`                             | n/a |
+* **`io.mantisrx.runtime.MantisJobProvider`** *(required)* — lists the fully-qualified name of the Java class that implements the `MantisJobProvider` interface
+* **`job.properties`** and **`job-test.properties`** *(optional)* — required only if you are initializing the platform via the `.lifecycle()` method
 
-After you have finished executing the `mantis aws:bootstrap` command, you can submit [Jobs] into the
-Mantis cluster that it creates.
+## Creating a Mantis Job
+
+To create a Mantis Job, call `MantisJob…create()`. When you do so, interpolate the following builder
+methods. The first three — `.source()`, `.stage()`, and `.sink()` — are required, they must be the
+first three of the methods that you call, and you must call them in that order:
+
+1. <code>.source(<var>AbstractJobSource</var>)</code> — required, see [The Source Component](source)
+1. <code>.stage(<var>Stage</var>, <var>stageConfig</var>)</code> — required, (call this one or more times) see [The Processing Stage Component](stage)
+1. <code>.sink(<var>Sink</var>)</code> — required, see [The Sink Component](sink)
+1. <code>.lifecycle(<var>Lifecycle</var>)</code> — optional, allows for start-up and shut-down hooks
+1. <code>.parameterDefinition(<var>ParameterDefinition</var>)</code> — optional, (call this zero to many times) define any [parameters](/glossary#parameter) your job requires here
+1. <code>.metadata(<var>Metadata</var>)</code> — optional, (call this zero to many times) define your job name and description here
+
+| of this class    | this method                | returns an object of this class |
+| ---------------- | -------------------------- | ------------------------------- |
+| `MantisJob` ⟶    | `source()` ⟶               | `SourceHolder`<br />⤶           |
+| `SourceHolder` ⟶ | `stage()` ⟶                | `Stages`<br />⤶                 |
+| [ `Stages` ⟶     | `stage()` ⟶                | `Stages` ]<br />⤶               |
+| `Stages` ⟶       | `sink()` ⟶                 | `Config`<br />⤶                 |
+| [ `Config` ⟶     | `lifecycle()` ⟶            | `Config` ]<br />⤶               |
+| [ `Config` ⟶     | `parameterDefinition()` ⟶  | `Config` ]<br />⤶               |
+| [ `Config` ⟶     | `metadata()` ⟶             | `Config` ]<br />⤶               |
+| `Config` ⟶       | `create()` ⟶               | `Job`                           |
+
+### Lifecycle Management
+
+You can establish start-up and shut-down procedures for your Mantis Job by means of the
+`.lifecycle().` builder method.
+
+Pass this method a `Lifecycle` object, that is to say, an object that implements the following
+methods:
+
+* **`startup()`** — initialize arbitrary application configs, perform dependency injection, and any long running or shared service libraries.
+* **`shutdown()`** — gracefully close connections, shut down long running or shared service libraries, and general process cleanup.
+* **`getServiceLocator()`** — returns a `ServiceLocator` that implements the `service(key)` method. Implement this method to return your dependency injection object such as Guice.
+
+### Defining Parameters
+
+To create a Parameter in order to pass it to the `.parameterDefinition()` builder method of the
+`MantisJob` builder, use the following <code>new <var>ParameterVariety</var>()…build()</code> builder
+methods:
+
+* <code>.name(<var>string</var>)</code> — a user-friendly name for your Parameter
+* <code>.description(<var>string</var>)</code> — a user-friendly description of your Parameter
+* <code>.defaultValue(<var>value</var>)</code> — the value of this Parameter if the Job does not override it
+* <code>.validator(<var>Validator</var>)</code> — a way of checking the proposed Parameter values for validity so bad values can be rejected before you submit the Job
+* <code>.required()</code> — call this builder method if the Job must provide a value for this Parameter
+
+There are some built-in Parameter varieties you can choose from that correspond to common data types:
+
+* `BooleanParameter`
+* `DoubleParameter`
+* `IntParameter`
+* `StringParameter`
+
+#### Validators
+
+<!-- 
+A `Validator` has a description, available via its `getDescription()` method, and a validation
+function, available via its `getValidator()` method. That function takes a potential value for
+your parameter as input and returns a `Validation`. A `Validation` has the following methods:
+
+* `isFailedValidation()` — indicates whether or not the potential parameter value is invalid
+* `getFailedValidationReason()` — if `isFailedValidation()` is `true`, this function returns a string that indicates why the validation failed
+-->
+
+There are some standard Validators you can choose from that cover some common varieties of parameters:
+
+* <code>Validators.range(<var>start</var>, <var>end</var>)</code> — will reject as invalid Parameter values that do not lie between the indicated *start* and *end* numerical values (where *start* and *end* themselves are valid Parameter values)
+* `Validators.notNullOrEmpty()` — will reject empty strings or null values
+* `Validators.alwaysPass()` — will not reject any Parameter values as invalid
+
+#### Example
+
+For example:
+
+```java
+myStringParameter = new StringParameter().name("MyParameter")
+                                         .description("This is a human-friendly description of my parameter")
+                                         .validator(Validators.notNullOrEmpty())
+                                         .defaultValue("SomeValue")
+                                         .required()
+                                         .build();
+```
+
+### Defining Metadata
+
+To create metadata in order to pass it to the `.metadata()` builder method of the `MantisJob`
+builder, use the following `new Metadata.Builder()…build()` builder methods:
+
+* <code>.name(<var>string</var>)</code>
+* <code>.description(<var>string</var>)</code>
+
+For example:
+
+```java
+myMetadata = new Metadata.Builder().name("MyMetadata")
+                                   .description("Description of my metadata")
+                                   .build();
+```
 
 <!-- Do not edit below this line -->
 <!-- START -->

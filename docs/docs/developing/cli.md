@@ -1,22 +1,81 @@
-A [Processing Stage]  [component] of a [Mantis Job] processes the stream of data by [transforming]
-it in some way. You can combine multiple Processing Stages into a single Job, or you can create a
-Job that consists of a single Processing Stage.
+## Introduction
 
-In its simplest form, a Processing Stage is a chain of [RxJava]
-[operators](http://reactivex.io/documentation/operators.html) operating on the [Observable] provided
-by the [Source] component.
+You can interact with Mantis [Job Clusters] by means of a command-line interface (CLI). This page
+explains how to install and use this interface.
 
-Transformations can be broadly categorized into two types: [Scalar] or [Grouped]. There are four
-varieties of Processing Stage, based on what type of transformation they accomplish:
+## Installation
 
-1. **Scalar-to-Scalar** — Also known as “narrow transformation,” this variety of Stage converts an `Observable<T>` into an `Observable<R>`. Such a Stage extends [the `ScalarToScalar` class](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToScalar.java). <br />![the Scalar-to-Scalar stage](../images/scalarToScalar.svg)
-1. **Scalar-to-Key**/**Scalar-to-Group** — Also known as “widening transformation,” this variety of Stage groups each element emitted by the source Observable by key. Typically you use such a Stage when you build a map/reduce-style job in which you need to perform stateful computations but the volume of data is too large to fit on a single worker. In such a model, the incoming data is divided into multiple streams, one per group. A subsequent State will typically to the stateful computation (for instance, calculating percentiles for the group). The purpose of this Scalar-to-Key State is to tag each incoming element with the group that it belongs to. Mantis then takes care of routing all traffic for the same group to the same [worker] in the subsequent stage.<br />![the Scalar-to-Key stage](../images/scalarToKey.svg)
-    1. **Scalar-to-Key** — This is the legacy way of grouping data (it is more elegant but comes with a performance penalty). You extend [the `ScalarToKey` class](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToKey.java) and transform an `Observable<T>` into an `Observable<GroupedObservable<K,R>>` (where `K` is the key). See [the RxJava `groupBy` operator](http://reactivex.io/documentation/operators/groupby.html) for more information.
-    1. **Scalar-to-Group** — This is a more efficient way to group data. You extend [the `ScalarToGroup` class](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToGroup.java) and transform an `Observable<T>` into an `Observable<MantisGroup<K,R>>` (where `K` is the key). This avoids the overhead associated with creating a `GroupedObservable` which can limit the number of groups it is possible to create.
-1. **Key-to-Scalar**/**Group-to-Scalar** — Once you have split a stream, you need a stage that can take grouped data and return it to a scalar form.<br />![the Key-to-Scalar stage](../images/keyToScalar.svg)
-    1. **Key-to-Scalar** — This is the legacy method and is designed for streams that have been split via a `ScalarToKey` Stage. You extend [the `KeyToScalar` class](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/KeyToScalar.java) and transform a `GroupedObservable<K,T>` into an `Observable<T>`.
-    1. **Group-to-Scalar** — This is the newer, faster method. It is less elegant, in that you must transform an `Observable<MantisGroup>` that contains payloads from all groups, and you must therefore manage the per-group state. Typically you would do this via a map that holds per-group state and evicts entries that haven’t been touched recently. This method has much better performance than the Key-to-Scalar method because it omits the overhead around RxJava’s `GroupedObservable`.
-1. **Key-to-Key**/**Group-to-Group** — You can further split a keyed stream by grouping it again if you have some use case that requires this.<br />![the Key-to-Key stage](../images/keyToKey.svg)
+You can install the Mantis CLI locally in your development environment by following the instructions
+on the [Mantis CLI Readme](https://github.com/netflix/mantis-cli#getting-started).
+
+Additionally, you can install the Mantis CLI onto your system as a package by following instructions
+on the [Mantis CLI Releasing](https://github.com/netflix/mantis-cli#releasing) section of the readme.
+
+## Mantis Commands
+
+A Mantis command takes the following form:
+
+<div class="commandline">
+ <span class="command prompted">mantis <var>command</var></span>
+</div>
+
+You can also issue the following command to learn about the various Mantis commands available to you
+from the command line:
+
+<div class="commandline">
+ <span class="command prompted">mantis --help</span>
+</div>
+
+Or you can issue the following command to learn about the use of a specific Mantis command:
+
+<div class="commandline">
+ <span class="command prompted">mantis <var>command</var> --help</span>
+</div>
+
+## Setting Up Your AWS Credentials
+Mantis can operate natively on different clouds. By default, Mantis provides CLI facilities for
+operating Mantis in the Amazon AWS environment.
+
+Before you can use the Mantis CLI to interact with Mantis Clusters in AWS, you must first establish
+your AWS credentials with Mantis. To do this, first obtain your AWS access key and secret access
+key, then issue the following command:
+
+<div class="commandline">
+ <span class="command prompted">mantis aws:configure <span class="comment">[</span>-k<span class="comment">|</span>--key=<var>access-key</var><span class="comment">]</span> <span class="comment">[</span>-s<span class="comment">|</span>--secret=<var>secret-access-key</var><span class="comment">]</span></span>
+</div>
+
+This command will store your AWS credentials to the same location and with the same file format as the [Amazon AWS CLI](https://aws.amazon.com/cli/).
+
+## Bootstrapping a Mantis Cluster in AWS
+You can use the Mantis CLI to bootstrap a Mantis Cluster in AWS. This will create the following:
+
+1. AWS key pair
+2. Default VPC
+3. Security groups
+4. Single [Zookeeper] EC2 instance backed by EBS volume
+5. Single Mesos Master EC2 instance backed by EBS volume
+6. Single Mesos Agent EC2 instance backed by EBS volume
+7. Single Mantis Master EC2 instance backed by EBS volume
+8. Single Mantis API EC2 instance backed by EBS volume
+
+To do this issue the following command:
+<div class="commandline">
+ <span class="command prompted">mantis aws:bootstrap</span>
+</div>
+
+!!! note
+    Before you issue the `mantis aws:bootstrap` command you must have first set up your AWS
+    credentials. You can do that with the `mantis aws:configure` command (see above).
+
+By default, the Mantis CLI bootstrap command is interactive and will prompt you for provisioning choices. Additionally, you can pass the following command-line parameters to skip some of the prompts from the `mantis aws:bootstrap` command:
+
+| prompt                 | parameter                        | valid inputs |
+| ---------------------- | -------------------------------- | ------------ |
+| **select a region**    | [`-r`\|`--region`] *`region`*    | `us-east-1`, `us-east-2`, `us-west-2` |
+| **confirm**            | `-y`                             | n/a |
+
+After you have finished executing the `mantis aws:bootstrap` command, you can submit [Jobs] into the
+Mantis cluster that it creates.
 
 <!-- Do not edit below this line -->
 <!-- START -->
@@ -80,8 +139,8 @@ varieties of Processing Stage, based on what type of transformation they accompl
 [migration strategies]:    ../../glossary#migration
 [MRE]:                     ../../glossary#mre               "Mantis Publish (a.k.a. Mantis Realtime Events, or MRE) is a library that your application can use to stream events into Mantis while respecting MQL filters."
 [Mantis Publish]:          ../../glossary#mantispublish     "Mantis Publish is a library that your application can use to stream events into Mantis while respecting MQL filters."
-[Mantis Query Language]:   ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
-[MQL]:                     ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[Mantis Query Language]:   ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[MQL]:                     ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
 [Observable]:              ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [Observables]:             ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [parameter]:               ../../glossary#parameter         "A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis."

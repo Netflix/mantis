@@ -1,151 +1,110 @@
-To implement a [Mantis Job]  [Source]  [component], you must implement the
-`io.mantisrx.runtime.Source` interface. A Source returns `Observable<Observable<T>>`, that is, an
-[Observable] that emits Observables. Each of the emitted Observables represents a stream of data
-from a single target server.
+## Background
+[Mantis Jobs] consist of one or more independent [stages]. Since stages are independent of one
+another, they are also sized independently.
 
-## Varieties of Sources
+Stages have one or more [workers], which are the fundamental unit of parallelism for a stage.
+Workers execute individual instances of a stage and are each allocated CPU, memory, disk, and
+network resources. Workers are also isolated from one another, which means they process events
+independently of each other using their own dedicated resources.
 
-Sources can be roughly divided into two categories:
+You can horizontally scale your Mantis Jobs by modifying the number of workers of your stages. You
+can also vertically scale your Mantis Jobs by tuning the number of resources for each worker.
 
-1. Sources that read data from the output of other Mantis Jobs
-    1. this may include [Source Jobs] (more on this below)
-    1. or ordinary Mantis Jobs
-1. Custom sources that read data directly from Amazon S3, SQS, Apache [Kafka], etc.
+The following sections are guidelines for sizing different types of Mantis Jobs.
 
-<!-- You can find more information on sources in [Mantis Data Sources](https://confluence.netflix.com/display/API/Mantis+Data+Sources) <span class="tbd">Incorporate that document into this docs set or omit the link.</span> -->
+!!! note
+    You can modify worker resources any time, even after you have already launched the Mantis Job.
+    This is useful in cases where you might want to adjust your Mantis Job to new traffic patterns.
+    You can do this by marking your stage as *Stage is Scalable*.
 
-### Mantis Job Sources
+    You can also mark the stage as *AutoScale this stage* to have Mantis automatically scale the
+    stage.
 
-You can string Mantis Jobs together by using the output of one Mantis Job as the input to another.
-This is useful if you want to break up your processing into multiple, reusable components and to
-take advantage of code and data reuse.
+    You can horizontally scale your Mantis Jobs without restarting the entire job. However,
+    vertically scaling your jobs requires a new job submission for changes to take effect.
 
-In such a case, you do not have access to the complete set of [Mantis Query Language (MQL)](../MQL)
-capabilities that you do in the case of a Source Job, but you can use MQL in client mode.
+## Mantis Jobs
+In addition to scaling the number of workers of a Mantis Job, you should consider tuning your
+workers, which have two tunable properties: processing resources and processing parallelism.
 
-#### Connecting to a Mantis Job
+For **processing resources**, you should generally determine if **CPU**, **memory**, or **network
+resources** will be a bottleneck in your processing. You should increase:
 
-To connect to a Mantis Job,
-use a [`JobSource`](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java) when you call `MantisJob.create()` — declare the following parameters when you use this class:
+- the number of CPUs if your job has CPU-intensive transformations such as serialization and
+  deserialization
+- memory if your job plans to hold many objects or large objects in memory
+- network resources if your job needs high throughput for network I/O such as external API calls
 
-1. `sourceJobName` *(required)* — the name of any valid [Job Cluster] (not necessarily a “Source Job”) <!-- MANTIS_SOURCEJOB_NAME_PARAM -->
-1. `sample` *(optional)* — use this if you want to [sample] the output `sample` times per second, or set this to `-1` to disable sampling <!-- MANTIS_SOURCEJOB_SAMPLE_PER_SEC_KEY -->
+For **processing parallelism**, you must choose between **serial** or **concurrent input**
+processing for each stage.
 
-For example:
-
-```java
-MantisJob.source(new JobSource())
-         .stage(…)
-         .sink(…)
-         .parameterDefinition(new StringParameter().name("sourceJobName")
-            .description("The name of the job")
-            .validator(Validators.notNullOrEmpty())
-            .defaultValue("MyDefaultJob")
-            .build())
-         .parameterDefinition(new IntParameter().name("sample")
-            .description("The number of samples per second")
-            .validator(Validators.range(-1, 10000))
-            .defaultValue(-1)
-            .build())
-         .lifecycle(…)
-         .metadata(…)
-         .create();
-```
-
-### Source Job Sources
-
-Mantis has a concept of [Source Jobs] which are Mantis [Jobs] with added conveniences and efficiences
-that simplify accessing data from certain sources. Your job can simply connect to a source job as its
-data source rather than trying to retrieve the data from its native home.
-There are two advantages to this approach:
-
-1. Source Jobs handle all of the implementation details around interacting with the native data
-   source.
-1. Source Jobs come with a simple query interface based on the [Mantis Query Language (MQL)](../MQL),
-   which allows you to filter the data from the source before processing it. In the case of source
-   jobs that fetch data from application servers directly, this filter gets pushed all the way to
-   those target servers so that no data flows unless someone is asking for it.
-1. Source Jobs reuse data so that multiple matching MQL queries are forwarded downstream instead of
-   paying the cost to fetch and serialize/deserialize the same data multiple times from the upstream
-   source.
-
-#### Broadcast Mode
-
-By default, Mantis will distribute the data that is output from the Source Job among the various
-workers in the processing stage of your Mantis Job. Each of those workers will get a subset of the
-complete data from the Source Job.
-
-You can override this by instructing the Source Job to use “broadcast mode”. If you do this, Mantis
-will send the complete set of data from the Source Job to *every* worker in your Job.
-
-#### Connecting to a Source Job
-
-Since Source Jobs are fundamentally Mantis Jobs, you should
-use a [`JobSource`](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java) when you call `MantisJob.create()` to connect to a particular Source Job.
-The difference is that you should pass in additional parameters:
-
-1. `sourceJobName` *(required)* — the name of the source Job Cluster you want to connect to
-1. `sample` *(required)* — use this if you want to [sample] the output `sample` times per second, or set this to `-1` to disable sampling
-1. `criterion` *(required)* — a query expression in [MQL](../MQL) to filter the source
-1. `clientId` *(optional)* — by default, the `jobId` of the client Job; the Source Job uses this to distribute data between all the subscriptions of the client Job
-1. `enableMetaMessages` *(optional)* — the source job may occasionally inject [meta messages] (with the prefix `mantis.meta.`) that indicate things like data drops on the Source Job side.
-
-For example:
+**Serial input** processing means your [Processing Stage] will receive and process events within a
+single thread. With serial input, you lose parallelism but your processing logic becomes
+straightforward without race conditions.
 
 ```java
-MantisJob.source(new JobSource())
-         .stage(…)
-         .sink(…)
-         .parameterDefinition(new StringParameter().name("sourceJobName")
-            .description("The name of the job")
-            .validator(Validators.notNullOrEmpty())
-            .defaultValue("MyDefaultSourceJob")
-            .build())
-         .parameterDefinition(new IntParameter().name("sample")
-            .description("The number of samples per second")
-            .validator(Validators.range(-1, 10000))
-            .defaultValue(-1)
-            .build())
-         .parameterDefinition(new StringParameter().name("criterion")
-            .description("Filter the source with this MQL statement")
-            .validator(Validators.notNullOrEmpty())
-            .defaultValue("true")
-            .build())
-         .parameterDefinition(new StringParameter().name("clientId")
-            .description("the ID of the client job")
-            .validator(Validators.alwaysPass())
-            .build())
-         .parameterDefinition(new BooleanParameter().name("enableMetaMessages")
-            .description("Is the source allowed to inject meta messages")
-            .validator(Validators.alwaysPass())
-            .defaultValue("true")
-            .build())
-         .lifecycle(…)
-         .metadata(…)
-         .create();
+// Specifying serial input for a stage.
+public class SerialStage implements ScalarComputation<T1, T2> {
+    static public ScalarToScalar.Config<T1, T2> config() {
+        return new ScalarToScalar.Config<T1, T2>().serialInput();
+    }
+}
 ```
 
-### Custom Sources
-
-[Custom sources] may be implemented and used to access data sources for which Mantis does not have a Source Job.
-Implementers are free to implement the [Source](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java) interface to fetch data from an external source.
-[Here](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-kafka/src/main/java/io/mantisrx/connector/kafka/source/KafkaSource.java) is an example in a source which implements the Source interface to consume data from Kafka.
-
-## Learning When Source Data is Incomplete
-
-You may want to know whether or not the stream you are receiving from your [source] is complete.
-Streams may be incomplete for a number of reasons:
-
-1. A connection to one or more of the [Source Job]  [workers] is lost.
-2. A connection exists but no data is flowing.
-3. Data is intentionally dropped from a source because of the [backpressure] strategy you are using.
-
-You can use the following `boolean` method within your `JobSource#call` method to determine whether or not all of your client
-connections are complete:
+**Concurrent input** means your [Processing Stage] will have multiple threads which each receive and
+process events. With concurrent input enabled, race conditions must be considered because the stage’s
+threads operate independently from one another and may process events at different speeds.
 
 ```java
-DefaultSinkConnectionStatusObserver.getInstance(true).isConnectedToAllSinks()
+// Specifying concurrent input for a stage.
+public class SerialStage implements ScalarComputation<T1, T2> {
+    static public ScalarToScalar.Config<T1, T2> config() {
+        return new ScalarToScalar.Config<T1, T2>().concurrentInput();
+    }
+}
 ```
+
+!!! note
+    Workers use serial input by default.
+
+## Kafka Source Jobs
+[Kafka]  [Source Jobs] are Mantis Jobs that share the same properties described above, except Kafka
+Source Jobs use concurrent input processing by default. There are additional job [parameters] to
+consider when tuning Kafka Source Jobs: `numConsumerInstances` and `stageConcurrency`.
+
+The `numConsumerInstances` [property] <!-- "property" or "parameter" (see previous paragraph)? --> determines how many Kafka consumers will be created for
+each worker. For example, if you have `numConsumerInstances` set to `2` and have 5 workers,
+then you will have 10 Kafka consumers in total for your Mantis Job consuming from a Kafka topic.
+
+The `stageConcurrency` property determines a pool of threads which receive events by the
+Kafka consumers. You can control your processing parallelism with this property. For example,
+if you have `numConsumerInstances` set to `2` and `stageConcurrency` set to 5 on a worker,
+then two Kafka consumers will read events from a Kafka topic and asynchronously send them to a
+pool of 5 processing threads.
+
+There are three considerations for using `numConsumerInstances` and `stageConcurrency` to tune your
+Kafka Source Job.
+
+First, you can pin `numConsumerInstances` to `1` and add more workers to load balance Kafka
+consumers across worker instances.
+
+If you find that your workers are under-utilized, you can increase `numConsumerInstances` for each
+worker. You can also give each worker more CPU, memory, and network resources and
+increase `numConsumerInstances` further so that you have fewer workers doing more work.
+
+Lastly, if you find that your Kafka topic’s lag is increasing, then processing might be a
+bottleneck. In this case, you can increase `stageConcurrency` to increase processing throughput.
+
+!!! note
+    Adding more workers to scale your Kafka Source Jobs to increase throughput or address lag has a
+    hard upper limit. Ensure that you do not have more Kafka consumers than the number of partitions
+    of the Kafka topic that your job is reading from. Specifically, ensure that:
+
+    $(numConsumerInstances × numberOfWorkers) ≤ numberOfPartitions$
+
+    This is because the number of partitions is a Kafka topic’s upper bound for parallelism. If you
+    exceed this number, then you will have idle consumers wasting resources which means adding more
+    workers to your Kafka Source Job will not have any positive effect.
 
 <!-- Do not edit below this line -->
 <!-- START -->
@@ -209,8 +168,8 @@ DefaultSinkConnectionStatusObserver.getInstance(true).isConnectedToAllSinks()
 [migration strategies]:    ../../glossary#migration
 [MRE]:                     ../../glossary#mre               "Mantis Publish (a.k.a. Mantis Realtime Events, or MRE) is a library that your application can use to stream events into Mantis while respecting MQL filters."
 [Mantis Publish]:          ../../glossary#mantispublish     "Mantis Publish is a library that your application can use to stream events into Mantis while respecting MQL filters."
-[Mantis Query Language]:   ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
-[MQL]:                     ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[Mantis Query Language]:   ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[MQL]:                     ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
 [Observable]:              ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [Observables]:             ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [parameter]:               ../../glossary#parameter         "A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis."

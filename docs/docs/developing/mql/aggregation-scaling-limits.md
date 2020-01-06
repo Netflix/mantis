@@ -1,124 +1,53 @@
-Mantis Source Jobs are [Mantis Jobs] that fetch data from external sources. There are four types of
-Source Jobs:
+[MQL] Queries that implement [aggregates (`COUNT`, `SUM`, etc.)](../MQL/operators#aggregates), as
+well as those that use windowing (like [`window`](../MQL/operators#window) or
+[`group by`](../MQL/operators#group-by)), must necessarily maintain state.
 
-1. **Mantis Publish Source Jobs**
-   read from their sources by using the [Mantis Publish](../../developing/mre) client library. As such, they do not apply [MQL](../../developing/mql) on events
-   themselves. Instead, they propagate the MQL queries upstream to Mantis Publish running on the external
-   source, which then applies the MQL queries to the events it produces and only then pushes those
-   events downstream to the Request Source Job.
+[The Mantis Publish library)](../glossary#mantispublish) and the [Source Jobs] do not perform MQL
+aggregation on the server side; consequently this must take place on the client side. This limits
+the blast radius if a client runs a long window or runs an aggregate against a large amount of data.
+However this creates potential scaling problems on the client side. This page will help you address
+such problems.
 
-2. **Kafka Source Jobs**
-   consume events from [Kafka] and apply MQL to each incoming event.
+## Details
+There are two primary technical concerns in these cases:
 
-## Composition of a Source Job
-A Source Job is composed of three components:
+1. Windowing must necessarily buffer the output until the end of the window.
+1. `group by` cannot run multithreaded as [RxJava] does not guarantee pairs with the same key end up
+   on the same thread.
 
-1. the default [Source]
-1. custom [Processing Stages] including a tagging operator
-1. the default [Sink] consisting of an [SSE] operator
+In the first case, as a client you’re simply facing a memory issue as you must have enough memory to
+buffer until the end of each window. However usually when you window, you are also performing some
+form of aggregate against the window (otherwise there is little point in windowing rather than just
+emitting the data immediately).
 
-For example, here is how you might declare a Kafka Source Job:
+The second case requires a single thread in order to guarantee that aggregate calculations against
+groups will be performed together.
 
-```java hl_lines="2 3 4 5 6 7 8"
-MantisJob
-  .source(KafkaSource)
-  .stage(
-     getAckableTaggingStage(),
-     CustomizedAutoAckTaggingStage.config())
-  .sink(new TaggedDataSourceSink(
-     new QueryRequestPreProcessor(),
-     new QueryRequestPostProcessor()))
-  .lifecycle(...)
-  .create();
-```
+A naive solution would be to always run MQL on a single thread. This solves the problem but is the
+least-scalable solution and also impacts queries do not require such restrictive behavior.
 
-### Source (RxFunction)
-The Source in this example contains code that creates and manages connections to Kafka using the
-0.10 high level consumer. It creates an [Observable] with [backpressure] semantics by leveraging the
-[`SyncOnSubscribe`](http://reactivex.io/RxJava/javadoc/rx/observables/SyncOnSubscribe.html) class.
+## Solutions
+There are a number of possible approaches you can take to address this problem. These primarily
+involve a tradeoff between engineering effort and effectiveness.
 
-### Processing Stage (RxFunction)
-The next stage in this Job is the Processing Stage which enriches events with [metadata]. This stage
-[transforms] events in the following way:
+### Solution A (Implemented)
+The MQL library includes `isAggregate()`, which is a function of `String` ⇒ `Boolean` that indicates
+whether or not a given query requires an aggregate operation. This allows you to test a query to
+determine if if requires single-threading and handle it appropriately if so.
 
-1. Applies a user-defined pre-mapping function.
-    - This is a Groovy function that takes a `Map<String, Object>` and returns a
-      `Map<String, Object>` referenced by a variable named `e`.
-2. Filters out empty events.
-3. Inspects its internal subscription registry and enriches each event with all matching
-   subscriptions.
-    - Subscriptions are represented by an MQL query and are registered when a consumer (e.g. Mantis
-      Job) subscribes to the Source Job.
-    - Each event is enriched with fields specified by the projections of a subscription’s MQL query,
-      as in the following illustration:
+This represents a low-effort / medium-effectiveness tradeoff; only queries that require the
+serialized behavior will suffer the performance penalty.
 
-        ![If an event matches multiple subscriptions, then the event will be enriched with projections from every subscription’s MQL query.](../images/RequestEventProcessor.svg)
+### Solution B (Future Work)
+A more scalable solution would be to enable MQL to emit additional formats. An example of this would
+be a Mantis topology backend that could emit multi-[stage] Mantis [Jobs] that implement the desired
+operation in a scalable fashion. A group-by stage that distributes values to downstream workers
+using consistent hashing would be able to scale horizontally based on the number of groups (still
+vertically for window size).
 
-### Sink (RxAction)
-In order for a consumer to consume events from a Source Job, the consumer connects to the Job’s Sink.
-
-Consumers subscribe to a Source Job by sending a subscription request over HTTP to the Source Job’s Sink.
-
-When a consumer connects to a Sink, the consumer must provide three query parameters:
-
-1. `criterion` — An MQL query string
-2. `clientId` — This is automatically generated if you use the Mantis client library; it defaults to
-   the Mantis Job ID
-3. `subscriptionId` — This is used as a load-balancing mechanism for `clientId`
-
-A consumer (represented as a client through `clientId`) may have many consumer instances
-(represented as susbcriptions through `subscriptionId`). Source Jobs use `clientId` and
-`subscriptionId` to **broadcast** and/or **load balance** events to consumers.
-
-Source Jobs will **broadcast** an event to all `clientId`s. This means that consumer instances with
-different `clientId`s will each receive the same event.
-
-However, Source Jobs will **load balance** an event within a `clientId`. This means that consumer
-instances with the same `clientId` but different `subscriptionId`s are effectively grouped together.
-Events with the same `clientId` are load balanced among its `subscriptionId`s.
-
-<div class="commandline">
- <span class="comment">Example of subscribing to a Source Job’s Sink which outputs the results of a sine wave function:</span><br />
- <span class="command prompted">curl "http://<var>instance-address</var>:<var>port</var>?clientId=<var>myId</var>&subscriptionId=<var>mySubscription</var>&criterion=select%20*%20where%20true"</span><br /><pre>
-
-data: {"x": 60.000000, "y": -3.048106}
-
-data: {"x": 100.000000, "y": -5.063656}
-
-data: {"x": 26.000000, "y": 7.625585}
-
-⋮</pre>
-</div>
-
-Sinks have a pre-processor (`QueryRequestPreProcessor`), a post-processor
-(`QueryRequestPostProcessor`), and a router:
-
-* The **pre-processor** is an RxFunction that registers the consumer’s query, with their `clientId`
-  and `subscriptionId`, into an in-memory cache called a `QueryRefCountMap` when a consumer instance
-  connects to the Sink. This registers queries so that the Source Job can apply them to events as
-  those events are ingested by the Source Job.
-
-* The **post-processor** is an RxFunction that de-registers subscriptions from the
-  `QueryRefCountMap` when a consumer instance disconnects from the Sink. The Source Job removes
-  removes the `clientId` entirely from the `QueryRefCountMap` only when all of its `subscriptionId`s
-  have been removed.
-
-* The **router** routes incoming events for a `clientId`s to its subscriptions. It does this by
-  using a **drainer** called a `ChunkProcessor` to drain events from an internal queue on an
-  interval and randomly distribute the events to subscriptions.
-
-!!! note
-    Typically, subscriptions to a Source Job come from other Mantis Jobs. However, because
-    subscriptions are SSE endpoints, you can subscribe to Source Jobs over that same SSE endpoint to
-    view the Job’s output for debugging purposes.
-
-## Caveats
-Source Jobs are single-stage Mantis Jobs that perform projection and filtering operations. MQL
-queries containing `groupBy`, `orderBy`, and `window` are ignored. These clauses are interpreted
-into [RxJava] operations and run by downstream Mantis Jobs.
-
-Mantis Publish-based Source Jobs do not [autoscale]. Autoscaling Mantis Publish-based Source Jobs requires future work to
-reshuffle connections among all Source Job instances and their upstream Mantis Publish connections.
+This solution requires significantly more engineering effort, but represents a very large increase
+in scalability for these queries. It would be a possibly-fruitful road for the Mantis open source
+software project to travel.
 
 <!-- Do not edit below this line -->
 <!-- START -->
@@ -182,8 +111,8 @@ reshuffle connections among all Source Job instances and their upstream Mantis P
 [migration strategies]:    ../../glossary#migration
 [MRE]:                     ../../glossary#mre               "Mantis Publish (a.k.a. Mantis Realtime Events, or MRE) is a library that your application can use to stream events into Mantis while respecting MQL filters."
 [Mantis Publish]:          ../../glossary#mantispublish     "Mantis Publish is a library that your application can use to stream events into Mantis while respecting MQL filters."
-[Mantis Query Language]:   ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
-[MQL]:                     ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[Mantis Query Language]:   ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[MQL]:                     ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
 [Observable]:              ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [Observables]:             ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [parameter]:               ../../glossary#parameter         "A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis."

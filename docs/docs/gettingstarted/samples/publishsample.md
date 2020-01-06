@@ -30,7 +30,7 @@ This end-to-end example highlights two powerful Mantis concepts
 >  **Note**: The local docker setup has already preconfigured a simple [Java Sample](https://github.com/Netflix/mantis-examples/tree/master/mantis-publish-sample) application to publish events
 to Mantis. 
 
-For instructions on instrumenting your own application check out the [Publishing events to Mantis](../../internals/mre.md)
+For instructions on instrumenting your own application check out the [Publishing events to Mantis](../../developing/mre.md)
 
 ## Setting up a Publish Data Source Job
 

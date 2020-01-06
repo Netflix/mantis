@@ -18,7 +18,7 @@ This job outputs request events sourced from an imaginary service. The RequestEv
 has information such as uri, status, userId, country etc.
 Data Source Jobs are mantis jobs that allow consumers to filter the raw stream down to just the events 
 they are interested in. 
-This filtering is done by specifying an [MQL query](../MQL/index.md) while connecting to the sink.
+This filtering is done by specifying an [MQL query](../developing/mql/index.md) while connecting to the sink.
 
 To run the sample execute the following command.
 ```bash
@@ -70,4 +70,4 @@ Next Steps
 * Try out other samples from the [Mantis examples repository](https://github.com/netflix/mantis-examples).
 * [Set up Mantis locally using Docker](docker.md) and run the samples.
 * [Set up Mantis in AWS](cloud.md) and run the samples.
-* Learn to write your own Mantis Jobs.
+* Learn to write [your own Mantis Jobs](../developing/writingjobs/index.md).

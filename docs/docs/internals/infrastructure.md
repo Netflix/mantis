@@ -1,5 +1,5 @@
 #Mantis Infrastructure Overview
-![High Level Architecture](./images/MantisArchitecture.png)
+![High Level Architecture](../images/MantisArchitecture.png)
 
 At a high level the Mantis Architecture consists of the Control plane (Mantis Master) and the
 Mantis runtime. The Master is responsible for managing the life cycle of Jobs, including
