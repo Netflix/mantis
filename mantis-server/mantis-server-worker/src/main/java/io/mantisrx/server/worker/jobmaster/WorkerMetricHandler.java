@@ -16,13 +16,6 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METRIC_GROUP;
-import static io.mantisrx.server.core.stats.MetricStringConstants.DROP_PERCENT;
-import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP;
-import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_LAG;
-import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_PROCESSED;
-import static io.mantisrx.server.core.stats.MetricStringConstants.RESOURCE_USAGE_METRIC_GROUP;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +44,8 @@ import rx.functions.Func1;
 import rx.observers.SerializedObserver;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
+
+import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
 
 /* package */ class WorkerMetricHandler {
@@ -199,13 +194,17 @@ import rx.subjects.PublishSubject;
             }
         }
 
+        private static final int metricsIntervalSeconds = 30; // TODO make it configurable
+
         @Override
         public Subscriber<? super MetricData> call(final Subscriber<? super Object> child) {
             child.add(Schedulers.computation().createWorker().schedulePeriodically(
                     new Action0() {
                         @Override
                         public void call() {
+
                             List<Map<String, GaugeData>> listofAggregates = new ArrayList<>();
+
                             synchronized (workersMap) {
                                 for (Map.Entry<Integer, WorkerMetrics> entry : workersMap.entrySet()) {
                                     // get the aggregate metric values by metric group per worker
@@ -217,8 +216,6 @@ import rx.subjects.PublishSubject;
                             Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
                             logger.info("Job stage " + stage + " avgResUsage from " +
                                     workersMap.size() + " workers: " + allWorkerAggregates.toString());
-
-                            // TODO: Could add an RPS gaguge here.
 
                             for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
                                 final String metricGrp = userDefinedMetric.getKey();
@@ -268,9 +265,15 @@ import rx.subjects.PublishSubject;
                                             new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage,
                                                     gauges.get(DROP_PERCENT), numWorkers, ""));
                                 }
+
+                                if (gauges.containsKey(ON_NEXT_COUNT)) {
+                                    jobAutoScaleObserver.onNext(
+                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
+                                                    gauges.get(ON_NEXT_COUNT) / metricsIntervalSeconds, numWorkers, ""));
+                                }
                             }
                         }
-                    }, 30, 30, TimeUnit.SECONDS // TODO make it configurable
+                    }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
             ));
             return new Subscriber<MetricData>() {
                 @Override

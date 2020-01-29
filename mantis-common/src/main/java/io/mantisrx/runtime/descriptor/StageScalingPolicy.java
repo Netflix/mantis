@@ -177,7 +177,8 @@ public class StageScalingPolicy {
         UserDefined,
         KafkaProcessed,
         Clutch,
-        ClutchExperimental
+        ClutchExperimental,
+        RPS
     }
 
     public static class RollingCount {
