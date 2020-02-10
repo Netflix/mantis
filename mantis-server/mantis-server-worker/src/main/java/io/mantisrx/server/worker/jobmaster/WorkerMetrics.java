@@ -22,6 +22,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.DROP_PERCENT;
 import static io.mantisrx.server.core.stats.MetricStringConstants.ON_NEXT_COUNT;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,8 +48,14 @@ public class WorkerMetrics {
                 final double totalCount = dropCount + onNextCount;
                 if (totalCount > 0.0) {
                     final double dropPercent = (dropCount * 100.0) / totalCount;
-                    return new GaugeData(data.getWhen(), Collections.singletonMap(DROP_PERCENT, dropPercent));
+
+                    Map<String, Double> newGauges = new HashMap<>(2);
+                    newGauges.put(DROP_PERCENT, dropPercent);
+                    newGauges.put(ON_NEXT_COUNT, gauges.get(ON_NEXT_COUNT));
+                    return new GaugeData(data.getWhen(), newGauges);
                 }
+            } else if (gauges.containsKey(ON_NEXT_COUNT)) {
+                return new GaugeData(data.getWhen(), Collections.singletonMap(ON_NEXT_COUNT, gauges.get(ON_NEXT_COUNT)));
             }
             return new GaugeData(data.getWhen(), Collections.emptyMap());
         }
