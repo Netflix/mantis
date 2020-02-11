@@ -51,7 +51,9 @@ public class Clutch implements Observable.Transformer<Event, Object> {
         /** Hypothetical metric which causes the controller to slow down. Currently unused. */
         RESISTANCE,
         /** A user defined resource metric provided by the job under control. Receives priority. */
-        UserDefined
+        UserDefined,
+        /** A measure of requests per second handled by the target. */
+        RPS
     }
 
     private final IActuator actuator;
@@ -91,7 +93,7 @@ public class Clutch implements Observable.Transformer<Event, Object> {
                 .compose(new ClutchConfigurator(new IClutchMetricsRegistry() { }, minSize,
                       maxSize, timer, this.loggingIntervalMins))
                 .flatMap(config -> events.compose(new ControlLoop(config, this.actuator,
-                        this.initialSize.doubleValue(), dampener, this.loggingIntervalMins))
+                        this.initialSize.doubleValue(), dampener))
                         .takeUntil(timer)) // takeUntil tears down this control loop when a new config is produced.
                 .lift(new OscillationDetector(60, x -> this.dampener.set(Math.pow(x, 3))));
     }

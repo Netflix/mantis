@@ -36,7 +36,7 @@ ext {
     sketchesVersion = '0.9.1'
     rxJavaVersion = '1.3.8'
     rxJavaMathVersion = '1.0.0'
-    lombokVersion = '1.18.6'
+    lombokVersion = '1.18.10'
     mockitoVersion = '1.9.+'
     assertjVersion = '3.12.+'
 }
@@ -47,14 +47,11 @@ allprojects {
 }
 
 apply plugin: 'java-library'
-apply plugin: 'application'
-apply plugin: 'checkstyle'
+//apply plugin: 'checkstyle'
 apply plugin: 'pmd'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
-
-mainClassName = 'com.netflix.control.Chapter03'
 
 group = 'io.mantisrx'
 
@@ -99,4 +96,4 @@ license {
     ignoreFailures = false
 }
 
-apply from: file('gradle/check.gradle')
+//apply from: file('gradle/check.gradle')
