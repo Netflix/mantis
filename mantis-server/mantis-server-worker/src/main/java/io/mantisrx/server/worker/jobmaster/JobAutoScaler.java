@@ -175,8 +175,7 @@ public class JobAutoScaler {
                                         .getStrategies()
                                         .values()
                                         .stream()
-                                        .anyMatch(policy -> policy.getReason().equals(StageScalingPolicy.ScalingReason.ClutchExperimental) ||
-                                                policy.getReason().equals(StageScalingPolicy.ScalingReason.Clutch))) {
+                                        .anyMatch(policy -> policy.getReason().equals(StageScalingPolicy.ScalingReason.Clutch))) {
 
                             int initialSize = stageSchedulingInfo.getNumberOfInstances();
                             StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
