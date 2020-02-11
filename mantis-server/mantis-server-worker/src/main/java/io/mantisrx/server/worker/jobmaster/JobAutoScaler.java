@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.control.clutch.Clutch;
+import com.netflix.control.clutch.ClutchExperimental;
+import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
@@ -37,6 +39,7 @@ import io.mantisrx.server.worker.jobmaster.control.actuators.MantisStageActuator
 import io.mantisrx.server.worker.jobmaster.control.utils.TransformerWrapper;
 import io.vavr.control.Try;
 import io.vavr.jackson.datatype.VavrModule;
+import meka.experiment.events.ExecutionStageEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.BackpressureOverflow;
@@ -68,17 +71,22 @@ public class JobAutoScaler {
         metricMap.put(StageScalingPolicy.ScalingReason.KafkaLag, Clutch.Metric.LAG);
         metricMap.put(StageScalingPolicy.ScalingReason.DataDrop, Clutch.Metric.DROPS);
         metricMap.put(StageScalingPolicy.ScalingReason.UserDefined, Clutch.Metric.UserDefined);
+        metricMap.put(StageScalingPolicy.ScalingReason.RPS, Clutch.Metric.RPS);
     }
 
     private final String jobId;
     private final MantisMasterClientApi masterClientApi;
     private final SchedulingInfo schedulingInfo;
     private final PublishSubject<Event> subject;
-    JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterClientApi masterClientApi) {
+    private final Context context;
+
+    JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterClientApi masterClientApi,
+                  Context context) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
         this.schedulingInfo = schedulingInfo;
         subject = PublishSubject.create();
+        this.context = context;
     }
 
     public static void main(String[] args) {
@@ -94,8 +102,6 @@ public class JobAutoScaler {
     }
 
     private com.netflix.control.clutch.Event mantisEventToClutchEvent(StageSchedulingInfo stageSchedulingInfo, Event event) {
-
-
         return new com.netflix.control.clutch.Event(metricMap.get(event.type),
                 Util.getEffectiveValue(stageSchedulingInfo, event.getType(), event.getValue()));
     }
@@ -184,6 +190,41 @@ public class JobAutoScaler {
                                             stageSchedulingInfo.getNumberOfInstances(),
                                             stageSchedulingInfo.getScalingPolicy().getMin(),
                                             stageSchedulingInfo.getScalingPolicy().getMax()));
+
+                        }
+
+                        //
+                        // Clutch experimental (invoked via scaling config)
+                        //
+
+                        if (stageSchedulingInfo != null &&
+                                stageSchedulingInfo.getScalingPolicy() != null &&
+                                stageSchedulingInfo
+                                        .getScalingPolicy()
+                                        .getStrategies() != null &&
+                                stageSchedulingInfo
+                                        .getScalingPolicy()
+                                        .getStrategies()
+                                        .values()
+                                        .stream()
+                                        .anyMatch(policy -> policy.getReason().equals(StageScalingPolicy.ScalingReason.ClutchExperimental))) {
+
+                            int initialSize = stageSchedulingInfo.getNumberOfInstances();
+                            StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
+
+                            logger.info("Setting up Clutch Experimental scale operator for job " + jobId + " stage " + stage);
+
+                            Observable<Integer> workerCounts = context.getWorkerMapObservable()
+                                    .map(x -> x.getWorkersForStage(go.getKey()).size());
+
+                            return go
+                                    .map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
+                                    .filter(event -> event.metric != null)
+                                    .compose(new ClutchExperimental(new MantisStageActuator(initialSize, scaler),
+                                            stageSchedulingInfo.getNumberOfInstances(),
+                                            stageSchedulingInfo.getScalingPolicy().getMin(),
+                                            stageSchedulingInfo.getScalingPolicy().getMax(),
+                                            workerCounts));
 
                         }
 

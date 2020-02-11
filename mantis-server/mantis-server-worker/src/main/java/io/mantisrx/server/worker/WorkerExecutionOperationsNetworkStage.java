@@ -410,7 +410,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 }
 
                 final JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
-                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
+                        workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
                 jobMasterService.start();
 
                 signalStarted(rw, subscriptionStateHandlerRef);

@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
+import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
@@ -49,6 +50,7 @@ public class JobMasterService implements Service {
     private final AutoScaleMetricsConfig autoScaleMetricsConfig;
     private final Observer<MetricData> metricObserver;
     private final JobAutoScaler jobAutoScaler;
+    private final Context context;
     private final Action0 observableOnCompleteCallback;
     private final Action1<Throwable> observableOnErrorCallback;
     private final Action0 observableOnTerminateCallback;
@@ -60,17 +62,19 @@ public class JobMasterService implements Service {
                             final WorkerMetricsClient workerMetricsClient,
                             final AutoScaleMetricsConfig autoScaleMetricsConfig,
                             final MantisMasterClientApi masterClientApi,
+                            final Context context,
                             final Action0 observableOnCompleteCallback,
                             final Action1<Throwable> observableOnErrorCallback,
                             final Action0 observableOnTerminateCallback) {
         this.jobId = jobId;
         this.workerMetricsClient = workerMetricsClient;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
-        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi);
+        this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context);
         this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig).initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = observableOnCompleteCallback;
         this.observableOnErrorCallback = observableOnErrorCallback;
         this.observableOnTerminateCallback = observableOnTerminateCallback;
+        this.context = context;
     }
 
     private Measurements handleMetricEvent(final String ev) {

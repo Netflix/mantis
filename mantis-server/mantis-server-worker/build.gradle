@@ -38,7 +38,7 @@ dependencies {
         exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
     }
     compile "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
-    compile 'io.mantisrx:mantis-rxcontrol:1.3.2'
+    compile 'io.mantisrx:mantis-rxcontrol:1.3.3'
 
     testImplementation "junit:junit-dep:$junitVersion"
     testImplementation "org.mockito:mockito-all:$mockitoVersion"
