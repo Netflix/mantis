@@ -32,6 +32,7 @@ public class MonitorOperator<T> implements Operator<T, T> {
 
     private static Logger logger = LoggerFactory.getLogger(MonitorOperator.class);
     private final Counter next;
+    private final Gauge nextGauge;
     private final Gauge error;
     private final Gauge complete;
     private final Gauge subscribe;
@@ -46,6 +47,7 @@ public class MonitorOperator<T> implements Operator<T, T> {
                         .addGauge("onError")
                         .addGauge("onComplete")
                         .addGauge("subscribe")
+                        .addGauge("onNextGauge")
                         .build();
 
         m = MetricsRegistry.getInstance().registerAndGet(m);
@@ -54,6 +56,7 @@ public class MonitorOperator<T> implements Operator<T, T> {
         error = m.getGauge("onError");
         complete = m.getGauge("onComplete");
         subscribe = m.getGauge("subscribe");
+        nextGauge = m.getGauge("onNextGauge");
     }
 
     @Override
@@ -85,6 +88,7 @@ public class MonitorOperator<T> implements Operator<T, T> {
             @Override
             public void onNext(T t) {
                 next.increment();
+                nextGauge.set(next.value());
                 o.onNext(t);
             }
         };
