@@ -46,5 +46,10 @@ public class MetricStringConstants {
     public static final String KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP = "consumer-fetch-manager-metrics";
     public static final String KAFKA_LAG = "records-lag-max";
     public static final String KAFKA_PROCESSED = "records-consumed-rate";
+
+    // RPS Metrics
+    public static final String WORKER_STAGE_INNER_INPUT = "worker_stage_inner_input";
+    public static final String ON_NEXT_GAUGE = "onNextGauge";
+
     private MetricStringConstants() {}
 }
