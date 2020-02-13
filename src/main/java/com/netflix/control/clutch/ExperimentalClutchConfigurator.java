@@ -17,13 +17,13 @@
 package com.netflix.control.clutch;
 
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
+import com.yahoo.sketches.quantiles.DoublesSketch;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -110,7 +110,20 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
 
         return initialConfig
                 .concatWith(configs)
+                .doOnNext(__ -> log.info("RPS Sketch State: {}", sketches.get(Clutch.Metric.RPS)))
+                .doOnNext(__ -> logSketchSummary(sketches.get(Clutch.Metric.RPS)))
                 .doOnNext(config -> log.info("Clutch switched to config: {}", config));
+    }
 
+    private static void logSketchSummary(DoublesSketch sketch) {
+        double[] quantiles = sketch.getQuantiles(new double[]{0.0, 0.25, 0.5, 0.75, 0.99, 1.0});
+        log.info("RPS Sketch Quantiles -- Min: {}, 25th: {}, 50th: {}, 75th: {}, 99th: {}, Max: {}",
+                quantiles[0],
+                quantiles[1],
+                quantiles[2],
+                quantiles[3],
+                quantiles[4],
+                quantiles[5]
+        );
     }
 }

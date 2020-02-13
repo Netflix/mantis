@@ -81,6 +81,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         size.doOnNext(currentScale::set)
                 .doOnNext(integrator::setSum)
+                .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
                 .doOnNext(n -> log.info("Clutch received new scheduling update with {} workers.", n))
                 .subscribe();
 
