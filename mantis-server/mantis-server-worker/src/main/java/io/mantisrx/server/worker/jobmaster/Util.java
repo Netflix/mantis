@@ -40,8 +40,8 @@ public class Util {
             // value is in bytes, multiply by 8, divide by M
             return 100.0 * value * 8 / (1024.0 * 1024.0 * stageSchedulingInfo.getMachineDefinition().getNetworkMbps());
         default:
-            log.warn("Unsupported type " + type);
-            return 0.0;
+            // Identity is the defaunt transformation
+            return value;
         }
     }
 }
