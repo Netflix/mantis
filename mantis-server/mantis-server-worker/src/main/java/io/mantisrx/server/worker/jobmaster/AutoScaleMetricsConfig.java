@@ -16,10 +16,7 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METRIC_GROUP;
-import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP;
-import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_LAG;
-import static io.mantisrx.server.core.stats.MetricStringConstants.RESOURCE_USAGE_METRIC_GROUP;
+import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +35,7 @@ public class AutoScaleMetricsConfig {
         final Map<String, AggregationAlgo> defaultKafkaConsumerMetric = new HashMap<>();
         defaultKafkaConsumerMetric.put(KAFKA_LAG, AggregationAlgo.MAX);
         defaultAutoScaleMetrics.put(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP, defaultKafkaConsumerMetric);
+        defaultAutoScaleMetrics.put(WORKER_STAGE_INNER_INPUT, new HashMap<>());
     }
 
     private final Map<String, Map<String, AggregationAlgo>> userDefinedAutoScaleMetrics;

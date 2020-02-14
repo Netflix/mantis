@@ -267,14 +267,13 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                                 }
                             }
 
-                            // TODO: Add these to mantis-control-plane-core MetricStringConstants
-                            if (allWorkerAggregates.containsKey("worker_stage_inner_input")) {
-                                final GaugeData gaugeData = allWorkerAggregates.get("worker_stage_inner_input");
+                            if (allWorkerAggregates.containsKey(WORKER_STAGE_INNER_INPUT)) {
+                                final GaugeData gaugeData = allWorkerAggregates.get(WORKER_STAGE_INNER_INPUT);
                                 final Map<String, Double> gauges = gaugeData.getGauges();
-                                if (gauges.containsKey("onNextGauge")) {
+                                if (gauges.containsKey(ON_NEXT_GAUGE)) {
                                     jobAutoScaleObserver.onNext(
                                             new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
-                                                    gauges.get("onNextGauge") / metricsIntervalSeconds, numWorkers, ""));
+                                                    gauges.get(ON_NEXT_GAUGE) / metricsIntervalSeconds, numWorkers, ""));
                                 }
                             }
                         }

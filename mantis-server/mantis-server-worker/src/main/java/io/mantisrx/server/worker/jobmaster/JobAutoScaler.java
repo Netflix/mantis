@@ -111,7 +111,7 @@ public class JobAutoScaler {
                 .onBackpressureBuffer(100, () -> {
                     logger.info("onOverflow triggered, dropping old events");
                 }, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
-                .doOnRequest(x -> logger.info("requested {}", x))
+                .doOnRequest(x -> logger.info("Scaler requested {} metrics.", x))
                 .groupBy(event -> event.getStage())
                 .flatMap(go -> {
                     Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
@@ -214,7 +214,8 @@ public class JobAutoScaler {
                             logger.info("Setting up Clutch Experimental scale operator for job " + jobId + " stage " + stage);
 
                             Observable<Integer> workerCounts = context.getWorkerMapObservable()
-                                    .map(x -> x.getWorkersForStage(go.getKey()).size());
+                                    .map(x -> x.getWorkersForStage(go.getKey()).size())
+                                    .distinctUntilChanged();
 
                             return go
                                     .map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
