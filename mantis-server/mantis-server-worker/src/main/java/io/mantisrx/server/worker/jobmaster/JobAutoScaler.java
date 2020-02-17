@@ -215,7 +215,8 @@ public class JobAutoScaler {
 
                             Observable<Integer> workerCounts = context.getWorkerMapObservable()
                                     .map(x -> x.getWorkersForStage(go.getKey()).size())
-                                    .distinctUntilChanged();
+                                    .distinctUntilChanged()
+                                    .throttleLast(5, TimeUnit.SECONDS);
 
                             return go
                                     .map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
