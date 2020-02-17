@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ExperimentalClutchConfigurator implements Observable.Transformer<Event, ClutchConfiguration>  {
     private static double DEFAULT_SETPOINT = 0.6;
-    private static Tuple2<Double, Double> DEFAULT_ROPE = Tuple.of(10.0, 0.00);
     private static int DEFAULT_K = 1024;
     private static double DEFAULT_QUANTILE = 0.99;
 
@@ -73,15 +72,20 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
         double setPoint = DEFAULT_SETPOINT * sketches.get(Clutch.Metric.RPS).getQuantile(DEFAULT_QUANTILE);
         Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.1, 0.0);
 
+        // TODO: Significant improvements to gain computation can likely be made.
+        double kp = (setPoint * 1e-6) / 4.0;
+        double ki = 0.0;
+        double kd = (setPoint * 1e-6) / 4.0;
+
         return new ClutchConfiguration.ClutchConfigurationBuilder()
                 .metric(Clutch.Metric.RPS)
                 .setPoint(setPoint)
-                .kp(0.01)
-                .ki(0.01)
-                .kd(0.01)
+                .kp(kp)
+                .ki(ki)
+                .kd(kd)
                 .minSize(this.minSize)
                 .maxSize(this.maxSize)
-                .rope(DEFAULT_ROPE)
+                .rope(rope)
                 .cooldownInterval(5)
                 .cooldownUnits(TimeUnit.MINUTES)
                 .build();
