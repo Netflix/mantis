@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.client;
 
 import java.nio.charset.Charset;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import io.netty.buffer.ByteBuf;
@@ -24,6 +25,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import mantis.io.reactivex.netty.client.RxClient;
@@ -75,7 +77,24 @@ import rx.functions.Func1;
                                         super.channelRead(ctx, msg);
                                     }
                                 });
+
+                                try {
+                                    int maxContentLength = 10 * 1024 * 1024; // Ten megabytes
+                                    pipeline.replace(HttpObjectAggregator.class, "http-object-aggregator",
+                                            new HttpObjectAggregator(maxContentLength));
+                                } catch (NoSuchElementException ex) {
+                                    logger.error("HttpObjectAggregator did not exist in this pipeline. Error: {}",
+                                            ex.getMessage(), ex);
+                                } catch (IllegalArgumentException ex) {
+                                    logger.error("ChannelHandler named http-object-aggregator already existed in this" +
+                                            " pipeline. Error: {}", ex.getMessage(), ex);
+                                }
+                                catch (Throwable t) {
+                                    logger.error("Unknown error adding HttpObjectAggregator to Master Client " +
+                                            "Pipeline. Error: {}", t.getMessage(), t);
+                                }
                             }
+
                         })
                 .build()
                 .submit(new RxClient.ServerInfo(host, port),
