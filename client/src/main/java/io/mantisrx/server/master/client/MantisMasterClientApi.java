@@ -565,7 +565,7 @@ public class MantisMasterClientApi {
                             });
                 })
                 .retryWhen(retryLogic)
-                .map(this::payloadIsError);
+                .map(payload -> !payloadIsError(payload));
     }
 
     /**
