@@ -16,9 +16,12 @@
 
 package com.netflix.control.clutch;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.IActuator;
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
+import com.yahoo.sketches.quantiles.DoublesSketch;
+import io.vavr.Function1;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import rx.Observable;
 
 import java.util.concurrent.TimeUnit;
@@ -37,11 +40,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
     private final Observable<Long> timer;
     private final Observable<Integer> size;
     private final long initialConfigMillis;
-
-
-    public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize, Observable<Integer> size) {
-        this(actuator, initialSize, minSize, maxSize, size, Observable.interval(1, TimeUnit.DAYS), 1000 * 60 * 10);
-    }
+    private final Function1<DoublesSketch, ClutchConfiguration> configurator;
 
     /**
      * Constructs a new Clutch instance for autoscaling.
@@ -54,7 +53,8 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
      * @param initialConfigMillis The initial number of milliseconds before initial configuration.
      */
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
-                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis) {
+                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis,
+                              Function1<DoublesSketch, ClutchConfiguration> configurator) {
         this.actuator = actuator;
         this.initialSize = initialSize;
         this.minSize = minSize;
@@ -62,6 +62,34 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
         this.size = size;
         this.timer = timer;
         this.initialConfigMillis = initialConfigMillis;
+        this.configurator = configurator;
+    }
+
+    public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
+                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis) {
+
+        this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, (sketch) -> {
+            double setPoint = 0.6 * sketch.getQuantile(0.99);
+            Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
+
+            // TODO: Significant improvements to gain computation can likely be made.
+            double kp = (setPoint * 1e-6) / 5.0;
+            double ki = 0.0;
+            double kd = (setPoint * 1e-6) / 4.0;
+
+            return new ClutchConfiguration.ClutchConfigurationBuilder()
+                    .metric(Clutch.Metric.RPS)
+                    .setPoint(setPoint)
+                    .kp(kp)
+                    .ki(ki)
+                    .kd(kd)
+                    .minSize(minSize)
+                    .maxSize(maxSize)
+                    .rope(rope)
+                    .cooldownInterval(5)
+                    .cooldownUnits(TimeUnit.MINUTES)
+                    .build();
+        });
     }
 
     @Override
@@ -69,8 +97,8 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
         final Observable<Event> events = eventObservable.share();
 
         return events
-                .compose(new ExperimentalClutchConfigurator(new IClutchMetricsRegistry() { }, minSize,
-                        maxSize, timer, initialConfigMillis))
+                .compose(new ExperimentalClutchConfigurator(new IClutchMetricsRegistry() { }, timer,
+                        initialConfigMillis, configurator))
                 .flatMap(config -> events
                         .compose(new ExperimentalControlLoop(config, this.actuator,
                                 this.initialSize.doubleValue(), size))

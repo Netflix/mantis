@@ -19,8 +19,7 @@ package com.netflix.control.clutch;
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.DoublesSketch;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
+import io.vavr.Function1;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
@@ -29,15 +28,12 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ExperimentalClutchConfigurator implements Observable.Transformer<Event, ClutchConfiguration>  {
-    private static double DEFAULT_SETPOINT = 0.6;
     private static int DEFAULT_K = 1024;
-    private static double DEFAULT_QUANTILE = 0.99;
 
     private IClutchMetricsRegistry metricsRegistry;
-    private final Integer minSize;
-    private final Integer maxSize;
     private final Observable<Long> timer;
     private final long initialConfigMilis;
+    private final Function1<DoublesSketch,ClutchConfiguration> configurator;
 
     private static ConcurrentHashMap<Clutch.Metric, UpdateDoublesSketch> sketches = new ConcurrentHashMap<>();
     static {
@@ -50,14 +46,13 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
         sketches.put(Clutch.Metric.RPS, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
     }
 
-    public ExperimentalClutchConfigurator(IClutchMetricsRegistry metricsRegistry, Integer minSize, Integer maxSize,
-                                          Observable<Long> timer,
-                                          long initialConfigMillis) {
+    public ExperimentalClutchConfigurator(IClutchMetricsRegistry metricsRegistry, Observable<Long> timer,
+                                          long initialConfigMillis,
+                                          Function1<DoublesSketch, ClutchConfiguration> configurator) {
         this.metricsRegistry = metricsRegistry;
-        this.minSize = minSize;
-        this.maxSize = maxSize;
         this.timer = timer;
         this.initialConfigMilis = initialConfigMillis;
+        this.configurator = configurator;
     }
 
     //
@@ -69,26 +64,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
      * @return A configuration suitable for autoscaling with Clutch.
      */
     private ClutchConfiguration getConfig() {
-        double setPoint = DEFAULT_SETPOINT * sketches.get(Clutch.Metric.RPS).getQuantile(DEFAULT_QUANTILE);
-        Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
-
-        // TODO: Significant improvements to gain computation can likely be made.
-        double kp = (setPoint * 1e-6) / 5.0;
-        double ki = 0.0;
-        double kd = (setPoint * 1e-6) / 4.0;
-
-        return new ClutchConfiguration.ClutchConfigurationBuilder()
-                .metric(Clutch.Metric.RPS)
-                .setPoint(setPoint)
-                .kp(kp)
-                .ki(ki)
-                .kd(kd)
-                .minSize(this.minSize)
-                .maxSize(this.maxSize)
-                .rope(rope)
-                .cooldownInterval(5)
-                .cooldownUnits(TimeUnit.MINUTES)
-                .build();
+        return this.configurator.apply(sketches.get(Clutch.Metric.RPS));
     }
 
     @Override
