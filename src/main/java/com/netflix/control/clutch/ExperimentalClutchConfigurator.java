@@ -70,10 +70,10 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
      */
     private ClutchConfiguration getConfig() {
         double setPoint = DEFAULT_SETPOINT * sketches.get(Clutch.Metric.RPS).getQuantile(DEFAULT_QUANTILE);
-        Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.1, 0.0);
+        Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
 
         // TODO: Significant improvements to gain computation can likely be made.
-        double kp = (setPoint * 1e-6) / 4.0;
+        double kp = (setPoint * 1e-6) / 5.0;
         double ki = 0.0;
         double kd = (setPoint * 1e-6) / 4.0;
 
