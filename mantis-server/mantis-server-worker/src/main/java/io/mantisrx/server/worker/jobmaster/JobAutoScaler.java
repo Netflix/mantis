@@ -225,7 +225,9 @@ public class JobAutoScaler {
                                             stageSchedulingInfo.getNumberOfInstances(),
                                             stageSchedulingInfo.getScalingPolicy().getMin(),
                                             stageSchedulingInfo.getScalingPolicy().getMax(),
-                                            workerCounts));
+                                            workerCounts,
+                                            Observable.interval(1, TimeUnit.DAYS),
+                                            1000 * 60 * 10));
 
                         }
 
