@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -541,6 +542,46 @@ public class MantisMasterClientApi {
                 })
                 .retryWhen(retryLogic)
                 ;
+    }
+
+    /**
+     * Checks the existence of a jobId by calling GET on the Master
+     * for /api/jobs/list/_jobId_ and ensuring the response is not an error.
+     *
+     * @param jobId The id of the Mantis job.
+     * @return A boolean indicating whether the job id exists or not.
+     */
+    public Observable<Boolean> jobIdExists(final String jobId) {
+        return masterMonitor.getMasterObservable()
+                .filter(masterDescription -> masterDescription != null)
+                .switchMap(masterDescription -> {
+                    String uri = API_JOBS_LIST_PATH + "/" + jobId;
+                    logger.info("Calling GET on " + uri);
+                    return HttpUtility.getGetResponse(masterDescription.getHostname(),
+                            masterDescription.getApiPort(), uri)
+                            .onErrorResumeNext(throwable -> {
+                                logger.warn("Can't connect to master: {}", throwable.getMessage(), throwable);
+                                return Observable.empty();
+                            });
+                })
+                .retryWhen(retryLogic)
+                .map(this::payloadIsError);
+    }
+
+    /**
+     * Checks wether a master response is of the form <code>{"error": "message"}</code>
+     * @param payload A string representation of the payload returned by Master GET /api/jobs/list/_jobId_
+     * @return A boolean indicating true if this payload represents an error.
+     */
+    private boolean payloadIsError(String payload) {
+        try {
+            Map<String, String> decoded =
+                    objectMapper.readValue(payload, new TypeReference<Map<String, String>>() {});
+            return decoded.get("error") != null;
+        } catch(Exception ex) {
+            // No op
+        }
+        return false;
     }
 
     private Integer getSinkStageNumFromJsonResponse(String jobId, String response) throws MasterClientException {
