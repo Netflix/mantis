@@ -15,7 +15,7 @@
  */
 
 ext {
-    mantisControlPlaneVersion = '1.2.+'
+    mantisControlPlaneVersion = '1.2.24'
 }
 
 dependencies {
