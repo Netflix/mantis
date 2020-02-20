@@ -17,7 +17,9 @@
 package io.mantisrx.common;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -35,8 +37,8 @@ public class WorkerPorts {
     private List<Integer> ports;
 
     public WorkerPorts(final List<Integer> assignedPorts) {
-        if (!(assignedPorts.size() >= 4)) {
-            throw new IllegalArgumentException("assignedPorts should be >= 4");
+        if (assignedPorts.size() < 4) {
+            throw new IllegalArgumentException("assignedPorts should have at least 4 ports");
         }
         this.metricsPort = assignedPorts.get(0);
         this.debugPort = assignedPorts.get(1);
@@ -117,6 +119,20 @@ public class WorkerPorts {
 
     public List<Integer> getPorts() {
         return ports;
+    }
+
+    /**
+     * Validates that this object has 5 valid ports and all of them are unique.
+     */
+    public boolean isValid() {
+        Set<Integer> uniquePorts = new HashSet<>();
+        uniquePorts.add(metricsPort);
+        uniquePorts.add(consolePort);
+        uniquePorts.add(debugPort);
+        uniquePorts.add(customPort);
+        uniquePorts.add(sinkPort);
+        return metricsPort > 0 && consolePort > 0 && debugPort > 0 && customPort > 0 && sinkPort > 0
+                && uniquePorts.size() == 5;
     }
 
     @Override
