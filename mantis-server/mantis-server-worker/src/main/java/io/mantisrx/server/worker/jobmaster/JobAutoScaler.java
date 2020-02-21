@@ -227,7 +227,8 @@ public class JobAutoScaler {
                                             stageSchedulingInfo.getScalingPolicy().getMax(),
                                             workerCounts,
                                             Observable.interval(1, TimeUnit.DAYS),
-                                            1000 * 60 * 10));
+                                            1000 * 60 * 10,
+                                            stageSchedulingInfo.getScalingPolicy().getCoolDownSecs()));
 
                         }
 
