@@ -101,7 +101,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
                         initialConfigMillis, configurator))
                 .flatMap(config -> events
                         .compose(new ExperimentalControlLoop(config, this.actuator,
-                                this.initialSize.doubleValue(), size))
+                                this.initialSize.doubleValue(), timer, size))
                         .takeUntil(timer)); // takeUntil tears down this control loop when a new config is produced.
     }
 }

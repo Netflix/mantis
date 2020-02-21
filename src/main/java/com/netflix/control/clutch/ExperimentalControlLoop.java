@@ -41,16 +41,16 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
     private final AtomicLong cooldownTimestamp;
     private final AtomicLong currentScale;
+    private final Observable<Long> timer;
     private final Observable<Integer> size;
 
-    private final UpdateDoublesSketch sketch = UpdateDoublesSketch.builder().setK(1024).build();
-
-    public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize, Observable<Integer> size) {
-        this(config, actuator, initialSize, new AtomicDouble(1.0), size);
+    public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
+                                   Observable<Long> timer, Observable<Integer> size) {
+        this(config, actuator, initialSize, new AtomicDouble(1.0), timer, size);
     }
 
     public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
-                                   AtomicDouble dampener, Observable<Integer> size) {
+                                   AtomicDouble dampener, Observable<Long> timer, Observable<Integer> size) {
         this.config = config;
         this.actuator = actuator;
         this.initialSize = initialSize;
@@ -59,8 +59,8 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + this.cooldownMillis);
         this.currentScale = new AtomicLong(Math.round(initialSize));
+        this.timer = timer;
         this.size = size;
-
     }
 
     @Override
@@ -79,7 +79,9 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         Integrator integrator = new Integrator(initialSize, config.minSize, config.maxSize);
 
-        size.doOnNext(currentScale::set)
+        size
+                .takeUntil(timer)
+                .doOnNext(currentScale::set)
                 .doOnNext(integrator::setSum)
                 .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
                 .doOnNext(n -> log.info("Clutch received new scheduling update with {} workers.", n))
