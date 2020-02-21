@@ -66,7 +66,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
     }
 
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
-                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis) {
+                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis, long coolDownSeconds) {
 
         this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, (sketch) -> {
             double setPoint = 0.6 * sketch.getQuantile(0.99);
@@ -86,8 +86,8 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
                     .minSize(minSize)
                     .maxSize(maxSize)
                     .rope(rope)
-                    .cooldownInterval(5)
-                    .cooldownUnits(TimeUnit.MINUTES)
+                    .cooldownInterval(coolDownSeconds)
+                    .cooldownUnits(TimeUnit.SECONDS)
                     .build();
         });
     }
