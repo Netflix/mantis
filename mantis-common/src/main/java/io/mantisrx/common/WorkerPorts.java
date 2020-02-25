@@ -159,13 +159,14 @@ public class WorkerPorts {
 
     @Override
     public String toString() {
-        return "WorkerPorts{" +
-                "metricsPort=" + metricsPort +
-                ", debugPort=" + debugPort +
-                ", consolePort=" + consolePort +
-                ", customPort=" + customPort +
-                ", ports=" + ports +
-                '}';
+        return "WorkerPorts{"
+                + " metricsPort=" + metricsPort
+                + ", debugPort=" + debugPort
+                + ", consolePort=" + consolePort
+                + ", customPort=" + customPort
+                + ", sinkPort=" + sinkPort
+                + ", ports=" + ports
+                + '}';
     }
 }
 
