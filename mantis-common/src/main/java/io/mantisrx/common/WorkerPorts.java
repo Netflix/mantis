@@ -37,8 +37,8 @@ public class WorkerPorts {
     private List<Integer> ports;
 
     public WorkerPorts(final List<Integer> assignedPorts) {
-        if (assignedPorts.size() < 4) {
-            throw new IllegalArgumentException("assignedPorts should have at least 4 ports");
+        if (assignedPorts.size() < 5) {
+            throw new IllegalArgumentException("assignedPorts should have at least 5 ports");
         }
         this.metricsPort = assignedPorts.get(0);
         this.debugPort = assignedPorts.get(1);
@@ -50,6 +50,10 @@ public class WorkerPorts {
 
             sinkPort = assignedPorts.get(idx);
             break;
+        }
+
+        if (!isValid()) {
+            throw new IllegalStateException("worker validation failed on port allocation");
         }
     }
 
@@ -122,7 +126,7 @@ public class WorkerPorts {
     }
 
     /**
-     * Validates that this object has 5 valid ports and all of them are unique.
+     * Validates that this object has at least 5 valid ports and all of them are unique.
      */
     public boolean isValid() {
         Set<Integer> uniquePorts = new HashSet<>();
@@ -131,8 +135,21 @@ public class WorkerPorts {
         uniquePorts.add(debugPort);
         uniquePorts.add(customPort);
         uniquePorts.add(sinkPort);
-        return metricsPort > 0 && consolePort > 0 && debugPort > 0 && customPort > 0 && sinkPort > 0
-                && uniquePorts.size() == 5;
+
+        return uniquePorts.size() >= 5
+                && isValidPort(metricsPort)
+                && isValidPort(consolePort)
+                && isValidPort(debugPort)
+                && isValidPort(customPort)
+                && isValidPort(sinkPort);
+    }
+
+    /**
+     * A port with 0 is technically correct, but we disallow it because there would be an inconsistency between
+     * what unused port the OS selects (some port number) and what this object's metadata holds (0).
+     */
+    private boolean isValidPort(int port) {
+        return port > 0 && port <= 65535;
     }
 
     @Override
