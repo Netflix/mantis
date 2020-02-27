@@ -56,6 +56,7 @@ import com.google.common.collect.Lists;
 import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.spectator.api.BasicTag;
+import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -68,6 +69,7 @@ import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
+import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
@@ -114,6 +116,7 @@ import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -153,6 +156,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final Counter numScaleStage;
     private final Counter numWorkersCompletedNotTerminal;
     private final Counter numSchedulingChangesRefreshed;
+    private final Counter numMissingWorkerPorts;
 
     /**
      * Behavior after being initialized.
@@ -252,6 +256,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .addCounter("numScaleStage")
                 .addCounter("numWorkersCompletedNotTerminal")
                 .addCounter("numSchedulingChangesRefreshed")
+                .addCounter("numMissingWorkerPorts")
                 .build();
         this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
@@ -260,6 +265,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.numScaleStage = metrics.getCounter("numScaleStage");
         this.numWorkersCompletedNotTerminal = metrics.getCounter("numWorkersCompletedNotTerminal");
         this.numSchedulingChangesRefreshed = metrics.getCounter("numSchedulingChangesRefreshed");
+        this.numMissingWorkerPorts = metrics.getCounter("numMissingWorkerPorts");
     }
 
     /**
@@ -743,7 +749,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             sender.tell(new JobInitialized(i.requestId, SUCCESS, String.format(
                     "Job %s initialized successfully", jobId), jobId, i.requstor), getSelf());
         } catch (Exception e) {
-            //  e.printStackTrace();
             LOGGER.error("Exception initializing job ", e);
             sender.tell(new JobInitialized(i.requestId, SERVER_ERROR, "" + e.getMessage(), jobId, i.requstor),
                     getSelf());
@@ -1339,14 +1344,23 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             currentJobSchedulingInfoStr = mapper.writeValueAsString(initialJS);
             jobSchedulingInfoBehaviorSubject = BehaviorSubject.create(initialJS);
 
-
             initialize(isSubmit);
             LOGGER.debug("Exit WorkerManager ctor");
         }
 
         /**
-         * Initialize the worker manager.
-         * @param isSubmit
+         * Initializes a worker manager.
+         *
+         * A WorkerManager can get initialized on a job submission or a failover.
+         *
+         * Init from Job submission: submits initial workers which each go through their startup lifecycle.
+         *
+         * Init from Master failover: workers are already running; gets state from Mesos and updates its view
+         * of the world. If worker information is bad from Mesos, gather up these worker and resubmit them
+         * in all together after initialization of running workers.
+         *
+         * @param isSubmit specifies if this initialization is due to job submission or a master failover.
+         *
          * @throws Exception
          */
         void initialize(boolean isSubmit) throws Exception {
@@ -1362,17 +1376,22 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void initializeRunningWorkers() {
             LOGGER.trace("In initializeRunningWorkers for Job {}", jobId);
+
+            // Scan for the list of all corrupted workers to be resubmitted.
+            List<JobWorker> workersToResubmit = markCorruptedWorkers();
+
             // publish a refresh before enqueuing tasks to the Scheduler, as there is a potential race between
             // WorkerRegistryV2 getting updated and isWorkerValid being called from SchedulingService loop
-            // If worker is not found in the SchedulingService loop, it is conisdered invalid and prematurely
-            // removed from Fenzo state
+            // If worker is not found in the SchedulingService loop, it is considered invalid and prematurely
+            // removed from Fenzo state.
             markStageAssignmentsChanged(true);
 
             for (IMantisStageMetadata stageMeta : mantisJobMetaData.getStageMetadata().values()) {
-
                 Map<Integer, WorkerHost> workerHosts = new HashMap<>();
+
                 for (JobWorker worker : stageMeta.getAllWorkers()) {
                     IMantisWorkerMetadata wm = worker.getMetadata();
+
                     if (WorkerState.isRunningState(wm.getState())) {
                         // send fake heartbeat
                         try {
@@ -1380,13 +1399,16 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                     wm.getWorkerIndex(), wm.getWorkerNumber(), Status.TYPE.HEARTBEAT, "",
                                     MantisJobState.Started, System.currentTimeMillis()));
                             worker.processEvent(fakeHB, jobStore);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        } catch (InvalidWorkerStateChangeException | IOException e) {
+                            LOGGER.error("problem sending initial heartbeat for Job {} during initialization",
+                                    worker.getMetadata().getJobId(), e);
                         }
+
                         workerHosts.put(wm.getWorkerNumber(),
-                                new WorkerHost(wm.getSlave(), wm.getWorkerIndex(),
-                                        wm.getPorts().isPresent() ? wm.getPorts().get().getPorts()
-                                                : Lists.newArrayList(),
+                                new WorkerHost(
+                                        wm.getSlave(),
+                                        wm.getWorkerIndex(),
+                                        wm.getWorkerPorts().getPorts(),
                                         DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
                                         wm.getWorkerNumber(),
                                         wm.getMetricsPort(),
@@ -1398,25 +1420,72 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             LOGGER.debug("initializing Running task {}-worker-{}-{}", wm.getJobId(),
                                     wm.getWorkerIndex(), wm.getWorkerNumber());
                         }
+
                         scheduler.initializeRunningWorker(scheduleRequest, wm.getSlave());
                         LOGGER.debug("Initialized running worker {}", wm.getSlave());
-
                     } else if (wm.getState().equals(WorkerState.Accepted)) {
                         queueTask(wm);
                     }
-
                 }
+
                 if (stageMeta.getStageNum() > 0) {
                     stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
                             stageMeta.getNumWorkers(), workerHosts));
                 }
-
             }
 
             // publish another update after queuing tasks to Fenzo (in case some workers were marked Started
             // due to the Fake heartbeat in above loop)
             markStageAssignmentsChanged(true);
+
+            // Resubmit workers with missing ports so they can be reassigned new resources.
+            for (JobWorker jobWorker : workersToResubmit) {
+                LOGGER.warn("discovered workers with missing ports during initialization: {}", jobWorker);
+                try {
+                    resubmitWorker(jobWorker);
+                } catch (Exception e) {
+                    LOGGER.warn("Exception resubmitting worker {} during initializeRunningWorkers due to {}",
+                            jobWorker, e.getMessage(), e);
+                }
+            }
+
             LOGGER.trace("Initialized running workers for Job {} complete", jobId);
+        }
+
+        private List<JobWorker> markCorruptedWorkers() {
+            LOGGER.trace("Enter markCorruptedWorkers for Job {} ", jobId);
+            List<JobWorker> corruptedWorkers = new ArrayList<>();
+
+            for (IMantisStageMetadata stageMeta : mantisJobMetaData.getStageMetadata().values()) {
+                for (JobWorker worker : stageMeta.getAllWorkers()) {
+                    IMantisWorkerMetadata wm = worker.getMetadata();
+
+                    Optional<WorkerPorts> workerPortsOptional = wm.getPorts();
+                    if (WorkerState.isRunningState(wm.getState()) &&
+                            (!workerPortsOptional.isPresent() || !workerPortsOptional.get().isValid())) {
+
+                        LOGGER.info("marking corrupted worker {} for Job ID {} as {}",
+                                worker.getMetadata().getWorkerId(), jobId, WorkerState.Failed);
+                        numMissingWorkerPorts.increment();
+                        // Mark this worker as corrupted.
+                        corruptedWorkers.add(worker);
+
+                        // Send initial status event to signal to the worker to mark itself as failed.
+                        try {
+                            WorkerStatus status = new WorkerStatus(new Status(jobId.getId(), stageMeta.getStageNum(),
+                                    wm.getWorkerIndex(), wm.getWorkerNumber(), Status.TYPE.HEARTBEAT, "",
+                                    MantisJobState.Failed, System.currentTimeMillis()));
+                            worker.processEvent(status, jobStore);
+                        } catch (InvalidWorkerStateChangeException | IOException e) {
+                            LOGGER.error("problem sending initial heartbeat for Job {} during initialization",
+                                    worker.getMetadata().getJobId(), e);
+                        }
+                    }
+                }
+            }
+            LOGGER.trace("Exit markCorruptedWorkers for Job {} ", jobId);
+
+            return corruptedWorkers;
         }
 
         private void markStageAssignmentsChanged(boolean forceRefresh) {
@@ -1445,14 +1514,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     IMantisWorkerMetadata wm = worker.getMetadata();
                     if (WorkerState.isRunningState(wm.getState())) {
 
-                        workerHosts.put(wm.getWorkerNumber(), new WorkerHost(
-                                wm.getSlave(),
-                                wm.getWorkerIndex(),
-                                wm.getPorts().isPresent() ? wm.getPorts().get().getPorts() : Lists.newArrayList(),
-                                DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
-                                wm.getWorkerNumber(),
-                                wm.getMetricsPort(),
-                                wm.getCustomPort()));
+                        workerHosts.put(wm.getWorkerNumber(),
+                                new WorkerHost(
+                                        wm.getSlave(),
+                                        wm.getWorkerIndex(),
+                                        wm.getWorkerPorts().getPorts(),
+                                        DataFormatAdapter.convertWorkerStateToMantisJobState(wm.getState()),
+                                        wm.getWorkerNumber(),
+                                        wm.getMetricsPort(),
+                                        wm.getCustomPort()));
                         activeWorkers.add(wm);
                         acceptedAndActiveWorkers.add(wm);
 
@@ -1891,9 +1961,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 try {
                     resubmitWorker(worker);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    LOGGER.warn("Exception {} occurred resubmitting Worker {}", e.getMessage(), worker.getMetadata());
-
+                    LOGGER.warn("Exception {} occurred resubmitting Worker {}", e.getMessage(), worker.getMetadata(), e);
                 }
             }
             migrateDisabledVmWorkers(currentTime);
@@ -2132,7 +2200,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                             workerNum));
                 }
             } else {
-                LOGGER.warn("No such Worker number {} in Job ", workerNum, jobId);
+                LOGGER.warn("No such Worker number {} in Job with ID {}", workerNum, jobId);
                 throw new Exception(String.format("No such worker number {} in resubmit Worker request", workerNum));
             }
         }

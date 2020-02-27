@@ -16,6 +16,23 @@
 
 package io.mantisrx.server.master.domain;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import com.google.common.base.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
@@ -40,8 +57,6 @@ import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-
-//import io.mantisrx.server.master.MantisJobMgr;
 import io.mantisrx.server.master.MantisJobMgr;
 import io.mantisrx.server.master.MantisJobOperations;
 import io.mantisrx.server.master.MantisJobStatus;
@@ -62,22 +77,6 @@ import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func2;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
 
 public class DataFormatAdapter {
 
@@ -317,7 +316,24 @@ public class DataFormatAdapter {
         writable.setReason(workerMeta.getReason());
     }
 
-
+    /**
+     * Convert/Deserialize metadata into a {@link JobWorker}.
+     *
+     * The converted object could have no worker ports which returns Null.
+     *
+     * Legit Cases:
+     *
+     * 1. Loaded worker was in Accepted state (hasn't been assigned ports yet).
+     * 2. Loaded worker was in Archived state but previously archived from Accepted state.
+     *
+     * Error Cases:
+     *
+     * 1. Loaded worker was in Non-Accepted state (data corruption).
+     * 2. Loaded worker was in Archived state but previously was running or completed (data corruption, but same
+     *    semantic as Legit Case 2 above.
+     *
+     * @return a valid converted job worker.
+     */
     public static JobWorker convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(MantisWorkerMetadata writeable, LifecycleEventPublisher eventPublisher) {
         if(logger.isDebugEnabled()) { logger.debug("DataFormatAdatper:converting worker {}", writeable); }
         String jobId = writeable.getJobId();
@@ -330,8 +346,12 @@ public class DataFormatAdapter {
             ports.add(writeable.getPorts().get(0));
         }
 
-
-        WorkerPorts workerPorts = new WorkerPorts(ports);
+        WorkerPorts workerPorts = null;
+        try {
+            workerPorts = new WorkerPorts(ports);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            logger.debug("problem loading worker {} for Job ID {}", writeable.getWorkerId(), jobId, e);
+        }
 
         JobWorker converted = new JobWorker.Builder()
                 .withJobId(jobId)

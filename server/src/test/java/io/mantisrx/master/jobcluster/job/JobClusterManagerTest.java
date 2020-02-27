@@ -28,11 +28,14 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -61,8 +64,10 @@ import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
+import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
@@ -105,13 +110,11 @@ import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-@Ignore
 public class JobClusterManagerTest {
     static ActorSystem system;
 
@@ -153,10 +156,6 @@ public class JobClusterManagerTest {
         TestKit.shutdownActorSystem(system);
         system = null;
     }
-//	    @Before
-//	    public static void cleanUpBeforeTest() {
-//	        ((SimpleCachedFileStorageProvider)storageProvider).deleteAllFiles();
-//	    }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(
             final String name,
@@ -394,7 +393,7 @@ public class JobClusterManagerTest {
         JobClustersManagerInitializeResponse iResponse = probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                                                                              JobClustersManagerInitializeResponse.class);
+                JobClustersManagerInitializeResponse.class);
         List<String> clusterNames = Lists.newArrayList("testBootStrapJobClustersAndJobs1",
                                                        "testBootStrapJobClustersAndJobs2",
                                                        "testBootStrapJobClustersAndJobs3");
@@ -420,12 +419,7 @@ public class JobClusterManagerTest {
                         "host1",
                         "vm1",
                         empty(),
-                        new WorkerPorts(
-                                8000,
-                                9000,
-                                9010,
-                                9020,
-                                Lists.newArrayList(9030)));
+                        new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
                 jobClusterManagerActor.tell(launchedEvent, probe.getRef());
 
@@ -623,6 +617,175 @@ public class JobClusterManagerTest {
 
     }
 
+    /**
+     * Case for a master leader re-election when a new master re-hydrates corrupted job worker metadata.
+     */
+    @Test
+    public void testBootstrapJobClusterAndJobsWithCorruptedWorkerPorts()
+            throws IOException, io.mantisrx.server.master.persistence.exceptions.InvalidJobException {
+
+        TestKit probe = new TestKit(system);
+        JobTestHelper.deleteAllFiles();
+        MantisJobStore jobStore = new MantisJobStore(new MantisStorageProviderAdapter(
+                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(),
+                eventPublisher));
+        MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
+                jobStoreSpied,
+                eventPublisher));
+        jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
+                schedulerMock,
+                false), probe.getRef());
+        probe.expectMsgClass(Duration.of(
+                10,
+                ChronoUnit.MINUTES),
+                JobClustersManagerInitializeResponse.class);
+        String jobClusterName = "testBootStrapJobClustersAndJobs1";
+        WorkerMigrationConfig migrationConfig = new WorkerMigrationConfig(MigrationStrategyEnum.PERCENTAGE,
+                "{\"percentToMove\":60, \"intervalMs\":30000}");
+
+        createJobClusterAndAssert(jobClusterManagerActor, jobClusterName, migrationConfig);
+        submitJobAndAssert(jobClusterManagerActor, jobClusterName);
+        String jobId = "testBootStrapJobClustersAndJobs1-1";
+        WorkerId workerId = new WorkerId(jobId, 0, 1);
+        WorkerEvent launchedEvent = new WorkerLaunched(
+                workerId,
+                0,
+                "host1",
+                "vm1",
+                empty(),
+                new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+
+        jobClusterManagerActor.tell(launchedEvent, probe.getRef());
+
+        WorkerEvent startInitEvent = new WorkerStatus(new Status(
+                workerId.getJobId(),
+                1,
+                workerId.getWorkerIndex(),
+                workerId.getWorkerNum(),
+                TYPE.INFO,
+                "test START_INIT",
+                MantisJobState.StartInitiated));
+        jobClusterManagerActor.tell(startInitEvent, probe.getRef());
+
+        WorkerEvent heartBeat = new WorkerHeartbeat(new Status(
+                jobId,
+                1,
+                workerId.getWorkerIndex(),
+                workerId.getWorkerNum(),
+                TYPE.HEARTBEAT,
+                "",
+                MantisJobState.Started));
+        jobClusterManagerActor.tell(heartBeat, probe.getRef());
+
+        // get Job status
+        jobClusterManagerActor.tell(
+                new GetJobDetailsRequest(
+                        "user",
+                        JobId.fromId(jobId).get()),
+                probe.getRef());
+        GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
+
+        // Ensure its launched
+        assertEquals(SUCCESS, resp2.responseCode);
+
+        JobWorker worker = new JobWorker.Builder()
+                .withWorkerIndex(0)
+                .withWorkerNumber(1)
+                .withJobId(jobId)
+                .withStageNum(1)
+                .withNumberOfPorts(5)
+                .withWorkerPorts(null)
+                .withState(WorkerState.Started)
+                .withLifecycleEventsPublisher(eventPublisher)
+                .build();
+        jobStoreSpied.updateWorker(worker.getMetadata());
+
+        // Stop job cluster Manager Actor
+        system.stop(jobClusterManagerActor);
+
+        // create new instance
+        jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
+                jobStoreSpied,
+                eventPublisher));
+        // initialize it
+        jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
+                schedulerMock,
+                true), probe.getRef());
+
+        JobClustersManagerInitializeResponse initializeResponse = probe.expectMsgClass(
+                JobClustersManagerInitializeResponse.class);
+        assertEquals(SUCCESS, initializeResponse.responseCode);
+
+        WorkerId newWorkerId = new WorkerId(jobId, 0, 11);
+        launchedEvent = new WorkerLaunched(
+                newWorkerId,
+                0,
+                "host1",
+                "vm1",
+                empty(),
+                new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+        jobClusterManagerActor.tell(launchedEvent, probe.getRef());
+        // Get Cluster Config
+        jobClusterManagerActor.tell(new GetJobClusterRequest("testBootStrapJobClustersAndJobs1"),
+                                    probe.getRef());
+        GetJobClusterResponse clusterResponse = probe.expectMsgClass(GetJobClusterResponse.class);
+
+        assertEquals(SUCCESS, clusterResponse.responseCode);
+        assertTrue(clusterResponse.getJobCluster().isPresent());
+        WorkerMigrationConfig mConfig = clusterResponse.getJobCluster().get().getMigrationConfig();
+        assertEquals(migrationConfig.getStrategy(), mConfig.getStrategy());
+        assertEquals(migrationConfig.getConfigString(), migrationConfig.getConfigString());
+
+        // get Job status
+        jobClusterManagerActor.tell(new GetJobDetailsRequest(
+                "user",
+                JobId.fromId("testBootStrapJobClustersAndJobs1-1")
+                     .get()), probe.getRef());
+        resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
+
+        // Ensure its launched
+        assertEquals(SUCCESS, resp2.responseCode);
+        assertEquals(JobState.Launched, resp2.getJobMetadata().get().getState());
+
+        IMantisWorkerMetadata mantisWorkerMetadata = resp2.getJobMetadata().get()
+                .getWorkerByIndex(1, 0).get()
+                .getMetadata();
+        assertNotNull(mantisWorkerMetadata.getWorkerPorts());
+        assertEquals(11, mantisWorkerMetadata.getWorkerNumber());
+        assertEquals(1, mantisWorkerMetadata.getTotalResubmitCount());
+
+        jobClusterManagerActor.tell(new GetLastSubmittedJobIdStreamRequest(
+                "testBootStrapJobClustersAndJobs1"), probe.getRef());
+        GetLastSubmittedJobIdStreamResponse lastSubmittedJobIdStreamResponse = probe.expectMsgClass(
+                Duration.of(10, ChronoUnit.MINUTES),
+                GetLastSubmittedJobIdStreamResponse.class);
+        lastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject()
+                                        .get()
+                                        .take(1)
+                                        .toBlocking()
+                                        .subscribe((jId) -> {
+                                            assertEquals(new JobId(
+                                                    "testBootStrapJobClustersAndJobs1",
+                                                    1), jId);
+                                        });
+
+        // Two schedules: one for the initial success, one for a resubmit from corrupted worker ports.
+        verify(schedulerMock, times(2)).scheduleWorker(any());
+        // One unschedule from corrupted worker ID 1 (before the resubmit).
+        verify(schedulerMock, times(1)).unscheduleAndTerminateWorker(eq(workerId), any());
+
+        try {
+            Mockito.verify(jobStoreSpied).loadAllArchivedJobsAsync();
+            Mockito.verify(jobStoreSpied).loadAllActiveJobs();
+            Mockito.verify(jobStoreSpied).loadAllCompletedJobs();
+            Mockito.verify(jobStoreSpied).archiveWorker(any());
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
 
     @Test
     public void testJobClusterCreate() throws MalformedURLException {

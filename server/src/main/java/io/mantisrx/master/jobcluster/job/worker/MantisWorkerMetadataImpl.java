@@ -16,25 +16,22 @@
 
 package io.mantisrx.master.jobcluster.job.worker;
 
+import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.WorkerPorts;
-
-
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
-
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
 
 
 /**
@@ -211,6 +208,10 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
     }
     public int getCustomPort() {
         return workerPorts == null ? -1 : workerPorts.getCustomPort();
+    }
+
+    public int getSinkPort() {
+        return workerPorts == null ? -1 : workerPorts.getSinkPort();
     }
 
     public int getResubmitOf() {
