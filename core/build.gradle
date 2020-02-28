@@ -15,8 +15,8 @@
  */
 
 ext {
-    akkaHttpVersion = '10.1.7'
-    akkaVersion = '2.5.21'
+    akkaHttpVersion = '10.1.8'
+    akkaVersion = '2.5.23'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     curatorVersion = '2.11.0'
@@ -33,14 +33,15 @@ ext {
 
 dependencies {
     // Master API akka-http dependencies
-    api "com.typesafe.akka:akka-http_2.12:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-http-jackson_2.12:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-http-caching_2.12:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-stream_2.12:$akkaVersion"
-    api "com.typesafe.akka:akka-slf4j_2.12:$akkaVersion"
+    api "com.typesafe.akka:akka-http_2.13:$akkaHttpVersion"
+    api "com.typesafe.akka:akka-http-jackson_2.13:$akkaHttpVersion"
+    api "com.typesafe.akka:akka-http-caching_2.13:$akkaHttpVersion"
+    api "com.typesafe.akka:akka-stream_2.13:$akkaVersion"
+    compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.5.23'
+    api "com.typesafe.akka:akka-slf4j_2.13:$akkaVersion"
 
     // Master core
-    api "com.typesafe.akka:akka-actor_2.12:$akkaVersion"
+    api "com.typesafe.akka:akka-actor_2.13:$akkaVersion"
     api "io.mantisrx:mantis-common:$mantisVersion"
     api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
 
@@ -58,7 +59,7 @@ dependencies {
     api "org.apache.curator:curator-recipes:$curatorVersion"
     api "joda-time:joda-time:$jodaTimeVersion"
 
-    testCompile "com.typesafe.akka:akka-testkit_2.12:$akkaVersion"
+    testCompile "com.typesafe.akka:akka-testkit_2.13:$akkaVersion"
     testCompile "junit:junit:4.+"
     testCompile "org.mockito:mockito-all:2.+"
 }

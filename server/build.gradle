@@ -17,7 +17,7 @@
 apply plugin: 'application'
 
 ext {
-    akkaVersion = '2.5.21'
+    akkaVersion = '2.5.23'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     curatorVersion = '2.11.0'
@@ -34,7 +34,7 @@ dependencies {
     api "org.apache.curator:curator-recipes:$curatorVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
 
-    testCompile "com.typesafe.akka:akka-testkit_2.12:$akkaVersion"
+    testCompile "com.typesafe.akka:akka-testkit_2.13:$akkaVersion"
     testCompile "junit:junit:4.+"
     testCompile "org.mockito:mockito-all:2.+"
     testCompile "org.testng:testng:$testngVersion"
