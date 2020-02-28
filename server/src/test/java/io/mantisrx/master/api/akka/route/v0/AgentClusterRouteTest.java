@@ -89,7 +89,7 @@ public class AgentClusterRouteTest {
         CompletionStage<HttpEntity.Strict> strictEntity = r.entity().toStrict(1000, materializer);
         return strictEntity.thenCompose(s ->
             s.getDataBytes()
-                .runFold(ByteString.empty(), (acc, b) -> acc.concat(b), materializer)
+                .runFold(ByteString.emptyByteString(), (acc, b) -> acc.concat(b), materializer)
                 .thenApply(s2 -> s2.utf8String())
         );
     }

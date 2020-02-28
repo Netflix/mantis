@@ -25,6 +25,7 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.RequestEntity;
 import akka.http.javadsl.model.StatusCode;
+
 import akka.stream.ActorMaterializer;
 import akka.util.ByteString;
 import org.slf4j.Logger;
@@ -148,7 +149,7 @@ abstract class RouteTestBase {
         CompletionStage<HttpEntity.Strict> strictEntity = r.entity().toStrict(1000, materializer);
         return strictEntity.thenCompose(s -> s.getDataBytes()
                                               .runFold(
-                                                      ByteString.empty(),
+                                                      ByteString.emptyByteString(),
                                                       ByteString::concat,
                                                       materializer)
                                               .thenApply(ByteString::utf8String)

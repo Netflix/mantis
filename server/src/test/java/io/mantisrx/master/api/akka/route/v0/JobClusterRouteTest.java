@@ -88,7 +88,7 @@ public class JobClusterRouteTest {
         CompletionStage<HttpEntity.Strict> strictEntity = r.entity().toStrict(1000, materializer);
         return strictEntity.thenCompose(s ->
             s.getDataBytes()
-                .runFold(ByteString.empty(), (acc, b) -> acc.concat(b), materializer)
+                .runFold(ByteString.emptyByteString(), (acc, b) -> acc.concat(b), materializer)
                 .thenApply(s2 -> s2.utf8String())
         );
     }
@@ -183,7 +183,7 @@ public class JobClusterRouteTest {
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("create"))
                 .withMethod(HttpMethods.POST)
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_CREATE));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_CREATE));
 
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
@@ -202,7 +202,7 @@ public class JobClusterRouteTest {
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("create"))
                 .withMethod(HttpMethods.POST)
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_CREATE));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_CREATE));
 
         responseFuture
             .thenCompose(r -> processRespFut(r, 500))
@@ -221,7 +221,7 @@ public class JobClusterRouteTest {
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("disable"))
                 .withMethod(HttpMethods.POST)
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_DISABLE));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_DISABLE));
 
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
@@ -240,7 +240,7 @@ public class JobClusterRouteTest {
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("enable"))
                 .withMethod(HttpMethods.POST)
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_DISABLE));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_DISABLE));
 
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
@@ -258,7 +258,7 @@ public class JobClusterRouteTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("quickupdate"))
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_QUICK_UPDATE_AND_SKIP_SUBMIT));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_QUICK_UPDATE_AND_SKIP_SUBMIT));
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
             .whenComplete((msg, t) -> {
@@ -275,7 +275,7 @@ public class JobClusterRouteTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("updatesla"))
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_UPDATE_SLA));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_UPDATE_SLA));
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
             .whenComplete((msg, t) -> {
@@ -292,7 +292,7 @@ public class JobClusterRouteTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("updatelabels"))
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.JOB_CLUSTER_UPDATE_LABELS));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_UPDATE_LABELS));
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
             .whenComplete((msg, t) -> {
@@ -309,7 +309,7 @@ public class JobClusterRouteTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("migratestrategy"))
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.MIGRATE_STRATEGY_UPDATE));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.MIGRATE_STRATEGY_UPDATE));
         responseFuture
             .thenCompose(r -> processRespFut(r, 200))
             .whenComplete((msg, t) -> {
@@ -326,7 +326,7 @@ public class JobClusterRouteTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("quicksubmit"))
-                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED, HttpCharsets.UTF_8), JobClusterPayloads.QUICK_SUBMIT));
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.QUICK_SUBMIT));
         responseFuture
             .thenCompose(r -> processRespFut(r, 400))
             .whenComplete((msg, t) -> {

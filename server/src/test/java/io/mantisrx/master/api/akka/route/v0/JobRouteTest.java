@@ -29,6 +29,7 @@ import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpMethods;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.MediaType;
 import akka.http.javadsl.model.MediaTypes;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
@@ -128,7 +129,7 @@ public class JobRouteTest {
         return strictEntity.thenCompose(s ->
                                                 s.getDataBytes()
                                                  .runFold(
-                                                         ByteString.empty(),
+                                                         ByteString.emptyByteString(),
                                                          (acc, b) -> acc.concat(b),
                                                          materializer)
                                                  .thenApply(s2 -> s2.utf8String())
@@ -145,7 +146,7 @@ public class JobRouteTest {
         return strictEntity.thenCompose(s ->
                                                 s.getDataBytes()
                                                  .runFold(
-                                                         ByteString.empty(),
+                                                         ByteString.emptyByteString(),
                                                          (acc, b) -> acc.concat(b),
                                                          materializer)
                                                  .thenApply(s2 -> s2.utf8String())
@@ -342,7 +343,7 @@ public class JobRouteTest {
             return strictEntity.thenCompose(s ->
                                                     s.getDataBytes()
                                                      .runFold(
-                                                             ByteString.empty(),
+                                                             ByteString.emptyByteString(),
                                                              (acc, b) -> acc.concat(b),
                                                              materializer)
                                                      .thenApply(s2 -> s2.utf8String()));
@@ -775,9 +776,8 @@ public class JobRouteTest {
                 HttpRequest.POST(jobAPIEndpoint(JobRoute.KILL_ENDPOINT))
                            .withMethod(HttpMethods.POST)
                            .withEntity(
-                                   ContentTypes.create(
-                                           MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED,
-                                           HttpCharsets.UTF_8),
+                                   ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED)
+                                   ,
                                    JobPayloads.KILL_JOB));
 
         responseFuture
