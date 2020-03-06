@@ -1,11 +1,10 @@
 package io.mantisrx.common;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
 
@@ -13,27 +12,33 @@ public class WorkerPortsTest {
 
     /**
      * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} which expects
-     * at least 4 ports: metrics, debug, console, custom.
+     * at least 5 ports: metrics, debug, console, custom.
      */
     @Test(expected = IllegalArgumentException.class)
     public void shouldNotConstructWorkerPorts() {
-        new WorkerPorts(Arrays.asList(1, 1, 1));
+        // Not enough ports.
+        new WorkerPorts(Arrays.asList(1, 1, 1, 1));
     }
 
     /**
-     * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} which can construct
-     * a WorkerPorts object, but is technically invalid because a worker needs a sink
-     * to be useful. Otherwise, other workers can't connect to it.
+     * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} which cannot construct
+     * a WorkerPorts object, because a worker needs a sink to be useful.
+     * Otherwise, other workers can't connect to it.
      */
-    @Test
-    public void shouldConstructInvalidWorkerPorts() {
-        // Not enough ports.
-        WorkerPorts workerPorts = new WorkerPorts(Arrays.asList(1, 1, 1, 1));
-        assertFalse(workerPorts.isValid());
-
+    @Test(expected = IllegalStateException.class)
+    public void shouldNotConstructWorkerPortsWithDuplicatePorts() {
         // Enough ports, but has duplicate ports.
-        workerPorts = new WorkerPorts(Arrays.asList(1, 1, 1, 1, 1));
-        assertFalse(workerPorts.isValid());
+        new WorkerPorts(Arrays.asList(1, 1, 1, 1, 1));
+    }
+
+    /**
+     * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} but was given a port
+     * out of range.
+     */
+    @Test(expected = IllegalStateException.class)
+    public void shouldNotConstructWorkerPortsWithInvalidPortRange() {
+        // Enough ports, but given an invalid port range
+        new WorkerPorts(Arrays.asList(1, 1, 1, 1, 65536));
     }
 
     /**
