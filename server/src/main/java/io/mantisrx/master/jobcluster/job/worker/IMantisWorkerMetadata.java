@@ -16,17 +16,16 @@
 
 package io.mantisrx.master.jobcluster.job.worker;
 
+import java.time.Instant;
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
-
 import io.mantisrx.server.master.domain.JobId;
-
-import java.time.Instant;
-import java.util.Optional;
 
 /**
  * Metadata object for a Mantis worker. Modification operations do not perform locking. Instead, a lock can be
@@ -79,6 +78,11 @@ public interface IMantisWorkerMetadata {
     int getStageNum();
 
     /**
+     * @return the {@link WorkerPorts} for this worker.
+     */
+    WorkerPorts getWorkerPorts();
+
+    /**
      * The port on which Metrics stream is served.
      * @return
      */
@@ -101,6 +105,13 @@ public interface IMantisWorkerMetadata {
      * @return
      */
     int getCustomPort();
+
+    /**
+     * The port which can be used to connect to other workers.
+     *
+     * @return
+     */
+    int getSinkPort();
 
 
     /**

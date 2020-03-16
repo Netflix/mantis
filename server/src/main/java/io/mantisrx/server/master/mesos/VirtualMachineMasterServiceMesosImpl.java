@@ -93,7 +93,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    // NOTE: all leases are for the same slave
+    // NOTE: All leases are for the same agent.
     @Override
     public Map<ScheduleRequest, LaunchTaskException> launchTasks(List<LaunchTaskRequest> requests, List<VirtualMachineLease> leases) {
         if (!super.getIsInited()) {

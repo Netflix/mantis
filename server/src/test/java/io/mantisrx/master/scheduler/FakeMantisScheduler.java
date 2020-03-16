@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.scheduler;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import akka.actor.ActorRef;
 import com.google.common.collect.Lists;
 import com.netflix.fenzo.VirtualMachineCurrentState;
@@ -26,16 +30,11 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
-
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 public class FakeMantisScheduler implements MantisScheduler {
 
@@ -52,7 +51,7 @@ public class FakeMantisScheduler implements MantisScheduler {
             scheduleRequest.getStageNum(),
             "host1",
             "vm1",
-            scheduleRequest.getPreferredCluster(), new WorkerPorts(8000, 9000, 9010, 9020, Lists.newArrayList(9030)));
+            scheduleRequest.getPreferredCluster(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
         jobClusterManagerActor.tell(workerLaunched, ActorRef.noSender());
 

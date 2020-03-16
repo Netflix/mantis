@@ -33,13 +33,11 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.IMantisWorkerEventProcessor;
+import io.mantisrx.master.jobcluster.job.JobActor;
 import io.mantisrx.master.scheduler.WorkerStateAdapter;
-
-
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.StatusPayloads;
@@ -163,8 +161,11 @@ public class JobWorker implements IMantisWorkerEventProcessor {
 
     /**
      * All events associated to this worker are processed in this method.
+     *
      * @param workerEvent The {@link WorkerEvent} associated with this worker.
+     *
      * @return boolean indicating whether to a change worth persisting occurred.
+     *
      * @throws InvalidWorkerStateChangeException thrown if the worker event lead to an invalid state transition.
      */
     public boolean processEvent(WorkerEvent workerEvent) throws InvalidWorkerStateChangeException {
@@ -236,16 +237,30 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         return true;
     }
 
+    /**
+     * Updates this {@link JobWorker}'s metadata from a {@link WorkerLaunched} event received by Mesos.
+     * This method will update metadata followed by updating the worker's state via
+     * {@link JobWorker#setState(WorkerState, long, JobCompletedReason)}. If any of the metadata
+     * fails to save, an {@link InvalidWorkerStateChangeException} is thrown and eventually bubbled up to the
+     * corresponding {@link JobActor} to handle.
+     *
+     * @param workerEvent an event received by Mesos with worker metadata after it was launched.
+     *
+     * @return {@code true} if all saving state succeeds
+     *         {@code false} otherwise (and don't durably persist; expect worker to be relaunched because
+     *         our state doesn't match Mesos)
+     */
     private boolean onWorkerLaunched(WorkerLaunched workerEvent) throws InvalidWorkerStateChangeException {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Processing for worker {}", workerEvent, metadata.getWorkerId());
+            LOGGER.debug("Processing for worker {} with id {}", workerEvent, metadata.getWorkerId());
         }
+
         setSlave(workerEvent.getHostname());
         addPorts(workerEvent.getPorts());
         setSlaveID(workerEvent.getVmId());
         setCluster(workerEvent.getClusterName());
-        //lastWorkerNum = workerEvent.getWorkerId().getWorkerNum();
         setState(WorkerState.Launched, workerEvent.getEventTimeMs(), JobCompletedReason.Normal);
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Worker {} state changed to Launched", workerEvent.getWorkerId());
         }
@@ -260,6 +275,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         } catch (IOException e) {
             LOGGER.warn("Error publishing status event for worker {} launch", workerEvent.getWorkerId(), e);
         }
+
         return true;
     }
 
@@ -294,10 +310,16 @@ public class JobWorker implements IMantisWorkerEventProcessor {
 
 
     /**
+     * Handles a {@link WorkerHeartbeat} event.
+     *
      * Assumptions:
-     * 1. Heartbeats from workers of terminated jobs are ignored at a higher level
-     * @param workerEvent
-     * @throws InvalidWorkerStateChangeException
+     *
+     * 1. Heartbeats from workers of terminated jobs are ignored at a higher level.
+     *
+     * @param workerEvent a {@link WorkerHeartbeat} event.
+     *
+     * @throws InvalidWorkerStateChangeException if it fails to persist worker state
+     *         via {@link JobWorker#setState(WorkerState, long, JobCompletedReason)}.
      */
     private boolean onHeartBeat(WorkerHeartbeat workerEvent) throws InvalidWorkerStateChangeException {
         numHeartBeatsReceived.increment();
@@ -305,6 +327,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             LOGGER.trace("Job {} Processing onHeartBeat for {}", this.metadata.getJobId(),
                 metadata.getWorkerId());
         }
+
         WorkerState workerState = metadata.getState();
         setLastHeartbeatAt(workerEvent.getEventTimeMs());
         boolean persistStateRequired = false;
@@ -325,7 +348,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
                 workerEvent.getWorkerId(), WorkerState.Started, ofNullable(metadata.getSlave())));
         }
 
-        // heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(true));
         List<Status.Payload> payloads = workerEvent.getStatus().getPayloads();
         for (Status.Payload payload : payloads) {
             if (payload.getType().equals(StatusPayloads.Type.SubscriptionState.toString())) {
@@ -363,8 +385,19 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         return true;
     }
 
+    /**
+     * Processes a {@link WorkerEvent} and if successful, saves/update state in the {@link MantisJobStore}.
+     *
+     * @param event a worker event which can be one of many event types such as launched, heartbeat, etc.
+     * @param jobStore a place to persist metadata.
+     *
+     * @throws InvalidWorkerStateChangeException if a worker failed to persist its state.
+     * @throws IOException if the job store failed to update the worker metadata.
+     */
     @Override
-    public void processEvent(final WorkerEvent event, final MantisJobStore jobStore) throws Exception {
+    public void processEvent(final WorkerEvent event, final MantisJobStore jobStore)
+            throws InvalidWorkerStateChangeException, IOException {
+
         if (event.getWorkerId().equals(this.metadata.getWorkerId())) {
             boolean persistStateRequired = processEvent(event);
             if (persistStateRequired) {

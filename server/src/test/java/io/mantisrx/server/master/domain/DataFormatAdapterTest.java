@@ -16,12 +16,22 @@
 
 package io.mantisrx.server.master.domain;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static java.util.Optional.of;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
@@ -54,28 +64,11 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobCompletedReason;
-
 import io.mantisrx.server.master.store.MantisJobMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.server.master.store.NamedJob;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.Optional.of;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class DataFormatAdapterTest {
     public static final MachineDefinition DEFAULT_MACHINE_DEFINITION = new MachineDefinition(1, 10, 10, 10, 2);
@@ -343,6 +336,7 @@ public class DataFormatAdapterTest {
             "  \"metricsPort\": 1,\n" +
             "  \"consolePort\": 3,\n" +
             "  \"debugPort\": 2,\n" +
+            "  \"customPort\": 5,\n" +
             "  \"ports\": [4],\n" +
             "  \"state\": \"Completed\",\n" +
             "  \"slave\": \"slave1\",\n" +
@@ -364,7 +358,7 @@ public class DataFormatAdapterTest {
         int metricsPort = 1;
         int debugPort = 2;
         int consolePort = 3;
-        int customPort = 0;
+        int customPort = 5;
         int ssePort = 4;
         List<Integer> ports = Lists.newArrayList();
 
@@ -432,7 +426,7 @@ public class DataFormatAdapterTest {
         assertEquals(metricsPort, oldMetadataWritable.getMetricsPort());
         assertEquals(consolePort, oldMetadataWritable.getConsolePort());
         assertEquals(debugPort, oldMetadataWritable.getDebugPort());
-        assertEquals(0, oldMetadataWritable.getCustomPort());
+        assertEquals(5, oldMetadataWritable.getCustomPort());
 
         assertEquals(MantisJobState.Completed, oldMetadataWritable.getState());
 
@@ -635,7 +629,7 @@ public class DataFormatAdapterTest {
                                                                         .build();
         IMantisWorkerMetadata workerMetadata = new MantisWorkerMetadataImpl(0,
                 1, jobId.getId(),
-                1,3, new WorkerPorts(100,200,300, 400, Collections.singletonList(500)), WorkerState.Started,
+                1,3, new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)), WorkerState.Started,
                 "slave","slaveId",startedAt.toEpochMilli(),startedAt.toEpochMilli(),
                 startedAt.toEpochMilli(),startedAt.toEpochMilli(),-1,JobCompletedReason.Normal,
                 0,0,of("cluster"));
