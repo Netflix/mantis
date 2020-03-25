@@ -41,6 +41,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
     private final AtomicLong cooldownTimestamp;
     private final AtomicLong currentScale;
+    private final AtomicDouble lastLag;
     private final Observable<Long> timer;
     private final Observable<Integer> size;
 
@@ -59,6 +60,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + this.cooldownMillis);
         this.currentScale = new AtomicLong(Math.round(initialSize));
+        this.lastLag = new AtomicDouble(0.0);
         this.timer = timer;
         this.size = size;
     }
@@ -89,9 +91,12 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         return rps.withLatestFrom(lag, drops, Tuple::of)
                 .map(triple -> {
+
+                  double lagDerivative  = triple._2.value - lastLag.get();
+                  lastLag.set(triple._2.value);
                     return triple._1.value // RPS
-                            + (triple._2.value / this.currentScale.get())  // LAG per worker
-                            + (triple._3.value / this.currentScale.get()); // DROPS per worker
+                            + (lagDerivative) // Lag derivative is of Max lag, so already per-worker.
+                            + (triple._3.value); // Drops are average, and thus per-worker.
                 })
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                 .lift(PIDController.of(config.kp, config.ki, config.kd))
