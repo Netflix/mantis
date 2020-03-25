@@ -137,12 +137,9 @@ public class SseWorkerConnection {
         this.connectionType = connectionType;
         this.hostname = hostname;
         this.port = port;
-        Tag[] tags = new Tag[2];
-        tags[0] = new BasicTag("host", Optional.ofNullable(hostname).orElse("none"));
-        tags[1] = new BasicTag("port", Optional.ofNullable(port.toString()).orElse("none"));
 
-        this.metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_Sse" + connectionType + "ConnectionFunction_withBuffer", tags);
-        final MetricGroupId connHealthMetricGroup = new MetricGroupId("ConnectionHealth", tags);
+        this.metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_Sse" + connectionType + "ConnectionFunction_withBuffer");
+        final MetricGroupId connHealthMetricGroup = new MetricGroupId("ConnectionHealth");
         Metrics m = new Metrics.Builder()
                 .id(connHealthMetricGroup)
                 .addCounter("pingCount")

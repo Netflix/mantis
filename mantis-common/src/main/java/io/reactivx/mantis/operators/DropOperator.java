@@ -40,8 +40,6 @@ public class DropOperator<T> implements Operator<T, T> {
     private final Counter next;
     private final Counter error;
     private final Counter complete;
-    private final Gauge subscribe;
-    private final Gauge requestedGauge;
     private final Counter dropped;
     MetricGroupId metricGroupId;
 
@@ -49,9 +47,7 @@ public class DropOperator<T> implements Operator<T, T> {
         next = m.getCounter("" + Counters.onNext);
         error = m.getCounter("" + Counters.onError);
         complete = m.getCounter("" + Counters.onComplete);
-        subscribe = m.getGauge("" + Gauges.subscribe);
         dropped = m.getCounter("" + Counters.dropped);
-        requestedGauge = m.getGauge("" + Gauges.requested);
     }
     public DropOperator(final MetricGroupId groupId) {
         this.metricGroupId = groupId;
@@ -61,9 +57,7 @@ public class DropOperator<T> implements Operator<T, T> {
                 .addCounter("" + Counters.onNext)
                 .addCounter("" + Counters.onError)
                 .addCounter("" + Counters.onComplete)
-                .addGauge("" + Gauges.subscribe)
                 .addCounter("" + Counters.dropped)
-                .addGauge("" + Gauges.requested)
                 .build();
 
         m = MetricsRegistry.getInstance().registerAndGet(m);
@@ -71,9 +65,7 @@ public class DropOperator<T> implements Operator<T, T> {
         next = m.getCounter("" + Counters.onNext);
         error = m.getCounter("" + Counters.onError);
         complete = m.getCounter("" + Counters.onComplete);
-        subscribe = m.getGauge("" + Gauges.subscribe);
         dropped = m.getCounter("" + Counters.dropped);
-        requestedGauge = m.getGauge("" + Gauges.requested);
     }
 
     public DropOperator(final String name) {
@@ -86,14 +78,10 @@ public class DropOperator<T> implements Operator<T, T> {
 
     @Override
     public Subscriber<? super T> call(final Subscriber<? super T> o) {
-        subscribe.increment();
         final AtomicLong requested = new AtomicLong();
 
-        o.add(Subscriptions.create(new Action0() {
-            @Override
-            public void call() {
-                subscribe.decrement();
-            }
+        o.add(Subscriptions.create(() -> {
+
         }));
         o.setProducer(new Producer() {
             @Override
@@ -101,8 +89,6 @@ public class DropOperator<T> implements Operator<T, T> {
                 if (requested.get() == Long.MAX_VALUE) {
                     logger.warn("current requested is int max do not increment");
                 } else {
-
-                    requestedGauge.increment(n);
                     requested.getAndAdd(n);
 
                 }
@@ -130,7 +116,6 @@ public class DropOperator<T> implements Operator<T, T> {
                     o.onNext(t);
                     next.increment();
                     requested.decrementAndGet();
-                    requestedGauge.decrement();
 
                 } else {
 
