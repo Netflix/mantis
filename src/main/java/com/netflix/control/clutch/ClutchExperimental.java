@@ -73,9 +73,9 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
             Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
 
             // TODO: Significant improvements to gain computation can likely be made.
-            double kp = (setPoint * 1e-6) / 5.0;
+            double kp = (setPoint * 1e-9) / 5.0;
             double ki = 0.0;
-            double kd = (setPoint * 1e-6) / 4.0;
+            double kd = (setPoint * 1e-9) / 4.0;
 
             return new ClutchConfiguration.ClutchConfigurationBuilder()
                     .metric(Clutch.Metric.RPS)
