@@ -36,7 +36,7 @@ ext {
     sketchesVersion = '0.9.1'
     rxJavaVersion = '1.3.8'
     rxJavaMathVersion = '1.0.0'
-    lombokVersion = '1.18.10'
+    lombokVersion = '1.18.12'
     mockitoVersion = '1.9.+'
     assertjVersion = '3.12.+'
 }
