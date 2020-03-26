@@ -273,7 +273,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                                 if (gauges.containsKey(ON_NEXT_GAUGE)) {
                                     jobAutoScaleObserver.onNext(
                                             new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
-                                                    gauges.get(ON_NEXT_GAUGE) / metricsIntervalSeconds, numWorkers, ""));
+                                                    gauges.get(ON_NEXT_GAUGE), numWorkers, ""));
                                 }
                             }
                         }
