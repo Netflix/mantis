@@ -62,7 +62,7 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
         // Use single netty thread
         NettyUtils.setNettyThreads();
 
-        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_Sse" + "Sink" + "ConnectionFunction_withBuffer");
+        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseSinkConnectionFunction_withBuffer");
         metricsSet.add(metricGroupId);
         logger.info("SETTING UP METRICS PRINTER THREAD");
         new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {

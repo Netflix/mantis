@@ -59,7 +59,7 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
         // Use single netty thread
         NettyUtils.setNettyThreads();
 
-        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_Sse" + "WorkerMetrics" + "ConnectionFunction_withBuffer");
+        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseWorkerMetricsConnectionFunction_withBuffer");
         metricsSet.add(metricGroupId);
         logger.info("SETTING UP METRICS PRINTER THREAD");
         new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {
