@@ -37,7 +37,7 @@ dependencies {
     compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.5.23'
     api "com.typesafe.akka:akka-slf4j_2.13:$akkaVersion"
 
-    // Master core
+
     api "com.typesafe.akka:akka-actor_2.13:$akkaVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "com.google.guava:guava:$guavaVersion"

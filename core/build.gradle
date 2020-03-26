@@ -51,7 +51,7 @@ dependencies {
     api "org.apache.curator:curator-recipes:$curatorVersion"
     api "joda-time:joda-time:$jodaTimeVersion"
 
-    testCompile "com.typesafe.akka:akka-testkit_2.13:$akkaVersion"
+
     testCompile "junit:junit:4.+"
     testCompile "org.mockito:mockito-all:2.+"
 }
