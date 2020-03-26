@@ -33,15 +33,7 @@ ext {
 
 dependencies {
     // Master API akka-http dependencies
-    api "com.typesafe.akka:akka-http_2.13:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-http-jackson_2.13:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-http-caching_2.13:$akkaHttpVersion"
-    api "com.typesafe.akka:akka-stream_2.13:$akkaVersion"
-    compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.5.23'
-    api "com.typesafe.akka:akka-slf4j_2.13:$akkaVersion"
 
-    // Master core
-    api "com.typesafe.akka:akka-actor_2.13:$akkaVersion"
     api "io.mantisrx:mantis-common:$mantisVersion"
     api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
 
