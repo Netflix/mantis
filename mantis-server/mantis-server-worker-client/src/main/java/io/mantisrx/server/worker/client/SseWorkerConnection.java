@@ -118,9 +118,11 @@ public class SseWorkerConnection {
                                final boolean reconnectUponConnectionReset,
                                final CopyOnWriteArraySet<MetricGroupId> metricsSet,
                                final int bufferSize,
-                               final SinkParameters sinkParameters) {
+                               final SinkParameters sinkParameters,
+                               final MetricGroupId metricGroupId) {
         this(connectionType, hostname, port, updateConxStatus, updateDataRecvngStatus, connectionResetHandler,
-                dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false);
+                dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false,
+                metricGroupId);
     }
     public SseWorkerConnection(final String connectionType,
                                final String hostname,
@@ -133,12 +135,13 @@ public class SseWorkerConnection {
                                final CopyOnWriteArraySet<MetricGroupId> metricsSet,
                                final int bufferSize,
                                final SinkParameters sinkParameters,
-                               final boolean disablePingFiltering) {
+                               final boolean disablePingFiltering,
+                               final MetricGroupId metricGroupId) {
         this.connectionType = connectionType;
         this.hostname = hostname;
         this.port = port;
 
-        this.metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_Sse" + connectionType + "ConnectionFunction_withBuffer");
+        this.metricGroupId = metricGroupId;//new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_Sse" + connectionType + "ConnectionFunction_withBuffer");
         final MetricGroupId connHealthMetricGroup = new MetricGroupId("ConnectionHealth");
         Metrics m = new Metrics.Builder()
                 .id(connHealthMetricGroup)
@@ -174,7 +177,7 @@ public class SseWorkerConnection {
     }
 
     public synchronized void close() throws Exception {
-        metricsSet.remove(metricGroupId);
+       // metricsSet.remove(metricGroupId);
         if (isShutdown)
             return;
         logger.info("Closing sse connection to " + hostname + ":" + port);
@@ -187,7 +190,7 @@ public class SseWorkerConnection {
     public synchronized Observable<MantisServerSentEvent> call() {
         if (isShutdown)
             return Observable.empty();
-        metricsSet.add(metricGroupId);
+       // metricsSet.add(metricGroupId);
         client =
                 RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
                         .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
