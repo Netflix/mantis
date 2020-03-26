@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.worker.client;
 
+import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATOR_INCOMING_METRIC_GROUP;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -42,6 +44,7 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
     private static final String DEFAULT_BUFFER_SIZE_STR = "0";
     private static final Logger logger = LoggerFactory.getLogger(SseWorkerConnectionFunction.class);
     private static final CopyOnWriteArraySet<MetricGroupId> metricsSet = new CopyOnWriteArraySet<>();
+    private static final MetricGroupId metricGroupId;
     private static final Action1<Throwable> defaultConxResetHandler = new Action1<Throwable>() {
         @Override
         public void call(Throwable throwable) {
@@ -56,7 +59,8 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
         // Use single netty thread
         NettyUtils.setNettyThreads();
 
-
+        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseWorkerMetricsConnectionFunction_withBuffer");
+        metricsSet.add(metricGroupId);
         logger.info("SETTING UP METRICS PRINTER THREAD");
         new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -119,7 +123,7 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
             private final SseWorkerConnection workerConn =
                     new SseWorkerConnection("WorkerMetrics", hostname, port, updateConxStatus, updateDataRecvngStatus,
                             connectionResetHandler, dataRecvTimeoutSecs, reconnectUponConnectionRest, metricsSet,
-                            bufferSize, sinkParameters);
+                            bufferSize, sinkParameters,metricGroupId);
 
             @Override
             public String getName() {

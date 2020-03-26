@@ -16,6 +16,8 @@
 
 package io.mantisrx.client;
 
+import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATOR_INCOMING_METRIC_GROUP;
+
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -44,6 +46,7 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
     private static final String DEFAULT_BUFFER_SIZE_STR = "0";
     private static final Logger logger = LoggerFactory.getLogger(SseSinkConnectionFunction.class);
     private static final CopyOnWriteArraySet<MetricGroupId> metricsSet = new CopyOnWriteArraySet<>();
+    private static final MetricGroupId metricGroupId;
     private static final Action1<Throwable> defaultConxResetHandler = new Action1<Throwable>() {
         @Override
         public void call(Throwable throwable) {
@@ -59,7 +62,8 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
         // Use single netty thread
         NettyUtils.setNettyThreads();
 
-
+        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseSinkConnectionFunction_withBuffer");
+        metricsSet.add(metricGroupId);
         logger.info("SETTING UP METRICS PRINTER THREAD");
         new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -124,7 +128,7 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
             private final SseWorkerConnection workerConn =
                     new SseWorkerConnection("Sink", hostname, port, updateConxStatus, updateDataRecvngStatus,
                             connectionResetHandler, dataRecvTimeoutSecs, reconnectUponConnectionRest, metricsSet,
-                            bufferSize, sinkParameters, disablePingFiltering);
+                            bufferSize, sinkParameters, disablePingFiltering,metricGroupId);
 
             @Override
             public String getName() {
