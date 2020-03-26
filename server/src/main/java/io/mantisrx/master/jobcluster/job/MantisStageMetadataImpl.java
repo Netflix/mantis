@@ -565,7 +565,6 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
      */
     public Optional<JobWorker> processWorkerEvent(WorkerEvent event, MantisJobStore jobStore) {
         try {
-
             JobWorker worker = getWorkerByIndex(event.getWorkerId().getWorkerIndex());
             worker.processEvent(event, jobStore);
             return of(worker);

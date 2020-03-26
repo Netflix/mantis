@@ -16,10 +16,10 @@
 
 package io.mantisrx.master.jobcluster;
 
+import java.util.List;
+
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.server.master.domain.JobId;
-
-import java.util.List;
 
 public class WorkerInfoListHolder {
 
@@ -37,5 +37,13 @@ public class WorkerInfoListHolder {
 
     public List<IMantisWorkerMetadata> getWorkerMetadataList() {
         return workerMetadataList;
+    }
+
+    @Override
+    public String toString() {
+        return "WorkerInfoListHolder{"
+                + " jobId=" + jobId
+                + ", workerMetadataList=" + workerMetadataList
+                + '}';
     }
 }

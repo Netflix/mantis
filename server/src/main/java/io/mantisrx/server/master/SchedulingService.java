@@ -112,6 +112,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private final Gauge jobMgrRunningWorkers;
     private final Counter numAutoScaleUpActions;
     private final Counter numAutoScaleDownActions;
+    private final Counter numMissingWorkerPorts;
     private final Counter schedulingResultExceptions;
     private final Counter schedulingCallbackExceptions;
     private final SchedulingStateManager schedulingState;
@@ -184,6 +185,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                 .addCounter("numAutoScaleDownActions")
                 .addGauge("fenzoLaunchedTasks")
                 .addGauge("jobMgrRunningWorkers")
+                .addCounter("numMissingWorkerPorts")
                 .addCounter("schedulingResultExceptions")
                 .addCounter("schedulingCallbackExceptions")
                 .build();
@@ -212,6 +214,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         numAutoScaleDownActions = m.getCounter("numAutoScaleDownActions");
         fenzoLaunchedTasks = m.getGauge("fenzoLaunchedTasks");
         jobMgrRunningWorkers = m.getGauge("jobMgrRunningWorkers");
+        numMissingWorkerPorts = m.getCounter("numMissingWorkerPorts");
         schedulingResultExceptions = m.getCounter("schedulingResultExceptions");
         schedulingCallbackExceptions = m.getCounter("schedulingCallbackExceptions");
         perWorkerSchedulingTimeMs = m.getCounter("perWorkerSchedulingTimeMillis");
@@ -330,28 +333,66 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         return hasValue ? Optional.of(lease.getAttributeMap().get(attributeName).getText().getValue()) : Optional.empty();
     }
 
+    /**
+     * Attempts to launch tasks given some number of leases from Mesos.
+     *
+     * When a task is launched successfully, the following will happen:
+     *
+     * 1. Emit a {@link WorkerLaunched} event to be handled by the corresponding actor.
+     * 2. Makes a call to the underlying Mesos driver to launch the task.
+     *
+     * A task can fail to launch if:
+     *
+     * 1. It doesn't receive enough metadata for {@link WorkerPorts} to pass its preconditions.
+     *      - No launch task request will be made for this assignment result.
+     *      - Proactively unschedule the worker.
+     * 2. It fails to emit a {@link WorkerLaunched} event.
+     *      - The worker will get unscheduled for this launch task request.
+     * 3. There are no launch tasks for this assignment result.
+     *      - All of these leases are rejected.
+     *      - Eventually, the underlying Mesos driver will decline offers since there are no launch task requests.
+     *
+     * @param requests collection of assignment results received by the scheduler.
+     * @param leases list of resource offers from Mesos.
+     */
     private void launchTasks(Collection<TaskAssignmentResult> requests, List<VirtualMachineLease> leases) {
         List<LaunchTaskRequest> launchTaskRequests = new ArrayList<>();
+
         for (TaskAssignmentResult assignmentResult : requests) {
             ScheduleRequest request = (ScheduleRequest) assignmentResult.getRequest();
-            WorkerPorts workerPorts = new WorkerPorts(assignmentResult.getAssignedPorts());
-            boolean success = jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
-                    request.getWorkerId(),
-                    request.getStageNum(),
-                    leases.get(0).hostname(),
-                    leases.get(0).getVMID(),
-                    getAttribute(leases.get(0), slaveClusterAttributeName),
-                    workerPorts));
-            if (success) {
-                launchTaskRequests.add(new LaunchTaskRequest(request, workerPorts));
+
+            WorkerPorts workerPorts = null;
+            try {
+                workerPorts = new WorkerPorts(assignmentResult.getAssignedPorts());
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                logger.error("problem launching tasks for assignment result {}: {}", assignmentResult, e);
+                numMissingWorkerPorts.increment();
+            }
+
+            if (workerPorts != null) {
+                boolean success = jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
+                        request.getWorkerId(),
+                        request.getStageNum(),
+                        leases.get(0).hostname(),
+                        leases.get(0).getVMID(),
+                        getAttribute(leases.get(0), slaveClusterAttributeName),
+                        workerPorts));
+
+                if (success) {
+                    launchTaskRequests.add(new LaunchTaskRequest(request, workerPorts));
+                } else {
+                    unscheduleWorker(request.getWorkerId(), Optional.ofNullable(leases.get(0).hostname()));
+                }
             } else {
                 unscheduleWorker(request.getWorkerId(), Optional.ofNullable(leases.get(0).hostname()));
             }
         }
+
         if (launchTaskRequests.isEmpty()) {
             for (VirtualMachineLease l : leases)
                 virtualMachineService.rejectLease(l);
         }
+
         Map<ScheduleRequest, LaunchTaskException> launchErrors = virtualMachineService.launchTasks(launchTaskRequests, leases);
         for (TaskAssignmentResult result : requests) {
             final ScheduleRequest sre = (ScheduleRequest) result.getRequest();

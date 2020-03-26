@@ -16,6 +16,16 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
@@ -43,7 +53,6 @@ import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
-
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
@@ -54,17 +63,6 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import org.junit.Test;
-import rx.Observable;
-
-import java.io.File;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
-
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 
 public class JobTestHelper {
@@ -225,8 +223,13 @@ public class JobTestHelper {
         jobActor.tell(startedEvent, probe.getRef());
     }
 
+    public static void sendJobInitializeEvent(final TestKit probe, final ActorRef jobClusterActor) {
+        JobProto.InitJob initJobEvent = new JobProto.InitJob(probe.getRef(), true);
+        jobClusterActor.tell(initJobEvent, probe.getRef());
+    }
+
     public static void sendWorkerLaunchedEvent(final TestKit probe, final ActorRef jobActor, WorkerId workerId2, int stageNo) {
-        WorkerEvent launchedEvent2 = new WorkerLaunched(workerId2, stageNo, "host1", "vm1", Optional.empty(), new WorkerPorts(8000, 9000, 9010, 9011, Lists.newArrayList(9020)));
+        WorkerEvent launchedEvent2 = new WorkerLaunched(workerId2, stageNo, "host1", "vm1", Optional.empty(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
         jobActor.tell(launchedEvent2, probe.getRef());
     }
 
@@ -385,21 +388,4 @@ public class JobTestHelper {
         assertEquals(1, JobHelper.calculateRuntimeDuration(10, startedAt));
 
     }
-
-
-    public static void main(String[] args) {
-
-        Observable.range(0, 100)
-            .groupBy((i) -> i % 2)
-            .flatMap((go) -> go
-                .buffer(2)
-                .map((lst) -> String.valueOf(lst)))
-            .toBlocking()
-            .subscribe((res) -> {
-                System.out.println("res -> " + res);
-            });
-
-    }
-
-
 }
