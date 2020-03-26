@@ -15,12 +15,10 @@
  */
 
 ext {
-    akkaHttpVersion = '10.1.8'
-    akkaVersion = '2.5.23'
+
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     curatorVersion = '2.11.0'
-    fenzoVersion = '0.13.8'
     guavaVersion = '19.0'
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
@@ -32,13 +30,9 @@ ext {
 }
 
 dependencies {
-    // Master API akka-http dependencies
 
     api "io.mantisrx:mantis-common:$mantisVersion"
     api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
-
-    api "com.netflix.fenzo:fenzo-core:$fenzoVersion"
-    api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
 
     api "org.skife.config:config-magic:$configMagicVersion"
 

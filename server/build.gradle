@@ -19,7 +19,7 @@ apply plugin: 'application'
 ext {
     akkaVersion = '2.5.23'
     akkaHttpVersion = '10.1.8'
-
+    fenzoVersion = '0.13.8'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     curatorVersion = '2.11.0'
@@ -37,8 +37,9 @@ dependencies {
     compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.5.23'
     api "com.typesafe.akka:akka-slf4j_2.13:$akkaVersion"
 
-
     api "com.typesafe.akka:akka-actor_2.13:$akkaVersion"
+    api "com.netflix.fenzo:fenzo-core:$fenzoVersion"
+    api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "com.google.guava:guava:$guavaVersion"
     api "org.apache.curator:curator-framework:$curatorVersion"
