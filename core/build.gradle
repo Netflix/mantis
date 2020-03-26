@@ -25,14 +25,12 @@ ext {
     jsonVersion = '20180813'
     mantisVersion = '1.2.+'
     mesosVersion = '1.3.2'
-    rxJavaReactiveStreamsVersion = '1.+'
     testngVersion = '6.14.+'
 }
 
 dependencies {
 
     api "io.mantisrx:mantis-common:$mantisVersion"
-    api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
 
     api "org.skife.config:config-magic:$configMagicVersion"
 

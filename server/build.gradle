@@ -22,6 +22,7 @@ ext {
     fenzoVersion = '0.13.8'
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
+    rxJavaReactiveStreamsVersion = '1.+'
     curatorVersion = '2.11.0'
     guavaVersion = '19.0'
     testngVersion = '6.+'
@@ -38,6 +39,7 @@ dependencies {
     api "com.typesafe.akka:akka-slf4j_2.13:$akkaVersion"
 
     api "com.typesafe.akka:akka-actor_2.13:$akkaVersion"
+    api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
     api "com.netflix.fenzo:fenzo-core:$fenzoVersion"
     api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
