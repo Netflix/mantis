@@ -37,7 +37,7 @@ public class AutoScaleMetricsConfig {
         defaultAutoScaleMetrics.put(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP, defaultKafkaConsumerMetric);
 
         final Map<String, AggregationAlgo> defaultWorkerStageInnerInputMetric = new HashMap<>();
-        defaultWorkerStageInnerInputMetric.put(ON_NEXT_GAUGE, AggregationAlgo.MAX);
+        defaultWorkerStageInnerInputMetric.put(ON_NEXT_GAUGE, AggregationAlgo.AVERAGE);
         defaultAutoScaleMetrics.put(WORKER_STAGE_INNER_INPUT, defaultWorkerStageInnerInputMetric);
     }
 
