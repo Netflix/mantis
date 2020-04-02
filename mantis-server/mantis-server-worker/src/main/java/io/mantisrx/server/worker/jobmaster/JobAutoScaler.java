@@ -250,9 +250,11 @@ public class JobAutoScaler {
                                       Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.3, 0.0);
                                       long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
 
-                                      double kp = 1.0 / setPoint / deltaT;
+                                      double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMax();
+
+                                      double kp = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
                                       double ki = 0.0;
-                                      double kd = 1.0 / setPoint / deltaT;
+                                      double kd = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
 
                                       return com.netflix.control.clutch.ClutchConfiguration.builder()
                                         .metric(Clutch.Metric.RPS)
