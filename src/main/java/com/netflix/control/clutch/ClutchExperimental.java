@@ -19,11 +19,13 @@ package com.netflix.control.clutch;
 import com.netflix.control.IActuator;
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.DoublesSketch;
+import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.vavr.Function1;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import rx.Observable;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,7 +42,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
     private final Observable<Long> timer;
     private final Observable<Integer> size;
     private final long initialConfigMillis;
-    private final Function1<DoublesSketch, ClutchConfiguration> configurator;
+    private final Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator;
 
     /**
      * Constructs a new Clutch instance for autoscaling.
@@ -54,7 +56,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
      */
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
                               Observable<Integer> size, Observable<Long> timer, long initialConfigMillis,
-                              Function1<DoublesSketch, ClutchConfiguration> configurator) {
+                              Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator) {
         this.actuator = actuator;
         this.initialSize = initialSize;
         this.minSize = minSize;
@@ -68,8 +70,8 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
                               Observable<Integer> size, Observable<Long> timer, long initialConfigMillis, long coolDownSeconds) {
 
-        this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, (sketch) -> {
-            double setPoint = 0.6 * sketch.getQuantile(0.99);
+        this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, (sketches) -> {
+            double setPoint = 0.6 * sketches.get(Clutch.Metric.RPS).getQuantile(0.99);
             Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
 
             // TODO: Significant improvements to gain computation can likely be made.

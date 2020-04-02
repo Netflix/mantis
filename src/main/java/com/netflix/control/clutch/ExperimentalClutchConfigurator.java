@@ -23,6 +23,7 @@ import io.vavr.Function1;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +34,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
     private IClutchMetricsRegistry metricsRegistry;
     private final Observable<Long> timer;
     private final long initialConfigMilis;
-    private final Function1<DoublesSketch,ClutchConfiguration> configurator;
+    private final Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator;
 
     private static ConcurrentHashMap<Clutch.Metric, UpdateDoublesSketch> sketches = new ConcurrentHashMap<>();
     static {
@@ -48,7 +49,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
 
     public ExperimentalClutchConfigurator(IClutchMetricsRegistry metricsRegistry, Observable<Long> timer,
                                           long initialConfigMillis,
-                                          Function1<DoublesSketch, ClutchConfiguration> configurator) {
+                                          Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator) {
         this.metricsRegistry = metricsRegistry;
         this.timer = timer;
         this.initialConfigMilis = initialConfigMillis;
@@ -64,7 +65,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
      * @return A configuration suitable for autoscaling with Clutch.
      */
     private ClutchConfiguration getConfig() {
-        return this.configurator.apply(sketches.get(Clutch.Metric.RPS));
+        return this.configurator.apply(sketches);
     }
 
     @Override
