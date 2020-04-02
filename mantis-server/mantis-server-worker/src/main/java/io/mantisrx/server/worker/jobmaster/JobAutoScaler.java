@@ -24,10 +24,9 @@ import io.mantisrx.server.core.stats.UsageDataStats;
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchExperimental;
 
+import io.mantisrx.server.worker.jobmaster.clutch.experimental.MantisClutchConfigurationSelector;
 import io.vavr.jackson.datatype.VavrModule;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
 import java.util.HashMap;
@@ -45,8 +44,6 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 
 import io.mantisrx.server.master.client.MantisMasterClientApi;
-
-import meka.experiment.events.ExecutionStageEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,32 +240,10 @@ public class JobAutoScaler {
                                     stageSchedulingInfo.getScalingPolicy().getMin(),
                                     stageSchedulingInfo.getScalingPolicy().getMax(),
                                     workerCounts,
-                                    Observable.interval(1, TimeUnit.DAYS),
+                                    Observable.interval(1, TimeUnit.HOURS),
                                     1000 * 60 * 10,
-                                    (sketch) -> {
-                                      double setPoint = 1.1 * sketch.getQuantile(0.5);
-                                      Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.3, 0.0);
-                                      long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
-
-                                      double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMax();
-
-                                      double kp = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
-                                      double ki = 0.0;
-                                      double kd = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
-
-                                      return com.netflix.control.clutch.ClutchConfiguration.builder()
-                                        .metric(Clutch.Metric.RPS)
-                                        .setPoint(setPoint)
-                                        .kp(kp)
-                                        .ki(ki)
-                                        .kd(kd)
-                                        .minSize(stageSchedulingInfo.getScalingPolicy().getMin())
-                                        .maxSize(stageSchedulingInfo.getScalingPolicy().getMax())
-                                        .rope(rope)
-                                        .cooldownInterval(stageSchedulingInfo.getScalingPolicy().getCoolDownSecs())
-                                        .cooldownUnits(TimeUnit.SECONDS)
-                                        .build();
-                                    }));
+                                      new MantisClutchConfigurationSelector(stage, stageSchedulingInfo)
+                                    ));
                         }
 
                         logger.info("Setting up stage scale operator for job " + jobId + " stage " + stage);
