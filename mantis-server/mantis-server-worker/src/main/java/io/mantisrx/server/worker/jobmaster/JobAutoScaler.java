@@ -246,8 +246,8 @@ public class JobAutoScaler {
                                     Observable.interval(1, TimeUnit.DAYS),
                                     1000 * 60 * 10,
                                     (sketch) -> {
-                                      double setPoint = 1.1 * sketch.getQuantile(0.80);
-                                      Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
+                                      double setPoint = 1.1 * sketch.getQuantile(0.5);
+                                      Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.3, 0.0);
                                       long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
 
                                       double kp = 1.0 / setPoint / deltaT;
