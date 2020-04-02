@@ -90,8 +90,8 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
                 .subscribe();
 
         return rps.withLatestFrom(lag, drops, Tuple::of)
+                .doOnNext(triple -> log.debug("Clutch received RPS: {}, Lag: {} (d {}), Drops: {}", triple._1.value, triple._2.value, triple._2.value - lastLag.get(), triple._3.value))
                 .map(triple -> {
-
                   double lagDerivative  = triple._2.value - lastLag.get();
                   lastLag.set(triple._2.value);
                     return triple._1.value // RPS
