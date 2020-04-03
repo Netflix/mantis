@@ -43,6 +43,8 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private final StageSchedulingInfo stageSchedulingInfo;
     private final AtomicDouble trueCpuMax = new AtomicDouble(0.0);
     private final AtomicDouble trueNetworkMax = new AtomicDouble(0.0);
+    private final AtomicDouble trueCpuMin = new AtomicDouble(0.0);
+    private final AtomicDouble trueNetworkMin = new AtomicDouble(0.0);
 
     public MantisClutchConfigurationSelector(Integer stageNumber, StageSchedulingInfo stageSchedulingInfo) {
         this.stageNumber = stageNumber;
@@ -57,9 +59,9 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         // Setpoint
         double setPoint = 1.1 * sketches.get(Clutch.Metric.RPS).getQuantile(0.5);
 
-        if (isSetpointHigh(sketches)) {
+        if (isSetpointHigh(sketches) && false) {
             setPoint *= 0.9;
-        } else if (isSetpointLow(sketches)) { // Only allow too cold if we're NOT too hot.
+        } else if (isSetpointLow(sketches) && false) { // Only allow too cold if we're NOT too hot.
             setPoint *= 1.11;
         }
 
@@ -133,9 +135,13 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private boolean isSetpointHigh(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
         double cpuMedian = sketches.get(Clutch.Metric.CPU).getQuantile(0.5);
         double networkMedian = sketches.get(Clutch.Metric.NETWORK).getQuantile(0.5);
+        
+        // TODO: How do we ensure we're not just always operating in a tight range?
 
-        boolean cpuTooHigh = cpuMedian > trueCpuMax.get() * 0.8;
-        boolean networkTooHigh = networkMedian > trueNetworkMax.get() * 0.8;
+        boolean cpuTooHigh = cpuMedian > trueCpuMax.get() * 0.8 
+          && cpuMedian > trueCpuMin.get() * 1.2;
+        boolean networkTooHigh = networkMedian > trueNetworkMax.get() * 0.8
+          && networkMedian > trueNetworkMin.get() * 1.2;
 
         if (cpuTooHigh) {
             logger.info("CPU running too hot for stage {} with median {} and max {}. Recommending reduction in setPoint.", stageNumber, cpuMedian, trueCpuMax.get());
@@ -193,6 +199,16 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
       }
       if (networkMax > trueNetworkMax.get()) {
         trueNetworkMax.set(networkMax);
+      }
+
+      double cpuMin = sketches.get(Clutch.Metric.CPU).getMinValue();
+      double networkMin = sketches.get(Clutch.Metric.NETWORK).getMinValue();
+
+      if (cpuMin > trueCpuMin.get()) {
+        trueCpuMin.set(cpuMin);
+      }
+      if (networkMin > trueNetworkMin.get()) {
+        trueNetworkMin.set(networkMin);
       }
     }
 }

@@ -40,7 +40,7 @@ public class Util {
             // value is in bytes, multiply by 8, divide by M
             return 100.0 * value * 8 / (1024.0 * 1024.0 * stageSchedulingInfo.getMachineDefinition().getNetworkMbps());
         default:
-            // Identity is the defaunt transformation
+            // Identity is the default transformation
             return value;
         }
     }
