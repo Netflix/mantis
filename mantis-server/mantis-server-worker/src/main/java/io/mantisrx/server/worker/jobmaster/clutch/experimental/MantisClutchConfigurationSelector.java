@@ -73,7 +73,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
 
         // Gain
         long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
-        double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMax();
+        double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMin();
 
         double kp = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
         double ki = 0.0;
