@@ -45,30 +45,62 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private final AtomicDouble trueNetworkMax = new AtomicDouble(0.0);
     private final AtomicDouble trueCpuMin = new AtomicDouble(0.0);
     private final AtomicDouble trueNetworkMin = new AtomicDouble(0.0);
+    private final long initializationTime = System.currentTimeMillis();
+    private final long ONE_DAY_MILLIS = 1000 * 60 * 60 * 25;
 
     public MantisClutchConfigurationSelector(Integer stageNumber, StageSchedulingInfo stageSchedulingInfo) {
         this.stageNumber = stageNumber;
         this.stageSchedulingInfo = stageSchedulingInfo;
     }
 
-    @Override
-    public ClutchConfiguration apply(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
+    /**
+     * Determines a suitable set point within some defined bounds.
+     * We use a quantile above 0.5 to encourage the function to grow over time if possible.
+     * @param sketches The map of sketches for which to compute a set point. Must contain RPS.
+     * @return A suitable set point for autoscaling.
+     */
+    private double getSetpoint(Map<Clutch.Metric, UpdateDoublesSketch> sketches, double numberOfCpuCores) {
+        double setPoint = sketches.get(Clutch.Metric.RPS).getQuantile(0.75);
+        double minRps = 1000 * numberOfCpuCores;
+        double maxRps = 2500 * numberOfCpuCores;
 
-        updateTrueMaxValues(sketches);
-
-        // Setpoint
-        double setPoint = 1.1 * sketches.get(Clutch.Metric.RPS).getQuantile(0.5);
-
-        if (isSetpointHigh(sketches) && false) {
+        // Checking for high or low values;
+        
+        if (isSetpointHigh(sketches)
+            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS) {
             setPoint *= 0.9;
-        } else if (isSetpointLow(sketches) && false) { // Only allow too cold if we're NOT too hot.
+        } else if (isSetpointLow(sketches)
+            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS) {
             setPoint *= 1.11;
         }
 
-        if (isUnderprovisioined(sketches)) {
-          // No op right now.
+        if (isUnderprovisioined(sketches)
+            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS) {
           logger.info("Job is underprovisioned see previous messages to determine metric.");
         }
+
+        // Sanity checking against mins / maxes
+        
+        if (setPoint < minRps) {
+          logger.info("Setpoint {} was less than minimum {}. Setting to {}.", minRps, minRps);
+          setPoint = minRps;
+        }
+        if (setPoint > maxRps) {
+          logger.info("Setpoint {} was greater than maximum {}. Setting to {}.", maxRps, maxRps);
+          setPoint = maxRps;
+        }
+
+        return setPoint;
+    }
+
+    @Override
+    public ClutchConfiguration apply(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
+        updateTrueMaxValues(sketches);
+
+        double numberOfCpuCores = stageSchedulingInfo.getMachineDefinition().getCpuCores();
+
+        // Setpoint
+        double setPoint = getSetpoint(sketches, numberOfCpuCores);
 
         // ROPE
         Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.3, 0.0);
@@ -81,7 +113,8 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         double ki = 0.0;
         double kd = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
 
-        resetSketches(sketches);
+        // TODO: Do we want to reset sketches, we need at least one day's values
+        //resetSketches(sketches);
         return com.netflix.control.clutch.ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
                 .setPoint(setPoint)
@@ -137,7 +170,6 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         double networkMedian = sketches.get(Clutch.Metric.NETWORK).getQuantile(0.5);
         
         // TODO: How do we ensure we're not just always operating in a tight range?
-
         boolean cpuTooHigh = cpuMedian > trueCpuMax.get() * 0.8 
           && cpuMedian > trueCpuMin.get() * 1.2;
         boolean networkTooHigh = networkMedian > trueNetworkMax.get() * 0.8
@@ -204,10 +236,10 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
       double cpuMin = sketches.get(Clutch.Metric.CPU).getMinValue();
       double networkMin = sketches.get(Clutch.Metric.NETWORK).getMinValue();
 
-      if (cpuMin > trueCpuMin.get()) {
+      if (cpuMin < trueCpuMin.get()) {
         trueCpuMin.set(cpuMin);
       }
-      if (networkMin > trueNetworkMin.get()) {
+      if (networkMin < trueNetworkMin.get()) {
         trueNetworkMin.set(networkMin);
       }
     }

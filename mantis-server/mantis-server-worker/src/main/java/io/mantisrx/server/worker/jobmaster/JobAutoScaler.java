@@ -240,7 +240,7 @@ public class JobAutoScaler {
                                     stageSchedulingInfo.getScalingPolicy().getMin(),
                                     stageSchedulingInfo.getScalingPolicy().getMax(),
                                     workerCounts,
-                                    Observable.interval(1, TimeUnit.HOURS),
+                                    Observable.interval(1, TimeUnit.DAYS),
                                     1000 * 60 * 10,
                                       new MantisClutchConfigurationSelector(stage, stageSchedulingInfo)
                                     ));
