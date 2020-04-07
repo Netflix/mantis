@@ -109,10 +109,11 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         // Gain
         long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
         double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMin();
+        double dampeningFactor = 0.4; // 0.5 caused a bit of oscillation, trying 0.4
 
-        double kp = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
+        double kp = 1.0 / setPoint / deltaT * minMaxMidPoint * dampeningFactor;
         double ki = 0.0;
-        double kd = 1.0 / setPoint / deltaT * minMaxMidPoint / 2.0;
+        double kd = 1.0 / setPoint / deltaT * minMaxMidPoint * dampeningFactor;
 
         // TODO: Do we want to reset sketches, we need at least one day's values
         //resetSketches(sketches);
