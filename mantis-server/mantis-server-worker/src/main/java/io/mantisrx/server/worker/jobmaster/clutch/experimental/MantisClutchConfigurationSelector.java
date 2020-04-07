@@ -46,7 +46,8 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private final AtomicDouble trueCpuMin = new AtomicDouble(0.0);
     private final AtomicDouble trueNetworkMin = new AtomicDouble(0.0);
     private final long initializationTime = System.currentTimeMillis();
-    private final long ONE_DAY_MILLIS = 1000 * 60 * 60 * 25;
+    private final long ONE_DAY_MILLIS = 1000 * 60 * 60 * 24;
+    private final long TEN_MINUTES_MILLIS = 1000 * 60 * 10;
 
     public MantisClutchConfigurationSelector(Integer stageNumber, StageSchedulingInfo stageSchedulingInfo) {
         this.stageNumber = stageNumber;
@@ -67,10 +68,10 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         // Checking for high or low values;
         
         if (isSetpointHigh(sketches)
-            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS) {
+            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS - TEN_MINUTES_MILLIS) {
             setPoint *= 0.9;
         } else if (isSetpointLow(sketches)
-            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS) {
+            && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS - TEN_MINUTES_MILLIS) {
             setPoint *= 1.11;
         }
 
