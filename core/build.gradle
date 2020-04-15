@@ -24,7 +24,7 @@ ext {
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
     mantisVersion = '1.2.+'
-    mesosVersion = '1.3.2'
+    mesosVersion = '1.4.2'
     testngVersion = '6.14.+'
 }
 
