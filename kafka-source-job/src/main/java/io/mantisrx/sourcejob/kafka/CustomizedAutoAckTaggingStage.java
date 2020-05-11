@@ -122,7 +122,7 @@ public class CustomizedAutoAckTaggingStage extends AutoAckTaggingStage {
             preMapperFunc.call(rawData);
         } catch (Exception e) {
             // TODO DynamicCounter.increment("mantis.source.premapping.failed", "mantisJobName", jobName);
-            logger.warn("Exception applying premapping funciton " + e.getMessage());
+            logger.warn("Exception applying premapping function " + e.getMessage());
         }
         final Map<String, Object> modifiedData = new HashMap<>(rawData);
 
