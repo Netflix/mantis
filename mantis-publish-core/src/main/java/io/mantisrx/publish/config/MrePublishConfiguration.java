@@ -18,6 +18,8 @@ package io.mantisrx.publish.config;
 
 import java.util.Map;
 
+import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
+
 
 public interface MrePublishConfiguration {
 
@@ -55,9 +57,16 @@ public interface MrePublishConfiguration {
      * List of Mantis Job clusters per stream configured to receive data for this app
      *
      * @return streamName to Job cluster mapping
+     *
+     * @deprecated Use {@link MantisJobDiscovery#getStreamNameToJobClusterMapping(String)} instead.
      */
+    @Deprecated
     Map<String, String> streamNameToJobClusterMapping();
 
+    /**
+     * @deprecated Use {@link MantisJobDiscovery#getJobCluster(String, String)} instead.
+     */
+    @Deprecated
     String mantisJobCluster(String streamName);
 
     int drainerIntervalMsec();

@@ -23,16 +23,16 @@ import java.util.concurrent.TimeUnit;
 
 import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
 import com.netflix.mantis.discovery.proto.MantisWorker;
-import io.mantisrx.publish.EventChannel;
-import io.mantisrx.publish.EventTransmitter;
-import io.mantisrx.publish.api.Event;
-import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
-import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
-import io.mantisrx.publish.netty.proto.MantisEvent;
+import io.mantisrx.publish.EventChannel;
+import io.mantisrx.publish.EventTransmitter;
+import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
+import io.mantisrx.publish.internal.metrics.SpectatorUtils;
+import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 public class RoundRobinEventTransmitter implements EventTransmitter {
 
     private static final Logger LOG = LoggerFactory.getLogger(RoundRobinEventTransmitter.class);
+
+    private final MrePublishConfiguration configuration;
     private static volatile int nextWorkerIdx = 0;
     private final Registry registry;
     private final Timer channelSendTime;
@@ -48,9 +50,11 @@ public class RoundRobinEventTransmitter implements EventTransmitter {
     private final Counter noWorkersDroppedCount;
     private final Counter noDiscoveryDroppedCount;
 
-    public RoundRobinEventTransmitter(Registry registry,
+    public RoundRobinEventTransmitter(MrePublishConfiguration config,
+                                      Registry registry,
                                       MantisJobDiscovery jobDiscovery,
                                       EventChannel eventChannel) {
+        this.configuration = config;
         this.registry = registry;
         this.channelSendTime =
                 SpectatorUtils.buildAndRegisterTimer(
@@ -65,7 +69,9 @@ public class RoundRobinEventTransmitter implements EventTransmitter {
     }
 
     @Override
-    public void send(Event event, String jobCluster) {
+    public void send(Event event, String stream) {
+        String app = configuration.appName();
+        String jobCluster = jobDiscovery.getJobCluster(app, stream);
         Optional<JobDiscoveryInfo> jobDiscoveryInfo = jobDiscovery.getCurrentJobWorkers(jobCluster);
         if (jobDiscoveryInfo.isPresent()) {
             List<MantisWorker> workers = jobDiscoveryInfo.get().getIngestStageWorkers().getWorkers();

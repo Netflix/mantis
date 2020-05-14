@@ -24,14 +24,15 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.core.SubscriptionFactory;
+import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.proto.MantisServerSubscription;
 import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
-import com.netflix.spectator.api.Counter;
-import com.netflix.spectator.api.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
 
     private final MrePublishConfiguration mrePublishConfiguration;
     private final Registry registry;
+    private final MantisJobDiscovery jobDiscovery;
     private final StreamManager streamManager;
     private final Counter refreshSubscriptionInvokedCount;
     private final Counter refreshSubscriptionSuccessCount;
@@ -51,18 +53,18 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     private volatile Map<String, StreamSubscriptions> previousSubscriptions = new HashMap<>();
 
     public AbstractSubscriptionTracker(MrePublishConfiguration mrePublishConfiguration,
-                                      Registry registry,
-                                      StreamManager streamManager) {
+                                       Registry registry,
+                                       MantisJobDiscovery jobDiscovery,
+                                       StreamManager streamManager) {
         this.mrePublishConfiguration = mrePublishConfiguration;
         this.registry = registry;
+        this.jobDiscovery = jobDiscovery;
         this.streamManager = streamManager;
         this.refreshSubscriptionInvokedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionInvokedCount");
         this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionSuccessCount");
         this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionFailedCount");
         this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry, "staleSubscriptionRemovedCount");
     }
-
-
 
     void propagateSubscriptionChanges(Set<MantisServerSubscription> prev, Set<MantisServerSubscription> curr) {
         Set<MantisServerSubscription> prevSubsNotInCurr = new HashSet<>(prev);
@@ -101,7 +103,6 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     }
 
 
-
     private void cleanupStaleSubscriptions(String streamName) {
         StreamSubscriptions streamSubscriptions = previousSubscriptions.get(streamName);
         if (streamSubscriptions != null) {
@@ -116,9 +117,11 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     }
 
     /**
-     * Get current set of subscriptions for a streamName for given jobCluster
+     * Get current set of subscriptions for a streamName for given jobCluster.
+     *
      * @param streamName name of MRE stream
      * @param jobCluster Mantis Job Cluster name
+     *
      * @return Optional of MantisServerSubscriptionEnvelope on successful retrieval, else empty
      */
     public abstract Optional<MantisServerSubscriptionEnvelope> fetchSubscriptions(String streamName, String jobCluster);
@@ -131,10 +134,11 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         Set<String> registeredStreams = streamManager.getRegisteredStreams();
         boolean subscriptionsFetchedForStream = false;
         if (mantisPublishEnabled && !registeredStreams.isEmpty()) {
-            Map<String, String> streamJobClusterMap = mrePublishConfiguration.streamNameToJobClusterMapping();
+            Map<String, String> streamJobClusterMap =
+                    jobDiscovery.getStreamNameToJobClusterMapping(mrePublishConfiguration.appName());
             for (Map.Entry<String, String> e : streamJobClusterMap.entrySet()) {
                 String streamName = e.getKey();
-                LOG.debug("processing stream {} and currently registered Streams", streamName, registeredStreams);
+                LOG.debug("processing stream {} and currently registered Streams {}", streamName, registeredStreams);
                 if (registeredStreams.contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
                     subscriptionsFetchedForStream = true;
                     String jobCluster = e.getValue();
@@ -162,7 +166,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                     LOG.debug("will not fetch subscriptions for un-registered stream {}", streamName);
                 }
             }
-            if(!subscriptionsFetchedForStream) {
+            if (!subscriptionsFetchedForStream) {
                 LOG.warn("No server side mappings found for one or more streams {} ", registeredStreams);
             }
         } else {

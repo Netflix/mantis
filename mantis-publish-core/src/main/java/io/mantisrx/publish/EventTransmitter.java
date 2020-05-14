@@ -20,7 +20,9 @@ import io.mantisrx.publish.api.Event;
 
 public interface EventTransmitter {
     /**
-     * Synchronous API to send an event to Mantis.
+     * Send an event to a stream.
+     *
+     * Implementations are free to determine how the events are routed to the stream.
      */
-    void send(Event event, String jobCluster);
+    void send(Event event, String stream);
 }

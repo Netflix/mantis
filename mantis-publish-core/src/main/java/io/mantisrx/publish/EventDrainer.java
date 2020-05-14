@@ -25,11 +25,11 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.Timer;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -37,17 +37,19 @@ import org.slf4j.MDC;
 
 class EventDrainer implements Runnable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EventDrainer.class);
+
     public static final String LOGGING_CONTEXT_KEY = "mantisLogCtx";
     static final String DEFAULT_THREAD_NAME = "mantisDrainer";
     public static final String LOGGING_CONTEXT_VALUE = DEFAULT_THREAD_NAME;
-    private static final Logger LOG = LoggerFactory.getLogger(EventDrainer.class);
+
     private final MrePublishConfiguration config;
     private final Timer mantisEventDrainTimer;
     private final StreamManager streamManager;
+    private final EventProcessor eventProcessor;
     private final EventTransmitter eventTransmitter;
     private final Clock clock;
 
-    private EventProcessor eventProcessor;
 
     EventDrainer(MrePublishConfiguration config,
                  StreamManager streamManager,
@@ -102,7 +104,7 @@ class EventDrainer implements Runnable {
                         streamEventList.stream()
                                 .map(e -> process(stream, e))
                                 .filter(Objects::nonNull)
-                                .forEach(e -> eventTransmitter.send(e, config.mantisJobCluster(stream)));
+                                .forEach(e -> eventTransmitter.send(e, stream));
                         streamEventList.clear();
                     }
                 } catch (Exception e) {

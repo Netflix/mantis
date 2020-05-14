@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -110,7 +111,9 @@ public class DefaultSubscriptionTrackerTest {
         mantisWorker2.start();
         mantisWorker3.start();
         httpClient = HttpClient.create(registry);
-        subscriptionTracker = new DefaultSubscriptionTracker(mrePublishConfiguration, registry, mockStreamManager, httpClient, mockJobDiscovery);
+        subscriptionTracker = new DefaultSubscriptionTracker(mrePublishConfiguration, registry, mockJobDiscovery, mockStreamManager, httpClient);
+
+        when(mockJobDiscovery.getStreamNameToJobClusterMapping(anyString())).thenReturn(streamJobClusterMap);
     }
 
     @AfterEach
