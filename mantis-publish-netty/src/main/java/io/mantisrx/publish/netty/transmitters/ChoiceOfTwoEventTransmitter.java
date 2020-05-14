@@ -46,6 +46,7 @@ public class ChoiceOfTwoEventTransmitter implements EventTransmitter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChoiceOfTwoEventTransmitter.class);
 
+    private final MrePublishConfiguration configuration;
     private final Registry registry;
     private final Timer channelSendTime;
     private final MantisJobDiscovery jobDiscovery;
@@ -61,8 +62,8 @@ public class ChoiceOfTwoEventTransmitter implements EventTransmitter {
                                        Registry registry,
                                        MantisJobDiscovery jobDiscovery,
                                        EventChannel eventChannel) {
+        this.configuration = config;
         this.registry = registry;
-
         this.channelSendTime =
                 SpectatorUtils.buildAndRegisterTimer(
                         registry, "sendTime", "channel", HttpEventChannel.CHANNEL_TYPE);
@@ -83,7 +84,9 @@ public class ChoiceOfTwoEventTransmitter implements EventTransmitter {
     }
 
     @Override
-    public void send(Event event, String jobCluster) {
+    public void send(Event event, String stream) {
+        String app = configuration.appName();
+        String jobCluster = jobDiscovery.getJobCluster(app, stream);
         Optional<JobDiscoveryInfo> jobDiscoveryInfo = jobDiscovery.getCurrentJobWorkers(jobCluster);
         if (jobDiscoveryInfo.isPresent()) {
             List<MantisWorker> workers = jobDiscoveryInfo.get().getIngestStageWorkers().getWorkers();

@@ -25,11 +25,11 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.Timer;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -102,7 +102,7 @@ class EventDrainer implements Runnable {
                         streamEventList.stream()
                                 .map(e -> process(stream, e))
                                 .filter(Objects::nonNull)
-                                .forEach(e -> eventTransmitter.send(e, config.mantisJobCluster(stream)));
+                                .forEach(e -> eventTransmitter.send(e, stream));
                         streamEventList.clear();
                     }
                 } catch (Exception e) {

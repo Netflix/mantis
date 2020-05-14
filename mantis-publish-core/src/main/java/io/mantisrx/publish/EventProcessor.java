@@ -66,7 +66,7 @@ class EventProcessor {
      * 2. Check in-memory cache of {@link Subscription}s to find subscriptions whose query match the event.
      * 3. Build a *superset* of fields from *all* matching subscriptions into a single event.o
      *
-     * @return a {@link MantisEvent} which is an internal representation (specific to MRE) of the {@link Event}.
+     * @return a Mantis {@link Event}.
      */
     public Event process(String stream, Event event) {
         LOG.debug("Entering EventProcessor#onNext: {}", event);
