@@ -49,13 +49,17 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
     private final MantisJobDiscovery jobDiscovery;
     private final Random random = new Random();
 
-
-    public DefaultSubscriptionTracker(MrePublishConfiguration mrePublishConfiguration, Registry registry, StreamManager streamManager, HttpClient httpClient, MantisJobDiscovery jobDiscovery) {
-        super(mrePublishConfiguration, registry, streamManager);
+    public DefaultSubscriptionTracker(
+            MrePublishConfiguration mrePublishConfiguration,
+            Registry registry,
+            MantisJobDiscovery jobDiscovery,
+            StreamManager streamManager,
+            HttpClient httpClient) {
+        super(mrePublishConfiguration, registry, jobDiscovery, streamManager);
         this.mrePublishConfiguration = mrePublishConfiguration;
+        this.jobDiscovery = jobDiscovery;
         this.subscriptionsFetchQueryParamString = mrePublishConfiguration.subscriptionFetchQueryParams();
         this.httpClient = httpClient;
-        this.jobDiscovery = jobDiscovery;
 
         this.fetchSubscriptionsFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "fetchSubscriptionsFailedCount");
         this.fetchSubscriptionsNon200Count = SpectatorUtils.buildAndRegisterCounter(registry, "fetchSubscriptionsNon200Count");

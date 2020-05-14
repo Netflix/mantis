@@ -37,17 +37,19 @@ import org.slf4j.MDC;
 
 class EventDrainer implements Runnable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EventDrainer.class);
+
     public static final String LOGGING_CONTEXT_KEY = "mantisLogCtx";
     static final String DEFAULT_THREAD_NAME = "mantisDrainer";
     public static final String LOGGING_CONTEXT_VALUE = DEFAULT_THREAD_NAME;
-    private static final Logger LOG = LoggerFactory.getLogger(EventDrainer.class);
+
     private final MrePublishConfiguration config;
     private final Timer mantisEventDrainTimer;
     private final StreamManager streamManager;
+    private final EventProcessor eventProcessor;
     private final EventTransmitter eventTransmitter;
     private final Clock clock;
 
-    private EventProcessor eventProcessor;
 
     EventDrainer(MrePublishConfiguration config,
                  StreamManager streamManager,

@@ -17,6 +17,7 @@
 package io.mantisrx.publish.internal.discovery;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +89,7 @@ public class MantisJobDiscoveryStaticImpl implements MantisJobDiscovery {
     }
 
     @Override
-    public String getJobCluster(String app, String streamName) {
+    public Map<String, String> getStreamNameToJobClusterMapping(String app) {
         String appName = DEFAULT_JOB_CLUSTER;
         Optional<AppJobClustersMap> jobClusterMappingsO = getJobClusterMappings(appName);
 
@@ -96,9 +97,25 @@ public class MantisJobDiscoveryStaticImpl implements MantisJobDiscovery {
             AppJobClustersMap appJobClustersMap = jobClusterMappingsO.get();
             StreamJobClusterMap streamJobClusterMap = appJobClustersMap.getStreamJobClusterMap(appName);
 
-            return streamJobClusterMap.getJobCluster(streamName);
+            return streamJobClusterMap.getStreamJobClusterMap();
         } else {
-            logger.info("Failed to lookup job cluster for app {} stream {}", appName, streamName);
+            logger.info("Failed to lookup stream to job cluster mapping for app {}", appName);
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
+    public String getJobCluster(String app, String stream) {
+        String appName = DEFAULT_JOB_CLUSTER;
+        Optional<AppJobClustersMap> jobClusterMappingsO = getJobClusterMappings(appName);
+
+        if (jobClusterMappingsO.isPresent()) {
+            AppJobClustersMap appJobClustersMap = jobClusterMappingsO.get();
+            StreamJobClusterMap streamJobClusterMap = appJobClustersMap.getStreamJobClusterMap(appName);
+
+            return streamJobClusterMap.getJobCluster(stream);
+        } else {
+            logger.info("Failed to lookup job cluster for app {} stream {}", appName, stream);
             return JOB_CLUSTER_LOOKUP_FAILED;
         }
     }

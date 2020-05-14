@@ -57,7 +57,10 @@ public interface MrePublishConfiguration {
      * List of Mantis Job clusters per stream configured to receive data for this app
      *
      * @return streamName to Job cluster mapping
+     *
+     * @deprecated Use {@link MantisJobDiscovery#getStreamNameToJobClusterMapping(String)} instead.
      */
+    @Deprecated
     Map<String, String> streamNameToJobClusterMapping();
 
     /**

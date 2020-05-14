@@ -104,9 +104,9 @@ public class MantisRealtimeEventsPublishModule extends AbstractModule {
             return new DefaultSubscriptionTracker(
                     configuration,
                     registry,
+                    jobDiscovery,
                     streamManager,
-                    HttpClient.create(registry),
-                    jobDiscovery);
+                    HttpClient.create(registry));
         }
     }
 

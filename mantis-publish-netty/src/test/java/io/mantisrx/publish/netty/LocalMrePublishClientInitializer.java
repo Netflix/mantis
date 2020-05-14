@@ -112,7 +112,7 @@ public class LocalMrePublishClientInitializer {
         StreamManager streamManager = new StreamManager(registry, mrePublishConfiguration);
         MantisEventPublisher mantisEventPublisher = new MantisEventPublisher(mrePublishConfiguration, streamManager);
         SubscriptionTracker subscriptionsTracker =
-                new DefaultSubscriptionTracker(mrePublishConfiguration, registry, streamManager, httpClient, jobDiscovery);
+                new DefaultSubscriptionTracker(mrePublishConfiguration, registry, jobDiscovery, streamManager, httpClient);
         HttpEventChannelManager channelManager = new HttpEventChannelManager(registry, mrePublishConfiguration);
         EventChannel eventChannel = new HttpEventChannel(registry, channelManager);
         EventTransmitter transmitter =

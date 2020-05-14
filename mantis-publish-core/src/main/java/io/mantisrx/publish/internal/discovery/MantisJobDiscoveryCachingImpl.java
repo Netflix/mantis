@@ -18,6 +18,8 @@ package io.mantisrx.publish.internal.discovery;
 
 import static com.netflix.mantis.discovery.proto.AppJobClustersMap.DEFAULT_APP_KEY;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,7 +124,7 @@ public class MantisJobDiscoveryCachingImpl implements MantisJobDiscovery {
     }
 
     @Override
-    public String getJobCluster(String app, String streamName) {
+    public Map<String, String> getStreamNameToJobClusterMapping(String app) {
         String appName = configuration.appName();
         Optional<AppJobClustersMap> jobClusterMappingsO = getJobClusterMappings(appName);
 
@@ -130,9 +132,25 @@ public class MantisJobDiscoveryCachingImpl implements MantisJobDiscovery {
             AppJobClustersMap appJobClustersMap = jobClusterMappingsO.get();
             StreamJobClusterMap streamJobClusterMap = appJobClustersMap.getStreamJobClusterMap(appName);
 
-            return streamJobClusterMap.getJobCluster(streamName);
+            return streamJobClusterMap.getStreamJobClusterMap();
         } else {
-            logger.info("Failed to lookup job cluster for app {} stream {}", appName, streamName);
+            logger.info("Failed to lookup stream to job cluster mapping for app {}", appName);
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
+    public String getJobCluster(String app, String stream) {
+        String appName = configuration.appName();
+        Optional<AppJobClustersMap> jobClusterMappingsO = getJobClusterMappings(appName);
+
+        if (jobClusterMappingsO.isPresent()) {
+            AppJobClustersMap appJobClustersMap = jobClusterMappingsO.get();
+            StreamJobClusterMap streamJobClusterMap = appJobClustersMap.getStreamJobClusterMap(appName);
+
+            return streamJobClusterMap.getJobCluster(stream);
+        } else {
+            logger.info("Failed to lookup job cluster for app {} stream {}", appName, stream);
             return JOB_CLUSTER_LOOKUP_FAILED;
         }
     }

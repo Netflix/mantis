@@ -17,6 +17,7 @@
 package io.mantisrx.publish.internal.discovery;
 
 
+import java.util.Map;
 import java.util.Optional;
 
 import com.netflix.mantis.discovery.proto.AppJobClustersMap;
@@ -43,12 +44,19 @@ public interface MantisJobDiscovery {
     Optional<JobDiscoveryInfo> getCurrentJobWorkers(String jobCluster);
 
     /**
+     * List of Job Clusters per stream configured to receive data for an app.
+     *
+     * @return Stream name to Job cluster mapping
+     */
+    Map<String, String> getStreamNameToJobClusterMapping(String app);
+
+    /**
      * Look up the job cluster for a given app and stream.
      *
      * @param app upstream application which is producing events
-     * @param streamName the stream which the upstream application is producing to
+     * @param stream the stream which the upstream application is producing to
      *
      * @return Job Cluster string
      */
-    String getJobCluster(String app, String streamName);
+    String getJobCluster(String app, String stream);
 }
