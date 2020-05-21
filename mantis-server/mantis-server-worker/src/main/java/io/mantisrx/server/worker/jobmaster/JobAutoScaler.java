@@ -77,7 +77,7 @@ public class JobAutoScaler {
 
     static {
         metricMap.put(StageScalingPolicy.ScalingReason.CPU, Clutch.Metric.CPU);
-        metricMap.put(StageScalingPolicy.ScalingReason.Memory, Clutch.Metric.MEMORY);
+        metricMap.put(StageScalingPolicy.ScalingReason.JVMMemory, Clutch.Metric.MEMORY);
         metricMap.put(StageScalingPolicy.ScalingReason.Network, Clutch.Metric.NETWORK);
         metricMap.put(StageScalingPolicy.ScalingReason.KafkaLag, Clutch.Metric.LAG);
         metricMap.put(StageScalingPolicy.ScalingReason.DataDrop, Clutch.Metric.DROPS);

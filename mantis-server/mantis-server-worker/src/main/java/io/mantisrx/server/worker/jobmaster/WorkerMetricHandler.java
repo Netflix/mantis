@@ -255,6 +255,10 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                                 jobAutoScaleObserver.onNext(
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Network, stage,
                                                 allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR), numWorkers, ""));
+                                jobAutoScaleObserver.onNext(
+                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
+                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes"), numWorkers, "")
+                                );
                             }
 
                             if (allWorkerAggregates.containsKey(DATA_DROP_METRIC_GROUP)) {

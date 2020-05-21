@@ -31,6 +31,8 @@ public class Util {
             return 100.0 * value / stageSchedulingInfo.getMachineDefinition().getCpuCores();
         case Memory:
             return 100.0 * value / stageSchedulingInfo.getMachineDefinition().getMemoryMB();
+        case JVMMemory:
+            return 100 * (value / (stageSchedulingInfo.getMachineDefinition().getMemoryMB() * 1024 * 1024));
         case DataDrop:
         case KafkaLag:
         case UserDefined:

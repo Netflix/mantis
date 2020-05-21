@@ -178,7 +178,8 @@ public class StageScalingPolicy {
         KafkaProcessed,
         Clutch,
         ClutchExperimental,
-        RPS
+        RPS,
+        JVMMemory
     }
 
     public static class RollingCount {
