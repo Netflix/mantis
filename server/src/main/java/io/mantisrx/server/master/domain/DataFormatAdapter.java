@@ -350,7 +350,7 @@ public class DataFormatAdapter {
         try {
             workerPorts = new WorkerPorts(ports);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            logger.debug("problem loading worker {} for Job ID {}", writeable.getWorkerId(), jobId, e);
+            logger.warn("problem loading worker {} for Job ID {}", writeable.getWorkerId(), jobId, e);
         }
 
         JobWorker converted = new JobWorker.Builder()
