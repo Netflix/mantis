@@ -28,11 +28,15 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observer;
 import rx.functions.Action1;
 
 
 public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
+
+    private static final Logger logger = LoggerFactory.getLogger(MesosDriverSupplier.class);
 
     private final MasterConfiguration masterConfig;
     private final Observer<String> vmLeaseRescindedObserver;
@@ -57,7 +61,9 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         if (addVMLeaseAction == null) {
             throw new IllegalStateException("addVMLeaseAction must be set before creating MesosSchedulerDriver");
         }
+
         if (isInitialized.compareAndSet(false, true)) {
+            logger.info("initializing mesos scheduler callback handler");
             final MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler =
                     new MesosSchedulerCallbackHandler(addVMLeaseAction, vmLeaseRescindedObserver, jobMessageRouter,
                             workerRegistry);
@@ -68,6 +74,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
                     .setId(Protos.FrameworkID.newBuilder().setValue(masterConfig.getMantisFrameworkName()))
                     .setCheckpoint(true)
                     .build();
+            logger.info("initializing mesos scheduler driver");
             final MesosSchedulerDriver mesosDriver =
                     new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation());
             mesosDriverRef.compareAndSet(null, mesosDriver);
