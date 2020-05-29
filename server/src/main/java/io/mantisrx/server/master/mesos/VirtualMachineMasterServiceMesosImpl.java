@@ -392,15 +392,22 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
         }
         final String taskIdString = workerId.getId();
         logger.info("Calling mesos to kill " + taskIdString);
-        Protos.Status status = mesosDriver.get().killTask(
-                TaskID.newBuilder()
-                        .setValue(taskIdString)
-                        .build());
-        logger.info("Kill status = " + status);
-        switch (status) {
-        case DRIVER_ABORTED:
-        case DRIVER_STOPPED:
-            logger.error("Unexpected to see Mesos driver status of " + status + " from kill task request. Committing suicide!");
+
+        try {
+            Protos.Status status = mesosDriver.get().killTask(
+                    TaskID.newBuilder()
+                            .setValue(taskIdString)
+                            .build());
+            logger.info("Kill status = " + status);
+            switch (status) {
+                case DRIVER_ABORTED:
+                case DRIVER_STOPPED:
+                    logger.error("Unexpected to see Mesos driver status of " + status + " from kill task request. Committing suicide!");
+                    System.exit(2);
+            }
+        } catch (RuntimeException e) {
+            // IllegalStateException from no mesosDriver's addVMLeaseAction or NPE from mesosDriver.get() being null.
+            logger.error("Unexpected to see Mesos driver not initialized", e);
             System.exit(2);
         }
     }
