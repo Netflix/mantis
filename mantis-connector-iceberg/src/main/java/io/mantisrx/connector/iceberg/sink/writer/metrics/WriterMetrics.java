@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2020 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connector.iceberg.sink.writer.metrics;
 
-include 'mantis-connector-iceberg'
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+
+/**
+ *
+ */
+public class WriterMetrics {
+    public WriterMetrics() {
+        Metrics metrics = new Metrics.Builder()
+                .name(WriterMetrics.class.getCanonicalName())
+                // TODO: Add metrics
+                .build();
+        metrics = MetricsRegistry.getInstance().registerAndGet(metrics);
+
+        // TODO: Get metrics, e.g., getCounter(name).
+    }
+}

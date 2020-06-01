@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2020 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,30 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+package io.mantisrx.connector.iceberg.sink.writer;
 
-include 'mantis-connector-iceberg'
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+import java.io.IOException;
+
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.data.Record;
+
+/**
+ *
+ */
+public interface IcebergWriter {
+
+    /**
+     *
+     */
+    void open() throws IOException;
+
+    /**
+     *
+     */
+    void write(Record record);
+
+    /**
+     *
+     */
+    DataFile close() throws IOException;
+}
