@@ -16,10 +16,10 @@
 
 package io.mantisrx.connector.iceberg.sink.committer;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties;
@@ -37,12 +37,11 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 import rx.Observable;
-import rx.RxReactiveStreams;
+import rx.Scheduler;
+import rx.schedulers.Schedulers;
 
 /**
  * Processing stage which commits table metadata to Iceberg on a time interval.
@@ -55,7 +54,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
     private final Schema schema;
     private final PartitionSpec partitionSpec;
 
-    private Transformer publisher;
+    private Transformer transformer;
 
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
@@ -94,32 +93,38 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         TableIdentifier id = TableIdentifier.of("namespace", "name");
         Table table = catalog.tableExists(id) ? catalog.loadTable(id) : catalog.createTable(id, schema);
         IcebergCommitter committer = new IcebergCommitter(metrics, config, table);
-        publisher = new Transformer(config, committer);
+        transformer = new Transformer(config, committer, Schedulers.computation());
     }
 
     @Override
     public Observable<Map<String, String>> call(Context context, Observable<DataFile> dataFileObservable) {
-        return RxReactiveStreams.toObservable(publisher.transform(RxReactiveStreams.toPublisher(dataFileObservable)));
+        return dataFileObservable.compose(transformer);
     }
 
-    public static class Transformer {
+    /**
+     *
+     */
+    public static class Transformer implements Observable.Transformer<DataFile, Map<String, String>> {
 
         private final CommitterConfig config;
         private final IcebergCommitter committer;
+        private final Scheduler scheduler;
 
-        /**
-         * TODO: Replace {@code Flux.from(source)} with {@code source.transform(s -> ...)}.
-         */
-        public Transformer(CommitterConfig config, IcebergCommitter committer) {
+        public Transformer(CommitterConfig config, IcebergCommitter committer, Scheduler scheduler) {
             this.config = config;
             this.committer = committer;
+            this.scheduler = scheduler;
         }
 
-        public Publisher<Map<String, String>> transform(Publisher<DataFile> source) {
-            return Flux.from(source)
-                    .buffer(Duration.ofMillis(config.getCommitFrequencyMs()))
+        /**
+         *
+         */
+        @Override
+        public Observable<Map<String, String>> call(Observable<DataFile> source) {
+            return source
+                    .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
                     .map(committer::commit)
-                    .doOnNext(success -> {
+                    .doOnNext(snapshot -> {
                     })
                     .doOnError(throwable -> {
                     });

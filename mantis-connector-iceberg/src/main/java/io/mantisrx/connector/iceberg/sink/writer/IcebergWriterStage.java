@@ -39,13 +39,9 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.Exceptions;
-import reactor.core.publisher.Flux;
 import rx.Observable;
-import rx.RxReactiveStreams;
 
 /**
  * Processing stage which writes records to Iceberg through a backing file store.
@@ -58,7 +54,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     private final Schema writerSchema;
     private final PartitionSpec partitionSpec;
 
-    private Transformer publisher;
+    private Transformer transformer;
 
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
@@ -115,18 +111,18 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
         IcebergWriter writer = new UnpartitionedIcebergWriter(metrics, config, workerInfo, table, partitionSpec);
-        publisher = new Transformer(config, writer);
+        transformer = new Transformer(config, writer);
     }
 
     @Override
     public Observable<DataFile> call(Context context, Observable<Record> recordObservable) {
-        return RxReactiveStreams.toObservable(publisher.transform(RxReactiveStreams.toPublisher(recordObservable)));
+        return recordObservable.compose(transformer);
     }
 
     /**
-     * TODO: Replace {@code Flux.from(source)} with {@code source.transform(s -> ...)}.
+     *
      */
-    public static class Transformer {
+    public static class Transformer implements Observable.Transformer<Record, DataFile> {
 
         private final WriterConfig config;
         private final IcebergWriter writer;
@@ -136,8 +132,12 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             this.writer = writer;
         }
 
-        public Publisher<DataFile> transform(Publisher<Record> source) {
-            return Flux.from(source)
+        /**
+         *
+         */
+        @Override
+        public Observable<DataFile> call(Observable<Record> source) {
+            return source
                     .scan(new Counter(config.getWriterRowGroupSize()), (counter, record) -> {
                         writer.write(record);
                         counter.increment();
@@ -150,7 +150,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                             counter.reset();
                             return dataFile;
                         } catch (IOException e) {
-                            throw Exceptions.propagate(e);
+                            throw rx.exceptions.Exceptions.propagate(e);
                         }
                     })
                     .doOnNext(dataFile -> {

@@ -19,6 +19,7 @@ package io.mantisrx.connector.iceberg.sink.committer;
 import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -29,16 +30,21 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
+import rx.RxReactiveStreams;
+import rx.schedulers.TestScheduler;
 
 class IcebergCommitterStageTest {
 
+    private CommitterConfig config;
+    private IcebergCommitter committer;
+    private TestScheduler scheduler;
     private IcebergCommitterStage.Transformer transformer;
 
     @BeforeEach
     void setUp() {
-        CommitterConfig config = new CommitterConfig(new Parameters());
-        IcebergCommitter committer = mock(IcebergCommitter.class);
-        this.transformer = new IcebergCommitterStage.Transformer(config, committer);
+        this.config = new CommitterConfig(new Parameters());
+        this.committer = mock(IcebergCommitter.class);
+        this.scheduler = new TestScheduler();
     }
 
     @AfterEach
@@ -51,14 +57,19 @@ class IcebergCommitterStageTest {
         StepVerifier
                 .withVirtualTime(() -> {
                     Flux<DataFile> upstream = Flux.interval(Duration.ofSeconds(1)).map(i -> mock(DataFile.class));
-                    return transformer.transform(upstream);
+                    transformer = new IcebergCommitterStage.Transformer(config, committer, scheduler);
+                    return RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
                 })
                 .expectSubscription()
+                .then(() -> scheduler.advanceTimeBy(1, TimeUnit.MINUTES))
                 .expectNoEvent(Duration.ofMinutes(1))
+                .then(() -> scheduler.advanceTimeBy(4, TimeUnit.MINUTES))
                 .thenAwait(Duration.ofMinutes(4))
                 .expectNextCount(1)
+                .then(() -> scheduler.advanceTimeBy(5, TimeUnit.MINUTES))
                 .thenAwait(Duration.ofMinutes(5))
                 .expectNextCount(1)
+                .then(() -> scheduler.advanceTimeBy(4, TimeUnit.MINUTES))
                 .expectNoEvent(Duration.ofMinutes(4))
                 .thenCancel()
                 .verify();

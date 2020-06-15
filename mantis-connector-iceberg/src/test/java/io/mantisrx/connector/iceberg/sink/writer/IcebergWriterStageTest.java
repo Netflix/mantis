@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+import rx.RxReactiveStreams;
 
 class IcebergWriterStageTest {
 
@@ -49,7 +50,7 @@ class IcebergWriterStageTest {
         StepVerifier
                 .withVirtualTime(() -> {
                     Flux<Record> upstream = Flux.interval(Duration.ofSeconds(1)).map(i -> mock(Record.class));
-                    return transformer.transform(upstream);
+                    return RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
                 })
                 .expectSubscription()
                 .expectNoEvent(Duration.ofSeconds(1))

@@ -19,8 +19,6 @@ package io.mantisrx.connector.iceberg.sink.committer;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import org.apache.iceberg.AppendFiles;
@@ -28,6 +26,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Commits manifest files for Iceberg table metadata.
@@ -40,7 +39,6 @@ public class IcebergCommitter {
     private final CommitterConfig config;
     private final Table table;
 
-    @Inject
     public IcebergCommitter(
             CommitterMetrics metrics,
             CommitterConfig config,
