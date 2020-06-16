@@ -27,6 +27,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.GenericParquetWriter;
@@ -51,7 +52,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     private FileAppender<Record> appender;
     private OutputFile file;
-    private String key;
+    private StructLike key;
 
     public BaseIcebergWriter(
             WriterMetrics metrics,
@@ -66,7 +67,6 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
         this.spec = spec;
         this.filename = generateFilename(workerInfo);
         this.format = FileFormat.valueOf(config.getWriterFileFormat());
-        this.key = "";
     }
 
     /**
@@ -84,6 +84,8 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
                         .schema(table.schema())
                         .createWriterFunc(GenericParquetWriter::buildWriter)
                         .build();
+                break;
+
             case AVRO:
             default:
                 throw new UnsupportedOperationException("Cannot write using an unsupported file format " + format);
@@ -104,7 +106,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
                 .withPath(file.location())
                 .withInputFile(file.toInputFile())
                 .withFileSizeInBytes(appender.length())
-//                .withPartition(spec.fields().size() == 0 ? null : key)
+                .withPartition(spec.fields().size() == 0 ? null : key)
                 .withMetrics(appender.metrics())
                 .withSplitOffsets(appender.splitOffsets())
                 .build();

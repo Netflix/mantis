@@ -39,6 +39,7 @@ import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.codec.JacksonCodecs;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import io.mantisrx.runtime.parameter.type.EnumParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
@@ -66,14 +67,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
     private final WriterMetrics metrics;
     private final Schema writerSchema;
-    private final PartitionSpec partitionSpec;
 
     private Transformer transformer;
 
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
-     * <p>
-     * TODO: Avro codec.
      */
     public static ScalarToScalar.Config<Record, DataFile> config() {
         return new ScalarToScalar.Config<Record, DataFile>()
@@ -105,15 +103,20 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 new StringParameter().name(WriterProperties.WRITER_PARTITION_KEY)
                         .description(WriterProperties.WRITER_PARTITION_KEY_DESCRIPTION)
                         .validator(Validators.alwaysPass())
-                        .defaultValue(WriterProperties.WRITER_FILE_FORMAT_DEFAULT)
+                        .defaultValue(WriterProperties.WRITER_PARTITION_KEY_DEFAULT)
+                        .build(),
+                new EnumParameter<>(WriterProperties.PartitionTransforms.class)
+                        .name(WriterProperties.WRITER_PARTITION_KEY_TRANSFORM)
+                        .description(WriterProperties.WRITER_PARTITION_KEY_TRANSFORM_DESCRIPTION)
+                        .validator(Validators.alwaysPass())
+                        .defaultValue(WriterProperties.WRITER_PARTITION_KEY_TRANSFORM_DEFAULT)
                         .build()
         );
     }
 
-    public IcebergWriterStage(Schema writerSchema, PartitionSpec partitionSpec) {
+    public IcebergWriterStage(Schema writerSchema) {
         this.metrics = new WriterMetrics();
         this.writerSchema = writerSchema;
-        this.partitionSpec = partitionSpec;
     }
 
     @Override
@@ -124,7 +127,8 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         TableIdentifier id = TableIdentifier.of("namespace", "name");
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
-        IcebergWriter writer = new UnpartitionedIcebergWriter(metrics, config, workerInfo, table, partitionSpec);
+
+        IcebergWriter writer = createIcebergWriter(config, workerInfo, table);
         transformer = new Transformer(config, writer);
     }
 
@@ -197,6 +201,39 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         }
     }
 
+    private IcebergWriter createIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
+        PartitionSpec.Builder specBuilder = PartitionSpec.builderFor(writerSchema);
+
+        String key = config.getWriterPartitionKey();
+        switch (config.getWriterPartitionKeyTransform()) {
+            case IDENTITY:
+                specBuilder.identity(key);
+                break;
+            case YEAR:
+                specBuilder.year(key);
+                break;
+            case MONTH:
+                specBuilder.month(key);
+                break;
+            case DAY:
+                specBuilder.day(key);
+                break;
+            case HOUR:
+                specBuilder.hour(key);
+                break;
+            default:
+                // Unpartitioned writer.
+                break;
+        }
+        PartitionSpec spec = specBuilder.build();
+
+        if (spec.fields().isEmpty()) {
+            return new UnpartitionedIcebergWriter(metrics, config, workerInfo, table, spec);
+        } else {
+            return new PartitionedIcebergWriter(metrics, config, workerInfo, table, spec);
+        }
+    }
+
     private static final Map<Integer, Long> VALUE_COUNTS = Maps.newHashMap();
     private static final Map<Integer, Long> NULL_VALUE_COUNTS = Maps.newHashMap();
     private static final Map<Integer, ByteBuffer> LOWER_BOUNDS = Maps.newHashMap();
@@ -216,14 +253,14 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     }
 
     private static final Schema DATE_SCHEMA = new Schema(
-      required(1, "id", Types.LongType.get()),
-      optional(2, "data", Types.StringType.get()),
-      required(3, "date", Types.StringType.get()));
+            required(1, "id", Types.LongType.get()),
+            optional(2, "data", Types.StringType.get()),
+            required(3, "date", Types.StringType.get()));
 
-  private static final PartitionSpec PARTITION_SPEC = PartitionSpec
-      .builderFor(DATE_SCHEMA)
-      .identity("date")
-      .build();
+    private static final PartitionSpec PARTITION_SPEC = PartitionSpec
+            .builderFor(DATE_SCHEMA)
+            .identity("date")
+            .build();
 
 
     public static void main(String[] args) throws IOException {

@@ -63,4 +63,23 @@ public class WriterProperties {
     public static final String WRITER_PARTITION_KEY_DEFAULT = "ts_utc_ms";     // timestamp utc in milliseconds
     public static final String WRITER_PARTITION_KEY_DESCRIPTION =
             "Partition key for Iceberg partition path";
+
+    /**
+     * Type of Transform to apply using partition key field.
+     * From Iceberg: {@code identity, year, month, day, hour}.
+     * // TODO: Support bucket[N] and truncate[W].
+     */
+    public static final String WRITER_PARTITION_KEY_TRANSFORM = "writerPartitionKeyTransform";
+    public static final Enum<PartitionTransforms> WRITER_PARTITION_KEY_TRANSFORM_DEFAULT = PartitionTransforms.HOUR;
+    public static final String WRITER_PARTITION_KEY_TRANSFORM_DESCRIPTION =
+            "Type of Transform to apply using partition key field. Available transforms: " +
+            "identity, year, month, day, hour";
+
+    public enum PartitionTransforms {
+        IDENTITY,
+        YEAR,
+        MONTH,
+        DAY,
+        HOUR,
+    }
 }
