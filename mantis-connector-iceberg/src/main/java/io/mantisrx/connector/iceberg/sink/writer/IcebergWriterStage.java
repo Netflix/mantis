@@ -16,16 +16,27 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
+import static org.apache.iceberg.types.Types.NestedField.optional;
+import static org.apache.iceberg.types.Types.NestedField.required;
+
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import io.mantisrx.common.codec.Codec;
+import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.WorkerInfo;
+import io.mantisrx.runtime.codec.JacksonCodecs;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.IntParameter;
@@ -33,12 +44,15 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -64,7 +78,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     public static ScalarToScalar.Config<Record, DataFile> config() {
         return new ScalarToScalar.Config<Record, DataFile>()
                 .description("")
-//                .codec(JacksonCodecs.mapStringObject())
+                .codec(JacksonCodecs.pojo(DataFile.class))
                 .withParameters(parameters());
     }
 
@@ -181,5 +195,51 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         boolean shouldReset() {
             return counter >= threshold;
         }
+    }
+
+    private static final Map<Integer, Long> VALUE_COUNTS = Maps.newHashMap();
+    private static final Map<Integer, Long> NULL_VALUE_COUNTS = Maps.newHashMap();
+    private static final Map<Integer, ByteBuffer> LOWER_BOUNDS = Maps.newHashMap();
+    private static final Map<Integer, ByteBuffer> UPPER_BOUNDS = Maps.newHashMap();
+
+    static {
+        VALUE_COUNTS.put(1, 5L);
+        VALUE_COUNTS.put(2, 3L);
+        NULL_VALUE_COUNTS.put(1, 0L);
+        NULL_VALUE_COUNTS.put(2, 2L);
+        LOWER_BOUNDS.put(1, longToBuffer(0L));
+        UPPER_BOUNDS.put(1, longToBuffer(4L));
+    }
+
+    private static ByteBuffer longToBuffer(long value) {
+        return ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(0, value);
+    }
+
+    private static final Schema DATE_SCHEMA = new Schema(
+      required(1, "id", Types.LongType.get()),
+      optional(2, "data", Types.StringType.get()),
+      required(3, "date", Types.StringType.get()));
+
+  private static final PartitionSpec PARTITION_SPEC = PartitionSpec
+      .builderFor(DATE_SCHEMA)
+      .identity("date")
+      .build();
+
+
+    public static void main(String[] args) throws IOException {
+        Codec<DataFile> codec = IcebergCodecs.dataFile();
+        DataFile dataFile = DataFiles
+                .builder(PARTITION_SPEC)
+                .withPath("/path/to/data-1.parquet")
+                .withFileSizeInBytes(1234)
+                .withPartitionPath("date=2018-06-08")
+                .withMetrics(new Metrics(5L, null, VALUE_COUNTS, NULL_VALUE_COUNTS, LOWER_BOUNDS, UPPER_BOUNDS))
+                .withSplitOffsets(ImmutableList.of(4L))
+                .withEncryptionKeyMetadata(ByteBuffer.allocate(4).putInt(34))
+                .build();
+
+        byte[] bytes = codec.encode(dataFile);
+        System.out.println(dataFile);
+        System.out.println(codec.decode(bytes));
     }
 }
