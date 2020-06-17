@@ -60,7 +60,7 @@ public class WriterProperties {
      */
     public static final String WRITER_PARTITION_KEY = "writerPartitionKey";
     // TODO: Change to long.
-    public static final String WRITER_PARTITION_KEY_DEFAULT = "ts_utc_ms";     // timestamp utc in milliseconds
+    public static final String WRITER_PARTITION_KEY_DEFAULT = "";
     public static final String WRITER_PARTITION_KEY_DESCRIPTION =
             "Partition key for Iceberg partition path";
 

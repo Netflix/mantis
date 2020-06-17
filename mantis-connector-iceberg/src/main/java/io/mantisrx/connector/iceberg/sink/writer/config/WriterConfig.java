@@ -35,6 +35,7 @@ public class WriterConfig {
 
     /**
      * Creates an instance from {@link Parameters} derived from the current Mantis Stage's {@code Context}.
+     * TODO: Build actual Partition Key (and their Transforms) from the comma-delimited string.
      */
     public WriterConfig(Parameters parameters, Configuration hadoopConfig) {
         this.writerRowGroupSize = (int) parameters.get(

@@ -85,7 +85,6 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
                         .createWriterFunc(GenericParquetWriter::buildWriter)
                         .build();
                 break;
-
             case AVRO:
             default:
                 throw new UnsupportedOperationException("Cannot write using an unsupported file format " + format);
