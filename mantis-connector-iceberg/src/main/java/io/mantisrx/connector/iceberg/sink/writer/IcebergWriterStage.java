@@ -121,6 +121,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             Schema writerSchema) {
         PartitionSpec.Builder specBuilder = PartitionSpec.builderFor(writerSchema);
 
+        // TODO: Support composite keys.
         String key = config.getWriterPartitionKey();
         switch (config.getWriterPartitionKeyTransform()) {
             case IDENTITY:
