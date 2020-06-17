@@ -56,6 +56,9 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     private final WriterMetrics metrics;
     private final Schema writerSchema;
 
+    // TODO: Move to config.
+    private final String[] tableIdentifierNames;
+
     private Transformer transformer;
 
     /**
@@ -102,21 +105,69 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         );
     }
 
-    public IcebergWriterStage(Schema writerSchema) {
+    /**
+     * Use this method to create an Iceberg Writer independent of a Mantis Processing Stage.
+     *
+     * This is useful for optimizing network utilization by using the writer directly within another
+     * processing stage instead of having to traverse stage boundaries.
+     *
+     * This incurs a debuggability trade-off where a processing stage will do multiple things.
+     */
+    public static IcebergWriter newIcebergWriter(
+            WriterConfig config,
+            WriterMetrics metrics,
+            WorkerInfo workerInfo,
+            Table table,
+            Schema writerSchema) {
+        PartitionSpec.Builder specBuilder = PartitionSpec.builderFor(writerSchema);
+
+        String key = config.getWriterPartitionKey();
+        switch (config.getWriterPartitionKeyTransform()) {
+            case IDENTITY:
+                specBuilder.identity(key);
+                break;
+            case YEAR:
+                specBuilder.year(key);
+                break;
+            case MONTH:
+                specBuilder.month(key);
+                break;
+            case DAY:
+                specBuilder.day(key);
+                break;
+            case HOUR:
+                specBuilder.hour(key);
+                break;
+            default:
+                // Unpartitioned writer.
+                break;
+        }
+        PartitionSpec spec = specBuilder.build();
+
+        if (spec.fields().isEmpty()) {
+            return new UnpartitionedIcebergWriter(metrics, config, workerInfo, table, spec);
+        } else {
+            return new PartitionedIcebergWriter(metrics, config, workerInfo, table, writerSchema, spec);
+        }
+    }
+
+    public IcebergWriterStage(Schema writerSchema, String... tableIdentifierNames) {
         this.metrics = new WriterMetrics();
         this.writerSchema = writerSchema;
+        this.tableIdentifierNames = tableIdentifierNames;
     }
 
     @Override
     public void init(Context context) {
-        WriterConfig config = new WriterConfig(context.getParameters(), new Configuration());
+        Configuration hadoopConfig = context.getServiceLocator().service(Configuration.class);
+        WriterConfig config = new WriterConfig(context.getParameters(), hadoopConfig);
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         // TODO: Get namespace and name from config.
-        TableIdentifier id = TableIdentifier.of("namespace", "name");
+        TableIdentifier id = TableIdentifier.of(tableIdentifierNames);
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
-        IcebergWriter writer = createIcebergWriter(config, workerInfo, table);
+        IcebergWriter writer = newIcebergWriter(config, metrics, workerInfo, table, writerSchema);
         transformer = new Transformer(config, writer);
     }
 
@@ -186,39 +237,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         boolean shouldReset() {
             return counter >= threshold;
-        }
-    }
-
-    private IcebergWriter createIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
-        PartitionSpec.Builder specBuilder = PartitionSpec.builderFor(writerSchema);
-
-        String key = config.getWriterPartitionKey();
-        switch (config.getWriterPartitionKeyTransform()) {
-            case IDENTITY:
-                specBuilder.identity(key);
-                break;
-            case YEAR:
-                specBuilder.year(key);
-                break;
-            case MONTH:
-                specBuilder.month(key);
-                break;
-            case DAY:
-                specBuilder.day(key);
-                break;
-            case HOUR:
-                specBuilder.hour(key);
-                break;
-            default:
-                // Unpartitioned writer.
-                break;
-        }
-        PartitionSpec spec = specBuilder.build();
-
-        if (spec.fields().isEmpty()) {
-            return new UnpartitionedIcebergWriter(metrics, config, workerInfo, table, spec);
-        } else {
-            return new PartitionedIcebergWriter(metrics, config, workerInfo, table, writerSchema, spec);
         }
     }
 }

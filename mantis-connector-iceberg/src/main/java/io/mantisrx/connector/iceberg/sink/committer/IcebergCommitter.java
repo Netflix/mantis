@@ -16,6 +16,7 @@
 
 package io.mantisrx.connector.iceberg.sink.committer;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,11 +52,10 @@ public class IcebergCommitter {
     /**
      * Uses Iceberg's Table API to append DataFiles and commit metadata to Iceberg.
      */
-    public Map<String, String> commit(List<DataFile> dataFiles) {
+    public Map<String, Object> commit(List<DataFile> dataFiles) {
         AppendFiles tableAppender = table.newAppend();
         dataFiles.forEach(tableAppender::appendFile);
-        tableAppender.commit();
 
-        return table.currentSnapshot().summary();
+        return new HashMap<>(table.currentSnapshot().summary());
     }
 }

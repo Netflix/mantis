@@ -32,7 +32,6 @@ import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
@@ -46,13 +45,13 @@ import rx.schedulers.Schedulers;
 /**
  * Processing stage which commits table metadata to Iceberg on a time interval.
  */
-public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<String, String>> {
+public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<String, Object>> {
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitterStage.class);
 
     private final CommitterMetrics metrics;
     private final Schema schema;
-    private final PartitionSpec partitionSpec;
+    private final String[] tableIdentifierNames;
 
     private Transformer transformer;
 
@@ -79,10 +78,10 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         );
     }
 
-    public IcebergCommitterStage(Schema schema, PartitionSpec partitionSpec) {
+    public IcebergCommitterStage(Schema schema, String... tableIdentifierNames) {
         this.metrics = new CommitterMetrics();
         this.schema = schema;
-        this.partitionSpec = partitionSpec;
+        this.tableIdentifierNames = tableIdentifierNames;
     }
 
     @Override
@@ -90,21 +89,21 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         CommitterConfig config = new CommitterConfig(context.getParameters());
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         // TODO: Get namespace and name from config.
-        TableIdentifier id = TableIdentifier.of("namespace", "name");
+        TableIdentifier id = TableIdentifier.of(tableIdentifierNames);
         Table table = catalog.tableExists(id) ? catalog.loadTable(id) : catalog.createTable(id, schema);
         IcebergCommitter committer = new IcebergCommitter(metrics, config, table);
         transformer = new Transformer(config, committer, Schedulers.computation());
     }
 
     @Override
-    public Observable<Map<String, String>> call(Context context, Observable<DataFile> dataFileObservable) {
+    public Observable<Map<String, Object>> call(Context context, Observable<DataFile> dataFileObservable) {
         return dataFileObservable.compose(transformer);
     }
 
     /**
      *
      */
-    public static class Transformer implements Observable.Transformer<DataFile, Map<String, String>> {
+    public static class Transformer implements Observable.Transformer<DataFile, Map<String, Object>> {
 
         private final CommitterConfig config;
         private final IcebergCommitter committer;
@@ -120,7 +119,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
          *
          */
         @Override
-        public Observable<Map<String, String>> call(Observable<DataFile> source) {
+        public Observable<Map<String, Object>> call(Observable<DataFile> source) {
             return source
                     .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
                     .map(committer::commit)
