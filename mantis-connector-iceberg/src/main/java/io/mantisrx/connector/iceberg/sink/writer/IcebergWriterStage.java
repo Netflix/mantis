@@ -139,6 +139,8 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             case HOUR:
                 specBuilder.hour(key);
                 break;
+            case NONE:
+                // Unpartitioned writer.
             default:
                 // Unpartitioned writer.
                 break;
@@ -165,7 +167,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         // TODO: Get namespace and name from config.
         TableIdentifier id = TableIdentifier.of(tableIdentifierNames);
-        Table table = catalog.loadTable(id);
+        Table table = catalog.tableExists(id) ? catalog.loadTable(id) : catalog.createTable(id, writerSchema);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
         IcebergWriter writer = newIcebergWriter(config, metrics, workerInfo, table, writerSchema);

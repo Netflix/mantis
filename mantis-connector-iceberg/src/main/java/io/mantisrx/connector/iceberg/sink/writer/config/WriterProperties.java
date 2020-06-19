@@ -70,7 +70,7 @@ public class WriterProperties {
      * // TODO: Support bucket[N] and truncate[W].
      */
     public static final String WRITER_PARTITION_KEY_TRANSFORM = "writerPartitionKeyTransform";
-    public static final Enum<PartitionTransforms> WRITER_PARTITION_KEY_TRANSFORM_DEFAULT = PartitionTransforms.HOUR;
+    public static final Enum<PartitionTransforms> WRITER_PARTITION_KEY_TRANSFORM_DEFAULT = PartitionTransforms.NONE;
     public static final String WRITER_PARTITION_KEY_TRANSFORM_DESCRIPTION =
             "Type of Transform to apply using partition key field. Available transforms: " +
             "identity, year, month, day, hour";
@@ -81,5 +81,6 @@ public class WriterProperties {
         MONTH,
         DAY,
         HOUR,
+        NONE,
     }
 }
