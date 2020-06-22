@@ -78,7 +78,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
      */
     @Override
     public void open() throws IOException {
-        String child = String.format("data/%s/%s.parquet", key, filename);
+        String child = String.format("data/%s/%s", key, filename);
         Path path = new Path(table.location(), child);
         file = HadoopOutputFile.fromPath(path, config.getHadoopConfig());
 
