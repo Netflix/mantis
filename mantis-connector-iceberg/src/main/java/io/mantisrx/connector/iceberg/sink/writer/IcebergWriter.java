@@ -40,4 +40,9 @@ public interface IcebergWriter {
      *
      */
     DataFile close() throws IOException;
+
+    /**
+     *
+     */
+    boolean isClosed();
 }

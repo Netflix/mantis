@@ -26,8 +26,8 @@ dependencies {
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
     shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
 
+    api "org.apache.iceberg:iceberg-api:$icebergVersion"
     // Exclude in case there are difference in SHAs in 0.7.0 incubation version. We only use interfaces anyway.
-    shadow "org.apache.iceberg:iceberg-api:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-core:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"

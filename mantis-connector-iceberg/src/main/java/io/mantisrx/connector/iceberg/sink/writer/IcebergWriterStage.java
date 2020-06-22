@@ -172,6 +172,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         IcebergWriter writer = newIcebergWriter(config, metrics, workerInfo, table, writerSchema);
         transformer = new Transformer(config, writer);
+        try {
+            writer.open();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to open file appender for Iceberg Writer", e);
+        }
     }
 
     @Override
@@ -207,6 +212,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                     .map(counter -> {
                         try {
                             DataFile dataFile = writer.close();
+                            writer.open();
                             counter.reset();
                             return dataFile;
                         } catch (IOException e) {
@@ -214,8 +220,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         }
                     })
                     .doOnNext(dataFile -> {
+                        // metric
                     })
-                    .doOnError(throwable -> {
+                    .onErrorResumeNext(error -> {
+                        // metric
+                        return Observable.empty();
                     });
         }
     }

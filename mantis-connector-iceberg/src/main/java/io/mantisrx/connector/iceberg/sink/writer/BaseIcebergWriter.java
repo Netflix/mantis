@@ -35,11 +35,15 @@ import org.apache.iceberg.hadoop.HadoopOutputFile;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.parquet.Parquet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public abstract class BaseIcebergWriter implements IcebergWriter {
+
+    private static final Logger logger = LoggerFactory.getLogger(BaseIcebergWriter.class);
 
     private final WriterMetrics metrics;
     private final WriterConfig config;
@@ -114,6 +118,10 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
         file = null;
 
         return dataFile;
+    }
+
+    public boolean isClosed() {
+        return appender == null;
     }
 
     protected void writeRecord(Record record) {
