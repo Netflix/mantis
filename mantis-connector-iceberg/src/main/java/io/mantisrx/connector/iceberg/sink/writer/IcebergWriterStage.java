@@ -20,13 +20,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.WorkerInfo;
-import io.mantisrx.runtime.codec.JacksonCodecs;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.EnumParameter;
@@ -67,7 +67,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     public static ScalarToScalar.Config<Record, DataFile> config() {
         return new ScalarToScalar.Config<Record, DataFile>()
                 .description("")
-                .codec(JacksonCodecs.pojo(DataFile.class))
+                .codec(IcebergCodecs.dataFile())
                 .withParameters(parameters());
     }
 

@@ -18,14 +18,15 @@ package io.mantisrx.connector.iceberg.sink.committer;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
+import io.mantisrx.runtime.codec.JacksonCodecs;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.StringParameter;
@@ -35,7 +36,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.data.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -45,7 +45,7 @@ import rx.schedulers.Schedulers;
 /**
  * Processing stage which commits table metadata to Iceberg on a time interval.
  */
-public class IcebergCommitterStage implements ScalarComputation<DataFile, Record> {
+public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<String, Object>> {
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitterStage.class);
 
@@ -58,10 +58,10 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Record
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
      */
-    public static ScalarToScalar.Config<DataFile, Record> config() {
-        return new ScalarToScalar.Config<DataFile, Record>()
+    public static ScalarToScalar.Config<DataFile, Map<String, Object>> config() {
+        return new ScalarToScalar.Config<DataFile, Map<String, Object>>()
                 .description("")
-                .codec(IcebergCodecs.record())
+                .codec(JacksonCodecs.mapStringObject())
                 .withParameters(parameters());
     }
 
@@ -96,14 +96,14 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Record
     }
 
     @Override
-    public Observable<Record> call(Context context, Observable<DataFile> dataFileObservable) {
+    public Observable<Map<String, Object>> call(Context context, Observable<DataFile> dataFileObservable) {
         return dataFileObservable.compose(transformer);
     }
 
     /**
      *
      */
-    public static class Transformer implements Observable.Transformer<DataFile, Record> {
+    public static class Transformer implements Observable.Transformer<DataFile, Map<String, Object>> {
 
         private final CommitterConfig config;
         private final IcebergCommitter committer;
@@ -119,7 +119,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Record
          *
          */
         @Override
-        public Observable<Record> call(Observable<DataFile> source) {
+        public Observable<Map<String, Object>> call(Observable<DataFile> source) {
             return source
                     .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
                     .map(committer::commit)
