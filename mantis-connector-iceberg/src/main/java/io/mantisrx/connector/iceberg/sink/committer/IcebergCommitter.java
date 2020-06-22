@@ -16,15 +16,18 @@
 
 package io.mantisrx.connector.iceberg.sink.committer;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +37,13 @@ import org.slf4j.LoggerFactory;
  */
 public class IcebergCommitter {
 
+
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitter.class);
 
     private final CommitterMetrics metrics;
     private final CommitterConfig config;
     private final Table table;
+    private final Schema committedDataFileSchema;
 
     public IcebergCommitter(
             CommitterMetrics metrics,
@@ -47,15 +52,28 @@ public class IcebergCommitter {
         this.metrics = metrics;
         this.config = config;
         this.table = table;
+        this.committedDataFileSchema = new Schema(
+                Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()),
+                Types.NestedField.required(2, "committed_data_files", table.spec().schema().asStruct())
+        );
     }
 
     /**
      * Uses Iceberg's Table API to append DataFiles and commit metadata to Iceberg.
      */
-    public Map<String, Object> commit(List<DataFile> dataFiles) {
+    public Record commit(List<DataFile> dataFiles) {
         AppendFiles tableAppender = table.newAppend();
-        dataFiles.forEach(tableAppender::appendFile);
 
-        return new HashMap<>(table.currentSnapshot().summary());
+        List<DataFile> dataFilesWithoutStats = dataFiles.stream().map(dataFile -> {
+            tableAppender.appendFile(dataFile);
+            return dataFile.copyWithoutStats();
+        }).collect(Collectors.toList());
+
+        Record committed = GenericRecord.create(committedDataFileSchema);
+        committed.setField("ts_utc_msec", System.currentTimeMillis());
+        committed.setField("committed_data_files", dataFilesWithoutStats);
+
+        logger.info("committed {}", committed);
+        return committed;
     }
 }

@@ -23,23 +23,23 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import io.mantisrx.common.codec.Codec;
-import org.apache.iceberg.DataFile;
+import org.apache.iceberg.data.Record;
 
 public class IcebergCodecs {
 
-    public static Codec<DataFile> dataFile() {
-        return new Codec<DataFile>() {
+    public static Codec<Record> record() {
+        return new Codec<Record>() {
             @Override
-            public DataFile decode(byte[] bytes) {
+            public Record decode(byte[] bytes) {
                 try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-                    return (DataFile) in.readObject();
+                    return (Record) in.readObject();
                 } catch (IOException | ClassNotFoundException e) {
                     throw new RuntimeException("Failed to convert bytes to DataFile", e);
                 }
             }
 
             @Override
-            public byte[] encode(DataFile value) {
+            public byte[] encode(Record value) {
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
                     out.writeObject(value);

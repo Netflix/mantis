@@ -224,6 +224,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                     })
                     .onErrorResumeNext(error -> {
                         // metric
+                        logger.error("error writing record", error);
                         return Observable.empty();
                     });
         }
