@@ -73,7 +73,8 @@ public class IcebergCommitter {
         committed.setField("ts_utc_msec", System.currentTimeMillis());
         committed.setField("committed_data_files", dataFilesWithoutStats);
 
-        logger.info("committed {}", committed);
+        tableAppender.commit();
+        logger.info("committed {}", committed.toString());
         return committed;
     }
 }
