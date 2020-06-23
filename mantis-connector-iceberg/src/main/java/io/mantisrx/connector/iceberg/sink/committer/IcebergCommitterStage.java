@@ -101,7 +101,12 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
     }
 
     /**
+     * Reactive Transformer for committing metadata to Iceberg.
      *
+     * Users may use this class independently of this Stage, for example, if they want to
+     * {@link Observable#compose(Observable.Transformer)} this transformer with a flow into
+     * an existing Stage. One benefit of this co-location is to avoid extra network
+     * cost from worker-to-worker communication, trading off debuggability.
      */
     public static class Transformer implements Observable.Transformer<DataFile, Map<String, Object>> {
 
@@ -116,7 +121,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         }
 
         /**
-         *
+         * Periodically commits DataFiles in a batch.
          */
         @Override
         public Observable<Map<String, Object>> call(Observable<DataFile> source) {

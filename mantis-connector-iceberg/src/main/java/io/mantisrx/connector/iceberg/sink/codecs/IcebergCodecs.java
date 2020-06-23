@@ -24,9 +24,17 @@ import java.io.ObjectOutputStream;
 
 import io.mantisrx.common.codec.Codec;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.data.Record;
 
+/**
+ * Encoders and decoders for working with Iceberg objects
+ * such as {@link Record}s and {@link DataFile}s.
+ */
 public class IcebergCodecs {
 
+    /**
+     * @return a codec for encoding/decoding DataFiles.
+     */
     public static Codec<DataFile> dataFile() {
         return new Codec<DataFile>() {
             @Override

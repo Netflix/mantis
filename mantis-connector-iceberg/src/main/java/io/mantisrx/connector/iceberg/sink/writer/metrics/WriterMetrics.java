@@ -19,9 +19,6 @@ package io.mantisrx.connector.iceberg.sink.writer.metrics;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 
-/**
- *
- */
 public class WriterMetrics {
     public WriterMetrics() {
         Metrics metrics = new Metrics.Builder()

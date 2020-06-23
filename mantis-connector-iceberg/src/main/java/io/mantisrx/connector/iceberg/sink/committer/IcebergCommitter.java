@@ -30,10 +30,11 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Commits manifest files for Iceberg table metadata.
+ * Commits {@link DataFile}s for Iceberg tables.
+ *
+ * This class uses Iceberg's Table API and only supports Table#append operations.
  */
 public class IcebergCommitter {
-
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitter.class);
 
@@ -52,6 +53,8 @@ public class IcebergCommitter {
 
     /**
      * Uses Iceberg's Table API to append DataFiles and commit metadata to Iceberg.
+     *
+     * @return the current snapshot of the table.
      */
     public Map<String, Object> commit(List<DataFile> dataFiles) {
         AppendFiles tableAppender = table.newAppend();

@@ -39,7 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Base class for writing {@link Record}s to Iceberg via a HDFS-compatible backend.
+ * For example, this class may be used with an S3 compatible filesystem library
+ * which progressively uploads (multipart) to S3 on each write operation for
+ * optimizing latencies.
  *
+ * Users have the flexibility to choose the semantics of opening, writing, and closing
+ * this Writer, for example, closing the underlying appender after some number
+ * of Bytes written and opening a new appender.
  */
 public abstract class BaseIcebergWriter implements IcebergWriter {
 
@@ -74,7 +81,11 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     }
 
     /**
+     * Opens a {@link FileAppender} for a specific {@link FileFormat}.
      *
+     * A filename is automatically generated for this appender.
+     *
+     * Supports Parquet. Avro, Orc, and others unsupported.
      */
     @Override
     public void open() throws IOException {
@@ -82,7 +93,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
         String filename = generateFilename(workerInfo);
         String child = String.format("data/%s", filename);
         Path path = new Path(table.location(), child);
-        logger.info("opening new file {}", path);
+        logger.info("opening new {} file appender {}", format, path);
         file = HadoopOutputFile.fromPath(path, config.getHadoopConfig());
 
         switch(format) {
@@ -102,7 +113,13 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     public abstract void write(Record record);
 
     /**
+     * Closes the currently opened file appender and builds a DataFile.
      *
+     * Users are expected to {@link IcebergWriter#open()} a new file appender for this writer
+     * if they want to continue writing. Users can check for status of the file appender
+     * using {@link IcebergWriter#isClosed()}.
+     *
+     * @return a DataFile representing metadata about the records written.
      */
     @Override
     public DataFile close() throws IOException {
@@ -121,7 +138,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
                 .withSplitOffsets(appender.splitOffsets())
                 .build();
 
-        logger.info("writing datafile: {}", dataFile);
+        logger.info("writing DataFile: {}", dataFile);
 
         appender = null;
         file = null;
@@ -134,7 +151,12 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     }
 
     /**
+     * Returns the current file size (in Bytes) written using this writer's appender.
      *
+     * Users should be careful calling this method in a tight loop because it can
+     * be expensive depending on the file format, for example in Parquet.
+     *
+     * @return current file size (in Bytes).
      */
     public long length() {
         return appender == null ? 0 : appender.length();
@@ -146,14 +168,16 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     }
 
     /**
-     *
+     * Generate a Parquet filename with attributes which make it more friendly to determine
+     * the source of the file. For example, if the caller exits unexpectedly and leaves
+     * files in the system, it's possible to identify them through a recursive listing.
      */
     private String generateFilename(WorkerInfo workerInfo) {
-        return String.format("%s_%s_%s_%s_%s.parquet",
+        return format.addExtension(String.format("%s_%s_%s_%s_%s",
                 workerInfo.getJobId(),
                 workerInfo.getStageNumber(),
                 workerInfo.getWorkerIndex(),
                 workerInfo.getWorkerNumber(),
-                UUID.randomUUID().toString());
+                UUID.randomUUID().toString()));
     }
 }

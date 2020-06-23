@@ -19,9 +19,6 @@ package io.mantisrx.connector.iceberg.sink.committer.metrics;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 
-/**
- *
- */
 public class CommitterMetrics {
     public CommitterMetrics() {
         Metrics metrics = new Metrics.Builder()

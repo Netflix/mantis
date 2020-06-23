@@ -24,7 +24,11 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 
 /**
+ * Writes unpartitioned {@link Record}s to Iceberg via a HDFS-compatible backend.
  *
+ * Users have the flexibility to choose the semantics of opening, writing, and closing
+ * this Writer, for example, closing the underlying appender after some number
+ * of Bytes written and opening a new appender.
  */
 public class UnpartitionedIcebergWriter extends BaseIcebergWriter {
 
@@ -38,7 +42,7 @@ public class UnpartitionedIcebergWriter extends BaseIcebergWriter {
     }
 
     /**
-     *
+     * Writes Records without partitioning.
      */
     @Override
     public void write(Record record) {

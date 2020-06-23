@@ -36,7 +36,8 @@ public class WriterProperties {
     public static final String WRITER_ROW_GROUP_SIZE = "writerRowGroupSize";
     public static final int WRITER_ROW_GROUP_SIZE_DEFAULT = 1000;
     public static final String WRITER_ROW_GROUP_SIZE_DESCRIPTION =
-            "Maximum number of rows that should exist in a file";
+            String.format("Maximum number of rows that should exist in a file (default: %s)",
+                    WRITER_ROW_GROUP_SIZE_DEFAULT);
 
     /**
      * Flush frequency by size (in Bytes).
@@ -45,7 +46,8 @@ public class WriterProperties {
     // TODO: Change to long.
     public static final String WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT = "134217728";     // 128 MiB
     public static final String WRITER_FLUSH_FREQUENCY_BYTES_DESCRIPTION =
-            "Flush frequency by size (in Bytes)";
+            String.format("Flush frequency by size in Bytes (default: %s)",
+                    WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT);
 
     /**
      * File format for writing data files to backing Iceberg store.
@@ -53,7 +55,8 @@ public class WriterProperties {
     public static final String WRITER_FILE_FORMAT = "writerFileFormat";
     public static final String WRITER_FILE_FORMAT_DEFAULT = FileFormat.PARQUET.name();
     public static final String WRITER_FILE_FORMAT_DESCRIPTION =
-            "File format for writing data files to backing Iceberg store";
+            String.format("File format for writing data files to backing Iceberg store (default: %s)",
+                    WRITER_FILE_FORMAT_DEFAULT);
 
     /**
      * Partition key for Iceberg partition path.
@@ -62,18 +65,19 @@ public class WriterProperties {
     // TODO: Change to long.
     public static final String WRITER_PARTITION_KEY_DEFAULT = "";
     public static final String WRITER_PARTITION_KEY_DESCRIPTION =
-            "Partition key for Iceberg partition path";
+            "Partition key for Iceberg partition path (default: none)";
 
     /**
      * Type of Transform to apply using partition key field.
+     *
      * From Iceberg: {@code identity, year, month, day, hour}.
-     * // TODO: Support bucket[N] and truncate[W].
+     * TODO: Support bucket[N] and truncate[W].
      */
     public static final String WRITER_PARTITION_KEY_TRANSFORM = "writerPartitionKeyTransform";
     public static final Enum<PartitionTransforms> WRITER_PARTITION_KEY_TRANSFORM_DEFAULT = PartitionTransforms.NONE;
     public static final String WRITER_PARTITION_KEY_TRANSFORM_DESCRIPTION =
             "Type of Transform to apply using partition key field. Available transforms: " +
-            "identity, year, month, day, hour";
+            "identity, year, month, day, hour (default: none)";
 
     public enum PartitionTransforms {
         IDENTITY,

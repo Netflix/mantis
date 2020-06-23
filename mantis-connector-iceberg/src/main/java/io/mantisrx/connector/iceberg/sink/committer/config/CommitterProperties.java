@@ -25,11 +25,12 @@ public class CommitterProperties {
     }
 
     /**
-     * Iceberg committer frequency by time (milliseconds).
+     * Iceberg committer frequency by time in milliseconds.
      */
     public static final String COMMIT_FREQUENCY_MS = "commitFrequencyMs";
     // TODO: Change to long.
     public static final String COMMIT_FREQUENCY_MS_DEFAULT = "300000";    // 5 min
     public static final String COMMIT_FREQUENCY_DESCRIPTION =
-            "Iceberg Committer frequency by time (milliseconds)";
+            String.format("Iceberg Committer frequency by time in milliseconds (default: %s)",
+                    COMMIT_FREQUENCY_MS_DEFAULT);
 }

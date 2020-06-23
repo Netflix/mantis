@@ -26,6 +26,11 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 
 /**
+ * Writes partitioned {@link Record}s to Iceberg via a HDFS-compatible backend.
+ *
+ * Users have the flexibility to choose the semantics of opening, writing, and closing
+ * this Writer, for example, closing the underlying appender after some number
+ * of Bytes written and opening a new appender.
  */
 public class PartitionedIcebergWriter extends BaseIcebergWriter {
 
@@ -45,7 +50,7 @@ public class PartitionedIcebergWriter extends BaseIcebergWriter {
     }
 
     /**
-     *
+     * Writes Records by applying a partition transforms to fields of a record specified by a PartitionSpec.
      */
     @Override
     public void write(Record record) {
@@ -54,7 +59,7 @@ public class PartitionedIcebergWriter extends BaseIcebergWriter {
     }
 
     /**
-     *
+     * TODO: Need to upstream Accessors and Transforms compatible with Iceberg Schemas.
      */
     public Record partition(Record record) {
         Record partitioned = GenericRecord.create(spec.partitionType());

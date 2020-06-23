@@ -21,33 +21,15 @@ import java.io.IOException;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 
-/**
- *
- */
 public interface IcebergWriter {
 
-    /**
-     *
-     */
     void open() throws IOException;
 
-    /**
-     *
-     */
     void write(Record record);
 
-    /**
-     *
-     */
     DataFile close() throws IOException;
 
-    /**
-     *
-     */
     boolean isClosed();
 
-    /**
-     *
-     */
     long length();
 }

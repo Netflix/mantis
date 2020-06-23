@@ -185,7 +185,12 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     }
 
     /**
+     * Reactive Transformer for writing records to Iceberg.
      *
+     * Users may use this class independently of this Stage, for example, if they want to
+     * {@link Observable#compose(Observable.Transformer)} this transformer with a flow into
+     * an existing Stage. One benefit of this co-location is to avoid extra network
+     * cost from worker-to-worker communication, trading off debuggability.
      */
     public static class Transformer implements Observable.Transformer<Record, DataFile> {
 
@@ -198,7 +203,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         }
 
         /**
+         * Opens an IcebergWriter FileAppender, writes records to a file. Check the file appender
+         * size on a configured count, and if over a configured threshold, close the file, build
+         * and emit a DataFile, and open a new FileAppender.
          *
+         * Pair this with a progressive multipart file uploader backend for better latencies.
          */
         @Override
         public Observable<DataFile> call(Observable<Record> source) {
@@ -227,6 +236,13 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         // metric
                         logger.error("error writing record", error);
                         return Observable.empty();
+                    })
+                    .doOnCompleted(() -> {
+                        try {
+                            writer.close();
+                        } catch (IOException e) {
+                            throw Exceptions.propagate(e);
+                        }
                     });
         }
     }
