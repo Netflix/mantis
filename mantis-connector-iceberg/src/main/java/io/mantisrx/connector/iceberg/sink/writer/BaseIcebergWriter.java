@@ -47,11 +47,11 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     private final WriterMetrics metrics;
     private final WriterConfig config;
+    private final WorkerInfo workerInfo;
 
     private final Table table;
     private final PartitionSpec spec;
 
-    private final String filename;
     private final FileFormat format;
 
     private FileAppender<Record> appender;
@@ -69,7 +69,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
         this.table = table;
         this.spec = spec;
-        this.filename = generateFilename(workerInfo);
+        this.workerInfo = workerInfo;
         this.format = FileFormat.valueOf(config.getWriterFileFormat());
     }
 
@@ -78,8 +78,11 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
      */
     @Override
     public void open() throws IOException {
-        String child = String.format("data/%s/%s", key, filename);
+        // TODO: Use key to generate part of the child path.
+        String filename = generateFilename(workerInfo);
+        String child = String.format("data/%s", filename);
         Path path = new Path(table.location(), child);
+        logger.info("opening new file {}", path);
         file = HadoopOutputFile.fromPath(path, config.getHadoopConfig());
 
         switch(format) {
@@ -103,6 +106,10 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
      */
     @Override
     public DataFile close() throws IOException {
+        if (appender == null) {
+            return null;
+        }
+
         appender.close();
 
         DataFile dataFile = DataFiles.builder(spec)
@@ -124,6 +131,13 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     public boolean isClosed() {
         return appender == null;
+    }
+
+    /**
+     *
+     */
+    public long length() {
+        return appender == null ? 0 : appender.length();
     }
 
     protected void writeRecord(Record record) {

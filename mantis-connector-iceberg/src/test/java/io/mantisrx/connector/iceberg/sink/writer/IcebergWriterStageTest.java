@@ -42,6 +42,7 @@ class IcebergWriterStageTest {
         WriterConfig config = new WriterConfig(new Parameters(), mock(Configuration.class));
         IcebergWriter writer = mock(IcebergWriter.class);
         when(writer.close()).thenReturn(mock(DataFile.class));
+        when(writer.length()).thenReturn(Long.MAX_VALUE);
         this.transformer = new IcebergWriterStage.Transformer(config, writer);
     }
 

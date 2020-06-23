@@ -45,4 +45,9 @@ public interface IcebergWriter {
      *
      */
     boolean isClosed();
+
+    /**
+     *
+     */
+    long length();
 }

@@ -24,18 +24,18 @@ ext {
 
 dependencies {
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
-    shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
+    implementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
 
     api "org.apache.iceberg:iceberg-api:$icebergVersion"
     // Exclude in case there are difference in SHAs in 0.7.0 incubation version. We only use interfaces anyway.
-    shadow "org.apache.iceberg:iceberg-core:$icebergVersion"
-    shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
-    shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
+    implementation "org.apache.iceberg:iceberg-core:$icebergVersion"
+    implementation "org.apache.iceberg:iceberg-data:$icebergVersion"
+    implementation "org.apache.iceberg:iceberg-parquet:$icebergVersion"
 
     implementation "io.mantisrx:mantis-runtime:$mantisVersion"
 
     // We only need this for local mains(). Users bring their own implementation.
-    shadow "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
 
     testImplementation "io.projectreactor:reactor-core:$reactorVersion"
     testImplementation "io.projectreactor:reactor-test:$reactorVersion"

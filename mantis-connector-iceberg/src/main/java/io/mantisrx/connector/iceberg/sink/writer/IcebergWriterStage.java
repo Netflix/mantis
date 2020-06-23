@@ -209,6 +209,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         return counter;
                     })
                     .filter(Counter::shouldReset)
+                    .filter(counter -> writer.length() >= config.getWriterFlushFrequencyBytes())
                     .map(counter -> {
                         try {
                             DataFile dataFile = writer.close();

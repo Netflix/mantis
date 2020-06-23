@@ -122,6 +122,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         public Observable<Map<String, Object>> call(Observable<DataFile> source) {
             return source
                     .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
+                    .filter(dataFiles -> !dataFiles.isEmpty())
                     .map(committer::commit)
                     .doOnNext(snapshot -> {
                         // metric
