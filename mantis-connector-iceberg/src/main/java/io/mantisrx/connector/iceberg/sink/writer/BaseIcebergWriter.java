@@ -163,7 +163,6 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     }
 
     protected void writeRecord(Record record) {
-        logger.info("writing record: {}", record);
         appender.add(record);
     }
 
