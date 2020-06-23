@@ -25,6 +25,7 @@ buildscript {
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:5.1.1'
         classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
     }
 }
 
@@ -40,6 +41,7 @@ allprojects {
 }
 
 subprojects {
+    apply plugin: 'com.github.johnrengelman.shadow'
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
