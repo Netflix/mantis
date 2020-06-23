@@ -18,11 +18,7 @@ project(":mantis-connector-iceberg") {
     shadowJar {
         classifier = null
         dependencies {
-            exclude dependency('org.apache.hadoop:hadoop-common')
-            exclude dependency('org.apache.iceberg:iceberg-core')
-            exclude dependency('org.apache.iceberg:iceberg-data')
-            exclude dependency('org.apache.iceberg:iceberg-parquet')
-            exclude dependency('org.slf4j:slf4j-log4j12')
+            exclude dependency("com.netflix.spectator:spectator-api")
         }
 
         // include the LICENSE and NOTICE files for the shaded Jar
