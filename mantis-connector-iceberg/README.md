@@ -2,6 +2,10 @@
 
 Connector for working with [Iceberg](https://iceberg.apache.org/).
 
+```
+implementation "io.mantisrx:mantis-connector-iceberg:$icebergVersion"
+```
+
 ## Source
 
 TBD
@@ -24,14 +28,18 @@ and `IcebergCommitterStage`.
 public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>> {
 
     public Job<Map<String, Object>> getJobInstance() {
+        // catalog, database, table
+        // Replace catalog, database, and table with your own.
+        String[] tableIdentifier = new String[]{"catalog", "database", "table"};
+
         return MantisJob.source(...)
-                .stage(...)                                                                 // (0)
-                .stage(new IcebergWriterStage(SCHEMA), IcebergWriterStage.config())         // (1)
-                .stage(new IcebergCommitterStage(SCHEMA), IcebergCommitterStage.config())   // (2)
+                .stage(...)                                                                                   // (0)
+                .stage(new IcebergWriterStage(SCHEMA, tableIdentifier), IcebergWriterStage.config())          // (1)
+                .stage(new IcebergCommitterStage(SCHEMA, tableIndentifier), IcebergCommitterStage.config())   // (2)
                 .sink(...)
                 }))
                 .lifecycle(NetflixLifecycles.governator(jobPropertiesFilename,
-                        new IcebergModule()))                                               // (3)
+                        new IcebergModule()))                                                                 // (3)
                 .create();
 }
 ```
