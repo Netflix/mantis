@@ -24,7 +24,7 @@ the semantics such as `open`, `write`, and `close`. Writers are stateless and th
 The easiest way to use this sink is to use add two Mantis Processing Stages to your Mantis Job: `IcebergWriterStage`
 and `IcebergCommitterStage`.
 
-```
+```java
 public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>> {
 
     public Job<Map<String, Object>> getJobInstance() {
@@ -60,7 +60,7 @@ one of your existing Processing Stages, you can avoid extra network cost from wo
 trading off debuggability since your Processing Stage is interacting with Iceberg in addition to executing
 your application logic.
 
-```
+```java
 IcebergWriterStage.Transformer writerTransformer =                      (0)
     new IcebergWriterStage.Transformer(writerConfig, icebergWriter);    (1)
 
