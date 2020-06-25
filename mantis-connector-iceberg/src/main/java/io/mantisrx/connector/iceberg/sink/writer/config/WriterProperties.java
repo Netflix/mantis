@@ -57,34 +57,4 @@ public class WriterProperties {
     public static final String WRITER_FILE_FORMAT_DESCRIPTION =
             String.format("File format for writing data files to backing Iceberg store (default: %s)",
                     WRITER_FILE_FORMAT_DEFAULT);
-
-    /**
-     * Partition key for Iceberg partition path.
-     */
-    public static final String WRITER_PARTITION_KEY = "writerPartitionKey";
-    // TODO: Change to long.
-    public static final String WRITER_PARTITION_KEY_DEFAULT = "";
-    public static final String WRITER_PARTITION_KEY_DESCRIPTION =
-            "Partition key for Iceberg partition path (default: none)";
-
-    /**
-     * Type of Transform to apply using partition key field.
-     *
-     * From Iceberg: {@code identity, year, month, day, hour}.
-     * TODO: Support bucket[N] and truncate[W].
-     */
-    public static final String WRITER_PARTITION_KEY_TRANSFORM = "writerPartitionKeyTransform";
-    public static final Enum<PartitionTransforms> WRITER_PARTITION_KEY_TRANSFORM_DEFAULT = PartitionTransforms.NONE;
-    public static final String WRITER_PARTITION_KEY_TRANSFORM_DESCRIPTION =
-            "Type of Transform to apply using partition key field. Available transforms: " +
-            "identity, year, month, day, hour (default: none)";
-
-    public enum PartitionTransforms {
-        IDENTITY,
-        YEAR,
-        MONTH,
-        DAY,
-        HOUR,
-        NONE,
-    }
 }

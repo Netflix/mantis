@@ -19,7 +19,6 @@ package io.mantisrx.connector.iceberg.sink.writer;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.WorkerInfo;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 
@@ -36,9 +35,8 @@ public class UnpartitionedIcebergWriter extends BaseIcebergWriter {
             WriterMetrics metrics,
             WriterConfig config,
             WorkerInfo workerInfo,
-            Table table,
-            PartitionSpec spec) {
-        super(metrics, config, workerInfo, table, spec);
+            Table table) {
+        super(metrics, config, workerInfo, table);
     }
 
     /**

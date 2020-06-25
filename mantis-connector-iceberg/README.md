@@ -2,7 +2,7 @@
 
 Connector for working with [Iceberg](https://iceberg.apache.org/).
 
-```
+```groovy
 implementation "io.mantisrx:mantis-connector-iceberg:$icebergVersion"
 ```
 

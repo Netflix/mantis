@@ -32,7 +32,6 @@ import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -50,7 +49,6 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitterStage.class);
 
     private final CommitterMetrics metrics;
-    private final Schema schema;
     private final String[] tableIdentifierNames;
 
     private Transformer transformer;
@@ -78,19 +76,28 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         );
     }
 
-    public IcebergCommitterStage(Schema schema, String... tableIdentifierNames) {
+    public IcebergCommitterStage(String... tableIdentifierNames) {
         this.metrics = new CommitterMetrics();
-        this.schema = schema;
         this.tableIdentifierNames = tableIdentifierNames;
     }
 
+    /**
+     * Uses the provided Mantis Context to inject configuration and creates an underlying table appender.
+     *
+     * This method depends on a Hadoop Configuration and Iceberg Catalog, both injected
+     * from the Context's service locator.
+     *
+     * Note that this method expects an Iceberg Table to have been previously created out-of-band,
+     * otherwise initialization will fail. Users should prefer to create tables
+     * out-of-band so they can be versioned alongside their schemas.
+     */
     @Override
     public void init(Context context) {
         CommitterConfig config = new CommitterConfig(context.getParameters());
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         // TODO: Get namespace and name from config.
         TableIdentifier id = TableIdentifier.of(tableIdentifierNames);
-        Table table = catalog.tableExists(id) ? catalog.loadTable(id) : catalog.createTable(id, schema);
+        Table table = catalog.loadTable(id);
         IcebergCommitter committer = new IcebergCommitter(metrics, config, table);
         transformer = new Transformer(config, committer, Schedulers.computation());
     }
