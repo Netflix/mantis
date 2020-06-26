@@ -136,7 +136,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
                     .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
                     .filter(dataFiles -> !dataFiles.isEmpty())
                     .map(committer::commit)
-                    .doOnNext(snapshot -> {
+                    .doOnNext(summary -> {
                         // metric
                     })
                     .onErrorResumeNext(throwable -> {
