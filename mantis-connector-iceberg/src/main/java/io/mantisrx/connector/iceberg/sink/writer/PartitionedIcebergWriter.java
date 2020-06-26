@@ -34,19 +34,17 @@ import org.apache.iceberg.data.Record;
  */
 public class PartitionedIcebergWriter extends BaseIcebergWriter {
 
-    private final Schema writerSchema;
+    private final Schema schema;
     private final PartitionSpec spec;
 
     public PartitionedIcebergWriter(
             WriterMetrics metrics,
             WriterConfig config,
             WorkerInfo workerInfo,
-            Table table,
-            Schema writerSchema,
-            PartitionSpec spec) {
-        super(metrics, config, workerInfo, table, spec);
-        this.writerSchema = writerSchema;
-        this.spec = spec;
+            Table table) {
+        super(metrics, config, workerInfo, table);
+        this.schema = table.schema();
+        this.spec = table.spec();
     }
 
     /**

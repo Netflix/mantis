@@ -69,13 +69,12 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
             WriterMetrics metrics,
             WriterConfig config,
             WorkerInfo workerInfo,
-            Table table,
-            PartitionSpec spec) {
+            Table table) {
         this.metrics = metrics;
         this.config = config;
 
         this.table = table;
-        this.spec = spec;
+        this.spec = table.spec();
         this.workerInfo = workerInfo;
         this.format = FileFormat.valueOf(config.getWriterFileFormat());
     }

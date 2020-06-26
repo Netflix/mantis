@@ -29,14 +29,11 @@ import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
-import io.mantisrx.runtime.parameter.type.EnumParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -54,7 +51,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     private static final Logger logger = LoggerFactory.getLogger(IcebergWriterStage.class);
 
     private final WriterMetrics metrics;
-    private final Schema writerSchema;
 
     // TODO: Move to config.
     private final String[] tableIdentifierNames;
@@ -90,17 +86,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         .description(WriterProperties.WRITER_FILE_FORMAT_DESCRIPTION)
                         .validator(Validators.alwaysPass())
                         .defaultValue(WriterProperties.WRITER_FILE_FORMAT_DEFAULT)
-                        .build(),
-                new StringParameter().name(WriterProperties.WRITER_PARTITION_KEY)
-                        .description(WriterProperties.WRITER_PARTITION_KEY_DESCRIPTION)
-                        .validator(Validators.alwaysPass())
-                        .defaultValue(WriterProperties.WRITER_PARTITION_KEY_DEFAULT)
-                        .build(),
-                new EnumParameter<>(WriterProperties.PartitionTransforms.class)
-                        .name(WriterProperties.WRITER_PARTITION_KEY_TRANSFORM)
-                        .description(WriterProperties.WRITER_PARTITION_KEY_TRANSFORM_DESCRIPTION)
-                        .validator(Validators.alwaysPass())
-                        .defaultValue(WriterProperties.WRITER_PARTITION_KEY_TRANSFORM_DEFAULT)
                         .build()
         );
     }
@@ -117,49 +102,32 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             WriterConfig config,
             WriterMetrics metrics,
             WorkerInfo workerInfo,
-            Table table,
-            Schema writerSchema) {
-        PartitionSpec.Builder specBuilder = PartitionSpec.builderFor(writerSchema);
-
-        // TODO: Support composite keys.
-        String key = config.getWriterPartitionKey();
-        switch (config.getWriterPartitionKeyTransform()) {
-            case IDENTITY:
-                specBuilder.identity(key);
-                break;
-            case YEAR:
-                specBuilder.year(key);
-                break;
-            case MONTH:
-                specBuilder.month(key);
-                break;
-            case DAY:
-                specBuilder.day(key);
-                break;
-            case HOUR:
-                specBuilder.hour(key);
-                break;
-            case NONE:
-                // Unpartitioned writer.
-            default:
-                // Unpartitioned writer.
-                break;
-        }
-        PartitionSpec spec = specBuilder.build();
-
-        if (spec.fields().isEmpty()) {
-            return new UnpartitionedIcebergWriter(metrics, config, workerInfo, table, spec);
+            Table table) {
+        if (table.spec().fields().isEmpty()) {
+            return new UnpartitionedIcebergWriter(metrics, config, workerInfo, table);
         } else {
-            return new PartitionedIcebergWriter(metrics, config, workerInfo, table, writerSchema, spec);
+            return new PartitionedIcebergWriter(metrics, config, workerInfo, table);
         }
     }
 
-    public IcebergWriterStage(Schema writerSchema, String... tableIdentifierNames) {
+    /**
+     * Creates a new Iceberg Writer Processing Stage using a table identifier.
+     */
+    public IcebergWriterStage(String... tableIdentifierNames) {
         this.metrics = new WriterMetrics();
-        this.writerSchema = writerSchema;
         this.tableIdentifierNames = tableIdentifierNames;
     }
 
+    /**
+     * Uses the provided Mantis Context to inject configuration and opens an underlying file appender.
+     *
+     * This method depends on a Hadoop Configuration and Iceberg Catalog, both injected
+     * from the Context's service locator.
+     *
+     * Note that this method expects an Iceberg Table to have been previously created out-of-band,
+     * otherwise initialization will fail. Users should prefer to create tables
+     * out-of-band so they can be versioned alongside their schemas.
+     */
     @Override
     public void init(Context context) {
         Configuration hadoopConfig = context.getServiceLocator().service(Configuration.class);
@@ -167,16 +135,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         // TODO: Get namespace and name from config.
         TableIdentifier id = TableIdentifier.of(tableIdentifierNames);
-        Table table = catalog.tableExists(id) ? catalog.loadTable(id) : catalog.createTable(id, writerSchema);
+        Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
-        IcebergWriter writer = newIcebergWriter(config, metrics, workerInfo, table, writerSchema);
+        IcebergWriter writer = newIcebergWriter(config, metrics, workerInfo, table);
         transformer = new Transformer(config, writer);
-        try {
-            writer.open();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to open file appender for Iceberg Writer", e);
-        }
     }
 
     @Override
@@ -237,11 +200,20 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         logger.error("error writing record", error);
                         return Observable.empty();
                     })
-                    .doOnCompleted(() -> {
+                    .doOnSubscribe(() -> {
                         try {
-                            writer.close();
+                            writer.open();
                         } catch (IOException e) {
                             throw Exceptions.propagate(e);
+                        }
+                    })
+                    .doOnTerminate(() -> {
+                        if (!writer.isClosed()) {
+                            try {
+                                writer.close();
+                            } catch (IOException e) {
+                                throw Exceptions.propagate(e);
+                            }
                         }
                     });
         }

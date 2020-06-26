@@ -29,8 +29,6 @@ public class WriterConfig {
     private final int writerRowGroupSize;
     private final long writerFlushFrequencyBytes;
     private final String writerFileFormat;
-    private final String writerPartitionKey;
-    private final PartitionTransforms writerPartitionKeyTransform;
     private final Configuration hadoopConfig;
 
     /**
@@ -44,10 +42,6 @@ public class WriterConfig {
                 WRITER_FLUSH_FREQUENCY_BYTES, WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT));
         this.writerFileFormat = (String) parameters.get(
                 WRITER_FILE_FORMAT, WRITER_FILE_FORMAT_DEFAULT);
-        this.writerPartitionKey = (String) parameters.get(
-                WRITER_PARTITION_KEY, WRITER_PARTITION_KEY_DEFAULT);
-        this.writerPartitionKeyTransform = (PartitionTransforms) parameters.get(
-                WRITER_PARTITION_KEY_TRANSFORM, WRITER_PARTITION_KEY_TRANSFORM_DEFAULT);
         this.hadoopConfig = hadoopConfig;
     }
 
@@ -73,23 +67,9 @@ public class WriterConfig {
     }
 
     /**
-     * Returns the Iceberg Partition key for writers to use.
-     */
-    public String getWriterPartitionKey() {
-        return writerPartitionKey;
-    }
-
-    /**
      * Returns a Hadoop configuration which has metadata for how and where to write files.
      */
     public Configuration getHadoopConfig() {
         return hadoopConfig;
-    }
-
-    /**
-     * Returns a String representing the type of Transform to apply to a partition key.
-     */
-    public PartitionTransforms getWriterPartitionKeyTransform() {
-        return writerPartitionKeyTransform;
     }
 }
