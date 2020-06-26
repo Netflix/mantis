@@ -38,11 +38,13 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.data.Record;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 import rx.RxReactiveStreams;
 
 class IcebergWriterStageTest {
@@ -70,6 +72,11 @@ class IcebergWriterStageTest {
         this.context = mock(Context.class);
         when(this.context.getParameters()).thenReturn(new Parameters());
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        VirtualTimeScheduler.reset();
     }
 
     @Test
