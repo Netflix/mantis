@@ -137,8 +137,6 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
                 .withSplitOffsets(appender.splitOffsets())
                 .build();
 
-        logger.info("writing DataFile: {}", dataFile);
-
         appender = null;
         file = null;
 

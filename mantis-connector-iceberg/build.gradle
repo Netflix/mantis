@@ -39,9 +39,6 @@ dependencies {
 
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
     testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion"
-    testImplementation "io.projectreactor:reactor-core:$reactorVersion"
-    testImplementation "io.projectreactor:reactor-test:$reactorVersion"
-    testImplementation "io.reactivex:rxjava-reactive-streams:$rxAdapterVersion"
     testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
 }
 

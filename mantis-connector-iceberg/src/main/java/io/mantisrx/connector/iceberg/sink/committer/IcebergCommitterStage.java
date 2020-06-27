@@ -17,6 +17,7 @@
 package io.mantisrx.connector.iceberg.sink.committer;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -135,13 +136,18 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
             return source
                     .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
                     .filter(dataFiles -> !dataFiles.isEmpty())
-                    .map(committer::commit)
+                    .map(dataFiles -> {
+                        try {
+                            return committer.commit(dataFiles);
+                        } catch (RuntimeException e) {
+                            // metric
+                            logger.error("error committing to Iceberg", e);
+                            return new HashMap<String, Object>();
+                        }
+                    })
+                    .filter(summary -> !summary.isEmpty())
                     .doOnNext(summary -> {
                         // metric
-                    })
-                    .onErrorResumeNext(throwable -> {
-                        // metric
-                        return Observable.empty();
                     });
         }
     }

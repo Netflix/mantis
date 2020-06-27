@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.runtime.Context;
@@ -38,24 +38,27 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.data.Record;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.test.StepVerifier;
-import reactor.test.scheduler.VirtualTimeScheduler;
-import rx.RxReactiveStreams;
+import rx.Observable;
+import rx.observers.TestSubscriber;
+import rx.schedulers.TestScheduler;
 
 class IcebergWriterStageTest {
 
+    private TestScheduler scheduler;
+    private TestSubscriber<DataFile> subscriber;
     private IcebergWriterStage.Transformer transformer;
     private Catalog catalog;
     private Context context;
     private IcebergWriter writer;
+    private Observable<DataFile> flow;
 
     @BeforeEach
     void setUp() throws IOException {
+        this.scheduler = new TestScheduler();
+        this.subscriber = new TestSubscriber<>();
+
         WriterConfig config = new WriterConfig(new Parameters(), mock(Configuration.class));
         this.writer = mock(IcebergWriter.class);
         when(this.writer.close()).thenReturn(mock(DataFile.class));
@@ -72,42 +75,36 @@ class IcebergWriterStageTest {
         this.context = mock(Context.class);
         when(this.context.getParameters()).thenReturn(new Parameters());
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
-    }
 
-    @AfterEach
-    void tearDown() {
-        VirtualTimeScheduler.reset();
+        Observable<Record> source = Observable.interval(1, TimeUnit.SECONDS, scheduler)
+                .map(i -> mock(Record.class));
+        flow = source.compose(transformer);
     }
 
     @Test
     void shouldCloseOnRowGroupSizeThreshold() throws IOException {
-        StepVerifier
-                .withVirtualTime(() -> {
-                    Flux<Record> upstream = Flux.interval(Duration.ofSeconds(1)).map(i -> mock(Record.class));
-                    return RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
-                })
-                .expectSubscription()
-                .expectNoEvent(Duration.ofSeconds(1))
-                .thenAwait(Duration.ofSeconds(999))
-                .expectNextCount(1)
-                .thenAwait(Duration.ofSeconds(1000))
-                .expectNextCount(1)
-                .expectNoEvent(Duration.ofSeconds(1))
-                .thenCancel()
-                .verify();
+        flow.subscribeOn(scheduler).subscribe(subscriber);
 
-        verify(writer, times(3)).open();
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+        subscriber.assertNoValues();
+        subscriber.assertNoTerminalEvent();
+
+        scheduler.advanceTimeBy(999, TimeUnit.SECONDS);
+        subscriber.assertValueCount(1);
+
+        scheduler.advanceTimeBy(1000, TimeUnit.SECONDS);
+        subscriber.assertValueCount(2);
+
+        verify(writer, times(2000)).write(any());
         verify(writer, times(2)).close();
     }
 
     @Test
     void shouldOpenWriterOnSubscribe() throws IOException {
-        Flux<Record> upstream = Flux.just(mock(Record.class));
-        Publisher<DataFile> flow =
-                RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
-        StepVerifier.create(flow)
-                .expectSubscription()
-                .verifyComplete();
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.triggerActions();
+        subscriber.assertNoTerminalEvent();
 
         verify(writer).open();
     }
@@ -116,12 +113,11 @@ class IcebergWriterStageTest {
     void shouldNoOpCloseWhenFailedToOpen() throws IOException {
         when(writer.isClosed()).thenReturn(true);
         doThrow(new IOException()).when(writer).open();
-        Flux<Record> upstream = Flux.just(mock(Record.class));
-        Publisher<DataFile> flow =
-                RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
-        StepVerifier.create(flow)
-                .expectSubscription()
-                .verifyError();
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.triggerActions();
+        subscriber.assertError(RuntimeException.class);
+        subscriber.assertTerminalEvent();
 
         verify(writer).open();
         verify(writer).isClosed();
@@ -129,18 +125,31 @@ class IcebergWriterStageTest {
     }
 
     @Test
-    void shouldCloseOnTerminate() throws IOException {
+    void shouldContinueOnWriteFailure() {
         doThrow(new RuntimeException()).when(writer).write(any());
-        Flux<Record> upstream = Flux.just(mock(Record.class));
-        Publisher<DataFile> flow =
-                RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
-        StepVerifier.create(flow)
-                .expectSubscription()
-                .verifyComplete();
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+        subscriber.assertNoTerminalEvent();
+
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+        subscriber.assertNoTerminalEvent();
+
+        verify(writer, times(2)).write(any());
+    }
+
+    @Test
+    void shouldCloseOnTerminate() throws IOException {
+        Observable<Record> source = Observable.just(mock(Record.class));
+        Observable<DataFile> flow = source.compose(transformer);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.triggerActions();
+        subscriber.assertNoErrors();
+        subscriber.assertCompleted();
 
         verify(writer).open();
         verify(writer).write(any());
-        verify(writer).isClosed();
         verify(writer, times(1)).close();
     }
 
