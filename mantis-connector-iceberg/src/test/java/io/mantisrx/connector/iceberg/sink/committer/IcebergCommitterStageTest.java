@@ -19,12 +19,14 @@ package io.mantisrx.connector.iceberg.sink.committer;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
@@ -36,29 +38,31 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
-import reactor.test.StepVerifier;
-import reactor.test.scheduler.VirtualTimeScheduler;
-import rx.RxReactiveStreams;
+import rx.Observable;
+import rx.observers.TestSubscriber;
 import rx.schedulers.TestScheduler;
 
 class IcebergCommitterStageTest {
 
+    private TestScheduler scheduler;
+    private TestSubscriber<Map<String, Object>> subscriber;
     private CommitterConfig config;
     private Catalog catalog;
     private Context context;
     private IcebergCommitter committer;
-    private TestScheduler scheduler;
     private IcebergCommitterStage.Transformer transformer;
 
     @BeforeEach
     void setUp() {
+        this.scheduler = new TestScheduler();
+        this.subscriber = new TestSubscriber<>();
+
         this.config = new CommitterConfig(new Parameters());
         this.committer = mock(IcebergCommitter.class);
-        this.scheduler = new TestScheduler();
+
+        transformer = new IcebergCommitterStage.Transformer(config, committer, scheduler);
 
         ServiceLocator serviceLocator = mock(ServiceLocator.class);
         when(serviceLocator.service(Configuration.class)).thenReturn(mock(Configuration.class));
@@ -72,34 +76,49 @@ class IcebergCommitterStageTest {
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
     }
 
-    @AfterEach
-    void tearDown() {
-        VirtualTimeScheduler.reset();
+    @Test
+    void shouldCommitPeriodically() {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("test", "test");
+        when(committer.commit(any())).thenReturn(summary);
+
+        Observable<DataFile> source = Observable.interval(1, TimeUnit.MINUTES, scheduler)
+                .map(i -> mock(DataFile.class));
+        Observable<Map<String, Object>> flow = source.compose(transformer);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.advanceTimeBy(1, TimeUnit.MINUTES);
+        subscriber.assertNoValues();
+        subscriber.assertNotCompleted();
+
+        scheduler.advanceTimeBy(4, TimeUnit.MINUTES);
+        subscriber.assertValueCount(1);
+
+        scheduler.advanceTimeBy(5, TimeUnit.MINUTES);
+        subscriber.assertValueCount(2);
+
+        scheduler.advanceTimeBy(1, TimeUnit.MINUTES);
+        subscriber.assertValueCount(2);
+        subscriber.assertNoErrors();
+
+        verify(committer, times(2)).commit(any());
     }
 
     @Test
-    void shouldCommitPeriodically() {
-        StepVerifier
-                .withVirtualTime(() -> {
-                    Flux<DataFile> upstream = Flux.interval(Duration.ofSeconds(1)).map(i -> mock(DataFile.class));
-                    transformer = new IcebergCommitterStage.Transformer(config, committer, scheduler);
-                    return RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(upstream).compose(transformer));
-                })
-                .expectSubscription()
-                .then(() -> scheduler.advanceTimeBy(1, TimeUnit.MINUTES))
-                .expectNoEvent(Duration.ofMinutes(1))
-                .then(() -> scheduler.advanceTimeBy(4, TimeUnit.MINUTES))
-                .thenAwait(Duration.ofMinutes(4))
-                .expectNextCount(1)
-                .then(() -> scheduler.advanceTimeBy(5, TimeUnit.MINUTES))
-                .thenAwait(Duration.ofMinutes(5))
-                .expectNextCount(1)
-                .then(() -> scheduler.advanceTimeBy(4, TimeUnit.MINUTES))
-                .expectNoEvent(Duration.ofMinutes(4))
-                .thenCancel()
-                .verify();
+    void shouldContinueOnCommitFailure() {
+        doThrow(new RuntimeException()).when(committer).commit(any());
 
-        verify(committer, times(2)).commit(any());
+        Observable<DataFile> source = Observable.interval(1, TimeUnit.MINUTES, scheduler)
+                .map(i -> mock(DataFile.class));
+        Observable<Map<String, Object>> flow = source.compose(transformer);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.advanceTimeBy(5, TimeUnit.MINUTES);
+        subscriber.assertNoErrors();
+        subscriber.assertNotCompleted();
+        subscriber.assertValueCount(0);
+
+        verify(committer).commit(any());
     }
 
     @Test

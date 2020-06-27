@@ -34,6 +34,7 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -92,10 +93,10 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
     /**
      * Use this method to create an Iceberg Writer independent of a Mantis Processing Stage.
-     *
+     * <p>
      * This is useful for optimizing network utilization by using the writer directly within another
      * processing stage instead of having to traverse stage boundaries.
-     *
+     * <p>
      * This incurs a debuggability trade-off where a processing stage will do multiple things.
      */
     public static IcebergWriter newIcebergWriter(
@@ -120,10 +121,10 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
     /**
      * Uses the provided Mantis Context to inject configuration and opens an underlying file appender.
-     *
+     * <p>
      * This method depends on a Hadoop Configuration and Iceberg Catalog, both injected
      * from the Context's service locator.
-     *
+     * <p>
      * Note that this method expects an Iceberg Table to have been previously created out-of-band,
      * otherwise initialization will fail. Users should prefer to create tables
      * out-of-band so they can be versioned alongside their schemas.
@@ -149,13 +150,19 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
     /**
      * Reactive Transformer for writing records to Iceberg.
-     *
+     * <p>
      * Users may use this class independently of this Stage, for example, if they want to
      * {@link Observable#compose(Observable.Transformer)} this transformer with a flow into
      * an existing Stage. One benefit of this co-location is to avoid extra network
      * cost from worker-to-worker communication, trading off debuggability.
      */
     public static class Transformer implements Observable.Transformer<Record, DataFile> {
+
+        private static final DataFile ERROR_DATA_FILE = new DataFiles.Builder()
+                .withPath("/error.parquet")
+                .withFileSizeInBytes(0L)
+                .withRecordCount(0L)
+                .build();
 
         private final WriterConfig config;
         private final IcebergWriter writer;
@@ -169,15 +176,29 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
          * Opens an IcebergWriter FileAppender, writes records to a file. Check the file appender
          * size on a configured count, and if over a configured threshold, close the file, build
          * and emit a DataFile, and open a new FileAppender.
-         *
+         * <p>
          * Pair this with a progressive multipart file uploader backend for better latencies.
          */
         @Override
         public Observable<DataFile> call(Observable<Record> source) {
             return source
+                    .doOnNext(record -> {
+                        if (writer.isClosed()) {
+                            try {
+                                writer.open();
+                            } catch (IOException e) {
+                                throw Exceptions.propagate(e);
+                            }
+                        }
+                    })
                     .scan(new Counter(config.getWriterRowGroupSize()), (counter, record) -> {
-                        writer.write(record);
-                        counter.increment();
+                        try {
+                            writer.write(record);
+                            counter.increment();
+                        } catch (RuntimeException e) {
+                            // metric
+                            logger.error("error writing record {}", record);
+                        }
                         return counter;
                     })
                     .filter(Counter::shouldReset)
@@ -185,20 +206,19 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                     .map(counter -> {
                         try {
                             DataFile dataFile = writer.close();
-                            writer.open();
                             counter.reset();
+                            logger.info("writing DataFile: {}", dataFile);
                             return dataFile;
                         } catch (IOException e) {
-                            throw Exceptions.propagate(e);
+                            // metric
+                            logger.error("error writing DataFile", e);
+                            return ERROR_DATA_FILE;
                         }
                     })
+                    .filter(dataFile -> !isErrorDataFile(dataFile))
                     .doOnNext(dataFile -> {
-                        // metric
-                    })
-                    .onErrorResumeNext(error -> {
-                        // metric
-                        logger.error("error writing record", error);
-                        return Observable.empty();
+                        // metric: data file
+                        // metric: num records written
                     })
                     .doOnSubscribe(() -> {
                         try {
@@ -217,28 +237,34 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         }
                     });
         }
-    }
 
-    private static class Counter {
-
-        private final int threshold;
-        private int counter;
-
-        Counter(int threshold) {
-            this.threshold = threshold;
-            this.counter = 0;
+        private boolean isErrorDataFile(DataFile dataFile) {
+            return ERROR_DATA_FILE.path() == dataFile.path() &&
+                    ERROR_DATA_FILE.fileSizeInBytes() == dataFile.fileSizeInBytes() &&
+                    ERROR_DATA_FILE.recordCount() == dataFile.recordCount();
         }
 
-        void increment() {
-            counter++;
-        }
+        private static class Counter {
 
-        void reset() {
-            counter = 0;
-        }
+            private final int threshold;
+            private int counter;
 
-        boolean shouldReset() {
-            return counter >= threshold;
+            Counter(int threshold) {
+                this.threshold = threshold;
+                this.counter = 0;
+            }
+
+            void increment() {
+                counter++;
+            }
+
+            void reset() {
+                counter = 0;
+            }
+
+            boolean shouldReset() {
+                return counter >= threshold;
+            }
         }
     }
 }
