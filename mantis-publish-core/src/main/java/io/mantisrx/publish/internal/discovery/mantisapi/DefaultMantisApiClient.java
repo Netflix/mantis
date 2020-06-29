@@ -88,7 +88,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
             StringBuilder uriBuilder = new StringBuilder(String.format(JOB_CLUSTER_MAPPING_URL_FORMAT, mrePublishConfiguration.discoveryApiHostname(), mrePublishConfiguration.discoveryApiPort()));
             app.ifPresent(appName -> uriBuilder.append("?app=").append(appName));
             String uri = uriBuilder.toString();
-            logger.info("job cluster mapping fetch url {}", uri);
+            logger.debug("job cluster mapping fetch url {}", uri);
             try {
                 HttpResponse response = httpClient.get(URI.create(uri))
                         .withConnectTimeout(CONNECT_TIMEOUT_MS)
