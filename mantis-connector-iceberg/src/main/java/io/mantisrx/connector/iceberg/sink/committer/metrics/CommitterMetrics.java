@@ -44,8 +44,8 @@ public class CommitterMetrics {
                 .addCounter(INVOCATION_COUNT)
                 .addCounter(COMMIT_SUCCESS_COUNT)
                 .addCounter(COMMIT_FAILURE_COUNT)
-                .addCounter(COMMIT_LATENCY_MSEC)
-                .addCounter(COMMIT_BATCH_SIZE)
+                .addGauge(COMMIT_LATENCY_MSEC)
+                .addGauge(COMMIT_BATCH_SIZE)
                 .build();
 
         metrics = MetricsRegistry.getInstance().registerAndGet(metrics);

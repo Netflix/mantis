@@ -62,7 +62,7 @@ class IcebergCommitterStageTest {
         this.subscriber = new TestSubscriber<>();
 
         this.config = new CommitterConfig(new Parameters());
-        this.metrics = mock(CommitterMetrics.class);
+        this.metrics = new CommitterMetrics();
         this.committer = mock(IcebergCommitter.class);
 
         transformer = new IcebergCommitterStage.Transformer(config, metrics, committer, scheduler);
