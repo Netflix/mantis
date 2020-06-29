@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
+import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -49,6 +50,7 @@ class IcebergCommitterStageTest {
     private TestScheduler scheduler;
     private TestSubscriber<Map<String, Object>> subscriber;
     private CommitterConfig config;
+    private CommitterMetrics metrics;
     private Catalog catalog;
     private Context context;
     private IcebergCommitter committer;
@@ -60,9 +62,10 @@ class IcebergCommitterStageTest {
         this.subscriber = new TestSubscriber<>();
 
         this.config = new CommitterConfig(new Parameters());
+        this.metrics = mock(CommitterMetrics.class);
         this.committer = mock(IcebergCommitter.class);
 
-        transformer = new IcebergCommitterStage.Transformer(config, committer, scheduler);
+        transformer = new IcebergCommitterStage.Transformer(config, metrics, committer, scheduler);
 
         ServiceLocator serviceLocator = mock(ServiceLocator.class);
         when(serviceLocator.service(Configuration.class)).thenReturn(mock(Configuration.class));

@@ -20,13 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
-import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Table;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -36,18 +32,9 @@ import org.slf4j.LoggerFactory;
  */
 public class IcebergCommitter {
 
-    private static final Logger logger = LoggerFactory.getLogger(IcebergCommitter.class);
-
-    private final CommitterMetrics metrics;
-    private final CommitterConfig config;
     private final Table table;
 
-    public IcebergCommitter(
-            CommitterMetrics metrics,
-            CommitterConfig config,
-            Table table) {
-        this.metrics = metrics;
-        this.config = config;
+    public IcebergCommitter(Table table) {
         this.table = table;
     }
 
@@ -60,9 +47,6 @@ public class IcebergCommitter {
         AppendFiles tableAppender = table.newAppend();
         dataFiles.forEach(tableAppender::appendFile);
         tableAppender.commit();
-        Map<String, Object> summary =
-                table.currentSnapshot() == null ? new HashMap<>() : new HashMap<>(table.currentSnapshot().summary());
-        logger.info("committed {}", summary);
-        return summary;
+        return table.currentSnapshot() == null ? new HashMap<>() : new HashMap<>(table.currentSnapshot().summary());
     }
 }

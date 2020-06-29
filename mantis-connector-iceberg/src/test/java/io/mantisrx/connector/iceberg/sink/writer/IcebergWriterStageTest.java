@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
+import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -60,10 +61,11 @@ class IcebergWriterStageTest {
         this.subscriber = new TestSubscriber<>();
 
         WriterConfig config = new WriterConfig(new Parameters(), mock(Configuration.class));
+        WriterMetrics metrics = new WriterMetrics();
         this.writer = mock(IcebergWriter.class);
         when(this.writer.close()).thenReturn(mock(DataFile.class));
         when(this.writer.length()).thenReturn(Long.MAX_VALUE);
-        this.transformer = new IcebergWriterStage.Transformer(config, this.writer);
+        this.transformer = new IcebergWriterStage.Transformer(config, metrics, this.writer);
 
         ServiceLocator serviceLocator = mock(ServiceLocator.class);
         when(serviceLocator.service(Configuration.class)).thenReturn(mock(Configuration.class));

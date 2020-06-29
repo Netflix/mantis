@@ -51,8 +51,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergWriterStage.class);
 
-    private final WriterMetrics metrics;
-
     // TODO: Move to config.
     private final String[] tableIdentifierNames;
 
@@ -99,15 +97,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      * <p>
      * This incurs a debuggability trade-off where a processing stage will do multiple things.
      */
-    public static IcebergWriter newIcebergWriter(
-            WriterConfig config,
-            WriterMetrics metrics,
-            WorkerInfo workerInfo,
-            Table table) {
+    public static IcebergWriter newIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
         if (table.spec().fields().isEmpty()) {
-            return new UnpartitionedIcebergWriter(metrics, config, workerInfo, table);
+            return new UnpartitionedIcebergWriter(config, workerInfo, table);
         } else {
-            return new PartitionedIcebergWriter(metrics, config, workerInfo, table);
+            return new PartitionedIcebergWriter(config, workerInfo, table);
         }
     }
 
@@ -115,7 +109,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      * Creates a new Iceberg Writer Processing Stage using a table identifier.
      */
     public IcebergWriterStage(String... tableIdentifierNames) {
-        this.metrics = new WriterMetrics();
         this.tableIdentifierNames = tableIdentifierNames;
     }
 
@@ -139,8 +132,9 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
-        IcebergWriter writer = newIcebergWriter(config, metrics, workerInfo, table);
-        transformer = new Transformer(config, writer);
+        IcebergWriter writer = newIcebergWriter(config, workerInfo, table);
+        WriterMetrics metrics = new WriterMetrics();
+        transformer = new Transformer(config, metrics, writer);
     }
 
     @Override
@@ -165,10 +159,12 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 .build();
 
         private final WriterConfig config;
+        private final WriterMetrics metrics;
         private final IcebergWriter writer;
 
-        public Transformer(WriterConfig config, IcebergWriter writer) {
+        public Transformer(WriterConfig config, WriterMetrics metrics, IcebergWriter writer) {
             this.config = config;
+            this.metrics = metrics;
             this.writer = writer;
         }
 
@@ -186,7 +182,9 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         if (writer.isClosed()) {
                             try {
                                 writer.open();
+                                metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
                             } catch (IOException e) {
+                                metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
                                 throw Exceptions.propagate(e);
                             }
                         }
@@ -195,8 +193,9 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         try {
                             writer.write(record);
                             counter.increment();
+                            metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
                         } catch (RuntimeException e) {
-                            // metric
+                            metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
                             logger.error("error writing record {}", record);
                         }
                         return counter;
@@ -207,29 +206,33 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         try {
                             DataFile dataFile = writer.close();
                             counter.reset();
-                            logger.info("writing DataFile: {}", dataFile);
                             return dataFile;
                         } catch (IOException e) {
-                            // metric
+                            metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
                             logger.error("error writing DataFile", e);
                             return ERROR_DATA_FILE;
                         }
                     })
                     .filter(dataFile -> !isErrorDataFile(dataFile))
                     .doOnNext(dataFile -> {
-                        // metric: data file
-                        // metric: num records written
+                        metrics.increment(WriterMetrics.BATCH_SUCCESS_COUNT);
+                        logger.info("writing DataFile: {}", dataFile);
+                        metrics.setGauge(WriterMetrics.BATCH_SIZE, dataFile.recordCount());
+                        metrics.setGauge(WriterMetrics.BATCH_SIZE_BYTES, dataFile.fileSizeInBytes());
                     })
                     .doOnSubscribe(() -> {
                         try {
                             writer.open();
+                            metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
                         } catch (IOException e) {
+                            metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
                             throw Exceptions.propagate(e);
                         }
                     })
                     .doOnTerminate(() -> {
                         if (!writer.isClosed()) {
                             try {
+                                logger.info("closing writer on rx terminate signal");
                                 writer.close();
                             } catch (IOException e) {
                                 throw Exceptions.propagate(e);
