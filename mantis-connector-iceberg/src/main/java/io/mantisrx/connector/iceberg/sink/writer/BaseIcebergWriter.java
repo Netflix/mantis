@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
-import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.WorkerInfo;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DataFile;
@@ -52,7 +51,6 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseIcebergWriter.class);
 
-    private final WriterMetrics metrics;
     private final WriterConfig config;
     private final WorkerInfo workerInfo;
 
@@ -65,12 +63,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     private OutputFile file;
     private StructLike key;
 
-    public BaseIcebergWriter(
-            WriterMetrics metrics,
-            WriterConfig config,
-            WorkerInfo workerInfo,
-            Table table) {
-        this.metrics = metrics;
+    public BaseIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
         this.config = config;
 
         this.table = table;
