@@ -40,6 +40,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -200,7 +201,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                             DataFile dataFile = writer.close();
                             counter.reset();
                             return dataFile;
-                        } catch (IOException e) {
+                        } catch (IOException | RuntimeIOException e) {
                             metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
                             logger.error("error writing DataFile", e);
                             return ERROR_DATA_FILE;
