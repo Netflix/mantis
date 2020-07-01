@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
-import io.mantisrx.connector.iceberg.sink.config.SinkProperties;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
@@ -70,21 +69,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      */
     public static List<ParameterDefinition<?>> parameters() {
         return Arrays.asList(
-                new StringParameter().name(SinkProperties.SINK_CATALOG)
-                        .description(SinkProperties.SINK_CATALOG_DESCRIPTION)
-                        .validator(Validators.notNullOrEmpty())
-                        .required()
-                        .build(),
-                new StringParameter().name(SinkProperties.SINK_DATABASE)
-                        .description(SinkProperties.SINK_DATABASE_DESCRIPTION)
-                        .validator(Validators.notNullOrEmpty())
-                        .required()
-                        .build(),
-                new StringParameter().name(SinkProperties.SINK_TABLE)
-                        .description(SinkProperties.SINK_TABLE_DESCRIPTION)
-                        .validator(Validators.notNullOrEmpty())
-                        .required()
-                        .build(),
                 new IntParameter().name(WriterProperties.WRITER_ROW_GROUP_SIZE)
                         .description(WriterProperties.WRITER_ROW_GROUP_SIZE_DESCRIPTION)
                         .validator(Validators.alwaysPass())
@@ -137,7 +121,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Configuration hadoopConfig = context.getServiceLocator().service(Configuration.class);
         WriterConfig config = new WriterConfig(context.getParameters(), hadoopConfig);
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
-        // TODO: Get namespace and name from config.
         TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
