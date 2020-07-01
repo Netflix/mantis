@@ -18,13 +18,14 @@ package io.mantisrx.connector.iceberg.sink.writer.config;
 
 import static io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties.*;
 
+import io.mantisrx.connector.iceberg.sink.config.SinkConfig;
 import io.mantisrx.runtime.parameter.Parameters;
 import org.apache.hadoop.conf.Configuration;
 
 /**
  * Config for controlling Iceberg Writer semantics.
  */
-public class WriterConfig {
+public class WriterConfig extends SinkConfig {
 
     private final int writerRowGroupSize;
     private final long writerFlushFrequencyBytes;
@@ -33,9 +34,9 @@ public class WriterConfig {
 
     /**
      * Creates an instance from {@link Parameters} derived from the current Mantis Stage's {@code Context}.
-     * TODO: Composite keys.
      */
     public WriterConfig(Parameters parameters, Configuration hadoopConfig) {
+        super(parameters);
         this.writerRowGroupSize = (int) parameters.get(
                 WRITER_ROW_GROUP_SIZE, WRITER_ROW_GROUP_SIZE_DEFAULT);
         this.writerFlushFrequencyBytes = Long.parseLong((String) parameters.get(

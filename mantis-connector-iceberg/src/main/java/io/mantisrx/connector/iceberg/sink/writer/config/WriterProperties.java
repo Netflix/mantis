@@ -20,10 +20,6 @@ import org.apache.iceberg.FileFormat;
 
 /**
  * Property key names and default values for an Iceberg Committer.
- *
- * TODO: Add Iceberg table properties (the writer sub-props).
- * TODO: Use Iceberg table properties's row-group-size instead.
- * TODO: Add Hadoop Configuration.
  */
 public class WriterProperties {
 

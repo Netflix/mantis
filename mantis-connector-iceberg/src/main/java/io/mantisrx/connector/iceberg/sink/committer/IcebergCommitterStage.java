@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
+import io.mantisrx.connector.iceberg.sink.config.SinkProperties;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.codec.JacksonCodecs;
@@ -49,8 +50,6 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitterStage.class);
 
-    private final String[] tableIdentifierNames;
-
     private Transformer transformer;
 
     /**
@@ -68,6 +67,21 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
      */
     public static List<ParameterDefinition<?>> parameters() {
         return Arrays.asList(
+                new StringParameter().name(SinkProperties.SINK_CATALOG)
+                        .description(SinkProperties.SINK_CATALOG_DESCRIPTION)
+                        .validator(Validators.notNullOrEmpty())
+                        .required()
+                        .build(),
+                new StringParameter().name(SinkProperties.SINK_DATABASE)
+                        .description(SinkProperties.SINK_DATABASE_DESCRIPTION)
+                        .validator(Validators.notNullOrEmpty())
+                        .required()
+                        .build(),
+                new StringParameter().name(SinkProperties.SINK_TABLE)
+                        .description(SinkProperties.SINK_TABLE_DESCRIPTION)
+                        .validator(Validators.notNullOrEmpty())
+                        .required()
+                        .build(),
                 new StringParameter().name(CommitterProperties.COMMIT_FREQUENCY_MS)
                         .description(CommitterProperties.COMMIT_FREQUENCY_DESCRIPTION)
                         .validator(Validators.alwaysPass())
@@ -76,8 +90,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         );
     }
 
-    public IcebergCommitterStage(String... tableIdentifierNames) {
-        this.tableIdentifierNames = tableIdentifierNames;
+    public IcebergCommitterStage() {
     }
 
     /**
@@ -95,8 +108,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         CommitterConfig config = new CommitterConfig(context.getParameters());
         CommitterMetrics metrics = new CommitterMetrics();
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
-        // TODO: Get namespace and name from config.
-        TableIdentifier id = TableIdentifier.of(tableIdentifierNames);
+        TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
         Table table = catalog.loadTable(id);
         IcebergCommitter committer = new IcebergCommitter(table);
         transformer = new Transformer(config, metrics, committer, Schedulers.computation());
