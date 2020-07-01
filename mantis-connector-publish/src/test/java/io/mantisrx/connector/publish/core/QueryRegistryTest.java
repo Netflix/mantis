@@ -116,6 +116,7 @@ class QueryRegistryTest {
 
 
     @Test
+    @Disabled("time-based, non-deterministic")
     void deregisterQueryTest() throws InterruptedException {
         try {
             QueryRegistry queryRegistry = new QueryRegistry.Builder().build();
@@ -155,6 +156,7 @@ class QueryRegistryTest {
     }
 
     @Test
+    @Disabled("time-based, non-deterministic")
     void registerIdenticalQueryGetsDedupedTest() {
         QueryRegistry queryRegistry = new QueryRegistry.Builder().withClientIdPrefix("myPrefix").build();
 
@@ -197,6 +199,7 @@ class QueryRegistryTest {
     }
 
     @Test
+    @Disabled("time-based, non-deterministic")
     void registerIdenticalQueryRemovalTest() throws InterruptedException {
         QueryRegistry queryRegistry = new QueryRegistry.Builder().withClientIdPrefix("myPrefix").build();
 
@@ -251,7 +254,7 @@ class QueryRegistryTest {
     }
 
     @Test
-    @Disabled
+    @Disabled("time-based, non-deterministic")
     void registerQueryMultipleAppsRemovalTest() throws InterruptedException {
         QueryRegistry queryRegistry = new QueryRegistry.Builder().withClientIdPrefix("myPrefix").build();
 
