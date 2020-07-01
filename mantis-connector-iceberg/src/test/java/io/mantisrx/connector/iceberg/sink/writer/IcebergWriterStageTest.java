@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import io.mantisrx.connector.iceberg.sink.TableIdentifierParameters;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
@@ -60,7 +61,8 @@ class IcebergWriterStageTest {
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
 
-        WriterConfig config = new WriterConfig(new Parameters(), mock(Configuration.class));
+        Parameters parameters = TableIdentifierParameters.newParameters();
+        WriterConfig config = new WriterConfig(parameters, mock(Configuration.class));
         WriterMetrics metrics = new WriterMetrics();
         this.writer = mock(IcebergWriter.class);
         when(this.writer.close()).thenReturn(mock(DataFile.class));
@@ -75,7 +77,7 @@ class IcebergWriterStageTest {
         when(this.catalog.loadTable(any())).thenReturn(table);
         when(serviceLocator.service(Catalog.class)).thenReturn(this.catalog);
         this.context = mock(Context.class);
-        when(this.context.getParameters()).thenReturn(new Parameters());
+        when(this.context.getParameters()).thenReturn(parameters);
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
 
         Observable<Record> source = Observable.interval(1, TimeUnit.SECONDS, scheduler)
@@ -157,14 +159,14 @@ class IcebergWriterStageTest {
 
     @Test
     void shouldInitializeWithExistingTable() {
-        IcebergWriterStage stage = new IcebergWriterStage("catalog", "database", "table");
+        IcebergWriterStage stage = new IcebergWriterStage();
         assertDoesNotThrow(() -> stage.init(context));
     }
 
     @Test
     void shouldFailToInitializeWithMissingTable() {
         when(catalog.loadTable(any())).thenThrow(new RuntimeException());
-        IcebergWriterStage stage = new IcebergWriterStage("catalog", "database", "missing");
+        IcebergWriterStage stage = new IcebergWriterStage();
         assertThrows(RuntimeException.class, () -> stage.init(context));
     }
 }

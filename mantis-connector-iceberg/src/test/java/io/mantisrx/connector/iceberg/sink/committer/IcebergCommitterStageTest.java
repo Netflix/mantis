@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.mantisrx.connector.iceberg.sink.TableIdentifierParameters;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import io.mantisrx.runtime.Context;
@@ -61,7 +62,8 @@ class IcebergCommitterStageTest {
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
 
-        this.config = new CommitterConfig(new Parameters());
+        Parameters parameters = TableIdentifierParameters.newParameters();
+        this.config = new CommitterConfig(parameters);
         this.metrics = new CommitterMetrics();
         this.committer = mock(IcebergCommitter.class);
 
@@ -75,7 +77,7 @@ class IcebergCommitterStageTest {
         when(this.catalog.loadTable(any())).thenReturn(table);
         when(serviceLocator.service(Catalog.class)).thenReturn(this.catalog);
         this.context = mock(Context.class);
-        when(this.context.getParameters()).thenReturn(new Parameters());
+        when(this.context.getParameters()).thenReturn(parameters);
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
     }
 
@@ -126,14 +128,14 @@ class IcebergCommitterStageTest {
 
     @Test
     void shouldInitializeWithExistingTable() {
-        IcebergCommitterStage stage = new IcebergCommitterStage("catalog", "database", "table");
+        IcebergCommitterStage stage = new IcebergCommitterStage();
         assertDoesNotThrow(() -> stage.init(context));
     }
 
     @Test
     void shouldFailToInitializeWithMissingTable() {
         when(catalog.loadTable(any())).thenThrow(new RuntimeException());
-        IcebergCommitterStage stage = new IcebergCommitterStage("catalog", "database", "missing");
+        IcebergCommitterStage stage = new IcebergCommitterStage();
         assertThrows(RuntimeException.class, () -> stage.init(context));
     }
 }

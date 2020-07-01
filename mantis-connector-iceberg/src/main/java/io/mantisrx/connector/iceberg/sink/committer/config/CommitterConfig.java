@@ -19,14 +19,13 @@ package io.mantisrx.connector.iceberg.sink.committer.config;
 import static io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties.COMMIT_FREQUENCY_MS;
 import static io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties.COMMIT_FREQUENCY_MS_DEFAULT;
 
+import io.mantisrx.connector.iceberg.sink.config.SinkConfig;
 import io.mantisrx.runtime.parameter.Parameters;
 
 /**
  * Config for controlling Iceberg Committer semantics.
- *
- * TODO: Add Iceberg Table properties.
  */
-public class CommitterConfig {
+public class CommitterConfig extends SinkConfig {
 
     private final long commitFrequencyMs;
 
@@ -34,7 +33,9 @@ public class CommitterConfig {
      * Creates an instance from {@link Parameters} derived from the current Mantis Stage's {@code Context}.
      */
     public CommitterConfig(Parameters parameters) {
-        this.commitFrequencyMs = Long.parseLong((String) parameters.get(COMMIT_FREQUENCY_MS, COMMIT_FREQUENCY_MS_DEFAULT));
+        super(parameters);
+        this.commitFrequencyMs =
+                Long.parseLong((String) parameters.get(COMMIT_FREQUENCY_MS, COMMIT_FREQUENCY_MS_DEFAULT));
     }
 
     /**
