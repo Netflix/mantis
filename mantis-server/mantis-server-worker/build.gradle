@@ -19,7 +19,7 @@ apply plugin: 'eu.appsatori.fatjar'
 ext {
     mantisControlPlaneVersion = '1.2.+'
     mantisRxControlVersion = '1.3.14'
-    mesosVersion = '1.3.2'
+    mesosVersion = '1.7.2'
     httpComponentsVersion = '4.5.6'
 }
 
