@@ -25,7 +25,7 @@ import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchExperimental;
 
 import io.mantisrx.server.worker.jobmaster.clutch.experimental.MantisClutchConfigurationSelector;
-import io.vavr.jackson.datatype.VavrModule;
+import mantis.io.vavr.jackson.datatype.VavrModule;
 
 import io.vavr.control.Try;
 
@@ -35,9 +35,9 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import mantis.com.fasterxml.jackson.core.type.TypeReference;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;

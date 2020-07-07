@@ -19,8 +19,8 @@ package io.mantisrx.server.worker;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;

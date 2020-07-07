@@ -16,14 +16,13 @@
 
 package com.mantisrx.common.utils;
 
+import mantis.com.fasterxml.jackson.core.type.TypeReference;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.databind.ObjectWriter;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-
 
 public class JsonUtility {
 

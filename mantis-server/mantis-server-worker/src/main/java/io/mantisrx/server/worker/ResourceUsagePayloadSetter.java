@@ -21,8 +21,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.core.JsonProcessingException;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;

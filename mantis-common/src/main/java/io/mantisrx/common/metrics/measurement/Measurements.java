@@ -19,9 +19,9 @@ package io.mantisrx.common.metrics.measurement;
 import java.util.Collection;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import mantis.com.fasterxml.jackson.annotation.JsonCreator;
+import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import mantis.com.fasterxml.jackson.annotation.JsonProperty;
 
 
 public class Measurements {

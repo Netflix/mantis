@@ -16,15 +16,15 @@
 
 package io.mantisrx.runtime.descriptor;
 
+import mantis.com.fasterxml.jackson.annotation.JsonCreator;
+import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import mantis.com.fasterxml.jackson.annotation.JsonProperty;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public class StageScalingPolicy {

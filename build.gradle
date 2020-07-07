@@ -24,6 +24,7 @@ buildscript {
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:5.1.1'
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
     }
 }
 
@@ -37,6 +38,7 @@ ext {
     junitVersion = '4.10'
     mockitoVersion = '1.9.+'
     slf4jVersion = '1.7.+'
+    vavrVersion = '0.9.2'
 }
 
 allprojects {

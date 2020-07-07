@@ -18,10 +18,10 @@ package io.mantisrx.runtime.codec;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.codec.Codec;
+import mantis.com.fasterxml.jackson.core.JsonProcessingException;
+import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public class JsonCodec<T extends JsonType> implements Codec<T> {

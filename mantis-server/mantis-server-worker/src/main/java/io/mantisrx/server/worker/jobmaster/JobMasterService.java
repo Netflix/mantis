@@ -19,9 +19,9 @@ package io.mantisrx.server.worker.jobmaster;
 import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.core.JsonProcessingException;
+import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;

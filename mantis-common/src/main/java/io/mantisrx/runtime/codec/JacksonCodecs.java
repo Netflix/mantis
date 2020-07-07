@@ -20,14 +20,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.mantisrx.common.codec.Codec;
+import mantis.com.fasterxml.jackson.core.JsonProcessingException;
+import mantis.com.fasterxml.jackson.core.type.TypeReference;
+import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.databind.ObjectReader;
+import mantis.com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+import mantis.com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 
 public class JacksonCodecs {

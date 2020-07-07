@@ -19,11 +19,11 @@ package io.mantisrx.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.annotation.JsonCreator;
+import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import mantis.com.fasterxml.jackson.annotation.JsonProperty;
+import mantis.com.fasterxml.jackson.core.JsonProcessingException;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

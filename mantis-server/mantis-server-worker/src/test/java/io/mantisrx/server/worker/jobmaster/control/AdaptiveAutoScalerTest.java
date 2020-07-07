@@ -21,8 +21,8 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.core.type.TypeReference;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import org.junit.Test;

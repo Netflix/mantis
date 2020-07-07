@@ -16,7 +16,7 @@
 
 package io.mantisrx.common.messages;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public abstract class MantisMetaMessage {

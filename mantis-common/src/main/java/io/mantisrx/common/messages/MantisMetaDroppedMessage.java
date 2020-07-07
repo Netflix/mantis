@@ -16,8 +16,8 @@
 
 package io.mantisrx.common.messages;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import mantis.com.fasterxml.jackson.annotation.JsonProperty;
+import mantis.com.fasterxml.jackson.core.JsonProcessingException;
 
 
 public class MantisMetaDroppedMessage extends MantisMetaMessage {

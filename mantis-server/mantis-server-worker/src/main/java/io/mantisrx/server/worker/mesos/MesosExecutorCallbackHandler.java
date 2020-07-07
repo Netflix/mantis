@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
+import mantis.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.worker.WrappedExecuteStageRequest;
 import org.apache.mesos.Executor;
