@@ -37,7 +37,7 @@ dependencies {
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
     shaded "io.vavr:vavr-jackson:$vavrVersion"
 
-    implementation "io.vavr:vavr:0.9.2:$vavrVersion"
+    implementation "io.vavr:vavr:$vavrVersion"
 }
 
 shadowJar {
