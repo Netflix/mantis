@@ -50,8 +50,6 @@ class IcebergCommitterStageTest {
 
     private TestScheduler scheduler;
     private TestSubscriber<Map<String, Object>> subscriber;
-    private CommitterConfig config;
-    private CommitterMetrics metrics;
     private Catalog catalog;
     private Context context;
     private IcebergCommitter committer;
@@ -63,8 +61,8 @@ class IcebergCommitterStageTest {
         this.subscriber = new TestSubscriber<>();
 
         Parameters parameters = TableIdentifierParameters.newParameters();
-        this.config = new CommitterConfig(parameters);
-        this.metrics = new CommitterMetrics();
+        CommitterConfig config = new CommitterConfig(parameters);
+        CommitterMetrics metrics = new CommitterMetrics();
         this.committer = mock(IcebergCommitter.class);
 
         transformer = new IcebergCommitterStage.Transformer(config, metrics, committer, scheduler);
