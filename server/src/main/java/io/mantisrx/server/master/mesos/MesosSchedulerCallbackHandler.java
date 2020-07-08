@@ -332,7 +332,7 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
     @Override
     public void statusUpdate(final SchedulerDriver arg0, TaskStatus arg1) {
         Optional<WorkerId> workerIdO = WorkerId.fromId(arg1.getTaskId().getValue());
-        logger.info("Task status update: ({}) state: {}({}) - {}",
+        logger.debug("Task status update: ({}) state: {}({}) - {}",
                 arg1.getTaskId().getValue(),
                 arg1.getState(),
                 arg1.getState().getNumber(),
