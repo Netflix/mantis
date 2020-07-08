@@ -24,11 +24,11 @@ import java.util.Objects;
 
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;
-import mantis.com.fasterxml.jackson.annotation.JsonCreator;
-import mantis.com.fasterxml.jackson.annotation.JsonIgnore;
-import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import mantis.com.fasterxml.jackson.annotation.JsonProperty;
-import mantis.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public class SchedulingInfo {

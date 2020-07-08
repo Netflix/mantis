@@ -21,13 +21,13 @@ import java.util.List;
 import java.util.Map;
 
 import io.mantisrx.common.codec.Codec;
-import mantis.com.fasterxml.jackson.core.JsonProcessingException;
-import mantis.com.fasterxml.jackson.core.type.TypeReference;
-import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
-import mantis.com.fasterxml.jackson.databind.ObjectMapper;
-import mantis.com.fasterxml.jackson.databind.ObjectReader;
-import mantis.com.fasterxml.jackson.dataformat.cbor.CBORFactory;
-import mantis.com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
+import io.mantisrx.shaded.com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+import io.mantisrx.shaded.com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 
 public class JacksonCodecs {

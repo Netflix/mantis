@@ -19,9 +19,9 @@ package io.mantisrx.runtime.descriptor;
 import java.util.HashMap;
 import java.util.Map;
 
-import mantis.com.fasterxml.jackson.annotation.JsonCreator;
-import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import mantis.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 
 public class JobInfo extends MetadataInfo {

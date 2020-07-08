@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import mantis.com.fasterxml.jackson.databind.DeserializationFeature;
-import mantis.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.StageConfig;

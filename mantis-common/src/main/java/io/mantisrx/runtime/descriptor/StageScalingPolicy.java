@@ -16,10 +16,10 @@
 
 package io.mantisrx.runtime.descriptor;
 
-import mantis.com.fasterxml.jackson.annotation.JsonCreator;
-import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import mantis.com.fasterxml.jackson.annotation.JsonProperty;
-import mantis.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Collections;

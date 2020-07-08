@@ -16,10 +16,10 @@
 
 package io.mantisrx.common;
 
-import mantis.com.fasterxml.jackson.annotation.JsonCreator;
-import mantis.com.fasterxml.jackson.annotation.JsonIgnore;
-import mantis.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import mantis.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.HashSet;
