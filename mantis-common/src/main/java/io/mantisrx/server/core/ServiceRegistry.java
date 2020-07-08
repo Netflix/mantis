@@ -43,7 +43,7 @@ public class ServiceRegistry {
     private MantisPropertiesLoader loadMantisPropertiesService() {
         MantisPropertiesLoader mpl = new DefaultMantisPropertiesLoader(new Properties());
         try {
-            mpl = (MantisPropertiesLoader) Class.forName("com.netflix.io.mantisrx.shaded.common.properties.MantisFastPropertiesLoader").getConstructor(Properties.class)
+            mpl = (MantisPropertiesLoader) Class.forName("com.netflix.mantis.common.properties.MantisFastPropertiesLoader").getConstructor(Properties.class)
                     .newInstance(new Properties());
         } catch (Exception e) {
             logger.warn("Could not load MantisFastPropertiesLoader");
