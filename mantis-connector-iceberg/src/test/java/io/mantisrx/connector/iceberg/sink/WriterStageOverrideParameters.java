@@ -22,11 +22,12 @@ import java.util.Map;
 import java.util.Set;
 
 import io.mantisrx.connector.iceberg.sink.config.SinkProperties;
+import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
 import io.mantisrx.runtime.parameter.Parameters;
 
-public class TableIdentifierParameters {
+public class WriterStageOverrideParameters {
 
-    private TableIdentifierParameters() {
+    private WriterStageOverrideParameters() {
     }
 
     public static Parameters newParameters() {
@@ -41,6 +42,9 @@ public class TableIdentifierParameters {
 
         required.add(SinkProperties.SINK_TABLE);
         state.put(SinkProperties.SINK_TABLE, "table");
+
+        required.add(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC);
+        state.put(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC, "5000");
 
         return new Parameters(state, required, required);
     }

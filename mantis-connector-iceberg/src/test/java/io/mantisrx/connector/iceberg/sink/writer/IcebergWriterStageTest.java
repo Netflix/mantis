@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import io.mantisrx.connector.iceberg.sink.TableIdentifierParameters;
+import io.mantisrx.connector.iceberg.sink.WriterStageOverrideParameters;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
@@ -57,18 +58,19 @@ class IcebergWriterStageTest {
     private Observable<DataFile> flow;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
 
-        Parameters parameters = TableIdentifierParameters.newParameters();
+        // Writer
+        Parameters parameters = WriterStageOverrideParameters.newParameters();
         WriterConfig config = new WriterConfig(parameters, mock(Configuration.class));
         WriterMetrics metrics = new WriterMetrics();
-        this.writer = mock(IcebergWriter.class);
-        when(this.writer.close()).thenReturn(mock(DataFile.class));
+        this.writer = spy(FakeIcebergWriter.class);
         when(this.writer.length()).thenReturn(Long.MAX_VALUE);
-        this.transformer = new IcebergWriterStage.Transformer(config, metrics, this.writer);
+        this.transformer = new IcebergWriterStage.Transformer(config, metrics, this.writer, this.scheduler);
 
+        // Catalog
         ServiceLocator serviceLocator = mock(ServiceLocator.class);
         when(serviceLocator.service(Configuration.class)).thenReturn(mock(Configuration.class));
         this.catalog = mock(Catalog.class);
@@ -76,27 +78,30 @@ class IcebergWriterStageTest {
         when(table.spec()).thenReturn(PartitionSpec.unpartitioned());
         when(this.catalog.loadTable(any())).thenReturn(table);
         when(serviceLocator.service(Catalog.class)).thenReturn(this.catalog);
+
+        // Mantis Context
         this.context = mock(Context.class);
         when(this.context.getParameters()).thenReturn(parameters);
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
 
-        Observable<Record> source = Observable.interval(1, TimeUnit.SECONDS, scheduler)
+        // Flow
+        Observable<Record> source = Observable.interval(1, TimeUnit.MILLISECONDS, this.scheduler)
                 .map(i -> mock(Record.class));
-        flow = source.compose(transformer);
+        this.flow = source.compose(this.transformer);
     }
 
     @Test
-    void shouldCloseOnRowGroupSizeThreshold() throws IOException {
+    void shouldCloseOnSizeThreshold() throws IOException {
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
-        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
         subscriber.assertNoTerminalEvent();
 
-        scheduler.advanceTimeBy(999, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(999, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(1);
 
-        scheduler.advanceTimeBy(1000, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1000, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(2);
 
         verify(writer, times(2000)).write(any());
@@ -104,27 +109,76 @@ class IcebergWriterStageTest {
     }
 
     @Test
-    void shouldOpenWriterOnSubscribe() throws IOException {
+    void shouldNotCloseWhenUnderSizeThreshold() throws IOException {
+        when(writer.length()).thenReturn(1L);
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
-        scheduler.triggerActions();
+        scheduler.advanceTimeBy(1000, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
         subscriber.assertNoTerminalEvent();
 
-        verify(writer).open();
+        verify(writer, times(1000)).write(any());
+        verify(writer, times(0)).close();
+    }
+
+    @Test
+    void shouldCloseOnTimeThreshold() throws IOException {
+        Observable<Record> source = Observable.interval(500, TimeUnit.MILLISECONDS, scheduler)
+                .map(i -> mock(Record.class));
+        flow = source.compose(transformer);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        when(writer.length()).thenReturn(1L);
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
+        subscriber.assertNoTerminalEvent();
+
+        scheduler.advanceTimeBy(499, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
+        subscriber.assertNoTerminalEvent();
+
+        scheduler.advanceTimeBy(4500, TimeUnit.MILLISECONDS);
+        subscriber.assertValueCount(1);
+
+        // Large events greater than size threshold, but low volume should not trigger count signal
+        // because count signal checks every `row-group-size` events.
+        when(writer.length()).thenReturn(Long.MAX_VALUE);
+        scheduler.advanceTimeBy(5000, TimeUnit.MILLISECONDS);
+        subscriber.assertValueCount(2);
+
+        verify(writer, times(20)).write(any());
+        verify(writer, times(2)).close();
+    }
+
+    @Test
+    void shouldNoOpCloseWhenNoDataOnTimeThreshold() throws IOException {
+        // Low volume stream.
+        Observable<Record> source = Observable.interval(10_000, TimeUnit.MILLISECONDS, scheduler)
+                .map(i -> mock(Record.class));
+        flow = source.compose(transformer);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.advanceTimeBy(5000, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
+        subscriber.assertNoErrors();
+        subscriber.assertNoTerminalEvent();
+
+        verify(writer, times(0)).open();
+        verify(writer, times(2)).isClosed();
+        verify(writer, times(0)).close();
     }
 
     @Test
     void shouldNoOpCloseWhenFailedToOpen() throws IOException {
-        when(writer.isClosed()).thenReturn(true);
         doThrow(new IOException()).when(writer).open();
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
-        scheduler.triggerActions();
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertError(RuntimeException.class);
         subscriber.assertTerminalEvent();
 
         verify(writer).open();
-        verify(writer).isClosed();
+        verify(writer, times(3)).isClosed();
         verify(writer, times(0)).close();
     }
 
@@ -133,10 +187,10 @@ class IcebergWriterStageTest {
         doThrow(new RuntimeException()).when(writer).write(any());
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
-        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoTerminalEvent();
 
-        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoTerminalEvent();
 
         verify(writer, times(2)).write(any());
@@ -150,10 +204,10 @@ class IcebergWriterStageTest {
 
         scheduler.triggerActions();
         subscriber.assertNoErrors();
-        subscriber.assertCompleted();
 
         verify(writer).open();
         verify(writer).write(any());
+        verify(writer, times(3)).isClosed();
         verify(writer, times(1)).close();
     }
 
@@ -168,5 +222,32 @@ class IcebergWriterStageTest {
         when(catalog.loadTable(any())).thenThrow(new RuntimeException());
         IcebergWriterStage stage = new IcebergWriterStage();
         assertThrows(RuntimeException.class, () -> stage.init(context));
+    }
+
+    private static abstract class FakeIcebergWriter implements IcebergWriter {
+
+        private final Object object;
+        private Object fileAppender;
+
+        public FakeIcebergWriter() {
+            this.object = new Object();
+            this.fileAppender = null;
+        }
+
+        @Override
+        public void open() throws IOException {
+            fileAppender = object;
+        }
+
+        @Override
+        public DataFile close() throws IOException {
+            fileAppender = null;
+            return mock(DataFile.class);
+        }
+
+        @Override
+        public boolean isClosed() {
+            return fileAppender == null;
+        }
     }
 }
