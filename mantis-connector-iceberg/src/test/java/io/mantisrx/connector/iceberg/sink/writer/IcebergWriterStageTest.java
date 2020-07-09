@@ -151,7 +151,7 @@ class IcebergWriterStageTest {
     }
 
     @Test
-    void shouldNoOpCloseWhenNoDataOnTimeThreshold() throws IOException {
+    void shouldNoOpWhenNoDataOnTimeThreshold() throws IOException {
         // Low volume stream.
         Observable<Record> source = Observable.interval(10_000, TimeUnit.MILLISECONDS, scheduler)
                 .map(i -> mock(Record.class));
@@ -164,6 +164,7 @@ class IcebergWriterStageTest {
         subscriber.assertNoTerminalEvent();
 
         verify(writer, times(0)).open();
+        verify(writer, times(0)).write(any());
         verify(writer, times(2)).isClosed();
         verify(writer, times(0)).close();
     }
