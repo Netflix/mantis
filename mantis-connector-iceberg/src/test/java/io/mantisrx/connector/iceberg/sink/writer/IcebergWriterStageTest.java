@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import io.mantisrx.connector.iceberg.sink.WriterStageOverrideParameters;
+import io.mantisrx.connector.iceberg.sink.StageOverrideParameters;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
@@ -63,7 +63,7 @@ class IcebergWriterStageTest {
         this.subscriber = new TestSubscriber<>();
 
         // Writer
-        Parameters parameters = WriterStageOverrideParameters.newParameters();
+        Parameters parameters = StageOverrideParameters.newParameters();
         WriterConfig config = new WriterConfig(parameters, mock(Configuration.class));
         WriterMetrics metrics = new WriterMetrics();
         this.writer = spy(FakeIcebergWriter.class);
@@ -94,15 +94,17 @@ class IcebergWriterStageTest {
     void shouldCloseOnSizeThreshold() throws IOException {
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
+        // Greater than size threshold, but not yet checked at row-group-size config.
         scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
-        subscriber.assertNoTerminalEvent();
 
         scheduler.advanceTimeBy(999, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(1);
 
         scheduler.advanceTimeBy(1000, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(2);
+
+        subscriber.assertNoTerminalEvent();
 
         verify(writer, times(2000)).write(any());
         verify(writer, times(2)).close();
@@ -113,8 +115,10 @@ class IcebergWriterStageTest {
         when(writer.length()).thenReturn(1L);
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
+        // Size is checked at row-group-size config, but under size-threshold, so no-op.
         scheduler.advanceTimeBy(1000, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
+
         subscriber.assertNoTerminalEvent();
 
         verify(writer, times(1000)).write(any());
@@ -122,32 +126,46 @@ class IcebergWriterStageTest {
     }
 
     @Test
-    void shouldCloseOnTimeThreshold() throws IOException {
+    void shouldCloseWhenLowVolumeOnTimeThreshold() throws IOException {
+        when(writer.length()).thenReturn(1L);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
+
+        // Size is checked at row-group-size config, but under size threshold, so no-op.
+        scheduler.advanceTimeBy(999, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
+
+        // Hits time threshold; proceed to close.
+        scheduler.advanceTimeBy(4000, TimeUnit.MILLISECONDS);
+        subscriber.assertValueCount(1);
+
+        subscriber.assertNoTerminalEvent();
+
+        verify(writer, times(5000)).write(any());
+        verify(writer, times(1)).close();
+    }
+
+    @Test
+    void shouldCloseWhenHighVolumeOnTimeThreshold() throws IOException {
         Observable<Record> source = Observable.interval(500, TimeUnit.MILLISECONDS, scheduler)
                 .map(i -> mock(Record.class));
         flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
-        when(writer.length()).thenReturn(1L);
-        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
+        // Over the size threshold, but not yet checked at row-group-size config.
+        scheduler.advanceTimeBy(500, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
-        subscriber.assertNoTerminalEvent();
 
-        scheduler.advanceTimeBy(499, TimeUnit.MILLISECONDS);
-        subscriber.assertNoValues();
-        subscriber.assertNoTerminalEvent();
-
+        // Hits time threshold and there's data to write; proceed to close.
         scheduler.advanceTimeBy(4500, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(1);
 
-        // Large events greater than size threshold, but low volume should not trigger count signal
-        // because count signal checks every `row-group-size` events.
-        when(writer.length()).thenReturn(Long.MAX_VALUE);
-        scheduler.advanceTimeBy(5000, TimeUnit.MILLISECONDS);
-        subscriber.assertValueCount(2);
+        subscriber.assertNoTerminalEvent();
 
-        verify(writer, times(20)).write(any());
-        verify(writer, times(2)).close();
+        verify(writer, times(10)).write(any());
+        verify(writer, times(1)).close();
     }
 
     @Test
