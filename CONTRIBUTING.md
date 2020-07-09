@@ -8,7 +8,7 @@ By contributing your code, you agree to license your contribution under the term
 
 ```
 /**
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2020 Netflix, Inc.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
