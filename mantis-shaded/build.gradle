@@ -18,6 +18,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 ext {
     jacksonVersion = '2.10.+'
+    guavaVersion = '18.+'
 }
 
 configurations {
@@ -36,6 +37,7 @@ dependencies {
     shaded "com.fasterxml.jackson.module:jackson-module-afterburner:$jacksonVersion"
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
     shaded "io.vavr:vavr-jackson:$vavrVersion"
+    shaded "com.google.guava:guava:$guavaVersion"
 
     implementation "io.vavr:vavr:$vavrVersion"
 }
@@ -45,6 +47,8 @@ shadowJar {
     configurations = [project.configurations.shaded]
     relocate 'com.fasterxml', 'io.mantisrx.shaded.com.fasterxml'
     relocate 'io.vavr.jackson.datatype', 'io.mantisrx.shaded.io.vavr.jackson.datatype'
+    relocate 'com.google.common', 'io.mantisrx.shaded.com.google.common'
+
     mergeServiceFiles()
 }
 
