@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.base.Splitter;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;

@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.experimental;
 
-import com.google.common.util.concurrent.AtomicDouble;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchConfiguration;
