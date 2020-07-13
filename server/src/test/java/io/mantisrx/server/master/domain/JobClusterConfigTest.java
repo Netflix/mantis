@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master.domain;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MachineDefinition;

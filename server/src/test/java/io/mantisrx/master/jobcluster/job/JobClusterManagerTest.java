@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

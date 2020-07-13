@@ -16,15 +16,15 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.server.master.domain.DataFormatAdapter;

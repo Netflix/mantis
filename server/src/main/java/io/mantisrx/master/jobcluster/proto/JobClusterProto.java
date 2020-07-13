@@ -17,7 +17,7 @@
 package io.mantisrx.master.jobcluster.proto;
 
 import akka.actor.ActorRef;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;

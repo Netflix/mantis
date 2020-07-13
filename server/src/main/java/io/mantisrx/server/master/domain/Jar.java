@@ -18,9 +18,9 @@ package io.mantisrx.server.master.domain;
 
 import java.net.URL;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 
 

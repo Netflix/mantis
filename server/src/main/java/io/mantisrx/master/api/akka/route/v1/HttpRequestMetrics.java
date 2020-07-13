@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.collect.Sets;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.metrics.spectator.MetricId;

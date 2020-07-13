@@ -33,7 +33,7 @@ import akka.http.javadsl.model.MediaTypes;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
-import com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;

@@ -21,16 +21,16 @@ import java.net.URL;
 import java.time.Instant;
 import java.util.*;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;

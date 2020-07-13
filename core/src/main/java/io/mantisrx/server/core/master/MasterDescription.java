@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.core.master;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Objects;
 
 
 /**

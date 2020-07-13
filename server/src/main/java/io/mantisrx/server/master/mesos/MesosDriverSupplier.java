@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;

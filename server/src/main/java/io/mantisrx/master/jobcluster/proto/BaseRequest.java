@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.concurrent.atomic.AtomicLong;
 

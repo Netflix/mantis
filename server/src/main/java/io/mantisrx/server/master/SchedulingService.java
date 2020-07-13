@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Sets;
+import io.mantisrx.shaded.com.google.common.collect.Sets;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.SchedulingResult;

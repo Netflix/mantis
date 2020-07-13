@@ -27,7 +27,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 
 import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import io.mantisrx.master.jobcluster.job.JobState;

@@ -26,7 +26,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;

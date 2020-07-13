@@ -23,7 +23,7 @@ import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.*;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.japi.Pair;
-import com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;

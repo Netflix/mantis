@@ -19,7 +19,6 @@ ext {
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     curatorVersion = '2.11.0'
-    guavaVersion = '19.0'
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
@@ -36,7 +35,6 @@ dependencies {
 
     api "org.apache.mesos:mesos:$mesosVersion"
     api "org.json:json:$jsonVersion"
-    api "com.google.guava:guava:$guavaVersion"
     api "org.hdrhistogram:HdrHistogram:$hdrHistogramVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.apache.curator:curator-framework:$curatorVersion"

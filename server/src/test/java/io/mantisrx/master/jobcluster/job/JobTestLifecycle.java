@@ -55,7 +55,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;

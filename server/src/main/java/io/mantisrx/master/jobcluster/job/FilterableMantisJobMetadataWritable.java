@@ -19,10 +19,10 @@ package io.mantisrx.master.jobcluster.job;
 import java.net.URL;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;

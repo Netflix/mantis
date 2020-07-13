@@ -23,10 +23,10 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.server.core.JobAssignmentResult;

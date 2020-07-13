@@ -17,9 +17,9 @@
 package io.mantisrx.master.api.akka.route.utils;
 
 import akka.http.javadsl.model.sse.ServerSentEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import org.slf4j.Logger;

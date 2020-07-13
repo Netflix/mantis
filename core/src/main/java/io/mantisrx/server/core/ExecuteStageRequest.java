@@ -20,9 +20,9 @@ import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;

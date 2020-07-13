@@ -18,11 +18,11 @@ package io.mantisrx.master.jobcluster.proto;
 
 import akka.actor.ActorRef;
 import akka.http.javadsl.model.Uri;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;

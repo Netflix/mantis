@@ -28,9 +28,9 @@ import akka.http.javadsl.model.HttpResponse;
 
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;

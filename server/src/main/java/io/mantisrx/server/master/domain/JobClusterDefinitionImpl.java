@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.runtime.JobOwner;

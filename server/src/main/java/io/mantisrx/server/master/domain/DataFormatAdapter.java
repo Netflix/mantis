@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;

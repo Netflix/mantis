@@ -20,9 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;

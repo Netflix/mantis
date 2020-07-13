@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.vm;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 
 import java.io.IOException;

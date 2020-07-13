@@ -26,7 +26,7 @@ import java.util.Set;
 import org.joda.time.Instant;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 
 
 import io.mantisrx.server.master.domain.JobId;

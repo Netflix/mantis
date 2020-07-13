@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.core.zookeeper;
 
-import com.google.common.util.concurrent.MoreExecutors;
+import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;

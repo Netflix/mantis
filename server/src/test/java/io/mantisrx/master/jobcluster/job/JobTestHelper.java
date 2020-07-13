@@ -29,7 +29,7 @@ import java.util.Optional;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;

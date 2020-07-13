@@ -29,9 +29,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.runtime.MachineDefinition;

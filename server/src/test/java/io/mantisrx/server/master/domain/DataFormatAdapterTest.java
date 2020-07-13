@@ -31,9 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;

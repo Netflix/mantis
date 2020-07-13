@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import akka.actor.ActorRef;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.common.WorkerPorts;

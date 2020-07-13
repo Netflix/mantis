@@ -27,11 +27,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;

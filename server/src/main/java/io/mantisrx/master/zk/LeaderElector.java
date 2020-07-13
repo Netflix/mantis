@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.zk;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.netty.util.concurrent.DefaultThreadFactory;

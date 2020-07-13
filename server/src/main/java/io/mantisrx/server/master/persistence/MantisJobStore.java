@@ -25,9 +25,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;

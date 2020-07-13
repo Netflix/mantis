@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.jobcluster;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobOwner;

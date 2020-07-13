@@ -24,7 +24,6 @@ ext {
     configMagicVersion = '0.11'
     rxJavaReactiveStreamsVersion = '1.+'
     curatorVersion = '2.11.0'
-    guavaVersion = '19.0'
     testngVersion = '6.+'
 }
 
@@ -43,7 +42,6 @@ dependencies {
     api "com.netflix.fenzo:fenzo-core:$fenzoVersion"
     api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
-    api "com.google.guava:guava:$guavaVersion"
     api "org.apache.curator:curator-framework:$curatorVersion"
     api "org.apache.curator:curator-recipes:$curatorVersion"
     api "org.skife.config:config-magic:$configMagicVersion"

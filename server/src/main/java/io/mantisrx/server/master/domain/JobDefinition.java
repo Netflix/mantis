@@ -21,10 +21,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;

@@ -17,9 +17,9 @@
 package io.mantisrx.master.api.akka.route.pagination;
 
 import akka.http.javadsl.model.Uri;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Maps;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.api.akka.route.v1.ParamName;
 import org.slf4j.Logger;

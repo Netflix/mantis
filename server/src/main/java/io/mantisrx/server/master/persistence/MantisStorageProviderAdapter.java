@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;

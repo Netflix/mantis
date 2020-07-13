@@ -19,7 +19,7 @@ package io.mantisrx.master.events;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;

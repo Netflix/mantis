@@ -19,9 +19,9 @@ package io.mantisrx.master.jobcluster.job.worker;
 import java.time.Instant;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;

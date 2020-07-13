@@ -19,8 +19,8 @@ package io.mantisrx.master.jobcluster.job;
 import java.util.Collection;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;

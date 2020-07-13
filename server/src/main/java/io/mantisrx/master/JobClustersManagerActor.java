@@ -22,7 +22,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;

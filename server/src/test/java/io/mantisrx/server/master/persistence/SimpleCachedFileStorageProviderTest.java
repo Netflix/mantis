@@ -39,10 +39,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Maps;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;

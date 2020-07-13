@@ -22,7 +22,7 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.fenzo.triggers.CronTrigger;
 import com.netflix.fenzo.triggers.TriggerOperator;

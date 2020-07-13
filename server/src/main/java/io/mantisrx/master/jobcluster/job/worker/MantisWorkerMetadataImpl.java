@@ -20,11 +20,11 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;

@@ -24,16 +24,16 @@ import akka.http.javadsl.model.RequestEntity;
 import akka.http.javadsl.marshalling.Marshaller;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.databind.ser.PropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.google.common.base.Strings;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.FilterProvider;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.PropertyFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import com.netflix.spectator.impl.Preconditions;
 
 public class Jackson {

@@ -18,7 +18,7 @@ package io.mantisrx.server.master.domain;
 
 import java.util.Optional;
 
-import com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

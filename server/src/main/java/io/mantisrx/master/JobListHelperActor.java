@@ -20,7 +20,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.util.Timeout;
-import com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;

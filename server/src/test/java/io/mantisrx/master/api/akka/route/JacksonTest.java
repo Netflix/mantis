@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 //import com.google.protobuf.util.JsonFormat;

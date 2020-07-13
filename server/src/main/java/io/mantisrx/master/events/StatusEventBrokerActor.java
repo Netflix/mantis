@@ -22,7 +22,7 @@ import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.dispatch.BoundedMessageQueueSemantics;
 import akka.dispatch.RequiresMessageQueue;
-import com.google.common.collect.EvictingQueue;
+import io.mantisrx.shaded.com.google.common.collect.EvictingQueue;
 import io.mantisrx.master.api.akka.route.proto.JobStatus;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.core.Status;

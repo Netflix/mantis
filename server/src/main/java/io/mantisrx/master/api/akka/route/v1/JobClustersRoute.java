@@ -26,7 +26,7 @@ import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
-import com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;

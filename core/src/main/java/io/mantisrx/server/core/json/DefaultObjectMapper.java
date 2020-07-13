@@ -16,14 +16,14 @@
 
 package io.mantisrx.server.core.json;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonFactory;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.Version;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.MapperFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.module.SimpleModule;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 
 public class DefaultObjectMapper extends ObjectMapper {

@@ -25,7 +25,7 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;

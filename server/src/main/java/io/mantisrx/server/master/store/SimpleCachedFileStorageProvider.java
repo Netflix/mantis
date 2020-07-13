@@ -27,10 +27,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.netflix.fenzo.functions.Action1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
