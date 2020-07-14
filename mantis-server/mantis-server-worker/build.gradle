@@ -44,8 +44,6 @@ dependencies {
     testImplementation "org.mockito:mockito-all:$mockitoVersion"
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
     testImplementation "io.vavr:vavr-test:$vavrVersion"
-    // Temporarily add this test dependency until mantis-control-pane is using shaded jackson
-    testImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.10.+'
 }
 
 // exclude any signed jars
