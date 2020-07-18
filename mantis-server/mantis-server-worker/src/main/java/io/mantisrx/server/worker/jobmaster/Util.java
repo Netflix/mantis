@@ -31,6 +31,8 @@ public class Util {
             return 100.0 * value / stageSchedulingInfo.getMachineDefinition().getCpuCores();
         case Memory:
             return 100.0 * value / stageSchedulingInfo.getMachineDefinition().getMemoryMB();
+        case JVMMemory:
+            return 100 * (value / (stageSchedulingInfo.getMachineDefinition().getMemoryMB() * 1024 * 1024));
         case DataDrop:
         case KafkaLag:
         case UserDefined:
@@ -40,7 +42,7 @@ public class Util {
             // value is in bytes, multiply by 8, divide by M
             return 100.0 * value * 8 / (1024.0 * 1024.0 * stageSchedulingInfo.getMachineDefinition().getNetworkMbps());
         default:
-            // Identity is the defaunt transformation
+            // Identity is the default transformation
             return value;
         }
     }

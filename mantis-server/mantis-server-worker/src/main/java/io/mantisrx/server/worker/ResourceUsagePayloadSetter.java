@@ -21,8 +21,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -71,6 +72,10 @@ public class ResourceUsagePayloadSetter {
     private final Gauge nwBytesUsageCurrGauge;
     private final String nwBytesUsagePeakGaugeName = MetricStringConstants.NW_BYTES_USAGE_PEAK;
     private final Gauge nwBytesUsagePeakGauge;
+    private final String jvmMemoryUsedGaugeName = "jvmMemoryUsedBytes";
+    private final Gauge jvmMemoryUsedGauge;
+    private final String jvmMemoryMaxGaugeName = "jvmMemoryMaxBytes";
+    private final Gauge jvmMemoryMaxGauge;
     private final double nwBytesLimit;
     private double prev_cpus_system_time_secs = -1.0;
     private double prev_cpus_user_time_secs = -1.0;
@@ -109,6 +114,8 @@ public class ResourceUsagePayloadSetter {
                 .addGauge(nwBytesLimitGaugeName)
                 .addGauge(nwBytesUsageCurrGaugeName)
                 .addGauge(nwBytesUsagePeakGaugeName)
+                .addGauge(jvmMemoryUsedGaugeName)
+                .addGauge(jvmMemoryMaxGaugeName)
                 .build();
         m = MetricsRegistry.getInstance().registerAndGet(m);
         cpuLimitGauge = m.getGauge(cpuLimitGaugeName);
@@ -122,6 +129,8 @@ public class ResourceUsagePayloadSetter {
         nwBytesLimitGauge = m.getGauge(nwBytesLimitGaugeName);
         nwBytesUsageCurrGauge = m.getGauge(nwBytesUsageCurrGaugeName);
         nwBytesUsagePeakGauge = m.getGauge(nwBytesUsagePeakGaugeName);
+        jvmMemoryUsedGauge = m.getGauge(jvmMemoryUsedGaugeName);
+        jvmMemoryMaxGauge = m.getGauge(jvmMemoryMaxGaugeName);
     }
 
     private long getNextDelay() {
@@ -151,6 +160,8 @@ public class ResourceUsagePayloadSetter {
             nwBytesLimitGauge.set(Math.round(nwBytesLimit));
             nwBytesUsageCurrGauge.set(Math.round(usage.getNwBytesCurrent()));
             nwBytesUsagePeakGauge.set(Math.round(usage.getNwBytesPeak()));
+            jvmMemoryUsedGauge.set(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+            jvmMemoryMaxGauge.set(Runtime.getRuntime().maxMemory());
             if (isBigIncrease(oldUsage, usage) || closeToLimit(usage))
                 delay = Math.min(delay, bigUsageChgReportingIntervalSecs);
             oldUsage = usage;

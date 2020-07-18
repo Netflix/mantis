@@ -18,8 +18,8 @@ package io.mantisrx.server.worker.jobmaster.control;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 
 

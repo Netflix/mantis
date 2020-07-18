@@ -24,9 +24,9 @@ import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.util.concurrent.AtomicDouble;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import com.yahoo.labs.samoa.instances.Attribute;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
