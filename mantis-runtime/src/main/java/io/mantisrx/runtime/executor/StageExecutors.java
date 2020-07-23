@@ -358,7 +358,7 @@ public class StageExecutors {
         logger.info("Setting up ScalarToGroup stage with input type: " + inputType);
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
-            return executeInners(source, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds());
+            return executeInnersInParallel(source, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(stage.getConcurrency()));
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds());
