@@ -156,6 +156,8 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                             predicateFunction = predicate.call(queryParameters);
                         }
 
+                        byte[] delimiter = "$$$".getBytes();
+
                         if (queryParameters != null && !queryParameters.isEmpty()) {
 
                             if (queryParameters.containsKey(MantisSSEConstants.ID)) {
@@ -179,13 +181,11 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                                 enableHeartbeats = true;
                             }
                             if (queryParameters != null && queryParameters.containsKey(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION)) {
-
                                 String enableBinaryOutputStr = queryParameters.get(MantisSSEConstants.MANTIS_ENABLE_COMPRESSION).get(0);
                                 if ("true".equalsIgnoreCase(enableBinaryOutputStr)) {
                                     logger.info("Binary compression requested");
                                     enableBinaryOutput = true;
                                 }
-
                             }
                             if (queryParameters.containsKey(MantisSSEConstants.ENABLE_PINGS)) {
                                 String enablePings = queryParameters.get(MantisSSEConstants.ENABLE_PINGS).get(0);
@@ -222,6 +222,13 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                                     throw new IllegalArgumentException("Sampling rate too low: " + samplingTimeMsec);
                                 }
                                 enableSampling = true;
+                            }
+
+                            if (queryParameters.containsKey(MantisSSEConstants.DELIMITER)) {
+                                String rawDelimiter = queryParameters.get(MantisSSEConstants.DELIMITER).get(0);
+                                if (rawDelimiter != null && !rawDelimiter.isEmpty()) {
+                                    delimiter = rawDelimiter.getBytes();
+                                }
                             }
 
                             if (queryParameters.containsKey(MantisSSEConstants.MQL)) {
@@ -310,7 +317,7 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                                 enableHeartbeats, heartbeatSubscription, enableSampling, samplingTimeMsec, metaMsgSubject, metaMsgSubscription,
                                 predicateFunction, connectionClosedCallback, sseProcessedCounter,
                                 sseDroppedCounter,
-                                new SubscribeCallback(), enableBinaryOutput, true);
+                                new SubscribeCallback(), enableBinaryOutput, true, delimiter);
                     }
                 })
                 .pipelineConfigurator(PipelineConfigurators.serveSseConfigurator())

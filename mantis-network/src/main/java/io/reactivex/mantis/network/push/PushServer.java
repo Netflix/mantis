@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.common.messages.MantisMetaDroppedMessage;
@@ -181,7 +182,7 @@ public abstract class PushServer<T, R> {
                                                 final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
                                                 final Action0 connectionSubscribeCallback) {
         return manageConnectionWithCompression(writer, host, port, groupId, slotId, id, lastWriteTime, applicationHeartbeats, heartbeatSubscription,
-                applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false);
+                applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null);
 
     }
 
@@ -218,7 +219,8 @@ public abstract class PushServer<T, R> {
                                                                final SerializedSubject<String, String> metaMsgSubject, final Subscription metaMsgSubscription,
                                                                Func1<T, Boolean> predicate, final Action0 connectionClosedCallback,
                                                                final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
-                                                               final Action0 connectionSubscribeCallback, boolean compressOutput, boolean isSSE) {
+                                                               final Action0 connectionSubscribeCallback, boolean compressOutput, boolean isSSE,
+                                                               byte[] delimiter) {
 
         if (id == null || id.isEmpty()) {
             id = host + "_" + port + "_" + System.currentTimeMillis();
@@ -290,7 +292,9 @@ public abstract class PushServer<T, R> {
                                             if (isSSE) {
                                                 if (compressOutput) {
                                                     boolean useSnappy = true;
-                                                    byte[] compressedData = CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy);
+                                                    byte[] compressedData =  delimiter == null
+                                                            ? CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy)
+                                                            : CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy, delimiter);
 
                                                     blockBuffer = ByteBuffer.allocate(prefix.length + compressedData.length + nwnw.length);
                                                     blockBuffer.put(prefix);
