@@ -25,8 +25,8 @@ import java.util.ArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectWriter;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
 import com.netflix.spectator.api.Counter;

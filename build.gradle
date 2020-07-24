@@ -32,7 +32,6 @@ ext {
     junitVersion = '5.3.+'
     mockitoVersion = '2.18.+'
     slf4jVersion = '1.7.+'
-    jacksonVersion = '2.10.+'
     spectatorVersion = 'latest.release'
     archaiusVersion = 'latest.release'
 }

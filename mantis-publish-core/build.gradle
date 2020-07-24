@@ -23,9 +23,6 @@ dependencies {
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
     api "io.mantisrx:mantis-discovery-proto:$mantisDiscoveryVersion"
 
-    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
-
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
 
