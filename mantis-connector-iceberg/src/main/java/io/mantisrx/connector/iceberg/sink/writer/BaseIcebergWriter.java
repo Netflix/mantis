@@ -122,7 +122,8 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
         // Calls to FileAppender#close can fail if the backing file system fails to close.
         // For example, this can happen for an S3-backed file system where it might fail
-        // to GET the status of the file.
+        // to GET the status of the file. The file would have already been closed.
+        // Callers should open a new appender.
         try {
             appender.close();
 
