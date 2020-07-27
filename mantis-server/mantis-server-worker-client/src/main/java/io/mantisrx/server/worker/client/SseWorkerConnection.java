@@ -299,6 +299,7 @@ public class SseWorkerConnection {
                 })
                 .flatMapIterable((data) -> {
                     boolean useSnappy = true;
+                    // TODO: This is the callsite if we have a delimiter
                     return CompressionUtils.decompressAndBase64Decode(data, compressedBinaryInputEnabled, useSnappy);
                 })
                 .takeUntil(shutdownSubject)

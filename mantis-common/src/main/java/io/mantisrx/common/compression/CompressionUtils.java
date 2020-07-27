@@ -201,27 +201,48 @@ public class CompressionUtils {
         }
     }
 
-    static List<MantisServerSentEvent> tokenize(BufferedReader bf) throws IOException {
+    static List<MantisServerSentEvent> tokenize(BufferedReader br) throws IOException {
+        return tokenize(br, "$$$");
+    }
+
+    static List<MantisServerSentEvent> tokenize(BufferedReader bf, String delimiter) throws IOException {
         StringBuilder sb = new StringBuilder();
         String line;
         List<MantisServerSentEvent> msseList = new ArrayList<>();
-        int dollarCnt = 0;
+        final int delimiterLength = delimiter.length();
+        char[] delimiterArray = delimiter.toCharArray();
+
+        int delimiterCount = 0;
         while ((line = bf.readLine()) != null) {
             for (int i = 0; i < line.length(); i++) {
-                if (dollarCnt == 3) {
+                if (delimiterCount == delimiterLength) {
                     msseList.add(new MantisServerSentEvent(sb.toString()));
-                    dollarCnt = 0;
+                    delimiterCount = 0;
                     sb = new StringBuilder();
                 }
-                if (line.charAt(i) != '$') {
+
+                if (line.charAt(i) != delimiterArray[delimiterCount]) {
+                    if (delimiterCount > 0) {
+                        for (int j = 0; j < delimiterCount; ++j) {
+                            sb.append(delimiterArray[j]);
+                        }
+                        delimiterCount = 0;
+                    }
                     sb.append(line.charAt(i));
                 } else {
-                    dollarCnt++;
+                    delimiterCount++;
                 }
             }
-
         }
+
+        // We have a trailing event.
         if (sb.length() > 0) {
+            // We had a partial delimiter match which was not in the builder.
+            if (delimiterCount > 0) {
+                for (int j = 0; j < delimiterCount; ++j) {
+                    sb.append(delimiter.charAt(j));
+                }
+            }
             msseList.add(new MantisServerSentEvent(sb.toString()));
         }
         return msseList;
@@ -282,6 +303,7 @@ public class CompressionUtils {
         return msseList;
     }
 
+    // TODO: These are the only tokenize callsites
     public static List<MantisServerSentEvent> decompressAndBase64Decode(String encodedString,
                                                                         boolean isCompressedBinary, boolean useSnappy) {
         encodedString = encodedString.trim();
