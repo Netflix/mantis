@@ -33,15 +33,16 @@ import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
-import io.vavr.Tuple;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.exceptions.RuntimeIOException;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -136,7 +137,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         IcebergWriter writer = newIcebergWriter(config, workerInfo, table);
         WriterMetrics metrics = new WriterMetrics();
-        transformer = new Transformer(config, metrics, writer, Schedulers.computation());
+        transformer = new Transformer(config, metrics, writer, Schedulers.computation(), Schedulers.io());
     }
 
     @Override
@@ -160,16 +161,28 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 .withRecordCount(0L)
                 .build();
 
+        private static final Schema TIMER_SCHEMA = new Schema(
+                Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()));
+
+        private static final Record TIMER_RECORD = GenericRecord.create(TIMER_SCHEMA);
+
         private final WriterConfig config;
         private final WriterMetrics metrics;
         private final IcebergWriter writer;
-        private final Scheduler scheduler;
+        private final Scheduler timerScheduler;
+        private final Scheduler transformerScheduler;
 
-        public Transformer(WriterConfig config, WriterMetrics metrics, IcebergWriter writer, Scheduler scheduler) {
+        public Transformer(
+                WriterConfig config,
+                WriterMetrics metrics,
+                IcebergWriter writer,
+                Scheduler timerScheduler,
+                Scheduler transformerScheduler) {
             this.config = config;
             this.metrics = metrics;
             this.writer = writer;
-            this.scheduler = scheduler;
+            this.timerScheduler = timerScheduler;
+            this.transformerScheduler = transformerScheduler;
         }
 
         /**
@@ -187,9 +200,15 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
          */
         @Override
         public Observable<DataFile> call(Observable<Record> source) {
-            Observable<Transformer.Counter> sizeSignal = source
+            Observable<Record> timer = Observable.interval(
+                    config.getWriterFlushFrequencyMsec(), TimeUnit.MILLISECONDS, timerScheduler)
+                    .map(i -> TIMER_RECORD);
+
+            return source.mergeWith(timer)
+                    .observeOn(transformerScheduler)
                     .doOnNext(record -> {
-                        if (writer.isClosed()) {
+                        // If closed _and_ timer record, don't open. Only open on new events from `source`.
+                        if (writer.isClosed() && record.struct().fields() != TIMER_SCHEMA.columns()) {
                             try {
                                 writer.open();
                                 metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
@@ -199,42 +218,30 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                             }
                         }
                     })
-                    .scan(new Counter(config.getWriterRowGroupSize()), (counter, record) -> {
-                        try {
-                            writer.write(record);
-                            counter.increment();
-                            metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
-                        } catch (RuntimeException e) {
-                            metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
-                            logger.error("error writing record {}", record);
-                        }
-                        return counter;
-                    })
-                    .filter(Counter::shouldReset)
-                    .filter(counter -> writer.length() >= config.getWriterFlushFrequencyBytes())
-                    .doOnTerminate(() -> {
-                        if (!writer.isClosed()) {
+                    .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
+                        if (record.struct().fields() == TIMER_SCHEMA.columns()) {
+                            trigger.timeout();
+                        } else {
                             try {
-                                logger.info("closing writer on rx terminate signal");
-                                writer.close();
-                            } catch (IOException e) {
-                                throw Exceptions.propagate(e);
+                                writer.write(record);
+                                trigger.increment();
+                                metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
+                            } catch (RuntimeException e) {
+                                metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
+                                logger.error("error writing record {}", record);
                             }
                         }
+                        return trigger;
                     })
-                    .startWith(new Counter(0));
-
-            Observable<Long> timeSignal = Observable.interval(
-                    0, config.getWriterFlushFrequencyMsec(), TimeUnit.MILLISECONDS, scheduler);
-
-            return Observable.combineLatest(sizeSignal, timeSignal, Tuple::of)
-                    .filter(tuple -> !writer.isClosed())
-                    .map(tuple -> {
+                    .filter(this::shouldFlush)
+                    // Writer can be closed if there are no events, yet timer is still ticking.
+                    .filter(trigger -> !writer.isClosed())
+                    .map(trigger -> {
                         try {
                             DataFile dataFile = writer.close();
-                            tuple._1.reset();
+                            trigger.reset();
                             return dataFile;
-                        } catch (IOException | RuntimeIOException e) {
+                        } catch (IOException | RuntimeException e) {
                             metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
                             logger.error("error writing DataFile", e);
                             return ERROR_DATA_FILE;
@@ -246,6 +253,16 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         logger.info("writing DataFile: {}", dataFile);
                         metrics.setGauge(WriterMetrics.BATCH_SIZE, dataFile.recordCount());
                         metrics.setGauge(WriterMetrics.BATCH_SIZE_BYTES, dataFile.fileSizeInBytes());
+                    })
+                    .doOnTerminate(() -> {
+                        if (!writer.isClosed()) {
+                            try {
+                                logger.info("closing writer on rx terminate signal");
+                                writer.close();
+                            } catch (IOException e) {
+                                throw Exceptions.propagate(e);
+                            }
+                        }
                     });
         }
 
@@ -255,13 +272,24 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                     ERROR_DATA_FILE.recordCount() == dataFile.recordCount();
         }
 
-        private static class Counter {
+        /**
+         * Flush on size or time.
+         */
+        private boolean shouldFlush(Trigger trigger) {
+            // Check the trigger to short-circuit if the count is over the threshold first
+            // because implementations of `writer.length()` may be expensive if called in a tight loop.
+            return (trigger.isOverCountThreshold() && writer.length() >= config.getWriterFlushFrequencyBytes())
+                    || trigger.isTimedOut();
+        }
 
-            private final int threshold;
+        private static class Trigger {
+
+            private final int countThreshold;
             private int counter;
+            private boolean timedOut;
 
-            Counter(int threshold) {
-                this.threshold = threshold;
+            Trigger(int countThreshold) {
+                this.countThreshold = countThreshold;
                 this.counter = 0;
             }
 
@@ -269,18 +297,29 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 counter++;
             }
 
-            void reset() {
-                counter = 0;
+            void timeout() {
+                timedOut = true;
             }
 
-            boolean shouldReset() {
-                return counter >= threshold;
+            void reset() {
+                counter = 0;
+                timedOut = false;
+            }
+
+            boolean isOverCountThreshold() {
+                return counter >= countThreshold;
+            }
+
+            boolean isTimedOut() {
+                return timedOut;
             }
 
             @Override
             public String toString() {
-                return "Counter{"
-                        + " counter=" + counter
+                return "Trigger{"
+                        + " countThreshold=" + countThreshold
+                        + ", counter=" + counter
+                        + ", timedOut=" + timedOut
                         + '}';
             }
         }
