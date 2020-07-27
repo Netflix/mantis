@@ -30,6 +30,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.GenericParquetWriter;
+import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.hadoop.HadoopOutputFile;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
@@ -42,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * For example, this class may be used with an S3 compatible filesystem library
  * which progressively uploads (multipart) to S3 on each write operation for
  * optimizing latencies.
- *
+ * <p>
  * Users have the flexibility to choose the semantics of opening, writing, and closing
  * this Writer, for example, closing the underlying appender after some number
  * of Bytes written and opening a new appender.
@@ -74,9 +75,9 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     /**
      * Opens a {@link FileAppender} for a specific {@link FileFormat}.
-     *
+     * <p>
      * A filename is automatically generated for this appender.
-     *
+     * <p>
      * Supports Parquet. Avro, Orc, and others unsupported.
      */
     @Override
@@ -88,7 +89,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
         logger.info("opening new {} file appender {}", format, path);
         file = HadoopOutputFile.fromPath(path, config.getHadoopConfig());
 
-        switch(format) {
+        switch (format) {
             case PARQUET:
                 appender = Parquet.write(file)
                         .schema(table.schema())
@@ -106,7 +107,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     /**
      * Closes the currently opened file appender and builds a DataFile.
-     *
+     * <p>
      * Users are expected to {@link IcebergWriter#open()} a new file appender for this writer
      * if they want to continue writing. Users can check for status of the file appender
      * using {@link IcebergWriter#isClosed()}.
@@ -114,26 +115,29 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
      * @return a DataFile representing metadata about the records written.
      */
     @Override
-    public DataFile close() throws IOException {
+    public DataFile close() throws IOException, RuntimeIOException {
         if (appender == null) {
             return null;
         }
 
-        appender.close();
+        // Calls to FileAppender#close can fail if the backing file system fails to close.
+        // For example, this can happen for an S3-backed file system where it might fail
+        // to GET the status of the file.
+        try {
+            appender.close();
 
-        DataFile dataFile = DataFiles.builder(spec)
-                .withPath(file.location())
-                .withInputFile(file.toInputFile())
-                .withFileSizeInBytes(appender.length())
-                .withPartition(spec.fields().size() == 0 ? null : key)
-                .withMetrics(appender.metrics())
-                .withSplitOffsets(appender.splitOffsets())
-                .build();
-
-        appender = null;
-        file = null;
-
-        return dataFile;
+            return DataFiles.builder(spec)
+                    .withPath(file.location())
+                    .withInputFile(file.toInputFile())
+                    .withFileSizeInBytes(appender.length())
+                    .withPartition(spec.fields().size() == 0 ? null : key)
+                    .withMetrics(appender.metrics())
+                    .withSplitOffsets(appender.splitOffsets())
+                    .build();
+        } finally {
+            appender = null;
+            file = null;
+        }
     }
 
     public boolean isClosed() {
@@ -142,7 +146,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     /**
      * Returns the current file size (in Bytes) written using this writer's appender.
-     *
+     * <p>
      * Users should be careful calling this method in a tight loop because it can
      * be expensive depending on the file format, for example in Parquet.
      *
