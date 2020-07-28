@@ -29,6 +29,7 @@ public class WriterConfig extends SinkConfig {
 
     private final int writerRowGroupSize;
     private final long writerFlushFrequencyBytes;
+    private final long writerFlushFrequencyMsec;
     private final String writerFileFormat;
     private final Configuration hadoopConfig;
 
@@ -41,6 +42,8 @@ public class WriterConfig extends SinkConfig {
                 WRITER_ROW_GROUP_SIZE, WRITER_ROW_GROUP_SIZE_DEFAULT);
         this.writerFlushFrequencyBytes = Long.parseLong((String) parameters.get(
                 WRITER_FLUSH_FREQUENCY_BYTES, WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT));
+        this.writerFlushFrequencyMsec = Long.parseLong((String) parameters.get(
+                WRITER_FLUSH_FREQUENCY_MSEC, WRITER_FLUSH_FREQUENCY_MSEC_DEFAULT));
         this.writerFileFormat = (String) parameters.get(
                 WRITER_FILE_FORMAT, WRITER_FILE_FORMAT_DEFAULT);
         this.hadoopConfig = hadoopConfig;
@@ -58,6 +61,13 @@ public class WriterConfig extends SinkConfig {
      */
     public long getWriterFlushFrequencyBytes() {
         return writerFlushFrequencyBytes;
+    }
+
+    /**
+     * Returns a long representing flush frequency by size in milliseconds.
+     */
+    public long getWriterFlushFrequencyMsec() {
+        return writerFlushFrequencyMsec;
     }
 
     /**

@@ -46,6 +46,16 @@ public class WriterProperties {
                     WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT);
 
     /**
+     * Flush frequency by time (in milliseconds).
+     */
+    public static final String WRITER_FLUSH_FREQUENCY_MSEC = "writerFlushFrequencyMsec";
+    // TODO: Change to long.
+    public static final String WRITER_FLUSH_FREQUENCY_MSEC_DEFAULT = "60000";           // 1 min
+    public static final String WRITER_FLUSH_FREQUENCY_MSEC_DESCRIPTION =
+            String.format("Flush frequency by time in milliseconds (default: %s)",
+                    WRITER_FLUSH_FREQUENCY_MSEC_DEFAULT);
+
+    /**
      * File format for writing data files to backing Iceberg store.
      */
     public static final String WRITER_FILE_FORMAT = "writerFileFormat";

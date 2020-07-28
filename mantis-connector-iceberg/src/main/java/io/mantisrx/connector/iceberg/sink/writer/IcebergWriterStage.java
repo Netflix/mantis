@@ -36,15 +36,20 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.exceptions.RuntimeIOException;
+import org.apache.iceberg.types.Comparators;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.Scheduler;
 import rx.exceptions.Exceptions;
+import rx.schedulers.Schedulers;
 
 /**
  * Processing stage which writes records to Iceberg through a backing file store.
@@ -80,6 +85,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         .validator(Validators.alwaysPass())
                         .defaultValue(WriterProperties.WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT)
                         .build(),
+                new StringParameter().name(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC)
+                        .description(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC_DESCRIPTION)
+                        .validator(Validators.alwaysPass())
+                        .defaultValue(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC_DEFAULT)
+                        .build(),
                 new StringParameter().name(WriterProperties.WRITER_FILE_FORMAT)
                         .description(WriterProperties.WRITER_FILE_FORMAT_DESCRIPTION)
                         .validator(Validators.alwaysPass())
@@ -92,7 +102,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      * Use this method to create an Iceberg Writer independent of a Mantis Processing Stage.
      * <p>
      * This is useful for optimizing network utilization by using the writer directly within another
-     * processing stage instead of having to traverse stage boundaries.
+     * processing stage to avoid crossing stage boundaries.
      * <p>
      * This incurs a debuggability trade-off where a processing stage will do multiple things.
      */
@@ -128,7 +138,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         IcebergWriter writer = newIcebergWriter(config, workerInfo, table);
         WriterMetrics metrics = new WriterMetrics();
-        transformer = new Transformer(config, metrics, writer);
+        transformer = new Transformer(config, metrics, writer, Schedulers.computation(), Schedulers.io());
     }
 
     @Override
@@ -152,28 +162,51 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 .withRecordCount(0L)
                 .build();
 
+        private static final Schema TIMER_SCHEMA = new Schema(
+                Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()));
+
+        private static final Record TIMER_RECORD = GenericRecord.create(TIMER_SCHEMA);
+
         private final WriterConfig config;
         private final WriterMetrics metrics;
         private final IcebergWriter writer;
+        private final Scheduler timerScheduler;
+        private final Scheduler transformerScheduler;
 
-        public Transformer(WriterConfig config, WriterMetrics metrics, IcebergWriter writer) {
+        public Transformer(
+                WriterConfig config,
+                WriterMetrics metrics,
+                IcebergWriter writer,
+                Scheduler timerScheduler,
+                Scheduler transformerScheduler) {
             this.config = config;
             this.metrics = metrics;
             this.writer = writer;
+            this.timerScheduler = timerScheduler;
+            this.transformerScheduler = transformerScheduler;
         }
 
         /**
          * Opens an IcebergWriter FileAppender, writes records to a file. Check the file appender
-         * size on a configured count, and if over a configured threshold, close the file, build
+         * size on a configured row count, and if over a configured threshold, close the file, build
          * and emit a DataFile, and open a new FileAppender.
+         * <p>
+         * If the size threshold is not met, secondarily check a time threshold. If there's data, then
+         * perform the same actions as above. If there's no data, then no-op.
          * <p>
          * Pair this with a progressive multipart file uploader backend for better latencies.
          */
         @Override
         public Observable<DataFile> call(Observable<Record> source) {
-            return source
+            Observable<Record> timer = Observable.interval(
+                    config.getWriterFlushFrequencyMsec(), TimeUnit.MILLISECONDS, timerScheduler)
+                    .map(i -> TIMER_RECORD);
+
+            return source.mergeWith(timer)
+                    .observeOn(transformerScheduler)
                     .doOnNext(record -> {
-                        if (writer.isClosed()) {
+                        // If closed _and_ timer record, don't open. Only open on new events from `source`.
+                        if (writer.isClosed() && !record.struct().fields().equals(TIMER_SCHEMA.columns())) {
                             try {
                                 writer.open();
                                 metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
@@ -183,25 +216,30 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                             }
                         }
                     })
-                    .scan(new Counter(config.getWriterRowGroupSize()), (counter, record) -> {
-                        try {
-                            writer.write(record);
-                            counter.increment();
-                            metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
-                        } catch (RuntimeException e) {
-                            metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
-                            logger.error("error writing record {}", record);
+                    .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
+                        if (record.struct().fields().equals(TIMER_SCHEMA.columns())) {
+                            trigger.timeout();
+                        } else {
+                            try {
+                                writer.write(record);
+                                trigger.increment();
+                                metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
+                            } catch (RuntimeException e) {
+                                metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
+                                logger.debug("error writing record {}", record);
+                            }
                         }
-                        return counter;
+                        return trigger;
                     })
-                    .filter(Counter::shouldReset)
-                    .filter(counter -> writer.length() >= config.getWriterFlushFrequencyBytes())
-                    .map(counter -> {
+                    .filter(this::shouldFlush)
+                    // Writer can be closed if there are no events, yet timer is still ticking.
+                    .filter(trigger -> !writer.isClosed())
+                    .map(trigger -> {
                         try {
                             DataFile dataFile = writer.close();
-                            counter.reset();
+                            trigger.reset();
                             return dataFile;
-                        } catch (IOException | RuntimeIOException e) {
+                        } catch (IOException | RuntimeException e) {
                             metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
                             logger.error("error writing DataFile", e);
                             return ERROR_DATA_FILE;
@@ -214,54 +252,72 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         metrics.setGauge(WriterMetrics.BATCH_SIZE, dataFile.recordCount());
                         metrics.setGauge(WriterMetrics.BATCH_SIZE_BYTES, dataFile.fileSizeInBytes());
                     })
-                    .doOnSubscribe(() -> {
-                        try {
-                            writer.open();
-                            metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
-                        } catch (IOException e) {
-                            metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
-                            throw Exceptions.propagate(e);
-                        }
-                    })
                     .doOnTerminate(() -> {
-                        if (!writer.isClosed()) {
-                            try {
-                                logger.info("closing writer on rx terminate signal");
-                                writer.close();
-                            } catch (IOException e) {
-                                throw Exceptions.propagate(e);
-                            }
+                        try {
+                            logger.info("closing writer on rx terminate signal");
+                            writer.close();
+                        } catch (IOException e) {
+                            throw Exceptions.propagate(e);
                         }
                     });
         }
 
         private boolean isErrorDataFile(DataFile dataFile) {
-            return ERROR_DATA_FILE.path() == dataFile.path() &&
+            return Comparators.charSequences().compare(ERROR_DATA_FILE.path(), dataFile.path()) == 0 &&
                     ERROR_DATA_FILE.fileSizeInBytes() == dataFile.fileSizeInBytes() &&
                     ERROR_DATA_FILE.recordCount() == dataFile.recordCount();
         }
 
-        private static class Counter {
+        /**
+         * Flush on size or time.
+         */
+        private boolean shouldFlush(Trigger trigger) {
+            // Check the trigger to short-circuit if the count is over the threshold first
+            // because implementations of `writer.length()` may be expensive if called in a tight loop.
+            return (trigger.isOverCountThreshold() && writer.length() >= config.getWriterFlushFrequencyBytes())
+                    || trigger.isTimedOut();
+        }
 
-            private final int threshold;
+        private static class Trigger {
+
+            private final int countThreshold;
             private int counter;
+            private boolean timedOut;
 
-            Counter(int threshold) {
-                this.threshold = threshold;
-                this.counter = 0;
+            Trigger(int countThreshold) {
+                this.countThreshold = countThreshold;
             }
 
             void increment() {
                 counter++;
             }
 
-            void reset() {
-                counter = 0;
+            void timeout() {
+                timedOut = true;
             }
 
-            boolean shouldReset() {
-                return counter >= threshold;
+            void reset() {
+                counter = 0;
+                timedOut = false;
+            }
+
+            boolean isOverCountThreshold() {
+                return counter >= countThreshold;
+            }
+
+            boolean isTimedOut() {
+                return timedOut;
+            }
+
+            @Override
+            public String toString() {
+                return "Trigger{"
+                        + " countThreshold=" + countThreshold
+                        + ", counter=" + counter
+                        + ", timedOut=" + timedOut
+                        + '}';
             }
         }
     }
+
 }

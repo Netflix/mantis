@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.mantisrx.connector.iceberg.sink.TableIdentifierParameters;
+import io.mantisrx.connector.iceberg.sink.StageOverrideParameters;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import io.mantisrx.runtime.Context;
@@ -50,8 +50,6 @@ class IcebergCommitterStageTest {
 
     private TestScheduler scheduler;
     private TestSubscriber<Map<String, Object>> subscriber;
-    private CommitterConfig config;
-    private CommitterMetrics metrics;
     private Catalog catalog;
     private Context context;
     private IcebergCommitter committer;
@@ -62,9 +60,9 @@ class IcebergCommitterStageTest {
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
 
-        Parameters parameters = TableIdentifierParameters.newParameters();
-        this.config = new CommitterConfig(parameters);
-        this.metrics = new CommitterMetrics();
+        Parameters parameters = StageOverrideParameters.newParameters();
+        CommitterConfig config = new CommitterConfig(parameters);
+        CommitterMetrics metrics = new CommitterMetrics();
         this.committer = mock(IcebergCommitter.class);
 
         transformer = new IcebergCommitterStage.Transformer(config, metrics, committer, scheduler);

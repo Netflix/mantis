@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.exceptions.RuntimeIOException;
 
 public interface IcebergWriter {
 
@@ -27,7 +28,7 @@ public interface IcebergWriter {
 
     void write(Record record);
 
-    DataFile close() throws IOException;
+    DataFile close() throws IOException, RuntimeIOException;
 
     boolean isClosed();
 
