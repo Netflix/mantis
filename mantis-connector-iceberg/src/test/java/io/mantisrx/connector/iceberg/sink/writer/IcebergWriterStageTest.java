@@ -37,6 +37,7 @@ import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -260,7 +261,14 @@ class IcebergWriterStageTest {
 
     private static abstract class FakeIcebergWriter implements IcebergWriter {
 
+        private static final DataFile DATA_FILE = new DataFiles.Builder()
+                .withPath("/datafile.parquet")
+                .withFileSizeInBytes(1L)
+                .withRecordCount(1L)
+                .build();
+
         private final Object object;
+
         private Object fileAppender;
 
         public FakeIcebergWriter() {
@@ -276,7 +284,7 @@ class IcebergWriterStageTest {
         @Override
         public DataFile close() throws IOException {
             fileAppender = null;
-            return mock(DataFile.class);
+            return DATA_FILE;
         }
 
         @Override

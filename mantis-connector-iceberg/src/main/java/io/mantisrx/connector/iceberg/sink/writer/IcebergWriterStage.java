@@ -42,6 +42,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.types.Comparators;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -267,7 +268,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         }
 
         private boolean isErrorDataFile(DataFile dataFile) {
-            return ERROR_DATA_FILE.path() == dataFile.path() &&
+            return Comparators.charSequences().compare(ERROR_DATA_FILE.path(), dataFile.path()) == 0 &&
                     ERROR_DATA_FILE.fileSizeInBytes() == dataFile.fileSizeInBytes() &&
                     ERROR_DATA_FILE.recordCount() == dataFile.recordCount();
         }
