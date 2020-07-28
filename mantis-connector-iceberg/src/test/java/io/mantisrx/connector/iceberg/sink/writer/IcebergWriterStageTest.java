@@ -212,8 +212,8 @@ class IcebergWriterStageTest {
         subscriber.assertTerminalEvent();
 
         verify(writer).open();
-        verify(writer, times(2)).isClosed();
-        verify(writer, times(0)).close();
+        verify(writer, times(1)).isClosed();
+        verify(writer, times(1)).close();
     }
 
     @Test

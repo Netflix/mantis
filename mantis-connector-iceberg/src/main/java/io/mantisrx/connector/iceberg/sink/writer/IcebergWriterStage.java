@@ -194,9 +194,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
          * If the size threshold is not met, secondarily check a time threshold. If there's data, then
          * perform the same actions as above. If there's no data, then no-op.
          * <p>
-         * Size threshold takes precedence over time threshold. A File Appender will open on new data
-         * based on the {@code sizeSignal} flow.
-         * <p>
          * Pair this with a progressive multipart file uploader backend for better latencies.
          */
         @Override
@@ -209,7 +206,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                     .observeOn(transformerScheduler)
                     .doOnNext(record -> {
                         // If closed _and_ timer record, don't open. Only open on new events from `source`.
-                        if (writer.isClosed() && record.struct().fields() != TIMER_SCHEMA.columns()) {
+                        if (writer.isClosed() && !record.struct().fields().equals(TIMER_SCHEMA.columns())) {
                             try {
                                 writer.open();
                                 metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
@@ -220,7 +217,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         }
                     })
                     .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
-                        if (record.struct().fields() == TIMER_SCHEMA.columns()) {
+                        if (record.struct().fields().equals(TIMER_SCHEMA.columns())) {
                             trigger.timeout();
                         } else {
                             try {
@@ -229,7 +226,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                                 metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
                             } catch (RuntimeException e) {
                                 metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
-                                logger.error("error writing record {}", record);
+                                logger.debug("error writing record {}", record);
                             }
                         }
                         return trigger;
@@ -256,13 +253,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         metrics.setGauge(WriterMetrics.BATCH_SIZE_BYTES, dataFile.fileSizeInBytes());
                     })
                     .doOnTerminate(() -> {
-                        if (!writer.isClosed()) {
-                            try {
-                                logger.info("closing writer on rx terminate signal");
-                                writer.close();
-                            } catch (IOException e) {
-                                throw Exceptions.propagate(e);
-                            }
+                        try {
+                            logger.info("closing writer on rx terminate signal");
+                            writer.close();
+                        } catch (IOException e) {
+                            throw Exceptions.propagate(e);
                         }
                     });
         }
@@ -291,7 +286,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
             Trigger(int countThreshold) {
                 this.countThreshold = countThreshold;
-                this.counter = 0;
             }
 
             void increment() {
@@ -325,4 +319,5 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             }
         }
     }
+
 }
