@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
+import io.mantisrx.connector.iceberg.sink.writer.factories.IcebergWriterFactory;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
@@ -58,6 +59,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergWriterStage.class);
 
+    private IcebergWriterFactory icebergWriterFactory;
     private Transformer transformer;
 
     /**
@@ -136,7 +138,8 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
-        IcebergWriter writer = newIcebergWriter(config, workerInfo, table);
+        IcebergWriterFactory factory = context.getServiceLocator().service(IcebergWriterFactory.class);
+        IcebergWriter writer = factory.newIcebergWriter(config, workerInfo, table);
         WriterMetrics metrics = new WriterMetrics();
         transformer = new Transformer(config, metrics, writer, Schedulers.computation(), Schedulers.io());
     }
