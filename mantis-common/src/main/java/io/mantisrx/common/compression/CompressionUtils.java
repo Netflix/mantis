@@ -303,9 +303,15 @@ public class CompressionUtils {
         return msseList;
     }
 
-    // TODO: These are the only tokenize callsites
     public static List<MantisServerSentEvent> decompressAndBase64Decode(String encodedString,
-                                                                        boolean isCompressedBinary, boolean useSnappy) {
+                                                                        boolean isCompressedBinary,
+                                                                        boolean useSnappy) {
+        return decompressAndBase64Decode(encodedString, isCompressedBinary, useSnappy, null);
+    }
+    public static List<MantisServerSentEvent> decompressAndBase64Decode(String encodedString,
+                                                                        boolean isCompressedBinary,
+                                                                        boolean useSnappy,
+                                                                        String delimiter) {
         encodedString = encodedString.trim();
         //	System.out.println("Inside client decompress Current thread -->" + Thread.currentThread().getName());
         if (!encodedString.isEmpty() && isCompressedBinary && !encodedString.startsWith("ping") && !encodedString.startsWith("{")) {
@@ -315,9 +321,13 @@ public class CompressionUtils {
             try {
 
                 if (useSnappy) {
-                    return tokenize(snappyDecompress(decoded));
+                    return delimiter == null
+                            ? tokenize(snappyDecompress(decoded))
+                            : tokenize(snappyDecompress(decoded), delimiter);
                 } else {
-                    return tokenize(gzipDecompress(decoded));
+                    return delimiter == null
+                            ? tokenize(gzipDecompress(decoded))
+                            : tokenize(gzipDecompress(decoded), delimiter);
                 }
 
             } catch (IOException e) {
@@ -329,7 +339,6 @@ public class CompressionUtils {
             s.add(new MantisServerSentEvent(encodedString));
             return s;
         }
-
     }
 
     @Deprecated
