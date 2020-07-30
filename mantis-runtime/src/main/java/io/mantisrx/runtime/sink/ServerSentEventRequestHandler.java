@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.compression.CompressionUtils;
@@ -194,8 +195,13 @@ public class ServerSentEventRequestHandler<T> implements
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
+
+        final byte[] delimiter = queryParameters != null
+                && queryParameters.containsKey(MantisSSEConstants.DELIMITER)
+                && queryParameters.get(MantisSSEConstants.DELIMITER).get(0) != null
+                ? queryParameters.get(MantisSSEConstants.DELIMITER).get(0).getBytes()
+                : null;
 
         Tag[] tags = new Tag[2];
         final String clientId = Optional.ofNullable(uniqueClientId).orElse("none");
@@ -269,7 +275,9 @@ public class ServerSentEventRequestHandler<T> implements
                             if (format.equals(BINARY_FORMAT)) {
                                 boolean useSnappy = true;
                                 try {
-                                    String compressedList = CompressionUtils.compressAndBase64Encode(filteredList, useSnappy);
+                                    String compressedList = delimiter == null
+                                            ? CompressionUtils.compressAndBase64Encode(filteredList, useSnappy)
+                                            : CompressionUtils.compressAndBase64Encode(filteredList, useSnappy, delimiter);
                                     StringBuilder sb = new StringBuilder(3);
                                     sb.append(SSE_DATA_PREFIX);
                                     sb.append(compressedList);

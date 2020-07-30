@@ -42,5 +42,5 @@ public class MantisSSEConstants {
 
     public static final String MQL = "mql";
 
-
+    public static final String DELIMITER = "delimiter";
 }
