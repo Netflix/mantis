@@ -41,14 +41,17 @@ public class CompressionUtils {
     public static final byte[] MANTIS_SSE_DELIMITER_BINARY = MANTIS_SSE_DELIMITER.getBytes();
     private static Logger logger = LoggerFactory.getLogger(CompressionUtils.class);
 
-
     public static String compressAndBase64Encode(List<String> events, boolean useSnappy) {
+        return compressAndBase64Encode(events, useSnappy, MANTIS_SSE_DELIMITER_BINARY);
+    }
+
+    public static String compressAndBase64Encode(List<String> events, boolean useSnappy, byte[] delimiter) {
         if (!events.isEmpty()) {
 
             StringBuilder sb = new StringBuilder();
             for (String event : events) {
                 sb.append(event);
-                sb.append(MANTIS_SSE_DELIMITER);
+                sb.append(delimiter);
             }
             try {
                 byte[] compressedBytes;
@@ -78,14 +81,18 @@ public class CompressionUtils {
     }
 
     public static byte[] compressAndBase64EncodeBytes(List<List<byte[]>> nestedEvents, boolean useSnappy) {
+        return compressAndBase64EncodeBytes(nestedEvents, useSnappy, MANTIS_SSE_DELIMITER_BINARY);
+    }
+
+    public static byte[] compressAndBase64EncodeBytes(List<List<byte[]>> nestedEvents, boolean useSnappy, byte[] delimiter) {
         if (!nestedEvents.isEmpty()) {
 
-            ByteBuffer buffer = ByteBuffer.allocate(getTotalByteSize(nestedEvents));
+            ByteBuffer buffer = ByteBuffer.allocate(getTotalByteSize(nestedEvents, delimiter));
 
             for (List<byte[]> outerList : nestedEvents) {
                 for (byte[] event : outerList) {
                     buffer.put(event);
-                    buffer.put(MANTIS_SSE_DELIMITER_BINARY);
+                    buffer.put(delimiter);
                 }
             }
 
@@ -115,7 +122,8 @@ public class CompressionUtils {
     public static byte[] compressAndBase64EncodeBytes(List<List<byte[]>> nestedEvents) {
         if (!nestedEvents.isEmpty()) {
 
-            ByteBuffer buffer = ByteBuffer.allocate(getTotalByteSize(nestedEvents));
+            ByteBuffer buffer = ByteBuffer.allocate(getTotalByteSize(nestedEvents, MANTIS_SSE_DELIMITER_BINARY));
+
 
             for (List<byte[]> outerList : nestedEvents) {
                 for (byte[] event : outerList) {
@@ -142,7 +150,8 @@ public class CompressionUtils {
         return null;
     }
 
-    private static int getTotalByteSize(List<List<byte[]>> nestedEvents) {
+
+    private static int getTotalByteSize(List<List<byte[]>> nestedEvents, byte[] delimiter) {
         int size = 0;
         int count = 0;
         for (List<byte[]> outerList : nestedEvents) {
@@ -152,7 +161,7 @@ public class CompressionUtils {
             }
         }
 
-        return size + count * MANTIS_SSE_DELIMITER_BINARY.length;
+        return size + count * delimiter.length;
 
     }
 
@@ -192,27 +201,48 @@ public class CompressionUtils {
         }
     }
 
-    static List<MantisServerSentEvent> tokenize(BufferedReader bf) throws IOException {
+    static List<MantisServerSentEvent> tokenize(BufferedReader br) throws IOException {
+        return tokenize(br, "$$$");
+    }
+
+    static List<MantisServerSentEvent> tokenize(BufferedReader bf, String delimiter) throws IOException {
         StringBuilder sb = new StringBuilder();
         String line;
         List<MantisServerSentEvent> msseList = new ArrayList<>();
-        int dollarCnt = 0;
+        final int delimiterLength = delimiter.length();
+        char[] delimiterArray = delimiter.toCharArray();
+
+        int delimiterCount = 0;
         while ((line = bf.readLine()) != null) {
             for (int i = 0; i < line.length(); i++) {
-                if (dollarCnt == 3) {
+                if (delimiterCount == delimiterLength) {
                     msseList.add(new MantisServerSentEvent(sb.toString()));
-                    dollarCnt = 0;
+                    delimiterCount = 0;
                     sb = new StringBuilder();
                 }
-                if (line.charAt(i) != '$') {
+
+                if (line.charAt(i) != delimiterArray[delimiterCount]) {
+                    if (delimiterCount > 0) {
+                        for (int j = 0; j < delimiterCount; ++j) {
+                            sb.append(delimiterArray[j]);
+                        }
+                        delimiterCount = 0;
+                    }
                     sb.append(line.charAt(i));
                 } else {
-                    dollarCnt++;
+                    delimiterCount++;
                 }
             }
-
         }
+
+        // We have a trailing event.
         if (sb.length() > 0) {
+            // We had a partial delimiter match which was not in the builder.
+            if (delimiterCount > 0) {
+                for (int j = 0; j < delimiterCount; ++j) {
+                    sb.append(delimiter.charAt(j));
+                }
+            }
             msseList.add(new MantisServerSentEvent(sb.toString()));
         }
         return msseList;
@@ -274,7 +304,14 @@ public class CompressionUtils {
     }
 
     public static List<MantisServerSentEvent> decompressAndBase64Decode(String encodedString,
-                                                                        boolean isCompressedBinary, boolean useSnappy) {
+                                                                        boolean isCompressedBinary,
+                                                                        boolean useSnappy) {
+        return decompressAndBase64Decode(encodedString, isCompressedBinary, useSnappy, null);
+    }
+    public static List<MantisServerSentEvent> decompressAndBase64Decode(String encodedString,
+                                                                        boolean isCompressedBinary,
+                                                                        boolean useSnappy,
+                                                                        String delimiter) {
         encodedString = encodedString.trim();
         //	System.out.println("Inside client decompress Current thread -->" + Thread.currentThread().getName());
         if (!encodedString.isEmpty() && isCompressedBinary && !encodedString.startsWith("ping") && !encodedString.startsWith("{")) {
@@ -284,9 +321,13 @@ public class CompressionUtils {
             try {
 
                 if (useSnappy) {
-                    return tokenize(snappyDecompress(decoded));
+                    return delimiter == null
+                            ? tokenize(snappyDecompress(decoded))
+                            : tokenize(snappyDecompress(decoded), delimiter);
                 } else {
-                    return tokenize(gzipDecompress(decoded));
+                    return delimiter == null
+                            ? tokenize(gzipDecompress(decoded))
+                            : tokenize(gzipDecompress(decoded), delimiter);
                 }
 
             } catch (IOException e) {
@@ -298,7 +339,6 @@ public class CompressionUtils {
             s.add(new MantisServerSentEvent(encodedString));
             return s;
         }
-
     }
 
     @Deprecated

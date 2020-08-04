@@ -197,9 +197,20 @@ public class SseWorkerConnection {
                         .build();
         StringBuilder sp = new StringBuilder();
 
+        String delimiter = sinkParameters == null
+                ? null
+                : sinkParameters.getSinkParams().stream()
+                        .filter(s -> s.getName()
+                                .equalsIgnoreCase(MantisSSEConstants.DELIMITER))
+                        .findFirst()
+                        .map(SinkParameter::getValue)
+                        .orElse(null);
+
         if (sinkParameters != null) {
             sp.append(sinkParameters.toString());
         }
+
+
 
         sp.append(sp.length() == 0 ? getDefaultSinkParams("?") : getDefaultSinkParams("&"));
 
@@ -220,7 +231,7 @@ public class SseWorkerConnection {
                                 if (updateConxStatus != null)
                                     updateConxStatus.call(true);
                             }
-                            return streamContent(response, updateDataRecvngStatus, dataRecvTimeoutSecs);
+                            return streamContent(response, updateDataRecvngStatus, dataRecvTimeoutSecs, delimiter);
                         })
                         .doOnError((Throwable throwable) -> {
                             resetConnected();
@@ -246,7 +257,7 @@ public class SseWorkerConnection {
 
     private Observable<MantisServerSentEvent> streamContent(HttpClientResponse<ServerSentEvent> response,
                                                             final Action1<Boolean> updateDataRecvngStatus,
-                                                            final long dataRecvTimeoutSecs) {
+                                                            final long dataRecvTimeoutSecs, String delimiter) {
         long interval = Math.max(1, dataRecvTimeoutSecs / 2);
         if (updateDataRecvngStatus != null) {
             Observable.interval(interval, interval, TimeUnit.SECONDS)
@@ -299,11 +310,10 @@ public class SseWorkerConnection {
                 })
                 .flatMapIterable((data) -> {
                     boolean useSnappy = true;
-                    return CompressionUtils.decompressAndBase64Decode(data, compressedBinaryInputEnabled, useSnappy);
+                    return CompressionUtils.decompressAndBase64Decode(data, compressedBinaryInputEnabled, useSnappy, delimiter);
                 })
                 .takeUntil(shutdownSubject)
-                .takeWhile((event) -> !isShutdown)
-                ;
+                .takeWhile((event) -> !isShutdown);
     }
 
     private boolean hasDataDrop() {
