@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.iceberg.sink.writer.factories;
+package io.mantisrx.connector.iceberg.sink.writer.partitioner;
 
-import io.mantisrx.connector.iceberg.sink.writer.IcebergWriter;
-import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
-import io.mantisrx.runtime.WorkerInfo;
-import org.apache.iceberg.Table;
+import org.apache.iceberg.StructLike;
 
-public interface IcebergWriterFactory {
+public interface Partitioner {
 
-    IcebergWriter newIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table);
+    StructLike partition(StructLike record);
 }

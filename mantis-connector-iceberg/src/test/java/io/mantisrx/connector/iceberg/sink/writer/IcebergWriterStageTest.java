@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 import io.mantisrx.connector.iceberg.sink.StageOverrideParameters;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
+import io.mantisrx.connector.iceberg.sink.writer.partitioner.Partitioner;
+import io.mantisrx.connector.iceberg.sink.writer.partitioner.PartitionerFactory;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -40,6 +42,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.data.GenericRecord;
@@ -58,11 +61,14 @@ class IcebergWriterStageTest {
     private TestSubscriber<DataFile> subscriber;
     private IcebergWriterStage.Transformer transformer;
     private Catalog catalog;
+    private Table table;
     private Context context;
     private IcebergWriter writer;
+    private Partitioner partitioner;
     private Observable<DataFile> flow;
 
-    private static final Schema SCHEMA = new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
+    private static final Schema SCHEMA =
+            new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
     private Record record;
 
     @BeforeEach
@@ -77,11 +83,13 @@ class IcebergWriterStageTest {
         WriterConfig config = new WriterConfig(parameters, mock(Configuration.class));
         WriterMetrics metrics = new WriterMetrics();
         this.writer = spy(FakeIcebergWriter.class);
+        this.partitioner = mock(Partitioner.class);
         when(this.writer.length()).thenReturn(Long.MAX_VALUE);
         this.transformer = new IcebergWriterStage.Transformer(
                 config,
                 metrics,
                 this.writer,
+                this.partitioner,
                 this.scheduler,
                 this.scheduler);
 
@@ -89,10 +97,11 @@ class IcebergWriterStageTest {
         ServiceLocator serviceLocator = mock(ServiceLocator.class);
         when(serviceLocator.service(Configuration.class)).thenReturn(mock(Configuration.class));
         this.catalog = mock(Catalog.class);
-        Table table = mock(Table.class);
-        when(table.spec()).thenReturn(PartitionSpec.unpartitioned());
-        when(this.catalog.loadTable(any())).thenReturn(table);
+        this.table = mock(Table.class);
+        when(this.table.spec()).thenReturn(PartitionSpec.unpartitioned());
+        when(this.catalog.loadTable(any())).thenReturn(this.table);
         when(serviceLocator.service(Catalog.class)).thenReturn(this.catalog);
+        when(serviceLocator.service(PartitionerFactory.class)).thenReturn(mock(PartitionerFactory.class));
 
         // Mantis Context
         this.context = mock(Context.class);
@@ -103,6 +112,40 @@ class IcebergWriterStageTest {
         Observable<Record> source = Observable.interval(1, TimeUnit.MILLISECONDS, this.scheduler)
                 .map(i -> record);
         this.flow = source.compose(this.transformer);
+    }
+
+    @Test
+    void shouldCloseOnNewPartition() throws IOException {
+        PartitionSpec spec = PartitionSpec.builderFor(SCHEMA).identity("id").build();
+        when(table.spec()).thenReturn(spec);
+        when(catalog.loadTable(any())).thenReturn(table);
+        Record recordWithNewPartition = GenericRecord.create(SCHEMA);
+        recordWithNewPartition.setField("id", 2);
+        // Identity partitioning.
+        when(partitioner.partition(record)).thenReturn(record);
+        when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
+
+        Observable<Record> source = Observable.just(record, record, recordWithNewPartition, record)
+                .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler));
+        flow = source.compose(transformer);
+        flow.subscribeOn(scheduler).subscribe(subscriber);
+
+        // Same partition; no other thresholds (size, time) met.
+        scheduler.advanceTimeBy(2, TimeUnit.MILLISECONDS);
+        subscriber.assertNoValues();
+
+        // New partition detected
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
+        subscriber.assertValueCount(1);
+
+        // New partition detected
+        scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
+        subscriber.assertValueCount(2);
+
+        verify(writer, times(4)).write(any());
+        // Two closes for [record, record] and [recordWithNewPartition]; a file is still open from the latest write.
+        verify(writer, times(2)).close();
+        verify(writer, times(3)).open(any());
     }
 
     @Test
@@ -196,22 +239,22 @@ class IcebergWriterStageTest {
         subscriber.assertNoErrors();
         subscriber.assertNoTerminalEvent();
 
-        verify(writer, times(0)).open();
+        verify(writer, times(0)).open(any());
         verify(writer, times(0)).write(any());
-        verify(writer, times(2)).isClosed();
+        verify(writer, times(1)).isClosed();
         verify(writer, times(0)).close();
     }
 
     @Test
     void shouldNoOpCloseWhenFailedToOpen() throws IOException {
-        doThrow(new IOException()).when(writer).open();
+        doThrow(new IOException()).when(writer).open(any());
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
         scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertError(RuntimeException.class);
         subscriber.assertTerminalEvent();
 
-        verify(writer).open();
+        verify(writer).open(any());
         verify(writer, times(1)).isClosed();
         verify(writer, times(1)).close();
     }
@@ -231,7 +274,7 @@ class IcebergWriterStageTest {
     }
 
     @Test
-    @Disabled
+    @Disabled("Will never terminate: Source terminates, but timer will continue to tick")
     void shouldCloseOnTerminate() throws IOException {
         Observable<Record> source = Observable.just(record);
         Observable<DataFile> flow = source.compose(transformer);
@@ -259,7 +302,7 @@ class IcebergWriterStageTest {
         assertThrows(RuntimeException.class, () -> stage.init(context));
     }
 
-    private static abstract class FakeIcebergWriter implements IcebergWriter {
+    private static class FakeIcebergWriter implements IcebergWriter {
 
         private static final DataFile DATA_FILE = new DataFiles.Builder()
                 .withPath("/datafile.parquet")
@@ -270,6 +313,7 @@ class IcebergWriterStageTest {
         private final Object object;
 
         private Object fileAppender;
+        private StructLike partitionKey;
 
         public FakeIcebergWriter() {
             this.object = new Object();
@@ -278,7 +322,17 @@ class IcebergWriterStageTest {
 
         @Override
         public void open() throws IOException {
+            open(null);
+        }
+
+        @Override
+        public void open(StructLike newPartitionKey) throws IOException {
             fileAppender = object;
+            partitionKey = newPartitionKey;
+        }
+
+        @Override
+        public void write(Record record) {
         }
 
         @Override
@@ -290,6 +344,16 @@ class IcebergWriterStageTest {
         @Override
         public boolean isClosed() {
             return fileAppender == null;
+        }
+
+        @Override
+        public long length() {
+            return 0;
+        }
+
+        @Override
+        public StructLike getPartitionKey() {
+            return partitionKey;
         }
     }
 }

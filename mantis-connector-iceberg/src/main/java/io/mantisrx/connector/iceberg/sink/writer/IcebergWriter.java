@@ -19,12 +19,15 @@ package io.mantisrx.connector.iceberg.sink.writer;
 import java.io.IOException;
 
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.exceptions.RuntimeIOException;
 
 public interface IcebergWriter {
 
     void open() throws IOException;
+
+    void open(StructLike newPartitionKey) throws IOException;
 
     void write(Record record);
 
@@ -33,4 +36,6 @@ public interface IcebergWriter {
     boolean isClosed();
 
     long length();
+
+    StructLike getPartitionKey();
 }

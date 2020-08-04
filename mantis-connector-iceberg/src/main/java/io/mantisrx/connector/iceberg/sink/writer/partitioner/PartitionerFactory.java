@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.iceberg.sink.writer.factories;
+package io.mantisrx.connector.iceberg.sink.writer.partitioner;
 
-import io.mantisrx.connector.iceberg.sink.writer.IcebergWriter;
-import io.mantisrx.connector.iceberg.sink.writer.UnpartitionedIcebergWriter;
-import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
-import io.mantisrx.runtime.WorkerInfo;
 import org.apache.iceberg.Table;
 
-public class ExampleIcebergWriterFactory implements IcebergWriterFactory {
+public interface PartitionerFactory {
 
-    @Override
-    public IcebergWriter newIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
-        return new UnpartitionedIcebergWriter(config, workerInfo, table);
-    }
+     Partitioner getPartitioner(Table table);
 }

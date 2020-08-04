@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base class for writing {@link Record}s to Iceberg via a HDFS-compatible backend.
+ * Class for writing {@link Record}s to Iceberg via a HDFS-compatible backend.
  * For example, this class may be used with an S3 compatible filesystem library
  * which progressively uploads (multipart) to S3 on each write operation for
  * optimizing latencies.
@@ -48,9 +48,9 @@ import org.slf4j.LoggerFactory;
  * this Writer, for example, closing the underlying appender after some number
  * of Bytes written and opening a new appender.
  */
-public abstract class BaseIcebergWriter implements IcebergWriter {
+public class DefaultIcebergWriter implements IcebergWriter {
 
-    private static final Logger logger = LoggerFactory.getLogger(BaseIcebergWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultIcebergWriter.class);
 
     private final WriterConfig config;
     private final WorkerInfo workerInfo;
@@ -62,19 +62,19 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
 
     private FileAppender<Record> appender;
     private OutputFile file;
-    private StructLike key;
+    private StructLike partitionKey;
 
-    public BaseIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
+    public DefaultIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
         this.config = config;
 
+        this.workerInfo = workerInfo;
         this.table = table;
         this.spec = table.spec();
-        this.workerInfo = workerInfo;
         this.format = FileFormat.valueOf(config.getWriterFileFormat());
     }
 
     /**
-     * Opens a {@link FileAppender} for a specific {@link FileFormat}.
+     * Opens an unpartitioned {@link FileAppender} for a specific {@link FileFormat}.
      * <p>
      * A filename is automatically generated for this appender.
      * <p>
@@ -82,6 +82,20 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
      */
     @Override
     public void open() throws IOException {
+        open(null);
+    }
+
+    /**
+     * Opens a partitioned {@link FileAppender} using a {@link StructLike} partition key
+     * for a specific {@link FileFormat}.
+     * <p>
+     * A filename is automatically generated for this appender.
+     * <p>
+     * Supports Parquet. Avro, Orc, and others unsupported.
+     */
+    @Override
+    public void open(StructLike newPartitionKey) throws IOException {
+        partitionKey = newPartitionKey;
         // TODO: Use key to generate part of the child path.
         String filename = generateFilename(workerInfo);
         String child = String.format("data/%s", filename);
@@ -103,7 +117,9 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
     }
 
     @Override
-    public abstract void write(Record record);
+    public void write(Record record) {
+        appender.add(record);
+    }
 
     /**
      * Closes the currently opened file appender and builds a DataFile.
@@ -131,7 +147,7 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
                     .withPath(file.location())
                     .withInputFile(file.toInputFile())
                     .withFileSizeInBytes(appender.length())
-                    .withPartition(spec.fields().size() == 0 ? null : key)
+                    .withPartition(spec.fields().size() == 0 ? null : partitionKey)
                     .withMetrics(appender.metrics())
                     .withSplitOffsets(appender.splitOffsets())
                     .build();
@@ -157,8 +173,13 @@ public abstract class BaseIcebergWriter implements IcebergWriter {
         return appender == null ? 0 : appender.length();
     }
 
-    protected void writeRecord(Record record) {
-        appender.add(record);
+    /**
+     * Returns the partition key for which this record is partitioned in an Iceberg table.
+     *
+     * @return StructLike for partitioned tables; null for unpartitioned tables
+     */
+    public StructLike getPartitionKey() {
+        return partitionKey;
     }
 
     /**
