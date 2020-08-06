@@ -234,6 +234,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                             // Only open (if closed) on new events from `source`; exclude timer records.
                             if (writer.isClosed()) {
                                 try {
+                                    logger.info("opening file for partition {}", partition);
                                     writer.open(partition);
                                     trigger.setPartition(partition);
                                     metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
@@ -257,6 +258,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                                 }
 
                                 try {
+                                    logger.info("opening file for new partition {}", partition);
                                     writer.open(partition);
                                     metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
                                 } catch (IOException e) {
