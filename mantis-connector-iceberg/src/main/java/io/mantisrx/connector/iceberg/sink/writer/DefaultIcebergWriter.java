@@ -204,6 +204,6 @@ public class DefaultIcebergWriter implements IcebergWriter {
             return filename;
         }
 
-        return String.format("/%s/", spec.partitionToPath(partitionKey));
+        return String.format("/%s/%s", spec.partitionToPath(partitionKey), filename);
     }
 }
