@@ -74,7 +74,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
     }
 
     /**
-     * Opens an unpartitioned {@link FileAppender} for a specific {@link FileFormat}.
+     * Opens a {@link FileAppender} for a specific {@link FileFormat}.
      * <p>
      * A filename is automatically generated for this appender.
      * <p>
@@ -86,7 +86,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
     }
 
     /**
-     * Opens a partitioned {@link FileAppender} using a {@link StructLike} partition key
+     * Opens a {@link FileAppender} using a {@link StructLike} partition key
      * for a specific {@link FileFormat}.
      * <p>
      * A filename is automatically generated for this appender.
