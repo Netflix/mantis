@@ -96,10 +96,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
     @Override
     public void open(StructLike newPartitionKey) throws IOException {
         partitionKey = newPartitionKey;
-        // TODO: Use key to generate part of the child path.
-        String filename = generateFilename(workerInfo);
-        String child = String.format("data/%s", filename);
-        Path path = new Path(table.location(), child);
+        Path path = new Path(table.location(), generateFilename());
         logger.info("opening new {} file appender {}", format, path);
         file = HadoopOutputFile.fromPath(path, config.getHadoopConfig());
 
@@ -187,12 +184,26 @@ public class DefaultIcebergWriter implements IcebergWriter {
      * the source of the file. For example, if the caller exits unexpectedly and leaves
      * files in the system, it's possible to identify them through a recursive listing.
      */
-    private String generateFilename(WorkerInfo workerInfo) {
-        return format.addExtension(String.format("%s_%s_%s_%s_%s",
-                workerInfo.getJobId(),
-                workerInfo.getStageNumber(),
-                workerInfo.getWorkerIndex(),
-                workerInfo.getWorkerNumber(),
-                UUID.randomUUID().toString()));
+    private String generateFilename() {
+        return generateDataPath(
+                generatePartitionPath(
+                        format.addExtension(String.format("%s_%s_%s_%s_%s",
+                                workerInfo.getJobId(),
+                                workerInfo.getStageNumber(),
+                                workerInfo.getWorkerIndex(),
+                                workerInfo.getWorkerNumber(),
+                                UUID.randomUUID().toString()))));
+    }
+
+    private String generateDataPath(String partitionPath) {
+        return String.format("data/%s", partitionPath);
+    }
+
+    private String generatePartitionPath(String filename) {
+        if (spec.fields().isEmpty()) {
+            return filename;
+        }
+
+        return String.format("/%s/", spec.partitionToPath(partitionKey));
     }
 }
