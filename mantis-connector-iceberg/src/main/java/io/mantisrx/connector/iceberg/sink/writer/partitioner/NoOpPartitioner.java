@@ -14,28 +14,17 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.iceberg.sink.writer;
+package io.mantisrx.connector.iceberg.sink.writer.partitioner;
 
-import java.io.IOException;
-
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.exceptions.RuntimeIOException;
 
-public interface IcebergWriter {
+/**
+ * Partitioner to use for unpartitioned Iceberg tables.
+ */
+public class NoOpPartitioner implements Partitioner {
 
-    void open() throws IOException;
-
-    void open(StructLike newPartitionKey) throws IOException;
-
-    void write(Record record);
-
-    DataFile close() throws IOException, RuntimeIOException;
-
-    boolean isClosed();
-
-    long length();
-
-    StructLike getPartitionKey();
+    @Override
+    public StructLike partition(StructLike record) {
+        return null;
+    }
 }

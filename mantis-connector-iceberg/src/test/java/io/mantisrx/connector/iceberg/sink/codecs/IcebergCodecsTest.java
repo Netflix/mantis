@@ -26,34 +26,55 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class IcebergCodecsTest {
 
-    private Codec<DataFile> codec;
-    private DataFile dataFile;
+    private static final Schema SCHEMA =
+            new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
+
+    private Codec<Record> recordCodec;
+    private Codec<DataFile> dataFileCodec;
 
     @BeforeEach
     void setUp() {
-        codec = IcebergCodecs.dataFile();
+        this.recordCodec = IcebergCodecs.record(SCHEMA);
+        this.dataFileCodec = IcebergCodecs.dataFile();
+    }
+
+    @Test
+    void shouldEncodeAndDecodeRecord() {
+        Record expected = GenericRecord.create(SCHEMA);
+        expected.setField("id", 1);
+
+        byte[] encoded = recordCodec.encode(expected);
+        Record actual = recordCodec.decode(encoded);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void shouldEncodeAndDecodeDataFile() {
         PartitionSpec spec = PartitionSpec.unpartitioned();
-        dataFile = DataFiles.builder(spec)
+        DataFile expected = DataFiles.builder(spec)
                 .withPath("/path/filename.parquet")
                 .withFileSizeInBytes(1)
                 .withPartition(null)
                 .withMetrics(mock(Metrics.class))
                 .withSplitOffsets(Collections.singletonList(1L))
                 .build();
-    }
 
-    @Test
-    void shouldEncodeAndDecodeDataFile() {
-        byte[] encoded = codec.encode(dataFile);
-        DataFile actual = codec.decode(encoded);
-        assertEquals(dataFile.path(), actual.path());
-        assertEquals(dataFile.fileSizeInBytes(), actual.fileSizeInBytes());
-        assertEquals(dataFile.partition(), actual.partition());
-        assertEquals(dataFile.splitOffsets(), actual.splitOffsets());
+        byte[] encoded = dataFileCodec.encode(expected);
+        DataFile actual = dataFileCodec.decode(encoded);
+
+        assertEquals(expected.path(), actual.path());
+        assertEquals(expected.fileSizeInBytes(), actual.fileSizeInBytes());
+        assertEquals(expected.partition(), actual.partition());
+        assertEquals(expected.splitOffsets(), actual.splitOffsets());
     }
 }

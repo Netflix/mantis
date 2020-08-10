@@ -25,6 +25,8 @@ import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
+import io.mantisrx.connector.iceberg.sink.writer.partitioner.Partitioner;
+import io.mantisrx.connector.iceberg.sink.writer.partitioner.PartitionerFactory;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.WorkerInfo;
@@ -37,6 +39,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -98,22 +101,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         );
     }
 
-    /**
-     * Use this method to create an Iceberg Writer independent of a Mantis Processing Stage.
-     * <p>
-     * This is useful for optimizing network utilization by using the writer directly within another
-     * processing stage to avoid crossing stage boundaries.
-     * <p>
-     * This incurs a debuggability trade-off where a processing stage will do multiple things.
-     */
-    public static IcebergWriter newIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
-        if (table.spec().fields().isEmpty()) {
-            return new UnpartitionedIcebergWriter(config, workerInfo, table);
-        } else {
-            return new PartitionedIcebergWriter(config, workerInfo, table);
-        }
-    }
-
     public IcebergWriterStage() {
     }
 
@@ -136,9 +123,11 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
-        IcebergWriter writer = newIcebergWriter(config, workerInfo, table);
+        IcebergWriter writer = new DefaultIcebergWriter(config, workerInfo, table);
         WriterMetrics metrics = new WriterMetrics();
-        transformer = new Transformer(config, metrics, writer, Schedulers.computation(), Schedulers.io());
+        PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
+        Partitioner partitioner = partitionerFactory.getPartitioner(table);
+        transformer = new Transformer(config, metrics, writer, partitioner, Schedulers.computation(), Schedulers.io());
     }
 
     @Override
@@ -169,6 +158,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         private final WriterConfig config;
         private final WriterMetrics metrics;
+        private final Partitioner partitioner;
         private final IcebergWriter writer;
         private final Scheduler timerScheduler;
         private final Scheduler transformerScheduler;
@@ -177,24 +167,56 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 WriterConfig config,
                 WriterMetrics metrics,
                 IcebergWriter writer,
+                Partitioner partitioner,
                 Scheduler timerScheduler,
                 Scheduler transformerScheduler) {
             this.config = config;
             this.metrics = metrics;
             this.writer = writer;
+            this.partitioner = partitioner;
             this.timerScheduler = timerScheduler;
             this.transformerScheduler = transformerScheduler;
         }
 
         /**
-         * Opens an IcebergWriter FileAppender, writes records to a file. Check the file appender
-         * size on a configured row count, and if over a configured threshold, close the file, build
-         * and emit a DataFile, and open a new FileAppender.
+         * Opens an IcebergWriter FileAppender, writes records to a file. The appender flushes if any of
+         * following criteria is met, in order of precedence:
          * <p>
-         * If the size threshold is not met, secondarily check a time threshold. If there's data, then
-         * perform the same actions as above. If there's no data, then no-op.
+         * 1. new partition
+         * 2. size threshold
+         * 3. time threshold
          * <p>
-         * Pair this with a progressive multipart file uploader backend for better latencies.
+         * New Partition:
+         * <p>
+         * If the Iceberg Table is partitioned, the appender will check _every_ record to detect a new partition.
+         * If there's a new partition, the appender will align the record to the new partition. It does this by
+         * closing the current file, opening a new file, and writing the record to that new file.
+         * <p>
+         * It's _important_ that upstream producers align events to partitions as best as possible. For example,
+         * - Given an Iceberg Table partitioned by {@code hour}
+         * - 10 producers writing Iceberg Records
+         * <p>
+         * Each of the 10 producers _should_ try to produce events aligned by the hour.
+         * If writes are not well-aligned, then results will be correct, but performance negatively impacted due to
+         * frequent opening/closing of files.
+         * <p>
+         * Writes may be _unordered_ as long as they're aligned by the table's partitioning.
+         * <p>
+         * Size Threshold:
+         * <p>
+         * The appender will periodically check the current file size as configured by
+         * {@link WriterConfig#getWriterRowGroupSize()}. If it's time to check, then the appender will flush on
+         * {@link WriterConfig#getWriterFlushFrequencyBytes()}.
+         * <p>
+         * Time Threshold:
+         * <p>
+         * The appender will periodically attempt to flush as configured by
+         * {@link WriterConfig#getWriterFlushFrequencyMsec()}. If this threshold is met, the appender will flush
+         * only if the appender has an open file. This avoids flushing unnecessarily if there are no events.
+         * Otherwise, a flush will happen, even if there are few events in the file. This effectively limits the
+         * upper-bound for allowed lateness.
+         * <p>
+         * Pair this writer with a progressive multipart file uploader backend for better latencies.
          */
         @Override
         public Observable<DataFile> call(Observable<Record> source) {
@@ -204,22 +226,47 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
             return source.mergeWith(timer)
                     .observeOn(transformerScheduler)
-                    .doOnNext(record -> {
-                        // If closed _and_ timer record, don't open. Only open on new events from `source`.
-                        if (writer.isClosed() && !record.struct().fields().equals(TIMER_SCHEMA.columns())) {
-                            try {
-                                writer.open();
-                                metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
-                            } catch (IOException e) {
-                                metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
-                                throw Exceptions.propagate(e);
-                            }
-                        }
-                    })
                     .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
                         if (record.struct().fields().equals(TIMER_SCHEMA.columns())) {
                             trigger.timeout();
                         } else {
+                            StructLike partition = partitioner.partition(record);
+                            // Only open (if closed) on new events from `source`; exclude timer records.
+                            if (writer.isClosed()) {
+                                try {
+                                    logger.info("opening file for partition {}", partition);
+                                    writer.open(partition);
+                                    trigger.setPartition(partition);
+                                    metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
+                                } catch (IOException e) {
+                                    metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
+                                    throw Exceptions.propagate(e);
+                                }
+                            }
+
+                            // Make sure records are aligned with the partition.
+                            if (trigger.isNewPartition(partition)) {
+                                trigger.setPartition(partition);
+
+                                try {
+                                    DataFile dataFile = writer.close();
+                                    trigger.stage(dataFile);
+                                    trigger.reset();
+                                } catch (IOException | RuntimeException e) {
+                                    metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
+                                    logger.error("error writing DataFile", e);
+                                }
+
+                                try {
+                                    logger.info("opening file for new partition {}", partition);
+                                    writer.open(partition);
+                                    metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
+                                } catch (IOException e) {
+                                    metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
+                                    throw Exceptions.propagate(e);
+                                }
+                            }
+
                             try {
                                 writer.write(record);
                                 trigger.increment();
@@ -229,12 +276,21 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                                 logger.debug("error writing record {}", record);
                             }
                         }
+
                         return trigger;
                     })
                     .filter(this::shouldFlush)
                     // Writer can be closed if there are no events, yet timer is still ticking.
                     .filter(trigger -> !writer.isClosed())
                     .map(trigger -> {
+                        // Triggered by new partition.
+                        if (trigger.hasStagedDataFile()) {
+                            DataFile dataFile = trigger.getStagedDataFile().copy();
+                            trigger.clearStagedDataFile();
+                            return dataFile;
+                        }
+
+                        // Triggered by size or time.
                         try {
                             DataFile dataFile = writer.close();
                             trigger.reset();
@@ -269,20 +325,24 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         }
 
         /**
-         * Flush on size or time.
+         * Trigger a flush on a repartition event, size threshold, or time threshold.
          */
         private boolean shouldFlush(Trigger trigger) {
-            // Check the trigger to short-circuit if the count is over the threshold first
+            // For size threshold, check the trigger to short-circuit if the count is over the threshold first
             // because implementations of `writer.length()` may be expensive if called in a tight loop.
-            return (trigger.isOverCountThreshold() && writer.length() >= config.getWriterFlushFrequencyBytes())
+            return trigger.hasStagedDataFile()
+                    || (trigger.isOverCountThreshold() && writer.length() >= config.getWriterFlushFrequencyBytes())
                     || trigger.isTimedOut();
         }
 
         private static class Trigger {
 
             private final int countThreshold;
+
             private int counter;
             private boolean timedOut;
+            private StructLike partition;
+            private DataFile stagedDataFile;
 
             Trigger(int countThreshold) {
                 this.countThreshold = countThreshold;
@@ -296,9 +356,17 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 timedOut = true;
             }
 
+            void setPartition(StructLike newPartition) {
+                partition = newPartition;
+            }
+
             void reset() {
                 counter = 0;
                 timedOut = false;
+            }
+
+            void stage(DataFile dataFile) {
+                this.stagedDataFile = dataFile;
             }
 
             boolean isOverCountThreshold() {
@@ -309,15 +377,32 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                 return timedOut;
             }
 
+            boolean isNewPartition(StructLike newPartition) {
+                return partition != null && !partition.equals(newPartition);
+            }
+
+            boolean hasStagedDataFile() {
+                return stagedDataFile != null;
+            }
+
+            DataFile getStagedDataFile() {
+                return stagedDataFile;
+            }
+
+            void clearStagedDataFile() {
+                stagedDataFile = null;
+            }
+
             @Override
             public String toString() {
                 return "Trigger{"
                         + " countThreshold=" + countThreshold
                         + ", counter=" + counter
                         + ", timedOut=" + timedOut
+                        + ", partition=" + partition
+                        + ", stagedDataFile=" + stagedDataFile
                         + '}';
             }
         }
     }
-
 }
