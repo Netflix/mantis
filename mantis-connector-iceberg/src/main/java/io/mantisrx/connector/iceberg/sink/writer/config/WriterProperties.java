@@ -32,7 +32,7 @@ public class WriterProperties {
     public static final String WRITER_ROW_GROUP_SIZE = "writerRowGroupSize";
     public static final int WRITER_ROW_GROUP_SIZE_DEFAULT = 1000;
     public static final String WRITER_ROW_GROUP_SIZE_DESCRIPTION =
-            String.format("Maximum number of rows that should exist in a file (default: %s)",
+            String.format("Number of rows to chunk before checking for file size (default: %s)",
                     WRITER_ROW_GROUP_SIZE_DEFAULT);
 
     /**
