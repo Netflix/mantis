@@ -90,6 +90,20 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         );
     }
 
+    /**
+     * Use this to instantiate a new transformer from a given {@link Context}.
+     */
+    public static Transformer newTransformer(Context context) {
+        CommitterConfig config = new CommitterConfig(context.getParameters());
+        CommitterMetrics metrics = new CommitterMetrics();
+        Catalog catalog = context.getServiceLocator().service(Catalog.class);
+        TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
+        Table table = catalog.loadTable(id);
+        IcebergCommitter committer = new IcebergCommitter(table);
+
+        return new Transformer(config, metrics, committer, Schedulers.computation());
+    }
+
     public IcebergCommitterStage() {
     }
 
@@ -105,13 +119,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
      */
     @Override
     public void init(Context context) {
-        CommitterConfig config = new CommitterConfig(context.getParameters());
-        CommitterMetrics metrics = new CommitterMetrics();
-        Catalog catalog = context.getServiceLocator().service(Catalog.class);
-        TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
-        Table table = catalog.loadTable(id);
-        IcebergCommitter committer = new IcebergCommitter(table);
-        transformer = new Transformer(config, metrics, committer, Schedulers.computation());
+        transformer = newTransformer(context);
     }
 
     @Override

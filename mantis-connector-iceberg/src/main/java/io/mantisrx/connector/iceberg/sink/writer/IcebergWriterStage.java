@@ -101,6 +101,25 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         );
     }
 
+    /**
+     * Use this to instantiate a new transformer from a given {@link Context}.
+     */
+    public static Transformer newTransformer(Context context) {
+        Configuration hadoopConfig = context.getServiceLocator().service(Configuration.class);
+        WriterConfig config = new WriterConfig(context.getParameters(), hadoopConfig);
+        Catalog catalog = context.getServiceLocator().service(Catalog.class);
+        TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
+        Table table = catalog.loadTable(id);
+        WorkerInfo workerInfo = context.getWorkerInfo();
+
+        IcebergWriter writer = new DefaultIcebergWriter(config, workerInfo, table);
+        WriterMetrics metrics = new WriterMetrics();
+        PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
+        Partitioner partitioner = partitionerFactory.getPartitioner(table);
+
+        return new Transformer(config, metrics, writer, partitioner, Schedulers.computation(), Schedulers.io());
+    }
+
     public IcebergWriterStage() {
     }
 
@@ -116,18 +135,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      */
     @Override
     public void init(Context context) {
-        Configuration hadoopConfig = context.getServiceLocator().service(Configuration.class);
-        WriterConfig config = new WriterConfig(context.getParameters(), hadoopConfig);
-        Catalog catalog = context.getServiceLocator().service(Catalog.class);
-        TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
-        Table table = catalog.loadTable(id);
-        WorkerInfo workerInfo = context.getWorkerInfo();
-
-        IcebergWriter writer = new DefaultIcebergWriter(config, workerInfo, table);
-        WriterMetrics metrics = new WriterMetrics();
-        PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
-        Partitioner partitioner = partitionerFactory.getPartitioner(table);
-        transformer = new Transformer(config, metrics, writer, partitioner, Schedulers.computation(), Schedulers.io());
+        transformer = newTransformer(context);
     }
 
     @Override
