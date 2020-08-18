@@ -132,7 +132,8 @@ public interface MrePublishConfiguration {
     String mantisJobCluster(String streamName);
 
     /**
-     * Interval in milliseconds when events are pushed for each stream.
+     * Interval in milliseconds when events are drained from the stream queue and delegated to underlying transmitter
+     * for sending.
      * <p>
      * Property: <code>mantis.publish.drainer.interval.msec</code>
      * <p>
@@ -141,7 +142,8 @@ public interface MrePublishConfiguration {
     int drainerIntervalMsec();
 
     /**
-     * Interval in seconds when subscriptions are fetched.
+     * Interval in seconds when subscriptions are fetched. In the default implementation, subscriptions are fetched
+     * over http from the workers returned by Discovery API.
      * <p>
      * Property: <code>mantis.publish.subs.refresh.interval.sec</code>
      * <p>
@@ -209,7 +211,7 @@ public interface MrePublishConfiguration {
 
     /**
      * Maximum number of mantis workers to fetch subscription from. Workers are randomly chosen from the list returned
-     * by discovery api.
+     * by Discovery API.
      * <p>
      * Property: <code>mantis.publish.subs.refresh.max.num.workers</code>
      * <p>
@@ -240,7 +242,7 @@ public interface MrePublishConfiguration {
     boolean getGzipEnabled();
 
     /**
-     * Netty channel configuration for pushing events. Wite idle timeout in seconds for the channel.
+     * Netty channel configuration for pushing events. Write idle timeout in seconds for the channel.
      * <p>
      * Property: <code>mantis.publish.channel.idleTimeout.sec</code>
      * <p>
