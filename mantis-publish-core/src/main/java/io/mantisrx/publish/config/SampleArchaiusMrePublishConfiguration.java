@@ -34,8 +34,8 @@ public class SampleArchaiusMrePublishConfiguration implements MrePublishConfigur
     public static final String DEEPCOPY_EVENT_MAP_ENABLED_PROP = PROP_PREFIX + ".deepcopy.eventmap.enabled";
     public static final String MRE_CLIENT_ENABLED_PROP = PROP_PREFIX + ".enabled";
     public static final String MRE_CLIENT_APP_NAME_PROP = PROP_PREFIX + ".app.name";
-    public static final String MRE_CLIENT_TEE_ENABLED_PROP = PROP_PREFIX + "tee.enabled";
-    public static final String MRE_CLIENT_TEE_STREAM_NAME_PROP = PROP_PREFIX + "tee.stream";
+    public static final String MRE_CLIENT_TEE_ENABLED_PROP = PROP_PREFIX + ".tee.enabled";
+    public static final String MRE_CLIENT_TEE_STREAM_NAME_PROP = PROP_PREFIX + ".tee.stream";
     public static final String MRE_CLIENT_BLACKLIST_KEYS_PROP = PROP_PREFIX + ".blacklist";
     public static final String MAX_SUBSCRIPTIONS_COUNT_PROP = PROP_PREFIX + ".max.subscriptions.per.stream.default";
     public static final String DRAINER_INTERVAL_MSEC_PROP = PROP_PREFIX + ".drainer.interval.msec";
