@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
+import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
@@ -204,6 +205,13 @@ public class ParameterUtils {
                 .build();
         systemParams.put(sseBinary.getName(), sseBinary);
 
+        ParameterDefinition<String> compressionDelimiter = new StringParameter()
+                .name(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER)
+                .validator(Validators.alwaysPass())
+                .defaultValue(CompressionUtils.MANTIS_SSE_DELIMITER)
+                .description("Delimiter for separating SSE data before compression")
+                .build();
+        systemParams.put(compressionDelimiter.getName(), compressionDelimiter);
     }
 
     private ParameterUtils() {

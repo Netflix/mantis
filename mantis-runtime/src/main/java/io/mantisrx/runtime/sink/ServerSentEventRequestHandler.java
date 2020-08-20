@@ -198,9 +198,9 @@ public class ServerSentEventRequestHandler<T> implements
         }
 
         final byte[] delimiter = queryParameters != null
-                && queryParameters.containsKey(MantisSSEConstants.DELIMITER)
-                && queryParameters.get(MantisSSEConstants.DELIMITER).get(0) != null
-                ? queryParameters.get(MantisSSEConstants.DELIMITER).get(0).getBytes()
+                && queryParameters.containsKey(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER)
+                && queryParameters.get(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER).get(0) != null
+                ? queryParameters.get(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER).get(0).getBytes()
                 : null;
 
         Tag[] tags = new Tag[2];
