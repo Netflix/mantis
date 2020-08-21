@@ -202,7 +202,7 @@ public class CompressionUtils {
     }
 
     static List<MantisServerSentEvent> tokenize(BufferedReader br) throws IOException {
-        return tokenize(br, "$$$");
+        return tokenize(br, MANTIS_SSE_DELIMITER);
     }
 
     static List<MantisServerSentEvent> tokenize(BufferedReader bf, String delimiter) throws IOException {
@@ -215,12 +215,6 @@ public class CompressionUtils {
         int delimiterCount = 0;
         while ((line = bf.readLine()) != null) {
             for (int i = 0; i < line.length(); i++) {
-                if (delimiterCount == delimiterLength) {
-                    msseList.add(new MantisServerSentEvent(sb.toString()));
-                    delimiterCount = 0;
-                    sb = new StringBuilder();
-                }
-
                 if (line.charAt(i) != delimiterArray[delimiterCount]) {
                     if (delimiterCount > 0) {
                         for (int j = 0; j < delimiterCount; ++j) {
@@ -231,6 +225,12 @@ public class CompressionUtils {
                     sb.append(line.charAt(i));
                 } else {
                     delimiterCount++;
+                }
+
+                if (delimiterCount == delimiterLength) {
+                    msseList.add(new MantisServerSentEvent(sb.toString()));
+                    delimiterCount = 0;
+                    sb = new StringBuilder();
                 }
             }
         }

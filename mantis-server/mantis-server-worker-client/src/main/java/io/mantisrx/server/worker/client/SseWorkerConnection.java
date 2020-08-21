@@ -20,15 +20,12 @@ import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATO
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
-import com.netflix.spectator.api.BasicTag;
-import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.common.metrics.Counter;
@@ -201,7 +198,7 @@ public class SseWorkerConnection {
                 ? null
                 : sinkParameters.getSinkParams().stream()
                         .filter(s -> s.getName()
-                                .equalsIgnoreCase(MantisSSEConstants.DELIMITER))
+                                .equalsIgnoreCase(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER))
                         .findFirst()
                         .map(SinkParameter::getValue)
                         .orElse(null);

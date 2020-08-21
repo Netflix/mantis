@@ -224,8 +224,8 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                                 enableSampling = true;
                             }
 
-                            if (queryParameters.containsKey(MantisSSEConstants.DELIMITER)) {
-                                String rawDelimiter = queryParameters.get(MantisSSEConstants.DELIMITER).get(0);
+                            if (queryParameters.containsKey(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER)) {
+                                String rawDelimiter = queryParameters.get(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER).get(0);
                                 if (rawDelimiter != null && !rawDelimiter.isEmpty()) {
                                     delimiter = rawDelimiter.getBytes();
                                 }

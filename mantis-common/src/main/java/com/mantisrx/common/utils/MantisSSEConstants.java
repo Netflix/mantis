@@ -20,6 +20,8 @@ public class MantisSSEConstants {
 
     public static final String MANTIS_ENABLE_COMPRESSION = "mantis.EnableCompressedBinary";
 
+    public static final String MANTIS_COMPRESSION_DELIMITER = "mantis.CompressionDelimiter";
+
     public static final String SAMPLE_M_SEC = "sampleMSec";
 
     public static final String SAMPLE = "sample";
@@ -41,6 +43,4 @@ public class MantisSSEConstants {
     public static final String ID = "id";
 
     public static final String MQL = "mql";
-
-    public static final String DELIMITER = "delimiter";
 }

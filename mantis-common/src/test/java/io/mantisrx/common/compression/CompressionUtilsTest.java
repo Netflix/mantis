@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,5 +54,49 @@ public class CompressionUtilsTest {
         } catch (IOException ex) {
             Assert.fail("Tokenization threw an IO exception that was unexpected");
         }
+    }
+
+    @Test
+    public void testCompression() throws Exception {
+        List<byte[]> events1 = new ArrayList<>();
+        events1.add("1".getBytes());
+        events1.add("2".getBytes());
+        events1.add("3".getBytes());
+        List<byte[]> events2 = new ArrayList<>();
+        events2.add("4".getBytes());
+        events2.add("5".getBytes());
+        events2.add("6".getBytes());
+        List<List<byte[]>> buffer = new ArrayList<>();
+        buffer.add(events1);
+        buffer.add(events2);
+
+        byte[] compressed = CompressionUtils.compressAndBase64EncodeBytes(buffer, false);
+        List<MantisServerSentEvent> decompressed = CompressionUtils.decompressAndBase64Decode(new String(compressed), true, false);
+        assertEquals("1", decompressed.get(0).getEventAsString());
+        assertEquals("2", decompressed.get(1).getEventAsString());
+        assertEquals("3", decompressed.get(2).getEventAsString());
+        assertEquals("4", decompressed.get(3).getEventAsString());
+        assertEquals("5", decompressed.get(4).getEventAsString());
+        assertEquals("6", decompressed.get(5).getEventAsString());
+
+        // test snappy
+        compressed = CompressionUtils.compressAndBase64EncodeBytes(buffer, true);
+        decompressed = CompressionUtils.decompressAndBase64Decode(new String(compressed), true, true);
+        assertEquals("1", decompressed.get(0).getEventAsString());
+        assertEquals("2", decompressed.get(1).getEventAsString());
+        assertEquals("3", decompressed.get(2).getEventAsString());
+        assertEquals("4", decompressed.get(3).getEventAsString());
+        assertEquals("5", decompressed.get(4).getEventAsString());
+        assertEquals("6", decompressed.get(5).getEventAsString());
+
+        // test custom delimiter
+        compressed = CompressionUtils.compressAndBase64EncodeBytes(buffer, true, "abcdefg".getBytes());
+        decompressed = CompressionUtils.decompressAndBase64Decode(new String(compressed), true, true, "abcdefg");
+        assertEquals("1", decompressed.get(0).getEventAsString());
+        assertEquals("2", decompressed.get(1).getEventAsString());
+        assertEquals("3", decompressed.get(2).getEventAsString());
+        assertEquals("4", decompressed.get(3).getEventAsString());
+        assertEquals("5", decompressed.get(4).getEventAsString());
+        assertEquals("6", decompressed.get(5).getEventAsString());
     }
 }
