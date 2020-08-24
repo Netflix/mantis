@@ -163,6 +163,46 @@ Transformation includes the following steps:
 Mantis Publish delivers events on-demand. When a client subscribes to a Mantis Job that issues an MQL query,
 the Event Publisher delivers the event using non-blocking I/O.
 
+
+## Properties
+
+There are a number of configuration options available to control the behavior of the publishing client.
+
+| **Property**  | **Description** | **Default Value** |
+| --- | --- | --- |
+| mantis.publish.enabled | Determine if event processing is enabled. | true |
+| mantis.publish.tee.enabled | Allows events to simultaneously be sent to an external system outside of Mantis. | false |
+| mantis.publish.tee.stream | Specifies which external stream name tee will write to. | default_stream |
+| mantis.publish.blacklist | Comma separated list of field names where the value will be obfuscated. | param.password |
+| mantis.publish.max.num.streams | Maximum number of streams this application can create. | 5 |
+| mantis.publish.stream.inactive.duration.threshold.sec | Maximum duration in seconds for the stream to be considered inactive if there are no events. | 86400 (24hr) |
+| mantis.publish.{stream_name}.stream.queue.size | Size of the blocking queue to hold events to be pushed for the specific stream. | 1000 |
+| mantis.publish.max.subscriptions.per.stream.default | Default maximum number of subscriptions per stream. After the limit is reached, further subscriptions on that stream are rejected. | 20 |
+| mantis.publish.max.subscriptions.stream.{stream_name} | Overrides the default maximum number of subscriptions for the specific stream. | 20 |
+| mantis.publish.subs.refresh.interval.sec | Interval in seconds when subscriptions are fetched. In the default implementation, subscriptions are fetched over http from the workers returned by Discovery API. | 1 |
+| mantis.publish.drainer.interval.msec | Interval in milliseconds when events are drained from the stream queue and delegated to underlying transmitter for sending. | 100 |
+| mantis.publish.subs.expiry.interval.sec | Duration in seconds between a subscription is last fetched and when it is removed. | 300 |
+| mantis.publish.jobdiscovery.refresh.interval.sec | Duration in seconds between workers are refreshed for a job cluster. | 10 |
+| mantis.publish.jobcluster.mapping.refresh.interval.sec | Duration in seconds between job cluster mapping is refreshed for the current application. | 60 |
+| mantis.publish.deepcopy.eventmap.enabled | Determine if event processing should operate on a deep copy of the event. Otherwise the event object is processed directly. | true |
+| mantis.publish.subs.refresh.max.num.workers | Maximum number of mantis workers to fetch subscription from. Workers are randomly chosen from the list returned by Discovery API. | 3 |
+| mantis.publish.subs.fetch.query.params.string | Additional query params to pass to the api call to fetch subscription. It should be of the form "param1=value1&param2=value2". |  |
+| mantis.publish.channel.gzip.enabled | *Netty channel configuration for pushing events.* Determine if events should be gzip encoded when send over the channel. | true |
+| mantis.publish.channel.idleTimeout.sec | *Netty channel configuration for pushing events.* Write idle timeout in seconds for the channel. | 300 |
+| mantis.publish.channel.writeTimeout.sec | *Netty channel configuration for pushing events.* Write timeout in seconds for the channel. | 1 |
+| mantis.publish.channel.httpChunkSize.bytes | *Netty channel configuration for pushing events.* Chunked size in bytes of the channel content. It is used by HttpObjectAggregator. | 32768 |
+| mantis.publish.channel.flushInterval.msec | *Netty channel configuration for pushing events.* Maximum duration in milliseconds between content flushes. | 50 |
+| mantis.publish.channel.flushInterval.bytes | *Netty channel configuration for pushing events.* Content is flushed when aggregated event size is above this threshold. | 524288 |
+| mantis.publish.channel.lowWriteBufferWatermark.bytes | *Netty channel configuration for pushing events.* Used for setting write buffer watermark. | 1572864 |
+| mantis.publish.channel.highWriteBufferWatermark.bytes | *Netty channel configuration for pushing events.* Used for setting write buffer watermark. | 2097152 |
+| mantis.publish.channel.ioThreads | *Netty channel configuration for pushing events.* Number of threads in the eventLoopGroup. | 1 |
+| mantis.publish.channel.compressionThreads | *Netty channel configuration for pushing events.* Number of threads in the encoderEventLoopGroup when gzip is enabled. | 1 |
+| mantis.publish.workerpool.capacity | Size of the pool of Mantis workers to push events to. | 1000 |
+| mantis.publish.workerpool.refresh.internal.sec | Duration in seconds between Mantis workers are refreshed in the pool. | 10 |
+| mantis.publish.workerpool.worker.error.quota | Number of errors to receive from a Mantis worker before it is blacklisted in the pool. | 60 |
+| mantis.publish.workerpool.worker.error.timeout.sec | Duration in seconds after which a blacklisted Mantis worker may be reconsidered for selection. | 300 |
+
+
 <!-- Do not edit below this line -->
 <!-- START -->
 <!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
