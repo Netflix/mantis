@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1001,18 +1001,18 @@ debugging purposes).</p>
 </li>
 </ol>
 <p>To create a Sink component, you implement the <code>Sink</code> interface:</p>
-<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">io.mantisrx.runtime.Context</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.PortRequest</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">rx.Observable</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">rx.functions.Action3</span><span class="o">;</span>
+<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">io.mantisrx.runtime.Context</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.PortRequest</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">rx.Observable</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">rx.functions.Action3</span><span class="p">;</span>
 
-<span class="hll"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Sink</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Action3</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">,</span> <span class="n">PortRequest</span><span class="o">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="o">{</span> <span class="o">}</span>
+<span class="hll"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Sink</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Action3</span><span class="o">&lt;</span><span class="n">Context</span><span class="p">,</span> <span class="n">PortRequest</span><span class="p">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="p">{</span> <span class="p">}</span>
 </span></pre></div>
 
 
 <h2 id="built-in-sinks">Built-in Sinks<a class="headerlink" href="#built-in-sinks" title="Permanent link">&para;</a></h2>
 <p>Some Sinks are provided by Mantis. To get access to these Sinks, add this line to your source:</p>
-<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.Sinks</span><span class="o">;</span>
+<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.Sinks</span><span class="p">;</span>
 </pre></div>
 
 
@@ -1023,14 +1023,14 @@ form of an SSE stream.</p>
 streamed as input and outputs data encoded as needed. The following example attaches a sink to a
 Mantis Job that passes the data from the last Processing Stage of the job, unchanged, to the SSE
 stream:</p>
-<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="o">.</span> <span class="err">…</span> <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">sse</span><span class="o">((</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="o">)).</span> <span class="err">…</span> <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span> <span class="err">…</span> <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">)).</span> <span class="err">…</span> <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
 <h3 id="sysout-sink">sysout Sink<a class="headerlink" href="#sysout-sink" title="Permanent link">&para;</a></h3>
 <p>The <code>sysout</code> Sink simply outputs the results from the previous Processing Stage directly to sysout.
 For example:</p>
-<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="o">.</span> <span class="err">…</span> <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">sysout</span><span class="o">()).</span> <span class="err">…</span> <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span> <span class="err">…</span> <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sysout</span><span class="p">()).</span> <span class="err">…</span> <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
@@ -1044,51 +1044,51 @@ output of the previous Processing Stage <em>immediately</em> when its <code>call
 has more processing to do within that method before it can respond to the output. This will start
 your Mantis Job more quickly, but may mean some of its initial data is dropped.</p>
 <p>For example:</p>
-<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="o">.</span> <span class="err">…</span> <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">eagerSubscribe</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">sse</span><span class="o">((</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="o">))).</span> <span class="err">…</span> <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span> <span class="err">…</span> <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">))).</span> <span class="err">…</span> <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
 <p>Here is a more complete example:</p>
 <div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span>        
         <span class="c1">// Reuse existing class that does all the plumbing of connecting to source jobs</span>
-        <span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="o">())</span>
+        <span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="p">())</span>
 
         <span class="c1">// Groups requests by ESN</span>
-        <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="k">new</span> <span class="n">GroupByStage</span><span class="o">(),</span> <span class="n">GroupByStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+        <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">GroupByStage</span><span class="p">(),</span> <span class="n">GroupByStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
 
         <span class="c1">// Computes sum over a window</span>
-        <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="k">new</span> <span class="n">FastAggregateStage</span><span class="o">(),</span> <span class="n">FastAggregateStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+        <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">FastAggregateStage</span><span class="p">(),</span> <span class="n">FastAggregateStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
 
         <span class="c1">// Collects the data and makes it availabe over SSE</span>
-        <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="k">new</span> <span class="n">CollectStage</span><span class="o">(),</span> <span class="n">CollectStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+        <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">CollectStage</span><span class="p">(),</span> <span class="n">CollectStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
 
         <span class="c1">// Reuse built in sink that eagerly subscribes and delivers data over SSE</span>
-        <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">eagerSubscribe</span><span class="o">(</span>
-                <span class="n">Sinks</span><span class="o">.</span><span class="na">sse</span><span class="o">((</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="o">)</span>
-             <span class="o">))</span>
+        <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span>
+                <span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">)</span>
+             <span class="p">))</span>
 
             <span class="c1">// Here we define the job parameter overrides        </span>
 
             <span class="c1">// The query sent to the source job.</span>
             <span class="c1">// Here we fetch the esn for all requests hitting the source</span>
-            <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">MantisSourceJobConnector</span><span class="o">.</span><span class="na">MANTIS_SOURCEJOB_CRITERION</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;SELECT customer_id, client_ip WHERE true&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>    
+            <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+            <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">MantisSourceJobConnector</span><span class="p">.</span><span class="na">MANTIS_SOURCEJOB_CRITERION</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;SELECT customer_id, client_ip WHERE true&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>    
 
-        <span class="o">.</span><span class="na">metadata</span><span class="o">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;GroupByIp&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;Connects to a source job and counts the number of requests sent from each ip within a window&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-        <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+        <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
+            <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;GroupByIp&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Connects to a source job and counts the number of requests sent from each ip within a window&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+        <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
 <h3 id="tomany-sink">toMany Sink<a class="headerlink" href="#tomany-sink" title="Permanent link">&para;</a></h3>
 <p>You can hook up multiple Sinks to the same final Stage of a Job by using the <code>toMany</code> Sink. To do
 this, pass each Sink to the <code>toMany()</code> method. For example:</p>
-<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="o">.</span> <span class="err">…</span> <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">toMany</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">sysout</span><span class="o">(),</span> <span class="n">Sinks</span><span class="o">.</span><span class="na">sse</span><span class="o">((</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="o">))).</span> <span class="err">…</span> <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+<div class="codehilite"><pre><span></span><span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span> <span class="err">…</span> <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">toMany</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sysout</span><span class="p">(),</span> <span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">))).</span> <span class="err">…</span> <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
@@ -1116,82 +1116,82 @@ based on query parameters sent by the client</p>
 </li>
 </ol>
 <p>Here is an example of a custom Sink that uses the <code>ServerSentEventsSink</code> builder:</p>
-<div class="codehilite"><pre><span></span><span class="kn">package</span> <span class="nn">com.netflix.mantis.sourcejob</span><span class="o">;</span>
+<div class="codehilite"><pre><span></span><span class="kn">package</span> <span class="nn">com.netflix.mantis.sourcejob</span><span class="p">;</span>
 
-<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.Context</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.PortRequest</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.ServerSentEventsSink</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.Sink</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.predicate.Predicate</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.Context</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.PortRequest</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.ServerSentEventsSink</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.Sink</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">io.mantisrx.runtime.sink.predicate.Predicate</span><span class="p">;</span>
 
-<span class="kn">import</span> <span class="nn">java.util.List</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Map</span><span class="p">;</span>
 
-<span class="kn">import</span> <span class="nn">rx.Observable</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">rx.functions.Func1</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">rx.functions.Func2</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">rx.Observable</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">rx.functions.Func1</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">rx.functions.Func2</span><span class="p">;</span>
 
-<span class="kn">import</span> <span class="nn">com.google.common.base.Charsets</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.google.common.base.Charsets</span><span class="p">;</span>
 
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SourceSink</span> <span class="kd">implements</span> <span class="n">Sink</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="o">{</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SourceSink</span> <span class="kd">implements</span> <span class="n">Sink</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
 
-  <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;,</span><span class="n">Context</span><span class="o">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">preProcessor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NoOpProcessor</span><span class="o">();</span>
-  <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;,</span><span class="n">Context</span><span class="o">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">postProcessor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NoOpProcessor</span><span class="o">();</span>
-  <span class="kd">private</span> <span class="n">String</span> <span class="n">clientId</span> <span class="o">=</span> <span class="s">&quot;DEFAULT_CLIENT_ID&quot;</span><span class="o">;</span>
+  <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">preProcessor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NoOpProcessor</span><span class="p">();</span>
+  <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">postProcessor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NoOpProcessor</span><span class="p">();</span>
+  <span class="kd">private</span> <span class="n">String</span> <span class="n">clientId</span> <span class="o">=</span> <span class="s">&quot;DEFAULT_CLIENT_ID&quot;</span><span class="p">;</span>
 
-  <span class="kd">static</span> <span class="kd">class</span> <span class="nc">NoOpProcessor</span> <span class="kd">implements</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;,</span><span class="n">Context</span><span class="o">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="o">{</span>
+  <span class="kd">static</span> <span class="kd">class</span> <span class="nc">NoOpProcessor</span> <span class="kd">implements</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="p">{</span>
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">t1</span><span class="o">,</span> <span class="n">Context</span> <span class="n">t2</span><span class="o">)</span> <span class="o">{</span>
-      <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
-    <span class="o">}</span>
-  <span class="o">}</span>
+    <span class="kd">public</span> <span class="n">Void</span> <span class="nf">call</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Context</span> <span class="n">t2</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 
-  <span class="kd">public</span> <span class="nf">SourceSink</span><span class="o">()</span> <span class="o">{</span>
-  <span class="o">}</span>
+  <span class="kd">public</span> <span class="nf">SourceSink</span><span class="p">()</span> <span class="p">{</span>
+  <span class="p">}</span>
 
-  <span class="kd">public</span> <span class="nf">SourceSink</span><span class="o">(</span><span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;,</span><span class="n">Context</span><span class="o">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">preProcessor</span><span class="o">,</span>
-           <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;,</span><span class="n">Context</span><span class="o">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">postProcessor</span><span class="o">,</span>
-           <span class="n">String</span> <span class="n">mantisClientId</span><span class="o">)</span> <span class="o">{</span>
-    <span class="k">this</span><span class="o">.</span><span class="na">postProcessor</span> <span class="o">=</span> <span class="n">postProcessor</span><span class="o">;</span>
-    <span class="k">this</span><span class="o">.</span><span class="na">preProcessor</span> <span class="o">=</span> <span class="n">preProcessor</span><span class="o">;</span>
-    <span class="k">this</span><span class="o">.</span><span class="na">clientId</span> <span class="o">=</span> <span class="n">mantisClientId</span><span class="o">;</span>
-  <span class="o">}</span>
+  <span class="kd">public</span> <span class="nf">SourceSink</span><span class="p">(</span><span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">preProcessor</span><span class="p">,</span>
+           <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">postProcessor</span><span class="p">,</span>
+           <span class="n">String</span> <span class="n">mantisClientId</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="na">postProcessor</span> <span class="o">=</span> <span class="n">postProcessor</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="na">preProcessor</span> <span class="o">=</span> <span class="n">preProcessor</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="na">clientId</span> <span class="o">=</span> <span class="n">mantisClientId</span><span class="p">;</span>
+  <span class="p">}</span>
 
   <span class="nd">@Override</span>
-  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">PortRequest</span> <span class="n">portRequest</span><span class="o">,</span>
-                   <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">observable</span><span class="o">)</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">PortRequest</span> <span class="n">portRequest</span><span class="p">,</span>
+                   <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">observable</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="n">observable</span> <span class="o">=</span> <span class="n">observable</span><span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">Boolean</span><span class="o">&gt;()</span> <span class="o">{</span>
+    <span class="n">observable</span> <span class="o">=</span> <span class="n">observable</span><span class="p">.</span><span class="na">filter</span><span class="p">(</span><span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="n">Boolean</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
       <span class="nd">@Override</span>
-      <span class="kd">public</span> <span class="n">Boolean</span> <span class="nf">call</span><span class="o">(</span><span class="n">String</span> <span class="n">t1</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="o">!</span><span class="n">t1</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">();</span>
-      <span class="o">}</span>
-    <span class="o">});</span>
+      <span class="kd">public</span> <span class="n">Boolean</span> <span class="nf">call</span><span class="p">(</span><span class="n">String</span> <span class="n">t1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="o">!</span><span class="n">t1</span><span class="p">.</span><span class="na">isEmpty</span><span class="p">();</span>
+      <span class="p">}</span>
+    <span class="p">});</span>
 
-    <span class="n">ServerSentEventsSink</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">sink</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ServerSentEventsSink</span><span class="o">.</span><span class="na">Builder</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;()</span>
-    <span class="o">.</span><span class="na">withEncoder</span><span class="o">(</span><span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;()</span> <span class="o">{</span>
+    <span class="n">ServerSentEventsSink</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">sink</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ServerSentEventsSink</span><span class="p">.</span><span class="na">Builder</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">()</span>
+    <span class="p">.</span><span class="na">withEncoder</span><span class="p">(</span><span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
       <span class="nd">@Override</span>
-      <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">(</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">data</span><span class="o">;</span>
-      <span class="o">}</span>
-    <span class="o">})</span>
-    <span class="o">.</span><span class="na">withPredicate</span><span class="o">(</span><span class="k">new</span> <span class="n">Predicate</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;(</span><span class="s">&quot;description&quot;</span><span class="o">,</span><span class="k">new</span> <span class="n">EventFilter</span><span class="o">(</span><span class="n">clientId</span><span class="o">)))</span>
-    <span class="o">.</span><span class="na">withRequestPreprocessor</span><span class="o">(</span><span class="n">preProcessor</span><span class="o">)</span>
-    <span class="o">.</span><span class="na">withRequestPostprocessor</span><span class="o">(</span><span class="n">postProcessor</span><span class="o">)</span>
-    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+      <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="p">(</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="na">withPredicate</span><span class="p">(</span><span class="k">new</span> <span class="n">Predicate</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;description&quot;</span><span class="p">,</span><span class="k">new</span> <span class="n">EventFilter</span><span class="p">(</span><span class="n">clientId</span><span class="p">)))</span>
+    <span class="p">.</span><span class="na">withRequestPreprocessor</span><span class="p">(</span><span class="n">preProcessor</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withRequestPostprocessor</span><span class="p">(</span><span class="n">postProcessor</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">build</span><span class="p">();</span>
 
-    <span class="n">observable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">();</span>
+    <span class="n">observable</span><span class="p">.</span><span class="na">subscribe</span><span class="p">();</span>
 
-    <span class="n">sink</span><span class="o">.</span><span class="na">call</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">portRequest</span><span class="o">,</span> <span class="n">observable</span><span class="o">);</span>
-  <span class="o">}</span>
+    <span class="n">sink</span><span class="p">.</span><span class="na">call</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">portRequest</span><span class="p">,</span> <span class="n">observable</span><span class="p">);</span>
+  <span class="p">}</span>
 
-  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span> <span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">String</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;{\&quot;amazon.availability-zone\&quot;:\&quot;us-east-1e\&quot;,\&quot;status\&quot;:200,\&quot;type\&quot;:\&quot;EVENT\&quot;,\&quot;matched-clients\&quot;:\&quot;client6\&quot;,\&quot;currentTime\&quot;:1409595016697,\&quot;duration-millis\&quot;:172}&quot;</span><span class="o">;</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span> <span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">String</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;{\&quot;amazon.availability-zone\&quot;:\&quot;us-east-1e\&quot;,\&quot;status\&quot;:200,\&quot;type\&quot;:\&quot;EVENT\&quot;,\&quot;matched-clients\&quot;:\&quot;client6\&quot;,\&quot;currentTime\&quot;:1409595016697,\&quot;duration-millis\&quot;:172}&quot;</span><span class="p">;</span>
 
-    <span class="kt">byte</span> <span class="o">[]</span> <span class="n">barr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charsets</span><span class="o">.</span><span class="na">UTF_8</span><span class="o">);</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;size: &quot;</span> <span class="o">+</span> <span class="n">barr</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
-  <span class="o">}</span>
-<span class="o">}</span>
+    <span class="kt">byte</span> <span class="o">[]</span> <span class="n">barr</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="na">getBytes</span><span class="p">(</span><span class="n">Charsets</span><span class="p">.</span><span class="na">UTF_8</span><span class="p">);</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;size: &quot;</span> <span class="o">+</span> <span class="n">barr</span><span class="p">.</span><span class="na">length</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1204,6 +1204,7 @@ based on query parameters sent by the client</p>
 <!-- END -->
                 
                   
+                
                 
               
               
@@ -1280,7 +1281,7 @@ based on query parameters sent by the client</p>
       
     </div>
     
-      <script src="../../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       

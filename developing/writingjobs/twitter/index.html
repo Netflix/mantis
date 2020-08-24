@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -936,46 +936,46 @@
 <span class="cm">  *                the total number of workers of this job.</span>
 <span class="cm">  */</span>
 <span class="nd">@Override</span>
-<span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Index</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">Index</span> <span class="n">index</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="n">String</span> <span class="n">consumerKey</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span> <span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">CONSUMER_KEY_PARAM</span><span class="o">);</span>
-    <span class="n">String</span> <span class="n">consumerSecret</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span> <span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">CONSUMER_SECRET_PARAM</span><span class="o">);</span>
-    <span class="n">String</span> <span class="n">token</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span> <span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">TOKEN_PARAM</span><span class="o">);</span>
-    <span class="n">String</span> <span class="n">tokenSecret</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span> <span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">TOKEN_SECRET_PARAM</span><span class="o">);</span>
-    <span class="n">String</span> <span class="n">terms</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span> <span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">TERMS_PARAM</span><span class="o">);</span>
+    <span class="n">String</span> <span class="n">consumerKey</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span> <span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">CONSUMER_KEY_PARAM</span><span class="p">);</span>
+    <span class="n">String</span> <span class="n">consumerSecret</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span> <span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">CONSUMER_SECRET_PARAM</span><span class="p">);</span>
+    <span class="n">String</span> <span class="n">token</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span> <span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">TOKEN_PARAM</span><span class="p">);</span>
+    <span class="n">String</span> <span class="n">tokenSecret</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span> <span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">TOKEN_SECRET_PARAM</span><span class="p">);</span>
+    <span class="n">String</span> <span class="n">terms</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span> <span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">TERMS_PARAM</span><span class="p">);</span>
 
-    <span class="n">Authentication</span> <span class="n">auth</span> <span class="o">=</span> <span class="k">new</span> <span class="n">OAuth1</span><span class="o">(</span><span class="n">consumerKey</span><span class="o">,</span>
-            <span class="n">consumerSecret</span><span class="o">,</span>
-            <span class="n">token</span><span class="o">,</span>
-            <span class="n">tokenSecret</span><span class="o">);</span>
+    <span class="n">Authentication</span> <span class="n">auth</span> <span class="o">=</span> <span class="k">new</span> <span class="n">OAuth1</span><span class="p">(</span><span class="n">consumerKey</span><span class="p">,</span>
+            <span class="n">consumerSecret</span><span class="p">,</span>
+            <span class="n">token</span><span class="p">,</span>
+            <span class="n">tokenSecret</span><span class="p">);</span>
 
-    <span class="n">StatusesFilterEndpoint</span> <span class="n">endpoint</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StatusesFilterEndpoint</span><span class="o">();</span>
+    <span class="n">StatusesFilterEndpoint</span> <span class="n">endpoint</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StatusesFilterEndpoint</span><span class="p">();</span>
 
-    <span class="n">String</span><span class="o">[]</span> <span class="n">termArray</span> <span class="o">=</span> <span class="n">terms</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&quot;,&quot;</span><span class="o">);</span>
+    <span class="n">String</span><span class="o">[]</span> <span class="n">termArray</span> <span class="o">=</span> <span class="n">terms</span><span class="p">.</span><span class="na">split</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">);</span>
 
-    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">termsList</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="n">termArray</span><span class="o">);</span>
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">termsList</span> <span class="o">=</span> <span class="n">Arrays</span><span class="p">.</span><span class="na">asList</span><span class="p">(</span><span class="n">termArray</span><span class="p">);</span>
 
-    <span class="n">endpoint</span><span class="o">.</span><span class="na">trackTerms</span><span class="o">(</span><span class="n">termsList</span><span class="o">);</span>
+    <span class="n">endpoint</span><span class="p">.</span><span class="na">trackTerms</span><span class="p">(</span><span class="n">termsList</span><span class="p">);</span>
 
-    <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientBuilder</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;twitter-source&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">hosts</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">STREAM_HOST</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">endpoint</span><span class="o">(</span><span class="n">endpoint</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">authentication</span><span class="o">(</span><span class="n">auth</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">processor</span><span class="o">(</span><span class="k">new</span> <span class="n">StringDelimitedProcessor</span><span class="o">(</span><span class="n">twitterObservable</span><span class="o">))</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientBuilder</span><span class="p">()</span>
+            <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;twitter-source&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">hosts</span><span class="p">(</span><span class="n">Constants</span><span class="p">.</span><span class="na">STREAM_HOST</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">endpoint</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">authentication</span><span class="p">(</span><span class="n">auth</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">processor</span><span class="p">(</span><span class="k">new</span> <span class="n">StringDelimitedProcessor</span><span class="p">(</span><span class="n">twitterObservable</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">();</span>
 
 
-    <span class="n">client</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
-<span class="o">}</span>
+    <span class="n">client</span><span class="p">.</span><span class="na">connect</span><span class="p">();</span>
+<span class="p">}</span>
 </pre></div>
 
 
 <p>Our <code>call</code> method is very simple thanks to the fact that our twitter client writes to a custom <code>BlockingQueue</code> adapter that we've written. We simply need to return an <code>Observable&lt;Observable&lt;T&gt;&gt;</code>.</p>
 <div class="codehilite"><pre><span></span><span class="nd">@Override</span>
-<span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="nf">call</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Index</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
-    <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">twitterObservable</span><span class="o">.</span><span class="na">observe</span><span class="o">());</span>
-<span class="o">}</span>
+<span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="nf">call</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">Index</span> <span class="n">index</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="na">just</span><span class="p">(</span><span class="n">twitterObservable</span><span class="p">.</span><span class="na">observe</span><span class="p">());</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -986,74 +986,74 @@
 <span class="cm">     * @return</span>
 <span class="cm">     */</span>
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getParameters</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">params</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">();</span>
+    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getParameters</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">params</span> <span class="o">=</span> <span class="n">Lists</span><span class="p">.</span><span class="na">newArrayList</span><span class="p">();</span>
 
         <span class="c1">// Consumer key</span>
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">CONSUMER_KEY_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;twitter consumer key&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">required</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">CONSUMER_KEY_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;twitter consumer key&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">required</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">());</span>
 
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">CONSUMER_SECRET_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;twitter consumer secret&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">required</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">CONSUMER_SECRET_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;twitter consumer secret&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">required</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">());</span>
 
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">TOKEN_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;twitter token&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">required</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">TOKEN_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;twitter token&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">required</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">());</span>
 
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">TOKEN_SECRET_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;twitter token secret&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">required</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">TOKEN_SECRET_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;twitter token secret&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">required</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">());</span>
 
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">TERMS_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;terms to follow&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;Netflix,Dark&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">TERMS_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;terms to follow&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;Netflix,Dark&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">());</span>
 
-        <span class="k">return</span> <span class="n">params</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">;</span>
 
-    <span class="o">}</span>
+    <span class="p">}</span>
 </pre></div>
 
 
 <p>Now our primary class <code>TwitterJob</code> which implements <code>MantisJobProvider</code> needs to specify our new source so change the source line to match the following.</p>
-<div class="codehilite"><pre><span></span><span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="k">new</span> <span class="n">TwitterSource</span><span class="o">())</span>
+<div class="codehilite"><pre><span></span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">TwitterSource</span><span class="p">())</span>
 </pre></div>
 
 
 <h2 id="the-stage">The Stage<a class="headerlink" href="#the-stage" title="Permanent link">&para;</a></h2>
 <p>The stage is nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.</p>
-<div class="codehilite"><pre><span></span>            <span class="o">.</span><span class="na">stage</span><span class="o">((</span><span class="n">context</span><span class="o">,</span> <span class="n">dataO</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
+<div class="codehilite"><pre><span></span>            <span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span> <span class="n">dataO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
 
                     <span class="c1">// Deserialize data</span>
-                    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">JsonUtility</span><span class="o">::</span><span class="n">jsonToMap</span><span class="o">)</span>
+                    <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">JsonUtility</span><span class="p">::</span><span class="n">jsonToMap</span><span class="p">)</span>
 
                     <span class="c1">// Filter for English Tweets</span>
-                    <span class="o">.</span><span class="na">filter</span><span class="o">((</span><span class="n">eventMap</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                        <span class="k">if</span><span class="o">(</span><span class="n">eventMap</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="s">&quot;lang&quot;</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">eventMap</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="s">&quot;text&quot;</span><span class="o">))</span> <span class="o">{</span>
-                            <span class="n">String</span> <span class="n">lang</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span><span class="n">eventMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;lang&quot;</span><span class="o">);</span>
-                            <span class="k">return</span> <span class="s">&quot;en&quot;</span><span class="o">.</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="n">lang</span><span class="o">);</span>
-                        <span class="o">}</span>
-                        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
-                    <span class="o">})</span>
+                    <span class="p">.</span><span class="na">filter</span><span class="p">((</span><span class="n">eventMap</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+                        <span class="k">if</span><span class="p">(</span><span class="n">eventMap</span><span class="p">.</span><span class="na">containsKey</span><span class="p">(</span><span class="s">&quot;lang&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">eventMap</span><span class="p">.</span><span class="na">containsKey</span><span class="p">(</span><span class="s">&quot;text&quot;</span><span class="p">))</span> <span class="p">{</span>
+                            <span class="n">String</span> <span class="n">lang</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span><span class="n">eventMap</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;lang&quot;</span><span class="p">);</span>
+                            <span class="k">return</span> <span class="s">&quot;en&quot;</span><span class="p">.</span><span class="na">equalsIgnoreCase</span><span class="p">(</span><span class="n">lang</span><span class="p">);</span>
+                        <span class="p">}</span>
+                        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+                    <span class="p">})</span>
 
                     <span class="c1">// Extract Tweet body</span>
-                    <span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">eventMap</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span><span class="n">eventMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;text&quot;</span><span class="o">))</span>
+                    <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">eventMap</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span><span class="n">eventMap</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;text&quot;</span><span class="p">))</span>
 
                     <span class="c1">// Same from here...</span>
 </pre></div>
@@ -1064,6 +1064,7 @@
 <p>If you've checked out the <a href="https://github.com/Netflix/mantis-examples"><code>mantis-examples</code></a> repository then running <code>./gradlew :mantis-examples-twitter-sample:execute --args='consumerKey consumerSecret token tokensecret'</code> at the root of the repository should begin running the job and expose a local port for SSE streaming. As an exercise consider how you might begin to scale this work out over multiple machines if the workload were too large to perform on a single host. This will be the topic of the next tutorial.</p>
                 
                   
+                
                 
               
               
@@ -1140,7 +1141,7 @@
       
     </div>
     
-      <script src="../../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       

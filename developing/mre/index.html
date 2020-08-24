@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -533,6 +533,13 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
   
 </li>
       
@@ -1067,6 +1074,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+      
       
       
       
@@ -1129,8 +1143,8 @@ the underlying components</p>
 <p>Inject the <code>MantisRealtimeEventsPublishModule</code> into your application.
 In addition to injecting <code>MantisRealtimeEventsPublishModule</code> you will also need to add the 
 <code>ArchaiusModule</code> and the <code>SpectatorModule</code> if not already injected.</p>
-<div class="codehilite"><pre><span></span>    <span class="n">Injector</span> <span class="n">injector</span> <span class="o">=</span> <span class="n">Guice</span><span class="o">.</span><span class="na">createInjector</span><span class="o">(</span><span class="k">new</span> <span class="n">BasicModule</span><span class="o">(),</span> <span class="k">new</span> <span class="n">ArchaiusModule</span><span class="o">(),</span>
-                <span class="k">new</span> <span class="n">MantisRealtimeEventsPublishModule</span><span class="o">(),</span> <span class="k">new</span> <span class="n">SpectatorModule</span><span class="o">());</span>
+<div class="codehilite"><pre><span></span>    <span class="n">Injector</span> <span class="n">injector</span> <span class="o">=</span> <span class="n">Guice</span><span class="p">.</span><span class="na">createInjector</span><span class="p">(</span><span class="k">new</span> <span class="n">BasicModule</span><span class="p">(),</span> <span class="k">new</span> <span class="n">ArchaiusModule</span><span class="p">(),</span>
+                <span class="k">new</span> <span class="n">MantisRealtimeEventsPublishModule</span><span class="p">(),</span> <span class="k">new</span> <span class="n">SpectatorModule</span><span class="p">());</span>
 </pre></div>
 
 
@@ -1139,13 +1153,13 @@ library is ready for use.</p>
 <p>For each event your application wishes to send to Mantis, create a <code>Event</code> object with your desired event fields,
 and pass that <code>Event</code> to the <code>MantisEventPublisher#publish</code> method. For example:</p>
 <div class="codehilite"><pre><span></span><span class="c1">// Create an `Event` for Mantis Publish using your application event.</span>
-<span class="kd">final</span> <span class="n">Event</span> <span class="n">event</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Event</span><span class="o">();</span>
-<span class="n">event</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="s">&quot;testKey&quot;</span><span class="o">,</span> <span class="s">&quot;testValue&quot;</span><span class="o">);</span>
+<span class="kd">final</span> <span class="n">Event</span> <span class="n">event</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Event</span><span class="p">();</span>
+<span class="n">event</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">&quot;testKey&quot;</span><span class="p">,</span> <span class="s">&quot;testValue&quot;</span><span class="p">);</span>
 
 <span class="c1">// Send your `Event` into Mantis.</span>
 <span class="c1">// Note: This event will only be dispatched over the network</span>
 <span class="c1">// if a subscription with a matching MQL query exists.</span>
-<span class="n">eventPublisher</span><span class="o">.</span><span class="na">publish</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+<span class="n">eventPublisher</span><span class="p">.</span><span class="na">publish</span><span class="p">(</span><span class="n">event</span><span class="p">);</span>
 </pre></div>
 
 
@@ -1227,6 +1241,174 @@ Transformation includes the following steps:</p>
 <h3 id="phase-3-event-delivery">Phase 3: Event Delivery<a class="headerlink" href="#phase-3-event-delivery" title="Permanent link">&para;</a></h3>
 <p>Mantis Publish delivers events on-demand. When a client subscribes to a Mantis Job that issues an MQL query,
 the Event Publisher delivers the event using non-blocking I/O.</p>
+<h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<p>There are a number of configuration options available to control the behavior of the publishing client.</p>
+<table>
+<thead>
+<tr>
+<th><strong>Property</strong></th>
+<th><strong>Description</strong></th>
+<th><strong>Default Value</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mantis.publish.enabled</td>
+<td>Determine if event processing is enabled.</td>
+<td>true</td>
+</tr>
+<tr>
+<td>mantis.publish.tee.enabled</td>
+<td>Allows events to simultaneously be sent to an external system outside of Mantis.</td>
+<td>false</td>
+</tr>
+<tr>
+<td>mantis.publish.tee.stream</td>
+<td>Specifies which external stream name tee will write to.</td>
+<td>default_stream</td>
+</tr>
+<tr>
+<td>mantis.publish.blacklist</td>
+<td>Comma separated list of field names where the value will be obfuscated.</td>
+<td>param.password</td>
+</tr>
+<tr>
+<td>mantis.publish.max.num.streams</td>
+<td>Maximum number of streams this application can create.</td>
+<td>5</td>
+</tr>
+<tr>
+<td>mantis.publish.stream.inactive.duration.threshold.sec</td>
+<td>Maximum duration in seconds for the stream to be considered inactive if there are no events.</td>
+<td>86400 (24hr)</td>
+</tr>
+<tr>
+<td stream_name="stream_name">mantis.publish.</td>
+<td>Size of the blocking queue to hold events to be pushed for the specific stream.</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>mantis.publish.max.subscriptions.per.stream.default</td>
+<td>Default maximum number of subscriptions per stream. After the limit is reached, further subscriptions on that stream are rejected.</td>
+<td>20</td>
+</tr>
+<tr>
+<td stream_name="stream_name">mantis.publish.max.subscriptions.stream.</td>
+<td>Overrides the default maximum number of subscriptions for the specific stream.</td>
+<td>20</td>
+</tr>
+<tr>
+<td>mantis.publish.subs.refresh.interval.sec</td>
+<td>Interval in seconds when subscriptions are fetched. In the default implementation, subscriptions are fetched over http from the workers returned by Discovery API.</td>
+<td>1</td>
+</tr>
+<tr>
+<td>mantis.publish.drainer.interval.msec</td>
+<td>Interval in milliseconds when events are drained from the stream queue and delegated to underlying transmitter for sending.</td>
+<td>100</td>
+</tr>
+<tr>
+<td>mantis.publish.subs.expiry.interval.sec</td>
+<td>Duration in seconds between a subscription is last fetched and when it is removed.</td>
+<td>300</td>
+</tr>
+<tr>
+<td>mantis.publish.jobdiscovery.refresh.interval.sec</td>
+<td>Duration in seconds between workers are refreshed for a job cluster.</td>
+<td>10</td>
+</tr>
+<tr>
+<td>mantis.publish.jobcluster.mapping.refresh.interval.sec</td>
+<td>Duration in seconds between job cluster mapping is refreshed for the current application.</td>
+<td>60</td>
+</tr>
+<tr>
+<td>mantis.publish.deepcopy.eventmap.enabled</td>
+<td>Determine if event processing should operate on a deep copy of the event. Otherwise the event object is processed directly.</td>
+<td>true</td>
+</tr>
+<tr>
+<td>mantis.publish.subs.refresh.max.num.workers</td>
+<td>Maximum number of mantis workers to fetch subscription from. Workers are randomly chosen from the list returned by Discovery API.</td>
+<td>3</td>
+</tr>
+<tr>
+<td>mantis.publish.subs.fetch.query.params.string</td>
+<td>Additional query params to pass to the api call to fetch subscription. It should be of the form "param1=value1&amp;param2=value2".</td>
+<td></td>
+</tr>
+<tr>
+<td>mantis.publish.channel.gzip.enabled</td>
+<td><em>Netty channel configuration for pushing events.</em> Determine if events should be gzip encoded when send over the channel.</td>
+<td>true</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.idleTimeout.sec</td>
+<td><em>Netty channel configuration for pushing events.</em> Write idle timeout in seconds for the channel.</td>
+<td>300</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.writeTimeout.sec</td>
+<td><em>Netty channel configuration for pushing events.</em> Write timeout in seconds for the channel.</td>
+<td>1</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.httpChunkSize.bytes</td>
+<td><em>Netty channel configuration for pushing events.</em> Chunked size in bytes of the channel content. It is used by HttpObjectAggregator.</td>
+<td>32768</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.flushInterval.msec</td>
+<td><em>Netty channel configuration for pushing events.</em> Maximum duration in milliseconds between content flushes.</td>
+<td>50</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.flushInterval.bytes</td>
+<td><em>Netty channel configuration for pushing events.</em> Content is flushed when aggregated event size is above this threshold.</td>
+<td>524288</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.lowWriteBufferWatermark.bytes</td>
+<td><em>Netty channel configuration for pushing events.</em> Used for setting write buffer watermark.</td>
+<td>1572864</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.highWriteBufferWatermark.bytes</td>
+<td><em>Netty channel configuration for pushing events.</em> Used for setting write buffer watermark.</td>
+<td>2097152</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.ioThreads</td>
+<td><em>Netty channel configuration for pushing events.</em> Number of threads in the eventLoopGroup.</td>
+<td>1</td>
+</tr>
+<tr>
+<td>mantis.publish.channel.compressionThreads</td>
+<td><em>Netty channel configuration for pushing events.</em> Number of threads in the encoderEventLoopGroup when gzip is enabled.</td>
+<td>1</td>
+</tr>
+<tr>
+<td>mantis.publish.workerpool.capacity</td>
+<td>Size of the pool of Mantis workers to push events to.</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>mantis.publish.workerpool.refresh.internal.sec</td>
+<td>Duration in seconds between Mantis workers are refreshed in the pool.</td>
+<td>10</td>
+</tr>
+<tr>
+<td>mantis.publish.workerpool.worker.error.quota</td>
+<td>Number of errors to receive from a Mantis worker before it is blacklisted in the pool.</td>
+<td>60</td>
+</tr>
+<tr>
+<td>mantis.publish.workerpool.worker.error.timeout.sec</td>
+<td>Duration in seconds after which a blacklisted Mantis worker may be reconsidered for selection.</td>
+<td>300</td>
+</tr>
+</tbody>
+</table>
 <!-- Do not edit below this line -->
 
 <!-- START -->
@@ -1236,6 +1418,7 @@ the Event Publisher delivers the event using non-blocking I/O.</p>
 <!-- END -->
                 
                   
+                
                 
               
               
@@ -1312,7 +1495,7 @@ the Event Publisher delivers the event using non-blocking I/O.</p>
       
     </div>
     
-      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

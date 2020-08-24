@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -965,11 +965,11 @@ processing for each stage.</p>
 single thread. With serial input, you lose parallelism but your processing logic becomes
 straightforward without race conditions.</p>
 <div class="codehilite"><pre><span></span><span class="c1">// Specifying serial input for a stage.</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SerialStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">T1</span><span class="o">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="o">{</span>
-    <span class="kd">static</span> <span class="kd">public</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="o">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="nf">config</span><span class="o">()</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="o">,</span> <span class="n">T2</span><span class="o">&gt;().</span><span class="na">serialInput</span><span class="o">();</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SerialStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="kd">static</span> <span class="kd">public</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span><span class="p">().</span><span class="na">serialInput</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -977,11 +977,11 @@ straightforward without race conditions.</p>
 process events. With concurrent input enabled, race conditions must be considered because the stage’s
 threads operate independently from one another and may process events at different speeds.</p>
 <div class="codehilite"><pre><span></span><span class="c1">// Specifying concurrent input for a stage.</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SerialStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">T1</span><span class="o">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="o">{</span>
-    <span class="kd">static</span> <span class="kd">public</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="o">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="nf">config</span><span class="o">()</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="o">,</span> <span class="n">T2</span><span class="o">&gt;().</span><span class="na">concurrentInput</span><span class="o">();</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SerialStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="kd">static</span> <span class="kd">public</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span><span class="p">().</span><span class="na">concurrentInput</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1029,6 +1029,7 @@ workers to your Kafka Source Job will not have any positive effect.</p>
 <!-- END -->
                 
                   
+                
                 
               
               
@@ -1105,7 +1106,7 @@ workers to your Kafka Source Job will not have any positive effect.</p>
       
     </div>
     
-      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

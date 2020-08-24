@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -938,33 +938,33 @@
 <p>NOTE: This tutorial is a work in progress.</p>
 <p>Until now we've run single stage Mantis jobs which a can run in a single process / container. Much of the power provided by Mantis is that we can design and implement a distributed job. Let's take a look at the <a href="https://github.com/Netflix/mantis-examples/tree/master/groupby-sample">groupby-sample</a> job definition and then break it down stage by stage. </p>
 <div class="codehilite"><pre><span></span>    <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getJobInstance</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getJobInstance</span><span class="p">()</span> <span class="p">{</span>
 
         <span class="k">return</span> <span class="n">MantisJob</span>
                 <span class="c1">// Stream Request Events from our random data generator source</span>
-                <span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="k">new</span> <span class="n">RandomRequestSource</span><span class="o">())</span>
+                <span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">RandomRequestSource</span><span class="p">())</span>
 
                 <span class="c1">// Groups requests by path</span>
-                <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="k">new</span> <span class="n">GroupByStage</span><span class="o">(),</span> <span class="n">GroupByStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+                <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">GroupByStage</span><span class="p">(),</span> <span class="n">GroupByStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
 
                 <span class="c1">// Computes count per path over a window</span>
-                <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="k">new</span> <span class="n">AggregationStage</span><span class="o">(),</span> <span class="n">AggregationStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+                <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">AggregationStage</span><span class="p">(),</span> <span class="n">AggregationStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
 
                 <span class="c1">// Collects the data and makes it availabe over SSE</span>
-                <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="k">new</span> <span class="n">CollectStage</span><span class="o">(),</span> <span class="n">CollectStage</span><span class="o">.</span><span class="na">config</span><span class="o">())</span>
+                <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">CollectStage</span><span class="p">(),</span> <span class="n">CollectStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
 
                 <span class="c1">// Reuse built in sink that eagerly subscribes and delivers data over SSE</span>
-                <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">eagerSubscribe</span><span class="o">(</span>
-                        <span class="n">Sinks</span><span class="o">.</span><span class="na">sse</span><span class="o">((</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="o">)))</span>
+                <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span>
+                        <span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">)))</span>
 
-                <span class="o">.</span><span class="na">metadata</span><span class="o">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
-                        <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;GroupByPath&quot;</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;Connects to a random data generator source&quot;</span>
-                                <span class="o">+</span> <span class="s">&quot; and counts the number of requests for each uri within a window&quot;</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+                <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
+                        <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;GroupByPath&quot;</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Connects to a random data generator source&quot;</span>
+                                <span class="o">+</span> <span class="s">&quot; and counts the number of requests for each uri within a window&quot;</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 
-    <span class="o">}</span>
+    <span class="p">}</span>
 </pre></div>
 
 
@@ -978,54 +978,54 @@
 <h2 id="stage-1-group-by-stage">Stage 1: Group By Stage<a class="headerlink" href="#stage-1-group-by-stage" title="Permanent link">&para;</a></h2>
 <p>The GroupByStage implements <code>ToGroupComputation&lt;RequestEvent, String, RequestEvent&gt;</code> which tells Mantis that the <code>call</code> method will be returning <code>MantisGroup&lt;String, RequestEvent&gt;</code> which represents a group key and the data. You may recall in the previous tutorials we used the reactive <code>groupBy</code> operator to group data. The reactive operator performs an in-memory group by which has some scaling limitations. Grouping data using a Mantis stage does not have the same limitations and allows us to scale the group by operation across multiple containers.</p>
 <p>The <code>config()</code> method also changes to specify this different stage type. It also allows us to specify <code>concurrentInput()</code> on the config allowing the <code>call</code> method to be run concurrently in this container. Also note the result of <code>getParameters()</code> is added to the config via the <code>withParameters</code> method, it isn't an interface method for stages but we're specifying parameters this way for convenience.</p>
-<div class="codehilite"><pre><span></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">GroupByStage</span> <span class="kd">implements</span> <span class="n">ToGroupComputation</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="o">,</span> <span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">&gt;</span> <span class="o">{</span>
+<div class="codehilite"><pre><span></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">GroupByStage</span> <span class="kd">implements</span> <span class="n">ToGroupComputation</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="o">&gt;</span> <span class="p">{</span>
 
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">GROUPBY_FIELD_PARAM</span> <span class="o">=</span> <span class="s">&quot;groupByField&quot;</span><span class="o">;</span>
-    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">groupByPath</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">GROUPBY_FIELD_PARAM</span> <span class="o">=</span> <span class="s">&quot;groupByField&quot;</span><span class="p">;</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">groupByPath</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">MantisGroup</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">&gt;&gt;</span> <span class="nf">call</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="o">&gt;</span> <span class="n">requestEventO</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">MantisGroup</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="o">&gt;&gt;</span> <span class="nf">call</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="o">&gt;</span> <span class="n">requestEventO</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="n">requestEventO</span>
-                <span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">requestEvent</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                    <span class="k">if</span><span class="o">(</span><span class="n">groupByPath</span><span class="o">)</span> <span class="o">{</span>
-                        <span class="k">return</span> <span class="k">new</span> <span class="n">MantisGroup</span><span class="o">&lt;&gt;(</span><span class="n">requestEvent</span><span class="o">.</span><span class="na">getRequestPath</span><span class="o">(),</span> <span class="n">requestEvent</span><span class="o">);</span>
-                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-                        <span class="k">return</span> <span class="k">new</span> <span class="n">MantisGroup</span><span class="o">&lt;&gt;(</span><span class="n">requestEvent</span><span class="o">.</span><span class="na">getIpAddress</span><span class="o">(),</span> <span class="n">requestEvent</span><span class="o">);</span>
-                    <span class="o">}</span>
-                <span class="o">});</span>
-    <span class="o">}</span>
+                <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">requestEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+                    <span class="k">if</span><span class="p">(</span><span class="n">groupByPath</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="k">return</span> <span class="k">new</span> <span class="n">MantisGroup</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">requestEvent</span><span class="p">.</span><span class="na">getRequestPath</span><span class="p">(),</span> <span class="n">requestEvent</span><span class="p">);</span>
+                    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                        <span class="k">return</span> <span class="k">new</span> <span class="n">MantisGroup</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">requestEvent</span><span class="p">.</span><span class="na">getIpAddress</span><span class="p">(),</span> <span class="n">requestEvent</span><span class="p">);</span>
+                    <span class="p">}</span>
+                <span class="p">});</span>
+    <span class="p">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">String</span> <span class="n">groupByField</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span><span class="o">)</span><span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">GROUPBY_FIELD_PARAM</span><span class="o">,</span><span class="s">&quot;path&quot;</span><span class="o">);</span>
-        <span class="n">groupByPath</span> <span class="o">=</span> <span class="n">groupByField</span><span class="o">.</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="s">&quot;path&quot;</span><span class="o">)</span> <span class="o">?</span> <span class="kc">true</span> <span class="o">:</span> <span class="kc">false</span><span class="o">;</span>
-    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">String</span> <span class="n">groupByField</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span><span class="p">)</span><span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">GROUPBY_FIELD_PARAM</span><span class="p">,</span><span class="s">&quot;path&quot;</span><span class="p">);</span>
+        <span class="n">groupByPath</span> <span class="o">=</span> <span class="n">groupByField</span><span class="p">.</span><span class="na">equalsIgnoreCase</span><span class="p">(</span><span class="s">&quot;path&quot;</span><span class="p">)</span> <span class="o">?</span> <span class="kc">true</span> <span class="p">:</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
 
     <span class="cm">/**</span>
 <span class="cm">     * Here we declare stage specific parameters.</span>
 <span class="cm">     * @return</span>
 <span class="cm">     */</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getParameters</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">params</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getParameters</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">params</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
 
         <span class="c1">// Group by field</span>
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">GROUPBY_FIELD_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;The key to group events by&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;path&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">())</span>   <span class="o">;</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">GROUPBY_FIELD_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The key to group events by&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;path&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">())</span>   <span class="p">;</span>
 
-        <span class="k">return</span> <span class="n">params</span><span class="o">;</span>
-    <span class="o">}</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">;</span>
+    <span class="p">}</span>
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToGroup</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="o">,</span> <span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">&gt;</span> <span class="nf">config</span><span class="o">(){</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToGroup</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="o">,</span> <span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">&gt;()</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;Group event data by path/ip&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">concurrentInput</span><span class="o">()</span> <span class="c1">// signifies events can be processed in parallel</span>
-                <span class="o">.</span><span class="na">withParameters</span><span class="o">(</span><span class="n">getParameters</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">codec</span><span class="o">(</span><span class="n">RequestEvent</span><span class="o">.</span><span class="na">requestEventCodec</span><span class="o">());</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToGroup</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">(){</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToGroup</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="o">&gt;</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Group event data by path/ip&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">concurrentInput</span><span class="p">()</span> <span class="c1">// signifies events can be processed in parallel</span>
+                <span class="p">.</span><span class="na">withParameters</span><span class="p">(</span><span class="n">getParameters</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">RequestEvent</span><span class="p">.</span><span class="na">requestEventCodec</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1034,10 +1034,10 @@
 <p>The previous stage produces <code>MantisGroup&lt;String, RequestEvent&gt;</code> by implementing <code>ToGroupComputation</code>. If we think of <code>ToGroupComputation</code> producing groups of data we can think of <code>GroupToScalarComputation&lt;K, T, R&gt;</code> as the inverse computing a scalar value from a group.</p>
 <p>The <code>init()</code>, <code>config()</code> and <code>getParameters()</code> methods should be familiar by now but let's take a closer look at the <code>call()</code> method. We're performing the same operation the stream as we did in the first two tutorials. Notice how we still group by <code>MantisGroup::getKeyValue</code>. This is because while Mantis guarantees that all data for an individual group from the previous stage will land on the same container in this stage, it does not invoke the <code>call()</code> method for each individual group and thus we need to handle the groups ourselves.</p>
 <div class="codehilite"><pre><span></span><span class="nd">@Slf4j</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">AggregationStage</span> <span class="kd">implements</span> <span class="n">GroupToScalarComputation</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">,</span> <span class="n">RequestAggregation</span> <span class="o">{</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">AggregationStage</span> <span class="kd">implements</span> <span class="n">GroupToScalarComputation</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="p">,</span> <span class="n">RequestAggregation</span> <span class="p">{</span>
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">AGGREGATION_DURATION_MSEC_PARAM</span> <span class="o">=</span> <span class="s">&quot;AggregationDurationMsec&quot;</span><span class="o">;</span>
-    <span class="kt">int</span> <span class="n">aggregationDurationMsec</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">AGGREGATION_DURATION_MSEC_PARAM</span> <span class="o">=</span> <span class="s">&quot;AggregationDurationMsec&quot;</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">aggregationDurationMsec</span><span class="p">;</span>
 
     <span class="cm">/**</span>
 <span class="cm">     * The call method is invoked by the Mantis runtime while executing the job.</span>
@@ -1047,26 +1047,26 @@
 <span class="cm">     * @return</span>
 <span class="cm">     */</span>
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">&gt;</span> <span class="nf">call</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">MantisGroup</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">&gt;&gt;</span> <span class="n">mantisGroupO</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">&gt;</span> <span class="nf">call</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">MantisGroup</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="o">&gt;&gt;</span> <span class="n">mantisGroupO</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="n">mantisGroupO</span>
-                <span class="o">.</span><span class="na">window</span><span class="o">(</span><span class="n">aggregationDurationMsec</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">omg</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">omg</span><span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="n">MantisGroup</span><span class="o">::</span><span class="n">getKeyValue</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">go</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="o">(</span><span class="n">accumulator</span><span class="o">,</span> <span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span>  <span class="n">accumulator</span> <span class="o">=</span> <span class="n">accumulator</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
-                                <span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">count</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">RequestAggregation</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">count</span><span class="o">(</span><span class="n">count</span><span class="o">).</span><span class="na">path</span><span class="o">(</span><span class="n">go</span><span class="o">.</span><span class="na">getKey</span><span class="o">()).</span><span class="na">build</span><span class="o">())</span>
-                                <span class="o">.</span><span class="na">doOnNext</span><span class="o">((</span><span class="n">aggregate</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                                    <span class="n">log</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&quot;Generated aggregate {}&quot;</span><span class="o">,</span> <span class="n">aggregate</span><span class="o">);</span>
-                                <span class="o">})</span>
-                        <span class="o">));</span>
-    <span class="o">}</span>
+                <span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="n">aggregationDurationMsec</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">MILLISECONDS</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">omg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">omg</span><span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">MantisGroup</span><span class="p">::</span><span class="n">getKeyValue</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">go</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">accumulator</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span>  <span class="n">accumulator</span> <span class="o">=</span> <span class="n">accumulator</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">count</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RequestAggregation</span><span class="p">.</span><span class="na">builder</span><span class="p">().</span><span class="na">count</span><span class="p">(</span><span class="n">count</span><span class="p">).</span><span class="na">path</span><span class="p">(</span><span class="n">go</span><span class="p">.</span><span class="na">getKey</span><span class="p">()).</span><span class="na">build</span><span class="p">())</span>
+                                <span class="p">.</span><span class="na">doOnNext</span><span class="p">((</span><span class="n">aggregate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+                                    <span class="n">log</span><span class="p">.</span><span class="na">debug</span><span class="p">(</span><span class="s">&quot;Generated aggregate {}&quot;</span><span class="p">,</span> <span class="n">aggregate</span><span class="p">);</span>
+                                <span class="p">})</span>
+                        <span class="p">));</span>
+    <span class="p">}</span>
 
     <span class="cm">/**</span>
 <span class="cm">     * Invoked only once during job startup. A good place to add one time initialization actions.</span>
 <span class="cm">     * @param context</span>
 <span class="cm">     */</span>
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">aggregationDurationMsec</span> <span class="o">=</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span><span class="n">context</span><span class="o">.</span><span class="na">getParameters</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="o">,</span> <span class="mi">1000</span><span class="o">);</span>
-    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">aggregationDurationMsec</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+    <span class="p">}</span>
 
     <span class="cm">/**</span>
 <span class="cm">     * Provides the Mantis runtime configuration information about the type of computation done by this stage.</span>
@@ -1074,32 +1074,32 @@
 <span class="cm">     * serialize the {@link RequestAggregation} events before sending it to the {@link CollectStage}</span>
 <span class="cm">     * @return</span>
 <span class="cm">     */</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">GroupToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">,</span> <span class="n">RequestAggregation</span><span class="o">&gt;</span> <span class="nf">config</span><span class="o">(){</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">GroupToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">RequestEvent</span><span class="o">,</span><span class="n">RequestAggregation</span><span class="o">&gt;()</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;sum events for a path&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">codec</span><span class="o">(</span><span class="n">RequestAggregation</span><span class="o">.</span><span class="na">requestAggregationCodec</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">withParameters</span><span class="o">(</span><span class="n">getParameters</span><span class="o">());</span>
-    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">GroupToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="p">,</span> <span class="n">RequestAggregation</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">(){</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">GroupToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">RequestEvent</span><span class="p">,</span><span class="n">RequestAggregation</span><span class="o">&gt;</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;sum events for a path&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">RequestAggregation</span><span class="p">.</span><span class="na">requestAggregationCodec</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">withParameters</span><span class="p">(</span><span class="n">getParameters</span><span class="p">());</span>
+    <span class="p">}</span>
 
     <span class="cm">/**</span>
 <span class="cm">     * Here we declare stage specific parameters.</span>
 <span class="cm">     * @return</span>
 <span class="cm">     */</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getParameters</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">params</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getParameters</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">params</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
 
         <span class="c1">// Aggregation duration</span>
-        <span class="n">params</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;window size for aggregation&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="mi">10000</span><span class="o">))</span>
-                <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="mi">5000</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">())</span>   <span class="o">;</span>
+        <span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;window size for aggregation&quot;</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">range</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+                <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">())</span>   <span class="p">;</span>
 
-        <span class="k">return</span> <span class="n">params</span><span class="o">;</span>
-    <span class="o">}</span>
+        <span class="k">return</span> <span class="n">params</span><span class="p">;</span>
+    <span class="p">}</span>
 
-<span class="o">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1107,59 +1107,59 @@
 <h2 id="stage-3-collect-stage">Stage 3: Collect Stage<a class="headerlink" href="#stage-3-collect-stage" title="Permanent link">&para;</a></h2>
 <p>The third stage collects data from all of the upstream workers and generates a report. We can see in the code below the stream is windowed for five seconds, then we flatmap a reduce over the window and invoke the <code>RequestAggregationAccumulator#generateReport()</code> method on the reduced value.</p>
 <div class="codehilite"><pre><span></span><span class="nd">@Slf4j</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CollectStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;</span> <span class="o">{</span>
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">ObjectMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ObjectMapper</span><span class="o">();</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CollectStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="p">,</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">ObjectMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ObjectMapper</span><span class="p">();</span>
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">call</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">&gt;</span> <span class="n">requestAggregationO</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">call</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">&gt;</span> <span class="n">requestAggregationO</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="n">requestAggregationO</span>
-                <span class="o">.</span><span class="na">window</span><span class="o">(</span><span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">requestAggO</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">requestAggO</span>
-                        <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="k">new</span> <span class="n">RequestAggregationAccumulator</span><span class="o">(),(</span><span class="n">acc</span><span class="o">,</span> <span class="n">requestAgg</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">acc</span><span class="o">.</span><span class="na">addAggregation</span><span class="o">(</span><span class="n">requestAgg</span><span class="o">))</span>
-                        <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">RequestAggregationAccumulator</span><span class="o">::</span><span class="n">generateReport</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">doOnNext</span><span class="o">((</span><span class="n">report</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                            <span class="n">log</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&quot;Generated Collection report {}&quot;</span><span class="o">,</span> <span class="n">report</span><span class="o">);</span>
-                        <span class="o">})</span>
-                <span class="o">)</span>
-                <span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">report</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                    <span class="k">try</span> <span class="o">{</span>
-                        <span class="k">return</span> <span class="n">mapper</span><span class="o">.</span><span class="na">writeValueAsString</span><span class="o">(</span><span class="n">report</span><span class="o">);</span>
-                    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">JsonProcessingException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-                        <span class="n">log</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
-                        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
-                    <span class="o">}</span>
-                <span class="o">}).</span><span class="na">filter</span><span class="o">(</span><span class="n">Objects</span><span class="o">::</span><span class="n">nonNull</span><span class="o">);</span>
-    <span class="o">}</span>
+                <span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">requestAggO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requestAggO</span>
+                        <span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="k">new</span> <span class="n">RequestAggregationAccumulator</span><span class="p">(),(</span><span class="n">acc</span><span class="p">,</span> <span class="n">requestAgg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">acc</span><span class="p">.</span><span class="na">addAggregation</span><span class="p">(</span><span class="n">requestAgg</span><span class="p">))</span>
+                        <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">RequestAggregationAccumulator</span><span class="p">::</span><span class="n">generateReport</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">doOnNext</span><span class="p">((</span><span class="n">report</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+                            <span class="n">log</span><span class="p">.</span><span class="na">debug</span><span class="p">(</span><span class="s">&quot;Generated Collection report {}&quot;</span><span class="p">,</span> <span class="n">report</span><span class="p">);</span>
+                        <span class="p">})</span>
+                <span class="p">)</span>
+                <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">report</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+                    <span class="k">try</span> <span class="p">{</span>
+                        <span class="k">return</span> <span class="n">mapper</span><span class="p">.</span><span class="na">writeValueAsString</span><span class="p">(</span><span class="n">report</span><span class="p">);</span>
+                    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">JsonProcessingException</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="n">log</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="na">getMessage</span><span class="p">());</span>
+                        <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+                    <span class="p">}</span>
+                <span class="p">}).</span><span class="na">filter</span><span class="p">(</span><span class="n">Objects</span><span class="p">::</span><span class="n">nonNull</span><span class="p">);</span>
+    <span class="p">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="o">}</span>
+    <span class="p">}</span>
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">config</span><span class="o">(){</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;()</span>
-                <span class="o">.</span><span class="na">codec</span><span class="o">(</span><span class="n">Codecs</span><span class="o">.</span><span class="na">string</span><span class="o">());</span>
-    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="p">,</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">(){</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="p">,</span><span class="n">String</span><span class="o">&gt;</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">Codecs</span><span class="p">.</span><span class="na">string</span><span class="p">());</span>
+    <span class="p">}</span>
 
     <span class="cm">/**</span>
 <span class="cm">     * The accumulator class as the name suggests accumulates all aggregates seen during a window and</span>
 <span class="cm">     * generates a consolidated report at the end.</span>
 <span class="cm">     */</span>
-    <span class="kd">static</span> <span class="kd">class</span> <span class="nc">RequestAggregationAccumulator</span> <span class="o">{</span>
-        <span class="kd">private</span> <span class="kd">final</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">pathToCountMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+    <span class="kd">static</span> <span class="kd">class</span> <span class="nc">RequestAggregationAccumulator</span> <span class="p">{</span>
+        <span class="kd">private</span> <span class="kd">final</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="n">pathToCountMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;</span><span class="p">();</span>
 
-        <span class="kd">public</span> <span class="nf">RequestAggregationAccumulator</span><span class="o">()</span>  <span class="o">{}</span>
+        <span class="kd">public</span> <span class="nf">RequestAggregationAccumulator</span><span class="p">()</span>  <span class="p">{}</span>
 
-        <span class="kd">public</span> <span class="n">RequestAggregationAccumulator</span> <span class="nf">addAggregation</span><span class="o">(</span><span class="n">RequestAggregation</span> <span class="n">agg</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">pathToCountMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">agg</span><span class="o">.</span><span class="na">getPath</span><span class="o">(),</span> <span class="n">agg</span><span class="o">.</span><span class="na">getCount</span><span class="o">());</span>
-            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
-        <span class="o">}</span>
+        <span class="kd">public</span> <span class="n">RequestAggregationAccumulator</span> <span class="nf">addAggregation</span><span class="p">(</span><span class="n">RequestAggregation</span> <span class="n">agg</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">pathToCountMap</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="n">agg</span><span class="p">.</span><span class="na">getPath</span><span class="p">(),</span> <span class="n">agg</span><span class="p">.</span><span class="na">getCount</span><span class="p">());</span>
+            <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+        <span class="p">}</span>
 
-        <span class="kd">public</span> <span class="n">AggregationReport</span> <span class="nf">generateReport</span><span class="o">()</span> <span class="o">{</span>
-            <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&quot;Generated report from=&gt; {}&quot;</span><span class="o">,</span> <span class="n">pathToCountMap</span><span class="o">);</span>
-            <span class="k">return</span> <span class="k">new</span> <span class="n">AggregationReport</span><span class="o">(</span><span class="n">pathToCountMap</span><span class="o">);</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+        <span class="kd">public</span> <span class="n">AggregationReport</span> <span class="nf">generateReport</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Generated report from=&gt; {}&quot;</span><span class="p">,</span> <span class="n">pathToCountMap</span><span class="p">);</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="n">AggregationReport</span><span class="p">(</span><span class="n">pathToCountMap</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1168,6 +1168,7 @@
 <p>We've now explored the concept of a multi-stage Mantis job which allows us to horizontally scale individual stages and express group by and aggregate semantics as a Mantis topology.</p>
                 
                   
+                
                 
               
               
@@ -1244,7 +1245,7 @@
       
     </div>
     
-      <script src="../../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       

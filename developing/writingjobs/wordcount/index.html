@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1010,48 +1010,48 @@
 <span class="cm"> * /gradlew :mantis-examples-wordcount:execute</span>
 <span class="cm"> */</span>
 <span class="nd">@Slf4j</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">WordCountJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="o">{</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">WordCountJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getJobInstance</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getJobInstance</span><span class="p">()</span> <span class="p">{</span>
         <span class="k">return</span> <span class="n">MantisJob</span>
-                <span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="k">new</span> <span class="n">IlliadSource</span><span class="o">())</span> <span class="c1">// Ignore for now, we&#39;ll implement one in the next tutorial.</span>
-                <span class="o">.</span><span class="na">stage</span><span class="o">((</span><span class="n">context</span><span class="o">,</span> <span class="n">dataO</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
+                <span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">IlliadSource</span><span class="p">())</span> <span class="c1">// Ignore for now, we&#39;ll implement one in the next tutorial.</span>
+                <span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span> <span class="n">dataO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
                         <span class="c1">// Tokenize</span>
-                        <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">text</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">Observable</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">tokenize</span><span class="o">(</span><span class="n">text</span><span class="o">)))</span>
+                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observable</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
                         <span class="c1">// On a hopping window of 10 seconds</span>
-                        <span class="o">.</span><span class="na">window</span><span class="o">(</span><span class="mi">10</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">wordCountPairObservable</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">wordCountPairObservable</span>
+                        <span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">wordCountPairObservable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wordCountPairObservable</span>
                                 <span class="c1">// count how many times a word appears</span>
-                                <span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="n">WordCountPair</span><span class="o">::</span><span class="n">getWord</span><span class="o">)</span>
-                                <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">groupO</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">groupO</span><span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="o">(</span><span class="n">cnt</span><span class="o">,</span> <span class="n">wordCntPair</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
-                                        <span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">cnt</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">WordCountPair</span><span class="o">(</span><span class="n">groupO</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="n">cnt</span><span class="o">))))</span>
-                                <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">WordCountPair</span><span class="o">::</span><span class="n">toString</span><span class="o">)</span>
-                        <span class="o">,</span> <span class="n">StageConfigs</span><span class="o">.</span><span class="na">scalarToScalarConfig</span><span class="o">())</span>
+                                <span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">getWord</span><span class="p">)</span>
+                                <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">groupO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">groupO</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">wordCntPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                                        <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">cnt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">WordCountPair</span><span class="p">(</span><span class="n">groupO</span><span class="p">.</span><span class="na">getKey</span><span class="p">(),</span> <span class="n">cnt</span><span class="p">))))</span>
+                                <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">toString</span><span class="p">)</span>
+                        <span class="p">,</span> <span class="n">StageConfigs</span><span class="p">.</span><span class="na">scalarToScalarConfig</span><span class="p">())</span>
                 <span class="c1">// Reuse built in sink that eagerly subscribes and delivers data over SSE</span>
-                <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">eagerSubscribe</span><span class="o">(</span><span class="n">Sinks</span><span class="o">.</span><span class="na">sse</span><span class="o">((</span><span class="n">String</span> <span class="n">data</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="o">)))</span>
-                <span class="o">.</span><span class="na">metadata</span><span class="o">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
-                        <span class="o">.</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;WordCount&quot;</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;Reads Homer&#39;s The Illiad faster than we can.&quot;</span><span class="o">)</span>
-                        <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-                <span class="o">.</span><span class="na">create</span><span class="o">();</span>
-    <span class="o">}</span>
+                <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">)))</span>
+                <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
+                        <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;WordCount&quot;</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Reads Homer&#39;s The Illiad faster than we can.&quot;</span><span class="p">)</span>
+                        <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+                <span class="p">.</span><span class="na">create</span><span class="p">();</span>
+    <span class="p">}</span>
 
-    <span class="kd">private</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span> <span class="nf">tokenize</span><span class="o">(</span><span class="n">String</span> <span class="n">text</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">StringTokenizer</span> <span class="n">tokenizer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringTokenizer</span><span class="o">(</span><span class="n">text</span><span class="o">);</span>
-        <span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span> <span class="n">wordCountPairs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
-        <span class="k">while</span><span class="o">(</span><span class="n">tokenizer</span><span class="o">.</span><span class="na">hasMoreTokens</span><span class="o">())</span> <span class="o">{</span>
-            <span class="n">String</span> <span class="n">word</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="na">nextToken</span><span class="o">().</span><span class="na">replaceAll</span><span class="o">(</span><span class="s">&quot;\\s*&quot;</span><span class="o">,</span> <span class="s">&quot;&quot;</span><span class="o">).</span><span class="na">toLowerCase</span><span class="o">();</span>
-            <span class="n">wordCountPairs</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">WordCountPair</span><span class="o">(</span><span class="n">word</span><span class="o">,</span><span class="mi">1</span><span class="o">));</span>
-        <span class="o">}</span>
-        <span class="k">return</span> <span class="n">wordCountPairs</span><span class="o">;</span>
-    <span class="o">}</span>
+    <span class="kd">private</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">String</span> <span class="n">text</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">StringTokenizer</span> <span class="n">tokenizer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringTokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span> <span class="n">wordCountPairs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+        <span class="k">while</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">.</span><span class="na">hasMoreTokens</span><span class="p">())</span> <span class="p">{</span>
+            <span class="n">String</span> <span class="n">word</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">.</span><span class="na">nextToken</span><span class="p">().</span><span class="na">replaceAll</span><span class="p">(</span><span class="s">&quot;\\s*&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">).</span><span class="na">toLowerCase</span><span class="p">();</span>
+            <span class="n">wordCountPairs</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">WordCountPair</span><span class="p">(</span><span class="n">word</span><span class="p">,</span><span class="mi">1</span><span class="p">));</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">wordCountPairs</span><span class="p">;</span>
+    <span class="p">}</span>
 
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">LocalJobExecutorNetworked</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">WordCountJob</span><span class="o">().</span><span class="na">getJobInstance</span><span class="o">());</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">LocalJobExecutorNetworked</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="k">new</span> <span class="n">WordCountJob</span><span class="p">().</span><span class="na">getJobInstance</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1061,31 +1061,31 @@
 <h3 id="the-stage">The Stage<a class="headerlink" href="#the-stage" title="Permanent link">&para;</a></h3>
 <p>Our stage implements the bulk of the processing logic for the streaming job. Recall that a Mantis job has 1..n stages which can be used to create a topology for data processing. This stage is a <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/computation/ScalarComputation.java"><code>ScalarComputation</code></a> but we'll learn about other stage types in the third tutorial when we make word counting a distributed job.</p>
 <p>We'll take advantage of Java's lambda syntax to implement this stage inline. The <code>call</code> method receives a <a href=""><code>Context</code></a> object and an <code>Observable&lt;String&gt;</code> provided by our source. The stage's responsibility is to produce an <code>Observable&lt;R&gt;</code> for consumption by down stream stages or the sink if this is the last stage.</p>
-<div class="codehilite"><pre><span></span><span class="o">.</span><span class="na">stage</span><span class="o">((</span><span class="n">context</span><span class="o">,</span> <span class="n">dataO</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
+<div class="codehilite"><pre><span></span><span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span> <span class="n">dataO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
                         <span class="c1">// Tokenize the string</span>
-                        <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">text</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">Observable</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">tokenize</span><span class="o">(</span><span class="n">text</span><span class="o">)))</span>
+                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observable</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
 
                         <span class="c1">// Hopping / Tumbling window of 10 seconds</span>
-                        <span class="o">.</span><span class="na">window</span><span class="o">(</span><span class="mi">10</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
+                        <span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
 
                         <span class="c1">// Reduce each window</span>
-                        <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">wordCountPairObservable</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">wordCountPairObservable</span>
+                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">wordCountPairObservable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wordCountPairObservable</span>
                                 <span class="c1">// count how many times a word appears</span>
 
-                                <span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="n">WordCountPair</span><span class="o">::</span><span class="n">getWord</span><span class="o">)</span>
-                                <span class="o">.</span><span class="na">flatMap</span><span class="o">((</span><span class="n">groupO</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">groupO</span><span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="o">(</span><span class="n">cnt</span><span class="o">,</span> <span class="n">wordCntPair</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
-                                        <span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">cnt</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">WordCountPair</span><span class="o">(</span><span class="n">groupO</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="n">cnt</span><span class="o">))))</span>
+                                <span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">getWord</span><span class="p">)</span>
+                                <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">groupO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">groupO</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">wordCntPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                                        <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">cnt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">WordCountPair</span><span class="p">(</span><span class="n">groupO</span><span class="p">.</span><span class="na">getKey</span><span class="p">(),</span> <span class="n">cnt</span><span class="p">))))</span>
                                 <span class="c1">// Convert the result to a string</span>
-                                <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">WordCountPair</span><span class="o">::</span><span class="n">toString</span><span class="o">)</span>
+                                <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">toString</span><span class="p">)</span>
 </pre></div>
 
 
 <p>If you're familiar with reactive stream processing the above should be fairly easy to comprehend. Unfortunately if you aren't then an introduction to this is outside of the scope of this tutorial. Head over to <a href="http://reactivex.io/">reactivex.io</a> to learn more about the concept.</p>
 <p>The stage configuration below specifies a few things; First that this stage is a scalar to scalar stage in that it ingests single events, and produces single events. The type of the input events is String, and the output is also String. Finally the configuration also specifies which <a href="https://github.com/Netflix/mantis/blob/master/mantis-common/src/main/java/io/mantisrx/common/codec/Codecs.java"><code>Codec</code></a> to use on the wire for this stage's output. You can use this configuration to specify concurrency for this stage as well, but we've not elected to do so here.</p>
-<div class="codehilite"><pre><span></span><span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="nf">scalarToScalarConfig</span><span class="o">()</span> <span class="o">{</span>
-    <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="o">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;()</span>
-            <span class="o">.</span><span class="na">codec</span><span class="o">(</span><span class="n">Codecs</span><span class="o">.</span><span class="na">string</span><span class="o">());</span>
-<span class="o">}</span>
+<div class="codehilite"><pre><span></span><span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="nf">scalarToScalarConfig</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span>
+            <span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">Codecs</span><span class="p">.</span><span class="na">string</span><span class="p">());</span>
+<span class="p">}</span>
 </pre></div>
 
 
@@ -1093,9 +1093,9 @@
 <p>The <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java"><code>MantisJobProvider</code></a> interface is what the Mantis runtime expects to load. The runtime reads <a href="https://github.com/Netflix/mantis-examples/blob/master/wordcount/src/main/resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider"><code>resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider</code></a> to discover the fully qualified classname of the MantisJobProvider to be used as an entry point for the application.</p>
 <h3 id="main-method">Main Method<a class="headerlink" href="#main-method" title="Permanent link">&para;</a></h3>
 <p>The main method invokes the <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/executor/LocalJobExecutorNetworked.java"><code>LocalJobExecutorNetworked</code></a> <code>execute</code> method to run our job locally. The first three tutorials will take advantage of the ability to run jobs locally. In the fourth tutorial we will explore uploading and submitting our job on a Mantis cloud deployment for greater scalability. We can and should run this main method by invoking <code>./gradlew :mantis-examples-wordcount:execute</code> at the root of the <code>mantis-examples</code> directory.</p>
-<div class="codehilite"><pre><span></span>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">LocalJobExecutorNetworked</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">WordCountJob</span><span class="o">().</span><span class="na">getJobInstance</span><span class="o">());</span>
-    <span class="o">}</span>
+<div class="codehilite"><pre><span></span>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">LocalJobExecutorNetworked</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="k">new</span> <span class="n">WordCountJob</span><span class="p">().</span><span class="na">getJobInstance</span><span class="p">());</span>
+    <span class="p">}</span>
 </pre></div>
 
 
@@ -1104,6 +1104,7 @@
 <p>As an extra credit task see if you can modify the stage in this job to print the top 10 words instead of the entire list.</p>
                 
                   
+                
                 
               
               
@@ -1180,7 +1181,7 @@
       
     </div>
     
-      <script src="../../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       

@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1066,22 +1066,22 @@ use a <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-c
 <li><code>sample</code> <em>(optional)</em> — use this if you want to <a href="../../glossary#sampling" title="Sampling is an MQL strategy for mitigating data volume issues. There are two sampling strategies: Random and Sticky. Random sampling uniformly downsamples the source stream to a percentage of its original volume. Sticky sampling selectively samples data from the source stream based on key values.">sample</a> the output <code>sample</code> times per second, or set this to <code>-1</code> to disable sampling <!-- MANTIS_SOURCEJOB_SAMPLE_PER_SEC_KEY --></li>
 </ol>
 <p>For example:</p>
-<div class="codehilite"><pre><span></span><span class="n">MantisJob</span><span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;sourceJobName&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;The name of the job&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;MyDefaultJob&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;sample&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;The number of samples per second&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">range</span><span class="o">(-</span><span class="mi">1</span><span class="o">,</span> <span class="mi">10000</span><span class="o">))</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(-</span><span class="mi">1</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">lifecycle</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">metadata</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+<div class="codehilite"><pre><span></span><span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sourceJobName&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The name of the job&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;MyDefaultJob&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sample&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The number of samples per second&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
@@ -1119,36 +1119,36 @@ The difference is that you should pass in additional parameters:</p>
 <li><code>enableMetaMessages</code> <em>(optional)</em> — the source job may occasionally inject <a href="../../glossary#metamessage" title="A Source Job may occasionally inject meta messages into its data stream that indicate things like data drops.">meta messages</a> (with the prefix <code>mantis.meta.</code>) that indicate things like data drops on the Source Job side.</li>
 </ol>
 <p>For example:</p>
-<div class="codehilite"><pre><span></span><span class="n">MantisJob</span><span class="o">.</span><span class="na">source</span><span class="o">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">stage</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">sink</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;sourceJobName&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;The name of the job&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;MyDefaultSourceJob&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;sample&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;The number of samples per second&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">range</span><span class="o">(-</span><span class="mi">1</span><span class="o">,</span> <span class="mi">10000</span><span class="o">))</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(-</span><span class="mi">1</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;criterion&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;Filter the source with this MQL statement&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">notNullOrEmpty</span><span class="o">())</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;true&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;clientId&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;the ID of the client job&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">alwaysPass</span><span class="o">())</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">parameterDefinition</span><span class="o">(</span><span class="k">new</span> <span class="n">BooleanParameter</span><span class="o">().</span><span class="na">name</span><span class="o">(</span><span class="s">&quot;enableMetaMessages&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">description</span><span class="o">(</span><span class="s">&quot;Is the source allowed to inject meta messages&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">validator</span><span class="o">(</span><span class="n">Validators</span><span class="o">.</span><span class="na">alwaysPass</span><span class="o">())</span>
-            <span class="o">.</span><span class="na">defaultValue</span><span class="o">(</span><span class="s">&quot;true&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">build</span><span class="o">())</span>
-         <span class="o">.</span><span class="na">lifecycle</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">metadata</span><span class="o">(</span><span class="err">…</span><span class="o">)</span>
-         <span class="o">.</span><span class="na">create</span><span class="o">();</span>
+<div class="codehilite"><pre><span></span><span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sourceJobName&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The name of the job&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;MyDefaultSourceJob&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sample&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The number of samples per second&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;criterion&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Filter the source with this MQL statement&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;true&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;clientId&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;the ID of the client job&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">alwaysPass</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">BooleanParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;enableMetaMessages&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Is the source allowed to inject meta messages&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">alwaysPass</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;true&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">create</span><span class="p">();</span>
 </pre></div>
 
 
@@ -1166,7 +1166,7 @@ Streams may be incomplete for a number of reasons:</p>
 </ol>
 <p>You can use the following <code>boolean</code> method within your <code>JobSource#call</code> method to determine whether or not all of your client
 connections are complete:</p>
-<div class="codehilite"><pre><span></span><span class="n">DefaultSinkConnectionStatusObserver</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="kc">true</span><span class="o">).</span><span class="na">isConnectedToAllSinks</span><span class="o">()</span>
+<div class="codehilite"><pre><span></span><span class="n">DefaultSinkConnectionStatusObserver</span><span class="p">.</span><span class="na">getInstance</span><span class="p">(</span><span class="kc">true</span><span class="p">).</span><span class="na">isConnectedToAllSinks</span><span class="p">()</span>
 </pre></div>
 
 
@@ -1179,6 +1179,7 @@ connections are complete:</p>
 <!-- END -->
                 
                   
+                
                 
               
               
@@ -1255,7 +1256,7 @@ connections are complete:</p>
       
     </div>
     
-      <script src="../../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       

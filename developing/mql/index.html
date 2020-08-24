@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -51,12 +51,12 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -931,23 +931,23 @@ analytical queries about the data in question.</p>
 such). Executing a query against that <a href="../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> is only a matter of putting that <code>Observable</code>
 into a <code>Map&lt;String, Observable&gt;</code> to represent the context and calling <code>evalMql</code> against said
 context. The result will be an <code>Observable</code> that represents the results of the query:</p>
-<div class="codehilite"><pre><span></span><span class="kn">package</span> <span class="nn">my.package</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="o">;</span>
+<div class="codehilite"><pre><span></span><span class="kn">package</span> <span class="nn">my.package</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="p">;</span>
 
-<span class="kd">class</span> <span class="nc">MqlExample</span> <span class="o">{</span>
-<span class="hll">    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="kd">class</span> <span class="nc">MqlExample</span> <span class="p">{</span>
+<span class="hll">    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
 </span><span class="hll">        <span class="c1">// Create a test observable source of x, y coordinates.</span>
-</span><span class="hll">        <span class="n">Observable</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">source</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="o">{</span>
-</span><span class="hll">            <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
-</span><span class="hll">            <span class="n">d</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;x&quot;</span><span class="o">,</span> <span class="n">x</span><span class="o">);</span>
-</span><span class="hll">            <span class="n">d</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;y&quot;</span><span class="o">,</span> <span class="n">x</span><span class="o">);</span>
-</span><span class="hll">        <span class="o">});</span>
+</span><span class="hll">        <span class="n">Observable</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">source</span> <span class="o">=</span> <span class="n">Observable</span><span class="p">.</span><span class="na">interval</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">MILLISECONDS</span><span class="p">).</span><span class="na">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="p">{</span>
+</span><span class="hll">            <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+</span><span class="hll">            <span class="n">d</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+</span><span class="hll">            <span class="n">d</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+</span><span class="hll">        <span class="p">});</span>
 </span><span class="hll">
-</span><span class="hll">        <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">context</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
-</span><span class="hll">        <span class="n">context</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;observations&quot;</span><span class="o">,</span> <span class="n">source</span><span class="o">);</span>
+</span><span class="hll">        <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">context</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+</span><span class="hll">        <span class="n">context</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;observations&quot;</span><span class="p">,</span> <span class="n">source</span><span class="p">);</span>
 </span><span class="hll">        <span class="c1">// You don&#39;t have to block, and shouldn&#39;t. It is just to keep the example running.</span>
-</span><span class="hll">        <span class="n">io</span><span class="o">.</span><span class="na">mantisrx</span><span class="o">.</span><span class="na">mql</span><span class="o">.</span><span class="na">Core</span><span class="o">.</span><span class="na">evalMql</span><span class="o">(</span><span class="s">&quot;select y from observations where x &gt; 50 OR y == 10&quot;</span><span class="o">,</span> <span class="n">context</span><span class="o">).</span><span class="na">toBlocking</span><span class="o">().</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span><span class="o">}</span>
+</span><span class="hll">        <span class="n">io</span><span class="p">.</span><span class="na">mantisrx</span><span class="p">.</span><span class="na">mql</span><span class="p">.</span><span class="na">Core</span><span class="p">.</span><span class="na">evalMql</span><span class="p">(</span><span class="s">&quot;select y from observations where x &gt; 50 OR y == 10&quot;</span><span class="p">,</span> <span class="n">context</span><span class="p">).</span><span class="na">toBlocking</span><span class="p">().</span><span class="na">forEach</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">::</span><span class="n">println</span><span class="p">);</span>
+</span><span class="p">}</span>
 </pre></div>
 
 
@@ -960,6 +960,7 @@ context. The result will be an <code>Observable</code> that represents the resul
 <!-- END -->
                 
                   
+                
                 
               
               
@@ -1036,7 +1037,7 @@ context. The result will be an <code>Observable</code> that represents the resul
       
     </div>
     
-      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
