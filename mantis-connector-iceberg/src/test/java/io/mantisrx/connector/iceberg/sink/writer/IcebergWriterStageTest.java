@@ -156,15 +156,15 @@ class IcebergWriterStageTest {
         scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
 
-        scheduler.advanceTimeBy(999, TimeUnit.MILLISECONDS);
+        scheduler.advanceTimeBy(99, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(1);
 
-        scheduler.advanceTimeBy(1000, TimeUnit.MILLISECONDS);
+        scheduler.advanceTimeBy(100, TimeUnit.MILLISECONDS);
         subscriber.assertValueCount(2);
 
         subscriber.assertNoTerminalEvent();
 
-        verify(writer, times(2000)).write(any());
+        verify(writer, times(200)).write(any());
         verify(writer, times(2)).close();
     }
 
@@ -174,12 +174,12 @@ class IcebergWriterStageTest {
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
         // Size is checked at row-group-size config, but under size-threshold, so no-op.
-        scheduler.advanceTimeBy(1000, TimeUnit.MILLISECONDS);
+        scheduler.advanceTimeBy(100, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
 
         subscriber.assertNoTerminalEvent();
 
-        verify(writer, times(1000)).write(any());
+        verify(writer, times(100)).write(any());
         verify(writer, times(0)).close();
     }
 
