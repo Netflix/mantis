@@ -193,7 +193,7 @@ important
 
 | **Name** | **Type** | **Default** | **Description** |
 | -------- | -------- | ----------- | --------------- |
-| `writerRowGroupSize` | int | 1000 | Number of rows to chunk before checking for file size |
+| `writerRowGroupSize` | int | 100 | Number of rows to chunk before checking for file size |
 | `writerFlushFrequencyBytes` | String | "134217728" (128 MiB) | Flush frequency by size in Bytes |
 | `writerFlushFrequencyMsec` | String | "60000" (1 min) | Flush frequency by time in milliseconds |
 | `writerFileFormat` | String | parquet | File format for writing data files to backing Iceberg store |
