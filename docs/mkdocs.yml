@@ -54,9 +54,9 @@ theme:
     text: '"Helvetica Neue",Helvetica,Arial,sans-serif'
 extra:
   social:
-    - type: 'twitter'
+    - icon: fontawesome/brands/twitter
       link: 'https://twitter.com/NetflixOSS'
-    - type: 'github'
+    - icon: fontawesome/brands/github
       link: 'https://netflix.github.io/'
 markdown_extensions:
   - admonition
@@ -71,6 +71,7 @@ markdown_extensions:
                 "enter" : "return",
                 "?" : "?"}
   - pymdownx.superfences
+  - pymdownx.snippets
   - def_list
   - extra
 extra_css:
