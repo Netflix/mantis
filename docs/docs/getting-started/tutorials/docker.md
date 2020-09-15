@@ -36,7 +36,7 @@ Open the [Mantis UI](https://netflix.github.io/mantis-ui/) in a new browser wind
 
 Fill out the Registration form as follows
 
-![Fresh Mantis UI](../images/fresh_ui.png)
+![Fresh Mantis UI](../../images/fresh_ui.png)
 
 1. **Name:** `Example`
 2. **Email:** `example@example.com`
@@ -48,28 +48,28 @@ Click on `Create`
 
 The Mantis Admin page should be pre-populated with all the Mantis examples.
 
-![Clusters](../images/clusterpage.png)
+![Clusters](../../images/clusterpage.png)
 
 ### Try out Mantis Jobs
 
 Now that you have setup a Mantis cluster locally try running some of the preconfigured
 Mantis samples
 
-1. [Sine Function Sample](samples/sinesample.md) - A simple job that generates x and y
+1. [Sine Function Sample](../samples/sine-function.md) - A simple job that generates x and y
 coordinates of a sine wave.
 
-2. [Twitter Sample](samples/twittersample.md) - Connects to a twitter stream using consumer and token
+2. [Twitter Sample](../samples/twitter.md) - Connects to a twitter stream using consumer and token
 keys specified and performs a streaming word count.
  
-3. [On Demand sourcing data from external apps sample](samples/publishsample.md) - Demonstrates
+3. [On Demand Sample](../samples/on-demand.md) - Demonstrates
 how Mantis Jobs can pull events on demand from external applications.
 
 
-Next steps. 
+## Next steps
 
 * [Setup Mantis in AWS](cloud.md) and run the samples
 
-* Learn to [write](../developing/writingjobs/index.md) your own Mantis Jobs
+* Write your [first Mantis Job](../../develop/processing/word-count.md)
 
 To teardown the Mantis cluster, issue the following command
 

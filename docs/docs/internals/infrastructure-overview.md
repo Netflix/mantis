@@ -1,4 +1,5 @@
-#Mantis Infrastructure Overview
+# Infrastructure Overview
+
 ![High Level Architecture](../images/MantisArchitecture.png)
 
 At a high level the Mantis Architecture consists of the Control plane (Mantis Master) and the

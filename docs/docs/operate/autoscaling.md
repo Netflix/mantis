@@ -1,213 +1,155 @@
-This page introduces the [MQL] operators, including a syntax summary, usage examples, and a brief
-description of each operator.
+Being a cloud-native platform Mantis supports [autoscaling] out-of-the-box. Both the agent cluster and the Mantis Jobs
+can be configured to autoscale. 
 
-For the most part these operations use their [RxJava] analogs:
+You can define a policy for your Jobs in which they autoscale their resources based on the dynamic needs resulting from variation in
+the input data they process. 
 
-| MQL operator            | RxJava operator |
-| ----------------------- | --------------- |
-| [`select`](#select)     | [`map`](http://reactivex.io/documentation/operators/map.html) |
-| [`window`](#window)     | [`window`](http://reactivex.io/documentation/operators/window.html) |
-| [`where`](#where)       | [`filter`](http://reactivex.io/documentation/operators/filter.html) |
-| [`group by`](#group-by) | [`groupBy`](http://reactivex.io/documentation/operators/groupby.html) |
-| [`order by`](#order-by) | n/a |
-| [`limit`](#limit)       | [`take`](http://reactivex.io/documentation/operators/take.html) |
+This provides two benefits:
 
-For this reason you may find [the ReactiveX documentation](http://reactivex.io/intro.html) useful as
-well, though it is a goal of MQL to provide you with a layer of abstraction such that you will not
-need to use or think about [ReactiveX] when writing queries.
+1. You can define Jobs to process data without provisioning for peak usage all the time.
+1. Mantis uses cluster resources optimally without leaving resources idle.
 
-MQL attempts to stay true to the SQL syntax in order to reduce friction for new users writing
-queries and to allow them to leverage their experiences with SQL.
+## Horizontal Scaling
 
-An essential concept in MQL is the “[property],” which can take on one of several forms:
+Your Mantis Jobs are composed of in part of [Processing Stages], with each stage responsible for a
+different stream processing task. Because different stages may have different computational needs,
+each stage has its own autoscaling policy.
 
-* `property.name.here`
-* `e["this"]["accesses"]["nested"]["properties"]`
-* `15`
-* `"string literal"`
+A Processing Stage is further subdivided into [workers]. A worker is the smallest unit of work that
+is scheduled. Each worker requests a certain number of CPUs, some amount of memory, and a certain
+amount of network bandwidth.
 
-Most of the MQL operators use these forms to refer to properties within the event stream, as well as
-string and numeric literals.
+When a Processing Stage scales, the number of workers in that stage increases or decreases (the
+resources that Mantis allocates to an individual worker in the stage do not change as a result of
+scaling).
 
-The last detail of note concerns unbounded vs. discrete streams. ReactiveX [Observables] that are
-not expected to close are an unbounded stream and must be bounded/discretized in order for certain
-operators to function with them. The `window` operator is useful for partitioning unbounded streams
-into discrete bounded streams for operators such as aggregate, group by, or order by.
+## Scaling a Processing Stage Manually
 
-## `select`
+You may define a Processing Stage as scalable without defining an autoscaling policy for it. In such
+a case the stage is considered *manually scalable* and you can scale it by means of
+the Mantis UI or the [Mantis API](../../developing/api#horizontally-scale-a-stage).
 
-**Syntax:** <code>select <var>property</var> from <var>source</var></code>
-
-**Examples:**
-
-* `"select * from servo"`
-* `"select nf.node from servo"`
-* `"select e["tags"]["nf.cluster"] from servo"`
-
-The `select` operator allows you to project data into a new object by specifying which properties
-should be carried forward into the output. Properties will bear the same name as was used to select
-them. In the case of numbers and string literals their value will also be their name. In the case of
-nested properties the result will be a top-level object joined with dots.
-
-For example, the following `select` example…
-
-* `"select "string literal", 45, e["tags"]["cluster"], nf.node from servo"`
-
-…would result in an object like:
-
-```json
-{
-  "string literal": "string literal",
-  45: 45,
-  "tags.cluster": "mantisagent",
-  "nf.node": "i-123456"
-}
-```
+## Setting an Autoscaling Policy
 
 !!! warning
-    Be careful to avoid collisions between the top-level objects with dotted names and the nested
-    objects that result in top-level properties with dotted names.
+    You should take care that your autoscaling strategies do not contradict each other. For example,
+    if you set a CPU-based strategy and a network-based strategy, one may want to trigger a scale-up
+    and the other a scale-down at the same time.
 
-### Aggregates
+You define the autoscaling policy for a Processing Stage by setting the following parameters:
 
-**Syntax:** <code>"select <var>aggregate</var>(<var>property</var>) from <var>source</var>"</code>
-
-**Examples:**
-
-* `"select count(e["node"]) from servo window 60"`
-* `"select count(e["node"]) from servo window 60 where e["metrics"]["latency"] > 350"`
-* `"select average(e["metrics"]["latency"]), e["node"] from servo window 10"`
-
-Supported Aggregates:
-
-- `Min`
-- `Max`
-- `Average`
-- `Count`
-- `Sum`
-
-Aggregates add analysis capabilities to MQL in order to allow you to answer interesting questions
-about data in real-time. They can be intermixed with regular properties in order to select
-properties and compute information about those properties, such as the last example above which
-computes average latency on a per-node basis in 10 second windows.
-
-!!! note
-    Aggregates require that the stream on which they operate be discretized. You can ensure this
-    either by feeding MQL a [cold Observable] in its context or by using the `window` operator on an
-    unbounded stream.
-
-You can use the `distinct` operator on a property to operate only on unique items within the window.
-This is particularly useful with the `count` aggregate if you want to count the number of items with
-some distinct property value in that window. For example:
-
-* `"select count(distinct esn) from stream window 10 1"`
-
-## `from`
-
-**Syntax:** <code>"select <var>something</var> from <var>source</var>"</code>
-
-**Example:**
-
-* `"select * from servo"`
-
-The `from` clause indicates to MQL from which Observable it should draw data. This requires some
-explanation, as it bears different meaning in different contexts.
-
-Directly against queryable sources the `from` clause refers to the source Observable no matter which
-name is given. The operator is in fact optional, and the name of the source is arbitrary in this
-context, and the clause will be inserted for you if you omit it.
-
-When you use MQL as a library, the *`source`* corresponds with the names in the context map
-parameter. The second parameter to `eval-mql()` is a `Map<String, Observable<T>>` and the `from`
-clause will attempt to fetch the `Observable` from this `Map`.
-
-## `window`
-
-**Syntax:** <code>"WINDOW <var>integer</var>"</code>
-
-**Examples:**
-
-* `"select node, latency from servo window 10"`
-* `"select MAX(latency) from servo window 60"`
-
-The `window` clause divides an otherwise unbounded stream of data into discrete time-bounded
-streams. The *`integer`* parameter is the number of seconds over which to perform this bounding. For
-example `"select * from observable window 10"` will produce 10-second windows of data.
-
-This discretization of streams is important for use with aggregate operations as well as group-by
-and order-by clauses which cannot be executed on, and will hang on, unbounded streams.
-
-## `where`
-
-**Syntax:** <code>"select <var>property</var> from <var>source</var> where <var>predicate</var>"</code>
-
-**Examples:** 
-
-* `"select * from servo where node == "i-123456" AND e["metrics"]["latency"] > 350"`
-* `"select * from servo where (node == "i-123456" AND e["metrics"]["latency"] > 350) OR node == "1-abcdef""`
-* `"select * from servo where node ==~ /i-123/"`
-
-The `where` clause filters any events out of the stream which do not match a given predictate.
-Predicates support `AND` and `OR` operations. Binary operators supported are `=`, `==`, `<>`, `!=`,
-`<`, `<=`, `>`, `>=`, `==~`. The first two above are both equality, and either of the next two
-represent not-equal. You can use the last of those operators, `==~`, with a regular expression as
-in: <code>"where <var>property</var> ==~ /<var>regex</var>/"</code> (any Java regular expression will
-suffice).
-
-## `group by`
-
-**Syntax:** <code>"GROUP BY <var>property</var>"</code>
-
-**Examples:**
-
-* `"select node, latency from servo where latency > 300.0 group by node"`
-* `"select MAX(latency), e["node"] from servo group by node"`
-
-`group by` groups values in the output according to some property. This is particularly useful in
-conjunction with aggregate operators in which one can compute aggregate values over a group. For
-example, the following query calculates the maximum latency observed for each node in 60-second
-windows:
-
-* `"select MAX(latency), e["node"] from servo window 60 group by node"`
+* **Min and Max number of workers** — This sets how many workers Mantis will guarantee to be working
+  within the Processing Stage at any particular time.
+* **Increment and decrement values** — This indicates how many workers are added to or removed from
+  a stage each time the stage autoscales up or down.
+* **Cooldown seconds** — This indicates how many seconds to wait after a scaling operation has been
+  completed before beginning another scaling operation.
+* **Stragtegies** — An autoscaling policy has the following strategy parameters:
+    * **Type** — CPU, memory, network, or data drop
+    * **Scale down below percentage** — When the average value for all workers falls below this
+      value, the stage will scale down. This value is calculated as actual usage divided by
+      requested amounts (for data drop, as the number of data items dropped divided by the total
+      number of data items, dropped+processed).
+    * **Scale up above percentage** — When the average value for all workers rises above this value,
+      the stage will scale up.
+    * **Rolling count** — This value helps to keep jitter out of the autoscaling process. Instead of
+      scaling immediately the first time values fall outside of the scale-down and scale-up
+      percentage thresholds you define, Mantis will wait until the thresholds are exceeded a certain
+      number of times within a certain window. For example, a rolling count of “6 of 10” means that
+      only if in ten consecutive observations six or more of the observations fall below the
+      scale-down threshold will the stage be scaled down.
 
 !!! note
-    The `group by` clause requires that the stream on which it operates be discretized. You can
-    ensure this either by feeding MQL a [cold Observable] in its context or by using the `window`
-    operator on an unbounded stream.
+    Ideally, there should be zero data drop, so there isn’t an elegant way to express “scale down
+    below percentage” for data drop. Specifying “0%” as the “scale down below percentage”
+    effectively means the data drop percentage never trigger a scale down. For this reason, it is
+    best to use the data drop strategy in conjunction with another strategy that provides the
+    scale-down trigger.
 
-## `order by`
+The following example shows how you might establish the autoscaling policy for a stage in the Mantis
+UI:
 
-**Syntax:** <code>"ORDER BY <var>property</var>"</code>
+![Autoscaling a Stage in the Mantis UI](../images/autoscale.png)
 
-**Example:**
+The illustration above shows a stage with an autoscaling policy that specifies a minimum of 5 and a
+maximum of 20 workers. It uses a single strategy, that of network bandwidth usage.
 
-* `"select node, latency from servo group by node order by latency"`
+## Autoscaling Scenarios
 
-The `order by` operator orders the results in the inner-most Observable by the specified property.
-For example, the query `"select * from observable window 5 group by nf.node order by latency"` would
-produce an Observable of Observables (windows) of Observables (groups). The events within the groups
-would be ordered by their latency property.
+There are four varieties of autoscaling scenarios that you should consider for your Mantis Job:
 
-!!! note
-    The `order by` clause requires that the stream on which it operates be discretized. You can
-    ensure this either by feeding MQL a [cold Observable] in its context or by using the `window`
-    operator on an unbounded stream.
+1. The Processing Stage connects to a [cold]  [Source], such as a [Kafka] topic.
 
-## `limit`
+    Autoscaling works well for this type of stage (the initial stage in a Job that connects to the
+    Source). For example, if your stage connects to a Kafka source, a change in the number of
+    workers in the first stage of your Mantis Job causes the Kafka client to redistribute the
+    partitions of the topic among the new number of workers.
 
-**Syntax:** <code>"LIMIT <var>integer</var>"</code>
+1. The Processing Stage connects to a hot source, such as a working server.
 
-**Examples:**
+    The Source stage (stage #1) will have to re-partition the Source servers after an autoscale
+    event on the Processing Stage. This is mainly a concern for [Source Jobs]. Upon receipt of a
+    modified number of workers, each worker re-partitions the current servers into its own index of
+    the new total. This results in a new list of servers to connect to (for both scale up and scale
+    down), some of which may be already connected. Making a new connection to a Source server evicts
+    any old existing connection from the same Job. This guarantees that no duplicate messages are
+    sent to a Mantis Job. (The solution for this scenario is currently in development.)
 
-* `"select * from servo limit 10"`
-* `"select AVERAGE(latency) from servo window 60 limit 10"`
+    <span class="tbd">Rewrite this; it’s not very clear.</span>
 
-The limit operator takes as a parameter a single integer and bounds the number of results to ≤
-*`integer`*.
+1. The Processing Stage connects to another Mantis Job.
 
-!!! note
-    Limit does *not* discretize the stream for earlier operators such as `group by`, `order by`,
-    aggregates.
+    In this case, the initial Processing Stage in a Job that connects to the output of the previous
+    Mantis Job has strong connectivity into the Source Job via the use of Mantis Java client. In suc
+    a case, all workers from this Processing Stage connect to all workers of the source Job’s
+    [Sink]. Therefore, autoscaling this type of Job works well. 
+
+1. The Processing Stage connects to a previous Processing Stage in the same Mantis Job.
+
+    Each Processing Stage is strongly connected to its previous Processing Stage. Therefore,
+    autoscaling of this type typically works well. However, a Processing Stage following a
+    *[grouped]* stage (a Processing Stage that does a `group by` operation) receives a grouped
+    [Observable] or `MantisGroup`. When Mantis scales such a grouped stage, these groups are
+    repartitioned on to the new number of workers. The Processing Stage following such a grouped
+    stage must, therefore, be prepared to potentially receive a different set of groups after a
+    rescale operation.
+
+    <span class="tbd">How does a subsequent stage learn that the previous stage has autoscaled?</span>
+
+    Note that the number of groups resulting from a `group by` operation is the maximum limit on the
+    number of workers that can be expected to work on such groups (unless a subsequent processing
+    stage subdivides those groups). In the following illustrations, a processing stage that does a
+    `group by` operation groups the incoming data into three groups, each one of which is handled by
+    a single worker in the subsequent processing stage. When that second stage scales up and adds
+    another worker, that worker remains idle and does not assist in processing data because there
+    are not enough groups to distribute among the larger number of workers.
+
+    **Before autoscaling:**
+    ![Before autoscaling](../images/scaling_prescale.svg)
+
+    **After autoscaling:**
+    ![After autoscaling](../images/scaling_postscale.svg)
+    
+
+## Updating Autoscalable Jobs
+
+To upload a Mantis Job when you have new code to push, upload the `.jar` or `.zip` [artifact file]
+to Mantis, and make any necessary adjustments to its behavior and policies by using the Mantis UI.
+
+You can also do this in two ways via the Mantis API:
+
+1. [Update the Job Cluster](../../developing/api#change-information-about-a-cluster) with a new version
+   for its artifact file along with new scheduling information. This updated JAR and scheduling info
+   are available to use with the next Job submission. However, currently-running Jobs continue to
+   run with whatever artifact file they were started with.
+1. [Quick update the Job Cluster](../../developing/api#update-a-clusters-artifacts) with only a new
+   artifact file version and submit a new Job with it. The new Job is submitted by using the
+   scheduling info from the last Job submitted. 
+
+The latter of the above two is convenient not only because you provide the minimal information
+needed to update the Job. But, also, because when it picks up the scheduling info from the last Job
+submitted, if it is running, the new Job is started with the same number of workers as the last one.
+That is, if it had scaled up, the new Job starts scaled up as well.
 
 <!-- Do not edit below this line -->
 <!-- START -->
@@ -271,8 +213,8 @@ The limit operator takes as a parameter a single integer and bounds the number o
 [migration strategies]:    ../../glossary#migration
 [MRE]:                     ../../glossary#mre               "Mantis Publish (a.k.a. Mantis Realtime Events, or MRE) is a library that your application can use to stream events into Mantis while respecting MQL filters."
 [Mantis Publish]:          ../../glossary#mantispublish     "Mantis Publish is a library that your application can use to stream events into Mantis while respecting MQL filters."
-[Mantis Query Language]:   ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
-[MQL]:                     ../../glossary#mql               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[Mantis Query Language]:   ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
+[MQL]:                     ../../glossary#MQL               "You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire."
 [Observable]:              ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [Observables]:             ../../glossary#observable        "In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data."
 [parameter]:               ../../glossary#parameter         "A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis."

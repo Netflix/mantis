@@ -40,7 +40,7 @@ Configuring AWS credentials... done
 ```
 
 This command stores your AWS credentials in the same exact format and location as the AWS SDK.
-More on this at the [Mantis CLI page](../../developing/cli/#setting-up-your-aws-credentials).
+More on this at the [Mantis CLI page](../../../reference/cli/#setting-up-your-aws-credentials).
 
 ### Bootstrap your cluster
 
@@ -109,7 +109,7 @@ On your browser, navigate to the Mantis UI at:
 
 And fill out the Registration form as follows:
 
-![Fresh Mantis UI](../images/fresh_ui.png)
+![Fresh Mantis UI](../../images/fresh_ui.png)
 
 1. **Name:** `Example`
 2. **Email:** `example@example.com`
@@ -122,23 +122,23 @@ And fill out the Registration form as follows:
 When you go into the UI, you'll notice that the Mantis CLI has automatically preloaded a Job Cluster for you to try out.
 Simply click on the `SineTest` Job Cluster to go into the cluster details page.
 
-![Preloaded Job Cluster](../images/preloaded_job_cluster.png)
+![Preloaded Job Cluster](../../images/preloaded_job_cluster.png)
 
 Once in the cluster details page, click on the green `Submit latest version` button on the top right to bring
 you to the Job Submit page.
 
-![Submit latest version](../images/cluster_details.png)
+![Submit latest version](../../images/cluster_details.png)
 
 On the Job Submit page, everything has already been configured for you. All you have to do is hit the
 green `Submit to Mantis` button at the bottom of the page to launch your first Mantis Job.
 
-![Submit Job](../images/submit_job.png)
+![Submit Job](../../images/submit_job.png)
 
 Now you can view the output of this job.
 
 If all goes well your job would go into `Launched` state.
 
-![Job Launched](../images/job_output.png)
+![Job Launched](../../images/job_output.png)
 
 Scroll to the bottom and in the `Job Output` section click on `Start`
 
@@ -164,7 +164,7 @@ $ aws:teardown
 You can debug your cluster by looking at the logs. To look at the logs, you'll need to go into your AWS EC2 Console
 and find instances with the `Application: Mantis` tag.
 
-![AWS EC2 Mantis Instances](../images/ec2_mantis_instances.png)
+![AWS EC2 Mantis Instances](../../images/ec2_mantis_instances.png)
 
 From there, you can look at the instances with the following
 security groups:
@@ -177,10 +177,12 @@ security groups:
 
 You can connect to your EC2 instances by following instructions from the `Connect` button at the top.
 
-!!! note
+!!! info
     The Mantis CLI puts your EC2 `.pem` keys in the same folder as your AWS credentials, typically
     located in `$HOME/.aws`.
 
-Application logs, e.g. Mantis-related or Zookeeper, for all instances will be located in `/logs`.
+!!! tip
+    Application logs, e.g. Mantis-related or Zookeeper, for all instances will be located in `/logs`.
 
-Mesos-related logs for `mesos-master` and `mesos-slave` will be located in `/var/run/mesos`.
+!!! tip
+    Mesos-related logs for `mesos-master` and `mesos-slave` will be located in `/var/run/mesos`.

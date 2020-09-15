@@ -1,4 +1,4 @@
-# Twitter sample
+# Twitter
 The Twitter sample demonstrates sourcing data from an external source (twitter in this case) and 
 calculates the number of occurrences of a word within a hopping window. 
 
@@ -6,8 +6,8 @@ calculates the number of occurrences of a word within a hopping window.
 
 A `TwitterSample` Job Cluster exists.
 
-> **Note** If you are following the [Mantis Cluster using Docker](../docker.md) instructions this
->should be already setup. 
+> **Note** If you are following the [Mantis Cluster using Docker](../tutorials/docker.md) instructions this
+>will be already set up. 
 
 Twitter credentials to be used to connect to Twitter.
 

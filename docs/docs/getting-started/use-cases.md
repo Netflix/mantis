@@ -1,4 +1,4 @@
-# Mantis use-cases
+# Mantis Use Cases
 
 Here is a non-comprehensive list of use-cases powered by Mantis to give you an idea of the type of
 applications that can be built on Mantis.

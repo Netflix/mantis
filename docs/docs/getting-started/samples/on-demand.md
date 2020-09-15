@@ -1,4 +1,4 @@
-# Publishing Events to Mantis
+# On-Demand
 
 One of the key features of Mantis is the ability to stream filtered events on-demand from external applications.
 
@@ -21,16 +21,14 @@ This end-to-end example highlights two powerful Mantis concepts
 * `JobConnectorSample` Job cluster exists
 * [Java Sample](https://github.com/Netflix/mantis-examples/tree/master/mantis-publish-sample) is setup and running.
 
-> **Note** If you are following the [Mantis Cluster using Docker](../docker.md) instructions all of this
->should be already setup. 
+> **Note** If you are following the [Mantis Cluster using Docker](../tutorials/docker.md) instructions all of this
+>will be already set up. 
 
 
-## Publishing data to Mantis
+## Publishing events into Mantis
 
 >  **Note**: The local docker setup has already preconfigured a simple [Java Sample](https://github.com/Netflix/mantis-examples/tree/master/mantis-publish-sample) application to publish events
 to Mantis. 
-
-For instructions on instrumenting your own application check out the [Publishing events to Mantis](../../developing/mre.md)
 
 ## Setting up a Publish Data Source Job
 
@@ -114,6 +112,3 @@ any data.
 
 By integrating the mantis-publish library with their applications, users can get access to rich data generated
 by their applications in realtime and in a cost-effective manner for analysis into their jobs. 
-
-
- 
