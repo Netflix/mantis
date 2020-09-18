@@ -1,0 +1,1359 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="shortcut icon" href="../../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.12">
+    
+    
+      
+        <title>Source - Mantis</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4dd2dd8d.min.css">
+      
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.6a5ad368.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#ef5552">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../../css/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#varieties-of-sources" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../.." title="Mantis" class="md-header-nav__button md-logo" aria-label="Mantis">
+      
+  <img src="../../../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            Mantis
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              Source
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Mantis" class="md-nav__button md-logo" aria-label="Mantis">
+      
+  <img src="../../../images/logo.png" alt="logo">
+
+    </a>
+    Mantis
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Welcome" class="md-nav__link">
+      Welcome
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Getting Started
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        <span class="md-nav__icon md-icon"></span>
+        Getting Started
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/concepts/" title="Concepts" class="md-nav__link">
+      Concepts
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/use-cases/" title="Use Cases" class="md-nav__link">
+      Use Cases
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Tutorials
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Tutorials" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        <span class="md-nav__icon md-icon"></span>
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/tutorials/local/" title="Explore Locally" class="md-nav__link">
+      Explore Locally
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/tutorials/docker/" title="Explore Using Docker" class="md-nav__link">
+      Explore Using Docker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/tutorials/cloud/" title="Explore in the Cloud" class="md-nav__link">
+      Explore in the Cloud
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Samples
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Samples" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        <span class="md-nav__icon md-icon"></span>
+        Samples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/samples/sine-function/" title="Sine Function" class="md-nav__link">
+      Sine Function
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/samples/twitter/" title="Twitter" class="md-nav__link">
+      Twitter
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../getting-started/samples/on-demand/" title="On-Demand" class="md-nav__link">
+      On-Demand
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Develop
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Develop" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Develop
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1">
+    
+    <label class="md-nav__link" for="nav-3-1">
+      Ingestion
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Ingestion" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        <span class="md-nav__icon md-icon"></span>
+        Ingestion
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/ingestion/netty/" title="Netty" class="md-nav__link">
+      Netty
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
+    
+    <label class="md-nav__link" for="nav-3-2">
+      Processing
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Processing" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        <span class="md-nav__icon md-icon"></span>
+        Processing
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/processing/word-count/" title="Writing Your First Job" class="md-nav__link">
+      Writing Your First Job
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/processing/twitter/" title="Writing Your Second Job" class="md-nav__link">
+      Writing Your Second Job
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/processing/group-by/" title="Writing Your Third Job" class="md-nav__link">
+      Writing Your Third Job
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+    
+    <label class="md-nav__link" for="nav-3-3">
+      Querying
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Querying" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        <span class="md-nav__icon md-icon"></span>
+        Querying
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/querying/mql/" title="Mantis Query Language" class="md-nav__link">
+      Mantis Query Language
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/querying/sampling/" title="Sampling" class="md-nav__link">
+      Sampling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../develop/querying/scaling-limits/" title="Scaling Limits" class="md-nav__link">
+      Scaling Limits
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Deploy
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Deploy" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        <span class="md-nav__icon md-icon"></span>
+        Deploy
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="" class="md-nav__link">
+      
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+    
+    <label class="md-nav__link" for="nav-5">
+      Operate
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Operate" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        <span class="md-nav__icon md-icon"></span>
+        Operate
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../operate/tuning/" title="Tuning" class="md-nav__link">
+      Tuning
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../operate/autoscaling/" title="Autoscaling" class="md-nav__link">
+      Autoscaling
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
+    
+    <label class="md-nav__link" for="nav-6">
+      Reference
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Reference" data-md-level="1">
+      <label class="md-nav__title" for="nav-6">
+        <span class="md-nav__icon md-icon"></span>
+        Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../reference/mql/" title="MQL" class="md-nav__link">
+      MQL
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../reference/api/" title="API" class="md-nav__link">
+      API
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../reference/cli/" title="CLI" class="md-nav__link">
+      CLI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7" checked>
+    
+    <label class="md-nav__link" for="nav-7">
+      Internals
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Internals" data-md-level="1">
+      <label class="md-nav__title" for="nav-7">
+        <span class="md-nav__icon md-icon"></span>
+        Internals
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../infrastructure-overview/" title="Infrastructure Overview" class="md-nav__link">
+      Infrastructure Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-2" type="checkbox" id="nav-7-2" checked>
+    
+    <label class="md-nav__link" for="nav-7-2">
+      Mantis Jobs
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Mantis Jobs" data-md-level="2">
+      <label class="md-nav__title" for="nav-7-2">
+        <span class="md-nav__icon md-icon"></span>
+        Mantis Jobs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Source
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="Source" class="md-nav__link md-nav__link--active">
+      Source
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#varieties-of-sources" class="md-nav__link">
+    Varieties of Sources
+  </a>
+  
+    <nav class="md-nav" aria-label="Varieties of Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mantis-job-sources" class="md-nav__link">
+    Mantis Job Sources
+  </a>
+  
+    <nav class="md-nav" aria-label="Mantis Job Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connecting-to-a-mantis-job" class="md-nav__link">
+    Connecting to a Mantis Job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-job-sources" class="md-nav__link">
+    Source Job Sources
+  </a>
+  
+    <nav class="md-nav" aria-label="Source Job Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#broadcast-mode" class="md-nav__link">
+    Broadcast Mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connecting-to-a-source-job" class="md-nav__link">
+    Connecting to a Source Job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-sources" class="md-nav__link">
+    Custom Sources
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#learning-when-source-data-is-incomplete" class="md-nav__link">
+    Learning When Source Data is Incomplete
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../processing-stage/" title="Processing Stage" class="md-nav__link">
+      Processing Stage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../sink/" title="Sink" class="md-nav__link">
+      Sink
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../source-jobs/" title="Source Jobs" class="md-nav__link">
+      Source Jobs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../runtime/" title="Runtime" class="md-nav__link">
+      Runtime
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../mantis-publish/" title="Mantis Publish" class="md-nav__link">
+      Mantis Publish
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../community/" title="Community" class="md-nav__link">
+      Community
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../glossary/" title="Glossary" class="md-nav__link">
+      Glossary
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#varieties-of-sources" class="md-nav__link">
+    Varieties of Sources
+  </a>
+  
+    <nav class="md-nav" aria-label="Varieties of Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mantis-job-sources" class="md-nav__link">
+    Mantis Job Sources
+  </a>
+  
+    <nav class="md-nav" aria-label="Mantis Job Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connecting-to-a-mantis-job" class="md-nav__link">
+    Connecting to a Mantis Job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-job-sources" class="md-nav__link">
+    Source Job Sources
+  </a>
+  
+    <nav class="md-nav" aria-label="Source Job Sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#broadcast-mode" class="md-nav__link">
+    Broadcast Mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connecting-to-a-source-job" class="md-nav__link">
+    Connecting to a Source Job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-sources" class="md-nav__link">
+    Custom Sources
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#learning-when-source-data-is-incomplete" class="md-nav__link">
+    Learning When Source Data is Incomplete
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/internals/mantis-jobs/source.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                  
+                
+                
+                  <h1>Source</h1>
+                
+                <p>To implement a <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Job</a>  <a href="../../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a>  <a href="../../glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">component</a>, you must implement the
+<code>io.mantisrx.runtime.Source</code> interface. A Source returns <code>Observable&lt;Observable&lt;T&gt;&gt;</code>, that is, an
+<a href="../../glossary#observable" title="In ReactiveX an Observable is the method of processing a stream of data in a way that facilitates its transformation and consumption by observers. Observables come in hot and cold varieties. There is also a GroupedObservable that is specialized to grouped data.">Observable</a> that emits Observables. Each of the emitted Observables represents a stream of data
+from a single target server.</p>
+<h2 id="varieties-of-sources">Varieties of Sources<a class="headerlink" href="#varieties-of-sources" title="Permanent link">&para;</a></h2>
+<p>Sources can be roughly divided into two categories:</p>
+<ol>
+<li>Sources that read data from the output of other Mantis Jobs<ol>
+<li>this may include <a href="../../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> (more on this below)</li>
+<li>or ordinary Mantis Jobs</li>
+</ol>
+</li>
+<li>Custom sources that read data directly from Amazon S3, SQS, Apache <a href="../../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a>, etc.</li>
+</ol>
+<!-- You can find more information on sources in [Mantis Data Sources](https://confluence.netflix.com/display/API/Mantis+Data+Sources) <span class="tbd">Incorporate that document into this docs set or omit the link.</span> -->
+
+<h3 id="mantis-job-sources">Mantis Job Sources<a class="headerlink" href="#mantis-job-sources" title="Permanent link">&para;</a></h3>
+<p>You can string Mantis Jobs together by using the output of one Mantis Job as the input to another.
+This is useful if you want to break up your processing into multiple, reusable components and to
+take advantage of code and data reuse.</p>
+<p>In such a case, you do not have access to the complete set of <a href="../../mql">Mantis Query Language (MQL)</a>
+capabilities that you do in the case of a Source Job, but you can use MQL in client mode.</p>
+<h4 id="connecting-to-a-mantis-job">Connecting to a Mantis Job<a class="headerlink" href="#connecting-to-a-mantis-job" title="Permanent link">&para;</a></h4>
+<p>To connect to a Mantis Job,
+use a <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java"><code>JobSource</code></a> when you call <code>MantisJob.create()</code> — declare the following parameters when you use this class:</p>
+<ol>
+<li><code>sourceJobName</code> <em>(required)</em> — the name of any valid <a href="../../glossary#jobcluster" title="A Mantis Job Cluster is a containing entity for Mantis Jobs. It defines metadata and certain service-level agreements. Job Clusters ease job lifecycle management and job revisioning.">Job Cluster</a> (not necessarily a “Source Job”) <!-- MANTIS_SOURCEJOB_NAME_PARAM --></li>
+<li><code>sample</code> <em>(optional)</em> — use this if you want to <a href="../../glossary#sampling" title="Sampling is an MQL strategy for mitigating data volume issues. There are two sampling strategies: Random and Sticky. Random sampling uniformly downsamples the source stream to a percentage of its original volume. Sticky sampling selectively samples data from the source stream based on key values.">sample</a> the output <code>sample</code> times per second, or set this to <code>-1</code> to disable sampling <!-- MANTIS_SOURCEJOB_SAMPLE_PER_SEC_KEY --></li>
+</ol>
+<p>For example:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sourceJobName&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The name of the job&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;MyDefaultJob&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sample&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The number of samples per second&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">create</span><span class="p">();</span>
+</code></pre></div>
+
+
+<h3 id="source-job-sources">Source Job Sources<a class="headerlink" href="#source-job-sources" title="Permanent link">&para;</a></h3>
+<p>Mantis has a concept of <a href="../../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> which are Mantis <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> with added conveniences and efficiences
+that simplify accessing data from certain sources. Your job can simply connect to a source job as its
+data source rather than trying to retrieve the data from its native home.
+There are two advantages to this approach:</p>
+<ol>
+<li>Source Jobs handle all of the implementation details around interacting with the native data
+   source.</li>
+<li>Source Jobs come with a simple query interface based on the <a href="../../mql">Mantis Query Language (MQL)</a>,
+   which allows you to filter the data from the source before processing it. In the case of source
+   jobs that fetch data from application servers directly, this filter gets pushed all the way to
+   those target servers so that no data flows unless someone is asking for it.</li>
+<li>Source Jobs reuse data so that multiple matching MQL queries are forwarded downstream instead of
+   paying the cost to fetch and serialize/deserialize the same data multiple times from the upstream
+   source.</li>
+</ol>
+<h4 id="broadcast-mode">Broadcast Mode<a class="headerlink" href="#broadcast-mode" title="Permanent link">&para;</a></h4>
+<p>By default, Mantis will distribute the data that is output from the Source Job among the various
+workers in the processing stage of your Mantis Job. Each of those workers will get a subset of the
+complete data from the Source Job.</p>
+<p>You can override this by instructing the Source Job to use “broadcast mode”. If you do this, Mantis
+will send the complete set of data from the Source Job to <em>every</em> worker in your Job.</p>
+<h4 id="connecting-to-a-source-job">Connecting to a Source Job<a class="headerlink" href="#connecting-to-a-source-job" title="Permanent link">&para;</a></h4>
+<p>Since Source Jobs are fundamentally Mantis Jobs, you should
+use a <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java"><code>JobSource</code></a> when you call <code>MantisJob.create()</code> to connect to a particular Source Job.
+The difference is that you should pass in additional parameters:</p>
+<ol>
+<li><code>sourceJobName</code> <em>(required)</em> — the name of the source Job Cluster you want to connect to</li>
+<li><code>sample</code> <em>(required)</em> — use this if you want to <a href="../../glossary#sampling" title="Sampling is an MQL strategy for mitigating data volume issues. There are two sampling strategies: Random and Sticky. Random sampling uniformly downsamples the source stream to a percentage of its original volume. Sticky sampling selectively samples data from the source stream based on key values.">sample</a> the output <code>sample</code> times per second, or set this to <code>-1</code> to disable sampling</li>
+<li><code>criterion</code> <em>(required)</em> — a query expression in <a href="../../mql">MQL</a> to filter the source</li>
+<li><code>clientId</code> <em>(optional)</em> — by default, the <code>jobId</code> of the client Job; the Source Job uses this to distribute data between all the subscriptions of the client Job</li>
+<li><code>enableMetaMessages</code> <em>(optional)</em> — the source job may occasionally inject <a href="../../glossary#metamessage" title="A Source Job may occasionally inject meta messages into its data stream that indicate things like data drops.">meta messages</a> (with the prefix <code>mantis.meta.</code>) that indicate things like data drops on the Source Job side.</li>
+</ol>
+<p>For example:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">JobSource</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sourceJobName&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The name of the job&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;MyDefaultSourceJob&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">IntParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;sample&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The number of samples per second&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10000</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;criterion&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Filter the source with this MQL statement&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;true&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">StringParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;clientId&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;the ID of the client job&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">alwaysPass</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">parameterDefinition</span><span class="p">(</span><span class="k">new</span> <span class="n">BooleanParameter</span><span class="p">().</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;enableMetaMessages&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Is the source allowed to inject meta messages&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">alwaysPass</span><span class="p">())</span>
+            <span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;true&quot;</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">build</span><span class="p">())</span>
+         <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="err">…</span><span class="p">)</span>
+         <span class="p">.</span><span class="na">create</span><span class="p">();</span>
+</code></pre></div>
+
+
+<h3 id="custom-sources">Custom Sources<a class="headerlink" href="#custom-sources" title="Permanent link">&para;</a></h3>
+<p><a href="../../glossary#customsource" title="In contrast to a Source Job, which is a built-in variety of Source component designed to pull data from a common sort of data source, a custom source typically accesses data from less-common sources or has unusual delivery guarantee semantics.">Custom sources</a> may be implemented and used to access data sources for which Mantis does not have a Source Job.
+Implementers are free to implement the <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java">Source</a> interface to fetch data from an external source.
+<a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-kafka/src/main/java/io/mantisrx/connector/kafka/source/KafkaSource.java">Here</a> is an example in a source which implements the Source interface to consume data from Kafka.</p>
+<h2 id="learning-when-source-data-is-incomplete">Learning When Source Data is Incomplete<a class="headerlink" href="#learning-when-source-data-is-incomplete" title="Permanent link">&para;</a></h2>
+<p>You may want to know whether or not the stream you are receiving from your <a href="../../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">source</a> is complete.
+Streams may be incomplete for a number of reasons:</p>
+<ol>
+<li>A connection to one or more of the <a href="../../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Job</a>  <a href="../../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a> is lost.</li>
+<li>A connection exists but no data is flowing.</li>
+<li>Data is intentionally dropped from a source because of the <a href="../../glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a> strategy you are using.</li>
+</ol>
+<p>You can use the following <code>boolean</code> method within your <code>JobSource#call</code> method to determine whether or not all of your client
+connections are complete:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">DefaultSinkConnectionStatusObserver</span><span class="p">.</span><span class="na">getInstance</span><span class="p">(</span><span class="kc">true</span><span class="p">).</span><span class="na">isConnectedToAllSinks</span><span class="p">()</span>
+</code></pre></div>
+
+
+<!-- Do not edit below this line -->
+
+<!-- START -->
+
+<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
+
+<!-- END -->
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../introduction/" title="Introduction" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Introduction
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../processing-stage/" title="Processing Stage" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Processing Stage
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://twitter.com/NetflixOSS" target="_blank" rel="noopener" title="twitter.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://netflix.github.io/" target="_blank" rel="noopener" title="netflix.github.io" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/vendor.3636a4ec.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.e9fe3281.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../..",
+          features: [],
+          search: Object.assign({
+            worker: "../../../assets/javascripts/worker/search.5eca75d3.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
