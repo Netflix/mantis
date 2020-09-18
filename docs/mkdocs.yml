@@ -15,14 +15,13 @@ nav:
   - 'Develop':
     - 'Ingestion':
       - 'Netty': 'develop/ingestion/netty.md'
+    - 'Querying':
+      - 'Mantis Query Language': 'develop/querying/mql.md'
+      - 'Sampling': 'develop/querying/sampling.md'
     - 'Processing':
       - 'Writing Your First Job': 'develop/processing/word-count.md'
       - 'Writing Your Second Job': 'develop/processing/twitter.md'
       - 'Writing Your Third Job': 'develop/processing/group-by.md'
-    - 'Querying':
-      - 'Mantis Query Language': 'develop/querying/mql.md'
-      - 'Sampling': 'develop/querying/sampling.md'
-      - 'Scaling Limits': 'develop/querying/scaling-limits.md'
     - 'Connectors':
       - 'Iceberg (Beta)': 'develop/connectors/iceberg.md'
   - 'Deploy':
@@ -32,6 +31,7 @@ nav:
     - 'Autoscaling': 'operate/autoscaling.md'
   - 'Reference':
     - 'MQL': 'reference/mql.md'
+    - 'Job DSL': 'reference/dsl.md'
     - 'API': 'reference/api.md'
     - 'CLI': 'reference/cli.md'
   - 'Internals':

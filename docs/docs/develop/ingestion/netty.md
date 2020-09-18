@@ -14,21 +14,17 @@ happens directly within your application before any events are sent over the net
 Further, Mantis Publish only dispatches events if a client is subscribed with a matching query. This means that
 you can freely produce events without incurring the cost until an active subscription exists.
 
-## Add the dependency
+## Choose a Package
+
+MRE works with both Guice-enabled and standalone injectors.
+
+### Guice-based Injector
 
 ```groovy
 implementation 'io.mantisrx:mantis-publish-netty-guice:1.2.+'
 ```
 
-If you prefer not to use Guice, you can use the standalone dependency:
-
-```groovy
-implementation 'io.mantisrx:mantis-publish-netty:1.2.+'
-```
-
-## Set up the client
-
-### Guice
+#### Enable the Publisher Client
 
 Inject the `MantisRealtimeEventsPublishModule` into your application.
 In addition to injecting `MantisRealtimeEventsPublishModule` you will also need to add the 
@@ -42,13 +38,35 @@ Injector injector = Guice.createInjector(
     new SpectatorModule());
 ```
 
-### Standalone
+### Standalone Injector
+
+```groovy
+implementation 'io.mantisrx:mantis-publish-netty:1.2.+'
+```
+
+#### Enable the Publisher Client
 
 Follow the [example standalone initializer](https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java) to manually inject dependencies.
 Once you have constructed a `MrePublishClientInitializer`, call the `MantisPublishClientInitializer#start` method
 to initialize underlying components.
 
-## Send your events
+## Configure Where to Send Svents
+
+You will need to configure the location of the Mantis API server for the mantis-publish library to bootstrap.
+
+Add the following properties to your `application.properties`:
+
+```bash
+mantis.publish.discovery.api.hostname=<IP of Mantis API>
+
+# mantis api port
+mantis.publish.discovery.api.port=<port for Mantis API>
+
+# This application's name
+mantis.publish.app.name=JavaApp
+``` 
+
+## Send Events into Mantis
 
 For each event your application wishes to send to Mantis, create a `Event` object with your desired event fields,
 and pass that `Event` to the `MantisEventPublisher#publish` method.
@@ -66,21 +84,9 @@ event.set("testKey", "testValue");
 eventPublisher.publish(event);
 ```
 
-### Configure where to send events
+## Consuming a Mantis Stream
 
-You will need to configure the location of the Mantis API server for the mantis-publish library to bootstrap.
-
-Add the following properties to your `application.properties`:
-
-```bash
-mantis.publish.discovery.api.hostname=<IP of Mantis API>
-
-# mantis api port
-mantis.publish.discovery.api.port=<port for Mantis API>
-
-# This application's name
-mantis.publish.app.name=JavaApp
-``` 
+Visit the [Querying page](../querying/mql.md) for details on how you can consume your application's event stream.
 
 ## Configuration Options
 
