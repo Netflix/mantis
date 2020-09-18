@@ -15,7 +15,7 @@
     
     
       
-        <title>Scaling Limits - Mantis</title>
+        <title>Iceberg (Beta) - Mantis</title>
       
     
     
@@ -60,7 +60,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#details" class="md-skip">
+        <a href="#sink" class="md-skip">
           Skip to content
         </a>
       
@@ -87,7 +87,7 @@
           </span>
           <span class="md-header-nav__topic md-ellipsis">
             
-              Scaling Limits
+              Iceberg (Beta)
             
           </span>
         </div>
@@ -493,12 +493,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" checked>
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
     
     <label class="md-nav__link" for="nav-3-3">
       Querying
@@ -518,7 +516,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../mql/" title="Mantis Query Language" class="md-nav__link">
+    <a href="../../querying/mql/" title="Mantis Query Language" class="md-nav__link">
       Mantis Query Language
     </a>
   </li>
@@ -530,7 +528,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../sampling/" title="Sampling" class="md-nav__link">
+    <a href="../../querying/sampling/" title="Sampling" class="md-nav__link">
       Sampling
     </a>
   </li>
@@ -540,72 +538,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Scaling Limits
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-    
-    <a href="./" title="Scaling Limits" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../../querying/scaling-limits/" title="Scaling Limits" class="md-nav__link">
       Scaling Limits
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#details" class="md-nav__link">
-    Details
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#solutions" class="md-nav__link">
-    Solutions
-  </a>
-  
-    <nav class="md-nav" aria-label="Solutions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#solution-a-implemented" class="md-nav__link">
-    Solution A (Implemented)
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#solution-b-future-work" class="md-nav__link">
-    Solution B (Future Work)
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
         
@@ -618,10 +555,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4" checked>
     
     <label class="md-nav__link" for="nav-3-4">
       Connectors
@@ -639,11 +578,99 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../../connectors/iceberg/" title="Iceberg (Beta)" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Iceberg (Beta)
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="Iceberg (Beta)" class="md-nav__link md-nav__link--active">
       Iceberg (Beta)
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sink" class="md-nav__link">
+    Sink
+  </a>
+  
+    <nav class="md-nav" aria-label="Sink">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#writers" class="md-nav__link">
+    Writers
+  </a>
+  
+    <nav class="md-nav" aria-label="Writers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#separate-processing-stage" class="md-nav__link">
+    Separate Processing Stage
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-an-existing-processing-stage" class="md-nav__link">
+    With an existing Processing Stage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#committer" class="md-nav__link">
+    Committer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-options" class="md-nav__link">
+    Configuration Options
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    Metrics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -1013,30 +1040,57 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#details" class="md-nav__link">
-    Details
+  <a href="#sink" class="md-nav__link">
+    Sink
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#solutions" class="md-nav__link">
-    Solutions
-  </a>
-  
-    <nav class="md-nav" aria-label="Solutions">
+    <nav class="md-nav" aria-label="Sink">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#solution-a-implemented" class="md-nav__link">
-    Solution A (Implemented)
+  <a href="#writers" class="md-nav__link">
+    Writers
+  </a>
+  
+    <nav class="md-nav" aria-label="Writers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#separate-processing-stage" class="md-nav__link">
+    Separate Processing Stage
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#solution-b-future-work" class="md-nav__link">
-    Solution B (Future Work)
+  <a href="#with-an-existing-processing-stage" class="md-nav__link">
+    With an existing Processing Stage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#committer" class="md-nav__link">
+    Committer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-options" class="md-nav__link">
+    Configuration Options
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    Metrics
   </a>
   
 </li>
@@ -1058,7 +1112,7 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/netflix/mantis/edit/master/docs/develop/querying/scaling-limits.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/develop/connectors/iceberg.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
@@ -1066,56 +1120,301 @@
                   
                 
                 
-                  <h1>Scaling Limits</h1>
+                  <h1>Iceberg (Beta)</h1>
                 
-                <p><a href="../../glossary#mql" title="You use Mantis Query Language to define filters and other data processing that Mantis applies to a Source data stream at its point of origin, so as to reduce the amount of data going over the wire.">MQL</a> Queries that implement <a href="../MQL/operators#aggregates">aggregates (<code>COUNT</code>, <code>SUM</code>, etc.)</a>, as
-well as those that use windowing (like <a href="../MQL/operators#window"><code>window</code></a> or
-<a href="../MQL/operators#group-by"><code>group by</code></a>), must necessarily maintain state.</p>
-<p><a href="../glossary#mantispublish">The Mantis Publish library)</a> and the <a href="../../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> do not perform MQL
-aggregation on the server side; consequently this must take place on the client side. This limits
-the blast radius if a client runs a long window or runs an aggregate against a large amount of data.
-However this creates potential scaling problems on the client side. This page will help you address
-such problems.</p>
-<h2 id="details">Details<a class="headerlink" href="#details" title="Permanent link">&para;</a></h2>
-<p>There are two primary technical concerns in these cases:</p>
-<ol>
-<li>Windowing must necessarily buffer the output until the end of the window.</li>
-<li><code>group by</code> cannot run multithreaded as <a href="../../glossary#rxjava" title="RxJava is the Java implementation of ReactiveX, a software technique for transforming, combining, reacting to, and managing streams of data.">RxJava</a> does not guarantee pairs with the same key end up
-   on the same thread.</li>
-</ol>
-<p>In the first case, as a client you’re simply facing a memory issue as you must have enough memory to
-buffer until the end of each window. However usually when you window, you are also performing some
-form of aggregate against the window (otherwise there is little point in windowing rather than just
-emitting the data immediately).</p>
-<p>The second case requires a single thread in order to guarantee that aggregate calculations against
-groups will be performed together.</p>
-<p>A naive solution would be to always run MQL on a single thread. This solves the problem but is the
-least-scalable solution and also impacts queries do not require such restrictive behavior.</p>
-<h2 id="solutions">Solutions<a class="headerlink" href="#solutions" title="Permanent link">&para;</a></h2>
-<p>There are a number of possible approaches you can take to address this problem. These primarily
-involve a tradeoff between engineering effort and effectiveness.</p>
-<h3 id="solution-a-implemented">Solution A (Implemented)<a class="headerlink" href="#solution-a-implemented" title="Permanent link">&para;</a></h3>
-<p>The MQL library includes <code>isAggregate()</code>, which is a function of <code>String</code> ⇒ <code>Boolean</code> that indicates
-whether or not a given query requires an aggregate operation. This allows you to test a query to
-determine if if requires single-threading and handle it appropriately if so.</p>
-<p>This represents a low-effort / medium-effectiveness tradeoff; only queries that require the
-serialized behavior will suffer the performance penalty.</p>
-<h3 id="solution-b-future-work">Solution B (Future Work)<a class="headerlink" href="#solution-b-future-work" title="Permanent link">&para;</a></h3>
-<p>A more scalable solution would be to enable MQL to emit additional formats. An example of this would
-be a Mantis topology backend that could emit multi-<a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stage</a> Mantis <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Jobs</a> that implement the desired
-operation in a scalable fashion. A group-by stage that distributes values to downstream workers
-using consistent hashing would be able to scale horizontally based on the number of groups (still
-vertically for window size).</p>
-<p>This solution requires significantly more engineering effort, but represents a very large increase
-in scalability for these queries. It would be a possibly-fruitful road for the Mantis open source
-software project to travel.</p>
-<!-- Do not edit below this line -->
+                <h2 id="sink">Sink<a class="headerlink" href="#sink" title="Permanent link">&para;</a></h2>
+<p>Add this package to your dependencies:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">implementation</span> <span class="s2">&quot;io.mantisrx:mantis-connector-iceberg:1.2.+&quot;</span>
+</code></pre></div>
 
-<!-- START -->
 
-<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
+<p>The Iceberg Sink has two components: <code>Writers</code> and a <code>Committer</code>.</p>
+<h3 id="writers">Writers<a class="headerlink" href="#writers" title="Permanent link">&para;</a></h3>
+<p><strong>Writers</strong> write Iceberg <code>Record</code>s to files in a specific file format. Writers periodically
+stage their data by flushing their underlying files to produce metadata in the form of
+<code>DataFile</code>s which are sent to Committers.</p>
+<p>You can instantiate and use an <code>IcebergWriter</code> in a separate Processing Stage or with
+an existing Processing Stage.</p>
+<h4 id="separate-processing-stage">Separate Processing Stage<a class="headerlink" href="#separate-processing-stage" title="Permanent link">&para;</a></h4>
+<p>Use this approach to decouple your application logic from Iceberg writing logic to
+may make it easier to debug your Mantis Job. This approach incurs extra encode/decode and
+network cost to move data between workers.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ExampleIcebergSinkJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="p">{</span>
 
-<!-- END -->
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="nf">getJobInstance</span><span class="p">()</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="o">&lt;</span><span class="n">source</span> <span class="n">that</span> <span class="n">produces</span> <span class="n">MantisServerSentEvents</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="hll">          <span class="p">.</span><span class="na">stage</span><span class="p">(...)</span>                                                           <span class="c1">// (0)</span>
+</span><span class="hll">          <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">IcebergWriterStage</span><span class="p">(),</span> <span class="n">IcebergWriterStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>         <span class="c1">// (1)</span>
+</span>          <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">IcebergCommitterStage</span><span class="p">(),</span> <span class="n">IcebergCommitterStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>   <span class="c1">// (2)</span>
+          <span class="p">.</span><span class="na">sink</span><span class="p">(...)</span>
+          <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="n">NetflixLifecycles</span><span class="p">.</span><span class="na">governator</span><span class="p">(</span>
+              <span class="o">&lt;</span><span class="n">job</span> <span class="n">file</span> <span class="n">properties</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">,</span>
+              <span class="k">new</span> <span class="n">IcebergModule</span><span class="p">()))</span>                                             <span class="c1">// (3)</span>
+          <span class="p">.</span><span class="na">create</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<blockquote>
+<p><strong>(0)</strong> A series of Processing Stages that you define for your application logic. Produces an Iceberg Record.
+To emit Iceberg Records out of your separate Processing Stage, add the <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42">Iceberg Record Codec</a> to your
+stage config.</p>
+<p><strong>(1)</strong> A Processing Stage of <strong>n</strong> parallelizable <code>IcebergWriter</code>s. The Stage Config automatically adds
+an <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49">Iceberg DataFile Codec</a> to encode/decode DataFiles between these workers and the Committer
+workers from the next stage downstream.</p>
+<p><strong>(2)</strong> A Processing Stage for <strong>1</strong> <code>IcebergCommitter</code>.</p>
+<p><strong>(3)</strong> A module for injecting dependencies and configs required to authenticate/connect/interact
+with backing Iceberg infrastructure.</p>
+</blockquote>
+<h4 id="with-an-existing-processing-stage">With an existing Processing Stage<a class="headerlink" href="#with-an-existing-processing-stage" title="Permanent link">&para;</a></h4>
+<p>Use this approach to avoid incurring encode/decode and network costs. This approach may
+make your Mantis Job more difficult to debug.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ExampleIcebergSinkJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="p">{</span>
+
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="nf">getJobInstance</span><span class="p">()</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="o">&lt;</span><span class="n">source</span> <span class="n">that</span> <span class="n">produces</span> <span class="n">MantisServerSentEvents</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="hll">          <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">ProcessingAndWriterStage</span><span class="p">(),</span> <span class="o">&lt;</span><span class="n">config</span><span class="o">&gt;</span><span class="p">)</span>                      <span class="c1">// (0)</span>
+</span>          <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">IcebergCommitterStage</span><span class="p">(),</span> <span class="n">IcebergCommitterStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>   <span class="c1">// (1)</span>
+          <span class="p">.</span><span class="na">sink</span><span class="p">(...)</span>
+          <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="n">NetflixLifecycles</span><span class="p">.</span><span class="na">governator</span><span class="p">(</span>
+              <span class="o">&lt;</span><span class="n">job</span> <span class="n">file</span> <span class="n">properties</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">,</span>
+              <span class="k">new</span> <span class="n">IcebergModule</span><span class="p">()))</span>                                             <span class="c1">// (2)</span>
+          <span class="p">.</span><span class="na">create</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * Example class which takes in MantisServerSentEvents, performs some logic,</span>
+<span class="cm"> * produces Iceberg Records, writes the Records to files,</span>
+<span class="cm"> * and produces DataFiles for a downstream Iceberg Committer.</span>
+<span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProcessingAndWriterStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">MantisServerSentEvent</span><span class="p">,</span> <span class="n">DataFile</span><span class="o">&gt;</span> <span class="p">{</span>
+
+<span class="hll">  <span class="kd">private</span> <span class="n">Transformer</span> <span class="n">transformer</span><span class="p">;</span>
+</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">Record</span><span class="p">,</span> <span class="n">DataFile</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">Record</span><span class="p">,</span> <span class="n">DataFile</span><span class="o">&gt;</span><span class="p">()</span>
+        <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">IcebergCodecs</span><span class="p">.</span><span class="na">dataFile</span><span class="p">())</span>                                        <span class="c1">// (3)</span>
+        <span class="p">.</span><span class="na">withParameters</span><span class="p">(...);</span>
+  <span class="p">}</span>
+
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">)</span> <span class="p">{</span>
+<span class="hll">    <span class="n">transformer</span> <span class="o">=</span> <span class="n">IcebergWriterStage</span><span class="p">.</span><span class="na">newTransformer</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>                   <span class="c1">// (4)</span>
+</span>  <span class="p">}</span>
+
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">DataFile</span><span class="o">&gt;</span> <span class="nf">call</span><span class="p">(</span><span class="n">Context</span> <span class="n">context</span><span class="p">,</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Record</span><span class="o">&gt;</span> <span class="n">recordObservable</span><span class="p">)</span> <span class="p">{</span>
+<span class="hll">    <span class="k">return</span> <span class="n">recordObservable</span>
+</span><span class="hll">        <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="o">&lt;</span><span class="n">some</span> <span class="n">application</span> <span class="n">logic</span><span class="o">&gt;</span><span class="p">)</span>
+</span><span class="hll">        <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="o">&lt;</span><span class="n">some</span> <span class="n">more</span> <span class="n">application</span> <span class="n">logic</span><span class="o">&gt;</span><span class="p">)</span>
+</span><span class="hll">        <span class="p">.</span><span class="na">compose</span><span class="p">(</span><span class="n">transformer</span><span class="p">);</span>                                                  <span class="c1">// (5)</span>
+</span>  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<blockquote>
+<p><strong>(0)</strong> A series of Processing Stages for your application logic <em>and</em> Iceberg writing logic.
+You may further reduce network cost by combining your Processing Stage(s) logic into your Source.</p>
+<p><strong>(1)</strong> A Processing Stage for <strong>1</strong> <code>IcebergCommitter</code>.</p>
+<p><strong>(2)</strong> A module for injecting dependencies and configs required to authenticate/connect/interact
+with backing Iceberg infrastructure.</p>
+<p><strong>(3)</strong> Remember to add an Iceberg DataFile Codec to emit <code>DataFile</code>s to the Committer.</p>
+<p><strong>(4)</strong> Create a new Iceberg Writer <a href="http://reactivex.io/RxJava/javadoc/io/reactivex/ObservableTransformer.html">Transformer</a>
+from the static method provided by <code>IcebergWriterStage</code>.</p>
+<p><strong>(5)</strong> <a href="http://reactivex.io/RxJava/javadoc/io/reactivex/Observable.html#compose-io.reactivex.ObservableTransformer-">Compose</a>
+the transformer with your application logic Observable.</p>
+</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Writers are stateless and may be parallelized/autoscaled.</p>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>To avoid poor write performance for <em>partitioned Iceberg Tables</em>, make sure your upstream producers
+write Iceberg Records in alignment with the table's partitioning as best they can. </p>
+<p>For example:</p>
+<ul>
+<li>Given an Iceberg Table partitioned by <code>hour</code></li>
+<li>10 upstream producers writing Iceberg Records</li>
+</ul>
+<p>Each of the 10 producers <em>should</em> try to produce events aligned by the hour.</p>
+<p>Writes may be <em>unordered</em>; the only concern is aligning writes to the table's partitioning.</p>
+<p>If writes are not well-aligned, then results will be correct, but write performance negatively impacted.</p>
+</div>
+<h3 id="committer">Committer<a class="headerlink" href="#committer" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ExampleIcebergSinkJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="p">{</span>
+
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="nf">getJobInstance</span><span class="p">()</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">MantisJob</span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="o">&lt;</span><span class="n">source</span> <span class="n">that</span> <span class="n">produces</span> <span class="n">Iceberg</span> <span class="n">Records</span><span class="o">&gt;</span><span class="p">)</span>
+          <span class="p">.</span><span class="na">stage</span><span class="p">(...)</span>
+          <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">IcebergWriterStage</span><span class="p">(),</span> <span class="n">IcebergWriterStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
+<span class="hll">          <span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span> <span class="n">IcebergCommitterStage</span><span class="p">(),</span> <span class="n">IcebergCommitterStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>   <span class="c1">// (1)</span>
+</span>          <span class="p">.</span><span class="na">sink</span><span class="p">(...)</span>
+          <span class="p">.</span><span class="na">lifecycle</span><span class="p">(</span><span class="n">NetflixLifecycles</span><span class="p">.</span><span class="na">governator</span><span class="p">(</span>
+              <span class="o">&lt;</span><span class="n">job</span> <span class="n">file</span> <span class="n">properties</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">,</span>
+              <span class="k">new</span> <span class="n">IcebergModule</span><span class="p">()))</span>
+          <span class="p">.</span><span class="na">create</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<blockquote>
+<p><strong>(1)</strong> A Processing Stage for <strong>1</strong> <code>IcebergCommitter</code>. The Committer outputs a <code>Map</code> which
+you can subscribe to with a Sink for optional debugging or connecting to another Mantis Job.
+Otherwise, a Sink not required because the Committer will write directly to Iceberg.</p>
+</blockquote>
+<p>A <strong>Committer</strong> commits <code>DataFile</code>s to Iceberg. <code>Records</code> are queryable from the Iceberg table
+only after a Committer commits <code>DataFile</code>s. A Committer commits on a configured interval (default: 5 min).</p>
+<p>A Committer aligns to Mantis's <em>at-most-once</em> guarantee. This means if a commit fails, it
+<em>will not</em> retry that commit. It will instead continue and try to commit for the next window
+of <code>Record</code>s at the next interval. This avoids backpressure issues originating from downstream
+and is therefore more suitable to operational use cases.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>You should have only <strong>one</strong> Committer per Iceberg Table and try to avoid a high frequency commit
+intervals (default: <code>5 min</code>). This avoids commit pressure on Iceberg.</p>
+</div>
+<h3 id="configuration-options">Configuration Options<a class="headerlink" href="#configuration-options" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th><strong>Name</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>writerRowGroupSize</code></td>
+<td>int</td>
+<td>100</td>
+<td>Number of rows to chunk before checking for file size</td>
+</tr>
+<tr>
+<td><code>writerFlushFrequencyBytes</code></td>
+<td>String</td>
+<td>"134217728" (128 MiB)</td>
+<td>Flush frequency by size in Bytes</td>
+</tr>
+<tr>
+<td><code>writerFlushFrequencyMsec</code></td>
+<td>String</td>
+<td>"60000" (1 min)</td>
+<td>Flush frequency by time in milliseconds</td>
+</tr>
+<tr>
+<td><code>writerFileFormat</code></td>
+<td>String</td>
+<td>parquet</td>
+<td>File format for writing data files to backing Iceberg store</td>
+</tr>
+<tr>
+<td><code>commitFrequencyMs</code></td>
+<td>String</td>
+<td>"300000" (5 min)</td>
+<td>Iceberg Committer frequency by time in milliseconds</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h3>
+<p>Prefix: <code>io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics</code></p>
+<table>
+<thead>
+<tr>
+<th><strong>Name</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openSuccessCount</code></td>
+<td>Counter</td>
+<td>Number of times a file was successfully opened</td>
+</tr>
+<tr>
+<td><code>openFailureCount</code></td>
+<td>Counter</td>
+<td>Number of times a file failed to open</td>
+</tr>
+<tr>
+<td><code>writeSuccessCount</code></td>
+<td>Counter</td>
+<td>Number of times an Iceberg <code>Record</code> was successfully written to a file</td>
+</tr>
+<tr>
+<td><code>writeFailureCount</code></td>
+<td>Counter</td>
+<td>Number of times an Iceberg <code>Record</code> failed to be written to a file</td>
+</tr>
+<tr>
+<td><code>batchSuccessCount</code></td>
+<td>Counter</td>
+<td>Number of times a file was successfully flushed to produce a <code>DataFile</code></td>
+</tr>
+<tr>
+<td><code>batchFailureCount</code></td>
+<td>Counter</td>
+<td>Number of times a file failed to flush</td>
+</tr>
+<tr>
+<td><code>batchSize</code></td>
+<td>Gauge</td>
+<td>Number of Iceberg <code>Records</code> per writer flush as described within a <code>DataFile</code></td>
+</tr>
+<tr>
+<td><code>batchSizeBytes</code></td>
+<td>Gauge</td>
+<td>Cumulative size of Iceberg <code>Records</code> from a writer flush</td>
+</tr>
+</tbody>
+</table>
+<p>Prefix: <code>io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics</code></p>
+<table>
+<thead>
+<tr>
+<th><strong>Name</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invocationCount</code></td>
+<td>Counter</td>
+<td>Number of times a commit was invoked</td>
+</tr>
+<tr>
+<td><code>commitSuccessCount</code></td>
+<td>Counter</td>
+<td>Number of times a commit was successful</td>
+</tr>
+<tr>
+<td><code>commitFailureCount</code></td>
+<td>Counter</td>
+<td>Number of times a commit failed</td>
+</tr>
+<tr>
+<td><code>commitLatencyMsec</code></td>
+<td>Gauge</td>
+<td>Time it took to perform the most recent commit</td>
+</tr>
+<tr>
+<td><code>commitBatchSize</code></td>
+<td>Gauge</td>
+<td>Cumulative size of <code>DataFile</code>s from a commit</td>
+</tr>
+</tbody>
+</table>
                 
               
               
@@ -1134,7 +1433,7 @@ software project to travel.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../sampling/" title="Sampling" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../../querying/scaling-limits/" title="Scaling Limits" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -1143,19 +1442,19 @@ software project to travel.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Sampling
+                Scaling Limits
               </div>
             </div>
           </a>
         
         
-          <a href="../../connectors/iceberg/" title="Iceberg (Beta)" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../../../operate/tuning/" title="Tuning" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-footer-nav__title">
               <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Iceberg (Beta)
+                Tuning
               </div>
             </div>
             <div class="md-footer-nav__button md-icon">
