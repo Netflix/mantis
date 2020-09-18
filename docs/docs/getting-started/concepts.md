@@ -3,7 +3,7 @@
 Mantis provides Stream-processing-As-a-Service. It is a self contained platform that manages all tasks associated
 with running thousands of stream processing jobs. 
 
-Take a look at [Infrastructure Overview](../internals/infrastructure.md) to get an understanding of the physical components
+Take a look at [Infrastructure Overview](../internals/infrastructure-overview.md) to get an understanding of the physical components
 of the Mantis Platform.
  
 Let us walk through some of the key concepts and terminologies used in Mantis.
@@ -53,7 +53,7 @@ Each Worker belongs to exactly one Mantis Stage.
 
 ## Stages (Group of workers)
 
-A Mantis job is logically divided into one or more [stages](../developing/writingjobs/stage.md). A stage is a collection
+A Mantis job is logically divided into one or more [stages](../internals/mantis-jobs/processing-stage.md). A stage is a collection
 of homogeneous Mantis Workers that perform the same computation. A typical map-reduce style
 job would be represented by three stages in Mantis (shuffle, window/aggregate and collect)
 
@@ -64,9 +64,9 @@ The presence of multiple stages imply network hops which allows users to distrib
 allowing for more scalability.
  
 Mantis allows each stage to dynamically scale the number of workers in the stage independently with the help of an
-[autoscaling](../production/autoscaling.md) policy.
+[autoscaling](../operate/autoscaling.md) policy.
 
-!!! note
+!!! info
     Autoscaling is only recommended on stateless stages. For stateful stages the user would need to implement
     logic to move state to new workers. In cases where the state can be rebuilt rapidly this is not a concern.  
 
@@ -82,7 +82,7 @@ Broadly speaking it covers all aspects of the running a Mantis Job which include
 
 ## Source Job
 
-A source job is a type of Mantis Job that makes data available to other Mantis Jobs via an [MQL](../developing/mql/index.md) interface.
+A source job is a type of Mantis Job that makes data available to other Mantis Jobs via an [MQL](../develop/querying/mql.md) interface.
 Downstream jobs connect to the Sink (Server Sent Event) of the Source job with an MQL query which denotes what data the job is interested in.
 Each event flowing through the Source job is evaluated against these MQL queries.
 Events matching a particular query are then streamed to the corresponding downstream job.
@@ -122,7 +122,7 @@ Reads data from one or more Kafka topics and makes it available for downstream c
 
 2. [Publish Source Job](https://github.com/Netflix/mantis-source-jobs/tree/master/publish-source-job):
 Works the the mantis-publish library to fetch data on-demand from external applications and make it
-available to downstream consumers. See the [Mantis Publish example](./samples/publishsample.md) to see
+available to downstream consumers. See the [On-Demand Sample](samples/on-demand.md) to see
 this in action.
 
 Users can also build their own source jobs see the [Synthetic Source Job](https://github.com/Netflix/mantis-examples/tree/master/synthetic-sourcejob) example.
@@ -144,7 +144,7 @@ Job chaining has proven to be extremely useful while operating at scale. It is w
   
 ## Mantis Query Language (MQL)
  
-[MQL](../developing/mql/index.md) is a SQL like language that allows users to work with streaming data without having to write Java code.
+[MQL](../develop/querying/mql.md) is a SQL like language that allows users to work with streaming data without having to write Java code.
 
 Example MQL query:
 ```bash
@@ -168,7 +168,7 @@ and uses [Fenzo](https://github.com/Netflix/Fenzo/) to optimally match workers t
 
 ## Mantis API
 
-The [Mantis API](../developing/api/index.md) is almost like a traditional API server which proxies request to the Mantis Master. 
+The [Mantis API](../reference/api.md) is almost like a traditional API server which proxies request to the Mantis Master. 
 But has additional capabilities such as:
  
 - Allowing users to stream the output of a job via web sockets (`/api/v1/jobConnectbyid/jobID` API)

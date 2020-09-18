@@ -1,4 +1,5 @@
-The Mantis Publish library allows your application to stream events into Mantis on-demand.
+You can stream events on-demand from your application to be ingested directly into Mantis
+using the Mantis Publish library (sometimes casually referred to as "MRE").
 
 Mantis Publish takes care of filtering the events you send into Mantis, and it will only transmit them over the
 network if a downstream consumer that is interested in such events is currently subscribed.
@@ -13,52 +14,48 @@ happens directly within your application before any events are sent over the net
 Further, Mantis Publish only dispatches events if a client is subscribed with a matching query. This means that
 you can freely produce events without incurring the cost until an active subscription exists.
 
-## How to Add the Mantis Publish Library
+## Add the dependency
 
-To add this library to your application, include [mantis-publish-netty](https://search.maven.org/search?q=a:mantis-publish-netty)
-in your application’s dependencies.
-
-```bash
-compile 'io.mantisrx:mantis-publish-netty:1.2.+'
+```groovy
+implementation 'io.mantisrx:mantis-publish-netty-guice:1.2.+'
 ```
 
-If your application is guice enabled you can do the following
-```bash
-compile 'io.mantisrx:mantis-publish-netty-guice:1.2.+'
+If you prefer not to use Guice, you can use the standalone dependency:
+
+```groovy
+implementation 'io.mantisrx:mantis-publish-netty:1.2.+'
 ```
-!!! note
-    A spring based module is coming soon.
 
-## How to Stream Events Into Mantis
+## Set up the client
 
-### Setting up the client.
-To stream events into Mantis
-
-***Without dependency injection***:
-
-Directly instantiate a `MantisEventPublisher` in your application code. In order to create a `MantisEventPublisher`,
-you will have to inject a few parameters. An example of which parameters are required and how to inject them
-can be found in [here](https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java).
-Next, you must use the `MrePublishClientInitializer` class and call `MrePublishClientInitializer#start` to start all
-the underlying components
-
-***With Guice***:
+### Guice
 
 Inject the `MantisRealtimeEventsPublishModule` into your application.
 In addition to injecting `MantisRealtimeEventsPublishModule` you will also need to add the 
 `ArchaiusModule` and the `SpectatorModule` if not already injected.
-```java
-    Injector injector = Guice.createInjector(new BasicModule(), new ArchaiusModule(),
-                new MantisRealtimeEventsPublishModule(), new SpectatorModule());
+
+```java hl_lines="3 4 5"
+Injector injector = Guice.createInjector(
+    new MyBasicModule(),
+    new ArchaiusModule(),
+    new MantisRealtimeEventsPublishModule(),
+    new SpectatorModule());
 ```
 
-Once injected, either manually via constructor or an injection framework such as Guice or Spring, the mantis-publish
-library is ready for use.
+### Standalone
+
+Follow the [example standalone initializer](https://github.com/Netflix/mantis-publish/blob/master/mantis-publish-netty/src/test/java/io/mantisrx/publish/netty/LocalMrePublishClientInitializer.java) to manually inject dependencies.
+Once you have constructed a `MrePublishClientInitializer`, call the `MantisPublishClientInitializer#start` method
+to initialize underlying components.
+
+## Send your events
 
 For each event your application wishes to send to Mantis, create a `Event` object with your desired event fields,
-and pass that `Event` to the `MantisEventPublisher#publish` method. For example:
+and pass that `Event` to the `MantisEventPublisher#publish` method.
 
-```java hl_lines="9 18"
+For example:
+
+```java hl_lines="2 3 8"
 // Create an `Event` for Mantis Publish using your application event.
 final Event event = new Event();
 event.set("testKey", "testValue");
@@ -69,11 +66,11 @@ event.set("testKey", "testValue");
 eventPublisher.publish(event);
 ```
 
-### Configuring where to send data
+### Configure where to send events
 
-We need to configure the location of the Mantis API server for the mantis-publish library to bootstrap
+You will need to configure the location of the Mantis API server for the mantis-publish library to bootstrap.
 
-Add the following properties to your `application.properties`
+Add the following properties to your `application.properties`:
 
 ```bash
 mantis.publish.discovery.api.hostname=<IP of Mantis API>
@@ -85,123 +82,49 @@ mantis.publish.discovery.api.port=<port for Mantis API>
 mantis.publish.app.name=JavaApp
 ``` 
 
-
-## The Runtime Flow of Mantis Publish
-
-Mantis Publish runtime flow consists of three phases: connecting, event processing, and event delivery.
-
-### Phase 1: Connecting
-
-Mantis Publish will only stream an event from your application into Mantis if there is a subscriber to that
-specific application instance with an MQL query that matches the event. Any [Mantis Job] can connect
-to these applications. However, it is a best practice to have [Source Jobs] connect to Mantis Publish
-applications. This is because Source Jobs provide several conveniences over regular Mantis Jobs,
-such as multiplexing events and connection management. By leveraging Source Jobs as an intermediary,
-Mantis Jobs are able to consume events from an external source without having to worry about
-lower-level details of that external source.
-
-This is possible through job chaining, which Mantis provides by default. When connecting to a
-Mantis Publish application, downstream Mantis Jobs will send subscription requests with an MQL query via HTTP to a Source
-Job. The Source Job will store these subscriptions in memory. These subscriptions are then fetched by upstream
-applications at the edge running the Mantis Publish library. Once the upstream edge Mantis Publish application
-is aware of the subscription, it will start pushing events downstream into the Source Job.
-
-!!! note
-    The Mantis Publish library not only handles subscriptions, but also takes care of discovering Source Job workers
-    so you do not have to worry about Source Job rebalancing/autoscaling.
-    For more information about Source Jobs see
-    [Mantis Source Jobs](../../internals/sourcejobs).
-
-#### Creating Stream Subscriptions
-
-Clients such as Mantis Jobs connect to a Mantis Publish application by submitting a subscription represented
-by an HTTP request. Mantis Publish’s `StreamManager` maintains these subscriptions in-memory. The
-`StreamManager` manages internal resources such as subscriptions, streams, and internal processing
-queues.
-
-Clients can create subscriptions to different event streams. There are two types:
-
-1. **`default` streams** contain events emitted by applications that use the Mantis Publish library.
-1. **`log` streams** contain events which may not be core to the application, such as log or general infrastructure events.
-
-### Phase 2: Event Processing
-
-Event processing within Mantis Publish takes place in two steps: event ingestion and event dispatch.
-
-#### Event Ingestion
-
-Event ingestion begins at the edge, in your application, by invoking `EventPublisher#publish` which places the
-event onto an internal queue for dispatching.
-
-#### Event Dispatch
-
-Events are dispatched by a drainer thread created by the Event Publisher. The drainer will drain events
-from the internal queue previously populated by `EventPublisher#publish`, perform some transformations,
-and finally dispatch events over the network and into Mantis.
-
-Events are transformed by an `EventProcessor` which processes events one at a time.
-Transformation includes the following steps:
-
-1. Masks sensitive fields in the event.
-    - Sensitive fields are referenced by a blacklist defined by a configuration
-      (`mantis.publish.blacklist`).
-    - This blacklist is a comma-delimited string of keys you wish to blacklist in your event. The
-      `param.password` key is included by default.
-1. Evaluates the MQL query of each subscription and builds a list of matching subscriptions.
-1. For each matching subscription, enriches the event with a superset of fields from the MQL query
-   from all the other matching subscriptions (see the following diagram).
-1. Sends this enriched event to all of the subscribers (see
-   [Event Delivery](#phase-3-event-delivery) below for the details).
-
-!!! note
-    More Mantis Publish configuration options can be found [here](https://github.com/Netflix/mantis-publish/blob/d69d549335cd74149395e9a48780dd702bbc1b82/mantis-publish-core/src/main/java/io/mantisrx/publish/config/MrePublishConfiguration.java).
-
-![RequestEventProcessor includes all RequestEvent fields requested by any subscriber in the results it gives to all subscribers](../images/RequestEventProcessor.svg)
-
-### Phase 3: Event Delivery
-
-Mantis Publish delivers events on-demand. When a client subscribes to a Mantis Job that issues an MQL query,
-the Event Publisher delivers the event using non-blocking I/O.
-
-
-## Properties
+## Configuration Options
 
 There are a number of configuration options available to control the behavior of the publishing client.
 
-| **Property**  | **Description** | **Default Value** |
-| --- | --- | --- |
-| mantis.publish.enabled | Determine if event processing is enabled. | true |
-| mantis.publish.tee.enabled | Allows events to simultaneously be sent to an external system outside of Mantis. | false |
-| mantis.publish.tee.stream | Specifies which external stream name tee will write to. | default_stream |
-| mantis.publish.blacklist | Comma separated list of field names where the value will be obfuscated. | param.password |
-| mantis.publish.max.num.streams | Maximum number of streams this application can create. | 5 |
-| mantis.publish.stream.inactive.duration.threshold.sec | Maximum duration in seconds for the stream to be considered inactive if there are no events. | 86400 (24hr) |
-| mantis.publish.{stream_name}.stream.queue.size | Size of the blocking queue to hold events to be pushed for the specific stream. | 1000 |
-| mantis.publish.max.subscriptions.per.stream.default | Default maximum number of subscriptions per stream. After the limit is reached, further subscriptions on that stream are rejected. | 20 |
-| mantis.publish.max.subscriptions.stream.{stream_name} | Overrides the default maximum number of subscriptions for the specific stream. | 20 |
-| mantis.publish.subs.refresh.interval.sec | Interval in seconds when subscriptions are fetched. In the default implementation, subscriptions are fetched over http from the workers returned by Discovery API. | 1 |
-| mantis.publish.drainer.interval.msec | Interval in milliseconds when events are drained from the stream queue and delegated to underlying transmitter for sending. | 100 |
-| mantis.publish.subs.expiry.interval.sec | Duration in seconds between a subscription is last fetched and when it is removed. | 300 |
-| mantis.publish.jobdiscovery.refresh.interval.sec | Duration in seconds between workers are refreshed for a job cluster. | 10 |
-| mantis.publish.jobcluster.mapping.refresh.interval.sec | Duration in seconds between job cluster mapping is refreshed for the current application. | 60 |
-| mantis.publish.deepcopy.eventmap.enabled | Determine if event processing should operate on a deep copy of the event. Otherwise the event object is processed directly. | true |
-| mantis.publish.subs.refresh.max.num.workers | Maximum number of mantis workers to fetch subscription from. Workers are randomly chosen from the list returned by Discovery API. | 3 |
-| mantis.publish.subs.fetch.query.params.string | Additional query params to pass to the api call to fetch subscription. It should be of the form "param1=value1&param2=value2". |  |
-| mantis.publish.channel.gzip.enabled | *Netty channel configuration for pushing events.* Determine if events should be gzip encoded when send over the channel. | true |
-| mantis.publish.channel.idleTimeout.sec | *Netty channel configuration for pushing events.* Write idle timeout in seconds for the channel. | 300 |
-| mantis.publish.channel.writeTimeout.sec | *Netty channel configuration for pushing events.* Write timeout in seconds for the channel. | 1 |
-| mantis.publish.channel.httpChunkSize.bytes | *Netty channel configuration for pushing events.* Chunked size in bytes of the channel content. It is used by HttpObjectAggregator. | 32768 |
-| mantis.publish.channel.flushInterval.msec | *Netty channel configuration for pushing events.* Maximum duration in milliseconds between content flushes. | 50 |
-| mantis.publish.channel.flushInterval.bytes | *Netty channel configuration for pushing events.* Content is flushed when aggregated event size is above this threshold. | 524288 |
-| mantis.publish.channel.lowWriteBufferWatermark.bytes | *Netty channel configuration for pushing events.* Used for setting write buffer watermark. | 1572864 |
-| mantis.publish.channel.highWriteBufferWatermark.bytes | *Netty channel configuration for pushing events.* Used for setting write buffer watermark. | 2097152 |
-| mantis.publish.channel.ioThreads | *Netty channel configuration for pushing events.* Number of threads in the eventLoopGroup. | 1 |
-| mantis.publish.channel.compressionThreads | *Netty channel configuration for pushing events.* Number of threads in the encoderEventLoopGroup when gzip is enabled. | 1 |
-| mantis.publish.workerpool.capacity | Size of the pool of Mantis workers to push events to. | 1000 |
-| mantis.publish.workerpool.refresh.internal.sec | Duration in seconds between Mantis workers are refreshed in the pool. | 10 |
-| mantis.publish.workerpool.worker.error.quota | Number of errors to receive from a Mantis worker before it is blacklisted in the pool. | 60 |
-| mantis.publish.workerpool.worker.error.timeout.sec | Duration in seconds after which a blacklisted Mantis worker may be reconsidered for selection. | 300 |
+Prefix:
 
+
+
+--8<-- "snippets/develop/ingestion/properties-open-source.md"
+
+| **Name**  | **Default** | **Description** |
+| --- | --- | --- |
+| `enabled` | true | Determine if event processing is enabled. |
+| `tee.enabled` | false | Allows events to simultaneously be sent to an external system outside of Mantis |
+| `tee.stream` | default_stream | Specifies which external stream name tee will write to |
+| `blacklist` | param.password | Comma separated list of field names where the value will be obfuscated |
+| `max.num.streams` | 5 | Maximum number of streams this application can create |
+| `stream.inactive.duration.threshold.sec` | 86400 (24 hours) | Maximum duration in seconds for the stream to be considered inactive if there are no events |
+| `<stream name>.stream.queue.size` | 1000 | Size of the blocking queue to hold events to be pushed for the specific stream |
+| `max.subscriptions.per.stream.default` | 20 | Default maximum number of subscriptions per stream. After the limit is reached, further subscriptions on that stream are rejected |
+| `max.subscriptions.stream.<stream name>` | 20 | Overrides the default maximum number of subscriptions for the specific stream |
+| `subs.refresh.interval.sec` | 1 | Interval in seconds when subscriptions are fetched. In the default implementation, subscriptions are fetched over http from the workers returned by Discovery API |
+| `drainer.interval.msec` | 100 | Interval in milliseconds when events are drained from the stream queue and delegated to underlying transmitter for sending |
+| `subs.expiry.interval.sec` | 300 | Duration in seconds between a subscription is last fetched and when it is removed |
+| `jobdiscovery.refresh.interval.sec` | 10 | Duration in seconds between workers are refreshed for a job cluster |
+| `jobcluster.mapping.refresh.interval.sec` | 60 | Duration in seconds between job cluster mapping is refreshed for the current application |
+| `deepcopy.eventmap.enabled` | true | Determine if event processing should operate on a deep copy of the event. Otherwise the event object is processed directly |
+| `subs.refresh.max.num.workers` | 3 | Maximum number of mantis workers to fetch subscription from. Workers are randomly chosen from the list returned by Discovery API |
+| `subs.fetch.query.params.string` | "" | Additional query params to pass to the api call to fetch subscription. It should be of the form "param1=value1&param2=value2" |
+| `channel.gzip.enabled` | true | *Netty channel configuration for pushing events.* Determine if events should be gzip encoded when send over the channel |
+| `channel.idleTimeout.sec` | 300 | *Netty channel configuration for pushing events.* Write idle timeout in seconds for the channel |
+| `channel.writeTimeout.sec` | 1 | *Netty channel configuration for pushing events.* Write timeout in seconds for the channel |
+| `channel.httpChunkSize.bytes` | 32768 (32 KiB) | *Netty channel configuration for pushing events.* Chunked size in bytes of the channel content. It is used by HttpObjectAggregator |
+| `channel.flushInterval.msec` | 50 | *Netty channel configuration for pushing events.* Maximum duration in milliseconds between content flushes |
+| `channel.flushInterval.bytes` | 524288 | *Netty channel configuration for pushing events.* Content is flushed when aggregated event size is above this threshold |
+| `channel.lowWriteBufferWatermark.bytes` | 1572864 | *Netty channel configuration for pushing events.* Used for setting write buffer watermark |
+| `channel.highWriteBufferWatermark.bytes` | 2097152 | *Netty channel configuration for pushing events.* Used for setting write buffer watermark |
+| `channel.ioThreads` | 1 | *Netty channel configuration for pushing events.* Number of threads in the eventLoopGroup |
+| `channel.compressionThreads` | 1 | *Netty channel configuration for pushing events.* Number of threads in the encoderEventLoopGroup when gzip is enabled |
+| `workerpool.capacity` | 1000 | Size of the pool of Mantis workers to push events to |
+| `workerpool.refresh.internal.sec` | 10 | Duration in seconds between Mantis workers are refreshed in the pool |
+| `workerpool.worker.error.quota` | 60 | Number of errors to receive from a Mantis worker before it is blacklisted in the pool |
+| `workerpool.worker.error.timeout.sec` | 300 | Duration in seconds after which a blacklisted Mantis worker may be reconsidered for selection |
 
 <!-- Do not edit below this line -->
 <!-- START -->

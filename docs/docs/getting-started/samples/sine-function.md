@@ -1,5 +1,3 @@
-# Sine Function sample
-
 The Sine function sample is a very simple job that generates a set of x and y coordinates of a sine
 wave. 
 
@@ -7,8 +5,8 @@ wave.
 
 A SineFunction Job Cluster exists.
 
-> **Note** If you are following the [Mantis Cluster using Docker](../docker.md) instructions this
->should be already setup. 
+> **Note** If you are following the [Mantis Cluster using Docker](../tutorials/docker.md) instructions this
+>will be already set up. 
 
 ## Running the sample
 
