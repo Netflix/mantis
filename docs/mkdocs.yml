@@ -23,6 +23,8 @@ nav:
       - 'Mantis Query Language': 'develop/querying/mql.md'
       - 'Sampling': 'develop/querying/sampling.md'
       - 'Scaling Limits': 'develop/querying/scaling-limits.md'
+    - 'Connectors':
+      - 'Iceberg (Beta)': 'develop/connectors/iceberg.md'
   - 'Deploy':
     - '': ''
   - 'Operate':
