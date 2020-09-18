@@ -90,7 +90,7 @@ Prefix:
 
 
 
---8<-- "snippets/develop/ingestion/properties-open-source.md"
+--8<-- "snippets/develop/ingestion/oss-prefix.md"
 
 | **Name**  | **Default** | **Description** |
 | --- | --- | --- |
