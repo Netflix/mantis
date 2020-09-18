@@ -1,5 +1,3 @@
-# On-Demand
-
 One of the key features of Mantis is the ability to stream filtered events on-demand from external applications.
 
 In this example we walk through publishing data to Mantis from a simple Java application using the mantis-publish library.

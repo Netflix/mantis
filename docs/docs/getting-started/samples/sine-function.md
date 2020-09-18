@@ -1,5 +1,3 @@
-# Sine Function
-
 The Sine function sample is a very simple job that generates a set of x and y coordinates of a sine
 wave. 
 

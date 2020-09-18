@@ -1,4 +1,3 @@
-# Twitter
 The Twitter sample demonstrates sourcing data from an external source (twitter in this case) and 
 calculates the number of occurrences of a word within a hopping window. 
 
