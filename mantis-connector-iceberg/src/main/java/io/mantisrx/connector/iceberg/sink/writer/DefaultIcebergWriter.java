@@ -105,6 +105,8 @@ public class DefaultIcebergWriter implements IcebergWriter {
                 appender = Parquet.write(file)
                         .schema(table.schema())
                         .createWriterFunc(GenericParquetWriter::buildWriter)
+                        .setAll(table.properties())
+                        .overwrite()
                         .build();
                 break;
             case AVRO:
