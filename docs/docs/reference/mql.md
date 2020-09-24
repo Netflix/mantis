@@ -146,13 +146,14 @@ and order-by clauses which cannot be executed on, and will hang on, unbounded st
 * `"select * from servo where node == "i-123456" AND e["metrics"]["latency"] > 350"`
 * `"select * from servo where (node == "i-123456" AND e["metrics"]["latency"] > 350) OR node == "1-abcdef""`
 * `"select * from servo where node ==~ /i-123/"`
+* `"select * from servo where e["metrics"]["latency"] != null`
 
 The `where` clause filters any events out of the stream which do not match a given predictate.
 Predicates support `AND` and `OR` operations. Binary operators supported are `=`, `==`, `<>`, `!=`,
 `<`, `<=`, `>`, `>=`, `==~`. The first two above are both equality, and either of the next two
 represent not-equal. You can use the last of those operators, `==~`, with a regular expression as
 in: <code>"where <var>property</var> ==~ /<var>regex</var>/"</code> (any Java regular expression will
-suffice).
+suffice). To take an event with certain attribute, use e["{{key}}"] != null.
 
 ## `group by`
 
