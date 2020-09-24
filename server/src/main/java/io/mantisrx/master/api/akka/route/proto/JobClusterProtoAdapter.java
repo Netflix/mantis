@@ -423,6 +423,7 @@ public class JobClusterProtoAdapter {
 
         return new CompactJobInfo(
             jm.getJobId(),
+            (jm.getJarUrl() != null) ? jm.getJarUrl().toString() : "",
             jm.getSubmittedAt(),
             jm.getUser(),
             jm.getState(),
