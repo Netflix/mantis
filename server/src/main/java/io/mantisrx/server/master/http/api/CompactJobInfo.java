@@ -36,6 +36,7 @@ public class CompactJobInfo {
     private final String jobId;
     private final long submittedAt;
     private final String user;
+    private final String jarUrl;
     private final MantisJobState state;
     private final MantisJobDurationType type;
     private final int numStages;
@@ -48,6 +49,7 @@ public class CompactJobInfo {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public CompactJobInfo(
             @JsonProperty("jobID") String jobId,
+            @JsonProperty("jarUrl") String jarUrl,
             @JsonProperty("submittedAt") long submittedAt,
             @JsonProperty("user") String user,
             @JsonProperty("state") MantisJobState state,
@@ -60,6 +62,7 @@ public class CompactJobInfo {
             @JsonProperty("labels") List<Label> labels
     ) {
         this.jobId = jobId;
+        this.jarUrl = jarUrl;
         this.submittedAt = submittedAt;
         this.user = user;
         this.state = state;
@@ -91,8 +94,9 @@ public class CompactJobInfo {
                     stSmry.put(w.getState() + "", prevVal + 1);
             }
         }
+        String artifact = job.getJarUrl().toString();
         return new CompactJobInfo(
-                job.getJobId(), job.getSubmittedAt(), job.getUser(), job.getState(),
+                job.getJobId(), artifact, job.getSubmittedAt(), job.getUser(), job.getState(),
                 job.getSla().getDurationType(), job.getNumStages(), workers, totCPUs, totMem, stSmry, job.getLabels()
         );
     }
@@ -132,6 +136,8 @@ public class CompactJobInfo {
     public double getTotMemory() {
         return totMemory;
     }
+
+    public String getJarUrl() { return jarUrl; }
 
     public Map<String, Integer> getStatesSummary() {
         return statesSummary;
