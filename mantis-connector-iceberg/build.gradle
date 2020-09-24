@@ -16,7 +16,7 @@
 
 ext {
     hadoopVersion = '2.7.3'
-    icebergVersion = '0.7.0-incubating'
+    icebergVersion = '0.9.+'
     mantisVersion = '1.+'
     reactorVersion = '3.3.+'
     rxAdapterVersion = '1.2.+'
