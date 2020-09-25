@@ -67,7 +67,8 @@ public class Jackson {
                     try {
                         return toJSON(mapper, null, u);
                     } catch (JsonProcessingException e) {
-                        String errMsg = "cannot marshal to Json " + u.toString().substring(0, 100);
+                        String objStr = u.toString();
+                        String errMsg = "cannot marshal to Json " + objStr.substring(0, Math.min(objStr.length(), 100));
                         logger.warn(errMsg, e);
                         throw new IllegalArgumentException(errMsg);
                     }
@@ -85,7 +86,8 @@ public class Jackson {
                     try {
                         return toJSON(mapper, filterProvider, u);
                     } catch (JsonProcessingException e) {
-                        String errMsg = "cannot marshal to Json " + u.toString().substring(0, 100);
+                        String objStr = u.toString();
+                        String errMsg = "cannot marshal to Json " + objStr.substring(0, Math.min(objStr.length(), 100));
                         logger.warn(errMsg, e);
                         throw new IllegalArgumentException(errMsg);
                     }
@@ -94,10 +96,6 @@ public class Jackson {
                 MediaTypes.APPLICATION_JSON
         );
     }
-
-//    public static <T> Unmarshaller<ByteString, T> byteStringUnmarshaller(Class<T> expectedType) {
-//        return byteStringUnmarshaller(defaultObjectMapper, expectedType);
-//    }
 
     public static <T> Unmarshaller<HttpEntity, T> unmarshaller(Class<T> expectedType) {
         return unmarshaller(defaultObjectMapper, expectedType);
@@ -115,7 +113,7 @@ public class Jackson {
                                try {
                                    return fromJSON(mapper, s, expectedType);
                                } catch (IOException e) {
-                                   logger.warn("cannot unmarshal json {}", s.substring(0, 100), e);
+                                   logger.warn("cannot unmarshal json", e);
                                    throw new IllegalArgumentException("cannot unmarshall Json as " +
                                                                       expectedType.getSimpleName());
                                }
@@ -130,17 +128,13 @@ public class Jackson {
                                try {
                                    return fromJSON(mapper, s, expectedType);
                                } catch (IOException e) {
-                                   logger.warn("cannot unmarshal json {}", s.substring(0, 100), e);
+                                   logger.warn("cannot unmarshal json", e);
                                    throw new IllegalArgumentException("cannot unmarshall Json as " +
                                                                       expectedType.getType()
                                                                                   .getTypeName());
                                }
                            });
     }
-
-//    public static <T> Unmarshaller<ByteString, T> byteStringUnmarshaller(ObjectMapper mapper, Class<T> expectedType) {
-//        return Unmarshaller.sync(s -> fromJSON(mapper, s.utf8String(), expectedType));
-//    }
 
     private static String toJSON(
             ObjectMapper mapper,
