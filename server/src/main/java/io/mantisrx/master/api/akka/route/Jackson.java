@@ -24,6 +24,7 @@ import akka.http.javadsl.model.RequestEntity;
 import akka.http.javadsl.marshalling.Marshaller;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 
+import io.mantisrx.master.api.akka.route.v0.JobRoute;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
@@ -35,8 +36,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterPr
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import com.netflix.spectator.impl.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Jackson {
+    private static final Logger logger = LoggerFactory.getLogger(Jackson.class);
+
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .registerModule(new Jdk8Module());
@@ -62,7 +67,9 @@ public class Jackson {
                     try {
                         return toJSON(mapper, null, u);
                     } catch (JsonProcessingException e) {
-                        throw new IllegalArgumentException("cannot marshall to Json " + u);
+                        String errMsg = "cannot marshal to Json " + u.toString().substring(0, 100);
+                        logger.warn(errMsg, e);
+                        throw new IllegalArgumentException(errMsg);
                     }
                 },
                 Marshaller.stringToEntity(),
@@ -78,7 +85,9 @@ public class Jackson {
                     try {
                         return toJSON(mapper, filterProvider, u);
                     } catch (JsonProcessingException e) {
-                        throw new IllegalArgumentException("cannot marshall to Json " + u);
+                        String errMsg = "cannot marshal to Json " + u.toString().substring(0, 100);
+                        logger.warn(errMsg, e);
+                        throw new IllegalArgumentException(errMsg);
                     }
                 },
                 Marshaller.stringToEntity(),
@@ -106,6 +115,7 @@ public class Jackson {
                                try {
                                    return fromJSON(mapper, s, expectedType);
                                } catch (IOException e) {
+                                   logger.warn("cannot unmarshal json {}", s.substring(0, 100), e);
                                    throw new IllegalArgumentException("cannot unmarshall Json as " +
                                                                       expectedType.getSimpleName());
                                }
@@ -120,6 +130,7 @@ public class Jackson {
                                try {
                                    return fromJSON(mapper, s, expectedType);
                                } catch (IOException e) {
+                                   logger.warn("cannot unmarshal json {}", s.substring(0, 100), e);
                                    throw new IllegalArgumentException("cannot unmarshall Json as " +
                                                                       expectedType.getType()
                                                                                   .getTypeName());
