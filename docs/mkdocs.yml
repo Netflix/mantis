@@ -18,10 +18,10 @@ nav:
     - 'Querying':
       - 'Mantis Query Language': 'develop/querying/mql.md'
       - 'Sampling': 'develop/querying/sampling.md'
-    - 'Processing':
-      - 'Writing Your First Job': 'develop/processing/word-count.md'
-      - 'Writing Your Second Job': 'develop/processing/twitter.md'
-      - 'Writing Your Third Job': 'develop/processing/group-by.md'
+    - 'Writing Jobs':
+      - 'Writing Your First Job': 'develop/writing-jobs/word-count.md'
+      - 'Writing Your Second Job': 'develop/writing-jobs/twitter.md'
+      - 'Writing Your Third Job': 'develop/writing-jobs/group-by.md'
     - 'Connectors':
       - 'Iceberg (Beta)': 'develop/connectors/iceberg.md'
   - 'Deploy':

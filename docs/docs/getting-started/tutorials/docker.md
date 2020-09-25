@@ -69,7 +69,7 @@ how Mantis Jobs can pull events on demand from external applications.
 
 * [Setup Mantis in AWS](cloud.md) and run the samples
 
-* Write your [first Mantis Job](../../develop/processing/word-count.md)
+* Write your [first Mantis Job](../../develop/writing-jobs/word-count.md)
 
 To teardown the Mantis cluster, issue the following command
 

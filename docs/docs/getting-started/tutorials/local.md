@@ -69,4 +69,4 @@ data: {"country":"Liberia","mantis.meta.sourceName":"SyntheticRequestSource","ma
 * Try out other samples from the [Mantis examples repository](https://github.com/netflix/mantis-examples).
 * [Set up Mantis locally using Docker](docker.md) and run the samples.
 * [Set up Mantis in AWS](cloud.md) and run the samples.
-* Learn to write your [first Mantis Job](../../develop/processing/word-count.md).
+* Learn to write your [first Mantis Job](../../develop/writing-jobs/word-count.md).
