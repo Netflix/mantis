@@ -22,12 +22,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.common.base.Splitter;
-import io.mantisrx.connector.kafka.source.serde.ParserType;
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
 import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;
+import io.mantisrx.connector.kafka.source.serde.ParserType;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.Parameters;
+import io.mantisrx.shaded.com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

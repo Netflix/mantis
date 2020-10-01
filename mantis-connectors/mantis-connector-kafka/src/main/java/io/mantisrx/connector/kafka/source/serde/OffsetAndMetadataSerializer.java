@@ -16,12 +16,12 @@
 
 package io.mantisrx.connector.kafka.source.serde;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-
 import java.io.IOException;
+
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonGenerator;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonSerializer;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 
 public class OffsetAndMetadataSerializer extends JsonSerializer<OffsetAndMetadata> {
     @Override

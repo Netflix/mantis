@@ -24,11 +24,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.mantisrx.connector.kafka.source.serde.OffsetAndMetadataDeserializer;
 import io.mantisrx.connector.kafka.source.serde.OffsetAndMetadataSerializer;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;

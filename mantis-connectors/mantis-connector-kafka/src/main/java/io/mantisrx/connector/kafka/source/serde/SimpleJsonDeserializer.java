@@ -16,19 +16,20 @@
 
 package io.mantisrx.connector.kafka.source.serde;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 
 public class SimpleJsonDeserializer extends MapDeserializerBase {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(SimpleJsonDeserializer.class);
     private final ObjectMapper jsonMapper = new ObjectMapper();
-    private final com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>> typeRef =
-        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {};
+    private final TypeReference<Map<String, Object>> typeRef =
+        new TypeReference<Map<String, Object>>() {};
 
 
     @Override

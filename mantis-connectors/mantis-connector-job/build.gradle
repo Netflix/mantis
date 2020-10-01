@@ -20,6 +20,7 @@ ext {
     gsonVersion = '2.8.+'
     mantisControlPlaneVersion = '1.2.+'
     mantisPublishVersion = '1.2.+'
+    vavrVersion = '0.9.+'
 }
 
 dependencies {
@@ -30,4 +31,5 @@ dependencies {
     implementation "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
 
     implementation "com.google.code.gson:gson:$gsonVersion"
+    implementation "io.vavr:vavr:$vavrVersion"
 }
