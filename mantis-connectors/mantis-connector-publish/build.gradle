@@ -15,13 +15,22 @@
  */
 
 ext {
+    junitVersion = '5.3.+'
     mantisVersion = '1.2.+'
     mantisPublishVersion = '1.2.+'
 }
 
 dependencies {
+    implementation project(":mantis-shaded")
     implementation project(":mantis-runtime")
 
     api "io.mantisrx:mantis-control-plane-core:$mantisVersion"
     api "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+}
+
+test {
+    useJUnitPlatform()
 }
