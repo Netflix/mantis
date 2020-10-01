@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-project(":mantis-connector-iceberg") {
+project(":mantis-connectors:mantis-connector-iceberg") {
     shadowJar {
         classifier = null
         dependencies {

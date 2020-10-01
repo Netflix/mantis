@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'mantis'
+
 ext {
     hadoopVersion = '2.7.3'
     icebergVersion = '0.9.+'
-    mantisVersion = '1.+'
-    reactorVersion = '3.3.+'
-    rxAdapterVersion = '1.2.+'
+    junitVersion = '5.3.+'
+    mockitoVersion = '2.18.+'
 }
 
 dependencies {
+    implementation project(":mantis-runtime")
+
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
     shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
 
@@ -32,10 +36,13 @@ dependencies {
     shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
 
-    implementation "io.mantisrx:mantis-runtime:$mantisVersion"
-
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
     // We only need this for local mains(). Users bring their own implementation.
     shadow "org.slf4j:slf4j-log4j12:$slf4jVersion"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
 
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
     testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion"
@@ -44,4 +51,8 @@ dependencies {
 
 tasks.jar.dependsOn tasks.shadowJar
 
-apply from: file('../gradle/shadow.gradle')
+test {
+    useJUnitPlatform()
+}
+
+apply from: file('../../gradle/shadow.gradle')

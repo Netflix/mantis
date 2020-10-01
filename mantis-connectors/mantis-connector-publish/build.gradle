@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-connectors'
+ext {
+    mantisVersion = '1.2.+'
+    mantisPublishVersion = '1.2.+'
+}
 
-include 'mantis-connector-iceberg'
-include 'mantis-connector-job'
-include "mantis-connector-kafka"
-include 'mantis-connector-publish'
+dependencies {
+    implementation project(":mantis-runtime")
+
+    api "io.mantisrx:mantis-control-plane-core:$mantisVersion"
+    api "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
+}

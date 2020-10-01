@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
+apply plugin: 'mantis'
+
 ext {
-    mantisVersion = '1.2.+'
+    gsonVersion = '2.8.+'
+    mantisControlPlaneVersion = '1.2.+'
     mantisPublishVersion = '1.2.+'
-    rxJavaVersion = '1.3.+'
 }
 
 dependencies {
-    api "io.mantisrx:mantis-runtime:$mantisVersion"
-    api "io.mantisrx:mantis-control-plane-core:$mantisVersion"
-    api "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
+    implementation project(":mantis-runtime")
+    implementation project(":mantis-client")
+
+    implementation "io.mantisrx:mantis-control-plane-core:$mantisControlPlaneVersion"
+    implementation "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
+
+    implementation "com.google.code.gson:gson:$gsonVersion"
 }

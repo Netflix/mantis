@@ -23,6 +23,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:5.1.1'
+        classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
         classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
     }
