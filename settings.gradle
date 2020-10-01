@@ -18,6 +18,12 @@ rootProject.name = 'mantis'
 
 include 'mantis-client'
 include 'mantis-common'
+
+include 'mantis-connectors:mantis-connector-iceberg'
+include 'mantis-connectors:mantis-connector-job'
+include 'mantis-connectors:mantis-connector-kafka'
+include 'mantis-connectors:mantis-connector-publish'
+
 include 'mantis-discovery-proto'
 
 include 'mantis-examples:mantis-examples-core'
