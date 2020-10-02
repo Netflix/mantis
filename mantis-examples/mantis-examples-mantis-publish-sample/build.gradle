@@ -42,7 +42,6 @@ application {
 }
 
 ext {
-
     guiceVersion = '4.2.2'
     spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
@@ -53,7 +52,9 @@ ext {
 
 
 dependencies {
-    compile 'io.mantisrx:mantis-publish-netty-guice:1.2.+'
+    compile project(":mantis-publish:mantis-publish-netty-guice")
+
+    implementation "io.reactivex:rxjava:$versionRxJava"
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"

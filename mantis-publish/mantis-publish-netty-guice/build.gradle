@@ -13,20 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-ext {
+apply plugin: 'com.github.johnrengelman.shadow'
 
+ext {
+    archaiusVersion = 'latest.release'
     guiceVersion = '4.2.2'
+    junitVersion = '5.3.+'
+    mockitoVersion = '2.18.+'
     spectatorVersion = '0.96.0'
 }
 
 dependencies {
-    implementation project(':mantis-publish-netty')
-    implementation project(':mantis-publish-core')
+    api project(':mantis-publish:mantis-publish-core')
+
+    implementation project(':mantis-publish:mantis-publish-netty')
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
+
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
 }
 
-apply from: file('../gradle/shadow.gradle')
+test {
+    useJUnitPlatform()
+}
+
+apply from: file('../../gradle/shadow.gradle')

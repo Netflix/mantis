@@ -43,9 +43,9 @@ ext {
 
 
 dependencies {
+    compile project(":mantis-publish:mantis-publish-netty-guice")
 
     providedCompile 'javax.servlet:javax.servlet-api:3.1.0'
-    compile 'io.mantisrx:mantis-publish-netty-guice:1.2.+'
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
