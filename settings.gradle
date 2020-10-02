@@ -41,6 +41,11 @@ include 'mantis-examples:mantis-examples-twitter-sample'
 include 'mantis-examples:mantis-examples-wordcount'
 
 include 'mantis-network'
+
+include ':mantis-publish:mantis-publish-core'
+include ':mantis-publish:mantis-publish-netty'
+include ':mantis-publish:mantis-publish-netty-guice'
+
 include 'mantis-remote-observable'
 include 'mantis-runtime'
 

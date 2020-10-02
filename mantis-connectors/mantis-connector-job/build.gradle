@@ -18,17 +18,14 @@ apply plugin: 'mantis'
 
 ext {
     gsonVersion = '2.8.+'
-    mantisControlPlaneVersion = '1.2.+'
-    mantisPublishVersion = '1.2.+'
     vavrVersion = '0.9.+'
 }
 
 dependencies {
     implementation project(":mantis-runtime")
     implementation project(":mantis-client")
-
     implementation project(":mantis-control-plane:mantis-control-plane-core")
-    implementation "io.mantisrx:mantis-publish-core:$mantisPublishVersion"
+    implementation project(":mantis-publish:mantis-publish-core")
 
     implementation "com.google.code.gson:gson:$gsonVersion"
     implementation "io.vavr:vavr:$vavrVersion"

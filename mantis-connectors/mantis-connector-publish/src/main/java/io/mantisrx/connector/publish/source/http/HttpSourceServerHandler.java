@@ -21,7 +21,6 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -29,6 +28,7 @@ import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.connector.publish.core.QueryRegistry;
 import io.mantisrx.publish.proto.MantisServerSubscription;
 import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
