@@ -18,11 +18,42 @@ rootProject.name = 'mantis'
 
 include 'mantis-client'
 include 'mantis-common'
+
+include 'mantis-connectors:mantis-connector-iceberg'
+include 'mantis-connectors:mantis-connector-job'
+include 'mantis-connectors:mantis-connector-kafka'
+include 'mantis-connectors:mantis-connector-publish'
+
+include 'mantis-control-plane:mantis-control-plane-client'
+include 'mantis-control-plane:mantis-control-plane-core'
+include 'mantis-control-plane:mantis-control-plane-server'
+
 include 'mantis-discovery-proto'
+
+include 'mantis-examples:mantis-examples-core'
+include 'mantis-examples:mantis-examples-groupby-sample'
+include 'mantis-examples:mantis-examples-jobconnector-sample'
+include 'mantis-examples:mantis-examples-mantis-publish-sample'
+include 'mantis-examples:mantis-examples-mantis-publish-web-sample'
+include 'mantis-examples:mantis-examples-sine-function'
+include 'mantis-examples:mantis-examples-synthetic-sourcejob'
+include 'mantis-examples:mantis-examples-twitter-sample'
+include 'mantis-examples:mantis-examples-wordcount'
+
 include 'mantis-network'
+
+include ':mantis-publish:mantis-publish-core'
+include ':mantis-publish:mantis-publish-netty'
+include ':mantis-publish:mantis-publish-netty-guice'
+
 include 'mantis-remote-observable'
 include 'mantis-runtime'
+
 include 'mantis-server:mantis-server-agent'
 include 'mantis-server:mantis-server-worker'
 include 'mantis-server:mantis-server-worker-client'
+
 include 'mantis-shaded'
+
+include 'mantis-source-jobs:mantis-source-job-kafka'
+include 'mantis-source-jobs:mantis-source-job-publish'

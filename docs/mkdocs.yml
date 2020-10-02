@@ -1,44 +1,49 @@
 site_name: Mantis
 nav:
-  - 'Welcome to Mantis': 'index.md'
+  - 'Welcome': 'index.md'
   - 'Getting Started':
-    - 'Getting Started Guide' : 'gettingstarted/index.md'
-    - 'Mantis Concepts': 'gettingstarted/concepts.md'
-    - 'Use cases' : 'gettingstarted/usecases.md'
-    - 'Explore a Mantis Job locally': 'gettingstarted/local.md'
-    - 'Mantis Cluster using Docker': 'gettingstarted/docker.md'
-    - 'Mantis Cluster in the cloud': 'gettingstarted/cloud.md'
-    - 'Mantis Samples':
-        - 'Sine Function': 'gettingstarted/samples/sinesample.md'
-        - 'Twitter Sample': 'gettingstarted/samples/twittersample.md'
-        - 'Publish to Mantis Sample': 'gettingstarted/samples/publishsample.md'
-  - 'Developing with Mantis':
-    - 'Publishing Events into Mantis': 'developing/mre.md'
-    - 'Writing Mantis Jobs':
-      - 'Introduction to Mantis Jobs': 'developing/writingjobs/index.md'
-      - 'The Source Component': 'developing/writingjobs/source.md'
-      - 'The Processing Stage Component': 'developing/writingjobs/stage.md'
-      - 'The Sink Component': 'developing/writingjobs/sink.md'
-      - 'Writing Your First Job': 'developing/writingjobs/wordcount.md'
-      - 'Writing Your Second Job': 'developing/writingjobs/twitter.md'
-      - 'Writing Your Third Job': 'developing/writingjobs/groupby.md'
-    - Querying Streams in Mantis:
-      - 'Introduction to MQL': 'developing/mql/index.md'
-      - 'Operators': 'developing/mql/operators.md'
-      - 'Sampling': 'developing/mql/sampling.md'
-      - 'Scaling Limits': 'developing/mql/aggregation-scaling-limits.md'
-    - The Mantis API:
-      - 'API Reference': 'developing/api/index.md'
-      - 'Websocket API': 'developing/api/websocket.md'
-    - 'The Mantis CLI': 'developing/cli.md'
-  - 'Mantis in Production':
-    - 'Mantis Job Capacity Planning & Sizing': 'production/capacity.md'
-    - 'Mantis Job Autoscaling': 'production/autoscaling.md'
-  - Mantis Internals:
-      - 'Infrastructure Overview': 'internals/infrastructure.md'
-      - 'Mantis Source Jobs': 'internals/sourcejobs.md'
-      - 'Mantis Runtime': 'internals/runtime.md'
-      - 'Local Development': 'internals/localdockersetup.md'
+    - 'Concepts': 'getting-started/concepts.md'
+    - 'Use Cases' : 'getting-started/use-cases.md'
+    - 'Tutorials':
+      - 'Explore Locally': 'getting-started/tutorials/local.md'
+      - 'Explore Using Docker': 'getting-started/tutorials/docker.md'
+      - 'Explore in the Cloud': 'getting-started/tutorials/cloud.md'
+    - 'Samples':
+      - 'Sine Function': 'getting-started/samples/sine-function.md'
+      - 'Twitter': 'getting-started/samples/twitter.md'
+      - 'On-Demand': 'getting-started/samples/on-demand.md'
+  - 'Develop':
+    - 'Ingestion':
+      - 'Netty': 'develop/ingestion/netty.md'
+    - 'Querying':
+      - 'Mantis Query Language': 'develop/querying/mql.md'
+      - 'Sampling': 'develop/querying/sampling.md'
+    - 'Writing Jobs':
+      - 'Writing Your First Job': 'develop/writing-jobs/word-count.md'
+      - 'Writing Your Second Job': 'develop/writing-jobs/twitter.md'
+      - 'Writing Your Third Job': 'develop/writing-jobs/group-by.md'
+    - 'Connectors':
+      - 'Iceberg (Beta)': 'develop/connectors/iceberg.md'
+  - 'Deploy':
+    - '': ''
+  - 'Operate':
+    - 'Tuning': 'operate/tuning.md'
+    - 'Autoscaling': 'operate/autoscaling.md'
+  - 'Reference':
+    - 'MQL': 'reference/mql.md'
+    - 'Job DSL': 'reference/dsl.md'
+    - 'API': 'reference/api.md'
+    - 'CLI': 'reference/cli.md'
+  - 'Internals':
+      - 'Infrastructure Overview': 'internals/infrastructure-overview.md'
+      - 'Mantis Jobs':
+        - 'Introduction': 'internals/mantis-jobs/introduction.md'
+        - 'Source': 'internals/mantis-jobs/source.md'
+        - 'Processing Stage': 'internals/mantis-jobs/processing-stage.md'
+        - 'Sink': 'internals/mantis-jobs/sink.md'
+      - 'Source Jobs': 'internals/source-jobs.md'
+      - 'Runtime': 'internals/runtime.md'
+      - 'Mantis Publish': 'internals/mantis-publish.md'
   - 'Community': 'community.md'
   - 'FAQ': 'faq.md'
   - 'Glossary': 'glossary.md'
@@ -47,16 +52,16 @@ theme:
   custom_dir: custom_theme/
   favicon: 'images/favicon.ico'
   palette:
-    primary: 'blue grey'
+    primary: 'red'
     accent: 'indigo'
   logo: 'images/logo.png'
   font-family:
     text: '"Helvetica Neue",Helvetica,Arial,sans-serif'
 extra:
   social:
-    - type: 'twitter'
+    - icon: fontawesome/brands/twitter
       link: 'https://twitter.com/NetflixOSS'
-    - type: 'github'
+    - icon: fontawesome/brands/github
       link: 'https://netflix.github.io/'
 markdown_extensions:
   - admonition
@@ -71,6 +76,8 @@ markdown_extensions:
                 "enter" : "return",
                 "?" : "?"}
   - pymdownx.superfences
+  - pymdownx.snippets:
+      check_paths: true
   - def_list
   - extra
 extra_css:

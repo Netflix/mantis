@@ -1,0 +1,42 @@
+/*
+ * Copyright 2019 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'mantis'
+
+ext {
+    archaiusVersion = '2.3.+'
+    spectatorVersion = '0.82.+'
+    kafkaVersion = '2.2.+'
+}
+
+dependencies {
+    implementation project(":mantis-shaded")
+    implementation project(":mantis-runtime")
+
+    compile "org.apache.kafka:kafka-clients:$kafkaVersion"
+
+    api "io.reactivex:rxjava:$versionRxJava"
+    api "com.netflix.spectator:spectator-api:$spectatorVersion"
+    api "com.netflix.archaius:archaius2-api:$archaiusVersion"
+    api "com.netflix.archaius:archaius2-core:$archaiusVersion"
+
+    testCompile "junit:junit"
+    testCompile "org.mockito:mockito-all:1.9.5"
+    testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
+    testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
+    // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69
+    testCompile 'info.batey.kafka:kafka-unit:1.0'
+}
