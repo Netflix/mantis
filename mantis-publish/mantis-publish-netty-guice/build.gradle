@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.github.johnrengelman.shadow'
-
 ext {
     archaiusVersion = 'latest.release'
     guiceVersion = '4.2.2'
@@ -44,5 +42,3 @@ dependencies {
 test {
     useJUnitPlatform()
 }
-
-apply from: file('../../gradle/shadow.gradle')
