@@ -22,14 +22,13 @@ ext {
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
-    mantisVersion = '1.2.+'
     mesosVersion = '1.7.2'
     testngVersion = '6.14.+'
 }
 
 dependencies {
 
-    api "io.mantisrx:mantis-common:$mantisVersion"
+    api project(":mantis-common")
 
     api "org.skife.config:config-magic:$configMagicVersion"
 

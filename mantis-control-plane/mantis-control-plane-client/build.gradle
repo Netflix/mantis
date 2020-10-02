@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-subprojects {
-    checkstyle {
-        toolVersion = '8.14'
-        // TODO: Don't ignore failures.
-        ignoreFailures = true
-        configFile = rootProject.file('codequality/checkstyle.xml')
-        sourceSets = [sourceSets.main]
-    }
+dependencies {
+    compile project(":mantis-control-plane:mantis-control-plane-core")
 
-    pmd {
-        toolVersion = '6.9.0'
-        // TODO: Don't ignore failures.
-        ignoreFailures = true
-        sourceSets = [sourceSets.main]
-        ruleSets = []
-        ruleSetFiles = rootProject.files("codequality/pmd.xml")
-    }
+    compile project(":mantis-remote-observable")
+
+    testCompile "junit:junit-dep:$junitVersion"
+    testCompile "org.mockito:mockito-all:$mockitoVersion"
 }
+
+
