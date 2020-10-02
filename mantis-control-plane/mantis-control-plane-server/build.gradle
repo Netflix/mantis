@@ -1,0 +1,69 @@
+/*
+ * Copyright 2019 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'application'
+
+ext {
+    akkaVersion = '2.5.23'
+    akkaHttpVersion = '10.1.8'
+    fenzoVersion = '0.13.8'
+    cliParserVersion = '1.1.1'
+    configMagicVersion = '0.11'
+    rxJavaReactiveStreamsVersion = '1.+'
+    curatorVersion = '2.11.0'
+    testngVersion = '6.+'
+}
+
+dependencies {
+    compile project(':mantis-control-plane:mantis-control-plane-core')
+
+    api "com.typesafe.akka:akka-http_2.13:$akkaHttpVersion"
+    api "com.typesafe.akka:akka-http-jackson_2.13:$akkaHttpVersion"
+    api "com.typesafe.akka:akka-http-caching_2.13:$akkaHttpVersion"
+    api "com.typesafe.akka:akka-stream_2.13:$akkaVersion"
+    compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.5.23'
+    api "com.typesafe.akka:akka-slf4j_2.13:$akkaVersion"
+
+    api "com.typesafe.akka:akka-actor_2.13:$akkaVersion"
+    api "io.reactivex:rxjava-reactive-streams:$rxJavaReactiveStreamsVersion"
+    api "com.netflix.fenzo:fenzo-core:$fenzoVersion"
+    api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
+    api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
+    api "org.apache.curator:curator-framework:$curatorVersion"
+    api "org.apache.curator:curator-recipes:$curatorVersion"
+    api "org.skife.config:config-magic:$configMagicVersion"
+
+    testCompile "com.typesafe.akka:akka-testkit_2.13:$akkaVersion"
+    testCompile "junit:junit:4.+"
+    testCompile "org.mockito:mockito-all:2.+"
+    testCompile "org.testng:testng:$testngVersion"
+}
+
+mainClassName = "io.mantisrx.server.master.MasterMain"
+
+run {
+    standardInput = System.in
+}
+
+task testNG(type: Test) {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+}
+
+test {
+    dependsOn testNG
+}

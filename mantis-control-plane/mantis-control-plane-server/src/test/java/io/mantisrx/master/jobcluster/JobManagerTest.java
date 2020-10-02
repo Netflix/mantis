@@ -1,0 +1,337 @@
+/*
+ * Copyright 2019 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.mantisrx.master.jobcluster;
+
+import akka.actor.AbstractActor;
+import akka.actor.ActorContext;
+import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.jobcluster.job.JobTestHelper;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
+import io.mantisrx.server.master.scheduler.MantisScheduler;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
+import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
+import io.mantisrx.master.jobcluster.JobClusterActor.JobManager;
+import io.mantisrx.master.jobcluster.job.JobState;
+import io.mantisrx.server.master.domain.JobDefinition;
+import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider;
+
+import static java.util.Optional.empty;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+public class JobManagerTest {
+    
+    private static MantisJobStore jobStore;
+    private static AbstractActor.ActorContext context;
+    private static MantisScheduler scheduler;
+    private static LifecycleEventPublisher publisher;
+    @BeforeClass
+    public static void setup() {
+        jobStore = mock(MantisJobStore.class);
+		context = mock(AbstractActor.ActorContext.class);
+		scheduler = mock(MantisScheduler.class);
+		publisher = mock(LifecycleEventPublisher.class);
+
+		JobTestHelper.createDirsIfRequired();
+		TestHelpers.setupMasterConfig();
+
+    }
+	@Test
+	public void acceptedToActive() {
+	    
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+		
+		assertTrue(jm.markJobAccepted(jInfo1));
+		
+		assertEquals(1, jm.acceptedJobsCount());
+		
+		assertTrue(jm.markJobStarted(jInfo1));
+		
+		assertEquals(0, jm.acceptedJobsCount());
+		assertEquals(1, jm.activeJobsCount());
+
+		assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo1));
+	}
+	
+	@Test
+	public void acceptedToCompleted() {
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+		
+		assertTrue(jm.markJobAccepted(jInfo1));
+		
+		assertEquals(1, jm.acceptedJobsCount());
+
+        assertTrue(jm.getCompletedJobsList().size() == 0);
+		
+		assertTrue(jm.markCompleted(jId1,empty(),JobState.Completed).isPresent());
+		
+		assertEquals(0, jm.acceptedJobsCount());
+		assertEquals(1, jm.getCompletedJobsList().size());
+		assertEquals(0, jm.activeJobsCount());
+
+        assertFalse(jm.getAllNonTerminalJobsList().contains(jInfo1));
+
+        assertTrue(jm.getCompletedJobsList().size() == 1);
+
+        JobClusterDefinitionImpl.CompletedJob completedJob = jm.getCompletedJobsList().get(0);
+
+        assertEquals(jId1.getId(), completedJob.getJobId());
+
+    }
+	
+	@Test
+	public void acceptedToTerminating() {
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+		
+		assertTrue(jm.markJobAccepted(jInfo1));
+
+        assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo1));
+
+		assertEquals(1, jm.acceptedJobsCount());
+		
+		assertTrue(jm.markJobTerminating(jInfo1, JobState.Terminating_abnormal));
+
+        assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo1));
+		
+		assertEquals(0, jm.acceptedJobsCount());
+		assertEquals(0 , jm.activeJobsCount());
+		Optional<JobInfo> j1 = jm.getJobInfoForNonTerminalJob(jId1);
+		assertTrue(j1.isPresent());
+		assertEquals(jId1, j1.get().jobId);
+		
+	}
+	
+	@Test
+	public void terminatingToActiveIsIgnored() {
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobDefinition jdMock = mock(JobDefinition.class);
+		JobInfo jInfo1 = new JobInfo(jId1, jdMock, 0, null, JobState.Accepted, "nj");
+		
+		jm.markJobAccepted(jInfo1);
+		
+		assertEquals(1, jm.acceptedJobsCount());
+		
+		Optional<JobInfo> jInfo1Op = jm.getJobInfoForNonTerminalJob(jId1);
+		
+		assertTrue(jInfo1Op.isPresent());
+		
+		assertTrue(jm.markJobTerminating(jInfo1Op.get(), JobState.Terminating_abnormal));
+		
+		jInfo1Op = jm.getJobInfoForNonTerminalJob(jId1);
+		assertTrue(jInfo1Op.isPresent());
+		assertFalse(jm.markJobStarted(jInfo1Op.get()));
+		
+		
+	}
+	
+	@Test
+	public void activeToAcceptedFails() {
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+		
+		assertTrue(jm.markJobAccepted(jInfo1));
+		
+		assertEquals(1, jm.acceptedJobsCount());
+		
+		assertTrue(jm.markJobTerminating(jInfo1, JobState.Terminating_abnormal));
+		
+		assertFalse(jm.markJobAccepted(jInfo1));
+		
+		
+	}
+	@Test
+	public void testGetAcceptedJobList() {
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+		
+		assertTrue(jm.markJobAccepted(jInfo1));
+		
+		JobId jId2 = new JobId("name",2);
+		JobInfo jInfo2 = new JobInfo(jId2, null, 0, null, JobState.Accepted, "nj");
+		assertTrue(jm.markJobAccepted(jInfo2));
+		
+		List<JobInfo> acceptedJobList = jm.getAcceptedJobsList();
+		
+		assertEquals(2, acceptedJobList.size());
+		
+		
+		assertTrue(jId1.equals(acceptedJobList.get(0).jobId) || jId1.equals(acceptedJobList.get(1).jobId));
+		
+		assertTrue(jId2.equals(acceptedJobList.get(0).jobId) || jId2.equals(acceptedJobList.get(1).jobId));
+		
+		try {
+			acceptedJobList.remove(0);
+			fail();
+		} catch (Exception e) {
+			
+		}
+	}
+	
+	@Test
+	public void testGetActiveJobList() {
+		JobClusterActor.JobManager jm =  new JobManager("name", context, scheduler, publisher, jobStore);
+		JobId jId1 = new JobId("name",1);
+		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+		
+		assertTrue(jm.markJobAccepted(jInfo1));
+		assertTrue(jm.markJobStarted(jInfo1));
+		
+		JobId jId2 = new JobId("name",2);
+		JobInfo jInfo2 = new JobInfo(jId2, null, 0, null, JobState.Accepted, "nj");
+		assertTrue(jm.markJobAccepted(jInfo2));
+		assertTrue(jm.markJobStarted(jInfo2));
+		List<JobInfo> acceptedJobList = jm.getAcceptedJobsList();
+		
+		assertEquals(0, acceptedJobList.size());
+		
+		List<JobInfo> activeJobList = jm.getActiveJobsList();
+		assertEquals(2, jm.getActiveJobsList().size());
+		
+		assertTrue(jId1.equals(activeJobList.get(0).jobId) || jId1.equals(activeJobList.get(1).jobId));
+		
+		assertTrue(jId2.equals(activeJobList.get(0).jobId) || jId2.equals(activeJobList.get(1).jobId));
+		
+		try {
+			activeJobList.remove(0);
+			fail();
+		} catch (Exception e) {
+			
+		}
+	}
+	@Test
+	public void testPurgeOldJobs() {
+        String clusterName = "testPurgeOldJobs";
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+        JobClusterActor.JobManager jm = new JobManager(clusterName, context, scheduler, publisher, jobStoreMock);
+
+        JobId jId1 = new JobId(clusterName,1);
+        JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+
+        assertTrue(jm.markJobAccepted(jInfo1));
+
+        assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo1));
+
+        JobId jId2 = new JobId(clusterName,2);
+        JobInfo jInfo2 = new JobInfo(jId2, null, 1, null, JobState.Accepted, "nj");
+        assertTrue(jm.markJobAccepted(jInfo2));
+
+        assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo2));
+
+        assertTrue(jm.getAllNonTerminalJobsList().size() == 2);
+
+        assertEquals(jInfo1 ,jm.getAllNonTerminalJobsList().get(1));
+
+        assertEquals(jInfo2 ,jm.getAllNonTerminalJobsList().get(0));
+
+        jm.markJobTerminating(jInfo1, JobState.Terminating_abnormal);
+
+        Instant completionInstant = Instant.now().minusSeconds(5);
+        jm.markCompleted(jId1,completionInstant.toEpochMilli(),empty(),JobState.Completed);
+
+        assertEquals(1,jm.getCompletedJobsList().size());
+        assertEquals(jId1.getId(), jm.getCompletedJobsList().get(0).getJobId());
+
+        jm.purgeOldCompletedJobs(Instant.now().minusSeconds(3).toEpochMilli());
+        assertEquals(0,jm.getCompletedJobsList().size());
+
+        try {
+            verify(jobStoreMock,times(1)).deleteCompletedJob(clusterName,jId1.getId());
+            verify(jobStoreMock,times(1)).deleteJob(jId1.getId());
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+
+
+    }
+
+    @Test
+    public void testJobListSortedCorrectly() {
+        String clusterName = "testJobListSortedCorrectly";
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+        JobClusterActor.JobManager jm = new JobManager(clusterName, context, scheduler, publisher, jobStoreMock);
+
+        JobId jId1 = new JobId(clusterName,1);
+        JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
+
+        assertTrue(jm.markJobAccepted(jInfo1));
+
+        assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo1));
+
+        JobId jId2 = new JobId(clusterName,2);
+        JobInfo jInfo2 = new JobInfo(jId2, null, 1, null, JobState.Accepted, "nj");
+        assertTrue(jm.markJobAccepted(jInfo2));
+
+        assertTrue(jm.getAllNonTerminalJobsList().contains(jInfo2));
+
+        assertTrue(jm.getAllNonTerminalJobsList().size() == 2);
+
+        assertEquals(jInfo1 ,jm.getAllNonTerminalJobsList().get(1));
+
+        assertEquals(jInfo2 ,jm.getAllNonTerminalJobsList().get(0));
+
+        jm.markJobTerminating(jInfo1, JobState.Terminating_abnormal);
+
+        Instant completionInstant = Instant.now().minusSeconds(5);
+        jm.markCompleted(jId1,completionInstant.toEpochMilli(),empty(),JobState.Completed);
+
+        assertEquals(1,jm.getCompletedJobsList().size());
+        assertEquals(jId1.getId(), jm.getCompletedJobsList().get(0).getJobId());
+
+        jm.markJobTerminating(jInfo1, JobState.Terminating_abnormal);
+
+        completionInstant = Instant.now().minusSeconds(2);
+        jm.markCompleted(jId2,completionInstant.toEpochMilli(),empty(),JobState.Completed);
+
+        assertEquals(2,jm.getCompletedJobsList().size());
+        assertEquals(jId2.getId(), jm.getCompletedJobsList().get(0).getJobId());
+        assertEquals(jId1.getId(), jm.getCompletedJobsList().get(1).getJobId());
+
+
+    }
+
+
+}
