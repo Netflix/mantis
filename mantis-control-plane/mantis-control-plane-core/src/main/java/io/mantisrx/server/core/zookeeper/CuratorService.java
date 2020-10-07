@@ -26,19 +26,19 @@ import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.imps.GzipCompressionProvider;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.framework.state.ConnectionStateListener;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.curator.utils.ZKPaths;
+import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
+import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
+import io.mantisrx.shaded.org.apache.curator.framework.imps.GzipCompressionProvider;
+import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
+import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
+import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
+import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
- * This {@link Service} implementation is responsible for managing the lifecycle of a {@link org.apache.curator.framework.CuratorFramework}
+ * This {@link Service} implementation is responsible for managing the lifecycle of a {@link io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework}
  * instance.
  */
 public class CuratorService extends BaseService {

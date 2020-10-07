@@ -19,6 +19,8 @@ apply plugin: 'com.github.johnrengelman.shadow'
 ext {
     jacksonVersion = '2.10.+'
     guavaVersion = '18.+'
+    curatorVersion = '2.11.0'       // For mantis-control-plane.
+    zookeeperVersion = '3.4.6'      // For mantis-control-plane.
 }
 
 configurations {
@@ -36,8 +38,15 @@ dependencies {
     shaded "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
     shaded "com.fasterxml.jackson.module:jackson-module-afterburner:$jacksonVersion"
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
+
     shaded "io.vavr:vavr-jackson:$vavrVersion"
+
     shaded "com.google.guava:guava:$guavaVersion"
+
+    shaded "org.apache.curator:curator-framework:$curatorVersion"
+    shaded "org.apache.curator:curator-recipes:$curatorVersion"
+    shaded "org.apache.curator:curator-client:$curatorVersion"
+    shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
 
     implementation "io.vavr:vavr:$vavrVersion"
 }
@@ -46,8 +55,10 @@ shadowJar {
     classifier = null
     configurations = [project.configurations.shaded]
     relocate 'com.fasterxml', 'io.mantisrx.shaded.com.fasterxml'
-    relocate 'io.vavr.jackson.datatype', 'io.mantisrx.shaded.io.vavr.jackson.datatype'
     relocate 'com.google.common', 'io.mantisrx.shaded.com.google.common'
+    relocate 'io.vavr.jackson.datatype', 'io.mantisrx.shaded.io.vavr.jackson.datatype'
+    relocate 'org.apache.curator', 'io.mantisrx.shaded.org.apache.curator'
+    relocate 'org.apache.zookeeper', 'io.mantisrx.shaded.org.apache.zookeeper'
 
     mergeServiceFiles()
 }

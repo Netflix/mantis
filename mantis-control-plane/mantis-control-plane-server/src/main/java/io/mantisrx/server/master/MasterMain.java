@@ -78,7 +78,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
-import org.apache.curator.utils.ZKPaths;
+import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

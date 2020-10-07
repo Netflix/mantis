@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.mantisrx.server.core.json.DefaultObjectMapper;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.BackgroundCallback;
-import org.apache.curator.framework.api.CuratorEvent;
-import org.apache.curator.framework.recipes.cache.NodeCache;
-import org.apache.curator.framework.recipes.cache.NodeCacheListener;
+import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
+import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
+import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
+import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
+import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
