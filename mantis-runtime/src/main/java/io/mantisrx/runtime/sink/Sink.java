@@ -28,6 +28,7 @@ import rx.functions.Action3;
 
 public interface Sink<T> extends Action3<Context, PortRequest, Observable<T>> {
 
+    default void init(Context context) {}
     default List<ParameterDefinition<?>> getParameters() {
         return Collections.emptyList();
     }

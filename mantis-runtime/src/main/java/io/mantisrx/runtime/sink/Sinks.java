@@ -16,9 +16,13 @@
 
 package io.mantisrx.runtime.sink;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
@@ -30,6 +34,10 @@ public class Sinks {
     public static <T> Sink<T> eagerSubscribe(final Sink<T> sink) {
         return new Sink<T>() {
             @Override
+            public List<ParameterDefinition<?>> getParameters() {
+                return sink.getParameters();
+            }
+            @Override
             public void call(Context c, PortRequest p, Observable<T> o) {
                 o.subscribe();
                 sink.call(c, p, o);
@@ -39,6 +47,10 @@ public class Sinks {
 
     public static <T> SelfDocumentingSink<T> eagerSubscribe(final SelfDocumentingSink<T> sink) {
         return new SelfDocumentingSink<T>() {
+            @Override
+            public List<ParameterDefinition<?>> getParameters() {
+                return sink.getParameters();
+            }
             @Override
             public void call(Context c, PortRequest p, Observable<T> o) {
                 o.subscribe();
@@ -55,6 +67,14 @@ public class Sinks {
     @SafeVarargs
     public static <T> Sink<T> toMany(final Sink<T>... many) {
         return new Sink<T>() {
+            @Override
+            public List<ParameterDefinition<?>> getParameters() {
+                List<ParameterDefinition<?>> parameterDefinitions = new ArrayList<>();
+                for (Sink<T> sink : many) {
+                    parameterDefinitions.addAll(sink.getParameters());
+                }
+                return parameterDefinitions;
+            }
             @Override
             public void call(Context t1, PortRequest t2, Observable<T> t3) {
                 for (Sink<T> sink : many) {

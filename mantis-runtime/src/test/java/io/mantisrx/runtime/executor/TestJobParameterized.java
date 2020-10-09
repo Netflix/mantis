@@ -87,6 +87,10 @@ public class TestJobParameterized extends MantisJobProvider<Integer> {
                         .codec(Codecs.integer()))
                 .sink(new Sink<Integer>() {
                     @Override
+                    public void init(Context context) {
+                        System.out.println("sink init called");
+                    }
+                    @Override
                     public void call(Context context,
                                      PortRequest p,
                                      Observable<Integer> o) {
