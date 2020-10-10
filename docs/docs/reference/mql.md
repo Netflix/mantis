@@ -147,13 +147,24 @@ and order-by clauses which cannot be executed on, and will hang on, unbounded st
 * `"select * from servo where (node == "i-123456" AND e["metrics"]["latency"] > 350) OR node == "1-abcdef""`
 * `"select * from servo where node ==~ /i-123/"`
 * `"select * from servo where e["metrics"]["latency"] != null`
+* `"select * from servo where e["list_of_requests"][*]["status"] == "success"`
 
 The `where` clause filters any events out of the stream which do not match a given predictate.
 Predicates support `AND` and `OR` operations. Binary operators supported are `=`, `==`, `<>`, `!=`,
 `<`, `<=`, `>`, `>=`, `==~`. The first two above are both equality, and either of the next two
 represent not-equal. You can use the last of those operators, `==~`, with a regular expression as
 in: <code>"where <var>property</var> ==~ /<var>regex</var>/"</code> (any Java regular expression will
-suffice). To take an event with certain attribute, use e["{{key}}"] != null.
+suffice). To take an event with certain attribute, use `e["{{key}}"] != null`.
+
+If the event contains a list field, you can use the `[*]` operator to match objects inside that list.
+For example, say the events have a field called `list_of_requests` and each item in the list has a field
+called `status`. Then, the condition `e["list_of_requests"][*]["status"] == "success"` will return true
+if at least 1 item has `status` equals `success`. Further, you can combine multiple conditions on the
+list. For example,
+```
+e["list_of_requests"][*]["status"] == "success" AND e["list_of_requests"][*]["url"] == "abc"
+```
+This condition returns true if at least 1 item has `status` equals `success` and `url` equals `abc`.
 
 ## `group by`
 
