@@ -55,4 +55,43 @@ test {
     useJUnitPlatform()
 }
 
-apply from: file('../../gradle/shadow.gradle')
+shadowJar {
+    classifier = null
+    dependencies {
+        exclude dependency("com.netflix.spectator:spectator-api")
+    }
+
+    // include the LICENSE and NOTICE files for the shaded Jar
+    from(projectDir) {
+        include 'LICENSE'
+        include 'NOTICE'
+    }
+}
+
+jar {
+    enabled = false
+}
+jar.dependsOn(shadowJar)
+
+afterEvaluate {
+    publishing {
+        publications {
+            // to remove shaded dependency from pom.xml
+            withType(MavenPublication) {
+                pom.withXml {
+                    asNode()
+                        .dependencies
+                        .dependency
+                        .findAll {
+                            ['hadoop-common',
+                             'iceberg-core',
+                             'iceberg-data',
+                             'iceberg-parquet'
+                            ].contains(it.artifactId.text())
+                        }
+                        .each { it.parent().remove(it) }
+                }
+            }
+        }
+    }
+}

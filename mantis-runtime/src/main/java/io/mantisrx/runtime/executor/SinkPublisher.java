@@ -103,6 +103,7 @@ public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
             // eager subscribe, don't allow unsubscribe back
             o.subscribe();
         }
+        sink.init(context);
         sink.call(context, new PortRequest(sinkPort),
                 o);
         //o.lift(new DoOnRequestOperator("beforeShare")).share().lift(new DropOperator<>("sink_share")));
