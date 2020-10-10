@@ -42,6 +42,11 @@ public class Sinks {
                 o.subscribe();
                 sink.call(c, p, o);
             }
+
+            @Override
+            public void init(Context t) {
+                sink.init(t);
+            }
         };
     }
 
@@ -61,6 +66,11 @@ public class Sinks {
             public Metadata metadata() {
                 return sink.metadata();
             }
+
+            @Override
+            public void init(Context t) {
+                sink.init(t);
+            }
         };
     }
 
@@ -79,6 +89,12 @@ public class Sinks {
             public void call(Context t1, PortRequest t2, Observable<T> t3) {
                 for (Sink<T> sink : many) {
                     sink.call(t1, t2, t3);
+                }
+            }
+            @Override
+            public void init(Context t) {
+                for(Sink<T> sink : many) {
+                    sink.init(t);
                 }
             }
         };
