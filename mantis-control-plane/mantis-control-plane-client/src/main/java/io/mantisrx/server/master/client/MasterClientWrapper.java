@@ -187,7 +187,9 @@ public class MasterClientWrapper {
             final WorkerAssignments assignments = workerAssignment.getValue();
             logger.info("job {} Creating endpoints conx from {} worker assignments for stage {}",
                     jobId, assignments.getHosts().size(), stageNum);
-            logger.info("stage {} hosts: {}", stageNum, assignments.getHosts());
+            if (logger.isDebugEnabled()) {
+                logger.debug("stage {} hosts: {}", stageNum, assignments.getHosts());
+            }
             totalWorkers += assignments.getNumWorkers();
 
             for (WorkerHost host : assignments.getHosts().values()) {
@@ -283,8 +285,10 @@ public class MasterClientWrapper {
                                     })
                                     .retryWhen(schedInfoRetry.getRetryLogic())
                                     .map((JobSchedulingInfo jobSchedulingInfo) -> {
-                                        logger.info("Got scheduling info for " + jobId);
-                                        logger.info("Worker Assignments " + jobSchedulingInfo.getWorkerAssignments().get(sinkStage));
+                                        logger.info("Got scheduling info for {}", jobId);
+                                        if (logger.isDebugEnabled()) {
+                                            logger.debug("Worker Assignments {}", jobSchedulingInfo.getWorkerAssignments().get(sinkStage));
+                                        }
 
                                         return jobSchedulingInfo.getWorkerAssignments().get(sinkStage);
                                     })
