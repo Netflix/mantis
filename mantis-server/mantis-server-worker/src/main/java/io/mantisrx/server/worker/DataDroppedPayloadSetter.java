@@ -103,7 +103,7 @@ class DataDroppedPayloadSetter {
                 prevDroppedCount.set(totalDropped);
                 prevOnNextCount.set(totalOnNext);
             } else
-                logger.warn("Got no metrics from DropOperator");
+                logger.info("Got no metrics from DropOperator");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
