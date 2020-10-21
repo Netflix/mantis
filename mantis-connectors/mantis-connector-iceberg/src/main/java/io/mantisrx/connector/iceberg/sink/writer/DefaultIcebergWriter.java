@@ -33,6 +33,7 @@ import org.apache.iceberg.data.parquet.GenericParquetWriter;
 import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.hadoop.HadoopOutputFile;
 import org.apache.iceberg.io.FileAppender;
+import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.parquet.Parquet;
 import org.slf4j.Logger;
@@ -60,17 +61,26 @@ public class DefaultIcebergWriter implements IcebergWriter {
 
     private final FileFormat format;
 
+    private final LocationProvider locationProvider;
+
     private FileAppender<Record> appender;
     private OutputFile file;
     private StructLike partitionKey;
 
-    public DefaultIcebergWriter(WriterConfig config, WorkerInfo workerInfo, Table table) {
+    public DefaultIcebergWriter(
+            WriterConfig config,
+            WorkerInfo workerInfo,
+            Table table,
+            LocationProvider locationProvider) {
+
         this.config = config;
 
         this.workerInfo = workerInfo;
         this.table = table;
         this.spec = table.spec();
         this.format = FileFormat.valueOf(config.getWriterFileFormat());
+
+        this.locationProvider = locationProvider;
     }
 
     /**
@@ -97,8 +107,9 @@ public class DefaultIcebergWriter implements IcebergWriter {
     public void open(StructLike newPartitionKey) throws IOException {
         partitionKey = newPartitionKey;
         Path path = new Path(table.location(), generateFilename());
-        logger.info("opening new {} file appender {}", format, path);
-        file = HadoopOutputFile.fromPath(path, config.getHadoopConfig());
+        String location = locationProvider.newDataLocation(path.toString());
+        logger.info("opening new {} file appender {}", format, location);
+        file = HadoopOutputFile.fromLocation(location, config.getHadoopConfig());
 
         switch (format) {
             case PARQUET:
