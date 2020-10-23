@@ -41,6 +41,22 @@ vMajor.Minor.Patch
 
 You can tag via git or through Github's Release UI.
 
+### Versioning
+Version 1.x(current master branch) is stable and will continue to be supported.
+
+Version 2.x is under active development.
+
+#### Version 2.x
+- Mantis 1.x will continue to be supported and co-exist with 2.x.
+- Mantis 2.x will focus on modernizing the `mantis-runtime` and user facing job authoring APIs
+
+The purpose of Mantis Runtime 2.x is:
+- expose a [Reactive Streams](http://www.reactive-streams.org) compatible Job DSL and remove dependency on RxJava 1.x Observable
+- modernize the Mantis runtime
+	- leverage a Reactive Streams compliant implementation in place of RxJava 1.x/RxNetty
+	- consolidate the networking stack for stage-to-stage and job-to-job communication. Current implementation uses Remote Observables for stage-to-stage communication and RxNetty for job-to-job communication.
+
+
 ## Contributing
 
 Mantis is interested in building the community. We welcome any forms of contributions through discussions on any
