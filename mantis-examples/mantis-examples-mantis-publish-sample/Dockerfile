@@ -1,5 +1,5 @@
 # Alpine Linux with OpenJDK JRE
-FROM openjdk:8-jre-alpine
+FROM docker-hub.netflix.net/openjdk:8-jre-alpine
 # copy WAR into image
 
 RUN mkdir -p /mnt/local/mantispublish

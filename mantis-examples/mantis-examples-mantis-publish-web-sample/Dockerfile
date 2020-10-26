@@ -1,4 +1,4 @@
-FROM tomcat:9.0-alpine
+FROM docker-hub.netflix.net/tomcat:9.0-alpine
 
 LABEL maintainer="mantis-oss-dev@netflix.com"
 
