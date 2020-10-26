@@ -45,6 +45,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Comparators;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
@@ -112,7 +113,8 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         Table table = catalog.loadTable(id);
         WorkerInfo workerInfo = context.getWorkerInfo();
 
-        IcebergWriter writer = new DefaultIcebergWriter(config, workerInfo, table);
+        LocationProvider locationProvider = context.getServiceLocator().service(LocationProvider.class);
+        IcebergWriter writer = new DefaultIcebergWriter(config, workerInfo, table, locationProvider);
         WriterMetrics metrics = new WriterMetrics();
         PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
         Partitioner partitioner = partitionerFactory.getPartitioner(table);

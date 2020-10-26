@@ -118,16 +118,16 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
                                 workerSentHeartbeats.increment();
                             }
                         } catch (SocketTimeoutException e) {
-                            logger.error("SocketTimeoutException: Failed to send status update", e);
+                            logger.warn("SocketTimeoutException: Failed to send status update", e);
                             hbSocketTimeoutCounter.increment();
                         } catch (ConnectionPoolTimeoutException e) {
-                            logger.error("ConnectionPoolTimeoutException: Failed to send status update", e);
+                            logger.warn("ConnectionPoolTimeoutException: Failed to send status update", e);
                             hbConnectionRequestTimeoutCounter.increment();
                         } catch (ConnectTimeoutException e) {
-                            logger.error("ConnectTimeoutException: Failed to send status update", e);
+                            logger.warn("ConnectTimeoutException: Failed to send status update", e);
                             hbConnectionTimeoutCounter.increment();
                         } catch (IOException e) {
-                            logger.error("Failed to send status update", e);
+                            logger.warn("Failed to send status update", e);
                         }
                     }
                 });
