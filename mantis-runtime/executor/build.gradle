@@ -15,21 +15,17 @@
  * limitations under the License.
  *
  */
+dependencies {
+    api project(':mantis-runtime:api')
+//    api "io.projectreactor:reactor-core:$versionReactor"
+    api "io.reactivex:rxjava:$versionRxJava"
+    api "io.reactivex:rxjava-reactive-streams:$versionRxJavaReactiveStreams"
+    api "org.slf4j:slf4j-api:$slf4jVersion"
 
-package io.mantisrx.runtime.api;
-
-import io.mantisrx.runtime.api.source.Source;
-
-public final class MantisJob {
-    private MantisJob() { }
-
-    /**
-     * Specify the data source connector for this mantis job
-     * @param source Data source
-     * @param <T> Type of data received from source
-     * @return SourceHolder<T> to compose with a Mantis Stage
-     */
-    public static <T> SourceHolder<T> source(Source<T> source) {
-        return new SourceHolder<T>(source);
-    }
+    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    testImplementation "io.projectreactor:reactor-test:$versionReactor"
+    testImplementation "junit:junit-dep:$junitVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
+
+

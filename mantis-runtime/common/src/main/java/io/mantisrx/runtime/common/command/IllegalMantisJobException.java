@@ -16,20 +16,18 @@
  *
  */
 
-package io.mantisrx.runtime.api;
+package io.mantisrx.runtime.common.command;
 
-import io.mantisrx.runtime.api.source.Source;
+public class IllegalMantisJobException extends RuntimeException {
 
-public final class MantisJob {
-    private MantisJob() { }
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Specify the data source connector for this mantis job
-     * @param source Data source
-     * @param <T> Type of data received from source
-     * @return SourceHolder<T> to compose with a Mantis Stage
-     */
-    public static <T> SourceHolder<T> source(Source<T> source) {
-        return new SourceHolder<T>(source);
+    public IllegalMantisJobException(String string) {
+        super(string);
     }
+
+    public IllegalMantisJobException(CommandException e) {
+        super(e);
+    }
+
 }

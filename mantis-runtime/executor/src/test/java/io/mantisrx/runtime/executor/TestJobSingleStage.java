@@ -16,23 +16,17 @@
 
 package io.mantisrx.runtime.executor;
 
+
 import java.util.LinkedList;
 import java.util.List;
 
-import io.mantisrx.common.codec.Codecs;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJob;
-import io.mantisrx.runtime.MantisJobProvider;
-import io.mantisrx.runtime.PortRequest;
-import io.mantisrx.runtime.ScalarToScalar;
-import io.mantisrx.runtime.computation.ScalarComputation;
-import io.mantisrx.runtime.sink.Sink;
-import io.mantisrx.runtime.source.Index;
-import io.mantisrx.runtime.source.Source;
-import rx.Observable;
-import rx.functions.Action1;
-import rx.functions.Func1;
+import io.mantisrx.runtime.api.Job;
+import io.mantisrx.runtime.api.MantisJob;
+import io.mantisrx.runtime.api.MantisJobProvider;
+import io.mantisrx.runtime.api.ScalarToScalar;
+import io.mantisrx.runtime.common.codec.Codecs;
+import reactor.core.publisher.Flux;
+import rx.RxReactiveStreams;
 
 
 public class TestJobSingleStage extends MantisJobProvider<Integer> {
@@ -50,42 +44,16 @@ public class TestJobSingleStage extends MantisJobProvider<Integer> {
     @Override
     public Job<Integer> getJobInstance() {
         return MantisJob
-                .<Integer>
-                        source(new Source<Integer>() {
-                    @Override
-                    public Observable<Observable<Integer>> call(Context t1,
-                                                                Index t2) {
-                        return Observable.just(Observable.range(0, 10));
-                    }
-                })
+                .source((context, index) -> Flux.just(Flux.range(0, 10)))
                 // doubles number
-                .stage(new ScalarComputation<Integer, Integer>() {
-                    @Override
-                    public Observable<Integer> call(Context context, Observable<Integer> t1) {
-                        return t1.map(new Func1<Integer, Integer>() {
-                            @Override
-                            public Integer call(Integer t1) {
-                                return t1 * t1;
-                            }
-                        });
-                    }
-                }, new ScalarToScalar.Config<Integer, Integer>()
+                .stage((context, t1) -> Flux.from(t1).map(t11 -> t11 * t11),
+                    new ScalarToScalar.Config<Integer, Integer>()
                         .codec(Codecs.integer()))
-                .sink(new Sink<Integer>() {
-                    @Override
-                    public void call(Context context,
-                                     PortRequest p,
-                                     Observable<Integer> o) {
-                        o
-                                .toBlocking().forEach(new Action1<Integer>() {
-                            @Override
-                            public void call(Integer t1) {
-                                System.out.println(t1);
-                                itemsWritten.add(t1);
-                            }
-                        });
-                    }
-                })
+                .sink((context, p, o) -> RxReactiveStreams.toObservable(o)
+                        .toBlocking().forEach(t1 -> {
+                            System.out.println(t1);
+                            itemsWritten.add(t1);
+                        }))
                 .create();
     }
 

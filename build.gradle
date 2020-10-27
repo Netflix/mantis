@@ -36,6 +36,7 @@ ext {
     versionSlf4j = '1.7.0'
     versionRxJava = '1.3.8'
     versionReactiveStreams = '1.0.3'
+    versionRxJavaReactiveStreams = '1.2.1'
     versionReactor = '3.4.0'
 
     junitVersion = '4.11'

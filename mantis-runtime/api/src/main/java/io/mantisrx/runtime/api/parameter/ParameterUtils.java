@@ -244,7 +244,7 @@ public class ParameterUtils {
         return createContextParameters(parameterDefinitions, array);
     }
 
-    @SuppressWarnings( {"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static void validationCheck(Function validator, Object value,
                                         String name) throws IllegalArgumentException {
         if (validator == null) {
@@ -265,7 +265,7 @@ public class ParameterUtils {
         }
     }
 
-    @SuppressWarnings( {"rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     public static <T> Map<String, Object> checkThenCreateState(
             Map<String, ParameterDefinition<?>> parameterDefinitions,
             Map<String, Parameter> parameters) throws IllegalArgumentException {

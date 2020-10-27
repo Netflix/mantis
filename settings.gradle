@@ -54,6 +54,7 @@ include 'mantis-remote-observable'
 include 'mantis-runtime-1.x'
 include 'mantis-runtime:api'
 include 'mantis-runtime:common'
+include 'mantis-runtime:executor'
 
 include 'mantis-server:mantis-server-agent'
 include 'mantis-server:mantis-server-worker'
