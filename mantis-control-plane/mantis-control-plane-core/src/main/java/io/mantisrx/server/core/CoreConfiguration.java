@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.core;
 
-import io.mantisrx.common.metrics.MetricsPublisher;
 import org.skife.config.Config;
 import org.skife.config.Default;
 

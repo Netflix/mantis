@@ -29,7 +29,10 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import io.mantisrx.shaded.com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
-
+/**
+ * @deprecated instead use {@link io.mantisrx.runtime.common.codec.JacksonCodecs}
+ */
+@Deprecated
 public class JacksonCodecs {
 
     private final static ObjectMapper mapper;

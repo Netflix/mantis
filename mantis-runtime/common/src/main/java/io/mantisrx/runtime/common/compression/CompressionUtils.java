@@ -1,20 +1,22 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ *
+ * Copyright 2020 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package io.mantisrx.common.compression;
+package io.mantisrx.runtime.common.compression;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -23,13 +25,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import io.mantisrx.common.MantisServerSentEvent;
+import io.mantisrx.runtime.common.MantisServerSentEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
@@ -39,7 +42,7 @@ public class CompressionUtils {
 
     public static final String MANTIS_SSE_DELIMITER = "$$$";
     public static final byte[] MANTIS_SSE_DELIMITER_BINARY = MANTIS_SSE_DELIMITER.getBytes();
-    private static Logger logger = LoggerFactory.getLogger(CompressionUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(CompressionUtils.class);
 
     public static String compressAndBase64Encode(List<String> events, boolean useSnappy) {
         return compressAndBase64Encode(events, useSnappy, MANTIS_SSE_DELIMITER_BINARY);
@@ -61,7 +64,9 @@ public class CompressionUtils {
                     compressedBytes = gzipCompressData(sb.toString());
                 }
                 String encodedData = Base64.getEncoder().encodeToString(compressedBytes);
-                if (logger.isDebugEnabled()) { logger.debug("Encoded Data --> " + encodedData); }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Encoded Data --> " + encodedData);
+                }
 
                 return encodedData;
             } catch (UnsupportedEncodingException e) {
@@ -106,7 +111,7 @@ public class CompressionUtils {
                 String encodedData = Base64.getEncoder().encodeToString(compressedBytes);
                 if (logger.isDebugEnabled()) { logger.debug("Encoded Data --> " + encodedData); }
 
-                return encodedData.getBytes("UTF-8");
+                return encodedData.getBytes(StandardCharsets.UTF_8);
             } catch (UnsupportedEncodingException e) {
                 logger.warn("Error encoding messages:" + e.getMessage());
 
@@ -138,7 +143,7 @@ public class CompressionUtils {
                 String encodedData = Base64.getEncoder().encodeToString(compressedBytes);
                 if (logger.isDebugEnabled()) { logger.debug("Encoded Data --> " + encodedData); }
 
-                return encodedData.getBytes("UTF-8");
+                return encodedData.getBytes(StandardCharsets.UTF_8);
             } catch (UnsupportedEncodingException e) {
                 logger.warn("Error encoding messages:" + e.getMessage());
 
@@ -175,7 +180,7 @@ public class CompressionUtils {
             GZIPInputStream gis;
             try {
                 gis = new GZIPInputStream(new ByteArrayInputStream(decoded));
-                BufferedReader bf = new BufferedReader(new InputStreamReader(gis, "UTF-8"));
+                BufferedReader bf = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8));
                 String outStr = "";
                 String line;
                 while ((line = bf.readLine()) != null) {
@@ -308,6 +313,7 @@ public class CompressionUtils {
                                                                         boolean useSnappy) {
         return decompressAndBase64Decode(encodedString, isCompressedBinary, useSnappy, null);
     }
+
     public static List<MantisServerSentEvent> decompressAndBase64Decode(String encodedString,
                                                                         boolean isCompressedBinary,
                                                                         boolean useSnappy,
@@ -355,17 +361,17 @@ public class CompressionUtils {
     }
 
     /*protected*/
-    static byte[] gzipCompressData(String data) throws IOException, UnsupportedEncodingException {
+    static byte[] gzipCompressData(String data) throws IOException {
         ByteArrayOutputStream obj = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(obj);
-        gzip.write(data.getBytes("UTF-8"));
+        gzip.write(data.getBytes(StandardCharsets.UTF_8));
         gzip.close();
         byte[] compressedBytes = obj.toByteArray();
         return compressedBytes;
     }
 
     /*protected*/
-    static byte[] gzipCompressData(byte[] data) throws IOException, UnsupportedEncodingException {
+    static byte[] gzipCompressData(byte[] data) throws IOException {
         ByteArrayOutputStream obj = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(obj);
         gzip.write(data);
@@ -377,13 +383,13 @@ public class CompressionUtils {
     static BufferedReader snappyDecompress(byte[] data) throws IOException {
         byte[] decompressed = Snappy.uncompress(data);
         ByteArrayInputStream bais = new ByteArrayInputStream(decompressed);
-        BufferedReader bf = new BufferedReader(new InputStreamReader(bais, "UTF-8"));
+        BufferedReader bf = new BufferedReader(new InputStreamReader(bais, StandardCharsets.UTF_8));
         return bf;
     }
 
     static BufferedReader gzipDecompress(byte[] data) throws IOException {
         GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(data));
-        BufferedReader bf = new BufferedReader(new InputStreamReader(gis, "UTF-8"));
+        BufferedReader bf = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8));
         return bf;
     }
 

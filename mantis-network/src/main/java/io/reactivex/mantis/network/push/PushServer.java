@@ -30,9 +30,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.compression.CompressionUtils;
+import io.mantisrx.runtime.common.compression.CompressionUtils;
 import io.mantisrx.common.messages.MantisMetaDroppedMessage;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;

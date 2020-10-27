@@ -35,6 +35,8 @@ ext {
     versionIoNetty = '4.1.5.Final'
     versionSlf4j = '1.7.0'
     versionRxJava = '1.3.8'
+    versionReactiveStreams = '1.0.3'
+    versionReactor = '3.4.0'
 
     junitVersion = '4.11'
     mockitoVersion = '1.9.+'

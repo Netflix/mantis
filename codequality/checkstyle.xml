@@ -59,19 +59,11 @@
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
-        <module name="JavadocMethod">
-            <property name="scope" value="package"/>
-            <property name="allowMissingParamTags" value="true"/>
-            <property name="allowMissingThrowsTags" value="true"/>
-            <property name="allowMissingReturnTag" value="true"/>
-            <property name="allowThrowsTagsForSubclasses" value="true"/>
-            <property name="allowUndeclaredRTE" value="true"/>
-            <property name="allowMissingPropertyJavadoc" value="true"/>
-            <property name="tokens" value="METHOD_DEF,ANNOTATION_FIELD_DEF"/>
-        </module>
+        <module name="MissingJavadocMethod"/>
+
         <module name="JavadocType">
             <property name="scope" value="package"/>
-            <property name="allowMissingParamTags" value="true"/>
+<!--            <property name="allowMissingParamTags" value="true"/>-->
         </module>
         <module name="JavadocVariable">
             <property name="scope" value="package"/>
@@ -102,13 +94,13 @@
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <!-- what is a good max value? -->
-            <property name="max" value="120"/>
-            <!-- ignore lines like "$File: //depot/... $" -->
-            <property name="ignorePattern" value="\$File.*\$"/>
-            <property name="severity" value="info"/>
-        </module>
+<!--        <module name="LineLength">-->
+<!--            &lt;!&ndash; what is a good max value? &ndash;&gt;-->
+<!--            <property name="max" value="120"/>-->
+<!--            &lt;!&ndash; ignore lines like "$File: //depot/... $" &ndash;&gt;-->
+<!--            <property name="ignorePattern" value="\$File.*\$"/>-->
+<!--            <property name="severity" value="info"/>-->
+<!--        </module>-->
         <module name="MethodLength"/>
         <module name="ParameterNumber"/>
 

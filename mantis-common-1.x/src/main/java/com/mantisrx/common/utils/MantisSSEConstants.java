@@ -16,6 +16,10 @@
 
 package com.mantisrx.common.utils;
 
+/**
+ * @deprecated instead use {@link io.mantisrx.runtime.common.MantisSSEConstants}
+ */
+@Deprecated
 public class MantisSSEConstants {
 
     public static final String MANTIS_ENABLE_COMPRESSION = "mantis.EnableCompressedBinary";
@@ -44,3 +48,6 @@ public class MantisSSEConstants {
 
     public static final String MQL = "mql";
 }
+
+
+

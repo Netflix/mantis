@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.common.compression.CompressionUtils;
+import io.mantisrx.runtime.common.compression.CompressionUtils;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;

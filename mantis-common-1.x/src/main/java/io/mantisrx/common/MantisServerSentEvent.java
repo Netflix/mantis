@@ -16,6 +16,10 @@
 
 package io.mantisrx.common;
 
+/**
+ * @deprecated instead use {@link io.mantisrx.runtime.common.MantisServerSentEvent}
+ */
+@Deprecated
 public class MantisServerSentEvent {
 
     private final String eventData;

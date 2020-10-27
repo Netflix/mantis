@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
-import io.mantisrx.common.compression.CompressionUtils;
+import io.mantisrx.runtime.common.compression.CompressionUtils;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;

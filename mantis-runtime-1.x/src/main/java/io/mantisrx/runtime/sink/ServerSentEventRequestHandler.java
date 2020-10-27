@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.api.Tag;
-import io.mantisrx.common.compression.CompressionUtils;
+import io.mantisrx.runtime.common.compression.CompressionUtils;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.Endpoint;

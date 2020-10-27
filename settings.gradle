@@ -50,7 +50,10 @@ include ':mantis-publish:mantis-publish-netty'
 include ':mantis-publish:mantis-publish-netty-guice'
 
 include 'mantis-remote-observable'
+// mantis-runtime-1.x will be removed from 2.x branch once new mantis-runtime is implemented and all dependent projects updated to use new runtime
 include 'mantis-runtime-1.x'
+include 'mantis-runtime:api'
+include 'mantis-runtime:common'
 
 include 'mantis-server:mantis-server-agent'
 include 'mantis-server:mantis-server-worker'

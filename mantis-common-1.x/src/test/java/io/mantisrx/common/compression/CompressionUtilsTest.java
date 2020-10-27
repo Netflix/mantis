@@ -1,4 +1,4 @@
-package io.mantisrx.common.compression;
+package io.mantisrx.runtime.common.compression;
 
 import io.mantisrx.common.MantisServerSentEvent;
 import org.junit.Assert;

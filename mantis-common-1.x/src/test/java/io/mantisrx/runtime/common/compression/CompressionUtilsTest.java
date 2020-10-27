@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package io.mantisrx.common.compression;
+=======
+package io.mantisrx.runtime.common.compression;
+>>>>>>> c4c968c... WIP runtime API
 
 import io.mantisrx.common.MantisServerSentEvent;
 import org.junit.Assert;
