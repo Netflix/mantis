@@ -19,7 +19,7 @@ ext {
 }
 
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
     implementation "io.mantisrx:mantis-control-plane-client:$mantisControlPlaneVersion"
     implementation project(':mantis-server:mantis-server-worker-client')
 

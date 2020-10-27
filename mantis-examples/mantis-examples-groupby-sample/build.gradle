@@ -13,7 +13,7 @@ task execute(type:JavaExec) {
 }
 
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
 
     implementation 'net.andreinc.mockneat:mockneat:0.3.7'
     implementation "org.slf4j:slf4j-api:$slf4jVersion"

@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
     implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"

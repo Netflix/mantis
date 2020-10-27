@@ -22,7 +22,7 @@ ext {
 }
 
 dependencies {
-    implementation project(":mantis-runtime")
+    implementation project(":mantis-runtime-1.x")
     implementation project(":mantis-publish:mantis-publish-netty")
     implementation project(":mantis-connectors:mantis-connector-publish")
 

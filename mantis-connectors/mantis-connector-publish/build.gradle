@@ -20,7 +20,7 @@ ext {
 
 dependencies {
     implementation project(":mantis-shaded")
-    implementation project(":mantis-runtime")
+    implementation project(":mantis-runtime-1.x")
 
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-publish:mantis-publish-core")

@@ -19,7 +19,7 @@ ext {
 }
 
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
     implementation "io.mantisrx:mantis-connector-job:$mantisConnectorsVersion"
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"

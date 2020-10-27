@@ -14,7 +14,7 @@ task execute(type:JavaExec) {
 }
 
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
     implementation project(':mantis-examples:mantis-examples-core')
 
     implementation 'com.twitter:hbc-core:2.2.0'

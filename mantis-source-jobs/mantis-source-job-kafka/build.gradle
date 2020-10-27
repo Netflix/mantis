@@ -20,7 +20,7 @@ ext {
 }
 
 dependencies {
-    implementation project(":mantis-runtime")
+    implementation project(":mantis-runtime-1.x")
     implementation project(":mantis-connectors:mantis-connector-kafka")
 
     implementation "io.mantisrx:mql-jvm:$mqlVersion"

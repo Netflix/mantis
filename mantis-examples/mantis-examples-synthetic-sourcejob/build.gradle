@@ -26,7 +26,7 @@ task execute(type:JavaExec) {
 
 
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
 
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
 

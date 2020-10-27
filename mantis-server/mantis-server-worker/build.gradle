@@ -24,7 +24,7 @@ ext {
 }
 
 dependencies {
-    compile project(":mantis-runtime")
+    compile project(":mantis-runtime-1.x")
     compile project(":mantis-control-plane:mantis-control-plane-client")
     compile project(":mantis-control-plane:mantis-control-plane-core")
     compile project(":mantis-server:mantis-server-worker-client")

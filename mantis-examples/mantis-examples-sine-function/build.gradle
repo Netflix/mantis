@@ -26,5 +26,5 @@ task execute(type:JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 dependencies {
-    implementation project(':mantis-runtime')
+    implementation project(':mantis-runtime-1.x')
 }
