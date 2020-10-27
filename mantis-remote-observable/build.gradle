@@ -24,7 +24,7 @@ test {
 }
 
 dependencies {
-    implementation project(':mantis-common')
+    implementation project(':mantis-common-1.x')
     implementation "io.netty:netty-handler:$nettyVersion"
     implementation("com.netflix.rxjava:rxjava-math:$rxJavaMathVersion") {
         exclude module: 'rxjava-core'

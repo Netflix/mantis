@@ -28,7 +28,7 @@ ext {
 
 dependencies {
 
-    api project(":mantis-common")
+    api project(":mantis-common-1.x")
 
     api "org.skife.config:config-magic:$configMagicVersion"
 

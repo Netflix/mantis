@@ -22,5 +22,5 @@ ext {
 dependencies {
     compile "io.netty:netty-handler:$nettyVersion"
     compile "io.mantisrx:mql-jvm:$mqlVersion"
-    compile project(':mantis-common')
+    compile project(':mantis-common-1.x')
 }

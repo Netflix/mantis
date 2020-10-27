@@ -17,6 +17,9 @@
 rootProject.name = 'mantis'
 
 include 'mantis-client'
+// mantis-common-1.x will be removed from 2.x branch once new mantis-common is implemented and all
+// dependent projects update to use new mantis-common module
+include 'mantis-common-1.x'
 include 'mantis-common'
 
 include 'mantis-connectors:mantis-connector-iceberg'
