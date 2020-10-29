@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -42,12 +43,10 @@ import io.mantisrx.runtime.common.command.CommandException;
 import io.mantisrx.runtime.common.command.IllegalMantisJobException;
 import io.mantisrx.runtime.common.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.common.parameter.Parameter;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.RxReactiveStreams;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.subjects.BehaviorSubject;
+import reactor.core.publisher.Sinks;
 
 
 public class LocalJobExecutorNetworked {
@@ -178,8 +177,8 @@ public class LocalJobExecutorNetworked {
 
 
         int numInstances = schedulingInfo.forStage(1).getNumberOfInstances();
-        BehaviorSubject<Integer> workersInStageOneObservable = BehaviorSubject.create(numInstances);
-        BehaviorSubject<WorkerMap> workerMapObservable = BehaviorSubject.create();
+        Publisher<Integer> workersInStageOneObservable = Sinks.many().replay().latestOrDefault(numInstances).asFlux();
+        Sinks.Many<WorkerMap> workerMapReplaySink = Sinks.many().replay().latest();
 
         if (stages.size() == 1) {
             // single stage job
@@ -188,9 +187,12 @@ public class LocalJobExecutorNetworked {
 
             // use latch to wait for all instances to complete
             final CountDownLatch waitUntilAllCompleted = new CountDownLatch(numInstances);
-            Action0 countDownLatchOnComplete = () -> waitUntilAllCompleted.countDown();
-            Action0 nullOnCompleted = () -> { };
-            Action1<Throwable> nullOnError = t -> { };
+            Runnable countDownLatchOnComplete = () -> {
+                logger.info("countDownLatchOnComplete {}", waitUntilAllCompleted.getCount());
+                waitUntilAllCompleted.countDown();
+            };
+            Runnable nullOnCompleted = () -> { };
+            Consumer<Throwable> nullOnError = t -> { };
 
             Map<Integer, List<WorkerInfo>> workerInfoMap = new HashMap<>();
             List<WorkerInfo> workerInfoList = new ArrayList<>();
@@ -206,17 +208,14 @@ public class LocalJobExecutorNetworked {
                         ParameterUtils.createContextParameters(parameterDefinitions,
                                 parameters),
                         lifecycle.getServiceLocator(),
-                        //new WorkerInfo(jobId, jobId, 1, i, i, MantisJobDurationType.Perpetual, "localhost", new ArrayList<>(),-1,-1),
                         workerInfo,
                         MetricsRegistry.getInstance(), () -> {
                     System.exit(0);
-                }, RxReactiveStreams.toPublisher(workerMapObservable));
+                }, workerMapReplaySink.asFlux());
 
                 // workers for stage 1
                 workerInfoMap.put(1, workerInfoList);
-
-                workerMapObservable.onNext(new WorkerMap(workerInfoMap));
-
+                workerMapReplaySink.tryEmitNext(new WorkerMap(workerInfoMap));
 
                 StageExecutors.executeSingleStageJob(source, stage, sink, () -> workerInfo.getWorkerPorts().getSinkPort(),
                         context, countDownLatchOnComplete, i, workersInStageOneObservable, null, null, nullOnCompleted,

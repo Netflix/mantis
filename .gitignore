@@ -194,4 +194,5 @@ gradle-app.setting
 ### Gradle Patch ###
 **/build/
 
+**/TestReactor.java
 # End of https://www.gitignore.io/api/vim,java,linux,macos,gradle,intellij+all

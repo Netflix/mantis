@@ -15,17 +15,19 @@
  * limitations under the License.
  *
  */
-dependencies {
-    api project(':mantis-runtime:api')
-    api "io.projectreactor:reactor-core:$versionReactor"
-//    api "io.reactivex:rxjava:$versionRxJava"
-    api "io.reactivex:rxjava-reactive-streams:$versionRxJavaReactiveStreams"
-    api "org.slf4j:slf4j-api:$slf4jVersion"
 
-    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
-    testImplementation "io.projectreactor:reactor-test:$versionReactor"
-    testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+package io.mantisrx.runtime.reactor;
+
+import java.util.function.Function;
+
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Operators;
+
+
+public final class MantisOperators {
+    private MantisOperators() { }
+
+    public static <T> Function<? super Publisher<T>, ? extends Publisher<T>> monitor(String name) {
+         return Operators.lift(new MonitorOperator<T>(name).operator());
+    }
 }
-
-

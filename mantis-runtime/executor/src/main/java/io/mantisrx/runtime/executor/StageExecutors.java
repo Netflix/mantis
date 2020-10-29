@@ -19,6 +19,7 @@ package io.mantisrx.runtime.executor;
 import static io.mantisrx.runtime.api.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
@@ -31,17 +32,12 @@ import io.mantisrx.runtime.api.StageConfig;
 import io.mantisrx.runtime.api.computation.Computation;
 import io.mantisrx.runtime.api.computation.ScalarComputation;
 import io.mantisrx.runtime.api.source.Index;
-import io.mantisrx.runtime.rx.MonitorOperator;
-import io.mantisrx.runtime.rx.scheduler.SingleThreadScheduler;
+import io.mantisrx.runtime.reactor.MantisOperators;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.RxReactiveStreams;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.internal.util.RxThreadFactory;
-import rx.schedulers.Schedulers;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 
 public final class StageExecutors {
@@ -64,31 +60,32 @@ public final class StageExecutors {
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked", "checkstyle:ParameterNumber"})
-    static void executeSingleStageJob(final SourceHolder source, final StageConfig stage,
-                                             final SinkHolder sink, final PortSelector portSelector,
-                                             final Context context, Action0 sinkObservableTerminatedCallback,
-                                             final int workerIndex,
-                                             final Observable<Integer> totalWorkerAtStageObservable,
-                                             final Action0 onSinkSubscribe, final Action0 onSinkUnsubscribe,
-                                             Action0 observableOnCompleteCallback,
-                                             Action1<Throwable> observableOnErrorCallback) {
+    static void executeSingleStageJob(final SourceHolder source,
+                                      final StageConfig stage,
+                                      final SinkHolder sink,
+                                      final PortSelector portSelector,
+                                      final Context context,
+                                      Runnable sinkOnTerminatedCallback,
+                                      final int workerIndex,
+                                      final Publisher<Integer> totalWorkerAtStagePublisher,
+                                      final Runnable onSinkSubscribe,
+                                      final Runnable onSinkUnsubscribe,
+                                      Runnable onCompleteCallback,
+                                      Consumer<Throwable> onErrorCallback) {
         // no previous stage for single stage job
         // source consumer
         WorkerConsumer sourceConsumer = new WorkerConsumer() {
             @Override
-            public Observable start(StageConfig previousStage) {
-                Index index = new Index(workerIndex, RxReactiveStreams.toPublisher(totalWorkerAtStageObservable));
+            public Publisher<Publisher<?>> start(StageConfig previousStage) {
+                Index index = new Index(workerIndex, totalWorkerAtStagePublisher);
                 // call init on source
                 source.getSourceFunction().init(context, index);
 
                 Publisher dataSource = source.getSourceFunction().createDataSource(context, index);
-                Observable<Publisher<?>> sourceObservable
-                        = (Observable<Publisher<?>>) RxReactiveStreams.toObservable(dataSource);
-                Observable<? extends Observable<?>> oo = sourceObservable.map(RxReactiveStreams::toObservable);
                 if (stage.getInputStrategy() == StageConfig.InputStrategy.CONCURRENT) {
-                    return oo;
+                    return dataSource;
                 } else {
-                    return Observable.just(Observable.merge(oo));
+                    return Flux.just(Flux.merge(dataSource));
                 }
             }
 
@@ -97,8 +94,8 @@ public final class StageExecutors {
         };
         // sink publisher with metrics
         WorkerPublisher sinkPublisher = new SinkPublisher(sink, portSelector, context,
-                sinkObservableTerminatedCallback, onSinkSubscribe, onSinkUnsubscribe,
-                observableOnCompleteCallback, observableOnErrorCallback);
+                sinkOnTerminatedCallback, onSinkSubscribe, onSinkUnsubscribe,
+                onCompleteCallback, onErrorCallback);
         StageExecutors.executeIntermediate(sourceConsumer, stage, sinkPublisher, context);
     }
 
@@ -198,35 +195,35 @@ public final class StageExecutors {
 //    }
 
     /**
-     * @param oo
+     * @param pp
      * @param computation
      *
      * @return untyped to support multiple callers return types
      */
     @SuppressWarnings("unchecked")
-    private static <T, R> Observable<Observable<R>> executeInners(Observable<Observable<T>> oo,
+    private static <T, R> Publisher<Publisher<R>> executeInners(Publisher<Publisher<T>> pp,
                                                                   Computation computation,
                                                                   Context context) {
         final BiFunction<Context, Publisher<T>, Publisher<R>> c
                 = (BiFunction<Context, Publisher<T>, Publisher<R>>) computation;
 
         return
-            oo
-                .lift(new MonitorOperator<>("worker_stage_outer"))
-                .map(observable -> RxReactiveStreams.toObservable(c
-                    .apply(context, RxReactiveStreams.toPublisher(observable
-                        .lift(new MonitorOperator<T>("worker_stage_inner_input")))))
-                    .lift(new MonitorOperator<R>("worker_stage_inner_output")));
+            Flux.from(pp)
+                .transform(MantisOperators.<Publisher<T>>monitor("worker_stage_outer"))
+                .map(publisher -> Flux.from(c
+                    .apply(context, Flux.from(publisher)
+                        .transform(MantisOperators.<T>monitor("worker_stage_inner_input"))))
+                    .transform(MantisOperators.<R>monitor("worker_stage_inner_output")));
     }
 
     /**
-     * @param oo
+     * @param pp
      * @param computation
      *
      * @return untyped to support multiple callers return types
      */
     @SuppressWarnings("unchecked")
-    private static <T, R> Observable<Observable<R>> executeInnersInParallel(Observable<Observable<T>> oo,
+    private static <T, R> Publisher<Publisher<R>> executeInnersInParallel(Publisher<Publisher<T>> pp,
                                                                             Computation computation,
                                                                             Context context,
                                                                             int concurrency) {
@@ -234,30 +231,25 @@ public final class StageExecutors {
                 = (BiFunction<Context, Publisher<T>, Publisher<R>>) computation;
 
         if (concurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY) {
-            return oo
-                .lift(new MonitorOperator<>("worker_stage_outer"))
-                .map(observable -> RxReactiveStreams.toObservable(c
-                    .apply(context, RxReactiveStreams.toPublisher(observable
-                        .observeOn(Schedulers.computation())
-                        .lift(new MonitorOperator<>("worker_stage_inner_input")))))
-                    .lift(new MonitorOperator<>("worker_stage_inner_output")));
+            return Flux.from(pp)
+                .transform(MantisOperators.<Publisher<T>>monitor("worker_stage_outer"))
+                .map(p -> Flux.from(c.apply(context,
+                    Flux.from(p)
+                        .publishOn(Schedulers.parallel())
+                        .transform(MantisOperators.<T>monitor("worker_stage_inner_input"))))
+                    .transform(MantisOperators.<R>monitor("worker_stage_inner_output")));
 
         } else {
-            final SingleThreadScheduler[] singleThreadSchedulers = new SingleThreadScheduler[concurrency];
-            RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisSingleThreadScheduler-");
-            LOGGER.info("creating {} Mantis threads", concurrency);
-            for (int i = 0; i < concurrency; i++) {
-                singleThreadSchedulers[i] = new SingleThreadScheduler(rxThreadFactory);
-            }
-            return oo
-                .lift(new MonitorOperator<>("worker_stage_outer"))
-                .map(observable -> observable
-                    .groupBy(e -> System.nanoTime() % concurrency)
-                    .flatMap(go -> RxReactiveStreams.toObservable(
-                        c.apply(context, RxReactiveStreams.toPublisher(go
-                                .observeOn(singleThreadSchedulers[go.getKey().intValue()])
-                                .lift(new MonitorOperator<>("worker_stage_inner_input")))))
-                        .lift(new MonitorOperator<>("worker_stage_inner_output"))));
+            // TODO review and test
+            // Note the newParallel() executor will detect and reject the usage of blocking Reactor APIs
+            return Flux.from(pp)
+                .transform(MantisOperators.<Publisher<T>>monitor("worker_stage_outer"))
+                .map(p -> Flux.from(p)
+                        .groupBy(e -> System.nanoTime() % concurrency)
+                        .flatMap(gf -> Flux.from(c.apply(context, gf
+                            .publishOn(Schedulers.newParallel("MantisParallelExecutor", concurrency, true))
+                            .transform(MantisOperators.<T>monitor("worker_stage_inner_input"))))
+                        .transform(MantisOperators.<R>monitor("worker_stage_inner_output"))));
         }
     }
 
@@ -294,8 +286,9 @@ public final class StageExecutors {
     }
 
 
-    private static <T, R> Observable<Observable<R>> setupScalarToScalarStage(ScalarToScalar<T, R> stage,
-                                                                             Observable<Observable<T>> source, Context context) {
+    private static <T, R> Publisher<Publisher<R>> setupScalarToScalarStage(ScalarToScalar<T, R> stage,
+                                                                           Publisher<Publisher<T>> source,
+                                                                           Context context) {
         ScalarComputation<T, R> computation = stage.getComputation();
         LOGGER.info("initializing {}", computation.getClass().getCanonicalName());
         computation.init(context);
@@ -306,7 +299,7 @@ public final class StageExecutors {
         if (inputType == StageConfig.InputStrategy.CONCURRENT) {
             return executeInnersInParallel(source, computation, context, resolveStageConcurrency(stage.getConcurrency()));
         } else if (inputType == StageConfig.InputStrategy.SERIAL) {
-            Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
+            Publisher<Publisher<T>> merged = Flux.just(Flux.merge(source));
             return executeInners(merged, computation, context);
         } else {
             throw new RuntimeException("Unsupported input type: " + inputType.name());
@@ -328,7 +321,6 @@ public final class StageExecutors {
 //        }
 //    }
 //
-//    // NJ
 //    private static <K, T, R> Observable<Observable<MantisGroup<String, R>>> setupScalarToGroupStage(ScalarToGroup<K, T, R> stage,
 //                                                                                                    Observable<Observable<T>> source, Context context) {
 //        StageConfig.InputStrategy inputType = stage.getInputStrategy();
@@ -375,7 +367,7 @@ public final class StageExecutors {
 //        }
 //    }
 //
-//    // NJ
+//
 //    private static <K, T, R> Observable<Observable<R>> setupKeyToScalarStage(KeyToScalar<K, T, R> stage,
 //                                                                             Observable<Observable<MantisGroup<String, T>>> source, Context context) {
 //        StageConfig.InputStrategy inputType = stage.getInputStrategy();
@@ -387,7 +379,7 @@ public final class StageExecutors {
 //                stage.getKeyExpireTimeSeconds());
 //    }
 //
-//    // NJ
+//
 //    private static <K, T, R> Observable<Observable<R>> setupGroupToScalarStage(GroupToScalar<K, T, R> stage,
 //                                                                               Observable<Observable<MantisGroup<K, T>>> source, Context context) {
 //        StageConfig.InputStrategy inputType = stage.getInputStrategy();
@@ -420,13 +412,11 @@ public final class StageExecutors {
             throw new IllegalArgumentException("producer cannot be null");
         }
 
-        Observable<?> toSink = null;
+        Publisher<?> toSink = null;
         if (stage instanceof ScalarToScalar) {
             ScalarToScalar scalarStage = (ScalarToScalar) stage;
-            Observable<Observable<T>> source
-                    = consumer.start(scalarStage);
+            Publisher<Publisher<T>> source = consumer.start(scalarStage);
             toSink = setupScalarToScalarStage(scalarStage, source, context);
-
         }
 //        else if (stage instanceof ScalarToKey) {
 //            ScalarToKey scalarStage = (ScalarToKey) stage;

@@ -17,12 +17,12 @@
 package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.api.StageConfig;
-import rx.Observable;
+import org.reactivestreams.Publisher;
 
 
 public interface WorkerConsumer<T, R> {
 
-    public Observable<Observable<T>> start(StageConfig<T, R> stage);
+    public Publisher<Publisher<T>> start(StageConfig<T, R> stage);
 
     public void stop();
 

@@ -17,44 +17,49 @@
 package io.mantisrx.runtime.executor;
 
 
-import java.util.LinkedList;
-import java.util.List;
+import java.time.Duration;
 
 import io.mantisrx.runtime.api.Job;
 import io.mantisrx.runtime.api.MantisJob;
-import io.mantisrx.runtime.api.MantisJobProvider;
 import io.mantisrx.runtime.api.ScalarToScalar;
 import io.mantisrx.runtime.common.codec.Codecs;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
-import rx.RxReactiveStreams;
+import reactor.test.StepVerifier;
 
 
-public class TestJobSingleStage extends MantisJobProvider<Integer> {
+public class LocalJobExecutorNetworkedTest {
 
-    private List<Integer> itemsWritten = new LinkedList<Integer>();
+    private static final Logger logger = LoggerFactory.getLogger(LocalJobExecutorNetworkedTest.class);
 
-    public static void main(String[] args) throws InterruptedException {
-        LocalJobExecutorNetworked.execute(new TestJobSingleStage().getJobInstance());
+    public static void main(String[] args) {
     }
 
-    public List<Integer> getItemsWritten() {
-        return itemsWritten;
-    }
-
-    @Override
-    public Job<Integer> getJobInstance() {
+    private Job<Integer> getJobInstance() {
         return MantisJob
-                .source((context, index) -> Flux.just(Flux.range(0, 10)))
-                // doubles number
+                .source((context, index) -> Flux.just(Flux.interval(Duration.ofSeconds(1))
+                    .take(4)
+                    .map(Long::intValue)))
                 .stage((context, t1) -> Flux.from(t1).map(t11 -> t11 * t11),
                     new ScalarToScalar.Config<Integer, Integer>()
                         .codec(Codecs.integer()))
-                .sink((context, p, o) -> RxReactiveStreams.toObservable(o)
-                        .toBlocking().forEach(t1 -> {
-                            System.out.println(t1);
-                            itemsWritten.add(t1);
-                        }))
+                .sink((context, portRequest, publisher) -> {
+                    StepVerifier
+                        .create(Flux.from(publisher))
+                        .expectNext(0)
+                        .expectNext(1)
+                        .expectNext(4)
+                        .expectNext(9)
+                        .verifyComplete();
+                })
                 .create();
+    }
+
+    @Test
+    public void testSingleStageJob() {
+        LocalJobExecutorNetworked.execute(getJobInstance());
     }
 
 }

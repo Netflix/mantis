@@ -17,11 +17,11 @@
 package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.api.StageConfig;
-import rx.Observable;
+import org.reactivestreams.Publisher;
 
 
 public interface WorkerPublisher<T, R> {
-    public void start(StageConfig<T, R> stage, Observable<Observable<R>> observableToPublish);
+    public void start(StageConfig<T, R> stage, Publisher<Publisher<R>> publisherPublisher);
 
     public void stop();
 }

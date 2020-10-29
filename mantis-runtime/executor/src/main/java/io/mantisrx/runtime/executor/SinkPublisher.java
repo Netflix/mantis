@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.executor;
 
-import rx.functions.Action1;
+import java.util.function.Consumer;
 
 import io.mantisrx.runtime.api.Context;
 import io.mantisrx.runtime.api.PortRequest;
@@ -24,35 +24,34 @@ import io.mantisrx.runtime.api.SinkHolder;
 import io.mantisrx.runtime.api.StageConfig;
 import io.mantisrx.runtime.api.sink.Sink;
 import io.mantisrx.runtime.common.MantisJobDurationType;
-import io.mantisrx.runtime.rx.MonitorOperator;
+import io.mantisrx.runtime.reactor.MantisOperators;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.RxReactiveStreams;
-import rx.Subscriber;
-import rx.functions.Action0;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 
 public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
 
-    private static final Logger logger = LoggerFactory.getLogger(SinkPublisher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SinkPublisher.class);
     private SinkHolder<R> sinkHolder;
     private PortSelector portSelector;
     private Context context;
-    private Action0 onTerminatedCallback;
-    private Action0 onSubscribeAction;
-    private Action0 onUnsubscribeAction;
-    private Action0 onCompleteCallback;
-    private Action1<Throwable> onErrorCallback;
+    private Runnable onTerminatedCallback;
+    private Runnable onSubscribeAction;
+    private Runnable onUnsubscribeAction;
+    private Runnable onCompleteCallback;
+    private Consumer<Throwable> onErrorCallback;
 
     public SinkPublisher(SinkHolder<R> sinkHolder,
                          PortSelector portSelector,
                          Context context,
-                         Action0 onTerminatedCallback,
-                         Action0 onSubscribeAction,
-                         Action0 onUnsubscribeAction,
-                         Action0 onCompleteCallback,
-                         Action1<Throwable> onErrorCallback) {
+                         Runnable onTerminatedCallback,
+                         Runnable onSubscribeAction,
+                         Runnable onUnsubscribeAction,
+                         Runnable onCompleteCallback,
+                         Consumer<Throwable> onErrorCallback) {
         this.sinkHolder = sinkHolder;
         this.portSelector = portSelector;
         this.context = context;
@@ -66,7 +65,7 @@ public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void start(StageConfig<T, R> stage,
-                      Observable<Observable<R>> observablesToPublish) {
+                      Publisher<Publisher<R>> toPublish) {
         final Sink<R> sink = sinkHolder.getSinkAction();
 
         int sinkPort = -1;
@@ -74,38 +73,34 @@ public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
             sinkPort = portSelector.acquirePort();
         }
 
-        // apply transform
+        Flux<R> mergedFlux = Flux.merge(toPublish)
+            .transform(MantisOperators.<R>monitor("worker_sink"))
+            .doOnSubscribe(subscription -> {
+                LOGGER.info("Got sink subscription, onSubscribe action {}", onSubscribeAction);
+                if (onSubscribeAction != null) {
+                    onSubscribeAction.run();
+                }
+            })
+            .doOnComplete(onCompleteCallback)
+            .doOnError(onErrorCallback)
+            .doOnTerminate(onTerminatedCallback)
+            .doOnCancel(() -> LOGGER.info("source CANCEL"))
+            .doFinally(signalType -> {
+                LOGGER.info("Sink subscriptions clean up {}, unsubscribe action {}", signalType, onUnsubscribeAction);
+                if (onUnsubscribeAction != null) {
+                    onUnsubscribeAction.run();
+                }
+            })
+            .share();
 
-        Observable<R> merged = Observable.merge(observablesToPublish);
-        final Observable wrappedO = merged.lift(new MonitorOperator("worker_sink"));
-
-        Observable o = Observable
-                .create(new Observable.OnSubscribe<Object>() {
-                    @Override
-                    public void call(Subscriber subscriber) {
-                        logger.info("Got sink subscription, onSubscribe=" + onSubscribeAction);
-                        wrappedO
-                                .doOnCompleted(onCompleteCallback)
-                                .doOnError(onErrorCallback)
-                                .doOnTerminate(onTerminatedCallback)
-                                .subscribe(subscriber);
-                        if (onSubscribeAction != null) {
-                            onSubscribeAction.call();
-                        }
-                    }
-                })
-                .doOnUnsubscribe((Action0) () -> {
-                    logger.info("Sink subscriptions clean up, action=" + onUnsubscribeAction);
-                    if (onUnsubscribeAction != null)
-                        onUnsubscribeAction.call();
-                })
-                .share();
         if (context.getWorkerInfo().getDurationType() == MantisJobDurationType.Perpetual) {
             // eager subscribe, don't allow unsubscribe back
-            o.subscribe();
+            mergedFlux
+                .subscribeOn(Schedulers.newSingle("PerpetualJobEagerSubscribe", true))
+                .subscribe(i -> LOGGER.trace("eagerSub {}", i));
         }
         sink.init(context);
-        sink.apply(context, new PortRequest(sinkPort), RxReactiveStreams.toPublisher(o));
+        sink.apply(context, new PortRequest(sinkPort), mergedFlux);
     }
 
     @Override
