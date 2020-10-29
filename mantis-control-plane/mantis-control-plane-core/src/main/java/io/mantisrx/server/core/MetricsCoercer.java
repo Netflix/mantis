@@ -19,6 +19,7 @@ package io.mantisrx.server.core;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import io.mantisrx.common.metrics.MetricsPublisher;
 import org.skife.config.Coercer;
 import org.skife.config.Coercible;
 

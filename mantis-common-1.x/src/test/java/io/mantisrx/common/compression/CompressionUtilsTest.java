@@ -1,8 +1,6 @@
-package io.mantisrx.runtime.common.compression;
+package io.mantisrx.common.compression;
 
-import io.mantisrx.common.MantisServerSentEvent;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import io.mantisrx.common.MantisServerSentEvent;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class CompressionUtilsTest {
 
