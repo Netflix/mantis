@@ -166,7 +166,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
                             long start = scheduler.now();
                             Map<String, Object> summary = committer.commit(dataFiles);
                             long now = scheduler.now();
-                            metrics.setGauge(CommitterMetrics.COMMIT_LATENCY_MSEC, now - start);
+                            metrics.record(CommitterMetrics.COMMIT_LATENCY_MSEC, now - start, TimeUnit.MILLISECONDS);
                             metrics.setGauge(CommitterMetrics.COMMIT_BATCH_SIZE, dataFiles.size());
                             return summary;
                         } catch (RuntimeException e) {
