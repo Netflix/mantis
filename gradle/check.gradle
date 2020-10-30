@@ -24,7 +24,7 @@ subprojects {
     }
 
     pmd {
-        toolVersion = '6.9.0'
+        toolVersion = '6.29.0'
         // TODO: Don't ignore failures.
         ignoreFailures = true
         sourceSets = [sourceSets.main]
