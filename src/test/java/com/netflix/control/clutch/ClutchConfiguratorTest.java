@@ -16,6 +16,7 @@
 
 package com.netflix.control.clutch;
 
+import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import org.assertj.core.data.Offset;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 public class ClutchConfiguratorTest {
 
@@ -47,6 +49,12 @@ public class ClutchConfiguratorTest {
         }
 
         assertThat(sketch.getQuantile(0.99)).isLessThan(76.0);
+    }
+
+    @Test public void shouldGetConfigWithoutException() {
+        ClutchConfigurator configurator = new ClutchConfigurator(new IClutchMetricsRegistry() {}, 1, 2, Observable.interval(1, TimeUnit.DAYS));
+        configurator.getSketch(Clutch.Metric.CPU).update(70.0);
+        assertNotNull(configurator.getConfig());
     }
 
     // TODO: What guarantees do I want to make about the configurator?

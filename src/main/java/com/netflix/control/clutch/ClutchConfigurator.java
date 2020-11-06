@@ -17,10 +17,12 @@
 package com.netflix.control.clutch;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -102,12 +104,12 @@ public class ClutchConfigurator implements Observable.Transformer<Event, ClutchC
      * @param metrics
      * @return A Clutch.Metric on which the job should scale.
      */
-    private static Clutch.Metric determineDominantMetric(Stream<Map.Entry<Clutch.Metric, UpdateDoublesSketch>> metrics) {
-        if (metrics.filter(metric -> metric.getKey() == Clutch.Metric.UserDefined).count() > 0) {
+    private static Clutch.Metric determineDominantMetric(List<Map.Entry<Clutch.Metric, UpdateDoublesSketch>> metrics) {
+        if (metrics.stream().filter(metric -> metric.getKey() == Clutch.Metric.UserDefined).count() > 0) {
            return Clutch.Metric.UserDefined;
         }
 
-        Clutch.Metric metric = metrics
+        Clutch.Metric metric = metrics.stream()
                 .max(Comparator.comparingDouble(a -> a.getValue().getQuantile(DEFAULT_QUANTILE)))
                 .map(Map.Entry::getKey)
                 .get();
@@ -140,10 +142,11 @@ public class ClutchConfigurator implements Observable.Transformer<Event, ClutchC
      * Generates a configuration based on Clutch's best understanding of the job at this time.
      * @return A configuration suitable for autoscaling with Clutch.
      */
-    private ClutchConfiguration getConfig() {
+    protected ClutchConfiguration getConfig() {
         Clutch.Metric dominantResource = determineDominantMetric(sketches.entrySet().stream()
                 .filter(x -> isResourceMetric(x.getKey()))
-                .filter(x -> x.getValue().getN() > 0));
+                .filter(x -> x.getValue().getN() > 0)
+                .collect(Collectors.toList()));
 
         double setPoint = determineSetpoint(sketches.get(dominantResource));
 
@@ -178,6 +181,10 @@ public class ClutchConfigurator implements Observable.Transformer<Event, ClutchC
                 .cooldownInterval(5)
                 .cooldownUnits(TimeUnit.MINUTES)
                 .build();
+    }
+
+    protected UpdateDoublesSketch getSketch(Clutch.Metric metric) {
+        return sketches.get(metric);
     }
 
     @Override
