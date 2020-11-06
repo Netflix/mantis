@@ -325,7 +325,8 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         } catch (IOException e) {
                             throw Exceptions.propagate(e);
                         }
-                    });
+                    })
+                    .share();
         }
 
         private boolean isErrorDataFile(DataFile dataFile) {
