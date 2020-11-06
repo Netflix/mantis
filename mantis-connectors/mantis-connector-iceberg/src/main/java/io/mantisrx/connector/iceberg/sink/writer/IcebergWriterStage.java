@@ -200,17 +200,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
          * <p>
          * If the Iceberg Table is partitioned, the appender will check _every_ record to detect a new partition.
          * If there's a new partition, the appender will align the record to the new partition. It does this by
-         * closing the current file, opening a new file, and writing the record to that new file.
-         * <p>
-         * It's _important_ that upstream producers align events to partitions as best as possible. For example,
-         * - Given an Iceberg Table partitioned by {@code hour}
-         * - 10 producers writing Iceberg Records
-         * <p>
-         * Each of the 10 producers _should_ try to produce events aligned by the hour.
-         * If writes are not well-aligned, then results will be correct, but performance negatively impacted due to
-         * frequent opening/closing of files.
-         * <p>
-         * Writes may be _unordered_ as long as they're aligned by the table's partitioning.
+         * opening a new file, and writing the record to that new file.
          * <p>
          * Size Threshold:
          * <p>
