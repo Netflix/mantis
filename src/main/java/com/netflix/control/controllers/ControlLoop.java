@@ -35,7 +35,6 @@ public class ControlLoop implements Observable.Transformer<Event, Double>  {
 
     private final ClutchConfiguration config;
     private final IActuator actuator;
-    private final Double initialSize;
     private final AtomicDouble dampener;
     private final AtomicLong currentScale;
     private final long cooldownMillis;
@@ -43,16 +42,15 @@ public class ControlLoop implements Observable.Transformer<Event, Double>  {
 
     private final UpdateDoublesSketch sketch = UpdateDoublesSketch.builder().setK(1024).build();
 
-    public ControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize) {
+    public ControlLoop(ClutchConfiguration config, IActuator actuator, AtomicLong initialSize) {
         this(config, actuator, initialSize, new AtomicDouble(1.0));
     }
 
-    public ControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
+    public ControlLoop(ClutchConfiguration config, IActuator actuator, AtomicLong initialSize,
                        AtomicDouble dampener) {
         this.config = config;
         this.actuator = actuator;
-        this.initialSize = initialSize;
-        this.currentScale = new AtomicLong(Math.round(initialSize));
+        this.currentScale = initialSize;
         this.dampener = dampener;
         this.cooldownMillis = config.getCooldownUnits().toMillis(config.cooldownInterval);
         this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + this.cooldownMillis);
@@ -72,7 +70,7 @@ public class ControlLoop implements Observable.Transformer<Event, Double>  {
                 .doOnNext(sketch::update)
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                 .lift(PIDController.of(config.kp, config.ki, config.kd))
-                .lift(new Integrator(initialSize, config.minSize, config.maxSize))
+                .lift(new Integrator(currentScale.get(), config.minSize, config.maxSize))
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
                 .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))
                 .lift(actuator)
