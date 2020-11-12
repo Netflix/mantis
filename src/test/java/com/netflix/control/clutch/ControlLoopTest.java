@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class ControlLoopTest {
@@ -50,7 +51,7 @@ public class ControlLoopTest {
 
         Observable.range(0, 1000)
                 .map(__ -> new Event(Clutch.Metric.CPU, 0.5))
-                .compose(new ControlLoop(config, IActuator.of(x -> x), 8.0))
+                .compose(new ControlLoop(config, IActuator.of(x -> x), new AtomicLong(8)))
                 .toBlocking()
                 .subscribe(subscriber);
 
@@ -82,7 +83,7 @@ public class ControlLoopTest {
                     .map(__ -> new Event(Clutch.Metric.NETWORK, 0.1));
 
             cpu.mergeWith(network)
-                    .compose(new ControlLoop(config, IActuator.of(x -> x), 8.0))
+                    .compose(new ControlLoop(config, IActuator.of(x -> x), new AtomicLong(8)))
                     .toBlocking()
                     .subscribe(subscriber);
 
@@ -109,7 +110,7 @@ public class ControlLoopTest {
 
         Observable.range(0, 1000)
                 .map(__ -> new Event(Clutch.Metric.CPU, 0.7))
-                .compose(new ControlLoop(config, IActuator.of(Math::ceil), 8.0))
+                .compose(new ControlLoop(config, IActuator.of(Math::ceil), new AtomicLong(8)))
                 .toBlocking()
                 .subscribe(subscriber);
 
@@ -136,7 +137,7 @@ public class ControlLoopTest {
 
         Observable.range(0, 1000)
                 .map(__ -> new Event(Clutch.Metric.CPU, 0.2))
-                .compose(new ControlLoop(config, IActuator.of(Math::ceil), 8.0))
+                .compose(new ControlLoop(config, IActuator.of(Math::ceil), new AtomicLong(8)))
                 .toBlocking()
                 .subscribe(subscriber);
 
@@ -163,7 +164,7 @@ public class ControlLoopTest {
 
         Observable.range(0, 1000)
                 .map(tick -> new Event(Clutch.Metric.CPU, ((tick % 60.0) + 30.0) / 100.0))
-                .compose(new ControlLoop(config, IActuator.of(Math::ceil), 5.0))
+                .compose(new ControlLoop(config, IActuator.of(Math::ceil), new AtomicLong(5)))
                 .toBlocking()
                 .subscribe(subscriber);
 
@@ -191,7 +192,7 @@ public class ControlLoopTest {
 
         Observable.range(0, 1000)
                 .map(tick -> new Event(Clutch.Metric.CPU, (tick % 60.0) + 30.0))
-                .compose(new ControlLoop(config, IActuator.of(Math::ceil), 5.0))
+                .compose(new ControlLoop(config, IActuator.of(Math::ceil), new AtomicLong(5)))
                 .toBlocking()
                 .subscribe(subscriber);
 

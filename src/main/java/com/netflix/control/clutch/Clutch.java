@@ -19,6 +19,7 @@ package com.netflix.control.clutch;
 import com.google.common.util.concurrent.AtomicDouble;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import rx.Observable;
 
@@ -57,7 +58,7 @@ public class Clutch implements Observable.Transformer<Event, Object> {
     }
 
     private final IActuator actuator;
-    private final Integer initialSize;
+    private final AtomicLong initialSize;
     private final Integer minSize;
     private final Integer maxSize;
     private final AtomicDouble dampener;
@@ -73,7 +74,7 @@ public class Clutch implements Observable.Transformer<Event, Object> {
      */
     public Clutch(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize) {
         this.actuator = actuator;
-        this.initialSize = initialSize;
+        this.initialSize = new AtomicLong(initialSize);
         this.minSize = minSize;
         this.maxSize = maxSize;
         this.dampener = new AtomicDouble(1.0);
@@ -93,7 +94,7 @@ public class Clutch implements Observable.Transformer<Event, Object> {
                 .compose(new ClutchConfigurator(new IClutchMetricsRegistry() { }, minSize,
                       maxSize, timer, this.loggingIntervalMins))
                 .flatMap(config -> events.compose(new ControlLoop(config, this.actuator,
-                        this.initialSize.doubleValue(), dampener))
+                        this.initialSize, dampener))
                         .takeUntil(timer)) // takeUntil tears down this control loop when a new config is produced.
                 .lift(new OscillationDetector(60, x -> this.dampener.set(Math.pow(x, 3))));
     }
