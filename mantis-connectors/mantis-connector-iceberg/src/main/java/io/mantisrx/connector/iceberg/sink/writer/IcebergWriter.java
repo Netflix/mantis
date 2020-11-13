@@ -17,11 +17,11 @@
 package io.mantisrx.connector.iceberg.sink.writer;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.exceptions.RuntimeIOException;
 
 public interface IcebergWriter {
 
@@ -31,7 +31,7 @@ public interface IcebergWriter {
 
     void write(Record record);
 
-    DataFile close() throws IOException, RuntimeIOException;
+    DataFile close() throws IOException, UncheckedIOException;
 
     boolean isClosed();
 

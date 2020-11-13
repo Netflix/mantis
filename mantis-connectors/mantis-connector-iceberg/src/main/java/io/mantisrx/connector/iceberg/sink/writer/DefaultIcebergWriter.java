@@ -179,7 +179,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
      *
      * @return current file size (in Bytes).
      */
-    public long length() {
+    public long length() throws UncheckedIOException {
         return appender == null ? 0 : appender.length();
     }
 

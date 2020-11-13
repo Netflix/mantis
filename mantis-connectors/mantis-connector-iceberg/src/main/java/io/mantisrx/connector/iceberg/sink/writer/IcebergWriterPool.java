@@ -17,6 +17,7 @@
 package io.mantisrx.connector.iceberg.sink.writer;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +62,7 @@ public class IcebergWriterPool {
         writer.write(record);
     }
 
-    public DataFile close(StructLike partition) throws IOException {
+    public DataFile close(StructLike partition) throws IOException, UncheckedIOException {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
             throw new RuntimeException("writer does not exist in writer pool");
@@ -77,7 +78,7 @@ public class IcebergWriterPool {
         return writer.isClosed();
     }
 
-    public List<DataFile> closeAll() throws IOException {
+    public List<DataFile> closeAll() throws IOException, UncheckedIOException {
         List<DataFile> dataFiles = new ArrayList<>();
         for (IcebergWriter writer : pool.values()) {
             dataFiles.add(writer.close());
@@ -97,10 +98,10 @@ public class IcebergWriterPool {
                 .collect(Collectors.toList());
     }
 
-    public boolean isWriterFlushable(StructLike partition) {
+    public boolean isWriterFlushable(StructLike partition) throws UncheckedIOException {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
-            return false;
+            throw new RuntimeException("writer does not exist in writer pool");
         }
         return writer.length() >= config.getWriterFlushFrequencyBytes();
     }
