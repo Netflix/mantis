@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -38,6 +39,8 @@ import io.mantisrx.connector.iceberg.sink.writer.factory.IcebergWriterFactory;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.connector.iceberg.sink.writer.partitioner.Partitioner;
 import io.mantisrx.connector.iceberg.sink.writer.partitioner.PartitionerFactory;
+import io.mantisrx.connector.iceberg.sink.writer.pool.BoundedIcebergWriterPool;
+import io.mantisrx.connector.iceberg.sink.writer.pool.IcebergWriterPool;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -87,9 +90,9 @@ class IcebergWriterStageTest {
         WriterMetrics metrics = new WriterMetrics();
         IcebergWriterFactory factory = FakeIcebergWriter::new;
 
-        this.writerPool = spy(new IcebergWriterPool(config, factory));
-        when(writerPool.getFlushableWriters()).thenReturn(Collections.singletonList(record));
-        when(writerPool.isWriterFlushable(eq(record))).thenReturn(true);
+        this.writerPool = spy(new BoundedIcebergWriterPool(config, factory));
+        doReturn(Collections.singletonList(record)).when(writerPool).getFlushableWriters();
+        doReturn(true).when(writerPool).isWriterFlushable(eq(record));
 
         this.partitioner = mock(Partitioner.class);
         when(partitioner.partition(record)).thenReturn(record);
@@ -170,8 +173,8 @@ class IcebergWriterStageTest {
 
     @Test
     void shouldNotCloseWhenUnderSizeThreshold() throws IOException {
-        when(writerPool.getFlushableWriters()).thenReturn(new ArrayList<>());
-        when(writerPool.isWriterFlushable(eq(record))).thenReturn(false);
+        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(false).when(writerPool).isWriterFlushable(eq(record));
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
         // Size is checked at row-group-size config, but under size-threshold, so no-op.
@@ -188,7 +191,7 @@ class IcebergWriterStageTest {
     void shouldCloseOnlyFlushableWritersOnSizeThreshold() throws IOException {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
-        when(writerPool.isWriterFlushable(eq(recordWithNewPartition))).thenReturn(false);
+        doReturn(false).when(writerPool).isWriterFlushable(eq(recordWithNewPartition));
 
         Observable<Record> source = Observable.just(record, recordWithNewPartition)
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
@@ -213,10 +216,9 @@ class IcebergWriterStageTest {
     void shouldCloseAllWritersOnTimeThresholdWhenLowVolume() throws IOException {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
-        when(writerPool.getFlushableWriters()).thenReturn(new ArrayList<>());
-        when(writerPool.isWriterFlushable(eq(record))).thenReturn(false);
-        when(writerPool.isWriterFlushable(eq(recordWithNewPartition))).thenReturn(false);
-        when(writerPool.getFlushableWriters()).thenReturn(new ArrayList<>());
+        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(false).when(writerPool).isWriterFlushable(eq(record));
+        doReturn(false).when(writerPool).isWriterFlushable(eq(recordWithNewPartition));
         // Low volume stream.
         Observable<Record> source = Observable.just(record, recordWithNewPartition)
                 .concatMap(r -> Observable.just(r).delay(50, TimeUnit.MILLISECONDS, scheduler))
@@ -242,9 +244,9 @@ class IcebergWriterStageTest {
     void shouldCloseAllWritersOnTimeThresholdWhenHighVolume() throws IOException {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
-        when(writerPool.getFlushableWriters()).thenReturn(new ArrayList<>());
-        when(writerPool.isWriterFlushable(eq(record))).thenReturn(false);
-        when(writerPool.isWriterFlushable(eq(recordWithNewPartition))).thenReturn(false);
+        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(false).when(writerPool).isWriterFlushable(eq(record));
+        doReturn(false).when(writerPool).isWriterFlushable(eq(recordWithNewPartition));
         Observable<Record> source = Observable.just(record, recordWithNewPartition)
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
@@ -270,8 +272,8 @@ class IcebergWriterStageTest {
 
     @Test
     void shouldNoOpOnTimeThresholdWhenNoData() throws IOException {
-        when(writerPool.getFlushableWriters()).thenReturn(new ArrayList<>());
-        when(writerPool.isWriterFlushable(eq(record))).thenReturn(false);
+        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(false).when(writerPool).isWriterFlushable(eq(record));
         // Low volume stream.
         Observable<Record> source = Observable.interval(900, TimeUnit.MILLISECONDS, scheduler)
                 .map(i -> record);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.iceberg.sink.writer;
+package io.mantisrx.connector.iceberg.sink.writer.pool;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -24,28 +24,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.mantisrx.connector.iceberg.sink.writer.IcebergWriter;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.factory.IcebergWriterFactory;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 
-public class IcebergWriterPool {
+public class BoundedIcebergWriterPool implements IcebergWriterPool {
 
     private final WriterConfig config;
     private final IcebergWriterFactory factory;
     private final Map<StructLike, IcebergWriter> pool;
 
-    public IcebergWriterPool(WriterConfig config, IcebergWriterFactory factory) {
+    public BoundedIcebergWriterPool(WriterConfig config, IcebergWriterFactory factory) {
         this.config = config;
         this.factory = factory;
         this.pool = new HashMap<>();
     }
 
+    @Override
     public void addWriter(StructLike partition) {
         pool.put(partition, factory.newIcebergWriter());
     }
 
+    @Override
     public void openWriter(StructLike partition) throws IOException {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
@@ -54,6 +57,7 @@ public class IcebergWriterPool {
         writer.open();
     }
 
+    @Override
     public void write(StructLike partition, Record record) {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
@@ -62,6 +66,7 @@ public class IcebergWriterPool {
         writer.write(record);
     }
 
+    @Override
     public DataFile close(StructLike partition) throws IOException, UncheckedIOException {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
@@ -70,14 +75,7 @@ public class IcebergWriterPool {
         return writer.close();
     }
 
-    public boolean isClosed(StructLike partition) {
-        IcebergWriter writer = pool.get(partition);
-        if (writer == null) {
-            throw new RuntimeException("writer does not exist in writer pool");
-        }
-        return writer.isClosed();
-    }
-
+    @Override
     public List<DataFile> closeAll() throws IOException, UncheckedIOException {
         List<DataFile> dataFiles = new ArrayList<>();
         for (IcebergWriter writer : pool.values()) {
@@ -87,10 +85,7 @@ public class IcebergWriterPool {
         return dataFiles;
     }
 
-    public boolean hasWriter(StructLike partition) {
-        return pool.containsKey(partition);
-    }
-
+    @Override
     public List<StructLike> getFlushableWriters() {
         return pool.entrySet().stream()
                 .filter(entry -> entry.getValue().length() >= config.getWriterFlushFrequencyBytes())
@@ -98,6 +93,21 @@ public class IcebergWriterPool {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public boolean isClosed(StructLike partition) {
+        IcebergWriter writer = pool.get(partition);
+        if (writer == null) {
+            throw new RuntimeException("writer does not exist in writer pool");
+        }
+        return writer.isClosed();
+    }
+
+    @Override
+    public boolean hasWriter(StructLike partition) {
+        return pool.containsKey(partition);
+    }
+
+    @Override
     public boolean isWriterFlushable(StructLike partition) throws UncheckedIOException {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {

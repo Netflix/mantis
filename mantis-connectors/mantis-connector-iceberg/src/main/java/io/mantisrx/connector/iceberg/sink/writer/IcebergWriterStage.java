@@ -33,6 +33,8 @@ import io.mantisrx.connector.iceberg.sink.writer.factory.IcebergWriterFactory;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.connector.iceberg.sink.writer.partitioner.Partitioner;
 import io.mantisrx.connector.iceberg.sink.writer.partitioner.PartitionerFactory;
+import io.mantisrx.connector.iceberg.sink.writer.pool.BoundedIcebergWriterPool;
+import io.mantisrx.connector.iceberg.sink.writer.pool.IcebergWriterPool;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.WorkerInfo;
@@ -119,7 +121,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         LocationProvider locationProvider = context.getServiceLocator().service(LocationProvider.class);
         IcebergWriterFactory factory = new DefaultIcebergWriterFactory(config, workerInfo, table, locationProvider);
-        IcebergWriterPool writerPool = new IcebergWriterPool(config, factory);
+        IcebergWriterPool writerPool = new BoundedIcebergWriterPool(config, factory);
         WriterMetrics metrics = new WriterMetrics();
         PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
         Partitioner partitioner = partitionerFactory.getPartitioner(table);

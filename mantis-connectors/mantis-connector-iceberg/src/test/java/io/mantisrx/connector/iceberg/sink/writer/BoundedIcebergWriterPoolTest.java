@@ -18,7 +18,7 @@ package io.mantisrx.connector.iceberg.sink.writer;
 
 import org.junit.jupiter.api.BeforeEach;
 
-class IcebergWriterPoolTest {
+class BoundedIcebergWriterPoolTest {
 
     @BeforeEach
     void setUp() {
