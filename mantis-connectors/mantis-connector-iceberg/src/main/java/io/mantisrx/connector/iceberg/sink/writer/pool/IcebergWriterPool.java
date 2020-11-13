@@ -41,6 +41,4 @@ public interface IcebergWriterPool {
     boolean isClosed(StructLike partition);
 
     boolean hasWriter(StructLike partition);
-
-    boolean isWriterFlushable(StructLike partition) throws UncheckedIOException;
 }

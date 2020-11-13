@@ -95,6 +95,9 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
         return dataFiles;
     }
 
+    /**
+     * Returns a list of writers whose lengths are greater than {@link WriterConfig#getWriterFlushFrequencyBytes()}.
+     */
     @Override
     public List<StructLike> getFlushableWriters() {
         return pool.entrySet().stream()
@@ -115,14 +118,5 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
     @Override
     public boolean hasWriter(StructLike partition) {
         return pool.containsKey(partition);
-    }
-
-    @Override
-    public boolean isWriterFlushable(StructLike partition) throws UncheckedIOException {
-        IcebergWriter writer = pool.get(partition);
-        if (writer == null) {
-            throw new RuntimeException("writer does not exist in writer pool");
-        }
-        return writer.length() >= config.getWriterFlushFrequencyBytes();
     }
 }
