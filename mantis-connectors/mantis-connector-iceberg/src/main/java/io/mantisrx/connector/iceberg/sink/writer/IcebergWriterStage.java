@@ -223,17 +223,8 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
                             if (!writerPool.hasWriter(partition)) {
                                 writerPool.addWriter(partition);
-                                try {
-                                    writerPool.openWriter(partition);
-                                    trigger.trackWriter(partition);
-                                    metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
-                                } catch (IOException e) {
-                                    metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
-                                    throw Exceptions.propagate(e);
-                                }
-                            }
+                           }
 
-                            // Only open (if closed) on new events from `source`; exclude timer records.
                             if (writerPool.isClosed(partition)) {
                                 try {
                                     logger.info("opening file for partition {}", partition);
