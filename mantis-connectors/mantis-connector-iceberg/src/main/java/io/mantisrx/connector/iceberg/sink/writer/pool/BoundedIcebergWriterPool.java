@@ -31,6 +31,9 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 
+/**
+ *
+ */
 public class BoundedIcebergWriterPool implements IcebergWriterPool {
 
     private final WriterConfig config;
@@ -75,11 +78,18 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
         return writer.close();
     }
 
+    /**
+     * Attempts to close all writers and produce {@link DataFile}s. If a writer is already closed, then it will
+     * produce a {@code null} which will be excluded from the resulting list.
+     */
     @Override
     public List<DataFile> closeAll() throws IOException, UncheckedIOException {
         List<DataFile> dataFiles = new ArrayList<>();
         for (IcebergWriter writer : pool.values()) {
-            dataFiles.add(writer.close());
+            DataFile dataFile = writer.close();
+            if (dataFile != null) {
+                dataFiles.add(dataFile);
+            }
         }
 
         return dataFiles;
