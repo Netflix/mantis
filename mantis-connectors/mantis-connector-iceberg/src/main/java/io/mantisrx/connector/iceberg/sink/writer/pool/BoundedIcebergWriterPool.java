@@ -54,7 +54,7 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
         }
 
         IcebergWriter writer = factory.newIcebergWriter();
-        writer.open();
+        writer.open(partition);
         pool.put(partition, writer);
     }
 
