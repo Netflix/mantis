@@ -142,7 +142,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
      */
     @Override
     public DataFile close() throws IOException, UncheckedIOException {
-        if (appender == null) {
+        if (isClosed()) {
             return null;
         }
 

@@ -19,6 +19,7 @@ package io.mantisrx.connector.iceberg.sink.writer.pool;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
@@ -26,9 +27,7 @@ import org.apache.iceberg.data.Record;
 
 public interface IcebergWriterPool {
 
-    void addWriter(StructLike partition);
-
-    void openWriter(StructLike partition) throws IOException;
+    void open(StructLike partition) throws IOException;
 
     void write(StructLike partition, Record record);
 
@@ -36,9 +35,9 @@ public interface IcebergWriterPool {
 
     List<DataFile> closeAll() throws IOException, UncheckedIOException;
 
-    List<StructLike> getFlushableWriters();
+    Set<StructLike> getWriters();
+
+    Set<StructLike> getFlushableWriters();
 
     boolean isClosed(StructLike partition);
-
-    boolean hasWriter(StructLike partition);
 }

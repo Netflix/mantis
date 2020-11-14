@@ -29,8 +29,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 import io.mantisrx.connector.iceberg.sink.StageOverrideParameters;
@@ -64,6 +64,9 @@ import rx.schedulers.TestScheduler;
 
 class IcebergWriterStageTest {
 
+    private static final Schema SCHEMA =
+            new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
+
     private TestScheduler scheduler;
     private TestSubscriber<DataFile> subscriber;
     private IcebergWriterStage.Transformer transformer;
@@ -73,8 +76,6 @@ class IcebergWriterStageTest {
     private Partitioner partitioner;
     private Observable<DataFile> flow;
 
-    private static final Schema SCHEMA =
-            new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
     private Record record;
 
     @BeforeEach
@@ -91,7 +92,7 @@ class IcebergWriterStageTest {
         IcebergWriterFactory factory = FakeIcebergWriter::new;
 
         this.writerPool = spy(new BoundedIcebergWriterPool(config, factory));
-        doReturn(Collections.singletonList(record)).when(writerPool).getFlushableWriters();
+        doReturn(Collections.singleton(record)).when(writerPool).getFlushableWriters();
 
         this.partitioner = mock(Partitioner.class);
         when(partitioner.partition(record)).thenReturn(record);
@@ -152,8 +153,8 @@ class IcebergWriterStageTest {
         scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
 
-        verify(writerPool, times(1)).openWriter(record);
-        verify(writerPool, times(1)).openWriter(recordWithNewPartition);
+        verify(writerPool, times(1)).open(record);
+        verify(writerPool, times(1)).open(recordWithNewPartition);
         verify(writerPool, times(3)).write(eq(record), any());
         verify(writerPool, times(1)).write(eq(recordWithNewPartition), any());
         verify(writerPool, times(0)).close(any());
@@ -172,7 +173,7 @@ class IcebergWriterStageTest {
 
     @Test
     void shouldNotCloseWhenUnderSizeThreshold() throws IOException {
-        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
         // Size is checked at row-group-size config, but under size-threshold, so no-op.
@@ -213,7 +214,7 @@ class IcebergWriterStageTest {
     void shouldCloseAllWritersOnTimeThresholdWhenLowVolume() throws IOException {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
-        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         // Low volume stream.
         Observable<Record> source = Observable.just(record, recordWithNewPartition)
                 .concatMap(r -> Observable.just(r).delay(50, TimeUnit.MILLISECONDS, scheduler))
@@ -239,7 +240,7 @@ class IcebergWriterStageTest {
     void shouldCloseAllWritersOnTimeThresholdWhenHighVolume() throws IOException {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
-        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         Observable<Record> source = Observable.just(record, recordWithNewPartition)
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
@@ -265,7 +266,7 @@ class IcebergWriterStageTest {
 
     @Test
     void shouldNoOpOnTimeThresholdWhenNoData() throws IOException {
-        doReturn(new ArrayList<>()).when(writerPool).getFlushableWriters();
+        doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         // Low volume stream.
         Observable<Record> source = Observable.interval(900, TimeUnit.MILLISECONDS, scheduler)
                 .map(i -> record);
@@ -288,22 +289,22 @@ class IcebergWriterStageTest {
         subscriber.assertNoErrors();
         subscriber.assertNoTerminalEvent();
 
-        verify(writerPool, times(1)).openWriter(any());
+        verify(writerPool, times(1)).open(any());
         verify(writerPool, times(1)).write(any(), any());
         // 2nd close is a noop.
-        verify(writerPool, times(2)).close(any());
+        verify(writerPool, times(1)).close(any());
     }
 
     @Test
     void shouldNoOpWhenFailedToOpen() throws IOException {
-        doThrow(new IOException()).when(writerPool).openWriter(any());
+        doThrow(new IOException()).when(writerPool).open(any());
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
         scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertError(RuntimeException.class);
         subscriber.assertTerminalEvent();
 
-        verify(writerPool).openWriter(any());
+        verify(writerPool).open(any());
         subscriber.assertNoValues();
     }
 
@@ -331,7 +332,7 @@ class IcebergWriterStageTest {
         scheduler.triggerActions();
         subscriber.assertNoErrors();
 
-        verify(writerPool).openWriter(record);
+        verify(writerPool).open(record);
         verify(writerPool).write(any(), any());
         verify(writerPool, times(2)).isClosed(record);
         verify(writerPool, times(1)).close(record);

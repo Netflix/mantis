@@ -19,11 +19,10 @@ package io.mantisrx.connector.iceberg.sink.writer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
@@ -162,10 +161,10 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      */
     public static class Transformer implements Observable.Transformer<Record, DataFile> {
 
-        private static final Schema TIMER_SCHEMA = new Schema(
+        private static final Schema TIMEOUT_SCHEMA = new Schema(
                 Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()));
 
-        private static final Record TIMER_RECORD = GenericRecord.create(TIMER_SCHEMA);
+        private static final Record TIMEOUT_RECORD = GenericRecord.create(TIMEOUT_SCHEMA);
 
         private final WriterConfig config;
         private final WriterMetrics metrics;
@@ -191,7 +190,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         /**
          * Opens an IcebergWriter FileAppender, writes records to a file. The appender flushes on size or time
-         * threshold, in that order.
+         * threshold.
          * <p>
          * Size Threshold:
          * <p>
@@ -213,25 +212,21 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         public Observable<DataFile> call(Observable<Record> source) {
             Observable<Record> timer = Observable.interval(
                     config.getWriterFlushFrequencyMsec(), TimeUnit.MILLISECONDS, timerScheduler)
-                    .map(i -> TIMER_RECORD);
+                    .map(i -> TIMEOUT_RECORD);
 
             return source.mergeWith(timer)
                     .observeOn(transformerScheduler)
                     .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
-                        if (record.struct().fields().equals(TIMER_SCHEMA.columns())) {
-                            trigger.timeout();
+                        if (record.struct().fields().equals(TIMEOUT_SCHEMA.columns())) {
+                            // Timeout; track all writers even if they're not yet ready to be flushed.
+                            trigger.trackAll(writerPool.getWriters());
                         } else {
                             StructLike partition = partitioner.partition(record);
-
-                            if (!writerPool.hasWriter(partition)) {
-                                writerPool.addWriter(partition);
-                           }
 
                             if (writerPool.isClosed(partition)) {
                                 try {
                                     logger.info("opening file for partition {}", partition);
-                                    writerPool.openWriter(partition);
-                                    trigger.trackWriter(partition);
+                                    writerPool.open(partition);
                                     metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
                                 } catch (IOException e) {
                                     metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
@@ -242,8 +237,13 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                             try {
                                 writerPool.write(partition, record);
                                 trigger.increment();
+                                // Check all writers to see if any are flushable and track them if so.
+                                // We should check _all_ writers because a writer that should be flushable
+                                // may not be flushed if an event for its partition doesn't show up for
+                                // a period of time. This could cause a longer delay for that partition,
+                                // especially since we only check at the trigger's count threshold.
                                 if (trigger.isOverCountThreshold()) {
-                                    writerPool.getFlushableWriters().forEach(trigger::markWriterFlushable);
+                                    trigger.trackAll(writerPool.getFlushableWriters());
                                 }
                                 metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
                             } catch (RuntimeException e) {
@@ -254,17 +254,16 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
                         return trigger;
                     })
-                    .filter(Trigger::hasFlushablePartitions)
+                    .filter(Trigger::shouldFlush)
                     .map(trigger -> {
                         List<DataFile> dataFiles = new ArrayList<>();
 
-                        for (StructLike partition : trigger.getFlushableWriters()) {
+                        // Timer can still tick while no writers are open (i.e., no events), which means
+                        // there won't be any tracked writers.
+                        for (StructLike partition : trigger.getTrackedWriters()) {
                             try {
-                                // Writers can be closed if there are no events, yet timer is still ticking.
                                 DataFile dataFile = writerPool.close(partition);
-                                if (dataFile != null) {
-                                    dataFiles.add(dataFile);
-                                }
+                                dataFiles.add(dataFile);
                             } catch (IOException | RuntimeException e) {
                                 metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
                                 logger.error("error writing DataFile", e);
@@ -297,56 +296,38 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
             private final int countThreshold;
 
-            private final HashMap<StructLike, Boolean> writers;
+            private final Set<StructLike> writers;
 
             private int counter;
-            private boolean timedOut;
 
             Trigger(int countThreshold) {
                 this.countThreshold = countThreshold;
-                writers = new HashMap<>();
+                writers = new HashSet<>();
             }
 
             void increment() {
                 counter++;
             }
 
-            void timeout() {
-                timedOut = true;
-                writers.replaceAll((k, v) -> true);
-            }
-
             void reset() {
                 counter = 0;
-                timedOut = false;
-                writers.replaceAll((k, v) -> false);
+                writers.clear();
             }
 
-            void trackWriter(StructLike partition) {
-                writers.put(partition, false);
+            void trackAll(Set<StructLike> partitions) {
+                writers.addAll(partitions);
             }
 
-            void markWriterFlushable(StructLike partition) {
-                writers.put(partition, true);
-            }
-
-            List<StructLike> getFlushableWriters() {
-                return writers.entrySet().stream()
-                        .filter(Map.Entry::getValue)
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
+            Set<StructLike> getTrackedWriters() {
+                return writers;
             }
 
             boolean isOverCountThreshold() {
                 return counter >= countThreshold;
             }
 
-            boolean isTimedOut() {
-                return timedOut;
-            }
-
-            boolean hasFlushablePartitions() {
-                return writers.containsValue(true);
+            boolean shouldFlush() {
+                return !writers.isEmpty();
             }
 
             @Override
@@ -355,7 +336,6 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         + " countThreshold=" + countThreshold
                         + ", writers=" + writers
                         + ", counter=" + counter
-                        + ", timedOut=" + timedOut
                         + '}';
             }
         }

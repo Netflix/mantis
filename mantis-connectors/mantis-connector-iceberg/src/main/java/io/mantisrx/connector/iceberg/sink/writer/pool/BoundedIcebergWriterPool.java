@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.mantisrx.connector.iceberg.sink.writer.IcebergWriter;
@@ -47,17 +48,14 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
     }
 
     @Override
-    public void addWriter(StructLike partition) {
-        pool.put(partition, factory.newIcebergWriter());
-    }
-
-    @Override
-    public void openWriter(StructLike partition) throws IOException {
-        IcebergWriter writer = pool.get(partition);
-        if (writer == null) {
-            throw new IOException("writer does not exist in writer pool");
+    public void open(StructLike partition) throws IOException {
+        if (!isClosed(partition)) {
+            return;
         }
+
+        IcebergWriter writer = factory.newIcebergWriter();
         writer.open();
+        pool.put(partition, writer);
     }
 
     @Override
@@ -74,8 +72,13 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
         IcebergWriter writer = pool.get(partition);
         if (writer == null) {
             throw new RuntimeException("writer does not exist in writer pool");
+
         }
-        return writer.close();
+        try {
+            return writer.close();
+        } finally {
+            pool.remove(partition);
+        }
     }
 
     /**
@@ -85,8 +88,8 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
     @Override
     public List<DataFile> closeAll() throws IOException, UncheckedIOException {
         List<DataFile> dataFiles = new ArrayList<>();
-        for (IcebergWriter writer : pool.values()) {
-            DataFile dataFile = writer.close();
+        for (StructLike partition : pool.keySet()) {
+            DataFile dataFile = close(partition);
             if (dataFile != null) {
                 dataFiles.add(dataFile);
             }
@@ -96,27 +99,26 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
     }
 
     /**
-     * Returns a list of writers whose lengths are greater than {@link WriterConfig#getWriterFlushFrequencyBytes()}.
+     * Returns a set of all writers in the pool.
      */
     @Override
-    public List<StructLike> getFlushableWriters() {
+    public Set<StructLike> getWriters() {
+        return pool.keySet();
+    }
+
+    /**
+     * Returns a set of writers whose lengths are greater than {@link WriterConfig#getWriterFlushFrequencyBytes()}.
+     */
+    @Override
+    public Set<StructLike> getFlushableWriters() {
         return pool.entrySet().stream()
                 .filter(entry -> entry.getValue().length() >= config.getWriterFlushFrequencyBytes())
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     @Override
     public boolean isClosed(StructLike partition) {
-        IcebergWriter writer = pool.get(partition);
-        if (writer == null) {
-            throw new RuntimeException("writer does not exist in writer pool");
-        }
-        return writer.isClosed();
-    }
-
-    @Override
-    public boolean hasWriter(StructLike partition) {
-        return pool.containsKey(partition);
+        return !pool.containsKey(partition);
     }
 }
