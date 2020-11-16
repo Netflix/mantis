@@ -39,7 +39,7 @@ import io.mantisrx.connector.iceberg.sink.writer.factory.IcebergWriterFactory;
 import io.mantisrx.connector.iceberg.sink.writer.metrics.WriterMetrics;
 import io.mantisrx.connector.iceberg.sink.writer.partitioner.Partitioner;
 import io.mantisrx.connector.iceberg.sink.writer.partitioner.PartitionerFactory;
-import io.mantisrx.connector.iceberg.sink.writer.pool.BoundedIcebergWriterPool;
+import io.mantisrx.connector.iceberg.sink.writer.pool.FixedIcebergWriterPool;
 import io.mantisrx.connector.iceberg.sink.writer.pool.IcebergWriterPool;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
@@ -91,7 +91,10 @@ class IcebergWriterStageTest {
         WriterMetrics metrics = new WriterMetrics();
         IcebergWriterFactory factory = FakeIcebergWriter::new;
 
-        this.writerPool = spy(new BoundedIcebergWriterPool(config, factory));
+        this.writerPool = spy(new FixedIcebergWriterPool(
+                factory,
+                config.getWriterFlushFrequencyBytes(),
+                config.getWriterMaximumPoolSize()));
         doReturn(Collections.singleton(record)).when(writerPool).getFlushableWriters();
 
         this.partitioner = mock(Partitioner.class);

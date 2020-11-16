@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -29,7 +30,7 @@ import java.io.IOException;
 import io.mantisrx.connector.iceberg.sink.StageOverrideParameters;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.factory.IcebergWriterFactory;
-import io.mantisrx.connector.iceberg.sink.writer.pool.BoundedIcebergWriterPool;
+import io.mantisrx.connector.iceberg.sink.writer.pool.FixedIcebergWriterPool;
 import io.mantisrx.connector.iceberg.sink.writer.pool.IcebergWriterPool;
 import io.mantisrx.runtime.parameter.Parameters;
 import org.apache.hadoop.conf.Configuration;
@@ -41,7 +42,7 @@ import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class BoundedIcebergWriterPoolTest {
+class FixedIcebergWriterPoolTest {
 
     private static final Schema SCHEMA =
             new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
@@ -61,7 +62,10 @@ class BoundedIcebergWriterPoolTest {
         when(this.writer.length()).thenReturn(Long.MAX_VALUE);
         when(factory.newIcebergWriter()).thenReturn(this.writer);
 
-        this.writerPool = spy(new BoundedIcebergWriterPool(config, factory));
+        this.writerPool = spy(new FixedIcebergWriterPool(
+                factory,
+                config.getWriterFlushFrequencyBytes(),
+                config.getWriterMaximumPoolSize()));
 
         this.record = GenericRecord.create(SCHEMA);
         this.record.setField("id", 1);
@@ -72,6 +76,12 @@ class BoundedIcebergWriterPoolTest {
     @Test
     void shouldOpenNewWriter() {
         assertDoesNotThrow(() -> writerPool.open(record));
+    }
+
+    @Test
+    void shouldFailToOpenNewWriterWhenMaximumPoolSizeExceeded() {
+        writerPool = spy(new FixedIcebergWriterPool(mock(IcebergWriterFactory.class), 0, 0));
+        assertThrows(IOException.class, () -> writerPool.open(any()));
     }
 
     @Test

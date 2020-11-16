@@ -33,22 +33,30 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 
 /**
+ * A service that delegates operations to {@link IcebergWriter}s.
  *
+ * Writers can be added to the pool up to a maximum size, after which new writers will be rejected.
  */
-public class BoundedIcebergWriterPool implements IcebergWriterPool {
+public class FixedIcebergWriterPool implements IcebergWriterPool {
 
-    private final WriterConfig config;
     private final IcebergWriterFactory factory;
     private final Map<StructLike, IcebergWriter> pool;
+    private final long flushFrequencyBytes;
+    private final int maximumPoolSize;
 
-    public BoundedIcebergWriterPool(WriterConfig config, IcebergWriterFactory factory) {
-        this.config = config;
+    public FixedIcebergWriterPool(IcebergWriterFactory factory, long flushFrequencyBytes, int maximumPoolSize) {
         this.factory = factory;
-        this.pool = new HashMap<>();
+        this.flushFrequencyBytes = flushFrequencyBytes;
+        this.maximumPoolSize = maximumPoolSize;
+        this.pool = new HashMap<>(this.maximumPoolSize);
     }
 
     @Override
     public void open(StructLike partition) throws IOException {
+        if (pool.size() >= maximumPoolSize) {
+            throw new IOException("problem opening writer; maximum writer pool size (" + maximumPoolSize + ") exceeded");
+        }
+
         if (!isClosed(partition)) {
             return;
         }
@@ -112,7 +120,7 @@ public class BoundedIcebergWriterPool implements IcebergWriterPool {
     @Override
     public Set<StructLike> getFlushableWriters() {
         return pool.entrySet().stream()
-                .filter(entry -> entry.getValue().length() >= config.getWriterFlushFrequencyBytes())
+                .filter(entry -> entry.getValue().length() >= flushFrequencyBytes)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
