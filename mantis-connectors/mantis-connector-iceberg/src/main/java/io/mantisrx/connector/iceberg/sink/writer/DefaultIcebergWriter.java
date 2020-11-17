@@ -17,6 +17,7 @@
 package io.mantisrx.connector.iceberg.sink.writer;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.UUID;
 
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
@@ -30,7 +31,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.GenericParquetWriter;
-import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.hadoop.HadoopOutputFile;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.LocationProvider;
@@ -141,8 +141,8 @@ public class DefaultIcebergWriter implements IcebergWriter {
      * @return a DataFile representing metadata about the records written.
      */
     @Override
-    public DataFile close() throws IOException, RuntimeIOException {
-        if (appender == null) {
+    public DataFile close() throws IOException, UncheckedIOException {
+        if (isClosed()) {
             return null;
         }
 
@@ -179,7 +179,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
      *
      * @return current file size (in Bytes).
      */
-    public long length() {
+    public long length() throws UncheckedIOException {
         return appender == null ? 0 : appender.length();
     }
 

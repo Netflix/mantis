@@ -44,7 +44,7 @@ public class StageOverrideParameters {
         state.put(SinkProperties.SINK_TABLE, "table");
 
         required.add(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC);
-        state.put(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC, "5000");
+        state.put(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC, "500");
 
         return new Parameters(state, required, required);
     }

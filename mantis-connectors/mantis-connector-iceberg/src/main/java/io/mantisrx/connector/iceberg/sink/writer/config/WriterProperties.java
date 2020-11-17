@@ -63,4 +63,13 @@ public class WriterProperties {
     public static final String WRITER_FILE_FORMAT_DESCRIPTION =
             String.format("File format for writing data files to backing Iceberg store (default: %s)",
                     WRITER_FILE_FORMAT_DEFAULT);
+
+    /**
+     * Maximum number of writers that should exist per worker.
+     */
+    public static final String WRITER_MAXIMUM_POOL_SIZE = "writerMaximumPoolSize";
+    public static final int WRITER_MAXIMUM_POOL_SIZE_DEFAULT = 5;
+    public static final String WRITER_MAXIMUM_POOL_SIZE_DESCRIPTION =
+            String.format("Maximum number of writers that should exist per worker (default: %s)",
+                    WRITER_MAXIMUM_POOL_SIZE_DEFAULT);
 }

@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.iceberg.sink.writer;
+package io.mantisrx.connector.iceberg.sink.writer.pool;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 
-public interface IcebergWriter {
+public interface IcebergWriterPool {
 
-    void open() throws IOException;
+    void open(StructLike partition) throws IOException;
 
-    void open(StructLike newPartitionKey) throws IOException;
+    void write(StructLike partition, Record record);
 
-    void write(Record record);
+    DataFile close(StructLike partition) throws IOException, UncheckedIOException;
 
-    DataFile close() throws IOException, UncheckedIOException;
+    List<DataFile> closeAll() throws IOException, UncheckedIOException;
 
-    boolean isClosed();
+    Set<StructLike> getWriters();
 
-    long length();
+    Set<StructLike> getFlushableWriters();
 
-    StructLike getPartitionKey();
+    boolean isClosed(StructLike partition);
 }
