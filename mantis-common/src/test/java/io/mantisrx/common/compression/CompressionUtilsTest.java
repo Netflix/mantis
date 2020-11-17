@@ -1,8 +1,6 @@
 package io.mantisrx.common.compression;
 
-import io.mantisrx.common.MantisServerSentEvent;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,14 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import io.mantisrx.common.MantisServerSentEvent;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class CompressionUtilsTest {
 
     @Test public void shouldTokenizeWithEventsContainingPartialDelimiterMatches() {
         String testInput = "ab$cdef$$$ghi$jkl$$$lmno$$pqrst$";
-        BufferedReader reader = new BufferedReader(new StringReader(testInput));
-        try {
+        try (BufferedReader reader = new BufferedReader(new StringReader(testInput))) {
             List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader);
 
             assertEquals(result.size(), 3);
@@ -42,8 +41,7 @@ public class CompressionUtilsTest {
                 + event2
                 + delimiter
                 + event3;
-        BufferedReader reader = new BufferedReader(new StringReader(testInput));
-        try {
+        try (BufferedReader reader = new BufferedReader(new StringReader(testInput))) {
             List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
 
             assertEquals(result.size(), 3);
