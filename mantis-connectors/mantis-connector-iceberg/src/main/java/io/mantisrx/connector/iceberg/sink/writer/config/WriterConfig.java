@@ -81,7 +81,7 @@ public class WriterConfig extends SinkConfig {
     }
 
     /**
-     * Returns an int representing the maximum number of writes that should exist per worker.
+     * Returns an int representing the maximum number of writers that should exist per worker.
      */
     public int getWriterMaximumPoolSize() {
         return writerMaximumPoolSize;
