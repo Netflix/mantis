@@ -182,6 +182,7 @@ and is therefore more suitable to operational use cases.
 | `writerFlushFrequencyBytes` | String | "134217728" (128 MiB) | Flush frequency by size in Bytes |
 | `writerFlushFrequencyMsec` | String | "60000" (1 min) | Flush frequency by time in milliseconds |
 | `writerFileFormat` | String | parquet | File format for writing data files to backing Iceberg store |
+| `writerMaximumPoolSize` | int | 5 | Maximum number of writers that should exist per worker |
 | `commitFrequencyMs` | String | "300000" (5 min) | Iceberg Committer frequency by time in milliseconds |
 
 ### Metrics
