@@ -1158,10 +1158,10 @@ network cost to move data between workers.</p>
 
 <blockquote>
 <p><strong>(0)</strong> A series of Processing Stages that you define for your application logic. Produces an Iceberg Record.
-To emit Iceberg Records out of your separate Processing Stage, add the <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42">Iceberg Record Codec</a> to your
+To emit Iceberg Records out of your separate Processing Stage, add the <a href="https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42">Iceberg Record Codec</a> to your
 stage config.</p>
 <p><strong>(1)</strong> A Processing Stage of <strong>n</strong> parallelizable <code>IcebergWriter</code>s. The Stage Config automatically adds
-an <a href="https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49">Iceberg DataFile Codec</a> to encode/decode DataFiles between these workers and the Committer
+an <a href="https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49">Iceberg DataFile Codec</a> to encode/decode DataFiles between these workers and the Committer
 workers from the next stage downstream.</p>
 <p><strong>(2)</strong> A Processing Stage for <strong>1</strong> <code>IcebergCommitter</code>.</p>
 <p><strong>(3)</strong> A module for injecting dependencies and configs required to authenticate/connect/interact
