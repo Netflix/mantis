@@ -67,7 +67,7 @@ public class ExampleAutoScaler implements Observable.Transformer<Double, Double>
                     kd: Derivative gain, multiplied by the diference between error now
                         and at t-1.
                  */
-                .lift(PIDController.of(kp, ki, kd))
+                .lift(new PIDController(kp, ki, kd))
                 /*
                     The integrator's job is to sum up the output of the controller. The
                     reason we integrate is because our actuator expects whole size numbers. If
