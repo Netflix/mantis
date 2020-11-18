@@ -123,21 +123,6 @@ public class ProcessingAndWriterStage implements ScalarComputation<MantisServerS
 !!! note
     Writers are stateless and may be parallelized/autoscaled.
 
-!!! important
-    To avoid poor write performance for _partitioned Iceberg Tables_, make sure your upstream producers
-    write Iceberg Records in alignment with the table's partitioning as best they can. 
-
-    For example:
-
-    - Given an Iceberg Table partitioned by `hour`
-    - 10 upstream producers writing Iceberg Records
-
-    Each of the 10 producers _should_ try to produce events aligned by the hour.
-
-    Writes may be _unordered_; the only concern is aligning writes to the table's partitioning.
-
-    If writes are not well-aligned, then results will be correct, but write performance negatively impacted.
-
 ### Committer
 
 ```java hl_lines="8"
