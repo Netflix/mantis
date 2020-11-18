@@ -12,8 +12,7 @@ The Iceberg Sink has two components: `Writers` and a `Committer`.
 stage their data by flushing their underlying files to produce metadata in the form of
 `DataFile`s which are sent to Committers.
 
-You can instantiate and use an `IcebergWriter` in a separate Processing Stage or with
-an existing Processing Stage.
+Add an Iceberg Writer using one of the following approaches:
 
 #### Separate Processing Stage
 
