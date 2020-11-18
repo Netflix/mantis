@@ -1234,19 +1234,6 @@ the transformer with your application logic Observable.</p>
 <p class="admonition-title">Note</p>
 <p>Writers are stateless and may be parallelized/autoscaled.</p>
 </div>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>To avoid poor write performance for <em>partitioned Iceberg Tables</em>, make sure your upstream producers
-write Iceberg Records in alignment with the table's partitioning as best they can. </p>
-<p>For example:</p>
-<ul>
-<li>Given an Iceberg Table partitioned by <code>hour</code></li>
-<li>10 upstream producers writing Iceberg Records</li>
-</ul>
-<p>Each of the 10 producers <em>should</em> try to produce events aligned by the hour.</p>
-<p>Writes may be <em>unordered</em>; the only concern is aligning writes to the table's partitioning.</p>
-<p>If writes are not well-aligned, then results will be correct, but write performance negatively impacted.</p>
-</div>
 <h3 id="committer">Committer<a class="headerlink" href="#committer" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ExampleIcebergSinkJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="p">{</span>
 
