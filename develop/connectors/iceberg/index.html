@@ -1234,6 +1234,11 @@ the transformer with your application logic Observable.</p>
 <p>Writers are stateless and may be parallelized/autoscaled.</p>
 </div>
 <h3 id="committer">Committer<a class="headerlink" href="#committer" title="Permanent link">&para;</a></h3>
+<p>The <strong>Committer</strong> commits <code>DataFile</code>s to Iceberg. <code>Records</code> are queryable from the Iceberg table
+only after a Committer commits <code>DataFile</code>s. A Committer commits on a configured interval (default: 5 min).</p>
+<p>If a Committer fails, it will retry until a retry threshold is met, after which it will continue
+onto the next window of <code>Record</code>s. This avoids backpressure issues originating from downstream consumers
+which makes it more suitable for operational use cases.</p>
 <div class="codehilite"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ExampleIcebergSinkJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="p">{</span>
 
   <span class="nd">@Override</span>
@@ -1257,15 +1262,9 @@ the transformer with your application logic Observable.</p>
 you can subscribe to with a Sink for optional debugging or connecting to another Mantis Job.
 Otherwise, a Sink not required because the Committer will write directly to Iceberg.</p>
 </blockquote>
-<p>A <strong>Committer</strong> commits <code>DataFile</code>s to Iceberg. <code>Records</code> are queryable from the Iceberg table
-only after a Committer commits <code>DataFile</code>s. A Committer commits on a configured interval (default: 5 min).</p>
-<p>A Committer aligns to Mantis's <em>at-most-once</em> guarantee. This means if a commit fails, it
-<em>will not</em> retry that commit. It will instead continue and try to commit for the next window
-of <code>Record</code>s at the next interval. This avoids backpressure issues originating from downstream
-and is therefore more suitable to operational use cases.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>You should have only <strong>one</strong> Committer per Iceberg Table and try to avoid a high frequency commit
+<p>You should try to have only <strong>one</strong> Committer per Iceberg Table and try to avoid a high frequency commit
 intervals (default: <code>5 min</code>). This avoids commit pressure on Iceberg.</p>
 </div>
 <h3 id="configuration-options">Configuration Options<a class="headerlink" href="#configuration-options" title="Permanent link">&para;</a></h3>
