@@ -124,6 +124,13 @@ public class ProcessingAndWriterStage implements ScalarComputation<MantisServerS
 
 ### Committer
 
+The **Committer** commits `DataFile`s to Iceberg. `Records` are queryable from the Iceberg table
+only after a Committer commits `DataFile`s. A Committer commits on a configured interval (default: 5 min).
+
+If a Committer fails, it will retry until a retry threshold is met, after which it will continue
+onto the next window of `Record`s. This avoids backpressure issues originating from downstream consumers
+which makes it more suitable for operational use cases.
+
 ```java hl_lines="8"
 public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>> {
 
@@ -146,16 +153,8 @@ public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>
 > you can subscribe to with a Sink for optional debugging or connecting to another Mantis Job.
 > Otherwise, a Sink not required because the Committer will write directly to Iceberg.
 
-A **Committer** commits `DataFile`s to Iceberg. `Records` are queryable from the Iceberg table
-only after a Committer commits `DataFile`s. A Committer commits on a configured interval (default: 5 min).
-
-A Committer aligns to Mantis's _at-most-once_ guarantee. This means if a commit fails, it
-_will not_ retry that commit. It will instead continue and try to commit for the next window
-of `Record`s at the next interval. This avoids backpressure issues originating from downstream
-and is therefore more suitable to operational use cases.
-
 !!! important
-    You should have only **one** Committer per Iceberg Table and try to avoid a high frequency commit
+    You should try to have only **one** Committer per Iceberg Table and try to avoid a high frequency commit
     intervals (default: `5 min`). This avoids commit pressure on Iceberg.
 
 ### Configuration Options
