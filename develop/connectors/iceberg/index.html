@@ -1133,8 +1133,7 @@
 <p><strong>Writers</strong> write Iceberg <code>Record</code>s to files in a specific file format. Writers periodically
 stage their data by flushing their underlying files to produce metadata in the form of
 <code>DataFile</code>s which are sent to Committers.</p>
-<p>You can instantiate and use an <code>IcebergWriter</code> in a separate Processing Stage or with
-an existing Processing Stage.</p>
+<p>Add an Iceberg Writer using one of the following approaches:</p>
 <h4 id="separate-processing-stage">Separate Processing Stage<a class="headerlink" href="#separate-processing-stage" title="Permanent link">&para;</a></h4>
 <p>Use this approach to decouple your application logic from Iceberg writing logic to
 may make it easier to debug your Mantis Job. This approach incurs extra encode/decode and
