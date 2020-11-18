@@ -39,11 +39,11 @@ public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>
 ```
 
 > **(0)** A series of Processing Stages that you define for your application logic. Produces an Iceberg Record.
-> To emit Iceberg Records out of your separate Processing Stage, add the [Iceberg Record Codec](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42) to your
+> To emit Iceberg Records out of your separate Processing Stage, add the [Iceberg Record Codec](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42) to your
 > stage config.
 
 > **(1)** A Processing Stage of **n** parallelizable `IcebergWriter`s. The Stage Config automatically adds
-> an [Iceberg DataFile Codec](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49) to encode/decode DataFiles between these workers and the Committer
+> an [Iceberg DataFile Codec](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49) to encode/decode DataFiles between these workers and the Committer
 > workers from the next stage downstream.
 
 > **(2)** A Processing Stage for **1** `IcebergCommitter`.
