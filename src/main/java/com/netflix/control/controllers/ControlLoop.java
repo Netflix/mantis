@@ -69,7 +69,7 @@ public class ControlLoop implements Observable.Transformer<Event, Double>  {
                 .map(e -> e.value)
                 .doOnNext(sketch::update)
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
-                .lift(new PIDController(config.kp, config.ki, config.kd))
+                .lift(new PIDController(config.kp, config.ki, config.kd, 1.0, new AtomicDouble(1.0), config.integralDecay))
                 .lift(new Integrator(currentScale.get(), config.minSize, config.maxSize))
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
                 .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))

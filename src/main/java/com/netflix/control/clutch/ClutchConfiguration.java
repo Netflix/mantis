@@ -39,6 +39,9 @@ public @Builder(access = AccessLevel.PUBLIC) @Value class ClutchConfiguration {
     public final double ki;
     /** Derivative controller gain. */
     public final double kd;
+    /** Integral component decay factor. */
+    @Builder.Default
+    public final double integralDecay = 1.0;
 
     /** Minimum size for autoscaling. */
     public final int minSize;

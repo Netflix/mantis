@@ -30,8 +30,6 @@ import com.netflix.control.IController;
  */
 public class PIDController extends IController {
 
-  public static final double DEFAULT_INTEGRAL_DECAY = 0.9;
-
   private final Double kp; // Proportional Gain
   private final Double ki; // Integral Gain
   private final Double kd; // Derivative Gain
@@ -76,7 +74,7 @@ public class PIDController extends IController {
   }
 
   public PIDController(Double kp, Double ki, Double kd) {
-    this(kp, ki, kd, 1.0, new AtomicDouble(1.0), DEFAULT_INTEGRAL_DECAY);
+    this(kp, ki, kd, 1.0, new AtomicDouble(1.0), 1.0);
   }
 
   @Override
@@ -99,7 +97,7 @@ public class PIDController extends IController {
    */
   @Deprecated
   public static PIDController of(Double kp, Double ki, Double kd, AtomicDouble dampener) {
-    return new PIDController(kp, ki, kd, 1.0, dampener, DEFAULT_INTEGRAL_DECAY);
+    return new PIDController(kp, ki, kd, 1.0, dampener, 1.0);
   }
 
   /**
@@ -108,7 +106,7 @@ public class PIDController extends IController {
    */
   @Deprecated
   public static PIDController of(Double kp, Double ki, Double kd, Double deltaT) {
-    return new PIDController(kp, ki, kd, deltaT, new AtomicDouble(1.0), DEFAULT_INTEGRAL_DECAY);
+    return new PIDController(kp, ki, kd, deltaT, new AtomicDouble(1.0), 1.0);
   }
 
   /**
@@ -117,7 +115,7 @@ public class PIDController extends IController {
    */
   @Deprecated
   public static PIDController of(Double kp, Double ki, Double kd) {
-    return new PIDController(kp, ki, kd, 1.0, new AtomicDouble(1.0), DEFAULT_INTEGRAL_DECAY);
+    return new PIDController(kp, ki, kd, 1.0, new AtomicDouble(1.0), 1.0);
   }
 
   public AtomicDouble getDampener() {
