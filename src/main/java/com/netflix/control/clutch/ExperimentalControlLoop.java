@@ -99,7 +99,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
                             + (triple._3.value); // Drops are average, and thus per-worker.
                 })
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
-                .lift(PIDController.of(config.kp, config.ki, config.kd))
+                .lift(new PIDController(config.kp, config.ki, config.kd, 1.0, new AtomicDouble(1.0), config.integralDecay))
                 .lift(integrator)
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
                 .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))
