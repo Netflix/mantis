@@ -31,6 +31,7 @@ import io.mantisrx.common.metrics.spectator.GaugeImpl;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
+import io.mantisrx.common.metrics.spectator.TimerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,7 @@ public class Metrics {
     private MetricGroupId metricGroup;
     private Map<MetricId, Counter> counters = new HashMap<>();
     private Map<MetricId, Gauge> gauges = new HashMap<>();
+    private Map<MetricId, Timer> timers = new HashMap<>();
 
     public Metrics(Builder builder) {
         this.builder = builder;
@@ -70,6 +72,13 @@ public class Metrics {
                 gauges.put(gaugeId, new GaugeImpl(gaugeId, builder.registry));
             }
         }
+
+        if (builder.timerIds != null && builder.timerIds.size() > 0) {
+            for (MetricId id : builder.timerIds) {
+                logger.debug("creating spectator timer for {}", id);
+                timers.put(id, new TimerImpl(id, builder.registry));
+            }
+        }
     }
 
     /**
@@ -92,6 +101,7 @@ public class Metrics {
                 "metricGroup=" + metricGroup +
                 ", counters=" + counters.keySet() +
                 ", gauges=" + gauges.keySet() +
+                ", timers=" + timers.keySet() +
                 '}';
     }
 
@@ -117,6 +127,14 @@ public class Metrics {
         return gauge;
     }
 
+    public Timer getTimer(String metricName) {
+        Timer timer = timers.get(new MetricId(metricGroup.name(), metricName, metricGroup.tags()));
+        if (timer == null) {
+            throw new RuntimeException("No timer registered for metriGroup: " + metricGroup + " with name: " + metricName);
+        }
+        return timer;
+    }
+
     public Counter getCounter(final String metricName, final Tag... tags) {
         Counter counter = counters.get(new MetricId(metricGroup.name(), metricName, tags));
         if (counter == null) {
@@ -131,6 +149,14 @@ public class Metrics {
             throw new RuntimeException("No gauge registered for metricGroup: " + this.metricGroup + " with metricName: " + metricName);
         }
         return gauge;
+    }
+
+    public Timer getTimer(final String metricName, final Tag... tags) {
+        Timer timer = timers.get(new MetricId(metricGroup.name(), metricName, tags));
+        if (timer == null) {
+            throw new RuntimeException("No timer registered for metricGroup: " + this.metricGroup + " with metricName: " + metricName);
+        }
+        return timer;
     }
 
     /**
@@ -149,12 +175,17 @@ public class Metrics {
         return Collections.unmodifiableMap(gauges);
     }
 
+    public Map<MetricId, Timer> timers() {
+        return Collections.unmodifiableMap(timers);
+    }
+
     public static class Builder {
 
         private final Registry registry;
         private final Set<Gauge> callbackGauges = new HashSet<>();
         private final Set<MetricId> counterIds = new HashSet<>();
         private final Set<MetricId> gaugeIds = new HashSet<>();
+        private final Set<MetricId> timerIds = new HashSet<>();
         private MetricGroupId metricGroup;
 
         public Builder() {
@@ -228,6 +259,12 @@ public class Metrics {
         public Builder addGauge(final Gauge callbackGauge) {
             Preconditions.checkNotNull(metricGroup, "set metric group id with id(String, Tag...) before adding Gauge");
             callbackGauges.add(callbackGauge);
+            return this;
+        }
+
+        public Builder addTimer(final String metricName) {
+            Preconditions.checkNotNull(metricGroup, "set metric group id with id(String, Tag...) before adding Timer");
+            timerIds.add(new MetricId(metricGroup.name(), metricName, metricGroup.tags()));
             return this;
         }
 

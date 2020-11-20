@@ -31,6 +31,7 @@ public class WriterConfig extends SinkConfig {
     private final long writerFlushFrequencyBytes;
     private final long writerFlushFrequencyMsec;
     private final String writerFileFormat;
+    private final int writerMaximumPoolSize;
     private final Configuration hadoopConfig;
 
     /**
@@ -46,6 +47,8 @@ public class WriterConfig extends SinkConfig {
                 WRITER_FLUSH_FREQUENCY_MSEC, WRITER_FLUSH_FREQUENCY_MSEC_DEFAULT));
         this.writerFileFormat = (String) parameters.get(
                 WRITER_FILE_FORMAT, WRITER_FILE_FORMAT_DEFAULT);
+        this.writerMaximumPoolSize = (int) parameters.get(
+                WRITER_MAXIMUM_POOL_SIZE, WRITER_MAXIMUM_POOL_SIZE_DEFAULT);
         this.hadoopConfig = hadoopConfig;
     }
 
@@ -75,6 +78,13 @@ public class WriterConfig extends SinkConfig {
      */
     public String getWriterFileFormat() {
         return writerFileFormat;
+    }
+
+    /**
+     * Returns an int representing the maximum number of writers that should exist per worker.
+     */
+    public int getWriterMaximumPoolSize() {
+        return writerMaximumPoolSize;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2020 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-subprojects {
-    checkstyle {
-        toolVersion = '8.14'
-        // TODO: Don't ignore failures.
-        ignoreFailures = true
-        configFile = rootProject.file('codequality/checkstyle.xml')
-        sourceSets = [sourceSets.main]
-    }
+package io.mantisrx.common.metrics;
 
-    pmd {
-        toolVersion = '6.29.0'
-        // TODO: Don't ignore failures.
-        ignoreFailures = true
-        sourceSets = [sourceSets.main]
-        ruleSets = []
-        ruleSetFiles = rootProject.files("codequality/pmd.xml")
-    }
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import com.netflix.spectator.api.Measurement;
+import io.mantisrx.common.metrics.spectator.MetricId;
+
+
+public interface Timer {
+
+    void record(long amount, TimeUnit unit);
+
+    <T> T record(Callable<T> f) throws Exception;
+
+    void record(Runnable f);
+
+    long count();
+
+    long totalTime();
+
+    MetricId id();
+
+    Iterable<Measurement> measure();
+
+    boolean hasExpired();
 }

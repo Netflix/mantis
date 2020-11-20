@@ -12,8 +12,7 @@ The Iceberg Sink has two components: `Writers` and a `Committer`.
 stage their data by flushing their underlying files to produce metadata in the form of
 `DataFile`s which are sent to Committers.
 
-You can instantiate and use an `IcebergWriter` in a separate Processing Stage or with
-an existing Processing Stage.
+Add an Iceberg Writer using one of the following approaches:
 
 #### Separate Processing Stage
 
@@ -40,11 +39,11 @@ public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>
 ```
 
 > **(0)** A series of Processing Stages that you define for your application logic. Produces an Iceberg Record.
-> To emit Iceberg Records out of your separate Processing Stage, add the [Iceberg Record Codec](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42) to your
+> To emit Iceberg Records out of your separate Processing Stage, add the [Iceberg Record Codec](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L42) to your
 > stage config.
 
 > **(1)** A Processing Stage of **n** parallelizable `IcebergWriter`s. The Stage Config automatically adds
-> an [Iceberg DataFile Codec](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49) to encode/decode DataFiles between these workers and the Committer
+> an [Iceberg DataFile Codec](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-iceberg/src/main/java/io/mantisrx/connector/iceberg/sink/codecs/IcebergCodecs.java#L49) to encode/decode DataFiles between these workers and the Committer
 > workers from the next stage downstream.
 
 > **(2)** A Processing Stage for **1** `IcebergCommitter`.
@@ -123,22 +122,14 @@ public class ProcessingAndWriterStage implements ScalarComputation<MantisServerS
 !!! note
     Writers are stateless and may be parallelized/autoscaled.
 
-!!! important
-    To avoid poor write performance for _partitioned Iceberg Tables_, make sure your upstream producers
-    write Iceberg Records in alignment with the table's partitioning as best they can. 
-
-    For example:
-
-    - Given an Iceberg Table partitioned by `hour`
-    - 10 upstream producers writing Iceberg Records
-
-    Each of the 10 producers _should_ try to produce events aligned by the hour.
-
-    Writes may be _unordered_; the only concern is aligning writes to the table's partitioning.
-
-    If writes are not well-aligned, then results will be correct, but write performance negatively impacted.
-
 ### Committer
+
+The **Committer** commits `DataFile`s to Iceberg. `Records` are queryable from the Iceberg table
+only after a Committer commits `DataFile`s. A Committer commits on a configured interval (default: 5 min).
+
+If a Committer fails, it will retry until a retry threshold is met, after which it will continue
+onto the next window of `Record`s. This avoids backpressure issues originating from downstream consumers
+which makes it more suitable for operational use cases.
 
 ```java hl_lines="8"
 public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>> {
@@ -162,16 +153,8 @@ public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>
 > you can subscribe to with a Sink for optional debugging or connecting to another Mantis Job.
 > Otherwise, a Sink not required because the Committer will write directly to Iceberg.
 
-A **Committer** commits `DataFile`s to Iceberg. `Records` are queryable from the Iceberg table
-only after a Committer commits `DataFile`s. A Committer commits on a configured interval (default: 5 min).
-
-A Committer aligns to Mantis's _at-most-once_ guarantee. This means if a commit fails, it
-_will not_ retry that commit. It will instead continue and try to commit for the next window
-of `Record`s at the next interval. This avoids backpressure issues originating from downstream
-and is therefore more suitable to operational use cases.
-
 !!! important
-    You should have only **one** Committer per Iceberg Table and try to avoid a high frequency commit
+    You should try to have only **one** Committer per Iceberg Table and try to avoid a high frequency commit
     intervals (default: `5 min`). This avoids commit pressure on Iceberg.
 
 ### Configuration Options
@@ -182,6 +165,7 @@ and is therefore more suitable to operational use cases.
 | `writerFlushFrequencyBytes` | String | "134217728" (128 MiB) | Flush frequency by size in Bytes |
 | `writerFlushFrequencyMsec` | String | "60000" (1 min) | Flush frequency by time in milliseconds |
 | `writerFileFormat` | String | parquet | File format for writing data files to backing Iceberg store |
+| `writerMaximumPoolSize` | int | 5 | Maximum number of writers that should exist per worker |
 | `commitFrequencyMs` | String | "300000" (5 min) | Iceberg Committer frequency by time in milliseconds |
 
 ### Metrics

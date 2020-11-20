@@ -14,28 +14,11 @@
  * limitations under the License.
  */
 
-package io.mantisrx.connector.iceberg.sink.writer;
+package io.mantisrx.connector.iceberg.sink.writer.factory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import io.mantisrx.connector.iceberg.sink.writer.IcebergWriter;
 
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.Record;
+public interface IcebergWriterFactory {
 
-public interface IcebergWriter {
-
-    void open() throws IOException;
-
-    void open(StructLike newPartitionKey) throws IOException;
-
-    void write(Record record);
-
-    DataFile close() throws IOException, UncheckedIOException;
-
-    boolean isClosed();
-
-    long length();
-
-    StructLike getPartitionKey();
+    IcebergWriter newIcebergWriter();
 }
