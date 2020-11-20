@@ -16,18 +16,17 @@
 
 package com.netflix.control.clutch;
 
-import io.vavr.Function4;
+import io.vavr.Function3;
 
 /**
  * A function for computing the new scale based on the current scale and the PID controller output.
  * Arguments:
- * 1.) the current scale
- * 2.) the delta computed by the PID controller
- * 3.) the scale min
- * 4.) the scale max
+ * 1.) the clutch configuration for the current control loop
+ * 2.) the current scale
+ * 3.) the delta computed by the PID controller
  * Return:
  * the new scale, which will be acted on by the actuator
  */
 @FunctionalInterface
-public interface IScaleComputer extends Function4<Long, Double, Long, Long, Double> {
+public interface IScaleComputer extends Function3<ClutchConfiguration, Long, Double, Double> {
 }

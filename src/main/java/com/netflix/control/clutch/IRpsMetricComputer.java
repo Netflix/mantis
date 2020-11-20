@@ -16,17 +16,18 @@
 
 package com.netflix.control.clutch;
 
-import io.vavr.Function3;
+import io.vavr.Function2;
+
+import java.util.Map;
 
 /**
  * A function for computing the RPS metric to be compared against the setPoint and feed to the PID controller.
  * Arguments:
- * 1.) the latest RPS metric
- * 2.) the latest Lag metric
- * 3.) the latest Drop metric
+ * 1.) the clutch configuration for the current control loop
+ * 2.) a Map containing metrics for computation
  * Return:
  * the computed RPS metric
  */
 @FunctionalInterface
-public interface IRpsMetricComputer extends Function3<Double, Double, Double, Double> {
+public interface IRpsMetricComputer extends Function2<ClutchConfiguration, Map<Clutch.Metric, Double>, Double> {
 }

@@ -16,6 +16,8 @@
 
 package com.netflix.control.clutch;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.util.concurrent.AtomicDouble;
@@ -95,12 +97,18 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         return rps.withLatestFrom(lag, drops, Tuple::of)
                 .doOnNext(triple -> log.debug("Clutch received RPS: {}, Lag: {} (d {}), Drops: {}", triple._1.value, triple._2.value, triple._2.value - lastLag.get(), triple._3.value))
-                .map(triple -> this.rpsMetricComputer.apply(triple._1.value, triple._2.value, triple._3.value))
+                .map(triple -> {
+                    Map<Clutch.Metric, Double> metrics = new HashMap<>();
+                    metrics.put(Clutch.Metric.RPS, triple._1.value);
+                    metrics.put(Clutch.Metric.LAG, triple._2.value);
+                    metrics.put(Clutch.Metric.DROPS, triple._3.value);
+                    return this.rpsMetricComputer.apply(config, metrics);
+                })
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                 .lift(new PIDController(config.kp, config.ki, config.kd, 1.0, new AtomicDouble(1.0), config.integralDecay))
                 .lift(deltaIntegrator)
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
-                .map(delta -> this.scaleComputer.apply(this.currentScale.get(), delta, (long) config.minSize, (long) config.maxSize))
+                .map(delta -> this.scaleComputer.apply(config, this.currentScale.get(), delta))
                 .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))
                 .lift(actuator)
                 .doOnNext(scale -> this.currentScale.set(Math.round(Math.ceil(scale))))
@@ -116,16 +124,17 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
     public static class DefaultRpsMetricComputer implements IRpsMetricComputer {
         private double lastLag = 0;
 
-        public Double apply(Double rps, Double lag, Double drop) {
+        public Double apply(ClutchConfiguration config, Map<Clutch.Metric, Double> metrics) {
+            double lag = metrics.get(Clutch.Metric.LAG);
             double lagDerivative  = lag - lastLag;
             lastLag = lag;
-            return rps + lagDerivative + drop;
+            return metrics.get(Clutch.Metric.RPS) + lagDerivative + metrics.get(Clutch.Metric.DROPS);
         }
     }
 
     public static class DefaultScaleComputer implements IScaleComputer {
-        public Double apply(Long currentScale, Double delta, Long min, Long max) {
-            return Math.min(max, Math.max(min, currentScale + delta));
+        public Double apply(ClutchConfiguration config, Long currentScale, Double delta) {
+            return Math.min(config.maxSize, Math.max(config.minSize, currentScale + delta));
         }
     }
 }
