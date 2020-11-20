@@ -79,7 +79,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
 
         Observable<Event> rps = events.filter(event -> event.getMetric() == Clutch.Metric.RPS);
 
-        Integrator integrator = new Integrator(initialSize, config.minSize, config.maxSize);
+        Integrator integrator = new Integrator(initialSize, config.minSize, config.maxSize, config.integralDecay);
 
         size
                 .takeUntil(timer)
