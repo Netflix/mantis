@@ -16,9 +16,9 @@
 
 package com.netflix.control.clutch;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.netflix.control.IActuator;
 import com.netflix.control.clutch.metrics.IClutchMetricsRegistry;
-import com.yahoo.sketches.quantiles.DoublesSketch;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.vavr.Function1;
 import io.vavr.Tuple;
@@ -43,6 +43,8 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
     private final Observable<Integer> size;
     private final long initialConfigMillis;
     private final Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator;
+    private final IRpsMetricComputer rpsMetricComputer;
+    private final IScaleComputer scaleComputer;
 
     /**
      * Constructs a new Clutch instance for autoscaling.
@@ -53,10 +55,16 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
      * @param size An observable indicating the size of the cluster should external events resize it.
      * @param timer An observable on which each tick signifies a new configuration should be emitted.
      * @param initialConfigMillis The initial number of milliseconds before initial configuration.
+     * @param configurator Function to generate a ClutchConfiguration based on metric sketches.
+     * @param rpsMetricComputer Computes the RPS metric to be feed into the PID controller.
+     * @param scaleComputer Computes the new scale based on the current scale and PID controller output.
+     *
      */
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
                               Observable<Integer> size, Observable<Long> timer, long initialConfigMillis,
-                              Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator) {
+                              Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator,
+                              IRpsMetricComputer rpsMetricComputer,
+                              IScaleComputer scaleComputer) {
         this.actuator = actuator;
         this.initialSize = initialSize;
         this.minSize = minSize;
@@ -65,6 +73,15 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
         this.timer = timer;
         this.initialConfigMillis = initialConfigMillis;
         this.configurator = configurator;
+        this.rpsMetricComputer = rpsMetricComputer;
+        this.scaleComputer = scaleComputer;
+    }
+
+    public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
+                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis,
+                              Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator) {
+        this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, configurator,
+                new ExperimentalControlLoop.DefaultRpsMetricComputer(), new ExperimentalControlLoop.DefaultScaleComputer());
     }
 
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
@@ -103,7 +120,8 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
                         initialConfigMillis, configurator))
                 .flatMap(config -> events
                         .compose(new ExperimentalControlLoop(config, this.actuator,
-                                this.initialSize.doubleValue(), timer, size))
+                                this.initialSize.doubleValue(), new AtomicDouble(1.0), timer, size,
+                                this.rpsMetricComputer, this.scaleComputer))
                         .takeUntil(timer)); // takeUntil tears down this control loop when a new config is produced.
     }
 }
