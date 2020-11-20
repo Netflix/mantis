@@ -31,4 +31,14 @@ public class IntegratorTest {
         output = integrator.processStep(30.0);
         assertEquals(64.2, output, 1e-10);
     }
+
+    @Test
+    public void shouldSupportMinMax() {
+        Integrator integrator = new Integrator(10, -100, 100, 1.0);
+        double output = integrator.processStep(200.0);
+        assertEquals(100.0, output, 1e-10);
+
+        output = integrator.processStep(-400.0);
+        assertEquals(-100.0, output, 1e-10);
+    }
 }
