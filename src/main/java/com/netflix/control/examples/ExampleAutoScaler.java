@@ -75,7 +75,7 @@ public class ExampleAutoScaler implements Observable.Transformer<Double, Double>
                     instead we were required to produce only the differences (+2 for scale up two
                     workers, -3 to scale down three then we would omit the integrator.
                  */
-                .lift(new Integrator(1.0, min, max))
+                .lift(new Integrator(1.0, min, max, 1.0))
                 /*
                     We now feed this to an actuator which hows how to actually perform
                     the scaling action against the target. This can be achieved by performing a

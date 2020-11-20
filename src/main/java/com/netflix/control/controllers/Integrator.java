@@ -23,6 +23,7 @@ public class Integrator extends IController {
     private double sum = 0;
     private double min = Double.NEGATIVE_INFINITY;
     private double max = Double.POSITIVE_INFINITY;
+    private double decayFactor = 1.0;
 
     public Integrator() {
     }
@@ -32,9 +33,14 @@ public class Integrator extends IController {
     }
 
     public Integrator(double init, double min, double max) {
+        this(init, min, max, 1.0);
+    }
+
+    public Integrator(double init, double min, double max, double decayFactor) {
         this.sum = init;
         this.min = min;
         this.max = max;
+        this.decayFactor = decayFactor;
     }
 
     /**
@@ -49,9 +55,10 @@ public class Integrator extends IController {
 
     @Override
     protected Double processStep(Double input) {
-        sum += input;
-        sum = (sum > max) ? max : sum;
-        sum = (sum < min) ? min : sum;
-        return sum;
+        double newSum = this.sum + input;
+        newSum = (newSum > max) ? max : newSum;
+        newSum = (newSum < min) ? min : newSum;
+        this.sum = decayFactor * newSum;
+        return newSum;
     }
 }
