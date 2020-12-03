@@ -432,9 +432,6 @@ public class JobAutoScaler {
         if (numCurrentWorkers < 0 || decrement < 1) {
           logger.error("current number of workers({}) not known or decrement({}) < 1, will not scale down", numCurrentWorkers, decrement);
           return numCurrentWorkers;
-        } else if (decrement > numCurrentWorkers) {
-          logger.error("trying to decrement by {} more than current number of workers({}), will set desired workers to 0", decrement, numCurrentWorkers);
-          desiredWorkers = 0;
         } else {
           int min = stageSchedulingInfo.getScalingPolicy().getMin();
           desiredWorkers = Math.max(numCurrentWorkers - decrement, min);
