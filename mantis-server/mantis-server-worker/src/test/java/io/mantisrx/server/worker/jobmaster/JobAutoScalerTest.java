@@ -238,6 +238,7 @@ public class JobAutoScalerTest {
         final Map<Integer, StageSchedulingInfo> schedulingInfoMap = new HashMap<>();
         final int numStage1Workers = 5;
         final int increment = 10;
+        // decrement by 10 on scale down, this will push num workers below min and below 0.
         final int decrement = 10;
         final int min = 3;
         final int max = 50;
