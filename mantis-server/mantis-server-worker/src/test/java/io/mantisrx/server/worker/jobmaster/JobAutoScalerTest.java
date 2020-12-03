@@ -21,11 +21,7 @@ import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Ka
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.UserDefined;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -231,6 +227,49 @@ public class JobAutoScalerTest {
             jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers - decrement, ""));
             verifyNoMoreInteractions(mockMasterClientApi);
         }
+    }
+
+    @Test
+    public void testScaleDownNotLessThanMin() throws InterruptedException {
+        final String jobId = "test-job-1";
+        final int coolDownSec = 2;
+        final int scalingStageNum = 1;
+        final MantisMasterClientApi mockMasterClientApi = mock(MantisMasterClientApi.class);
+        final Map<Integer, StageSchedulingInfo> schedulingInfoMap = new HashMap<>();
+        final int numStage1Workers = 5;
+        final int increment = 10;
+        final int decrement = 10;
+        final int min = 3;
+        final int max = 50;
+        final double scaleUpAbovePct = 45.0;
+        final double scaleDownBelowPct = 15.0;
+        final double workerMemoryMB = 512.0;
+
+        final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo(
+                numStage1Workers,
+                new MachineDefinition(2, workerMemoryMB, 200, 1024, 2),
+                null,
+                null,
+                new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+                        Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
+                                new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))),
+                true);
+
+        schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
+
+        when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), anyInt(), anyString())).thenReturn(Observable.just(true));
+
+        Context context = mock(Context.class);
+
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
+        jobAutoScaler.start();
+        final Observer<JobAutoScaler.Event> jobAutoScalerObserver = jobAutoScaler.getObserver();
+
+        // should trigger a scale down (below 15% scaleDown threshold)
+        jobAutoScalerObserver.onNext(new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, scalingStageNum, workerMemoryMB * (scaleDownBelowPct / 100.0 - 0.01), numStage1Workers, ""));
+
+        verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, min, String.format("Memory with value %1$,.2f is below scaleDown threshold of %2$,.1f", (scaleDownBelowPct / 100.0 - 0.01) * 100.0, scaleDownBelowPct));
+        verifyNoMoreInteractions(mockMasterClientApi);
     }
 
     @Test
