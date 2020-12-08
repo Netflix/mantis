@@ -52,6 +52,7 @@ public class AggregationStage implements GroupToScalarComputation<String, Reques
 
     private Observable<? extends RequestAggregation> aggregate(GroupedObservable<String, MantisGroup<String, RequestEvent>> go) {
         return go.reduce(RequestAggregation.builder().build(), (accumulator, value) -> {
+            log.info("aggregating " + go.getKey() + " on Thread " + Thread.currentThread().getName());
             accumulator.setCount(accumulator.getCount() + value.getValue().getLatency());
             accumulator.setPath(go.getKey());
             return accumulator;
@@ -72,6 +73,9 @@ public class AggregationStage implements GroupToScalarComputation<String, Reques
     @Override
     public Observable<RequestAggregation> call(Context context, Observable<MantisGroup<String, RequestEvent>> mantisGroupO) {
         return mantisGroupO
+                .doOnNext((mg) -> {
+                    log.info("Received " + mg.getKeyValue() + " on Thread " + Thread.currentThread().getName());
+                })
                 .window(aggregationDurationMsec, TimeUnit.MILLISECONDS)
                 .flatMap((omg) -> omg.groupBy(MantisGroup::getKeyValue)
                         .flatMap(//                                .map((count) -> RequestAggregation.builder().count(count).path(go.getKey()).build())
@@ -98,6 +102,7 @@ public class AggregationStage implements GroupToScalarComputation<String, Reques
         return new GroupToScalar.Config<String, RequestEvent,RequestAggregation>()
                 .description("sum events for a path")
                 .codec(RequestAggregation.requestAggregationCodec())
+                .concurrentInput()
                 .withParameters(getParameters());
     }
 
