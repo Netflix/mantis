@@ -15,7 +15,8 @@
  */
 
 test {
-    exclude 'io/mantisrx/runtime/**'  // exclude remote tests that require ports
+    exclude 'io/mantisrx/runtime/executor/**'  // exclude remote tests that require ports
+    exclude 'io/mantisrx/runtime/source/**'  // exclude remote tests that require ports
 }
 
 dependencies {

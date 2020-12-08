@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
 import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import com.netflix.spectator.api.BasicTag;
@@ -156,7 +157,7 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                             predicateFunction = predicate.call(queryParameters);
                         }
 
-                        byte[] delimiter = "$$$".getBytes();
+                        byte[] delimiter = CompressionUtils.MANTIS_SSE_DELIMITER_BINARY;
 
                         if (queryParameters != null && !queryParameters.isEmpty()) {
 

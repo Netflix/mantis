@@ -130,6 +130,10 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
         return sourceObs;
     }
 
+    /**
+     * Use {@link io.mantisrx.runtime.parameter.SourceJobParameters.TargetInfo} instead.
+     */
+    @Deprecated
     public static class TargetInfo {
 
         public String sourceJobName;
@@ -163,6 +167,10 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
         return parseTargetInfo(targetListStr);
     }
 
+    /**
+     * Use {@link io.mantisrx.runtime.parameter.SourceJobParameters#parseTargetInfo(String)} instead.
+     */
+    @Deprecated
     protected static List<TargetInfo> parseTargetInfo(String targetListStr) {
         List<TargetInfo> targetList = new ArrayList<TargetInfo>();
         JsonObject requestObj = (JsonObject) parser.parse(targetListStr);
@@ -211,6 +219,10 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
         return targetList;
     }
 
+    /**
+     * Use {@link io.mantisrx.runtime.parameter.SourceJobParameters.TargetInfoBuilder} instead.
+     */
+    @Deprecated
     public static class TargetInfoBuilder {
 
         private String sourceJobName;
@@ -273,6 +285,8 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
     }
 
     /**
+     * Use {@link io.mantisrx.runtime.parameter.SourceJobParameters#enforceClientIdConsistency(List, String)} instead.
+     *
      * Ensures that a list of TargetInfo contains a sane set of sourceJobName, ClientId pairs.
      * TODO: Currently mutates the list, which isn't problematic here, but it would be prudent to clean this up.
      *
@@ -280,6 +294,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
      *
      * @return The original List modified to have consistent clientIds.
      */
+    @Deprecated
     public static List<TargetInfo> enforceClientIdConsistency(List<TargetInfo> targets, String defaultClientId) {
 
         targets.sort(Comparator.comparing(t -> t.criterion));

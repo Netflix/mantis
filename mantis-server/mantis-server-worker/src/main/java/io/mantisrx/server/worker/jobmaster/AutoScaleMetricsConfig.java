@@ -17,17 +17,27 @@
 package io.mantisrx.server.worker.jobmaster;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
+import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 
 public class AutoScaleMetricsConfig {
 
+    public static final String CLIENT_ID_TOKEN = "_CLIENT_ID_";
+    public static final String OUTBOUND_METRIC_GROUP_PATTERN = "PushServerSse:clientId=" + CLIENT_ID_TOKEN + ":*";
+    public static final String OUTBOUND_METRIC_GROUP_PATTERN_LEGACY = "ServerSentEventRequestHandler:clientId=" + CLIENT_ID_TOKEN + ":*";
+
     private static final AggregationAlgo DEFAULT_ALGO = AggregationAlgo.AVERAGE;
     // autoscaling metric groups to subscribe to by default
     private static final Map<String, Map<String, AggregationAlgo>> defaultAutoScaleMetrics = new HashMap<>();
+
+    private static final Map<String, Map<String, AggregationAlgo>> sourceJobMetrics = new HashMap<>();
+    private static final Map<String, Pattern> sourceJobMetricsPatterns = new HashMap<>();
 
     static {
         defaultAutoScaleMetrics.put(RESOURCE_USAGE_METRIC_GROUP, new HashMap<>());
@@ -39,6 +49,13 @@ public class AutoScaleMetricsConfig {
         final Map<String, AggregationAlgo> defaultWorkerStageInnerInputMetric = new HashMap<>();
         defaultWorkerStageInnerInputMetric.put(ON_NEXT_GAUGE, AggregationAlgo.AVERAGE);
         defaultAutoScaleMetrics.put(WORKER_STAGE_INNER_INPUT, defaultWorkerStageInnerInputMetric);
+
+        final Map<String, AggregationAlgo> defaultOutboundMetric = new HashMap<>();
+        defaultOutboundMetric.put(DROPPED_COUNTER_METRIC_NAME, AggregationAlgo.MAX);
+        sourceJobMetrics.put(OUTBOUND_METRIC_GROUP_PATTERN, defaultOutboundMetric);
+        sourceJobMetrics.put(OUTBOUND_METRIC_GROUP_PATTERN_LEGACY, defaultOutboundMetric);
+        sourceJobMetricsPatterns.put(OUTBOUND_METRIC_GROUP_PATTERN, Pattern.compile(OUTBOUND_METRIC_GROUP_PATTERN.replace("*", ".*").replaceAll(CLIENT_ID_TOKEN, ".*")));
+        sourceJobMetricsPatterns.put(OUTBOUND_METRIC_GROUP_PATTERN_LEGACY, Pattern.compile(OUTBOUND_METRIC_GROUP_PATTERN_LEGACY.replace("*", ".*").replaceAll(CLIENT_ID_TOKEN, ".*")));
     }
 
     private final Map<String, Map<String, AggregationAlgo>> userDefinedAutoScaleMetrics;
@@ -64,6 +81,11 @@ public class AutoScaleMetricsConfig {
         }
         if (defaultAutoScaleMetrics.containsKey(metricGroupName) && defaultAutoScaleMetrics.get(metricGroupName).containsKey(metricName)) {
             return defaultAutoScaleMetrics.get(metricGroupName).getOrDefault(metricName, DEFAULT_ALGO);
+        }
+        for (Map.Entry<String, Pattern> entry : sourceJobMetricsPatterns.entrySet()) {
+            if (entry.getValue().matcher(metricGroupName).matches()) {
+                return sourceJobMetrics.get(entry.getKey()).getOrDefault(metricName, DEFAULT_ALGO);
+            }
         }
         return DEFAULT_ALGO;
     }
@@ -96,6 +118,16 @@ public class AutoScaleMetricsConfig {
 
     public Set<String> getMetricGroups() {
         return getAllMetrics().keySet();
+    }
+
+    public Set<String> generateSourceJobMetricGroups(Set<String> clientIds) {
+        Set<String> results = new HashSet<>();
+        for (String clientId : clientIds) {
+            for (String metricPattern : sourceJobMetrics.keySet()) {
+                results.add(metricPattern.replaceAll(CLIENT_ID_TOKEN, clientId));
+            }
+        }
+        return results;
     }
 
     @Override

@@ -32,6 +32,8 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerOutlier;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.reactivx.mantis.operators.DropOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,7 @@ import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
+import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 
 
 /* package */ class WorkerMetricHandler {
@@ -109,6 +112,10 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
         private final int valuesToKeep = 2;
         private final AutoScaleMetricsConfig autoScaleMetricsConfig;
         private final ConcurrentMap<Integer, WorkerMetrics> workersMap = new ConcurrentHashMap<>();
+        private final ConcurrentMap<String, WorkerMetrics> sourceJobWorkersMap = new ConcurrentHashMap<>();
+        private final Cache<String, String> sourceJobMetricsRecent = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.MINUTES)
+                .build();
         private final WorkerOutlier workerOutlier;
 
         private final Map<Integer, Integer> workerNumberByIndex = new HashMap<>();
@@ -163,12 +170,14 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
         private void addDataPoint(final MetricData datapoint) {
             final int workerIndex = datapoint.getWorkerIndex();
+
             logger.debug("adding data point for worker idx={} data={}", workerIndex, datapoint);
 
-            if (!workersMap.containsKey(workerIndex)) {
-                workersMap.putIfAbsent(workerIndex, new WorkerMetrics(valuesToKeep));
-            }
             WorkerMetrics workerMetrics = workersMap.get(workerIndex);
+            if (workerMetrics == null) {
+                workerMetrics = new WorkerMetrics(valuesToKeep);
+                workersMap.put(workerIndex, workerMetrics);
+            }
 
             final MetricData transformedMetricData = workerMetrics.addDataPoint(datapoint.getMetricGroupName(), datapoint);
             if (transformedMetricData.getMetricGroupName().equals(DATA_DROP_METRIC_GROUP)) {
@@ -192,6 +201,24 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                     workersMap.remove(idx);
                 }
             }
+        }
+
+        private void addSourceJobDataPoint(final MetricData datapoint) {
+            final String sourceJobId = datapoint.getJobId();
+            final int workerIndex = datapoint.getWorkerIndex();
+
+            String sourceWorkerKey = sourceJobId + ":" + workerIndex;
+
+            WorkerMetrics workerMetrics = sourceJobWorkersMap.get(workerIndex);
+            if (workerMetrics == null) {
+                workerMetrics = new WorkerMetrics(valuesToKeep);
+                sourceJobWorkersMap.put(sourceWorkerKey, workerMetrics);
+            }
+
+            workerMetrics.addDataPoint(datapoint.getMetricGroupName(), datapoint);
+
+            String sourceMetricKey = sourceWorkerKey + ":" + datapoint.getMetricGroupName();
+            sourceJobMetricsRecent.put(sourceMetricKey, sourceMetricKey);
         }
 
         private static final int metricsIntervalSeconds = 30; // TODO make it configurable
@@ -280,6 +307,28 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                                                     gauges.get(ON_NEXT_GAUGE) / 6.0, numWorkers, ""));
                                 }
                             }
+
+                            double sourceJobDrops = 0;
+                            boolean hasSourceJobDropsMetric = false;
+                            Map<String, String> sourceMetricsRecent = sourceJobMetricsRecent.asMap();
+                            for (Map.Entry<String, WorkerMetrics> worker : sourceJobWorkersMap.entrySet()) {
+                                Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
+                                for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
+                                    String metricKey = worker.getKey() + ":" + group.getKey();
+                                    Map<String, Double> gauges = group.getValue().getGauges();
+                                    if (sourceMetricsRecent.containsKey(metricKey) && gauges.containsKey(DROPPED_COUNTER_METRIC_NAME)) {
+                                        sourceJobDrops += gauges.get(DROPPED_COUNTER_METRIC_NAME);
+                                        hasSourceJobDropsMetric = true;
+                                    }
+                                }
+                            }
+                            if (hasSourceJobDropsMetric) {
+                                logger.info("Job stage " + stage + ", recent source job metrics count: " +
+                                        sourceMetricsRecent.size();
+                                jobAutoScaleObserver.onNext(
+                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
+                                                sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));
+                            }
                         }
                     }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
             ));
@@ -298,7 +347,11 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                 public void onNext(MetricData metricData) {
                     logger.debug("Got metric metricData for job " + jobId + " stage " + stage +
                             ", worker " + metricData.getWorkerNumber() + ": " + metricData);
-                    addDataPoint(metricData);
+                    if (metricData.getJobId() == jobId) {
+                        addDataPoint(metricData);
+                    } else {
+                        addSourceJobDataPoint(metricData);
+                    }
                 }
             };
         }

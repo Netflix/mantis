@@ -42,6 +42,7 @@ public class ParameterUtils {
     public static final String JOB_MASTER_AUTOSCALE_CONFIG_SYSTEM_PARAM = "mantis.jobmaster.autoscale.adaptive.config";
     public static final String JOB_MASTER_CLUTCH_SYSTEM_PARAM = "mantis.jobmaster.clutch.config";
     public static final String JOB_MASTER_CLUTCH_EXPERIMENTAL_PARAM = "mantis.jobmaster.clutch.experimental.enabled";
+    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM = "mantis.jobmaster.autoscale.sourcejob.metric.enabled";
     public static final String PER_STAGE_JVM_OPTS_FORMAT = "MANTIS_WORKER_JVM_OPTS_STAGE%d";
     public static final String STAGE_CONCURRENCY = "mantis.stageConcurrency";
     public static final int MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE = 5;
