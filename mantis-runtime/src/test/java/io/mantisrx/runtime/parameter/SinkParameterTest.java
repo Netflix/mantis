@@ -27,56 +27,33 @@ import org.junit.Test;
 public class SinkParameterTest {
 
     @Test
-    public void testGenerateURI() {
+    public void testGenerateURI() throws Exception {
 
         SinkParameters sps;
-        try {
-            sps = new SinkParameters.Builder().withParameter("p1", "v1").withParameter("p2", "v2").withParameter("p3", "v3").build();
-            assertEquals("?p1=v1&p2=v2&p3=v3", sps.toString());
-        } catch (UnsupportedEncodingException e) {
-
-            e.printStackTrace();
-            fail();
-        }
-
+        sps = new SinkParameters.Builder().withParameter("p1", "v1").withParameter("p2", "v2").withParameter("p3", "v3").build();
+        assertEquals("?p1=v1&p2=v2&p3=v3", sps.toString());
     }
 
     @Test
-    public void testGenerateURI2() {
+    public void testGenerateURI2() throws Exception {
 
         SinkParameters sps;
-        try {
-            sps = new SinkParameters.Builder().withParameter("p1", "v1").withParameter("p2", null).withParameter("p3", "v3").build();
-            assertEquals("?p1=v1&p2=&p3=v3", sps.toString());
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            fail();
-        }
-
+        sps = new SinkParameters.Builder().withParameter("p1", "v1").withParameter("p2", null).withParameter("p3", "v3").build();
+        assertEquals("?p1=v1&p2=&p3=v3", sps.toString());
     }
 
     @Test
-    public void testGenerateURI3() {
+    public void testGenerateURI3() throws Exception {
 
         SinkParameters sps;
-        try {
-            sps = new SinkParameters.Builder().withParameter("p1", "select esn, country where e[\"response.header.x-netflix.api-script-endpoint\"]==\"/account/geo\"").build();
-            assertEquals("?p1=v1&p2=&p3=v3", sps.toString());
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            fail();
-        }
-
+        sps = new SinkParameters.Builder().withParameter("p1", "select esn, country where e[\"response.header.x-netflix.api-script-endpoint\"]==\"/account/geo\"").build();
+        assertEquals("?p1=select+esn%2C+country+where+e%5B%22response.header.x-netflix.api-script-endpoint%22%5D%3D%3D%22%2Faccount%2Fgeo%22", sps.toString());
     }
 
     @Test
     public void testGenerateURI4() {
-
         SinkParameters sps = new SinkParameters.Builder().build();
         assertEquals("", sps.toString());
-
     }
 
 

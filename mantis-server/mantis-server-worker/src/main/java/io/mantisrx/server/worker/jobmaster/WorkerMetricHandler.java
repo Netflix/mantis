@@ -324,7 +324,7 @@ import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_MET
                             }
                             if (hasSourceJobDropsMetric) {
                                 logger.info("Job stage " + stage + ", recent source job metrics count: " +
-                                        sourceMetricsRecent.size();
+                                        sourceMetricsRecent.size());
                                 jobAutoScaleObserver.onNext(
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
                                                 sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));
