@@ -23,7 +23,7 @@ import java.util.Set;
 
 import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 import static io.reactivex.mantis.network.push.PushServerSse.PROCESSED_COUNTER_METRIC_NAME;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class AutoScaleMetricsConfigTest {
     @Test
@@ -37,12 +37,13 @@ public class AutoScaleMetricsConfigTest {
     }
 
     @Test
-    public void testgetAggregationAlgoForSourceJobMetrics() throws Exception {
+    public void testGetAggregationAlgoForSourceJobMetrics() throws Exception {
         AutoScaleMetricsConfig config = new AutoScaleMetricsConfig();
 
         AutoScaleMetricsConfig.AggregationAlgo aglo = config.getAggregationAlgo(
                 "ServerSentEventRequestHandler:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", DROPPED_COUNTER_METRIC_NAME);
         assertEquals(AutoScaleMetricsConfig.AggregationAlgo.MAX, aglo);
+        assertTrue(config.isSourceJobDropMetric("ServerSentEventRequestHandler:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", DROPPED_COUNTER_METRIC_NAME));
 
         aglo = config.getAggregationAlgo(
                 "PushServerSse:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", DROPPED_COUNTER_METRIC_NAME);
@@ -59,5 +60,29 @@ public class AutoScaleMetricsConfigTest {
         aglo = config.getAggregationAlgo(
                 "PushServerSse:clientId=ABC:DEF", DROPPED_COUNTER_METRIC_NAME);
         assertEquals(AutoScaleMetricsConfig.AggregationAlgo.MAX, aglo);
+    }
+
+    @Test
+    public void testAddSourceJobDropMetrics() {
+        AutoScaleMetricsConfig config = new AutoScaleMetricsConfig();
+        config.addSourceJobDropMetrics("myDropGroup1:clientId=_CLIENT_ID_:*::myDropCounter::MAX");
+
+        AutoScaleMetricsConfig.AggregationAlgo aglo = config.getAggregationAlgo(
+                "myDropGroup1:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", "myDropCounter");
+        assertEquals(AutoScaleMetricsConfig.AggregationAlgo.MAX, aglo);
+        assertTrue(config.isSourceJobDropMetric("myDropGroup1:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", "myDropCounter"));
+        assertFalse(config.isSourceJobDropMetric("ABCmyDropGroup1:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", "myDropCounter"));
+        assertTrue(config.isSourceJobDropMetric("ServerSentEventRequestHandler:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", DROPPED_COUNTER_METRIC_NAME));
+    }
+
+    @Test
+    public void testAddSourceJobDropMetricsThrowsException() {
+        AutoScaleMetricsConfig config = new AutoScaleMetricsConfig();
+        try {
+            config.addSourceJobDropMetrics("InvalidMetricFormat");
+            fail();
+        } catch (Exception ex) {
+            // pass
+        }
     }
 }

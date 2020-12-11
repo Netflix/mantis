@@ -48,7 +48,6 @@ import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
-import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 
 
 /* package */ class WorkerMetricHandler {
@@ -209,7 +208,7 @@ import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_MET
 
             String sourceWorkerKey = sourceJobId + ":" + workerIndex;
 
-            WorkerMetrics workerMetrics = sourceJobWorkersMap.get(workerIndex);
+            WorkerMetrics workerMetrics = sourceJobWorkersMap.get(sourceWorkerKey);
             if (workerMetrics == null) {
                 workerMetrics = new WorkerMetrics(valuesToKeep);
                 sourceJobWorkersMap.put(sourceWorkerKey, workerMetrics);
@@ -302,6 +301,7 @@ import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_MET
                                 final GaugeData gaugeData = allWorkerAggregates.get(WORKER_STAGE_INNER_INPUT);
                                 final Map<String, Double> gauges = gaugeData.getGauges();
                                 if (gauges.containsKey(ON_NEXT_GAUGE)) {
+                                    // Divide by 6 to account for 6 second reset by Atlas on counter metric.
                                     jobAutoScaleObserver.onNext(
                                             new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
                                                     gauges.get(ON_NEXT_GAUGE) / 6.0, numWorkers, ""));
@@ -315,16 +315,18 @@ import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_MET
                                 Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
                                 for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
                                     String metricKey = worker.getKey() + ":" + group.getKey();
-                                    Map<String, Double> gauges = group.getValue().getGauges();
-                                    if (sourceMetricsRecent.containsKey(metricKey) && gauges.containsKey(DROPPED_COUNTER_METRIC_NAME)) {
-                                        sourceJobDrops += gauges.get(DROPPED_COUNTER_METRIC_NAME);
-                                        hasSourceJobDropsMetric = true;
+                                    for (Map.Entry<String, Double> gauge : group.getValue().getGauges().entrySet()) {
+                                        if (sourceMetricsRecent.containsKey(metricKey) &&
+                                                autoScaleMetricsConfig.isSourceJobDropMetric(group.getKey(), gauge.getKey())) {
+                                            sourceJobDrops += gauge.getValue();
+                                            hasSourceJobDropsMetric = true;
+                                        }
                                     }
                                 }
                             }
                             if (hasSourceJobDropsMetric) {
-                                logger.info("Job stage " + stage + ", recent source job metrics count: " +
-                                        sourceMetricsRecent.size());
+                                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobWorkersMap);
+                                // Divide by 6 to account for 6 second reset by Atlas on counter metric.
                                 jobAutoScaleObserver.onNext(
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
                                                 sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));

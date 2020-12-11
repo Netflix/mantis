@@ -127,12 +127,7 @@ public class JobMasterService implements Service {
         boolean isSourceJobMetricEnabled = (boolean) context.getParameters().get(
                 ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM, false);
         if (isSourceJobMetricEnabled) {
-            List<SourceJobParameters.TargetInfo> targetInfos = SourceJobParameters.enforceClientIdConsistency(
-                    SourceJobParameters.parseInputParameters(context), jobId);
-            SourceJobWorkerMetricsSubscription sourceSub = new SourceJobWorkerMetricsSubscription(
-                    targetInfos, masterClientApi, workerMetricsClient, autoScaleMetricsConfig);
-
-            metrics = metrics.mergeWith(sourceSub.getResults());
+            metrics = metrics.mergeWith(getSourceJobMetrics());
         }
 
         subscription = Observable.merge(metrics)
@@ -141,6 +136,24 @@ public class JobMasterService implements Service {
                 .doOnCompleted(observableOnCompleteCallback)
                 .doOnError(observableOnErrorCallback)
                 .subscribe();
+    }
+
+    protected Observable<Observable<MantisServerSentEvent>> getSourceJobMetrics() {
+        List<SourceJobParameters.TargetInfo> targetInfos = SourceJobParameters.parseTargetInfo(
+                (String) context.getParameters().get(ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM, "{}"));
+        if (targetInfos.isEmpty()) {
+            targetInfos = SourceJobParameters.parseInputParameters(context);
+        }
+        targetInfos = SourceJobParameters.enforceClientIdConsistency(targetInfos, jobId);
+
+        String additionalDropMetricPatterns =
+                (String) context.getParameters().get(ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM, "");
+        autoScaleMetricsConfig.addSourceJobDropMetrics(additionalDropMetricPatterns);
+
+        SourceJobWorkerMetricsSubscription sourceSub = new SourceJobWorkerMetricsSubscription(
+                targetInfos, masterClientApi, workerMetricsClient, autoScaleMetricsConfig);
+
+        return sourceSub.getResults();
     }
 
     @Override
