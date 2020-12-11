@@ -42,6 +42,9 @@ public class ParameterUtils {
     public static final String JOB_MASTER_AUTOSCALE_CONFIG_SYSTEM_PARAM = "mantis.jobmaster.autoscale.adaptive.config";
     public static final String JOB_MASTER_CLUTCH_SYSTEM_PARAM = "mantis.jobmaster.clutch.config";
     public static final String JOB_MASTER_CLUTCH_EXPERIMENTAL_PARAM = "mantis.jobmaster.clutch.experimental.enabled";
+    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM = "mantis.jobmaster.autoscale.sourcejob.metric.enabled";
+    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM = "mantis.jobmaster.autoscale.sourcejob.target";
+    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM = "mantis.jobmaster.autoscale.sourcejob.dropMetricPatterns";
     public static final String PER_STAGE_JVM_OPTS_FORMAT = "MANTIS_WORKER_JVM_OPTS_STAGE%d";
     public static final String STAGE_CONCURRENCY = "mantis.stageConcurrency";
     public static final int MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE = 5;
@@ -212,6 +215,32 @@ public class ParameterUtils {
                 .description("Delimiter for separating SSE data before compression")
                 .build();
         systemParams.put(compressionDelimiter.getName(), compressionDelimiter);
+
+        ParameterDefinition<Boolean> autoscaleSourceJobMetricEnabled = new BooleanParameter()
+                .name(JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM)
+                .validator(Validators.alwaysPass())
+                .defaultValue(false)
+                .description("Enable source job drop metrics to be used for autoscaling the 1st stage")
+                .build();
+        systemParams.put(autoscaleSourceJobMetricEnabled.getName(), autoscaleSourceJobMetricEnabled);
+
+        ParameterDefinition<String> autoscaleSourceJobTarget = new StringParameter()
+                .name(JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM)
+                .validator(Validators.alwaysPass())
+                .defaultValue("{}")
+                .description("Json config to specify source job targets for autoscale metrics. This param is not needed if the 'target' param is already present. Example: {\"targets\": [{\"sourceJobName\":<jobName>, \"clientId\":<clientId>}]}")
+                .build();
+        systemParams.put(autoscaleSourceJobTarget.getName(), autoscaleSourceJobTarget);
+
+        ParameterDefinition<String> autoscaleSourceJobDropMetricPattern = new StringParameter()
+                .name(JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM)
+                .validator(Validators.alwaysPass())
+                .defaultValue("")
+                .description("Additional metrics pattern for source job drops. Comma separated list, supports dynamic client ID by using '_CLIENT_ID_' as a token. " +
+                        "Each metric should be expressed in the same format as '" + JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM + "'. " +
+                        "Example: PushServerSse:clientId=_CLIENT_ID_:*::droppedCounter::MAX,ServerSentEventRequestHandler:clientId=_CLIENT_ID_:*::droppedCounter::MAX")
+                .build();
+        systemParams.put(autoscaleSourceJobDropMetricPattern.getName(), autoscaleSourceJobDropMetricPattern);
     }
 
     private ParameterUtils() {

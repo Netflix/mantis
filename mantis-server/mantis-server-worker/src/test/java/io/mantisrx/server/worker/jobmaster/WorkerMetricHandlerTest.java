@@ -18,6 +18,8 @@ package io.mantisrx.server.worker.jobmaster;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METRIC_GROUP;
 import static io.mantisrx.server.core.stats.MetricStringConstants.KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP;
+import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
+import static io.reactivex.mantis.network.push.PushServerSse.PROCESSED_COUNTER_METRIC_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyInt;
@@ -41,6 +43,7 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -281,4 +284,77 @@ public class WorkerMetricHandlerTest {
         assertTrue(autoScaleLatch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void testSourceJobDropMetricTriggersAutoScale() throws InterruptedException {
+        final String jobId = "test-job-1";
+        final String sourceJobId = "source-test-job-1";
+        final int stage = 1;
+
+        final MantisMasterClientApi mockMasterClientApi = mock(MantisMasterClientApi.class);
+
+        final Map<Integer, WorkerAssignments> assignmentsMap = new HashMap<>();
+        assignmentsMap.put(stage, new WorkerAssignments(stage, 2,
+                ImmutableMap.of(1, new WorkerHost("1.1.1.1", 0, Arrays.asList(31300), MantisJobState.Started, 1, 31301, -1),
+                        2, new WorkerHost("2.2.2.2", 1, Arrays.asList(31300), MantisJobState.Started, 2, 31301, -1))));
+        when(mockMasterClientApi.schedulingChanges(jobId)).thenReturn(Observable.just(new JobSchedulingInfo(jobId, assignmentsMap)));
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final AutoScaleMetricsConfig aggregationConfig = new AutoScaleMetricsConfig();
+
+        final WorkerMetricHandler workerMetricHandler = new WorkerMetricHandler(jobId, new Observer<JobAutoScaler.Event>() {
+            @Override
+            public void onCompleted() {
+                logger.warn("onCompleted");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                logger.warn("onError {}", e.getMessage(), e);
+            }
+
+            @Override
+            public void onNext(JobAutoScaler.Event event) {
+                logger.info("got auto scale event {}", event);
+                // Expected metric value should be (1 + 2 + 3 + 6) / 6.0 / 2
+                JobAutoScaler.Event expected = new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage, 1.0, 2, "");
+                if (expected.equals(event)) {
+                    latch.countDown();
+                }
+            }
+        }, mockMasterClientApi, aggregationConfig);
+
+        final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
+
+        List<GaugeMeasurement> gauges = Arrays.asList(
+                new GaugeMeasurement(PROCESSED_COUNTER_METRIC_NAME, 10.0),
+                new GaugeMeasurement(DROPPED_COUNTER_METRIC_NAME, 1.0));
+        // Source job worker 0 -> job worker 0
+        metricDataObserver.onNext(new MetricData(sourceJobId, stage, 0, 1, "ServerSentEventRequestHandler:clientId=" + jobId + ":sockAddr=/1.1.1.1", gauges));
+
+        gauges = Arrays.asList(
+                new GaugeMeasurement(PROCESSED_COUNTER_METRIC_NAME, 20.0),
+                new GaugeMeasurement(DROPPED_COUNTER_METRIC_NAME, 2.0));
+        // Source job worker 0 -> job worker 1
+        metricDataObserver.onNext(new MetricData(sourceJobId, stage, 0, 1, "ServerSentEventRequestHandler:clientId=" + jobId + ":sockAddr=/2.2.2.2", gauges));
+
+        gauges = Arrays.asList(
+                new GaugeMeasurement(PROCESSED_COUNTER_METRIC_NAME, 30.0),
+                new GaugeMeasurement(DROPPED_COUNTER_METRIC_NAME, 3.0));
+        // Source job worker 1 -> job worker 0
+        metricDataObserver.onNext(new MetricData(sourceJobId, stage, 1, 2, "ServerSentEventRequestHandler:clientId=" + jobId + ":sockAddr=/1.1.1.1", gauges));
+
+        gauges = Arrays.asList(
+                new GaugeMeasurement(PROCESSED_COUNTER_METRIC_NAME, 60.0),
+                new GaugeMeasurement(DROPPED_COUNTER_METRIC_NAME, 6.0));
+        // Source job worker 1 -> job worker 1
+        metricDataObserver.onNext(new MetricData(sourceJobId, stage, 1, 2, "ServerSentEventRequestHandler:clientId=" + jobId + ":sockAddr=/2.2.2.2", gauges));
+        // Another datapoint from source job worker 1 -> job worker 1 to verify MAX aggregation
+        gauges = Arrays.asList(
+                new GaugeMeasurement(PROCESSED_COUNTER_METRIC_NAME, 50.0),
+                new GaugeMeasurement(DROPPED_COUNTER_METRIC_NAME, 5.0));
+        metricDataObserver.onNext(new MetricData(sourceJobId, stage, 1, 2, "ServerSentEventRequestHandler:clientId=" + jobId + ":sockAddr=/2.2.2.2", gauges));
+
+        assertTrue(latch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
+    }
 }

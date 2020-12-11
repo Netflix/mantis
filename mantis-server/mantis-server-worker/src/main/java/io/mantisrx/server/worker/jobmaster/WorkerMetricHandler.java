@@ -32,6 +32,8 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerOutlier;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.reactivx.mantis.operators.DropOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,6 +111,10 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
         private final int valuesToKeep = 2;
         private final AutoScaleMetricsConfig autoScaleMetricsConfig;
         private final ConcurrentMap<Integer, WorkerMetrics> workersMap = new ConcurrentHashMap<>();
+        private final ConcurrentMap<String, WorkerMetrics> sourceJobWorkersMap = new ConcurrentHashMap<>();
+        private final Cache<String, String> sourceJobMetricsRecent = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.MINUTES)
+                .build();
         private final WorkerOutlier workerOutlier;
 
         private final Map<Integer, Integer> workerNumberByIndex = new HashMap<>();
@@ -163,12 +169,14 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
         private void addDataPoint(final MetricData datapoint) {
             final int workerIndex = datapoint.getWorkerIndex();
+
             logger.debug("adding data point for worker idx={} data={}", workerIndex, datapoint);
 
-            if (!workersMap.containsKey(workerIndex)) {
-                workersMap.putIfAbsent(workerIndex, new WorkerMetrics(valuesToKeep));
-            }
             WorkerMetrics workerMetrics = workersMap.get(workerIndex);
+            if (workerMetrics == null) {
+                workerMetrics = new WorkerMetrics(valuesToKeep);
+                workersMap.put(workerIndex, workerMetrics);
+            }
 
             final MetricData transformedMetricData = workerMetrics.addDataPoint(datapoint.getMetricGroupName(), datapoint);
             if (transformedMetricData.getMetricGroupName().equals(DATA_DROP_METRIC_GROUP)) {
@@ -192,6 +200,24 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                     workersMap.remove(idx);
                 }
             }
+        }
+
+        private void addSourceJobDataPoint(final MetricData datapoint) {
+            final String sourceJobId = datapoint.getJobId();
+            final int workerIndex = datapoint.getWorkerIndex();
+
+            String sourceWorkerKey = sourceJobId + ":" + workerIndex;
+
+            WorkerMetrics workerMetrics = sourceJobWorkersMap.get(sourceWorkerKey);
+            if (workerMetrics == null) {
+                workerMetrics = new WorkerMetrics(valuesToKeep);
+                sourceJobWorkersMap.put(sourceWorkerKey, workerMetrics);
+            }
+
+            workerMetrics.addDataPoint(datapoint.getMetricGroupName(), datapoint);
+
+            String sourceMetricKey = sourceWorkerKey + ":" + datapoint.getMetricGroupName();
+            sourceJobMetricsRecent.put(sourceMetricKey, sourceMetricKey);
         }
 
         private static final int metricsIntervalSeconds = 30; // TODO make it configurable
@@ -275,10 +301,35 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                                 final GaugeData gaugeData = allWorkerAggregates.get(WORKER_STAGE_INNER_INPUT);
                                 final Map<String, Double> gauges = gaugeData.getGauges();
                                 if (gauges.containsKey(ON_NEXT_GAUGE)) {
+                                    // Divide by 6 to account for 6 second reset by Atlas on counter metric.
                                     jobAutoScaleObserver.onNext(
                                             new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
                                                     gauges.get(ON_NEXT_GAUGE) / 6.0, numWorkers, ""));
                                 }
+                            }
+
+                            double sourceJobDrops = 0;
+                            boolean hasSourceJobDropsMetric = false;
+                            Map<String, String> sourceMetricsRecent = sourceJobMetricsRecent.asMap();
+                            for (Map.Entry<String, WorkerMetrics> worker : sourceJobWorkersMap.entrySet()) {
+                                Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
+                                for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
+                                    String metricKey = worker.getKey() + ":" + group.getKey();
+                                    for (Map.Entry<String, Double> gauge : group.getValue().getGauges().entrySet()) {
+                                        if (sourceMetricsRecent.containsKey(metricKey) &&
+                                                autoScaleMetricsConfig.isSourceJobDropMetric(group.getKey(), gauge.getKey())) {
+                                            sourceJobDrops += gauge.getValue();
+                                            hasSourceJobDropsMetric = true;
+                                        }
+                                    }
+                                }
+                            }
+                            if (hasSourceJobDropsMetric) {
+                                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobWorkersMap);
+                                // Divide by 6 to account for 6 second reset by Atlas on counter metric.
+                                jobAutoScaleObserver.onNext(
+                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
+                                                sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));
                             }
                         }
                     }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
@@ -298,7 +349,11 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                 public void onNext(MetricData metricData) {
                     logger.debug("Got metric metricData for job " + jobId + " stage " + stage +
                             ", worker " + metricData.getWorkerNumber() + ": " + metricData);
-                    addDataPoint(metricData);
+                    if (metricData.getJobId() == jobId) {
+                        addDataPoint(metricData);
+                    } else {
+                        addSourceJobDataPoint(metricData);
+                    }
                 }
             };
         }

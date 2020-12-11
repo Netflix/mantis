@@ -179,7 +179,8 @@ public class StageScalingPolicy {
         Clutch,
         ClutchExperimental,
         RPS,
-        JVMMemory
+        JVMMemory,
+        SourceJobDrop
     }
 
     public static class RollingCount {

@@ -40,9 +40,9 @@ public class SinkParameter {
      */
     public SinkParameter(String name, String value) throws UnsupportedEncodingException {
         this.name = name;
-        this.value = value;
+        this.value = value == null ? "" : value;
 
-        encodedValue = URLEncoder.encode(value, "UTF-8");
+        encodedValue = URLEncoder.encode(this.value, "UTF-8");
 
     }
 

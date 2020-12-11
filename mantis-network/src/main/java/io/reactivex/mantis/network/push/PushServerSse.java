@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
 import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import com.netflix.spectator.api.BasicTag;
@@ -58,8 +59,12 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(PushServerSse.class);
 
+    public static final String PUSH_SERVER_METRIC_GROUP_NAME = "PushServerSse";
+    public static final String PUSH_SERVER_LEGACY_METRIC_GROUP_NAME = "ServerSentEventRequestHandler";
     public static final String PROCESSED_COUNTER_METRIC_NAME = "processedCounter";
     public static final String DROPPED_COUNTER_METRIC_NAME = "droppedCounter";
+    public static final String CLIENT_ID_TAG_NAME = "clientId";
+    public static final String SOCK_ADDR_TAG_NAME = "sockAddr";
 
     private static IFn require = Clojure.var("io.mantisrx.mql.shaded.clojure.core", "require");
 
@@ -97,10 +102,10 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
     }
 
     private Metrics registerSseMetrics(String uniqueClientId, String socketAddrStr) {
-        final BasicTag clientIdTag = new BasicTag("clientId", Optional.ofNullable(uniqueClientId).orElse("none"));
-        final BasicTag sockAddrTag = new BasicTag("sockAddr", Optional.ofNullable(socketAddrStr).orElse("none"));
+        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(uniqueClientId).orElse("none"));
+        final BasicTag sockAddrTag = new BasicTag(SOCK_ADDR_TAG_NAME, Optional.ofNullable(socketAddrStr).orElse("none"));
 
-        final String metricGroup = supportLegacyMetrics ? "ServerSentEventRequestHandler" : "PushServerSse";
+        final String metricGroup = supportLegacyMetrics ? PUSH_SERVER_LEGACY_METRIC_GROUP_NAME : PUSH_SERVER_METRIC_GROUP_NAME;
         Metrics sseSinkMetrics = new Metrics.Builder()
                 .id(metricGroup, clientIdTag, sockAddrTag)
                 .addCounter(PROCESSED_COUNTER_METRIC_NAME)
@@ -156,7 +161,7 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                             predicateFunction = predicate.call(queryParameters);
                         }
 
-                        byte[] delimiter = "$$$".getBytes();
+                        byte[] delimiter = CompressionUtils.MANTIS_SSE_DELIMITER_BINARY;
 
                         if (queryParameters != null && !queryParameters.isEmpty()) {
 

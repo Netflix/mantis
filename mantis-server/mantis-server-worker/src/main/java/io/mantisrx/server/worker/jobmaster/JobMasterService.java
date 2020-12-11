@@ -18,7 +18,10 @@ package io.mantisrx.server.worker.jobmaster;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import io.mantisrx.runtime.parameter.ParameterUtils;
+import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,6 +57,7 @@ public class JobMasterService implements Service {
     private final Action0 observableOnCompleteCallback;
     private final Action1<Throwable> observableOnErrorCallback;
     private final Action0 observableOnTerminateCallback;
+    private final MantisMasterClientApi masterClientApi;
 
     private Subscription subscription = null;
 
@@ -69,6 +73,7 @@ public class JobMasterService implements Service {
         this.jobId = jobId;
         this.workerMetricsClient = workerMetricsClient;
         this.autoScaleMetricsConfig = autoScaleMetricsConfig;
+        this.masterClientApi = masterClientApi;
         this.jobAutoScaler = new JobAutoScaler(jobId, schedInfo, masterClientApi, context);
         this.metricObserver = new WorkerMetricHandler(jobId, jobAutoScaler.getObserver(), masterClientApi, autoScaleMetricsConfig).initAndGetMetricDataObserver();
         this.observableOnCompleteCallback = observableOnCompleteCallback;
@@ -83,13 +88,20 @@ public class JobMasterService implements Service {
 
             final String jobId = measurements.getTags().get(MetricStringConstants.MANTIS_JOB_ID);
             final int workerIdx = Integer.parseInt(measurements.getTags().get(MetricStringConstants.MANTIS_WORKER_INDEX));
-            final int stage = Integer.parseInt(measurements.getTags().get(MetricStringConstants.MANTIS_STAGE_NUM));
+            int stage = Integer.parseInt(measurements.getTags().get(MetricStringConstants.MANTIS_STAGE_NUM));
             final int workerNum = Integer.parseInt(measurements.getTags().get(MetricStringConstants.MANTIS_WORKER_NUM));
+            List<GaugeMeasurement> gauges = (List<GaugeMeasurement>) measurements.getGauges();
 
-            //            logger.info("got data from idx {} num {} stage {}", workerIdx, workerNum, stage);
-            metricObserver.onNext(new MetricData(jobId, stage, workerIdx, workerNum,
-                    measurements.getName(), (List<GaugeMeasurement>) measurements.getGauges()));
-
+            // Metric is not from current job, it is from the source job
+            if (jobId != this.jobId) {
+                // Funnel source job metric into the 1st stage
+                stage = 1;
+                if (gauges.isEmpty()) {
+                    gauges = measurements.getCounters().stream().map(counter ->
+                            new GaugeMeasurement(counter.getEvent(), counter.getCount())).collect(Collectors.toList());
+                }
+            }
+            metricObserver.onNext(new MetricData(jobId, stage, workerIdx, workerNum, measurements.getName(), gauges));
             return measurements;
 
         } catch (JsonProcessingException e) {
@@ -110,13 +122,38 @@ public class JobMasterService implements Service {
 
         final WorkerMetricSubscription workerMetricSubscription = new WorkerMetricSubscription(jobId, workerMetricsClient, autoScaleMetricsConfig.getMetricGroups());
 
-        final Observable<Observable<MantisServerSentEvent>> metrics = workerMetricSubscription.getMetricsClient().getResults();
+        Observable<Observable<MantisServerSentEvent>> metrics = workerMetricSubscription.getMetricsClient().getResults();
+
+        boolean isSourceJobMetricEnabled = (boolean) context.getParameters().get(
+                ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM, false);
+        if (isSourceJobMetricEnabled) {
+            metrics = metrics.mergeWith(getSourceJobMetrics());
+        }
+
         subscription = Observable.merge(metrics)
                 .map(event -> handleMetricEvent(event.getEventAsString()))
                 .doOnTerminate(observableOnTerminateCallback)
                 .doOnCompleted(observableOnCompleteCallback)
                 .doOnError(observableOnErrorCallback)
                 .subscribe();
+    }
+
+    protected Observable<Observable<MantisServerSentEvent>> getSourceJobMetrics() {
+        List<SourceJobParameters.TargetInfo> targetInfos = SourceJobParameters.parseTargetInfo(
+                (String) context.getParameters().get(ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM, "{}"));
+        if (targetInfos.isEmpty()) {
+            targetInfos = SourceJobParameters.parseInputParameters(context);
+        }
+        targetInfos = SourceJobParameters.enforceClientIdConsistency(targetInfos, jobId);
+
+        String additionalDropMetricPatterns =
+                (String) context.getParameters().get(ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM, "");
+        autoScaleMetricsConfig.addSourceJobDropMetrics(additionalDropMetricPatterns);
+
+        SourceJobWorkerMetricsSubscription sourceSub = new SourceJobWorkerMetricsSubscription(
+                targetInfos, masterClientApi, workerMetricsClient, autoScaleMetricsConfig);
+
+        return sourceSub.getResults();
     }
 
     @Override

@@ -17,17 +17,27 @@
 package io.mantisrx.server.worker.jobmaster;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
+import static io.reactivex.mantis.network.push.PushServerSse.*;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 
 public class AutoScaleMetricsConfig {
 
+    public static final String CLIENT_ID_TOKEN = "_CLIENT_ID_";
+    public static final String OUTBOUND_METRIC_GROUP_PATTERN = String.format("%s:%s=%s:*", PUSH_SERVER_METRIC_GROUP_NAME, CLIENT_ID_TAG_NAME, CLIENT_ID_TOKEN);
+    public static final String OUTBOUND_LEGACY_METRIC_GROUP_PATTERN = String.format("%s:%s=%s:*", PUSH_SERVER_LEGACY_METRIC_GROUP_NAME, CLIENT_ID_TAG_NAME, CLIENT_ID_TOKEN);
+
     private static final AggregationAlgo DEFAULT_ALGO = AggregationAlgo.AVERAGE;
     // autoscaling metric groups to subscribe to by default
     private static final Map<String, Map<String, AggregationAlgo>> defaultAutoScaleMetrics = new HashMap<>();
+
+    private final Map<String, Map<String, AggregationAlgo>> sourceJobMetrics = new HashMap<>();
+    private final Map<String, Pattern> sourceJobMetricsPatterns = new HashMap<>();
 
     static {
         defaultAutoScaleMetrics.put(RESOURCE_USAGE_METRIC_GROUP, new HashMap<>());
@@ -49,6 +59,13 @@ public class AutoScaleMetricsConfig {
 
     public AutoScaleMetricsConfig(final Map<String, Map<String, AggregationAlgo>> userDefinedAutoScaleMetrics) {
         this.userDefinedAutoScaleMetrics = userDefinedAutoScaleMetrics;
+
+        final Map<String, AggregationAlgo> defaultOutboundMetric = new HashMap<>();
+        defaultOutboundMetric.put(DROPPED_COUNTER_METRIC_NAME, AggregationAlgo.MAX);
+        sourceJobMetrics.put(OUTBOUND_METRIC_GROUP_PATTERN, defaultOutboundMetric);
+        sourceJobMetrics.put(OUTBOUND_LEGACY_METRIC_GROUP_PATTERN, defaultOutboundMetric);
+        sourceJobMetricsPatterns.put(OUTBOUND_METRIC_GROUP_PATTERN, generateSourceJobMetricPattern(OUTBOUND_METRIC_GROUP_PATTERN));
+        sourceJobMetricsPatterns.put(OUTBOUND_LEGACY_METRIC_GROUP_PATTERN, generateSourceJobMetricPattern(OUTBOUND_LEGACY_METRIC_GROUP_PATTERN));
     }
 
     public void addUserDefinedMetric(final String metricGroupName,
@@ -58,12 +75,44 @@ public class AutoScaleMetricsConfig {
         userDefinedAutoScaleMetrics.get(metricGroupName).put(metricName, algo);
     }
 
+    /**
+     * Add source job drop metric patterns in addition to the default patterns.
+     * @param metricsStr comma separated list of metrics in the form of metricGroupName::metricName::algo
+     */
+    public void addSourceJobDropMetrics(String metricsStr) {
+        for (String metric : metricsStr.split(",")) {
+            metric = metric.trim();
+            try {
+                String[] parts = metric.split("::");
+                String metricGroupName = parts[0];
+                String metricName = parts[1];
+                AggregationAlgo algo = AggregationAlgo.valueOf(parts[2]);
+
+                Map<String, AggregationAlgo> metricGroup = sourceJobMetrics.get(metricGroupName);
+                if (metricGroup == null) {
+                    metricGroup = new HashMap<>();
+                    sourceJobMetrics.put(metricGroupName, metricGroup);
+                    sourceJobMetricsPatterns.put(metricGroupName, generateSourceJobMetricPattern(metricGroupName));
+                }
+                metricGroup.put(metricName, algo);
+            } catch (Exception ex) {
+                String errMsg = String.format("Invalid format for source job metric: %s", metricsStr);
+                throw new RuntimeException(errMsg, ex);
+            }
+        }
+    }
+
     public AggregationAlgo getAggregationAlgo(final String metricGroupName, final String metricName) {
         if (userDefinedAutoScaleMetrics.containsKey(metricGroupName) && userDefinedAutoScaleMetrics.get(metricGroupName).containsKey(metricName)) {
             return userDefinedAutoScaleMetrics.get(metricGroupName).getOrDefault(metricName, DEFAULT_ALGO);
         }
         if (defaultAutoScaleMetrics.containsKey(metricGroupName) && defaultAutoScaleMetrics.get(metricGroupName).containsKey(metricName)) {
             return defaultAutoScaleMetrics.get(metricGroupName).getOrDefault(metricName, DEFAULT_ALGO);
+        }
+        for (Map.Entry<String, Pattern> entry : sourceJobMetricsPatterns.entrySet()) {
+            if (entry.getValue().matcher(metricGroupName).matches()) {
+                return sourceJobMetrics.get(entry.getKey()).getOrDefault(metricName, DEFAULT_ALGO);
+            }
         }
         return DEFAULT_ALGO;
     }
@@ -96,6 +145,29 @@ public class AutoScaleMetricsConfig {
 
     public Set<String> getMetricGroups() {
         return getAllMetrics().keySet();
+    }
+
+    public Set<String> generateSourceJobMetricGroups(Set<String> clientIds) {
+        Set<String> results = new HashSet<>();
+        for (String clientId : clientIds) {
+            for (String metricPattern : sourceJobMetrics.keySet()) {
+                results.add(metricPattern.replaceAll(CLIENT_ID_TOKEN, clientId));
+            }
+        }
+        return results;
+    }
+
+    public boolean isSourceJobDropMetric(String metricGroupName, String metricName) {
+        for (Map.Entry<String, Pattern> entry : sourceJobMetricsPatterns.entrySet()) {
+            if (entry.getValue().matcher(metricGroupName).matches()) {
+                return sourceJobMetrics.get(entry.getKey()).keySet().contains(metricName);
+            }
+        }
+        return false;
+    }
+
+    private static Pattern generateSourceJobMetricPattern(String metricGroupName) {
+        return Pattern.compile(metricGroupName.replace("*", ".*").replaceAll(CLIENT_ID_TOKEN, ".*"));
     }
 
     @Override
