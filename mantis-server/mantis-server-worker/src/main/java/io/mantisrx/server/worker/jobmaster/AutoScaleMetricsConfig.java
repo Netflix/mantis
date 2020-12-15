@@ -80,8 +80,14 @@ public class AutoScaleMetricsConfig {
      * @param metricsStr comma separated list of metrics in the form of metricGroupName::metricName::algo
      */
     public void addSourceJobDropMetrics(String metricsStr) {
+        if (metricsStr == null) {
+            return;
+        }
         for (String metric : metricsStr.split(",")) {
             metric = metric.trim();
+            if (metric.isEmpty()) {
+                continue;
+            }
             try {
                 String[] parts = metric.split("::");
                 String metricGroupName = parts[0];

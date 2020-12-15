@@ -325,7 +325,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                                 }
                             }
                             if (hasSourceJobDropsMetric) {
-                                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobWorkersMap);
+                                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobDrops);
                                 // Divide by 6 to account for 6 second reset by Atlas on counter metric.
                                 jobAutoScaleObserver.onNext(
                                         new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
