@@ -85,4 +85,13 @@ public class AutoScaleMetricsConfigTest {
             // pass
         }
     }
+
+    @Test
+    public void testAddSourceJobDropMetricsEmptyString() {
+        AutoScaleMetricsConfig config = new AutoScaleMetricsConfig();
+        config.addSourceJobDropMetrics(null);
+        config.addSourceJobDropMetrics("");
+
+        assertTrue(config.isSourceJobDropMetric("ServerSentEventRequestHandler:clientId=RavenConnectorJob-1657357:sockAddr=/100.87.51.222", DROPPED_COUNTER_METRIC_NAME));
+    }
 }
