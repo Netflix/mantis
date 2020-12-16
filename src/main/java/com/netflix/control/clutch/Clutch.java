@@ -54,7 +54,9 @@ public class Clutch implements Observable.Transformer<Event, Object> {
         /** A user defined resource metric provided by the job under control. Receives priority. */
         UserDefined,
         /** A measure of requests per second handled by the target. */
-        RPS
+        RPS,
+        /** Messages dropped by by the source job when sending to current job. */
+        SOURCEJOB_DROP
     }
 
     private final IActuator actuator;
