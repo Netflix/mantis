@@ -105,7 +105,8 @@ public class WorkerMetricHandlerTest {
 
         final Observer<MetricData> metricDataObserver = workerMetricHandler.initAndGetMetricDataObserver();
 
-        metricDataObserver.onNext(new MetricData(jobId, stage, workerIdx, workerNum, DATA_DROP_METRIC_GROUP, gauges));
+        // Purposely create a new String for jobId
+        metricDataObserver.onNext(new MetricData(new String(jobId), stage, workerIdx, workerNum, DATA_DROP_METRIC_GROUP, gauges));
 
         assertTrue(latch.await(30 + 5/* leeway */, TimeUnit.SECONDS));
     }

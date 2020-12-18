@@ -349,7 +349,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                 public void onNext(MetricData metricData) {
                     logger.debug("Got metric metricData for job " + jobId + " stage " + stage +
                             ", worker " + metricData.getWorkerNumber() + ": " + metricData);
-                    if (metricData.getJobId() == jobId) {
+                    if (jobId.equals(metricData.getJobId())) {
                         addDataPoint(metricData);
                     } else {
                         addSourceJobDataPoint(metricData);
