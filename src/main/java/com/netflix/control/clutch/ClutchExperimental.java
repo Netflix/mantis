@@ -118,10 +118,9 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
         return events
                 .compose(new ExperimentalClutchConfigurator(new IClutchMetricsRegistry() { }, timer,
                         initialConfigMillis, configurator))
-                .flatMap(config -> events
+                .switchMap(config -> events
                         .compose(new ExperimentalControlLoop(config, this.actuator,
                                 this.initialSize.doubleValue(), new AtomicDouble(1.0), timer, size,
-                                this.rpsMetricComputer, this.scaleComputer))
-                        .takeUntil(timer)); // takeUntil tears down this control loop when a new config is produced.
+                                this.rpsMetricComputer, this.scaleComputer)));
     }
 }

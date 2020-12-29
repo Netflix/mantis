@@ -25,14 +25,13 @@ import com.netflix.control.IActuator;
 import com.netflix.control.controllers.ErrorComputer;
 import com.netflix.control.controllers.Integrator;
 import com.netflix.control.controllers.PIDController;
-import io.vavr.Tuple;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
+import rx.Subscription;
 
 
 @Slf4j
 public class ExperimentalControlLoop implements Observable.Transformer<Event, Double> {
-
     private final ClutchConfiguration config;
     private final IActuator actuator;
     private final Double initialSize;
@@ -41,7 +40,6 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
     private final AtomicLong cooldownTimestamp;
     private final AtomicLong currentScale;
     private final AtomicDouble lastLag;
-    private final Observable<Long> timer;
     private final Observable<Integer> size;
     private final IRpsMetricComputer rpsMetricComputer;
     private final IScaleComputer scaleComputer;
@@ -66,7 +64,6 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
         this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + this.cooldownMillis);
         this.currentScale = new AtomicLong(Math.round(initialSize));
         this.lastLag = new AtomicDouble(0.0);
-        this.timer = timer;
         this.size = size;
         this.rpsMetricComputer = rpsMetricComputer;
         this.scaleComputer = scaleComputer;
@@ -84,36 +81,46 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
                 Observable.just(new Event(Clutch.Metric.DROPS, 0.0))
                         .mergeWith(events.filter(event -> event.getMetric() == Clutch.Metric.DROPS));
 
+        Observable<Event> sourceJobDrops =
+                Observable.just(new Event(Clutch.Metric.SOURCEJOB_DROP, 0.0))
+                        .mergeWith(events.filter(event -> event.getMetric() == Clutch.Metric.SOURCEJOB_DROP));
+
         Observable<Event> rps = events.filter(event -> event.getMetric() == Clutch.Metric.RPS);
 
         Integrator deltaIntegrator = new Integrator(0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, config.integralDecay);
 
-        size
-                .takeUntil(timer)
+        Subscription sizeSub = size
                 .doOnNext(currentScale::set)
                 .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
                 .doOnNext(n -> log.info("Clutch received new scheduling update with {} workers.", n))
                 .subscribe();
 
-        return rps.withLatestFrom(lag, drops, Tuple::of)
-                .doOnNext(triple -> log.debug("Clutch received RPS: {}, Lag: {} (d {}), Drops: {}", triple._1.value, triple._2.value, triple._2.value - lastLag.get(), triple._3.value))
-                .map(triple -> {
+        return rps
+                .withLatestFrom(lag, drops, sourceJobDrops, (rpsEvent, lagEvent, dropEvent, sourceDropEvent) -> {
                     Map<Clutch.Metric, Double> metrics = new HashMap<>();
-                    metrics.put(Clutch.Metric.RPS, triple._1.value);
-                    metrics.put(Clutch.Metric.LAG, triple._2.value);
-                    metrics.put(Clutch.Metric.DROPS, triple._3.value);
-                    return this.rpsMetricComputer.apply(config, metrics);
+                    metrics.put(rpsEvent.getMetric(), rpsEvent.getValue());
+                    metrics.put(lagEvent.getMetric(), lagEvent.getValue());
+                    metrics.put(dropEvent.getMetric(), dropEvent.getValue());
+                    metrics.put(sourceDropEvent.getMetric(), sourceDropEvent.getValue());
+                    return metrics;
                 })
+                .doOnNext(metrics -> log.info("Latest metrics: {}", metrics))
+                .map(metrics -> this.rpsMetricComputer.apply(config, metrics))
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                 .lift(new PIDController(config.kp, config.ki, config.kd, 1.0, new AtomicDouble(1.0), config.integralDecay))
+                .doOnNext(d -> log.info("PID controller output: {}", d))
                 .lift(deltaIntegrator)
+                .doOnNext(d -> log.info("Integral: {}", d))
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
                 .map(delta -> this.scaleComputer.apply(config, this.currentScale.get(), delta))
                 .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))
                 .lift(actuator)
                 .doOnNext(scale -> this.currentScale.set(Math.round(Math.ceil(scale))))
                 .doOnNext(__ -> deltaIntegrator.setSum(0))
-                .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()));
+                .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
+                .doOnUnsubscribe(() -> {
+                    sizeSub.unsubscribe();
+                });
     }
 
     /* For testing to trigger actuator on next event */
@@ -125,10 +132,13 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
         private double lastLag = 0;
 
         public Double apply(ClutchConfiguration config, Map<Clutch.Metric, Double> metrics) {
+            double rps = metrics.get(Clutch.Metric.RPS);
             double lag = metrics.get(Clutch.Metric.LAG);
+            double sourceDrops = metrics.get(Clutch.Metric.SOURCEJOB_DROP);
+            double drops = metrics.get(Clutch.Metric.DROPS);
             double lagDerivative  = lag - lastLag;
             lastLag = lag;
-            return metrics.get(Clutch.Metric.RPS) + lagDerivative + metrics.get(Clutch.Metric.DROPS);
+            return rps + lagDerivative + sourceDrops + drops;
         }
     }
 

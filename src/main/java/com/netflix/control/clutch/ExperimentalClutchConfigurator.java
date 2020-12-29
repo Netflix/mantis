@@ -45,6 +45,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
         sketches.put(Clutch.Metric.DROPS, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
         sketches.put(Clutch.Metric.UserDefined, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
         sketches.put(Clutch.Metric.RPS, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
+        sketches.put(Clutch.Metric.SOURCEJOB_DROP, UpdateDoublesSketch.builder().setK(DEFAULT_K).build());
     }
 
     public ExperimentalClutchConfigurator(IClutchMetricsRegistry metricsRegistry, Observable<Long> timer,
@@ -91,6 +92,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
 
         return initialConfig
                 .concatWith(configs)
+                .distinctUntilChanged()
                 .doOnNext(__ -> log.info("RPS Sketch State: {}", sketches.get(Clutch.Metric.RPS)))
                 .doOnNext(__ -> logSketchSummary(sketches.get(Clutch.Metric.RPS)))
                 .doOnNext(config -> log.info("Clutch switched to config: {}", config));

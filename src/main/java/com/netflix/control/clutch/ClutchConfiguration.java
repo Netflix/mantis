@@ -21,11 +21,13 @@ import java.util.concurrent.TimeUnit;
 import io.vavr.Tuple2;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 /**
  * Represents the overall configuration of a Clutch control loop.
  */
+@EqualsAndHashCode
 public @Builder(access = AccessLevel.PUBLIC) @Value class ClutchConfiguration {
 
     /** The Metric for which this configuration is intended. */
