@@ -73,13 +73,13 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
     public Observable<ClutchConfiguration> call(Observable<Event> eventObservable) {
         Observable<ClutchConfiguration> configs = timer
                 .map(__ -> getConfig())
-                .doOnNext(config -> System.out.println("New Config: " + config.toString()));
+                .doOnNext(config -> log.info("New Config: ", config.toString()));
 
         Observable<ClutchConfiguration> initialConfig = Observable
                 .interval(this.initialConfigMilis, TimeUnit.MILLISECONDS)
                 .take(1)
                 .map(__ -> getConfig())
-                .doOnNext(config -> System.out.println("Initial Config: " + config.toString()));
+                .doOnNext(config -> log.info("Initial Config: {}", config.toString()));
 
         eventObservable
                 .filter(event -> event != null && event.metric != null)
