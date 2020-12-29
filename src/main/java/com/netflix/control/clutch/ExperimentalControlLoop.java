@@ -16,6 +16,8 @@
 
 package com.netflix.control.clutch;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.util.concurrent.AtomicDouble;
@@ -23,35 +25,36 @@ import com.netflix.control.IActuator;
 import com.netflix.control.controllers.ErrorComputer;
 import com.netflix.control.controllers.Integrator;
 import com.netflix.control.controllers.PIDController;
-import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
-import io.vavr.Tuple;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
+import rx.Subscription;
 
 
 @Slf4j
 public class ExperimentalControlLoop implements Observable.Transformer<Event, Double> {
-
     private final ClutchConfiguration config;
     private final IActuator actuator;
     private final Double initialSize;
     private final AtomicDouble dampener;
-    private final long cooldownMillis;
-
 
     private final AtomicLong cooldownTimestamp;
     private final AtomicLong currentScale;
     private final AtomicDouble lastLag;
-    private final Observable<Long> timer;
     private final Observable<Integer> size;
+    private final IRpsMetricComputer rpsMetricComputer;
+    private final IScaleComputer scaleComputer;
+    private long cooldownMillis;
 
     public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
                                    Observable<Long> timer, Observable<Integer> size) {
-        this(config, actuator, initialSize, new AtomicDouble(1.0), timer, size);
+        this(config, actuator, initialSize, new AtomicDouble(1.0), timer, size,
+                new DefaultRpsMetricComputer(), new DefaultScaleComputer());
     }
 
     public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
-                                   AtomicDouble dampener, Observable<Long> timer, Observable<Integer> size) {
+                                   AtomicDouble dampener, Observable<Long> timer, Observable<Integer> size,
+                                   IRpsMetricComputer rpsMetricComputer,
+                                   IScaleComputer scaleComputer) {
         this.config = config;
         this.actuator = actuator;
         this.initialSize = initialSize;
@@ -61,8 +64,9 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
         this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + this.cooldownMillis);
         this.currentScale = new AtomicLong(Math.round(initialSize));
         this.lastLag = new AtomicDouble(0.0);
-        this.timer = timer;
         this.size = size;
+        this.rpsMetricComputer = rpsMetricComputer;
+        this.scaleComputer = scaleComputer;
     }
 
     @Override
@@ -77,34 +81,70 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
                 Observable.just(new Event(Clutch.Metric.DROPS, 0.0))
                         .mergeWith(events.filter(event -> event.getMetric() == Clutch.Metric.DROPS));
 
+        Observable<Event> sourceJobDrops =
+                Observable.just(new Event(Clutch.Metric.SOURCEJOB_DROP, 0.0))
+                        .mergeWith(events.filter(event -> event.getMetric() == Clutch.Metric.SOURCEJOB_DROP));
+
         Observable<Event> rps = events.filter(event -> event.getMetric() == Clutch.Metric.RPS);
 
-        Integrator integrator = new Integrator(initialSize, config.minSize, config.maxSize, config.integralDecay);
+        Integrator deltaIntegrator = new Integrator(0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, config.integralDecay);
 
-        size
-                .takeUntil(timer)
+        Subscription sizeSub = size
                 .doOnNext(currentScale::set)
-                .doOnNext(integrator::setSum)
                 .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
                 .doOnNext(n -> log.info("Clutch received new scheduling update with {} workers.", n))
                 .subscribe();
 
-        return rps.withLatestFrom(lag, drops, Tuple::of)
-                .doOnNext(triple -> log.debug("Clutch received RPS: {}, Lag: {} (d {}), Drops: {}", triple._1.value, triple._2.value, triple._2.value - lastLag.get(), triple._3.value))
-                .map(triple -> {
-                  double lagDerivative  = triple._2.value - lastLag.get();
-                  lastLag.set(triple._2.value);
-                    return triple._1.value // RPS
-                            + (lagDerivative) // Lag derivative is of Max lag, so already per-worker.
-                            + (triple._3.value); // Drops are average, and thus per-worker.
+        return rps
+                .withLatestFrom(lag, drops, sourceJobDrops, (rpsEvent, lagEvent, dropEvent, sourceDropEvent) -> {
+                    Map<Clutch.Metric, Double> metrics = new HashMap<>();
+                    metrics.put(rpsEvent.getMetric(), rpsEvent.getValue());
+                    metrics.put(lagEvent.getMetric(), lagEvent.getValue());
+                    metrics.put(dropEvent.getMetric(), dropEvent.getValue());
+                    metrics.put(sourceDropEvent.getMetric(), sourceDropEvent.getValue());
+                    return metrics;
                 })
+                .doOnNext(metrics -> log.info("Latest metrics: {}", metrics))
+                .map(metrics -> this.rpsMetricComputer.apply(config, metrics))
                 .lift(new ErrorComputer(config.setPoint, true, config.rope._1, config.rope._2))
                 .lift(new PIDController(config.kp, config.ki, config.kd, 1.0, new AtomicDouble(1.0), config.integralDecay))
-                .lift(integrator)
+                .doOnNext(d -> log.info("PID controller output: {}", d))
+                .lift(deltaIntegrator)
+                .doOnNext(d -> log.info("Integral: {}", d))
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
+                .map(delta -> this.scaleComputer.apply(config, this.currentScale.get(), delta))
                 .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))
                 .lift(actuator)
                 .doOnNext(scale -> this.currentScale.set(Math.round(Math.ceil(scale))))
-                .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()));
+                .doOnNext(__ -> deltaIntegrator.setSum(0))
+                .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
+                .doOnUnsubscribe(() -> {
+                    sizeSub.unsubscribe();
+                });
+    }
+
+    /* For testing to trigger actuator on next event */
+    protected void setCooldownMillis(long cooldownMillis) {
+        this.cooldownMillis = cooldownMillis;
+    }
+
+    public static class DefaultRpsMetricComputer implements IRpsMetricComputer {
+        private double lastLag = 0;
+
+        public Double apply(ClutchConfiguration config, Map<Clutch.Metric, Double> metrics) {
+            double rps = metrics.get(Clutch.Metric.RPS);
+            double lag = metrics.get(Clutch.Metric.LAG);
+            double sourceDrops = metrics.get(Clutch.Metric.SOURCEJOB_DROP);
+            double drops = metrics.get(Clutch.Metric.DROPS);
+            double lagDerivative  = lag - lastLag;
+            lastLag = lag;
+            return rps + lagDerivative + sourceDrops + drops;
+        }
+    }
+
+    public static class DefaultScaleComputer implements IScaleComputer {
+        public Double apply(ClutchConfiguration config, Long currentScale, Double delta) {
+            return Math.min(config.maxSize, Math.max(config.minSize, currentScale + delta));
+        }
     }
 }
