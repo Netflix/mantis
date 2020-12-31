@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch;
 
+import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
 import io.vavr.control.Option;
 
 
@@ -34,9 +35,10 @@ public class ClutchConfiguration {
     public final Option<ClutchPIDConfig> cpu;
     public final Option<ClutchPIDConfig> memory;
     public final Option<ClutchPIDConfig> network;
+    public final Option<ClutchRpsPIDConfig> rpsConfig;
 
-    @java.beans.ConstructorProperties( {"minSize", "maxSize", "rps", "minSamples", "cooldownSeconds", "panicThresholdSeconds", "maxAdjustment", "cpu", "memory", "network", "useExperimental"})
-    public ClutchConfiguration(int minSize, int maxSize, double rps, Option<Long> minSamples, Option<Long> cooldownSeconds, Option<Double> panicThresholdSeconds, Option<Double> maxAdjustment, Option<ClutchPIDConfig> cpu, Option<ClutchPIDConfig> memory, Option<ClutchPIDConfig> network, Option<Boolean> useExperimental) {
+    @java.beans.ConstructorProperties( {"minSize", "maxSize", "rps", "minSamples", "cooldownSeconds", "panicThresholdSeconds", "maxAdjustment", "cpu", "memory", "network", "rpsConfig", "useExperimental"})
+    public ClutchConfiguration(int minSize, int maxSize, double rps, Option<Long> minSamples, Option<Long> cooldownSeconds, Option<Double> panicThresholdSeconds, Option<Double> maxAdjustment, Option<ClutchPIDConfig> cpu, Option<ClutchPIDConfig> memory, Option<ClutchPIDConfig> network, Option<ClutchRpsPIDConfig> rpsConfig, Option<Boolean> useExperimental) {
         this.minSize = minSize;
         this.maxSize = maxSize;
         this.rps = rps;
@@ -47,6 +49,7 @@ public class ClutchConfiguration {
         this.cpu = cpu;
         this.memory = memory;
         this.network = network;
+        this.rpsConfig = rpsConfig;
         this.useExperimental = useExperimental;
     }
 
@@ -94,6 +97,10 @@ public class ClutchConfiguration {
         return this.network;
     }
 
+    public Option<ClutchRpsPIDConfig> getRpsConfig() {
+        return this.rpsConfig;
+    }
+
     public boolean equals(Object o) {
         if (o == this) return true;
         if (!(o instanceof ClutchConfiguration)) return false;
@@ -126,6 +133,12 @@ public class ClutchConfiguration {
         final Object this$network = this.getNetwork();
         final Object other$network = other.getNetwork();
         if (this$network == null ? other$network != null : !this$network.equals(other$network)) return false;
+        final Object this$rpsConfig = this.getRpsConfig();
+        final Object other$rpsConfig = other.getRpsConfig();
+        if (this$rpsConfig == null ? other$rpsConfig != null : !this$rpsConfig.equals(other$rpsConfig)) return false;
+        final Object this$useExperimental = this.getUseExperimental();
+        final Object other$useExperimental = other.getUseExperimental();
+        if (this$useExperimental == null ? other$useExperimental != null : !this$useExperimental.equals(other$useExperimental)) return false;
         return true;
     }
 
@@ -150,12 +163,14 @@ public class ClutchConfiguration {
         result = result * PRIME + ($memory == null ? 43 : $memory.hashCode());
         final Object $network = this.getNetwork();
         result = result * PRIME + ($network == null ? 43 : $network.hashCode());
+        final Object $rpsConfig = this.getRpsConfig();
+        result = result * PRIME + ($rpsConfig == null ? 43 : $rpsConfig.hashCode());
         final Object $useExperimental = this.getUseExperimental();
         result = result * PRIME + ($useExperimental == null ? 43 : $useExperimental.hashCode());
         return result;
     }
 
     public String toString() {
-        return "ClutchConfiguration(minSize=" + this.getMinSize() + ", maxSize=" + this.getMaxSize() + ", rps=" + this.getRps() + ", minSamples=" + this.getMinSamples() + ", cooldownSeconds=" + this.getCooldownSeconds() + ", panicThresholdSeconds=" + this.getPanicThresholdSeconds() + ", maxAdjustment=" + this.getMaxAdjustment() + ", cpu=" + this.getCpu() + ", memory=" + this.getMemory() + ", network=" + this.getNetwork() + ", useExperimental=" + this.getUseExperimental() + ")";
+        return "ClutchConfiguration(minSize=" + this.getMinSize() + ", maxSize=" + this.getMaxSize() + ", rps=" + this.getRps() + ", minSamples=" + this.getMinSamples() + ", cooldownSeconds=" + this.getCooldownSeconds() + ", panicThresholdSeconds=" + this.getPanicThresholdSeconds() + ", maxAdjustment=" + this.getMaxAdjustment() + ", cpu=" + this.getCpu() + ", memory=" + this.getMemory() + ", network=" + this.getNetwork() + ", rpsConfig=" + this.getRpsConfig() + ", useExperimental=" + this.getUseExperimental() + ")";
     }
 }

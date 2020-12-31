@@ -25,11 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.server.core.ServiceRegistry;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerOutlier;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -42,12 +43,14 @@ import rx.Observer;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.functions.Action0;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.observers.SerializedObserver;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
+import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 
 
 /* package */ class WorkerMetricHandler {
@@ -59,6 +62,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
     private final AutoScaleMetricsConfig autoScaleMetricsConfig;
     private final MetricAggregator metricAggregator;
     private final Map<Integer, Integer> numWorkersByStage = new HashMap<>();
+    private final Map<Integer, List<WorkerHost>> workerHostsByStage = new HashMap<>();
 
     private final String jobId;
     private final Func1<Integer, Integer> lookupNumWorkersByStage = stage -> {
@@ -105,6 +109,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
     private class StageMetricDataOperator implements Observable.Operator<Object, MetricData> {
 
         private static final int killCooldownSecs = 600;
+        private final Pattern hostExtractorPattern = Pattern.compile(".+:.+:sockAddr=/(?<host>.+)");
 
         private final int stage;
         private final Func1<Integer, Integer> numStageWorkersFn;
@@ -116,6 +121,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                 .expireAfterWrite(1, TimeUnit.MINUTES)
                 .build();
         private final WorkerOutlier workerOutlier;
+        private final TimeBufferedWorkerOutlier workerOutlierForSourceJobMetrics;
 
         private final Map<Integer, Integer> workerNumberByIndex = new HashMap<>();
 
@@ -126,7 +132,8 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
             this.stage = stage;
             this.numStageWorkersFn = numStageWorkersFn;
             this.autoScaleMetricsConfig = autoScaleMetricsConfig;
-            this.workerOutlier = new WorkerOutlier(killCooldownSecs, workerIndex -> {
+
+            Action1<Integer> workerResubmitFunc = workerIndex -> {
                 try {
                     final int workerNumber;
                     if (workerNumberByIndex.containsKey(workerIndex)) {
@@ -152,6 +159,15 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                 } catch (Exception e) {
                     logger.warn("Can't resubmit outlier worker idx {} error {}", workerIndex, e.getMessage(), e);
                 }
+            };
+
+            this.workerOutlier = new WorkerOutlier(killCooldownSecs, workerResubmitFunc);
+            this.workerOutlierForSourceJobMetrics = new TimeBufferedWorkerOutlier(killCooldownSecs, metricsIntervalSeconds, workerIndex -> {
+                List<WorkerHost> candidates = workerHostsByStage.get(stage);
+                if (candidates != null) {
+                    candidates.stream().filter(h -> h.getWorkerIndex() == workerIndex).map(WorkerHost::getHost).findFirst().ifPresent(host ->
+                        lookupWorkersByHost(host).stream().forEach(i -> workerResubmitFunc.call(i)));
+                }
             });
         }
 
@@ -165,6 +181,14 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                             ServiceRegistry.INSTANCE.getPropertiesService()
                                     .getStringValue(resubmitOutlierWorkerProp, enableOutlierWorkerResubmit));
             return resubmitOutlierWorker;
+        }
+
+        private List<Integer> lookupWorkersByHost(String host) {
+            List<WorkerHost> candidates = workerHostsByStage.get(stage);
+            if (candidates != null) {
+                return candidates.stream().filter(h -> h.getHost().equals(host)).map(WorkerHost::getWorkerIndex).collect(Collectors.toList());
+            }
+            return new ArrayList<>();
         }
 
         private void addDataPoint(final MetricData datapoint) {
@@ -218,6 +242,21 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
             String sourceMetricKey = sourceWorkerKey + ":" + datapoint.getMetricGroupName();
             sourceJobMetricsRecent.put(sourceMetricKey, sourceMetricKey);
+
+            // Detect outlier on sourcejob drops, if high percentage of drops are concentrated on few workers.
+            Matcher matcher = hostExtractorPattern.matcher(datapoint.getMetricGroupName());
+            final Map<String, Double> dataDropGauges = datapoint.getGaugeData().getGauges();
+            if (matcher.matches() && dataDropGauges.containsKey(DROPPED_COUNTER_METRIC_NAME)) {
+                // From the sourcejob drop metric, we only know the sockAddr of the downstream worker. Multiple worker
+                // may be running on the same machine. We need to count that evenly in the outlier detector.
+                List<Integer> workerIndices = lookupWorkersByHost(matcher.group("host"));
+                for (Map.Entry<String, Double> gauge: datapoint.getGaugeData().getGauges().entrySet()) {
+                    if (autoScaleMetricsConfig.isSourceJobDropMetric(datapoint.getMetricGroupName(), gauge.getKey())) {
+                        workerIndices.stream().forEach(i ->
+                            workerOutlierForSourceJobMetrics.addDataPoint(i, gauge.getValue() / workerIndices.size(), numStageWorkersFn.call(stage)));
+                    }
+                }
+            }
         }
 
         private static final int metricsIntervalSeconds = 30; // TODO make it configurable
@@ -368,6 +407,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
                         final WorkerAssignments workerAssignment = workerAssignmentsEntry.getValue();
                         logger.debug("setting numWorkers={} for stage={}", workerAssignment.getNumWorkers(), workerAssignment.getStage());
                         numWorkersByStage.put(workerAssignment.getStage(), workerAssignment.getNumWorkers());
+                        workerHostsByStage.put(workerAssignment.getStage(), new ArrayList<>(workerAssignment.getHosts().values()));
                     }
                 }).subscribe();
 

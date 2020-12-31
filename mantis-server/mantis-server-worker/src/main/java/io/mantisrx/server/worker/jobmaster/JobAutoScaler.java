@@ -25,15 +25,22 @@ import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchExperimental;
 
 import io.mantisrx.server.worker.jobmaster.clutch.experimental.MantisClutchConfigurationSelector;
+import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
+import io.mantisrx.server.worker.jobmaster.clutch.rps.RpsClutchConfigurationSelector;
+import io.mantisrx.server.worker.jobmaster.clutch.rps.RpsMetricComputer;
+import io.mantisrx.server.worker.jobmaster.clutch.rps.RpsScaleComputer;
 import io.mantisrx.shaded.io.vavr.jackson.datatype.VavrModule;
 
+import io.vavr.control.Option;
 import io.vavr.control.Try;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 
@@ -83,6 +90,7 @@ public class JobAutoScaler {
         metricMap.put(StageScalingPolicy.ScalingReason.DataDrop, Clutch.Metric.DROPS);
         metricMap.put(StageScalingPolicy.ScalingReason.UserDefined, Clutch.Metric.UserDefined);
         metricMap.put(StageScalingPolicy.ScalingReason.RPS, Clutch.Metric.RPS);
+        metricMap.put(StageScalingPolicy.ScalingReason.SourceJobDrop, Clutch.Metric.SOURCEJOB_DROP);
     }
 
     private final String jobId;
@@ -140,120 +148,112 @@ public class JobAutoScaler {
                     if (stageSchedulingInfo != null && (stageSchedulingInfo.getScalingPolicy() != null ||
                             clutchCustomConfiguration.isPresent())) {
 
-                        //
-                        // Clutch Unofficial (invoked via job parameter)
-                        //
+                        ClutchConfiguration config = null;
+                        int minSize = stageSchedulingInfo.getScalingPolicy().getMin();
+                        int maxSize = stageSchedulingInfo.getScalingPolicy().getMax();
+                        boolean useJsonConfigBased = false;
+                        boolean useClutch = false;
+                        boolean useClutchRps = false;
+                        boolean useClutchExperimental = false;
 
+                        // Determine which type of scaler to use.
                         if (clutchCustomConfiguration.isPresent()) {
                             try {
-
-                                ClutchConfiguration config = getClutchConfiguration(clutchCustomConfiguration.get())
-                                        .get(stage);
-
-                                int initialSize = stageSchedulingInfo.getNumberOfInstances();
-                                StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
-
-                                logger.info("Initializing Clutch with config:");
-                                logger.info(config.toString());
-
-                                if (config != null && config.getUseExperimental().getOrElse(false)) {
-                                    logger.info("Setting up Clutch Custom operator for job " + jobId + " stage " + stage);
-                                    return go
-                                            .map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
-                                            .filter(event -> event.metric != null)
-                                            .compose(new Clutch(new MantisStageActuator(initialSize, scaler), stageSchedulingInfo.getNumberOfInstances(), config.minSize, config.maxSize));
-                                } else if (config != null) {
-                                    logger.info("Setting up Clutch Custom operator for job " + jobId + " stage " + stage);
-                                    return go
-                                            .compose(new ClutchAutoScaler(stageSchedulingInfo, scaler, config, initialSize));
-                                }
+                                config = getClutchConfiguration(clutchCustomConfiguration.get()).get(stage);
                             } catch (Exception ex) {
-                                logger.error("Error initializing Clutch: " + ex.getMessage());
+                                logger.error("Error parsing json clutch config: {}", clutchCustomConfiguration.get(), ex);
+                            }
+                            if (config != null) {
+                                if (config.getRpsConfig().isDefined()) {
+                                    useClutchRps = true;
+                                } else if (config.getUseExperimental().getOrElse(false)) {
+                                    useClutch = true;
+                                } else {
+                                    useJsonConfigBased = true;
+                                }
+                                if (config.getMinSize() > 0) {
+                                    minSize = config.getMinSize();
+                                }
+                                if (config.getMaxSize() > 0) {
+                                    maxSize = config.getMaxSize();
+                                }
+                            }
+                        }
+                        if (stageSchedulingInfo.getScalingPolicy() != null &&
+                                stageSchedulingInfo.getScalingPolicy().getStrategies() != null) {
+                            Set<StageScalingPolicy.ScalingReason> reasons = stageSchedulingInfo.getScalingPolicy().getStrategies()
+                                    .values()
+                                    .stream()
+                                    .map(StageScalingPolicy.Strategy::getReason)
+                                    .collect(Collectors.toSet());
+                            if (reasons.contains(StageScalingPolicy.ScalingReason.Clutch)) {
+                                useClutch = true;
+                            } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchExperimental)) {
+                                useClutchExperimental = true;
+                            } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchRps)) {
+                                useClutchRps = true;
                             }
                         }
 
-                        //
-                        // Clutch Official (invoked via scaling config)
-                        //
+                        int initialSize = stageSchedulingInfo.getNumberOfInstances();
+                        StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
+                        MantisStageActuator actuator = new MantisStageActuator(initialSize, scaler);
 
-                        if (stageSchedulingInfo != null &&
-                                stageSchedulingInfo.getScalingPolicy() != null &&
-                                stageSchedulingInfo
-                                .getScalingPolicy()
-                                .getStrategies() != null &&
-                                stageSchedulingInfo
-                                        .getScalingPolicy()
-                                        .getStrategies()
-                                        .values()
-                                        .stream()
-                                        .anyMatch(policy -> policy.getReason().equals(StageScalingPolicy.ScalingReason.Clutch))) {
+                        Observable.Transformer<Event, com.netflix.control.clutch.Event> transformToClutchEvent =
+                                obs -> obs.map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
+                                        .filter(event -> event.metric != null);
+                        Observable<Integer> workerCounts = context.getWorkerMapObservable()
+                                .map(x -> x.getWorkersForStage(go.getKey()).size())
+                                .distinctUntilChanged()
+                                .throttleLast(5, TimeUnit.SECONDS);
 
-                            int initialSize = stageSchedulingInfo.getNumberOfInstances();
-                            StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
-
-                            logger.info("Setting up Clutch Official scale operator for job " + jobId + " stage " + stage);
-
+                        // Create the scaler.
+                        if (useClutchRps) {
+                            logger.info("Using clutch rps scaler, job: {}, stage: {} ", jobId, stage);
+                            ClutchRpsPIDConfig rpsConfig = Option.of(config).flatMap(ClutchConfiguration::getRpsConfig).getOrNull();
                             return go
-                                    .map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
-                                    .filter(event -> event.metric != null)
-                                    .compose(new Clutch(new MantisStageActuator(initialSize, scaler),
-                                            stageSchedulingInfo.getNumberOfInstances(),
-                                            stageSchedulingInfo.getScalingPolicy().getMin(),
-                                            stageSchedulingInfo.getScalingPolicy().getMax()));
-
-                        }
-
-                        //
-                        // Clutch experimental (invoked via scaling config)
-                        //
-
-                        if (stageSchedulingInfo != null &&
-                                stageSchedulingInfo.getScalingPolicy() != null &&
-                                stageSchedulingInfo
-                                        .getScalingPolicy()
-                                        .getStrategies() != null &&
-                                stageSchedulingInfo
-                                        .getScalingPolicy()
-                                        .getStrategies()
-                                        .values()
-                                        .stream()
-                                        .anyMatch(policy -> policy.getReason().equals(StageScalingPolicy.ScalingReason.ClutchExperimental))) {
-
-                            int initialSize = stageSchedulingInfo.getNumberOfInstances();
-                            StageScaler scaler = new StageScaler(stage, stageSchedulingInfo);
-
-                            logger.info("Setting up Clutch Experimental scale operator for job " + jobId + " stage " + stage);
-
-                            Observable<Integer> workerCounts = context.getWorkerMapObservable()
-                                    .map(x -> x.getWorkersForStage(go.getKey()).size())
-                                    .distinctUntilChanged()
-                                    .throttleLast(5, TimeUnit.SECONDS);
-
-                            com.netflix.control.clutch.ClutchConfiguration clutchConfig = com.netflix.control.clutch.ClutchConfiguration.builder().build();
-
+                                    .compose(transformToClutchEvent)
+                                    .compose(new ClutchExperimental(
+                                            actuator,
+                                            initialSize,
+                                            minSize,
+                                            maxSize,
+                                            workerCounts,
+                                            Observable.interval(1, TimeUnit.HOURS),
+                                            TimeUnit.MINUTES.toMillis(10),
+                                            new RpsClutchConfigurationSelector(stage, stageSchedulingInfo, config),
+                                            new RpsMetricComputer(),
+                                            new RpsScaleComputer(rpsConfig)));
+                        } else if (useJsonConfigBased) {
+                            logger.info("Using json config based scaler, job: {}, stage: {} ", jobId, stage);
                             return go
-                              .map(event -> this.mantisEventToClutchEvent(stageSchedulingInfo, event))
-                              .filter(event -> event.metric != null)
-                              .compose(new ClutchExperimental(
-                                    new MantisStageActuator(initialSize, scaler),
-                                    stageSchedulingInfo.getNumberOfInstances(),
-                                    stageSchedulingInfo.getScalingPolicy().getMin(),
-                                    stageSchedulingInfo.getScalingPolicy().getMax(),
-                                    workerCounts,
-                                    Observable.interval(1, TimeUnit.HOURS),
-                                    1000 * 60 * 10,
-                                      new MantisClutchConfigurationSelector(stage, stageSchedulingInfo)
-                                    ));
+                                    .compose(new ClutchAutoScaler(stageSchedulingInfo, scaler, config, initialSize));
+                        } else if (useClutch) {
+                            logger.info("Using clutch scaler, job: {}, stage: {} ", jobId, stage);
+                            return go
+                                    .compose(transformToClutchEvent)
+                                    .compose(new Clutch(
+                                            actuator,
+                                            initialSize,
+                                            minSize,
+                                            maxSize));
+                        } else if (useClutchExperimental) {
+                            logger.info("Using clutch experimental scaler, job: {}, stage: {} ", jobId, stage);
+                            return go
+                                    .compose(transformToClutchEvent)
+                                    .compose(new ClutchExperimental(
+                                            actuator,
+                                            initialSize,
+                                            minSize,
+                                            maxSize,
+                                            workerCounts,
+                                            Observable.interval(1, TimeUnit.HOURS),
+                                            TimeUnit.MINUTES.toMillis(10),
+                                            new MantisClutchConfigurationSelector(stage, stageSchedulingInfo)));
+                        } else {
+                            logger.info("Using rule based scaler, job: {}, stage: {} ", jobId, stage);
+                            return go.compose(new TransformerWrapper<>(new StageScaleOperator<>(stage, stageSchedulingInfo)));
                         }
-
-                        logger.info("Setting up stage scale operator for job " + jobId + " stage " + stage);
-
-                        //
-                        // Step Based Autoscaler
-                        //
-
-                        return go.compose(new TransformerWrapper<>(new StageScaleOperator<>(stage, stageSchedulingInfo)));
-
                     } else {
                       return go;
                     }
@@ -277,7 +277,7 @@ public class JobAutoScaler {
      *
      * @return A map of stage -> config for Clutch.
      */
-    private Map<Integer, ClutchConfiguration> getClutchConfiguration(String jsonConfig) {
+    protected Map<Integer, ClutchConfiguration> getClutchConfiguration(String jsonConfig) {
       return Try.<Map<Integer, ClutchConfiguration>>of(() -> objectMapper.readValue(jsonConfig, new TypeReference<Map<Integer, ClutchConfiguration>>() {}))
         .getOrElseGet(t -> Try.of(() -> {
           ClutchConfiguration config = objectMapper.readValue(jsonConfig, new TypeReference<ClutchConfiguration>() {});
