@@ -245,8 +245,7 @@ import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_MET
 
             // Detect outlier on sourcejob drops, if high percentage of drops are concentrated on few workers.
             Matcher matcher = hostExtractorPattern.matcher(datapoint.getMetricGroupName());
-            final Map<String, Double> dataDropGauges = datapoint.getGaugeData().getGauges();
-            if (matcher.matches() && dataDropGauges.containsKey(DROPPED_COUNTER_METRIC_NAME)) {
+            if (matcher.matches()) {
                 // From the sourcejob drop metric, we only know the sockAddr of the downstream worker. Multiple worker
                 // may be running on the same machine. We need to count that evenly in the outlier detector.
                 List<Integer> workerIndices = lookupWorkersByHost(matcher.group("host"));
