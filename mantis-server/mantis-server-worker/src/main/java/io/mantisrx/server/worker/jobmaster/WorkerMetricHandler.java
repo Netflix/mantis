@@ -50,7 +50,6 @@ import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.*;
-import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 
 
 /* package */ class WorkerMetricHandler {

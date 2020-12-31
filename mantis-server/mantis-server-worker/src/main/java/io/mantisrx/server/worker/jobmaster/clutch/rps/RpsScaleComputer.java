@@ -23,6 +23,7 @@ public class RpsScaleComputer implements IScaleComputer {
             delta = delta * rpsConfig.getScaleDownMultiplier();
         }
 
+        // delta is a percentage, actual increase/decrease is computed as percentage of current scale.
         double scale = Math.round(currentScale + currentScale * delta);
 
         scale = Math.min(config.getMaxSize(), Math.max(config.getMinSize(), scale));
