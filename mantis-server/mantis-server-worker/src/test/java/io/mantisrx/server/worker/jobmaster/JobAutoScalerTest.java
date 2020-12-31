@@ -90,6 +90,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(Observable.just(true));
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -169,6 +170,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(simulateScaleJobStageFailureResp);
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -213,6 +215,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers - decrement), anyString())).thenReturn(Observable.just(true));
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -268,6 +271,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), anyInt(), anyString())).thenReturn(Observable.just(true));
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -314,6 +318,7 @@ public class JobAutoScalerTest {
             when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(Observable.just(true));
 
             Context context = mock(Context.class);
+            when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
             final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
             jobAutoScaler.start();
