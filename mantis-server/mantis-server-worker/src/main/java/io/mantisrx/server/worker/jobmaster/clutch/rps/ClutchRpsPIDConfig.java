@@ -24,7 +24,12 @@ import io.vavr.control.Option;
 public class ClutchRpsPIDConfig extends ClutchPIDConfig {
 
     public static final ClutchRpsPIDConfig DEFAULT = new ClutchRpsPIDConfig(0.0, Tuple.of(0.3, 0.0), 0.0, 0.0,
-            Option.of(0.0), Option.of(0.0), Option.of(1.0), Option.of(1.0));
+            Option.of(0.75), Option.of(0.0), Option.of(0.0), Option.of(1.0), Option.of(1.0));
+
+    /**
+     * Percentile of RPS data points to use as set point.
+     */
+    public final double setPointPercentile;
 
     /**
      * Percentage threshold for scaling up. Use to delay scaling up during until a threshold is reached, effectively
@@ -51,18 +56,24 @@ public class ClutchRpsPIDConfig extends ClutchPIDConfig {
      */
     public final double scaleDownMultiplier;
 
-    @java.beans.ConstructorProperties( {"setPoint", "rope", "kp", "kd", "scaleUpAbovePct", "scaleDownBelowPct", "scaleUpMultiplier", "scaleDownMultiplier"})
+    @java.beans.ConstructorProperties( {"setPoint", "rope", "kp", "kd", "setPointPercentile", "scaleUpAbovePct", "scaleDownBelowPct", "scaleUpMultiplier", "scaleDownMultiplier"})
     public ClutchRpsPIDConfig(double setPoint, Tuple2<Double, Double> rope, double kp, double kd,
+                              Option<Double> setPointPercentile,
                               Option<Double> scaleUpAbovePct,
                               Option<Double> scaleDownBelowPct,
                               Option<Double> scaleUpMultiplier,
                               Option<Double> scaleDownMultiplier) {
         super(setPoint, rope == null ? DEFAULT.getRope() : rope, kp, kd);
+        this.setPointPercentile = setPointPercentile.getOrElse(() -> DEFAULT.getSetPointPercentile());
         this.scaleUpAbovePct = scaleUpAbovePct.getOrElse(() -> DEFAULT.getScaleUpAbovePct());
         this.scaleDownBelowPct = scaleDownBelowPct.getOrElse(() -> DEFAULT.getScaleDownBelowPct());
         this.scaleUpMultiplier = scaleUpMultiplier.getOrElse(() -> DEFAULT.getScaleUpMultiplier());
         this.scaleDownMultiplier = scaleDownMultiplier.getOrElse(() -> DEFAULT.getScaleDownMultiplier());
 
+    }
+
+    public double getSetPointPercentile() {
+        return setPointPercentile;
     }
 
     public double getScaleUpAbovePct() {
@@ -88,6 +99,7 @@ public class ClutchRpsPIDConfig extends ClutchPIDConfig {
 
         if (!super.equals(o)) return false;
 
+        if (Double.compare(this.getSetPointPercentile(), other.getSetPointPercentile()) != 0) return false;
         if (Double.compare(this.getScaleUpAbovePct(), other.getScaleUpAbovePct()) != 0) return false;
         if (Double.compare(this.getScaleDownBelowPct(), other.getScaleDownBelowPct()) != 0) return false;
         if (Double.compare(this.getScaleUpMultiplier(), other.getScaleUpMultiplier()) != 0) return false;
@@ -98,6 +110,8 @@ public class ClutchRpsPIDConfig extends ClutchPIDConfig {
     public int hashCode() {
         final int PRIME = 59;
         int result = super.hashCode();
+        final long $setPointPercentile = Double.doubleToLongBits(this.getSetPointPercentile());
+        result = result * PRIME + (int) ($setPointPercentile >>> 32 ^ $setPointPercentile);
         final long $scaleUpAbovePct = Double.doubleToLongBits(this.getScaleUpAbovePct());
         result = result * PRIME + (int) ($scaleUpAbovePct >>> 32 ^ $scaleUpAbovePct);
         final long $scaleDownBelowPct = Double.doubleToLongBits(this.getScaleDownBelowPct());
@@ -111,6 +125,7 @@ public class ClutchRpsPIDConfig extends ClutchPIDConfig {
 
     public String toString() {
         return "ClutchRPSPIDConfig(setPoint=" + this.getSetPoint() + ", rope=" + this.getRope() + ", kp=" + this.getKp() + ", kd=" + this.getKd() +
+                ", setPointPercentile=" + this.getSetPointPercentile() +
                 ", scaleUpAbovePct=" + this.getScaleUpAbovePct() + ", scaleDownBelowPct=" + this.getScaleDownBelowPct() +
                 ", scaleUpMultiplier=" + this.getScaleUpMultiplier() + ", scaleDownMultiplier=" + this.getScaleDownMultiplier() + ")";
     }

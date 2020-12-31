@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> {
     private static final double INTEGRAL_DECAY = 0.9;
-    private static final double QUANTILE = 0.75;
+//    private static final double QUANTILE = 0.75;
     private final Integer stageNumber;
     private final StageSchedulingInfo stageSchedulingInfo;
     private final io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig;
@@ -76,14 +76,21 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
 
     private double getSetpoint(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
         UpdateDoublesSketch rpsSketch = sketches.get(Clutch.Metric.RPS);
-        double setPoint = rpsSketch.getQuantile(QUANTILE);
+        double setPoint = rpsSketch.getQuantile(getSetPointPercentile());
 
-        // Check if set point drifted too low.
-        if (rpsSketch.getQuantile(0.99) * QUANTILE > setPoint) {
+        // Check if set point drifted too low due to distribution skewing lower.
+        if (rpsSketch.getQuantile(0.99) * getSetPointPercentile() > setPoint) {
             setPoint = setPoint * 1.1;
         }
 
         return setPoint;
+    }
+
+    private double getSetPointPercentile() {
+        if (customConfig != null && customConfig.getRpsConfig().isDefined()) {
+            return customConfig.getRpsConfig().get().getSetPointPercentile();
+        }
+        return ClutchRpsPIDConfig.DEFAULT.getSetPointPercentile();
     }
 
     private Tuple2<Double, Double> getRope() {

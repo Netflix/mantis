@@ -367,7 +367,7 @@ public class JobAutoScalerTest {
         final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null);
         ClutchConfiguration config = jobAutoScaler.getClutchConfiguration(json).get(1);
 
-        ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.3, 0.0), 0.0, 0.0, Option.of(0.3), Option.of(0.0), Option.of(1.5), Option.of(1.0));
+        ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.3, 0.0), 0.0, 0.0, Option.of(0.75), Option.of(0.3), Option.of(0.0), Option.of(1.5), Option.of(1.0));
         assertEquals(Option.of(100L), config.getCooldownSeconds());
         assertEquals(expected, config.getRpsConfig().get());
 
@@ -375,12 +375,13 @@ public class JobAutoScalerTest {
                 "  \"cooldownSeconds\": 100," +
                 "  \"rpsConfig\": {" +
                 "    \"rope\": [0.9, 0.8]," +
+                "    \"setPointPercentile\": 0.95," +
                 "    \"scaleDownBelowPct\": 1.5," +
                 "    \"scaleDownMultiplier\": 0.5" +
                 "  }" +
                 "}";
         config = jobAutoScaler.getClutchConfiguration(json).get(1);
-        expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.9, 0.8), 0.0, 0.0, Option.of(0.0), Option.of(1.5), Option.of(1.0), Option.of(0.5));
+        expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.9, 0.8), 0.0, 0.0, Option.of(0.95), Option.of(0.0), Option.of(1.5), Option.of(1.0), Option.of(0.5));
         assertEquals(expected, config.getRpsConfig().get());
 
         json = "{" +
