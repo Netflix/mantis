@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> {
     private static final double INTEGRAL_DECAY = 0.9;
-//    private static final double QUANTILE = 0.75;
     private final Integer stageNumber;
     private final StageSchedulingInfo stageSchedulingInfo;
     private final io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig;

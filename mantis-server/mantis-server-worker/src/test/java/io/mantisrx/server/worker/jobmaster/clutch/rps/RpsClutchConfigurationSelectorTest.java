@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RpsClutchConfigurationSelectorTest {
     private static final Logger logger = LoggerFactory.getLogger(RpsClutchConfigurationSelectorTest.class);
@@ -97,6 +98,37 @@ public class RpsClutchConfigurationSelectorTest {
 
         assertEquals(76.0, config.getSetPoint(), 1e-10);
 
+    }
+
+    @Test
+    public void testReturnSameConfigIfSetPointWithin5Percent() {
+        UpdateDoublesSketch rpsSketch = UpdateDoublesSketch.builder().setK(1024).build();
+        for (int i = 1; i <= 100; i++) {
+            rpsSketch.update(i);
+        }
+        Map<Clutch.Metric, UpdateDoublesSketch> sketches = ImmutableMap.of(Clutch.Metric.RPS, rpsSketch);
+
+        StageScalingPolicy scalingPolicy = new StageScalingPolicy(1, 2, 9, 0, 0, 400L, null);
+
+        StageSchedulingInfo schedulingInfo = new StageSchedulingInfo(3, null, null, null, scalingPolicy, true);
+        RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
+
+        ClutchConfiguration config = selector.apply(sketches);
+
+        assertEquals(76.0, config.getSetPoint(), 1e-10);
+
+        for (int i = 101; i <= 105; i++) {
+            rpsSketch.update(i);
+        }
+        ClutchConfiguration newConfig = selector.apply(sketches);
+        // Instance equality
+        assertTrue(config == newConfig);
+        for (int i = 106; i < 110; i++) {
+            rpsSketch.update(i);
+        }
+        newConfig = selector.apply(sketches);
+        assertTrue(config != newConfig);
+        assertEquals(82.0, newConfig.getSetPoint(), 1e-10);
     }
 
     @Test
