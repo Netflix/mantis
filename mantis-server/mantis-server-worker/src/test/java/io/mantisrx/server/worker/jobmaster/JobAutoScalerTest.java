@@ -19,6 +19,8 @@ package io.mantisrx.server.worker.jobmaster;
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.DataDrop;
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.KafkaLag;
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.UserDefined;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -38,6 +40,11 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
+import io.mantisrx.server.worker.jobmaster.clutch.ClutchPIDConfig;
+import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
+import io.vavr.Tuple;
+import io.vavr.control.Option;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -83,6 +90,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(Observable.just(true));
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -162,6 +170,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(simulateScaleJobStageFailureResp);
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -206,6 +215,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers - decrement), anyString())).thenReturn(Observable.just(true));
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -261,6 +271,7 @@ public class JobAutoScalerTest {
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), anyInt(), anyString())).thenReturn(Observable.just(true));
 
         Context context = mock(Context.class);
+        when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
         final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
         jobAutoScaler.start();
@@ -307,6 +318,7 @@ public class JobAutoScalerTest {
             when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(Observable.just(true));
 
             Context context = mock(Context.class);
+            when(context.getWorkerMapObservable()).thenReturn(Observable.empty());
 
             final JobAutoScaler jobAutoScaler = new JobAutoScaler(jobId, new SchedulingInfo(schedulingInfoMap), mockMasterClientApi, context);
             jobAutoScaler.start();
@@ -341,6 +353,43 @@ public class JobAutoScalerTest {
 
             verify(mockMasterClientApi, timeout(1000).times(1)).scaleJobStage(jobId, scalingStageNum, numStage1Workers + 2 * increment, String.format("%s with value %2$.2f exceeded scaleUp threshold of %3$.1f", scalingReason.name(), (scaleUpAbove + 0.01), scaleUpAbove));
         }
+    }
+
+    @Test
+    public void testGetClutchConfigurationFromJson() throws Exception {
+        String json = "{" +
+                "  \"cooldownSeconds\": 100," +
+                "  \"rpsConfig\": {" +
+                "    \"scaleUpAbovePct\": 0.3," +
+                "    \"scaleUpMultiplier\": 1.5" +
+                "  }" +
+                "}";
+        final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null);
+        ClutchConfiguration config = jobAutoScaler.getClutchConfiguration(json).get(1);
+
+        ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.3, 0.0), 0.0, 0.0, Option.of(0.75), Option.of(0.3), Option.of(0.0), Option.of(1.5), Option.of(1.0));
+        assertEquals(Option.of(100L), config.getCooldownSeconds());
+        assertEquals(expected, config.getRpsConfig().get());
+
+        json = "{" +
+                "  \"cooldownSeconds\": 100," +
+                "  \"rpsConfig\": {" +
+                "    \"rope\": [0.9, 0.8]," +
+                "    \"setPointPercentile\": 0.95," +
+                "    \"scaleDownBelowPct\": 1.5," +
+                "    \"scaleDownMultiplier\": 0.5" +
+                "  }" +
+                "}";
+        config = jobAutoScaler.getClutchConfiguration(json).get(1);
+        expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.9, 0.8), 0.0, 0.0, Option.of(0.95), Option.of(0.0), Option.of(1.5), Option.of(1.0), Option.of(0.5));
+        assertEquals(expected, config.getRpsConfig().get());
+
+        json = "{" +
+                "  \"cooldownSeconds\": 100" +
+                "}";
+        config = jobAutoScaler.getClutchConfiguration(json).get(1);
+        assertFalse(config.getRpsConfig().isDefined());
+        assertEquals(0, config.getMinSize());
     }
 
     //    @Test

@@ -178,6 +178,7 @@ public class StageScalingPolicy {
         KafkaProcessed,
         Clutch,
         ClutchExperimental,
+        ClutchRps,
         RPS,
         JVMMemory,
         SourceJobDrop
