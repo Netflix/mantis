@@ -44,7 +44,7 @@ public class CompressionUtilsTest {
         try (BufferedReader reader = new BufferedReader(new StringReader(testInput))) {
             List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
 
-            assertEquals(result.size(), 3);
+            assertEquals("Delimiter: '" + delimiter + "'", result.size(), 3);
             assertEquals(result.get(0).getEventAsString(), event1);
             assertEquals(result.get(1).getEventAsString(), event2);
             assertEquals(result.get(2).getEventAsString(), event3);
