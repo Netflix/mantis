@@ -42,6 +42,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
     @Override
     public ClutchConfiguration apply(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
         double setPoint = getSetpoint(sketches);
+        Tuple2<Double, Double> rope = getRope().map(x -> x * setPoint, y -> y * setPoint);
 
         // Gain - number of ticks within the cooldown period. This is the minimum number of times PID output will accumulate
         // before an action is taken.
@@ -60,7 +61,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
                 .integralDecay(INTEGRAL_DECAY)
                 .minSize(getMinSize())
                 .maxSize(getMaxSize())
-                .rope(getRope())
+                .rope(rope)
                 .cooldownInterval(getCooldownSecs())
                 .cooldownUnits(TimeUnit.SECONDS)
                 .build();
