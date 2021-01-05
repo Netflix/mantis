@@ -55,7 +55,7 @@ public class RpsClutchConfigurationSelectorTest {
         assertEquals(100.0, config.getSetPoint(), 1e-10);
         assertEquals(1, config.getMinSize());
         assertEquals(10, config.getMaxSize());
-        assertEquals(Tuple.of(0.2, 0.1), config.getRope());
+        assertEquals(Tuple.of(20.0, 10.0), config.getRope());
         assertEquals(300L, config.getCooldownInterval());
     }
 
@@ -76,7 +76,7 @@ public class RpsClutchConfigurationSelectorTest {
         assertEquals(100.0, config.getSetPoint(), 1e-10);
         assertEquals(2, config.getMinSize());
         assertEquals(9, config.getMaxSize());
-        assertEquals(Tuple.of(0.3, 0.0), config.getRope());
+        assertEquals(Tuple.of(30.0, 0.0), config.getRope());
         assertEquals(400L, config.getCooldownInterval());
 
     }

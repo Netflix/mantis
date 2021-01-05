@@ -149,14 +149,32 @@ public class JobAutoScaler {
                             clutchCustomConfiguration.isPresent())) {
 
                         ClutchConfiguration config = null;
-                        int minSize = stageSchedulingInfo.getScalingPolicy().getMin();
-                        int maxSize = stageSchedulingInfo.getScalingPolicy().getMax();
+                        int minSize = 0;
+                        int maxSize = 0;
                         boolean useJsonConfigBased = false;
                         boolean useClutch = false;
                         boolean useClutchRps = false;
                         boolean useClutchExperimental = false;
 
                         // Determine which type of scaler to use.
+                        if (stageSchedulingInfo.getScalingPolicy() != null) {
+                            minSize = stageSchedulingInfo.getScalingPolicy().getMin();
+                            maxSize = stageSchedulingInfo.getScalingPolicy().getMax();
+                            if (stageSchedulingInfo.getScalingPolicy().getStrategies() != null) {
+                                Set<StageScalingPolicy.ScalingReason> reasons = stageSchedulingInfo.getScalingPolicy().getStrategies()
+                                        .values()
+                                        .stream()
+                                        .map(StageScalingPolicy.Strategy::getReason)
+                                        .collect(Collectors.toSet());
+                                if (reasons.contains(StageScalingPolicy.ScalingReason.Clutch)) {
+                                    useClutch = true;
+                                } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchExperimental)) {
+                                    useClutchExperimental = true;
+                                } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchRps)) {
+                                    useClutchRps = true;
+                                }
+                            }
+                        }
                         if (clutchCustomConfiguration.isPresent()) {
                             try {
                                 config = getClutchConfiguration(clutchCustomConfiguration.get()).get(stage);
@@ -177,21 +195,6 @@ public class JobAutoScaler {
                                 if (config.getMaxSize() > 0) {
                                     maxSize = config.getMaxSize();
                                 }
-                            }
-                        }
-                        if (stageSchedulingInfo.getScalingPolicy() != null &&
-                                stageSchedulingInfo.getScalingPolicy().getStrategies() != null) {
-                            Set<StageScalingPolicy.ScalingReason> reasons = stageSchedulingInfo.getScalingPolicy().getStrategies()
-                                    .values()
-                                    .stream()
-                                    .map(StageScalingPolicy.Strategy::getReason)
-                                    .collect(Collectors.toSet());
-                            if (reasons.contains(StageScalingPolicy.ScalingReason.Clutch)) {
-                                useClutch = true;
-                            } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchExperimental)) {
-                                useClutchExperimental = true;
-                            } else if (reasons.contains(StageScalingPolicy.ScalingReason.ClutchRps)) {
-                                useClutchRps = true;
                             }
                         }
 
