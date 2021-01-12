@@ -238,8 +238,8 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                 } else
                     logger.warn("No auto scale rules setup");
             }
-        } catch (IllegalStateException e) {
-            logger.warn("Ignoring: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Ignoring exception during autoscale rules setup", e);
         }
         schedulerBuilder = schedulerBuilder.withMaxOffersToReject(Math.max(1, minMinIdle));
         final TaskScheduler scheduler = schedulerBuilder.build();
