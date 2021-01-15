@@ -44,27 +44,7 @@ You define the autoscaling policy for a Processing Stage by setting the followin
   a stage each time the stage autoscales up or down.
 * **Cooldown seconds** — This indicates how many seconds to wait after a scaling operation has been
   completed before beginning another scaling operation.
-* **Stragtegies** — An autoscaling policy has the following strategy parameters:
-    * **Type** — CPU, memory, network, or data drop
-    * **Scale down below percentage** — When the average value for all workers falls below this
-      value, the stage will scale down. This value is calculated as actual usage divided by
-      requested amounts (for data drop, as the number of data items dropped divided by the total
-      number of data items, dropped+processed).
-    * **Scale up above percentage** — When the average value for all workers rises above this value,
-      the stage will scale up.
-    * **Rolling count** — This value helps to keep jitter out of the autoscaling process. Instead of
-      scaling immediately the first time values fall outside of the scale-down and scale-up
-      percentage thresholds you define, Mantis will wait until the thresholds are exceeded a certain
-      number of times within a certain window. For example, a rolling count of “6 of 10” means that
-      only if in ten consecutive observations six or more of the observations fall below the
-      scale-down threshold will the stage be scaled down.
-
-!!! note
-    Ideally, there should be zero data drop, so there isn’t an elegant way to express “scale down
-    below percentage” for data drop. Specifying “0%” as the “scale down below percentage”
-    effectively means the data drop percentage never trigger a scale down. For this reason, it is
-    best to use the data drop strategy in conjunction with another strategy that provides the
-    scale-down trigger.
+* **Stragtegies** — See [autoscaling strategies](../autoscalingstrategies) for details.
 
 The following example shows how you might establish the autoscaling policy for a stage in the Mantis
 UI:
