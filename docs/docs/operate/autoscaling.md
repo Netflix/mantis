@@ -44,7 +44,7 @@ You define the autoscaling policy for a Processing Stage by setting the followin
   a stage each time the stage autoscales up or down.
 * **Cooldown seconds** — This indicates how many seconds to wait after a scaling operation has been
   completed before beginning another scaling operation.
-* **Stragtegies** — See [autoscaling strategies](../autoscalingstrategies) for details.
+* **Strategies** — See [autoscaling strategies](../autoscalingstrategies) for details.
 
 The following example shows how you might establish the autoscaling policy for a stage in the Mantis
 UI:
