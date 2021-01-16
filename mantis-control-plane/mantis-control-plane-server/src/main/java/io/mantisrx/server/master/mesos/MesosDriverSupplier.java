@@ -59,6 +59,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     @Override
     public MesosSchedulerDriver get() {
         if (addVMLeaseAction == null) {
+            logger.warn("addVMLeaseAction is null, attempt to get Mesos Driver before MesosDriverSupplier init");
             throw new IllegalStateException("addVMLeaseAction must be set before creating MesosSchedulerDriver");
         }
 
@@ -77,7 +78,8 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             logger.info("initializing mesos scheduler driver");
             final MesosSchedulerDriver mesosDriver =
                     new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation());
-            mesosDriverRef.compareAndSet(null, mesosDriver);
+            boolean result = mesosDriverRef.compareAndSet(null, mesosDriver);
+            logger.info("initialized mesos scheduler driver {}", result);
         }
 
         return mesosDriverRef.get();
