@@ -145,3 +145,7 @@ JSON in the job parameter `mantis.jobmaster.clutch.config`. Example:
 | `scaleUpAbovePct`    | Only scale up if the PID controller output is above this number. It can be used to delay a scaling action. Valid input is between `[0.0, 100.0]`. Default is `0.0`. |
 | `scaleDownMultiplier` | Artificially increase/decrease the size of scale down by this factor. Default is `1.0`. |
 | `scaleUpMultiplier`  | Artificially increase/decrease the size of scale up by this factor. Default is `1.0`. |
+
+### Clutch Experimental (Developmental Use Only)
+
+This strategy is internally used for testing new Clutch implementations. It should not be used for production jobs.
