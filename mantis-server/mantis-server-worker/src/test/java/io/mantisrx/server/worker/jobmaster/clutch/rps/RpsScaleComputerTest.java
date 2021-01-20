@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class RpsScaleComputerTest {
     @Test
     public void testApply() {
-        ClutchRpsPIDConfig rpsConfig = new ClutchRpsPIDConfig(0.0, Tuple.of(0.0, 0.0), 0.0, 0.0, Option.none(), Option.of(0.4), Option.of(0.6), Option.of(2.0), Option.of(0.5));
+        ClutchRpsPIDConfig rpsConfig = new ClutchRpsPIDConfig(0.0, Tuple.of(0.0, 0.0), 0.0, 0.0, Option.none(), Option.of(40.0), Option.of(60.0), Option.of(2.0), Option.of(0.5));
         RpsScaleComputer scaleComputer = new RpsScaleComputer(rpsConfig);
         ClutchConfiguration config = ClutchConfiguration.builder().minSize(1).maxSize(1000).build();
 

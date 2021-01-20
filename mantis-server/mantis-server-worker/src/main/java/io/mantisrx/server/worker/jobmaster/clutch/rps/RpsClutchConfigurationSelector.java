@@ -42,7 +42,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
     @Override
     public ClutchConfiguration apply(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
         double setPoint = getSetpoint(sketches);
-        Tuple2<Double, Double> rope = getRope().map(x -> x * setPoint, y -> y * setPoint);
+        Tuple2<Double, Double> rope = getRope().map(x -> x / 100.0 * setPoint, y -> y / 100.0 * setPoint);
 
         // Gain - number of ticks within the cooldown period. This is the minimum number of times PID output will accumulate
         // before an action is taken.
@@ -88,9 +88,9 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
 
     private double getSetPointPercentile() {
         if (customConfig != null && customConfig.getRpsConfig().isDefined()) {
-            return customConfig.getRpsConfig().get().getSetPointPercentile();
+            return customConfig.getRpsConfig().get().getSetPointPercentile() / 100.0;
         }
-        return ClutchRpsPIDConfig.DEFAULT.getSetPointPercentile();
+        return ClutchRpsPIDConfig.DEFAULT.getSetPointPercentile() / 100.0;
     }
 
     private Tuple2<Double, Double> getRope() {

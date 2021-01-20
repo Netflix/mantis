@@ -23,24 +23,24 @@ import io.vavr.control.Option;
 
 public class ClutchRpsPIDConfig extends ClutchPIDConfig {
 
-    public static final ClutchRpsPIDConfig DEFAULT = new ClutchRpsPIDConfig(0.0, Tuple.of(0.3, 0.0), 0.0, 0.0,
-            Option.of(0.75), Option.of(0.0), Option.of(0.0), Option.of(1.0), Option.of(1.0));
+    public static final ClutchRpsPIDConfig DEFAULT = new ClutchRpsPIDConfig(0.0, Tuple.of(30.0, 0.0), 0.0, 0.0,
+            Option.of(75.0), Option.of(0.0), Option.of(0.0), Option.of(1.0), Option.of(1.0));
 
     /**
-     * Percentile of RPS data points to use as set point.
+     * Percentile of RPS data points to use as set point. 99.0 means P99.
      */
     public final double setPointPercentile;
 
     /**
      * Percentage threshold for scaling up. Use to delay scaling up during until a threshold is reached, effectively
-     * reducing the number of scaling activities.
+     * reducing the number of scaling activities. 10.0 means 10%.
      */
     public final double scaleUpAbovePct;
 
 
     /**
      * Percentage threshold for scaling down. Use to delay scaling down during until a threshold is reached, effectively
-     * reducing the number of scaling activities.
+     * reducing the number of scaling activities. 10.0 means 10%.
      */
     public final double scaleDownBelowPct;
 
