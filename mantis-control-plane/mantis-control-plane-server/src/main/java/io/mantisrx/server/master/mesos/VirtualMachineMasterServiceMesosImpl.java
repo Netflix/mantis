@@ -407,6 +407,9 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
             }
         } catch (RuntimeException e) {
             // IllegalStateException from no mesosDriver's addVMLeaseAction or NPE from mesosDriver.get() being null.
+            if (mesosDriver.get() == null) {
+                logger.warn("mesosDriver supplier returned null mesosDriver");
+            }
             logger.error("Unexpected to see Mesos driver not initialized", e);
             System.exit(2);
         }
@@ -424,7 +427,8 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                 executor.execute(() -> {
                     try {
                         logger.info("invoking the Mesos driver run");
-                        mesosDriver.get().run();
+                        Protos.Status status = mesosDriver.get().run();
+                        logger.info("MesosSchedulerDriver run status {}", status);
                     } catch (Exception e) {
                         logger.error("Failed to register Mantis Framework with Mesos", e);
                         System.exit(2);
