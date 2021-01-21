@@ -58,6 +58,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("5")
     int getMesosSchedulerDriverInitTimeoutSec();
 
+    @Config("mesos.scheduler.driver.init.num.retries")
+    @Default("3")
+    int getMesosSchedulerDriverInitNumRetries();
+
     @Config("mesos.worker.timeoutSecondsToReportStart")
     @Default("10")
     int getTimeoutSecondsToReportStart();

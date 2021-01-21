@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -51,6 +52,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     private final AtomicReference<MesosSchedulerDriver> mesosDriverRef = new AtomicReference<>(null);
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private volatile Action1<List<VirtualMachineLease>> addVMLeaseAction = null;
+    private final AtomicInteger numAttemptsToInit = new AtomicInteger(0);
 
     public MesosDriverSupplier(final MasterConfiguration masterConfig,
                                final Observer<String> vmLeaseRescindedObserver,
@@ -81,6 +83,11 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         }
 
         if (isInitialized.compareAndSet(false, true)) {
+            if (numAttemptsToInit.incrementAndGet() >= masterConfig.getMesosSchedulerDriverInitNumRetries()) {
+                logger.error("too many attempts({} > {}) to initialize Mesos scheduler driver, will terminate master",
+                    numAttemptsToInit.get(), masterConfig.getMesosSchedulerDriverInitNumRetries());
+                System.exit(2);
+            }
             logger.info("initializing mesos scheduler callback handler");
             final MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler =
                     new MesosSchedulerCallbackHandler(addVMLeaseAction, vmLeaseRescindedObserver, jobMessageRouter,
