@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.mesos;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,11 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.slf4j.Logger;
@@ -64,15 +65,22 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         this.workerRegistry = workerRegistry;
     }
 
-    MesosSchedulerDriver initMesosSchedulerDriverWithTimeout(MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler,
-                                                             Protos.FrameworkInfo framework) throws InterruptedException, ExecutionException, TimeoutException {
+    Optional<MesosSchedulerDriver> initMesosSchedulerDriverWithTimeout(MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler,
+                                                                       Protos.FrameworkInfo framework) {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         int mesosSchedulerDriverInitTimeoutSec = masterConfig.getMesosSchedulerDriverInitTimeoutSec();
         logger.info("initializing mesos scheduler driver with timeout of {} sec", mesosSchedulerDriverInitTimeoutSec);
-        Future<MesosSchedulerDriver> driverF = executorService.submit(() -> new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation()));
-        MesosSchedulerDriver mesosSchedulerDriver = driverF.get(mesosSchedulerDriverInitTimeoutSec, TimeUnit.SECONDS);
-        executorService.shutdown();
-        return mesosSchedulerDriver;
+        Optional<MesosSchedulerDriver> mesosSchedulerDriverO = Optional.empty();
+        try {
+            Future<MesosSchedulerDriver> driverF = executorService.submit(() -> new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation()));
+            MesosSchedulerDriver mesosSchedulerDriver = driverF.get(mesosSchedulerDriverInitTimeoutSec, TimeUnit.SECONDS);
+            mesosSchedulerDriverO = Optional.ofNullable(mesosSchedulerDriver);
+        } catch (Exception e) {
+            logger.info("failed to initialize MesosSchedulerDriver", e);
+        } finally {
+            executorService.shutdown();
+        }
+        return mesosSchedulerDriverO;
     }
 
     @Override
@@ -100,14 +108,11 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
                     .setCheckpoint(true)
                     .build();
             logger.info("initializing mesos scheduler driver");
-            MesosSchedulerDriver mesosDriver;
-            try {
-                mesosDriver = initMesosSchedulerDriverWithTimeout(mesosSchedulerCallbackHandler, framework);
-            } catch (Exception e) {
-                logger.info("timed out trying to initialize MesosSchedulerDriver, will retry", e);
+            MesosSchedulerDriver mesosDriver = initMesosSchedulerDriverWithTimeout(mesosSchedulerCallbackHandler, framework).orElseGet(() -> {
+                logger.info("initialize MesosSchedulerDriver failed, will retry");
                 isInitialized.compareAndSet(true, false);
-                mesosDriver = get();
-            }
+                return this.get();
+            });
 
             boolean result = mesosDriverRef.compareAndSet(null, mesosDriver);
             logger.info("initialized mesos scheduler driver {}", result);
