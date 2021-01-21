@@ -113,16 +113,13 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             logger.info("initialized mesos scheduler driver {}", result);
         } else {
             // block till mesosDriver is not null
-            while (true) {
-                if (mesosDriverRef.get() == null) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        logger.warn("thread interrupted during sleep", e);
-                        Thread.currentThread().interrupt();
-                    }
-                } else {
-                    break;
+            while (mesosDriverRef.get() == null) {
+                try {
+                    logger.info("mesos scheduler driver null, sleep for 1 sec awaiting init");
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    logger.warn("thread interrupted during sleep", e);
+                    Thread.currentThread().interrupt();
                 }
             }
         }

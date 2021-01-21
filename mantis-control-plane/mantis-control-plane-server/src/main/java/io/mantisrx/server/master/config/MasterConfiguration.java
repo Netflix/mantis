@@ -55,7 +55,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     String getMasterIP();
 
     @Config("mesos.scheduler.driver.init.timeout.sec")
-    @Default("5")
+    @Default("2")
     int getMesosSchedulerDriverInitTimeoutSec();
 
     @Config("mesos.scheduler.driver.init.num.retries")
