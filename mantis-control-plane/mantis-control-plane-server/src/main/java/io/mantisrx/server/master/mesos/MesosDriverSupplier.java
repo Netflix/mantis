@@ -63,11 +63,12 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     }
 
     MesosSchedulerDriver initMesosSchedulerDriverWithTimeout(MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler,
-                                                             Protos.FrameworkInfo framework,
-                                                             int timeoutSec) throws InterruptedException, ExecutionException, TimeoutException {
+                                                             Protos.FrameworkInfo framework) throws InterruptedException, ExecutionException, TimeoutException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
+        int mesosSchedulerDriverInitTimeoutSec = masterConfig.getMesosSchedulerDriverInitTimeoutSec();
+        logger.info("initializing mesos scheduler driver with timeout of {} sec", mesosSchedulerDriverInitTimeoutSec);
         Future<MesosSchedulerDriver> driverF = executorService.submit(() -> new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation()));
-        MesosSchedulerDriver mesosSchedulerDriver = driverF.get(timeoutSec, TimeUnit.SECONDS);
+        MesosSchedulerDriver mesosSchedulerDriver = driverF.get(mesosSchedulerDriverInitTimeoutSec, TimeUnit.SECONDS);
         executorService.shutdown();
         return mesosSchedulerDriver;
     }
@@ -94,9 +95,9 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             logger.info("initializing mesos scheduler driver");
             MesosSchedulerDriver mesosDriver;
             try {
-                mesosDriver = initMesosSchedulerDriverWithTimeout(mesosSchedulerCallbackHandler, framework, 5);
+                mesosDriver = initMesosSchedulerDriverWithTimeout(mesosSchedulerCallbackHandler, framework);
             } catch (Exception e) {
-                logger.warn("timed out trying to initialize MesosSchedulerDriver, will retry", e);
+                logger.info("timed out trying to initialize MesosSchedulerDriver, will retry", e);
                 isInitialized.compareAndSet(true, false);
                 mesosDriver = get();
             }
