@@ -17,6 +17,12 @@
 package io.mantisrx.server.master.mesos;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -56,6 +62,16 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         this.workerRegistry = workerRegistry;
     }
 
+    MesosSchedulerDriver initMesosSchedulerDriverWithTimeout(MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler,
+                                                             Protos.FrameworkInfo framework,
+                                                             int timeoutSec) throws InterruptedException, ExecutionException, TimeoutException {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<MesosSchedulerDriver> driverF = executorService.submit(() -> new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation()));
+        MesosSchedulerDriver mesosSchedulerDriver = driverF.get(timeoutSec, TimeUnit.SECONDS);
+        executorService.shutdown();
+        return mesosSchedulerDriver;
+    }
+
     @Override
     public MesosSchedulerDriver get() {
         if (addVMLeaseAction == null) {
@@ -76,10 +92,31 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
                     .setCheckpoint(true)
                     .build();
             logger.info("initializing mesos scheduler driver");
-            final MesosSchedulerDriver mesosDriver =
-                    new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation());
+            MesosSchedulerDriver mesosDriver;
+            try {
+                mesosDriver = initMesosSchedulerDriverWithTimeout(mesosSchedulerCallbackHandler, framework, 5);
+            } catch (Exception e) {
+                logger.warn("timed out trying to initialize MesosSchedulerDriver, will retry", e);
+                isInitialized.compareAndSet(true, false);
+                mesosDriver = get();
+            }
+
             boolean result = mesosDriverRef.compareAndSet(null, mesosDriver);
             logger.info("initialized mesos scheduler driver {}", result);
+        } else {
+            // block till mesosDriver is not null
+            while (true) {
+                if (mesosDriverRef.get() == null) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        logger.warn("thread interrupted during sleep", e);
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    break;
+                }
+            }
         }
 
         return mesosDriverRef.get();
