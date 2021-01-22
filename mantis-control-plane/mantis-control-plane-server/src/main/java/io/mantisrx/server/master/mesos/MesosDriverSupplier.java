@@ -18,12 +18,10 @@ package io.mantisrx.server.master.mesos;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,9 +89,9 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         }
 
         if (isInitialized.compareAndSet(false, true)) {
-            if (numAttemptsToInit.incrementAndGet() >= masterConfig.getMesosSchedulerDriverInitNumRetries()) {
-                logger.error("too many attempts({} > {}) to initialize Mesos scheduler driver, will terminate master",
-                    numAttemptsToInit.get(), masterConfig.getMesosSchedulerDriverInitNumRetries());
+            if (numAttemptsToInit.incrementAndGet() > masterConfig.getMesosSchedulerDriverInitMaxAttempts()) {
+                logger.error("Failed to initialize Mesos scheduler driver after {} attempts, will terminate master",
+                    numAttemptsToInit.get() - 1);
                 System.exit(2);
             }
             logger.info("initializing mesos scheduler callback handler");
@@ -117,11 +115,19 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             boolean result = mesosDriverRef.compareAndSet(null, mesosDriver);
             logger.info("initialized mesos scheduler driver {}", result);
         } else {
-            // block till mesosDriver is not null
+            int sleepIntervalMillis = 1000;
+            int maxTimeToWaitMillis =
+                masterConfig.getMesosSchedulerDriverInitMaxAttempts() * masterConfig.getMesosSchedulerDriverInitTimeoutSec() * 1000;
+            // block maxTimeToWaitMillis till mesosDriver is not null
             while (mesosDriverRef.get() == null) {
+                if (maxTimeToWaitMillis <= 0) {
+                    logger.error("mesos driver init taking too long, exiting");
+                    System.exit(2);
+                }
                 try {
                     logger.info("mesos scheduler driver null, sleep for 1 sec awaiting init");
-                    Thread.sleep(1000);
+                    Thread.sleep(sleepIntervalMillis);
+                    maxTimeToWaitMillis -= sleepIntervalMillis;
                 } catch (InterruptedException e) {
                     logger.warn("thread interrupted during sleep", e);
                     Thread.currentThread().interrupt();
@@ -135,5 +141,14 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     public void setAddVMLeaseAction(final Action1<List<VirtualMachineLease>> addVMLeaseAction) {
         Preconditions.checkNotNull(addVMLeaseAction);
         this.addVMLeaseAction = addVMLeaseAction;
+    }
+
+    public void shutdown() {
+        MesosSchedulerDriver mesosSchedulerDriver = mesosDriverRef.get();
+        if (mesosSchedulerDriver != null) {
+            mesosSchedulerDriver.stop(true);
+        } else {
+            logger.info("mesos driver null, continue shutdown");
+        }
     }
 }
