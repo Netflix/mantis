@@ -28,10 +28,10 @@ import rx.schedulers.Schedulers;
  * Schedules work on the same fixed thread pool executor with 1 thread that is constructed once as part of creating
  * this Scheduler.
  */
-public final class MantisRxScheduler extends Scheduler {
+public final class MantisRxSingleThreadScheduler extends Scheduler {
     private final Scheduler scheduler;
 
-    public MantisRxScheduler(ThreadFactory threadFactory) {
+    public MantisRxSingleThreadScheduler(ThreadFactory threadFactory) {
         ExecutorService executorService = newFixedThreadPool(1, threadFactory);
         this.scheduler = Schedulers.from(executorService);
     }

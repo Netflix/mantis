@@ -39,7 +39,7 @@ import io.mantisrx.runtime.SourceHolder;
 import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.computation.Computation;
 import io.mantisrx.runtime.markers.MantisMarker;
-import io.mantisrx.runtime.scheduler.MantisRxScheduler;
+import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.reactivex.mantis.remote.observable.RxMetrics;
@@ -219,11 +219,11 @@ public class StageExecutors {
 
         } else {
 
-            final MantisRxScheduler[] mantisRxSchedulers = new MantisRxScheduler[concurrency];
-            RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxScheduler-");
+            final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[concurrency];
+            RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxSingleThreadScheduler-");
             logger.info("creating {} Mantis threads", concurrency);
             for (int i = 0; i < concurrency; i++) {
-                mantisRxSchedulers[i] = new MantisRxScheduler(rxThreadFactory);
+                mantisRxSingleThreadSchedulers[i] = new MantisRxSingleThreadScheduler(rxThreadFactory);
             }
 
             return
@@ -233,7 +233,7 @@ public class StageExecutors {
                             .groupBy(e -> Math.abs(e.getKeyValue().hashCode()) % concurrency)
                             .flatMap(gbo -> c
                                     .call(context, gbo
-                                            .observeOn(mantisRxSchedulers[gbo.getKey().intValue()])
+                                            .observeOn(mantisRxSingleThreadSchedulers[gbo.getKey().intValue()])
                                             .lift(new MonitorOperator<MantisGroup<K, T>>("worker_stage_inner_input")))
                                     .lift(new MonitorOperator<R>("worker_stage_inner_output"))));
         }
@@ -289,11 +289,11 @@ public class StageExecutors {
                                     .lift(new MonitorOperator<T>("worker_stage_inner_input")))
                             .lift(new MonitorOperator<R>("worker_stage_inner_output")));
         } else {
-            final MantisRxScheduler[] mantisRxSchedulers = new MantisRxScheduler[concurrency];
-            RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxScheduler-");
+            final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[concurrency];
+            RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxSingleThreadScheduler-");
             logger.info("creating {} Mantis threads", concurrency);
             for (int i = 0; i < concurrency; i++) {
-                mantisRxSchedulers[i] = new MantisRxScheduler(rxThreadFactory);
+                mantisRxSingleThreadSchedulers[i] = new MantisRxSingleThreadScheduler(rxThreadFactory);
             }
             return oo
                     .lift(new MonitorOperator<>("worker_stage_outer"))
@@ -302,7 +302,7 @@ public class StageExecutors {
                             .flatMap(go ->
                                     c
                                     .call(context, go
-                                            .observeOn(mantisRxSchedulers[go.getKey().intValue()])
+                                            .observeOn(mantisRxSingleThreadSchedulers[go.getKey().intValue()])
                                             .lift(new MonitorOperator<>("worker_stage_inner_input")))
                                     .lift(new MonitorOperator<>("worker_stage_inner_output"))));
         }

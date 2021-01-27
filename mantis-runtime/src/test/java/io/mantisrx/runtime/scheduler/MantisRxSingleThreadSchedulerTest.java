@@ -15,8 +15,8 @@ import rx.Subscription;
 import rx.internal.util.RxThreadFactory;
 
 
-public class MantisRxSchedulerTest {
-    private static final Logger logger = LoggerFactory.getLogger(MantisRxSchedulerTest.class);
+public class MantisRxSingleThreadSchedulerTest {
+    private static final Logger logger = LoggerFactory.getLogger(MantisRxSingleThreadSchedulerTest.class);
 
     Observable<Observable<String>> createSourceObs(int numInnerObs, int valuesPerCompletingInnerObs) {
         return Observable.range(1, numInnerObs)
@@ -35,11 +35,11 @@ public class MantisRxSchedulerTest {
     @Test
     public void testObserveOnAfterOnCompleteMantisRxScheduler() throws InterruptedException {
         int nThreads = 6;
-        final MantisRxScheduler[] mantisRxSchedulers = new MantisRxScheduler[nThreads];
+        final MantisRxSingleThreadScheduler[] mantisRxSingleThreadSchedulers = new MantisRxSingleThreadScheduler[nThreads];
         RxThreadFactory rxThreadFactory = new RxThreadFactory("MantisRxScheduler-");
         logger.info("creating {} Mantis threads", nThreads);
         for (int i = 0; i < nThreads; i++) {
-            mantisRxSchedulers[i] = new MantisRxScheduler(rxThreadFactory);
+            mantisRxSingleThreadSchedulers[i] = new MantisRxSingleThreadScheduler(rxThreadFactory);
         }
 
         int numInnerObs = 10;
@@ -53,7 +53,7 @@ public class MantisRxSchedulerTest {
             .map(observable -> observable
                 .groupBy(e -> System.nanoTime() % nThreads)
                 .flatMap(go -> go
-                    .observeOn(mantisRxSchedulers[go.getKey().intValue()])
+                    .observeOn(mantisRxSingleThreadSchedulers[go.getKey().intValue()])
                     .doOnNext(x -> {
                         logger.info("processing {} on thread {}", x, Thread.currentThread().getName());
                         latch.countDown();
@@ -64,7 +64,7 @@ public class MantisRxSchedulerTest {
         Subscription subscription = map.subscribe();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         for (int i = 0; i < nThreads; i++) {
-            assertFalse(mantisRxSchedulers[i].createWorker().isUnsubscribed());
+            assertFalse(mantisRxSingleThreadSchedulers[i].createWorker().isUnsubscribed());
         }
         subscription.unsubscribe();
     }
