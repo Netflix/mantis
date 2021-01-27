@@ -16,25 +16,28 @@
 
 package io.mantisrx.runtime.scheduler;
 
+import static java.util.concurrent.Executors.newFixedThreadPool;
+
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import rx.Scheduler;
-import rx.internal.schedulers.NewThreadWorker;
-
+import rx.schedulers.Schedulers;
 
 /**
- * Schedules work on the same thread that is constructed once as part of the creating this Scheduler.
+ * Schedules work on the same fixed thread pool executor with 1 thread that is constructed once as part of creating
+ * this Scheduler.
  */
-public final class SingleThreadScheduler extends Scheduler {
+public final class MantisRxScheduler extends Scheduler {
+    private final Scheduler scheduler;
 
-    private final NewThreadWorker worker;
-
-    public SingleThreadScheduler(ThreadFactory threadFactory) {
-        this.worker = new NewThreadWorker(threadFactory);
+    public MantisRxScheduler(ThreadFactory threadFactory) {
+        ExecutorService executorService = newFixedThreadPool(1, threadFactory);
+        this.scheduler = Schedulers.from(executorService);
     }
 
     @Override
     public Worker createWorker() {
-        return this.worker;
+        return this.scheduler.createWorker();
     }
 }
