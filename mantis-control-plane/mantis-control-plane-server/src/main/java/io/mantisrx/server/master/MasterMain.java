@@ -333,6 +333,7 @@ public class MasterMain implements Service {
         if (shutdownInitiated.compareAndSet(false, true)) {
             logger.info("Shutting down Mantis Master");
             mantisServices.shutdown();
+            logger.info("mantis services shutdown complete");
             boolean shutdownCuratorEnabled = ConfigurationProvider.getConfig().getShutdownCuratorServiceEnabled();
             if (curatorService != null && shutdownCuratorEnabled) {
                 logger.info("Shutting down Curator Service");
@@ -341,6 +342,7 @@ public class MasterMain implements Service {
                 logger.info("not shutting down curator service {} shutdownEnabled? {}", curatorService, shutdownCuratorEnabled);
             }
             blockUntilShutdown.countDown();
+            logger.info("Mantis Master shutdown done");
         } else
             logger.info("Shutdown already initiated, not starting again");
     }

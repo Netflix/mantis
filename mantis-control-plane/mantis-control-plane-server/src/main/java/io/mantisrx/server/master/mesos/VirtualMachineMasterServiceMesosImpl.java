@@ -66,7 +66,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
 
     private static final Logger logger = LoggerFactory.getLogger(VirtualMachineMasterServiceMesosImpl.class);
     private final String masterDescriptionJson;
-    private final Supplier<MesosSchedulerDriver> mesosDriver;
+    private final MesosDriverSupplier mesosDriver;
     private final AtomicBoolean initializationDone = new AtomicBoolean(false);
     private volatile int workerJvmMemoryScaleBackPct;
     private MasterConfiguration masterConfig;
@@ -76,7 +76,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     public VirtualMachineMasterServiceMesosImpl(
             final MasterConfiguration masterConfig,
             final String masterDescriptionJson,
-            final Supplier<MesosSchedulerDriver> mesosSchedulerDriverSupplier) {
+            final MesosDriverSupplier mesosSchedulerDriverSupplier) {
         super(true);
         this.masterConfig = masterConfig;
         this.masterDescriptionJson = masterDescriptionJson;
@@ -441,7 +441,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     @Override
     public void shutdown() {
         logger.info("Unregistering Mantis Framework with Mesos");
-        mesosDriver.get().stop(true);
+        mesosDriver.shutdown();
         executor.shutdown();
     }
 

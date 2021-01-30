@@ -54,6 +54,14 @@ public interface MasterConfiguration extends CoreConfiguration {
     @DefaultNull
     String getMasterIP();
 
+    @Config("mesos.scheduler.driver.init.timeout.sec")
+    @Default("2")
+    int getMesosSchedulerDriverInitTimeoutSec();
+
+    @Config("mesos.scheduler.driver.init.max.attempts")
+    @Default("3")
+    int getMesosSchedulerDriverInitMaxAttempts();
+
     @Config("mesos.worker.timeoutSecondsToReportStart")
     @Default("10")
     int getTimeoutSecondsToReportStart();
