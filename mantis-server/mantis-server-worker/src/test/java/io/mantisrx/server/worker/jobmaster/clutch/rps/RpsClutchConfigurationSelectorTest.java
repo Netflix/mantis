@@ -42,7 +42,7 @@ public class RpsClutchConfigurationSelectorTest {
         rpsSketch.update(100);
         Map<Clutch.Metric, UpdateDoublesSketch> sketches = ImmutableMap.of(Clutch.Metric.RPS, rpsSketch);
 
-        ClutchRpsPIDConfig rpsConfig = new ClutchRpsPIDConfig(0.0, Tuple.of(0.2, 0.1), 0, 0, Option.none(), Option.none(), Option.none(), Option.none(), Option.none());
+        ClutchRpsPIDConfig rpsConfig = new ClutchRpsPIDConfig(0.0, Tuple.of(20.0, 10.0), 0, 0, Option.none(), Option.none(), Option.none(), Option.none(), Option.none());
         io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig = new io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration(
                 1, 10, 0, Option.none(), Option.of(300L), Option.none(), Option.none(), Option.none(), Option.none(), Option.none(), Option.of(rpsConfig), Option.none());
 
@@ -97,6 +97,7 @@ public class RpsClutchConfigurationSelectorTest {
         ClutchConfiguration config = selector.apply(sketches);
 
         assertEquals(76.0, config.getSetPoint(), 1e-10);
+        assertEquals(Tuple.of(22.8, 0.0), config.getRope());
 
     }
 

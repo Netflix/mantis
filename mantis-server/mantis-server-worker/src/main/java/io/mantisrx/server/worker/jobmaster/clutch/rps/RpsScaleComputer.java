@@ -13,13 +13,15 @@ public class RpsScaleComputer implements IScaleComputer {
         this.rpsConfig = rpsConfig;
     }
     public Double apply(ClutchConfiguration config, Long currentScale, Double delta) {
-        if (delta > -rpsConfig.getScaleDownBelowPct() && delta < rpsConfig.getScaleUpAbovePct()) {
+        double scaleUpPct = rpsConfig.getScaleUpAbovePct() / 100.0;
+        double scaleDownPct = rpsConfig.getScaleDownBelowPct() / 100.0;
+        if (delta > -scaleDownPct && delta < scaleUpPct) {
             return (double) currentScale;
         }
-        if (delta >= rpsConfig.getScaleUpAbovePct()) {
+        if (delta >= scaleUpPct) {
             delta = delta * rpsConfig.getScaleUpMultiplier();
         }
-        if (delta <= -rpsConfig.getScaleDownBelowPct()) {
+        if (delta <= -scaleDownPct) {
             delta = delta * rpsConfig.getScaleDownMultiplier();
         }
 

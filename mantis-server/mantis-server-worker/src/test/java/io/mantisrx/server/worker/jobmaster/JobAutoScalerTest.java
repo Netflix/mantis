@@ -360,28 +360,28 @@ public class JobAutoScalerTest {
         String json = "{" +
                 "  \"cooldownSeconds\": 100," +
                 "  \"rpsConfig\": {" +
-                "    \"scaleUpAbovePct\": 0.3," +
+                "    \"scaleUpAbovePct\": 30.0," +
                 "    \"scaleUpMultiplier\": 1.5" +
                 "  }" +
                 "}";
         final JobAutoScaler jobAutoScaler = new JobAutoScaler("jobId", null, null, null);
         ClutchConfiguration config = jobAutoScaler.getClutchConfiguration(json).get(1);
 
-        ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.3, 0.0), 0.0, 0.0, Option.of(0.75), Option.of(0.3), Option.of(0.0), Option.of(1.5), Option.of(1.0));
+        ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(30.0, 0.0), 0.0, 0.0, Option.of(75.0), Option.of(30.0), Option.of(0.0), Option.of(1.5), Option.of(1.0));
         assertEquals(Option.of(100L), config.getCooldownSeconds());
         assertEquals(expected, config.getRpsConfig().get());
 
         json = "{" +
                 "  \"cooldownSeconds\": 100," +
                 "  \"rpsConfig\": {" +
-                "    \"rope\": [0.9, 0.8]," +
-                "    \"setPointPercentile\": 0.95," +
-                "    \"scaleDownBelowPct\": 1.5," +
+                "    \"rope\": [90.0, 80.0]," +
+                "    \"setPointPercentile\": 95.0," +
+                "    \"scaleDownBelowPct\": 150.0," +
                 "    \"scaleDownMultiplier\": 0.5" +
                 "  }" +
                 "}";
         config = jobAutoScaler.getClutchConfiguration(json).get(1);
-        expected = new ClutchRpsPIDConfig(0.0, Tuple.of(0.9, 0.8), 0.0, 0.0, Option.of(0.95), Option.of(0.0), Option.of(1.5), Option.of(1.0), Option.of(0.5));
+        expected = new ClutchRpsPIDConfig(0.0, Tuple.of(90.0, 80.0), 0.0, 0.0, Option.of(95.0), Option.of(0.0), Option.of(150.0), Option.of(1.0), Option.of(0.5));
         assertEquals(expected, config.getRpsConfig().get());
 
         json = "{" +
