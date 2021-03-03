@@ -52,5 +52,5 @@ shadowJar {
     mergeServiceFiles()
 }
 
-jar.deleteAllActions()
+jar.enabled = false
 jar.dependsOn shadowJar
