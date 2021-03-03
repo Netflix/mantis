@@ -23,7 +23,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:5.1.1'
+        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:9.1.0'
     }
 }
 
@@ -94,6 +94,10 @@ tasks.withType(Javadoc).all {
 
 license {
     ignoreFailures = false
+}
+
+pmd {
+    ignoreFailures = true
 }
 
 //apply from: file('gradle/check.gradle')
