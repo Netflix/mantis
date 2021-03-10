@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 
 dependencies {
+    annotationProcessor "org.projectlombok:lombok:1.16.16"
     implementation project(':mantis-runtime')
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"

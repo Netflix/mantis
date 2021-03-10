@@ -26,6 +26,7 @@ task execute(type:JavaExec) {
 
 
 dependencies {
+    annotationProcessor "org.projectlombok:lombok:1.16.16"
     implementation project(':mantis-runtime')
 
     implementation "io.mantisrx:mql-jvm:$mqlVersion"

@@ -34,7 +34,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
     }
 }
 application {
@@ -52,6 +52,7 @@ ext {
 
 
 dependencies {
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
     compile project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation "io.reactivex:rxjava:$versionRxJava"

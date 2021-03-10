@@ -41,6 +41,7 @@ dependencies {
     }
     compile "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
     compile "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
+    compile "com.yahoo.datasketches:sketches-core:0.9.1"
 
     testImplementation "junit:junit-dep:$junitVersion"
     testImplementation "org.mockito:mockito-all:$mockitoVersion"

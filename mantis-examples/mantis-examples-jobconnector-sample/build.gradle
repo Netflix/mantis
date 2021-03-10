@@ -19,6 +19,7 @@ ext {
 }
 
 dependencies {
+    annotationProcessor "org.projectlombok:lombok:1.16.16"
     implementation project(':mantis-runtime')
     implementation "io.mantisrx:mantis-connector-job:$mantisConnectorsVersion"
 
