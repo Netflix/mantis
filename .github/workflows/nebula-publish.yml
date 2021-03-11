@@ -6,7 +6,7 @@ on:
       - v*.*.*-rc.*
   release:
     types:
-      - created
+      - published
 
 jobs:
   build:
