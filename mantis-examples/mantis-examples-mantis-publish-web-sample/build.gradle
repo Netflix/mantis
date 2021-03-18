@@ -17,9 +17,9 @@
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
         maven {
-            url "https://dl.bintray.com/netflixoss/maven"
+            url "https://artifactory-oss.prod.netflix.net/artifactory/maven-oss-releases"
         }
     }
 }
