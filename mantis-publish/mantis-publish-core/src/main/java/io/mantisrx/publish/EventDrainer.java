@@ -110,7 +110,7 @@ class EventDrainer implements Runnable {
                         streamEventList.clear();
                     }
                 } catch (Exception e) {
-                    LOG.error("Exception processing events for stream {}", stream, e);
+                    LOG.warn("Exception processing events for stream {}", stream, e);
                     final int finalQueueDepth = queueDepth;
                     streamManager.getStreamMetrics(stream)
                             .ifPresent(m -> {
