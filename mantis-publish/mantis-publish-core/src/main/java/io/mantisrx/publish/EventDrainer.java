@@ -81,6 +81,7 @@ class EventDrainer implements Runnable {
             for (String stream : streams) {
                 final List<Event> streamEventList = new ArrayList<>();
 
+                int queueDepth = 0;
                 try {
                     final Optional<BlockingQueue<Event>> streamQueueO = streamManager.getQueueForStream(stream);
 
@@ -88,15 +89,16 @@ class EventDrainer implements Runnable {
                         BlockingQueue<Event> streamEventQ = streamQueueO.get();
                         streamEventQ.drainTo(streamEventList);
 
-                        int queueDepth = streamEventList.size();
+                        queueDepth = streamEventList.size();
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("Queue drained size: {} for stream {}", queueDepth, stream);
                         }
 
+                        final int finalQueueDepth = queueDepth;
                         streamManager.getStreamMetrics(stream)
                                 .ifPresent(m -> {
-                                    m.getMantisEventsQueuedGauge().set((double) queueDepth);
-                                    if (queueDepth > 0) {
+                                    m.getMantisEventsQueuedGauge().set((double) finalQueueDepth);
+                                    if (finalQueueDepth > 0) {
                                         m.updateLastEventOnStreamTimestamp();
                                     }
                                 });
@@ -108,7 +110,12 @@ class EventDrainer implements Runnable {
                         streamEventList.clear();
                     }
                 } catch (Exception e) {
-                    LOG.warn("Exception processing events for stream {}", stream, e);
+                    LOG.error("Exception processing events for stream {}", stream, e);
+                    final int finalQueueDepth = queueDepth;
+                    streamManager.getStreamMetrics(stream)
+                            .ifPresent(m -> {
+                                m.getMantisEventsDroppedProcessingExceptionCounter().increment(finalQueueDepth);
+                            });
                 }
             }
             final long processingTime = clock.millis() - startTime;

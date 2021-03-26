@@ -29,6 +29,7 @@ public class StreamMetrics {
     private final String streamName;
 
     private final Counter mantisEventsDroppedCounter;
+    private final Counter mantisEventsDroppedProcessingExceptionCounter;
     private final Counter mantisEventsProcessedCounter;
     private final Counter mantisEventsSkippedCounter;
     private final Counter mantisQueryRejectedCounter;
@@ -45,6 +46,8 @@ public class StreamMetrics {
 
         this.mantisEventsDroppedCounter = SpectatorUtils.buildAndRegisterCounter(
                 registry, "mantisEventsDropped", "stream", streamName, "reason", "publisherQueueFull");
+        this.mantisEventsDroppedProcessingExceptionCounter = SpectatorUtils.buildAndRegisterCounter(
+                registry, "mantisEventsDropped", "stream", streamName, "reason", "processingException");
         this.mantisEventsProcessedCounter = SpectatorUtils.buildAndRegisterCounter(
                 registry, "mantisEventsProcessed", "stream", streamName);
         this.mantisEventsSkippedCounter = SpectatorUtils.buildAndRegisterCounter(
@@ -71,6 +74,10 @@ public class StreamMetrics {
 
     public Counter getMantisEventsDroppedCounter() {
         return mantisEventsDroppedCounter;
+    }
+
+    public Counter getMantisEventsDroppedProcessingExceptionCounter() {
+        return mantisEventsDroppedProcessingExceptionCounter;
     }
 
     public Counter getMantisEventsProcessedCounter() {
