@@ -35,16 +35,26 @@ public class Event {
     private static final AtomicBoolean ERROR_LOG_ENABLED = new AtomicBoolean(true);
 
     private static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
+    static {
+        JACKSON_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    }
+
     private final Map<String, Object> attributes;
 
     public Event() {
-        this(null, false);
+        this(null);
     }
 
     public Event(Map<String, Object> attributes) {
-        this(attributes, false);
+        this(attributes, true);
     }
 
+    /**
+     * @deprecated
+     * Use {@link #Event(Map)} instead where <code>deepCopy</code> is default to true. Always creates a new top level
+     * Map to avoid any exceptions due to immutable map.
+     */
+    @Deprecated
     public Event(Map<String, Object> attributes, boolean deepCopy) {
         if (attributes == null || deepCopy) {
             this.attributes = new HashMap<>();
@@ -54,8 +64,6 @@ public class Event {
         } else {
             this.attributes = attributes;
         }
-
-        JACKSON_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
     public Event set(String key, Object value) {
