@@ -49,6 +49,11 @@ public class Event {
         this(attributes, true);
     }
 
+    /**
+     * @deprecated
+     * Use {@link #Event(Map)} instead where <code>deepCopy</code> is default to true. Always creates a new top level
+     * Map to avoid any exceptions due to immutable map.
+     */
     @Deprecated
     public Event(Map<String, Object> attributes, boolean deepCopy) {
         if (attributes == null || deepCopy) {
