@@ -7,6 +7,7 @@ can be helpful for debugging OOMs. Below are the steps to start profiling your r
     tar -xzvf <zulu_mission_control_package>.tar.gz
     ```
  1. Run ZMC.
+
     !!! note
         On Mac the `Zulu Mission Control` app is actually a directory even though it has an icon.
         The `zmc` executable is inside and needs to be called directly.
@@ -23,6 +24,7 @@ can be helpful for debugging OOMs. Below are the steps to start profiling your r
     ```
     ssh -L 7156:127.0.0.1:7156 100.82.159.148
     ```
+
     !!! note
         Tunneling is only required if you can't access the Mantis worker's ip directly.
 
