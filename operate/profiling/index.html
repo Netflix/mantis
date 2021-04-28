@@ -14,7 +14,7 @@
     
     
       
-        <title>Tuning - Mantis</title>
+        <title>Memory and CPU Profiling - Mantis</title>
       
     
     
@@ -64,11 +64,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#background" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -94,7 +89,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tuning
+              Memory and CPU Profiling
             
           </span>
         </div>
@@ -679,61 +674,11 @@
             
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Tuning
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../tuning/" class="md-nav__link">
         Tuning
       </a>
-      
-        
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#background" class="md-nav__link">
-    Background
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mantis-jobs" class="md-nav__link">
-    Mantis Jobs
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#kafka-source-jobs" class="md-nav__link">
-    Kafka Source Jobs
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -765,11 +710,19 @@
             
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../profiling/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Memory and CPU Profiling
       </a>
+      
     </li>
   
 
@@ -1063,156 +1016,68 @@
               </div>
             
             
-              
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#background" class="md-nav__link">
-    Background
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mantis-jobs" class="md-nav__link">
-    Mantis Jobs
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#kafka-source-jobs" class="md-nav__link">
-    Kafka Source Jobs
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
           
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/netflix/mantis/edit/master/docs/operate/tuning.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/operate/profiling.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                  <h1>Tuning</h1>
+                  <h1>Memory and CPU Profiling</h1>
                 
-                <h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
-<p><a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a> consist of one or more independent <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">stages</a>. Since stages are independent of one
-another, they are also sized independently.</p>
-<p>Stages have one or more <a href="../../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">workers</a>, which are the fundamental unit of parallelism for a stage.
-Workers execute individual instances of a stage and are each allocated CPU, memory, disk, and
-network resources. Workers are also isolated from one another, which means they process events
-independently of each other using their own dedicated resources.</p>
-<p>You can horizontally scale your Mantis Jobs by modifying the number of workers of your stages. You
-can also vertically scale your Mantis Jobs by tuning the number of resources for each worker.</p>
-<p>The following sections are guidelines for sizing different types of Mantis Jobs.</p>
+                <p>Mantis allows you to directly connect profiling tools to workers in order to do performance or memory profiling. This
+can be helpful for debugging OOMs. Below are the steps to start profiling your running Mantis job:</p>
+<ol>
+<li>Download a profiling tool. We recommend <a href="https://www.azul.com/products/zulu-mission-control/">Zulu Mission Control (ZMC)</a>.</li>
+<li>Untar ZMC
+    <code>tar -xzvf &lt;zulu_mission_control_package&gt;.tar.gz</code></li>
+<li>
+<p>Run ZMC.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can modify worker resources any time, even after you have already launched the Mantis Job.
-This is useful in cases where you might want to adjust your Mantis Job to new traffic patterns.
-You can do this by marking your stage as <em>Stage is Scalable</em>.</p>
-<p>You can also mark the stage as <em>AutoScale this stage</em> to have Mantis automatically scale the
-stage.</p>
-<p>You can horizontally scale your Mantis Jobs without restarting the entire job. However,
-vertically scaling your jobs requires a new job submission for changes to take effect.</p>
+<p>On Mac the <code>Zulu Mission Control</code> app is actually a directory even though it has an icon.
+The <code>zmc</code> executable is inside and needs to be called directly.</p>
 </div>
-<h2 id="mantis-jobs">Mantis Jobs<a class="headerlink" href="#mantis-jobs" title="Permanent link">&para;</a></h2>
-<p>In addition to scaling the number of workers of a Mantis Job, you should consider tuning your
-workers, which have two tunable properties: processing resources and processing parallelism.</p>
-<p>For <strong>processing resources</strong>, you should generally determine if <strong>CPU</strong>, <strong>memory</strong>, or <strong>network
-resources</strong> will be a bottleneck in your processing. You should increase:</p>
-<ul>
-<li>the number of CPUs if your job has CPU-intensive transformations such as serialization and
-  deserialization</li>
-<li>memory if your job plans to hold many objects or large objects in memory</li>
-<li>network resources if your job needs high throughput for network I/O such as external API calls</li>
-</ul>
-<p>For <strong>processing parallelism</strong>, you must choose between <strong>serial</strong> or <strong>concurrent input</strong>
-processing for each stage.</p>
-<p><strong>Serial input</strong> processing means your <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> will receive and process events within a
-single thread. With serial input, you lose parallelism but your processing logic becomes
-straightforward without race conditions.</p>
-<div class="codehilite"><pre><span></span><code><span class="c1">// Specifying serial input for a stage.</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SerialStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="p">{</span>
-    <span class="kd">static</span> <span class="kd">public</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">()</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span><span class="p">().</span><span class="na">serialInput</span><span class="p">();</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div>
-
-<p><strong>Concurrent input</strong> means your <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> will have multiple threads which each receive and
-process events. With concurrent input enabled, race conditions must be considered because the stage’s
-threads operate independently from one another and may process events at different speeds.</p>
-<div class="codehilite"><pre><span></span><code><span class="c1">// Specifying concurrent input for a stage.</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SerialStage</span> <span class="kd">implements</span> <span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="p">{</span>
-    <span class="kd">static</span> <span class="kd">public</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span> <span class="nf">config</span><span class="p">()</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="o">&gt;</span><span class="p">().</span><span class="na">concurrentInput</span><span class="p">();</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div>
-
+<p><code>&lt;your dir&gt;/&lt;zulu_mission_control_package&gt;/Zulu\ Mission\ Control.app/Contents/MacOS/zmc</code>
+ 1. Find a worker you want to debug in your job and click on it to get its <strong>ip address</strong> and <strong>debug port</strong> In this
+example these are <code>100.82.159.148</code> and <code>7156</code> respectively.</p>
+<p><img alt="Worker Debug URL" src="../../images/profiling/workerDebugURL.png" /></p>
+</li>
+<li>
+<p>Setup an SSH tunnel with local portforwarding for your worker and port. The tunnel command for the example worker
+    in the previous step would be:
+    <code>ssh -L 7156:127.0.0.1:7156 100.82.159.148</code></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Workers use serial input by default.</p>
+<p>Tunneling is only required if you can't access the Mantis worker's ip directly.</p>
 </div>
-<h2 id="kafka-source-jobs">Kafka Source Jobs<a class="headerlink" href="#kafka-source-jobs" title="Permanent link">&para;</a></h2>
-<p><a href="../../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a>  <a href="../../glossary#sourcejob" title="A Source Job is a Mantis Job that you can use as a Source, which wraps a data source external to Mantis and makes it easier for you to create a job that observes its data.">Source Jobs</a> are Mantis Jobs that share the same properties described above, except Kafka
-Source Jobs use concurrent input processing by default. There are additional job <a href="../../glossary#parameter" title="A Mantis Job may accept parameters that modify its behavior. You can define these in your Job Cluster definition, and set their values on a per-Job basis.">parameters</a> to
-consider when tuning Kafka Source Jobs: <code>numConsumerInstances</code> and <code>stageConcurrency</code>.</p>
-<p>The <code>numConsumerInstances</code> <a href="../../glossary#property" title="A property is a particular named data value found within events in an event stream.">property</a> <!-- "property" or "parameter" (see previous paragraph)? --> determines how many Kafka consumers will be created for
-each worker. For example, if you have <code>numConsumerInstances</code> set to <code>2</code> and have 5 workers,
-then you will have 10 Kafka consumers in total for your Mantis Job consuming from a Kafka topic.</p>
-<p>The <code>stageConcurrency</code> property determines a pool of threads which receive events by the
-Kafka consumers. You can control your processing parallelism with this property. For example,
-if you have <code>numConsumerInstances</code> set to <code>2</code> and <code>stageConcurrency</code> set to 5 on a worker,
-then two Kafka consumers will read events from a Kafka topic and asynchronously send them to a
-pool of 5 processing threads.</p>
-<p>There are three considerations for using <code>numConsumerInstances</code> and <code>stageConcurrency</code> to tune your
-Kafka Source Job.</p>
-<p>First, you can pin <code>numConsumerInstances</code> to <code>1</code> and add more workers to load balance Kafka
-consumers across worker instances.</p>
-<p>If you find that your workers are under-utilized, you can increase <code>numConsumerInstances</code> for each
-worker. You can also give each worker more CPU, memory, and network resources and
-increase <code>numConsumerInstances</code> further so that you have fewer workers doing more work.</p>
-<p>Lastly, if you find that your Kafka topic’s lag is increasing, then processing might be a
-bottleneck. In this case, you can increase <code>stageConcurrency</code> to increase processing throughput.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Adding more workers to scale your Kafka Source Jobs to increase throughput or address lag has a
-hard upper limit. Ensure that you do not have more Kafka consumers than the number of partitions
-of the Kafka topic that your job is reading from. Specifically, ensure that:</p>
-<p><span><span class="MathJax_Preview">(numConsumerInstances × numberOfWorkers) ≤ numberOfPartitions</span><script type="math/tex">(numConsumerInstances × numberOfWorkers) ≤ numberOfPartitions</script></span></p>
-<p>This is because the number of partitions is a Kafka topic’s upper bound for parallelism. If you
-exceed this number, then you will have idle consumers wasting resources which means adding more
-workers to your Kafka Source Job will not have any positive effect.</p>
-</div>
-<!-- Do not edit below this line -->
-<!-- START -->
-<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
-<!-- END -->
+</li>
+<li>
+<p>After setting up local port forwarding. Add the worker JVM to ZMC by clicking the plug and star icon in the top right corner.</p>
+<p><img alt="ZMC add VM" src="../../images/profiling/zmcAddVM.png" /></p>
+</li>
+<li>
+<p>Input your mantis worker information</p>
+<p><img alt="ZMC VM Info" src="../../images/profiling/zmcAddVMDialogue.png" /></p>
+</li>
+<li>
+<p>Start the flight recorder</p>
+<p><img alt="Start Profiling" src="../../images/profiling/zmcJFRDialogue.png" /></p>
+</li>
+<li>
+<p>Wait for the Flight recording to complete</p>
+<p><img alt="JFR running" src="../../images/profiling/pendingJFR.png" /></p>
+</li>
+<li>
+<p>Look at the collected profiling info. Below is an example of the memory profiling results. You can see the 
+    percentage of the heap occuppied by different objects, and some stack profiling information about where the
+    allocations happen.</p>
+<p><img alt="Profiling results" src="../../images/profiling/zmcProfilingResults.png" /></p>
+</li>
+</ol>
                 
               
               
@@ -1231,7 +1096,7 @@ workers to your Kafka Source Job will not have any positive effect.</p>
   
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
-        <a href="../../develop/connectors/iceberg/" class="md-footer__link md-footer__link--prev" rel="prev">
+        <a href="../autoscalingstrategies/" class="md-footer__link md-footer__link--prev" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1240,19 +1105,19 @@ workers to your Kafka Source Job will not have any positive effect.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Iceberg (Beta)
+              Autoscaling Strategies
             </div>
           </div>
         </a>
       
       
-        <a href="../autoscaling/" class="md-footer__link md-footer__link--next" rel="next">
+        <a href="../../reference/mql/" class="md-footer__link md-footer__link--next" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Autoscaling
+              MQL
             </div>
           </div>
           <div class="md-footer__button md-icon">
