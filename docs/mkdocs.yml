@@ -30,6 +30,7 @@ nav:
     - 'Tuning': 'operate/tuning.md'
     - 'Autoscaling': 'operate/autoscaling.md'
     - 'Autoscaling Strategies': 'operate/autoscalingstrategies.md'
+    - 'Memory and CPU Profiling': 'operate/profiling.md'
   - 'Reference':
     - 'MQL': 'reference/mql.md'
     - 'Job DSL': 'reference/dsl.md'
