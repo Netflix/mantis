@@ -19,12 +19,12 @@ import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -63,14 +63,11 @@ public class SseWorkerConnectionTest {
         MetricsRegistry.getInstance().registerAndGet(metrics);
         TestScheduler testScheduler = Schedulers.test();
 
-        List<ServerSentEvent> content = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            content.add(new ServerSentEvent(Unpooled.copiedBuffer(Integer.toString(i), Charset.defaultCharset())));
-        }
+        // Events are just "0", "1", "2", ...
+        Observable<ServerSentEvent> contentObs = Observable.interval(1, TimeUnit.SECONDS, testScheduler)
+                .map(t -> new ServerSentEvent(Unpooled.copiedBuffer(Long.toString(t), Charset.defaultCharset())));
 
-        Observable<ServerSentEvent> contentObs = Observable.interval(1, TimeUnit.SECONDS, testScheduler).map(t -> new ServerSentEvent(Unpooled.copiedBuffer(Long.toString(t), Charset.defaultCharset())));
-
-        when(response.getContent()).thenReturn(/*Observable.from(content)*/contentObs);
+        when(response.getContent()).thenReturn(contentObs);
 
         TestSubscriber<MantisServerSentEvent> subscriber = new TestSubscriber<>(1);
 
@@ -78,6 +75,8 @@ public class SseWorkerConnectionTest {
 
         testScheduler.advanceTimeBy(100, TimeUnit.SECONDS);
         subscriber.assertValueCount(1);
+        List<MantisServerSentEvent> events = subscriber.getOnNextEvents();
+        assertEquals("0", events.get(0).getEventAsString());
         logger.info("next: {}", onNextCounter.value());
         logger.info("drop: {}", droppedCounter.value());
         assertTrue(onNextCounter.value() < 10);
