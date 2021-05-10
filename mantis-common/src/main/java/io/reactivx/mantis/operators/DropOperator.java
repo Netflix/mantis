@@ -113,10 +113,9 @@ public class DropOperator<T> implements Operator<T, T> {
             public void onNext(T t) {
 
                 if (requested.get() > 0) {
+                    requested.decrementAndGet();
                     o.onNext(t);
                     next.increment();
-                    requested.decrementAndGet();
-
                 } else {
 
                     dropped.increment();

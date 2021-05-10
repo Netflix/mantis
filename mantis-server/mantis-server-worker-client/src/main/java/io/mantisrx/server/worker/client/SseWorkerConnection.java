@@ -252,7 +252,7 @@ public class SseWorkerConnection {
                 }
     }
 
-    private Observable<MantisServerSentEvent> streamContent(HttpClientResponse<ServerSentEvent> response,
+    protected Observable<MantisServerSentEvent> streamContent(HttpClientResponse<ServerSentEvent> response,
                                                             final Action1<Boolean> updateDataRecvngStatus,
                                                             final long dataRecvTimeoutSecs, String delimiter) {
         long interval = Math.max(1, dataRecvTimeoutSecs / 2);
@@ -297,7 +297,7 @@ public class SseWorkerConnection {
                         return Observable.error(new SseException(ErrorType.Retryable, "Got error SSE event: " + t1.contentAsString()));
                     }
                     return Observable.just(t1.contentAsString());
-                })
+                }, 1)
                 .filter(data -> {
                     if (data.startsWith("ping")) {
                         pingCounter.increment();
@@ -308,7 +308,7 @@ public class SseWorkerConnection {
                 .flatMapIterable((data) -> {
                     boolean useSnappy = true;
                     return CompressionUtils.decompressAndBase64Decode(data, compressedBinaryInputEnabled, useSnappy, delimiter);
-                })
+                }, 1)
                 .takeUntil(shutdownSubject)
                 .takeWhile((event) -> !isShutdown);
     }
