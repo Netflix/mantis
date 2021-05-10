@@ -252,7 +252,7 @@ public class SseWorkerConnection {
                 }
     }
 
-    private Observable<MantisServerSentEvent> streamContent(HttpClientResponse<ServerSentEvent> response,
+    protected Observable<MantisServerSentEvent> streamContent(HttpClientResponse<ServerSentEvent> response,
                                                             final Action1<Boolean> updateDataRecvngStatus,
                                                             final long dataRecvTimeoutSecs, String delimiter) {
         long interval = Math.max(1, dataRecvTimeoutSecs / 2);
