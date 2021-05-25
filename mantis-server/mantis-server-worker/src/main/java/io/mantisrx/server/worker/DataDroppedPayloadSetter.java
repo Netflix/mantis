@@ -24,7 +24,6 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.ON_NEXT_COUNT;
 import java.util.Collection;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
@@ -43,10 +42,7 @@ class DataDroppedPayloadSetter {
 
     private static final String metricNamePrefix = DROP_OPERATOR_INCOMING_METRIC_GROUP;
     private static final Logger logger = LoggerFactory.getLogger(DataDroppedPayloadSetter.class);
-    private static final double bigIncreaseThreshold = 0.05;
     private final Heartbeat heartbeat;
-    private final AtomicLong prevDroppedCount = new AtomicLong(-1L);
-    private final AtomicLong prevOnNextCount = new AtomicLong(0L);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ScheduledThreadPoolExecutor executor;
 
@@ -68,11 +64,10 @@ class DataDroppedPayloadSetter {
         onNextCountGauge = m.getGauge(ON_NEXT_COUNT);
     }
 
-    private void setPayload(final long intervalSecs) {
+    protected void setPayload(final long intervalSecs) {
         final Collection<Metrics> metrics = MetricsRegistry.getInstance().getMetrics(metricNamePrefix);
         long totalDropped = 0L;
         long totalOnNext = 0L;
-        long delay = intervalSecs;
         try {
             if (metrics != null && !metrics.isEmpty()) {
                 //logger.info("Got " + metrics.size() + " metrics for DropOperator");
@@ -88,10 +83,7 @@ class DataDroppedPayloadSetter {
                     else
                         logger.warn("Unexpected to get null onNext counter for metric " + m.getMetricGroupId().id());
                 }
-                if (!isBigChange(prevDroppedCount.get(), totalDropped))
-                    delay *= 2;
-                final StatusPayloads.DataDropCounts dataDrop = new StatusPayloads.DataDropCounts(totalOnNext - prevOnNextCount.get(),
-                        totalDropped - prevDroppedCount.get());
+                final StatusPayloads.DataDropCounts dataDrop = new StatusPayloads.DataDropCounts(totalOnNext, totalDropped);
                 try {
                     heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, objectMapper.writeValueAsString(dataDrop));
                 } catch (JsonProcessingException e) {
@@ -99,38 +91,19 @@ class DataDroppedPayloadSetter {
                 }
                 dropCountGauge.set(dataDrop.getDroppedCount());
                 onNextCountGauge.set(dataDrop.getOnNextCount());
-
-                prevDroppedCount.set(totalDropped);
-                prevOnNextCount.set(totalOnNext);
             } else
                 logger.info("Got no metrics from DropOperator");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        executor.schedule(new Runnable() {
-            @Override
-            public void run() {
-                setPayload(intervalSecs);
-            }
-        }, delay, TimeUnit.SECONDS);
-    }
-
-    private boolean isBigChange(long prevTotalDropped, long totalDropped) {
-        if (prevTotalDropped < 0L)
-            return true;
-        if (prevTotalDropped == 0)
-            return totalDropped != 0;
-        if (totalDropped == 0)
-            return true;
-        return (double) Math.abs(totalDropped - prevTotalDropped) / (double) totalDropped > bigIncreaseThreshold;
     }
 
     void start(final long intervalSecs) {
-        executor.schedule(new Runnable() {
+        executor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 setPayload(intervalSecs);
             }
-        }, intervalSecs, TimeUnit.SECONDS);
+        }, intervalSecs, intervalSecs, TimeUnit.SECONDS);
     }
 }

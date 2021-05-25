@@ -1,11 +1,12 @@
 package io.mantisrx.server.worker.client;
 
+import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import io.mantisrx.common.metrics.spectator.MetricId;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.netty.buffer.Unpooled;
 import io.reactivx.mantis.operators.DropOperator;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
@@ -22,7 +23,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -34,6 +34,7 @@ public class SseWorkerConnectionTest {
 
     @Test
     public void testStreamContentDrops() throws Exception {
+        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
         String metricGroupString = "testmetric";
         MetricGroupId metricGroupId = new MetricGroupId(metricGroupString);
         SseWorkerConnection workerConnection = new SseWorkerConnection("connection_type",
@@ -50,17 +51,6 @@ public class SseWorkerConnectionTest {
                 true,
                 metricGroupId);
         HttpClientResponse<ServerSentEvent> response = mock(HttpClientResponse.class);
-        Metrics metrics = mock(Metrics.class);
-        Counter onNextCounter = new CounterImpl(new MetricId(metricGroupString, DropOperator.Counters.onNext.toString()));
-        Counter onErrorCounter = new CounterImpl(new MetricId(metricGroupString, DropOperator.Counters.onError.toString()));
-        Counter onCompleteCounter = new CounterImpl(new MetricId(metricGroupString, DropOperator.Counters.onComplete.toString()));
-        Counter droppedCounter = new CounterImpl(new MetricId(metricGroupString, DropOperator.Counters.dropped.toString()));
-        when(metrics.getMetricGroupId()).thenReturn(metricGroupId);
-        when(metrics.getCounter(DropOperator.Counters.onNext.toString())).thenReturn(onNextCounter);
-        when(metrics.getCounter(DropOperator.Counters.onError.toString())).thenReturn(onErrorCounter);
-        when(metrics.getCounter(DropOperator.Counters.onComplete.toString())).thenReturn(onCompleteCounter);
-        when(metrics.getCounter(DropOperator.Counters.dropped.toString())).thenReturn(droppedCounter);
-        MetricsRegistry.getInstance().registerAndGet(metrics);
         TestScheduler testScheduler = Schedulers.test();
 
         // Events are just "0", "1", "2", ...
@@ -77,53 +67,13 @@ public class SseWorkerConnectionTest {
         subscriber.assertValueCount(1);
         List<MantisServerSentEvent> events = subscriber.getOnNextEvents();
         assertEquals("0", events.get(0).getEventAsString());
+
+        Metrics metrics = MetricsRegistry.getInstance().getMetric(metricGroupId);
+        Counter onNextCounter = metrics.getCounter(DropOperator.Counters.onNext.toString());
+        Counter droppedCounter = metrics.getCounter(DropOperator.Counters.dropped.toString());
         logger.info("next: {}", onNextCounter.value());
         logger.info("drop: {}", droppedCounter.value());
         assertTrue(onNextCounter.value() < 10);
         assertTrue(droppedCounter.value() > 90);
-    }
-
-    public static class CounterImpl implements Counter {
-        private final AtomicLong count = new AtomicLong();
-        private final MetricId id;
-
-        public CounterImpl(MetricId id) {
-            this.id = id;
-        }
-
-        @Override
-        public void increment() {
-            count.incrementAndGet();
-        }
-
-        @Override
-        public void increment(long x) {
-            count.addAndGet(x);
-        }
-
-        @Override
-        public long value() {
-            return count.get();
-        }
-
-        @Override
-        public long rateValue() {
-            return -1;
-        }
-
-        @Override
-        public long rateTimeInMilliseconds() {
-            return -1;
-        }
-
-        @Override
-        public String event() {
-            return null;
-        }
-
-        @Override
-        public MetricId id() {
-            return id;
-        }
     }
 }
