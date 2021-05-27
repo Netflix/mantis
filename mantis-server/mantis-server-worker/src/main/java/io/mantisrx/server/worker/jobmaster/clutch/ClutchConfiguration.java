@@ -31,14 +31,18 @@ public class ClutchConfiguration {
     public final Option<Double> panicThresholdSeconds;
     public final Option<Double> maxAdjustment;
     public final Option<Boolean> useExperimental;
+    public final Option<Double> integralDecay;
 
     public final Option<ClutchPIDConfig> cpu;
     public final Option<ClutchPIDConfig> memory;
     public final Option<ClutchPIDConfig> network;
     public final Option<ClutchRpsPIDConfig> rpsConfig;
 
-    @java.beans.ConstructorProperties( {"minSize", "maxSize", "rps", "minSamples", "cooldownSeconds", "panicThresholdSeconds", "maxAdjustment", "cpu", "memory", "network", "rpsConfig", "useExperimental"})
-    public ClutchConfiguration(int minSize, int maxSize, double rps, Option<Long> minSamples, Option<Long> cooldownSeconds, Option<Double> panicThresholdSeconds, Option<Double> maxAdjustment, Option<ClutchPIDConfig> cpu, Option<ClutchPIDConfig> memory, Option<ClutchPIDConfig> network, Option<ClutchRpsPIDConfig> rpsConfig, Option<Boolean> useExperimental) {
+    @java.beans.ConstructorProperties( {"minSize", "maxSize", "rps", "minSamples", "cooldownSeconds", "panicThresholdSeconds", "maxAdjustment", "cpu", "memory", "network", "rpsConfig", "useExperimental", "integralDecay"})
+    public ClutchConfiguration(int minSize, int maxSize, double rps, Option<Long> minSamples, Option<Long> cooldownSeconds,
+                               Option<Double> panicThresholdSeconds, Option<Double> maxAdjustment, Option<ClutchPIDConfig> cpu,
+                               Option<ClutchPIDConfig> memory, Option<ClutchPIDConfig> network, Option<ClutchRpsPIDConfig> rpsConfig,
+                               Option<Boolean> useExperimental, Option<Double> integralDecay) {
         this.minSize = minSize;
         this.maxSize = maxSize;
         this.rps = rps;
@@ -51,6 +55,7 @@ public class ClutchConfiguration {
         this.network = network;
         this.rpsConfig = rpsConfig;
         this.useExperimental = useExperimental;
+        this.integralDecay = integralDecay;
     }
 
     public int getMinSize() {
@@ -83,6 +88,10 @@ public class ClutchConfiguration {
 
     public Option<Boolean> getUseExperimental() {
         return this.useExperimental;
+    }
+
+    public Option<Double> getIntegralDecay() {
+        return this.integralDecay;
     }
 
     public Option<ClutchPIDConfig> getCpu() {
@@ -139,6 +148,10 @@ public class ClutchConfiguration {
         final Object this$useExperimental = this.getUseExperimental();
         final Object other$useExperimental = other.getUseExperimental();
         if (this$useExperimental == null ? other$useExperimental != null : !this$useExperimental.equals(other$useExperimental)) return false;
+        final Object this$integralDecay = this.getIntegralDecay();
+        final Object other$integralDecay = other.getIntegralDecay();
+        if (this$integralDecay == null ? other$integralDecay != null : !this$integralDecay.equals(other$integralDecay))
+            return false;
         return true;
     }
 
@@ -167,10 +180,17 @@ public class ClutchConfiguration {
         result = result * PRIME + ($rpsConfig == null ? 43 : $rpsConfig.hashCode());
         final Object $useExperimental = this.getUseExperimental();
         result = result * PRIME + ($useExperimental == null ? 43 : $useExperimental.hashCode());
+        final Object $integralDecay = this.getIntegralDecay();
+        result = result * PRIME + ($integralDecay == null ? 43 : $integralDecay.hashCode());
         return result;
     }
 
     public String toString() {
-        return "ClutchConfiguration(minSize=" + this.getMinSize() + ", maxSize=" + this.getMaxSize() + ", rps=" + this.getRps() + ", minSamples=" + this.getMinSamples() + ", cooldownSeconds=" + this.getCooldownSeconds() + ", panicThresholdSeconds=" + this.getPanicThresholdSeconds() + ", maxAdjustment=" + this.getMaxAdjustment() + ", cpu=" + this.getCpu() + ", memory=" + this.getMemory() + ", network=" + this.getNetwork() + ", rpsConfig=" + this.getRpsConfig() + ", useExperimental=" + this.getUseExperimental() + ")";
+        return "ClutchConfiguration(minSize=" + this.getMinSize() + ", maxSize=" + this.getMaxSize() + ", rps=" + this.getRps() +
+                ", minSamples=" + this.getMinSamples() + ", cooldownSeconds=" + this.getCooldownSeconds() +
+                ", panicThresholdSeconds=" + this.getPanicThresholdSeconds() + ", maxAdjustment=" + this.getMaxAdjustment() +
+                ", cpu=" + this.getCpu() + ", memory=" + this.getMemory() + ", network=" + this.getNetwork() +
+                ", rpsConfig=" + this.getRpsConfig() + ", useExperimental=" + this.getUseExperimental() +
+                ", integralDecay=" + this.getIntegralDecay() + ")";
     }
 }

@@ -359,6 +359,7 @@ public class JobAutoScalerTest {
     public void testGetClutchConfigurationFromJson() throws Exception {
         String json = "{" +
                 "  \"cooldownSeconds\": 100," +
+                "  \"integralDecay\": 0.7," +
                 "  \"rpsConfig\": {" +
                 "    \"scaleUpAbovePct\": 30.0," +
                 "    \"scaleUpMultiplier\": 1.5" +
@@ -369,6 +370,7 @@ public class JobAutoScalerTest {
 
         ClutchRpsPIDConfig expected = new ClutchRpsPIDConfig(0.0, Tuple.of(30.0, 0.0), 0.0, 0.0, Option.of(75.0), Option.of(30.0), Option.of(0.0), Option.of(1.5), Option.of(1.0));
         assertEquals(Option.of(100L), config.getCooldownSeconds());
+        assertEquals(0.7, config.getIntegralDecay().get(), 1e-10);
         assertEquals(expected, config.getRpsConfig().get());
 
         json = "{" +

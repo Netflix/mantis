@@ -44,7 +44,8 @@ public class RpsClutchConfigurationSelectorTest {
 
         ClutchRpsPIDConfig rpsConfig = new ClutchRpsPIDConfig(0.0, Tuple.of(20.0, 10.0), 0, 0, Option.none(), Option.none(), Option.none(), Option.none(), Option.none());
         io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig = new io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration(
-                1, 10, 0, Option.none(), Option.of(300L), Option.none(), Option.none(), Option.none(), Option.none(), Option.none(), Option.of(rpsConfig), Option.none());
+                1, 10, 0, Option.none(), Option.of(300L), Option.none(), Option.none(), Option.none(), Option.none(), Option.none(), Option.of(rpsConfig), Option.none(),
+                Option.of(0.7));
 
         StageSchedulingInfo schedulingInfo = new StageSchedulingInfo(3, null, null, null, null, true);
         RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, customConfig);
@@ -57,6 +58,7 @@ public class RpsClutchConfigurationSelectorTest {
         assertEquals(10, config.getMaxSize());
         assertEquals(Tuple.of(20.0, 10.0), config.getRope());
         assertEquals(300L, config.getCooldownInterval());
+        assertEquals(0.7, config.getIntegralDecay(), 1e-10);
     }
 
     @Test

@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> {
-    private static final double INTEGRAL_DECAY = 0.9;
+    private static final double DEFAULT_INTEGRAL_DECAY = 0.9;
     private final Integer stageNumber;
     private final StageSchedulingInfo stageSchedulingInfo;
     private final io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig;
@@ -48,9 +48,9 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         // before an action is taken.
         long deltaT = getCooldownSecs() / 30l;
 
-        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(INTEGRAL_DECAY, deltaT);
+        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralDecay(), deltaT);
         double ki = 0.0;
-        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(INTEGRAL_DECAY, deltaT);
+        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralDecay(), deltaT);
 
         ClutchConfiguration config = com.netflix.control.clutch.ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
@@ -58,7 +58,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
                 .kp(kp)
                 .ki(ki)
                 .kd(kd)
-                .integralDecay(INTEGRAL_DECAY)
+                .integralDecay(getIntegralDecay())
                 .minSize(getMinSize())
                 .maxSize(getMaxSize())
                 .rope(rope)
@@ -128,6 +128,13 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
             return stageSchedulingInfo.getScalingPolicy().getCoolDownSecs();
         }
         return 0;
+    }
+
+    private double getIntegralDecay() {
+        if (customConfig != null && customConfig.getIntegralDecay().isDefined()) {
+            return customConfig.getIntegralDecay().get();
+        }
+        return DEFAULT_INTEGRAL_DECAY;
     }
 
     private boolean isSimilarToPreviousConfig(ClutchConfiguration curConfig) {
