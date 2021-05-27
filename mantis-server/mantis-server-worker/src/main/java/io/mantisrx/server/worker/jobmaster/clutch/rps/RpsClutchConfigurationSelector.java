@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> {
-    private static final double DEFAULT_INTEGRAL_DECAY = 0.9;
+    private static final double DEFAULT_INTEGRAL_DECAY = 0.1;
     private final Integer stageNumber;
     private final StageSchedulingInfo stageSchedulingInfo;
     private final io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig;
@@ -132,9 +132,9 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
 
     private double getIntegralDecay() {
         if (customConfig != null && customConfig.getIntegralDecay().isDefined()) {
-            return customConfig.getIntegralDecay().get();
+            return 1.0 - customConfig.getIntegralDecay().get();
         }
-        return DEFAULT_INTEGRAL_DECAY;
+        return 1.0 - DEFAULT_INTEGRAL_DECAY;
     }
 
     private boolean isSimilarToPreviousConfig(ClutchConfiguration curConfig) {
