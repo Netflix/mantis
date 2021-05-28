@@ -579,6 +579,10 @@ public class JobClusterTest {
                     .withJobState(JobState.Completed)
                     .build();
             when(jobStoreMock.getArchivedJob(any())).thenReturn(of(completedJobMock));
+            doAnswer((Answer) invocation -> {
+                storeCompletedCalled.countDown();
+                return null;
+            }).when(jobStoreMock).storeCompletedJobForCluster(any(),any());
 
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
 
@@ -617,11 +621,6 @@ public class JobClusterTest {
             verify(jobStoreMock,times(2)).updateJob(any());
 
             verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
-
-            doAnswer((Answer) invocation -> {
-                storeCompletedCalled.countDown();
-                return null;
-            }).when(jobStoreMock).storeCompletedJobForCluster(any(),any());
 
             storeCompletedCalled.await(1, TimeUnit.SECONDS);
 

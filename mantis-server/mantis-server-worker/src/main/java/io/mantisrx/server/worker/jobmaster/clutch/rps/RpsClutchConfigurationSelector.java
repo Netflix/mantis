@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> {
-    private static final double INTEGRAL_DECAY = 0.9;
+    private static final double DEFAULT_INTEGRAL_DECAY = 0.1;
     private final Integer stageNumber;
     private final StageSchedulingInfo stageSchedulingInfo;
     private final io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration customConfig;
@@ -48,9 +48,9 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         // before an action is taken.
         long deltaT = getCooldownSecs() / 30l;
 
-        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(INTEGRAL_DECAY, deltaT);
+        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralScaler(), deltaT);
         double ki = 0.0;
-        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(INTEGRAL_DECAY, deltaT);
+        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralScaler(), deltaT);
 
         ClutchConfiguration config = com.netflix.control.clutch.ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
@@ -58,7 +58,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
                 .kp(kp)
                 .ki(ki)
                 .kd(kd)
-                .integralDecay(INTEGRAL_DECAY)
+                .integralDecay(getIntegralScaler())
                 .minSize(getMinSize())
                 .maxSize(getMaxSize())
                 .rope(rope)
@@ -130,6 +130,13 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         return 0;
     }
 
+    private double getIntegralScaler() {
+        if (customConfig != null && customConfig.getIntegralDecay().isDefined()) {
+            return 1.0 - customConfig.getIntegralDecay().get();
+        }
+        return 1.0 - DEFAULT_INTEGRAL_DECAY;
+    }
+
     private boolean isSimilarToPreviousConfig(ClutchConfiguration curConfig) {
         if (prevConfig == null) {
             return false;
@@ -141,10 +148,10 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         return curSetPoint >= prevSetPoint * 0.95 && curSetPoint <= prevSetPoint * 1.05;
     }
 
-    private double getCumulativeIntegralDivisor(double integralDecay, long count) {
+    private double getCumulativeIntegralDivisor(double integralScaler, long count) {
         double result = 0.0;
         for (int i = 0; i < count; i++) {
-            result = result * integralDecay + 1.0;
+            result = result * integralScaler + 1.0;
         }
         return result;
     }
