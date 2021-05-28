@@ -48,9 +48,9 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         // before an action is taken.
         long deltaT = getCooldownSecs() / 30l;
 
-        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralDecay(), deltaT);
+        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralScaler(), deltaT);
         double ki = 0.0;
-        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralDecay(), deltaT);
+        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralScaler(), deltaT);
 
         ClutchConfiguration config = com.netflix.control.clutch.ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
@@ -58,7 +58,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
                 .kp(kp)
                 .ki(ki)
                 .kd(kd)
-                .integralDecay(getIntegralDecay())
+                .integralDecay(getIntegralScaler())
                 .minSize(getMinSize())
                 .maxSize(getMaxSize())
                 .rope(rope)
@@ -130,7 +130,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         return 0;
     }
 
-    private double getIntegralDecay() {
+    private double getIntegralScaler() {
         if (customConfig != null && customConfig.getIntegralDecay().isDefined()) {
             return 1.0 - customConfig.getIntegralDecay().get();
         }
@@ -148,10 +148,10 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         return curSetPoint >= prevSetPoint * 0.95 && curSetPoint <= prevSetPoint * 1.05;
     }
 
-    private double getCumulativeIntegralDivisor(double integralDecay, long count) {
+    private double getCumulativeIntegralDivisor(double integralScaler, long count) {
         double result = 0.0;
         for (int i = 0; i < count; i++) {
-            result = result * integralDecay + 1.0;
+            result = result * integralScaler + 1.0;
         }
         return result;
     }
