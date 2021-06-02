@@ -29,12 +29,12 @@ public class RpsMetricComputerTest {
     public void testApply() {
 
         Map<Clutch.Metric, Double> metrics = ImmutableMap.of(
-                Clutch.Metric.RPS, 1.0,
+                Clutch.Metric.RPS, 1000.0,
                 Clutch.Metric.DROPS, 20.0,
                 Clutch.Metric.LAG, 300.0,
-                Clutch.Metric.SOURCEJOB_DROP, 4000.0
+                Clutch.Metric.SOURCEJOB_DROP, 4.0
         );
         double result = new RpsMetricComputer().apply(null, metrics);
-        assertEquals(4321.0, result, 1e-10);
+        assertEquals(1504.0, result, 1e-10);
     }
 }

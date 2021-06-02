@@ -27,7 +27,7 @@ public class RpsMetricComputer implements IRpsMetricComputer {
         double rps = metrics.get(Clutch.Metric.RPS);
         double lag = metrics.get(Clutch.Metric.LAG);
         double sourceDrops = metrics.get(Clutch.Metric.SOURCEJOB_DROP);
-        double drops = metrics.get(Clutch.Metric.DROPS);
+        double drops = metrics.get(Clutch.Metric.DROPS) / 100.0 * rps;
         return rps + lag + sourceDrops + drops;
     }
 }
