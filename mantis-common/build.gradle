@@ -25,7 +25,7 @@ ext {
 }
 
 dependencies {
-    api project(path: ':mantis-shaded', configuration: 'shadow')
+    api project(":mantis-shaded-wrapper")
     api "com.netflix:mantis-rxnetty:${rootProject.versionRxNetty}.${rootProject.versionSuffixRxNettyShaded}"
     api "io.reactivex:rxjava:$versionRxJava"
     api "io.netty:netty-codec-http:$nettyVersion"

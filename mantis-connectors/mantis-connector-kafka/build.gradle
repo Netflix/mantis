@@ -23,7 +23,7 @@ ext {
 }
 
 dependencies {
-    implementation project(":mantis-shaded")
+    api project(":mantis-shaded-wrapper")
     implementation project(":mantis-runtime")
 
     compile "org.apache.kafka:kafka-clients:$kafkaVersion"

@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-dependencies {
-    api project(":mantis-shaded-wrapper")
+compileJava.dependsOn(tasks.getByPath(':mantis-shaded:publishToMavenLocal'))
 
-    testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+dependencies {
+    compile(group: project.group, name: "mantis-shaded", version: project.version)
 }

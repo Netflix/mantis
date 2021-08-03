@@ -57,14 +57,9 @@ subprojects {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 
-    if (project.hasProperty('useMavenLocal')) {
-        repositories {
-            mavenLocal()
-        }
-    }
-
     repositories {
         mavenCentral()
+        mavenLocal()
         /**
          * This repository locates artifacts that don't exist in maven central but we had to backup from jcenter
          * The exclusiveContent 
