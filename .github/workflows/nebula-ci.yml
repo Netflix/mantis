@@ -36,7 +36,7 @@ jobs:
           restore-keys: |
             - ${{ runner.os }}-gradlewrapper-
       - name: Build with Gradle
-        run: ./gradlew --info --stacktrace build
+        run: ./gradlew --info --stacktrace mantis-shaded-wrapper:build build
         env:
           CI_NAME: github_actions
           CI_BUILD_NUMBER: ${{ github.sha }}
