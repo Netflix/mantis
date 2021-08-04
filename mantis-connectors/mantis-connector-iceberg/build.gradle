@@ -25,7 +25,7 @@ ext {
 }
 
 dependencies {
-    implementation project(":mantis-runtime")
+    shadow project(":mantis-runtime")
 
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
     shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
@@ -59,6 +59,7 @@ shadowJar {
     classifier = null
     dependencies {
         exclude dependency("com.netflix.spectator:spectator-api")
+        exclude(dependency("io.mantisrx:.*"))
     }
 
     // include the LICENSE and NOTICE files for the shaded Jar

@@ -24,7 +24,7 @@ ext {
 }
 
 dependencies {
-    implementation project(':mantis-publish:mantis-publish-core')
+    shadow project(':mantis-publish:mantis-publish-core')
     implementation "io.netty:netty-all:$nettyVersion"
 
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
@@ -51,6 +51,7 @@ shadowJar {
     exclude('com.netflix.spectator.*')
     dependencies {
       exclude(dependency('com.netflix.spectator:.*:.*'))
+      exclude(dependency("io.mantisrx:.*"))
     }
 }
 

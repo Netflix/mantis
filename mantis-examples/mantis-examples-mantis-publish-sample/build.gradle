@@ -23,19 +23,13 @@ repositories {
     }
 }
 
-
-if (project.hasProperty('useMavenLocal')) {
-    repositories {
-        mavenLocal()
-    }
-}
-
 buildscript {
     repositories {
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        mavenLocal()
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
@@ -57,7 +51,7 @@ ext {
 
 dependencies {
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-    compile project(":mantis-publish:mantis-publish-netty-guice")
+    shadow project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation "io.reactivex:rxjava:$versionRxJava"
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
