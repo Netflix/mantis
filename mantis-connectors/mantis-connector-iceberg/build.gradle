@@ -26,6 +26,7 @@ ext {
 
 dependencies {
     shadow project(":mantis-runtime")
+    implementation project(":mantis-runtime")
 
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
     shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
