@@ -35,8 +35,16 @@ jobs:
           key: ${{ runner.os }}-gradlewrapper-${{ hashFiles('gradle/wrapper/*') }}
           restore-keys: |
             - ${{ runner.os }}-gradlewrapper-
+      - name: Build shaded dependency first and install it
+        run: ./gradlew --info --stacktrace mantis-shaded-wrapper:build
+        env:
+          CI_NAME: github_actions
+          CI_BUILD_NUMBER: ${{ github.sha }}
+          CI_BUILD_URL: 'https://github.com/${{ github.repository }}'
+          CI_BRANCH: ${{ github.ref }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build with Gradle
-        run: ./gradlew --info --stacktrace mantis-shaded-wrapper:build build
+        run: ./gradlew --info --stacktrace build
         env:
           CI_NAME: github_actions
           CI_BUILD_NUMBER: ${{ github.sha }}
