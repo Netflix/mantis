@@ -47,7 +47,7 @@ shadowJar {
     configurations = [project.configurations.shaded]
     relocate 'com.fasterxml', 'io.mantisrx.shaded.com.fasterxml'
     relocate 'io.vavr.jackson.datatype', 'io.mantisrx.shaded.io.vavr.jackson.datatype'
-    relocate 'com.google.common', 'io.mantisrx.shaded.com.google.common'
+    relocate 'com.google', 'io.mantisrx.shaded.com.google'
 
     mergeServiceFiles()
 }
