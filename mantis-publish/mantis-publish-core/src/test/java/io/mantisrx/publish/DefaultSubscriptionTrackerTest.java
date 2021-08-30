@@ -21,7 +21,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -168,9 +167,6 @@ public class DefaultSubscriptionTrackerTest {
         }
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-//        assertTrue(currentSubsO.isPresent());
-//        MantisServerSubscriptionEnvelope currentSubs = currentSubsO.get();
         Set<String> currentSubIds = subscriptionTracker.getCurrentSubIds(streamName);
         // subs resolved to majority among workers
         assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
@@ -218,9 +214,6 @@ public class DefaultSubscriptionTrackerTest {
         }
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-//        assertTrue(currentSubsO.isPresent());
-//        MantisServerSubscriptionEnvelope currentSubs = currentSubsO.get();
         Set<String> currentSubIds = subscriptionTracker.getCurrentSubIds(streamName);
         // subs resolved to majority among workers
         assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
@@ -244,9 +237,6 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubsO2 = subscriptionTracker.getCurrentSubs(streamName);
-//        assertTrue(currentSubsO2.isPresent());
-//        MantisServerSubscriptionEnvelope currentSubs2 = currentSubsO2.get();
         Set<String> currentSubIds2 = subscriptionTracker.getCurrentSubIds(streamName);
         // subs resolved to majority among workers
         assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds2);
@@ -255,19 +245,15 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubs3 = subscriptionTracker.getCurrentSubs(streamName);
-//        assertFalse(currentSubs3.isPresent());
         assertTrue(subscriptionTracker.getCurrentSubIds(streamName).isEmpty());
 
         // verify all previously added subscriptions cleaned up and propagated as REMOVE to StreamManager
         ArgumentCaptor<String> captor2 = ArgumentCaptor.forClass(String.class);
         verify(mockStreamManager, times(2)).removeStreamSubscription(captor2.capture());
         List<String> subsAdded2 = captor2.getAllValues();
-//        Map<String, Subscription> subIdToSubMap2 = subsAdded2.stream().collect(Collectors.toMap(Subscription::getSubscriptionId, s -> s));
         assertEquals(majoritySubs.getSubscriptionList().size(), subsAdded2.size());
         majoritySubs.getSubscriptionList().forEach(sub -> {
             assertTrue(subsAdded2.contains(sub.getSubscriptionId()));
-//            assertEquals(sub.getQuery(), subIdToSubMap2.get(sub.getSubscriptionId()).getRawQuery());
         });
     }
 
@@ -302,9 +288,6 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-//        assertTrue(currentSubsO.isPresent());
-//        MantisServerSubscriptionEnvelope currentSubs = currentSubsO.get();
         Set<String> currentSubIds = subscriptionTracker.getCurrentSubIds(streamName);
         // subs resolved to majority among workers
         assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
@@ -326,9 +309,6 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubsO2 = subscriptionTracker.getCurrentSubs(streamName);
-//        assertTrue(currentSubsO2.isPresent());
-//        MantisServerSubscriptionEnvelope currentSubs2 = currentSubsO2.get();
         Set<String> currentSubIds2 = subscriptionTracker.getCurrentSubIds(streamName);
         // subs resolved to majority among workers
         assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds2);
@@ -337,20 +317,15 @@ public class DefaultSubscriptionTrackerTest {
         Thread.sleep(subscriptionExpiryIntervalSec * 1000 + 100);
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubs3 = subscriptionTracker.getCurrentSubs(streamName);
-//        assertFalse(currentSubs3.isPresent());
         assertTrue(subscriptionTracker.getCurrentSubIds(streamName).isEmpty());
 
         // verify all previously added subscriptions cleaned up and propagated as REMOVE to StreamManager
         ArgumentCaptor<String> captor2 = ArgumentCaptor.forClass(String.class);
         verify(mockStreamManager, times(2)).removeStreamSubscription(captor2.capture());
-//        verify(mockStreamManager, times(2)).removeStreamSubscription(anyString());
         List<String> subsAdded2 = captor2.getAllValues();
-//        Map<String, Subscription> subIdToSubMap2 = subsAdded2.stream().collect(Collectors.toMap(Subscription::getSubscriptionId, s -> s));
         assertEquals(majoritySubs.getSubscriptionList().size(), subsAdded2.size());
         majoritySubs.getSubscriptionList().forEach(sub -> {
             assertTrue(subsAdded2.contains(sub.getSubscriptionId()));
-//            assertEquals(sub.getQuery(), subIdToSubMap2.get(sub.getSubscriptionId()).getRawQuery());
         });
     }
 
@@ -385,8 +360,6 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-//        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-//        assertFalse(currentSubsO.isPresent());
         assertTrue(subscriptionTracker.getCurrentSubIds(streamName).isEmpty());
         verify(mockStreamManager, times(1)).getRegisteredStreams();
         verifyZeroInteractions(mockJobDiscovery);
