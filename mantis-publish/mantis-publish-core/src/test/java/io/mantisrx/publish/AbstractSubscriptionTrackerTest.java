@@ -113,7 +113,8 @@ public class AbstractSubscriptionTrackerTest {
                 new MantisServerSubscription("id1", "select * from defaultStream where id = 1", null),
                 new MantisServerSubscription("id2", "select * from defaultStream where id = 2", null),
                 new MantisServerSubscription("id3", "select * from defaultStream where id = 3", null),
-                new MantisServerSubscription("id4", "select * from defaultStream where id = 4", null)
+                new MantisServerSubscription("id4", "select * from defaultStream where id = 4", null),
+                new MantisServerSubscription("id5", "select * from defaultStream where id = 5", null)
         );
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
