@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractSubscriptionTracker implements SubscriptionTracker {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSubscriptionTracker.class);
-    private static final MantisServerSubscriptionEnvelope DEFAULT_EMPTY_SUB_ENVELOPE = new MantisServerSubscriptionEnvelope(Collections.emptyList());
 
     private final MrePublishConfiguration mrePublishConfiguration;
     private final Registry registry;
@@ -66,10 +65,14 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         this.registry = registry;
         this.jobDiscovery = jobDiscovery;
         this.streamManager = streamManager;
-        this.refreshSubscriptionInvokedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionInvokedCount");
-        this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionSuccessCount");
-        this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionFailedCount");
-        this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry, "staleSubscriptionRemovedCount");
+        this.refreshSubscriptionInvokedCount = SpectatorUtils.buildAndRegisterCounter(registry,
+                "refreshSubscriptionInvokedCount");
+        this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry,
+                "refreshSubscriptionSuccessCount");
+        this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry,
+                "refreshSubscriptionFailedCount");
+        this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry,
+                "staleSubscriptionRemovedCount");
     }
 
     void propagateSubscriptionChanges(String streamName, Set<MantisServerSubscription> curr) {
@@ -79,7 +82,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
             // Add new subscription not present previously
             if (!previousIds.contains(newSub.getSubscriptionId())) {
                 try {
-                    Optional<Subscription> subscription = SubscriptionFactory.getSubscription(newSub.getSubscriptionId(), newSub.getQuery());
+                    Optional<Subscription> subscription = SubscriptionFactory.getSubscription(
+                            newSub.getSubscriptionId(), newSub.getQuery());
                     if (subscription.isPresent()) {
                         streamManager.addStreamSubscription(subscription.get());
                     } else {
@@ -111,7 +115,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     private void cleanupStaleSubscriptions(String streamName) {
         Long lastFetched = streamLastFetchedTs.get(streamName);
         if (lastFetched != null) {
-            boolean hasStaleSubscriptionsData = (System.currentTimeMillis() - lastFetched) > mrePublishConfiguration.subscriptionExpiryIntervalSec() * 1000;
+            boolean hasStaleSubscriptionsData = (System.currentTimeMillis() - lastFetched) >
+                    mrePublishConfiguration.subscriptionExpiryIntervalSec() * 1000;
             if (hasStaleSubscriptionsData) {
                 LOG.info("removing stale subscriptions data for stream {} (created {})", streamName, lastFetched);
                 staleSubscriptionRemovedCount.increment();
@@ -134,7 +139,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     @Override
     public void refreshSubscriptions() {
         refreshSubscriptionInvokedCount.increment();
-        // refresh subscriptions only if the Publish client is enabled and has streams registered by MantisEventPublisher
+        // refresh subscriptions only if the Publish client is enabled and has streams registered by
+        // MantisEventPublisher
         boolean mantisPublishEnabled = mrePublishConfiguration.isMREClientEnabled();
         Set<String> registeredStreams = streamManager.getRegisteredStreams();
         boolean subscriptionsFetchedForStream = false;
@@ -144,11 +150,13 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
             for (Map.Entry<String, String> e : streamJobClusterMap.entrySet()) {
                 String streamName = e.getKey();
                 LOG.debug("processing stream {} and currently registered Streams {}", streamName, registeredStreams);
-                if (registeredStreams.contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
+                if (registeredStreams.contains(streamName)
+                        || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
                     subscriptionsFetchedForStream = true;
                     String jobCluster = e.getValue();
                     try {
-                        Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(streamName, jobCluster);
+                        Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(
+                                streamName, jobCluster);
                         if (subsEnvelopeO.isPresent()) {
                             MantisServerSubscriptionEnvelope subsEnvelope = subsEnvelopeO.get();
                             propagateSubscriptionChanges(streamName, subsEnvelope.getSubscriptions());
@@ -156,7 +164,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                             streamLastFetchedTs.put(streamName, System.currentTimeMillis());
                             refreshSubscriptionSuccessCount.increment();
                         } else {
-                            // cleanup stale subsEnvelope if we haven't seen a subscription refresh for subscriptionExpiryIntervalSec from the Mantis workers
+                            // cleanup stale subsEnvelope if we haven't seen a subscription refresh for
+                            // subscriptionExpiryIntervalSec from the Mantis workers
                             cleanupStaleSubscriptions(streamName);
                             refreshSubscriptionFailedCount.increment();
                         }
@@ -172,11 +181,13 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                 LOG.warn("No server side mappings found for one or more streams {} ", registeredStreams);
             }
         } else {
-            LOG.debug("subscription refresh skipped (client enabled {} registered streams {})", mantisPublishEnabled, registeredStreams);
+            LOG.debug("subscription refresh skipped (client enabled {} registered streams {})",
+                    mantisPublishEnabled, registeredStreams);
         }
     }
 
     protected Set<String> getCurrentSubIds(String streamName) {
-        return streamManager.getStreamSubscriptions(streamName).stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        return streamManager.getStreamSubscriptions(streamName).stream().map(Subscription::getSubscriptionId)
+                .collect(Collectors.toSet());
     }
 }
