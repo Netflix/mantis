@@ -15,6 +15,11 @@
  */
 package io.reactivex.mantis.network.push;
 
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -34,6 +39,12 @@ public class TimedChunker<T> implements Callable<Void> {
     private int maxBufferLength;
     private int maxTimeMSec;
     private ConnectionManager<T> connectionManager;
+    private Counter chunkerCancelSuccessInterrupted;
+    private Counter chunkerCancelFailureInterrupted;
+    private Counter chunkerCancelSuccessTimeout;
+    private Counter chunkerCancelFailureTimeout;
+    private Counter chunkerCancelSuccessExecution;
+    private Counter chunkerCancelFailureExecution;
 
     public TimedChunker(MonitoredQueue<T> buffer, int maxBufferLength,
                         int maxTimeMSec, ChunkProcessor<T> processor,
@@ -43,26 +54,67 @@ public class TimedChunker<T> implements Callable<Void> {
         this.buffer = buffer;
         this.processor = processor;
         this.connectionManager = connectionManager;
+
+        MetricGroupId metricsGroup = new MetricGroupId("TimedChunker");
+        Metrics metrics = new Metrics.Builder()
+                .id(metricsGroup)
+                .addCounter("chunkerCancelSuccess_interrupted")
+                .addCounter("chunkerCancelFailure_interrupted")
+                .addCounter("chunkerCancelSuccess_timeout")
+                .addCounter("chunkerCancelFailure_timeout")
+                .addCounter("chunkerCancelSuccess_execution")
+                .addCounter("chunkerCancelFailure_execution")
+                .build();
+        chunkerCancelSuccessInterrupted = metrics.getCounter("chunkerCancelSuccess_interrupted");
+        chunkerCancelFailureInterrupted = metrics.getCounter("chunkerCancelFailure_interrupted");
+        chunkerCancelSuccessTimeout = metrics.getCounter("chunkerCancelSuccess_timeout");
+        chunkerCancelFailureTimeout = metrics.getCounter("chunkerCancelFailure_timeout");
+        chunkerCancelSuccessExecution = metrics.getCounter("chunkerCancelSuccess_execution");
+        chunkerCancelFailureExecution = metrics.getCounter("chunkerCancelFailure_execution");
+        MetricsRegistry.getInstance().registerAndGet(metrics);
     }
 
     @Override
     public Void call() throws Exception {
         while (!stopCondition()) {
+            boolean timeoutException = false;
+            boolean executionException = false;
+
             T data = buffer.get();
             Future<Void> queryFuture = timerPool.submit(new Chunker<T>(processor, data, buffer, maxBufferLength,
                     connectionManager));
             try {
                 queryFuture.get(maxTimeMSec, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                queryFuture.cancel(true);
+                boolean success = queryFuture.cancel(true);
+                if (success) {
+                    chunkerCancelSuccessInterrupted.increment();
+                } else {
+                    chunkerCancelFailureInterrupted.increment();
+                }
                 Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
+                executionException = true;
                 throw e;
             } catch (TimeoutException e) {
                 // cancel task below
+                timeoutException = true;
             } finally {
                 // send interrupt signal to thread
-                queryFuture.cancel(true);
+                boolean success = queryFuture.cancel(true);
+                if (timeoutException) {
+                    if (success) {
+                        chunkerCancelSuccessTimeout.increment();
+                    } else {
+                        chunkerCancelFailureTimeout.increment();
+                    }
+                } else if (executionException) {
+                    if (success) {
+                        chunkerCancelSuccessExecution.increment();
+                    } else {
+                        chunkerCancelFailureExecution.increment();
+                    }
+                }
             }
         }
         return null;
@@ -71,5 +123,4 @@ public class TimedChunker<T> implements Callable<Void> {
     private boolean stopCondition() {
         return Thread.currentThread().isInterrupted();
     }
-
 }
