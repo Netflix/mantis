@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +36,7 @@ public class Chunker<T> implements Callable<Void> {
     private int internalBufferSize;
     private ChunkProcessor<T> processor;
     private ConnectionManager<T> connectionManager;
+    private Counter numEventsDrained;
 
     public Chunker(
             ChunkProcessor<T> processor,
@@ -43,6 +48,15 @@ public class Chunker<T> implements Callable<Void> {
         this.connectionManager = connectionManager;
         internalBuffer = new ArrayList<T>(internalBufferSize);
         internalBuffer.add(firstRead);
+
+        MetricGroupId metricsGroup = new MetricGroupId("Chunker");
+        Metrics metrics = new Metrics.Builder()
+                .id(metricsGroup)
+                .addCounter("numEventsDrained")
+                .build();
+        numEventsDrained = metrics.getCounter("numEventsDrained");
+        MetricsRegistry.getInstance().registerAndGet(metrics);
+
         if (internalBufferSize == 1) {
             drain();
         }
@@ -73,6 +87,7 @@ public class Chunker<T> implements Callable<Void> {
             copy.addAll(internalBuffer);
             processor.process(connectionManager, copy);
             internalBuffer.clear();
+            numEventsDrained.increment(size);
         }
     }
 
