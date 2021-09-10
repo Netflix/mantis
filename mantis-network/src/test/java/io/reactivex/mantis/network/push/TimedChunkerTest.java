@@ -47,7 +47,7 @@ public class TimedChunkerTest {
 
     @Test
     public void testProcessData() throws Exception {
-        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 1000, processor, null);
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 500, processor, null);
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -76,7 +76,7 @@ public class TimedChunkerTest {
 
     @Test
     public void testBufferLength() throws Exception {
-        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 1000, processor, null);
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 500, processor, null);
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {

@@ -60,7 +60,7 @@ public class TimedChunker<T> implements Callable<Void> {
                 .addCounter("interrupted")
                 .addCounter("numEventsDrained")
                 .build();
-        interrupted = metrics.getCounter("chunkerCancelSuccess_interrupted");
+        interrupted = metrics.getCounter("interrupted");
         numEventsDrained = metrics.getCounter("numEventsDrained");
         MetricsRegistry.getInstance().registerAndGet(metrics);
     }
