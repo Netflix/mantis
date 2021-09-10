@@ -47,7 +47,15 @@ public class TimedChunkerTest {
 
     @Test
     public void testProcessData() throws Exception {
+<<<<<<< HEAD
+<<<<<<< HEAD
         TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 500, processor, null);
+=======
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 1000, processor, null);
+>>>>>>> 1d9ec46... Refactor TimedChunker to fix data drop due to race condition
+=======
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 500, processor, null);
+>>>>>>> 41790fe... fix metric name
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -76,7 +84,15 @@ public class TimedChunkerTest {
 
     @Test
     public void testBufferLength() throws Exception {
+<<<<<<< HEAD
+<<<<<<< HEAD
         TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 500, processor, null);
+=======
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 1000, processor, null);
+>>>>>>> 1d9ec46... Refactor TimedChunker to fix data drop due to race condition
+=======
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 500, processor, null);
+>>>>>>> 41790fe... fix metric name
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
