@@ -20,14 +20,14 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 
 public class TimedChunker<T> implements Callable<Void> {
@@ -35,16 +35,14 @@ public class TimedChunker<T> implements Callable<Void> {
     private static ThreadFactory namedFactory = new NamedThreadFactory("TimedChunkerGroup");
     private MonitoredQueue<T> buffer;
     private ChunkProcessor<T> processor;
-    private ExecutorService timerPool = Executors.newSingleThreadExecutor(namedFactory);
+    private ScheduledExecutorService scheduledService = Executors.newSingleThreadScheduledExecutor(namedFactory);
     private int maxBufferLength;
     private int maxTimeMSec;
     private ConnectionManager<T> connectionManager;
-    private Counter chunkerCancelSuccessInterrupted;
-    private Counter chunkerCancelFailureInterrupted;
-    private Counter chunkerCancelSuccessTimeout;
-    private Counter chunkerCancelFailureTimeout;
-    private Counter chunkerCancelSuccessExecution;
-    private Counter chunkerCancelFailureExecution;
+    private List<T> internalBuffer;
+
+    private Counter interrupted;
+    private Counter numEventsDrained;
 
     public TimedChunker(MonitoredQueue<T> buffer, int maxBufferLength,
                         int maxTimeMSec, ChunkProcessor<T> processor,
@@ -54,73 +52,58 @@ public class TimedChunker<T> implements Callable<Void> {
         this.buffer = buffer;
         this.processor = processor;
         this.connectionManager = connectionManager;
+        this.internalBuffer = new ArrayList<>(maxBufferLength);
 
         MetricGroupId metricsGroup = new MetricGroupId("TimedChunker");
         Metrics metrics = new Metrics.Builder()
                 .id(metricsGroup)
-                .addCounter("chunkerCancelSuccess_interrupted")
-                .addCounter("chunkerCancelFailure_interrupted")
-                .addCounter("chunkerCancelSuccess_timeout")
-                .addCounter("chunkerCancelFailure_timeout")
-                .addCounter("chunkerCancelSuccess_execution")
-                .addCounter("chunkerCancelFailure_execution")
+                .addCounter("interrupted")
+                .addCounter("numEventsDrained")
                 .build();
-        chunkerCancelSuccessInterrupted = metrics.getCounter("chunkerCancelSuccess_interrupted");
-        chunkerCancelFailureInterrupted = metrics.getCounter("chunkerCancelFailure_interrupted");
-        chunkerCancelSuccessTimeout = metrics.getCounter("chunkerCancelSuccess_timeout");
-        chunkerCancelFailureTimeout = metrics.getCounter("chunkerCancelFailure_timeout");
-        chunkerCancelSuccessExecution = metrics.getCounter("chunkerCancelSuccess_execution");
-        chunkerCancelFailureExecution = metrics.getCounter("chunkerCancelFailure_execution");
+        interrupted = metrics.getCounter("chunkerCancelSuccess_interrupted");
+        numEventsDrained = metrics.getCounter("numEventsDrained");
         MetricsRegistry.getInstance().registerAndGet(metrics);
     }
 
     @Override
     public Void call() throws Exception {
+        ScheduledFuture periodicDrain = scheduledService.scheduleAtFixedRate(this::drain, maxTimeMSec, maxTimeMSec,
+                TimeUnit.MILLISECONDS);
         while (!stopCondition()) {
-            boolean timeoutException = false;
-            boolean executionException = false;
-
-            T data = buffer.get();
-            Future<Void> queryFuture = timerPool.submit(new Chunker<T>(processor, data, buffer, maxBufferLength,
-                    connectionManager));
             try {
-                queryFuture.get(maxTimeMSec, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                boolean success = queryFuture.cancel(true);
-                if (success) {
-                    chunkerCancelSuccessInterrupted.increment();
-                } else {
-                    chunkerCancelFailureInterrupted.increment();
+                T data = buffer.get();
+                synchronized (internalBuffer) {
+                    internalBuffer.add(data);
                 }
+                if (internalBuffer.size() >= maxBufferLength) {
+                    drain();
+                }
+            } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
-                executionException = true;
-                throw e;
-            } catch (TimeoutException e) {
-                // cancel task below
-                timeoutException = true;
-            } finally {
-                // send interrupt signal to thread
-                boolean success = queryFuture.cancel(true);
-                if (timeoutException) {
-                    if (success) {
-                        chunkerCancelSuccessTimeout.increment();
-                    } else {
-                        chunkerCancelFailureTimeout.increment();
-                    }
-                } else if (executionException) {
-                    if (success) {
-                        chunkerCancelSuccessExecution.increment();
-                    } else {
-                        chunkerCancelFailureExecution.increment();
-                    }
-                }
+                periodicDrain.cancel(true);
+                interrupted.increment();
             }
         }
+        drain();
         return null;
     }
 
     private boolean stopCondition() {
         return Thread.currentThread().isInterrupted();
+    }
+
+    private void drain() {
+        if (internalBuffer.size() > 0) {
+            List<T> copy = new ArrayList<>(internalBuffer.size());
+            synchronized (internalBuffer) {
+                // internalBuffer content may have changed since acquiring the lock.
+                copy.addAll(internalBuffer);
+                internalBuffer.clear();
+            }
+            if (copy.size() > 0) {
+                processor.process(connectionManager, copy);
+                numEventsDrained.increment(copy.size());
+            }
+        }
     }
 }
