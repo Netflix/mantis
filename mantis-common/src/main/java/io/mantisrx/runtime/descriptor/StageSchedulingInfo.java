@@ -204,7 +204,16 @@ public class StageSchedulingInfo {
             return this;
         }
 
-        public StageSchedulingInfo createStageSchedulingInfo() {
+        public Builder cloneWithoutNumberOfInstances(StageSchedulingInfo other) {
+            return this.setInheritInstanceCount(other.getInheritInstanceCount())
+                    .setOptionalMachineDefinition(other.getMachineDefinition())
+                    .setScalable(other.getScalable())
+                    .setOptionalHardConstraints(other.getHardConstraints())
+                    .setOptionalSoftConstraints(other.getSoftConstraints())
+                    .setOptionalScalingPolicy(other.getScalingPolicy());
+        }
+
+        public StageSchedulingInfo build() {
             return new StageSchedulingInfo(
                     numberOfInstances,
                     machineDefinition,

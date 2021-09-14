@@ -491,7 +491,7 @@ public class DataFormatAdapter {
                 .setOptionalSoftConstraints(mantisStageMetadata.getSoftConstraints())
                 .setOptionalScalingPolicy(mantisStageMetadata.getScalingPolicy())
                 .setScalable(mantisStageMetadata.getScalable())
-                .createStageSchedulingInfo();
+                .build();
     }
 
     private static SchedulingInfo generateSchedulingInfo(List<IMantisStageMetadata> convertedStageList) {

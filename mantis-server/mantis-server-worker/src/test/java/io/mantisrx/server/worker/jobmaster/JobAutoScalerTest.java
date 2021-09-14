@@ -81,7 +81,7 @@ public class JobAutoScalerTest {
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
 
@@ -147,7 +147,7 @@ public class JobAutoScalerTest {
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
 
@@ -204,7 +204,7 @@ public class JobAutoScalerTest {
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
 
@@ -258,7 +258,7 @@ public class JobAutoScalerTest {
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
 
@@ -304,7 +304,7 @@ public class JobAutoScalerTest {
                         Collections.singletonMap(scalingReason,
                             new StageScalingPolicy.Strategy(scalingReason, scaleDownBelow, scaleUpAbove, new StageScalingPolicy.RollingCount(1, 2)))))
                     .setScalable(true)
-                    .createStageSchedulingInfo();
+                    .build();
 
             schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
 

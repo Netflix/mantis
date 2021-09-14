@@ -82,11 +82,11 @@ public class TestHelpers {
                         .setNumberOfInstances(1)
                         .setOptionalMachineDefinition(machineDefinition)
                         .setOptionalHardConstraints(Collections.emptyList()).setOptionalSoftConstraints(Collections.emptyList())
-                        .createStageSchedulingInfo())
+                        .build())
                 ))
                 .withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Perpetual, null))
                 .build();
-            
+
         	IMantisJobMetadata mantisJobMetadata = new MantisJobMetadataImpl.Builder()
                 .withJobId(JobId.fromId(workerId.getJobId()).get())
                 .withJobDefinition(jobDefinition)

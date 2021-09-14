@@ -51,7 +51,7 @@ public class RpsClutchConfigurationSelectorTest {
                 .setNumberOfInstances(3)
                 .setOptionalMachineDefinition(null)
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
         RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, customConfig);
 
         ClutchConfiguration config = selector.apply(sketches);
@@ -77,7 +77,7 @@ public class RpsClutchConfigurationSelectorTest {
                 .setNumberOfInstances(3)
                 .setOptionalScalingPolicy(scalingPolicy)
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
         RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
@@ -106,7 +106,7 @@ public class RpsClutchConfigurationSelectorTest {
                 .setNumberOfInstances(3)
                 .setOptionalScalingPolicy(scalingPolicy)
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
         RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
@@ -130,7 +130,7 @@ public class RpsClutchConfigurationSelectorTest {
                 .setNumberOfInstances(3)
                 .setOptionalScalingPolicy(scalingPolicy)
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
         RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);
@@ -169,7 +169,7 @@ public class RpsClutchConfigurationSelectorTest {
                 .setNumberOfInstances(3)
                 .setOptionalScalingPolicy(scalingPolicy)
                 .setScalable(true)
-                .createStageSchedulingInfo();
+                .build();
         RpsClutchConfigurationSelector selector = new RpsClutchConfigurationSelector(1, schedulingInfo, null);
 
         ClutchConfiguration config = selector.apply(sketches);

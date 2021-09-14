@@ -22,6 +22,8 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 
+import io.mantisrx.runtime.command.InvalidJobException;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.fenzo.triggers.CronTrigger;
@@ -1332,12 +1334,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private JobDefinition getResolvedJobDefinition(final String user, final Optional<JobDefinition> givenJobDefnOp) throws Exception {
         JobDefinition resolvedJobDefn;
-        if(givenJobDefnOp.isPresent()) {
-            resolvedJobDefn = givenJobDefnOp.get();
-        }
-        else {
+        if(!givenJobDefnOp.isPresent()) {
             // no job definition specified , this is quick submit which is supposed to inherit from last job submitted
-            List<JobInfo> existingJobsList = new ArrayList<>(jobManager.getAllNonTerminalJobsList());
+            List<JobInfo> existingJobsList = jobManager.getAllNonTerminalJobsList();
             Optional<JobDefinition> jobDefnOp = createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters(existingJobsList, jobManager.getCompletedJobsList(), empty(),jobStore);
             if(jobDefnOp.isPresent()) {
                 logger.info("Inherited scheduling Info and parameters from previous job");
@@ -1345,7 +1344,21 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } else {
                 throw new Exception("Job Definition could not retrieved from a previous submission (There may not be a previous submission)");
             }
-
+        }
+        else if (givenJobDefnOp.get().getSchedulingInfo() != null && givenJobDefnOp.get().getSchedulingInfo().requireInheritInstanceCheck()) {
+            // given job defn requires inheriting instance count from existing job.
+            logger.info("Job requires inheriting instance count.");
+            Optional<JobDefinition> jobDefnOp = createJobDefinitionInheritingInstanceCount(
+                    givenJobDefnOp.get(), jobManager.getAllNonTerminalJobsList(), jobManager.getCompletedJobsList(), jobStore);
+            if(jobDefnOp.isPresent()) {
+                logger.info("Inherited stage instance count from previous job");
+                resolvedJobDefn = jobDefnOp.get();
+            } else {
+                throw new Exception("Job Definition could not be created from given job definition while inheriting instance count");
+            }
+        }
+        else {
+            resolvedJobDefn = givenJobDefnOp.get();
         }
 
         logger.info("Resolved JobDefn {}", resolvedJobDefn);
@@ -1893,6 +1906,55 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters empty"); }
         return empty();
+    }
+
+
+    private Optional<JobDefinition> createJobDefinitionInheritingInstanceCount(
+            final JobDefinition givenJobDefn,
+            final List<JobInfo> existingJobsList,
+            final List<CompletedJob> completedJobs,
+            final MantisJobStore store) {
+        if(logger.isTraceEnabled()) { logger.trace("Enter createJobDefinitionInheritingInstanceCount"); }
+
+        // use last submitted job (if present) to merge with the givenJobDefn so the result jobDefn will inherit instance count.
+        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().from(givenJobDefn);
+        Optional<JobDefinition> lastSubmittedJobDefn = getLastSubmittedJobDefinition(existingJobsList, completedJobs, empty(), store);
+        if (lastSubmittedJobDefn.isPresent()) {
+            if (givenJobDefn.getSchedulingInfo() == null) {
+                logger.error("Empty scheduling info in given job defn {}.", givenJobDefn);
+                return empty();
+            }
+
+            if (lastSubmittedJobDefn.get().getSchedulingInfo() != null &&
+                    lastSubmittedJobDefn.get().getSchedulingInfo().getStages().size() == givenJobDefn.getSchedulingInfo().getStages().size()) {
+                // Use instance count from last submitted job at each stage.
+                Map<Integer, StageSchedulingInfo> givenStages = givenJobDefn.getSchedulingInfo().getStages();
+                Map<Integer, StageSchedulingInfo> lastStages = lastSubmittedJobDefn.get().getSchedulingInfo().getStages();
+                SchedulingInfo.Builder siBuilder = new SchedulingInfo.Builder().numberOfStages(givenStages.size());
+                givenStages.forEach((stageId, givenStageInfo) -> {
+                    if (lastStages.containsKey(stageId) && givenStageInfo.getInheritInstanceCount()) {
+                        StageSchedulingInfo mergedStageInfo = new StageSchedulingInfo.Builder()
+                                .setNumberOfInstances(lastStages.get(stageId).getNumberOfInstances())
+                                .cloneWithoutNumberOfInstances(givenStageInfo)
+                                .build();
+                        siBuilder.addStage(mergedStageInfo);
+                    }
+                    else {
+                        siBuilder.addStage(givenStageInfo);
+                    }
+                });
+                jobDefnBuilder.withSchedulingInfo(siBuilder.build());
+            }
+        }
+
+        try {
+            return createNewJobDefinitionInheritSchedInfoAndParameters(jobDefnBuilder.build());
+        }
+        catch (InvalidJobException ije)
+        {
+            logger.error("Failed to create jobDefinition inheriting instance count {} due to {}.", givenJobDefn, ije.getMessage());
+            return empty();
+        }
     }
 
     @Override

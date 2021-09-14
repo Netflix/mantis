@@ -335,7 +335,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             schedulingInfo.addJobMasterStage(new StageSchedulingInfo.Builder()
                     .setNumberOfInstances(1)
                     .setOptionalMachineDefinition(getJobMasterMachineDef())
-                    .createStageSchedulingInfo());
+                    .build());
 
             // Update jobMetadata with the new stage added
             mantisJobMetaData = new MantisJobMetadataImpl.Builder()

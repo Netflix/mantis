@@ -97,6 +97,10 @@ public class SchedulingInfo {
         return stages.get(stageNum);
     }
 
+    public boolean requireInheritInstanceCheck() {
+        return this.stages.values().stream().anyMatch(StageSchedulingInfo::getInheritInstanceCount);
+    }
+
     @Override
     public String toString() {
         return "SchedulingInfo{" +
@@ -106,9 +110,15 @@ public class SchedulingInfo {
 
     public static class Builder {
 
-        private Map<Integer, StageSchedulingInfo> builderStages = new HashMap<>();
+        private final Map<Integer, StageSchedulingInfo> builderStages = new HashMap<>();
         private Integer currentStage = 1;
         private int numberOfStages;
+
+        public Builder addStage(StageSchedulingInfo stageSchedulingInfo) {
+            builderStages.put(currentStage, stageSchedulingInfo);
+            currentStage++;
+            return this;
+        }
 
         public Builder numberOfStages(int numberOfStages) {
             this.numberOfStages = numberOfStages;
@@ -125,7 +135,7 @@ public class SchedulingInfo {
                         .setOptionalMachineDefinition(machineDefinition)
                         .setOptionalHardConstraints(hardConstraints)
                         .setOptionalSoftConstraints(softConstraints)
-                        .createStageSchedulingInfo());
+                        .build());
             currentStage++;
             return this;
         }
@@ -136,7 +146,7 @@ public class SchedulingInfo {
                     new StageSchedulingInfo.Builder()
                         .setNumberOfInstances(1)
                         .setOptionalMachineDefinition(machineDefinition)
-                        .createStageSchedulingInfo());
+                        .build());
             currentStage++;
             return this;
         }
@@ -156,14 +166,21 @@ public class SchedulingInfo {
                     .setOptionalScalingPolicy(ssp)
                     .setScalable(ssp.isEnabled())
                     .setInheritInstanceCount(false)
-                    .createStageSchedulingInfo());
+                    .build());
             currentStage++;
             return this;
         }
 
         public Builder multiWorkerStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
                                                        List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints) {
-            builderStages.put(currentStage, new StageSchedulingInfo.Builder().setNumberOfInstances(numberOfWorkers).setOptionalMachineDefinition(machineDefinition).setOptionalHardConstraints(hardConstraints).setOptionalSoftConstraints(softConstraints).setOptionalScalingPolicy(null).setScalable(false).setInheritInstanceCount(false).createStageSchedulingInfo());
+            builderStages.put(
+                    currentStage,
+                    new StageSchedulingInfo.Builder()
+                            .setNumberOfInstances(numberOfWorkers)
+                            .setOptionalMachineDefinition(machineDefinition)
+                            .setOptionalHardConstraints(hardConstraints)
+                            .setOptionalSoftConstraints(softConstraints)
+                            .build());
             currentStage++;
             return this;
         }
@@ -174,7 +191,7 @@ public class SchedulingInfo {
                     new StageSchedulingInfo.Builder()
                             .setNumberOfInstances(numberOfWorkers)
                             .setOptionalMachineDefinition(machineDefinition)
-                            .createStageSchedulingInfo());
+                            .build());
             currentStage++;
             return this;
         }
@@ -186,7 +203,7 @@ public class SchedulingInfo {
                             .setNumberOfInstances(numberOfWorkers)
                             .setOptionalMachineDefinition(machineDefinition)
                             .setInheritInstanceCount(true)
-                            .createStageSchedulingInfo());
+                            .build());
             currentStage++;
             return this;
         }
