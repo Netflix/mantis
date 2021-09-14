@@ -115,17 +115,28 @@ public class SchedulingInfo {
             return this;
         }
 
-        public Builder singleWorkerStageWithConstraints(MachineDefinition machineDefinition,
-                                                        List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints) {
-            builderStages.put(currentStage, new StageSchedulingInfo(1, machineDefinition, hardConstraints,
-                    softConstraints, null, false));
+        public Builder singleWorkerStageWithConstraints(
+                MachineDefinition machineDefinition,
+                List<JobConstraints> hardConstraints,
+                List<JobConstraints> softConstraints) {
+            builderStages.put(currentStage,
+                    new StageSchedulingInfo.Builder()
+                        .setNumberOfInstances(1)
+                        .setOptionalMachineDefinition(machineDefinition)
+                        .setOptionalHardConstraints(hardConstraints)
+                        .setOptionalSoftConstraints(softConstraints)
+                        .createStageSchedulingInfo());
             currentStage++;
             return this;
         }
 
         public Builder singleWorkerStage(MachineDefinition machineDefinition) {
-            builderStages.put(currentStage, new StageSchedulingInfo(1, machineDefinition, null,
-                    null, null, false));
+            builderStages.put(
+                    currentStage,
+                    new StageSchedulingInfo.Builder()
+                        .setNumberOfInstances(1)
+                        .setOptionalMachineDefinition(machineDefinition)
+                        .createStageSchedulingInfo());
             currentStage++;
             return this;
         }
@@ -135,23 +146,47 @@ public class SchedulingInfo {
                                                                StageScalingPolicy scalingPolicy) {
             StageScalingPolicy ssp = new StageScalingPolicy(currentStage, scalingPolicy.getMin(), scalingPolicy.getMax(),
                     scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies());
-            builderStages.put(currentStage, new StageSchedulingInfo(numberOfWorkers, machineDefinition,
-                    hardConstraints, softConstraints, ssp, ssp.isEnabled()));
+            builderStages.put(
+                currentStage,
+                new StageSchedulingInfo.Builder()
+                    .setNumberOfInstances(numberOfWorkers)
+                    .setOptionalMachineDefinition(machineDefinition)
+                    .setOptionalHardConstraints(hardConstraints)
+                    .setOptionalSoftConstraints(softConstraints)
+                    .setOptionalScalingPolicy(ssp)
+                    .setScalable(ssp.isEnabled())
+                    .setInheritInstanceCount(false)
+                    .createStageSchedulingInfo());
             currentStage++;
             return this;
         }
 
         public Builder multiWorkerStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
                                                        List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints) {
-            builderStages.put(currentStage, new StageSchedulingInfo(numberOfWorkers, machineDefinition,
-                    hardConstraints, softConstraints, null, false));
+            builderStages.put(currentStage, new StageSchedulingInfo.Builder().setNumberOfInstances(numberOfWorkers).setOptionalMachineDefinition(machineDefinition).setOptionalHardConstraints(hardConstraints).setOptionalSoftConstraints(softConstraints).setOptionalScalingPolicy(null).setScalable(false).setInheritInstanceCount(false).createStageSchedulingInfo());
             currentStage++;
             return this;
         }
 
         public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition) {
-            builderStages.put(currentStage, new StageSchedulingInfo(numberOfWorkers, machineDefinition,
-                    null, null, null, false));
+            builderStages.put(
+                    currentStage,
+                    new StageSchedulingInfo.Builder()
+                            .setNumberOfInstances(numberOfWorkers)
+                            .setOptionalMachineDefinition(machineDefinition)
+                            .createStageSchedulingInfo());
+            currentStage++;
+            return this;
+        }
+
+        public Builder multiWorkerStageInheritWorkerNumberEnabled(int numberOfWorkers, MachineDefinition machineDefinition) {
+            builderStages.put(
+                    currentStage,
+                    new StageSchedulingInfo.Builder()
+                            .setNumberOfInstances(numberOfWorkers)
+                            .setOptionalMachineDefinition(machineDefinition)
+                            .setInheritInstanceCount(true)
+                            .createStageSchedulingInfo());
             currentStage++;
             return this;
         }

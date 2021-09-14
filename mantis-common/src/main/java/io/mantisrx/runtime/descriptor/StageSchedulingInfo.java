@@ -29,12 +29,13 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 public class StageSchedulingInfo {
 
-    private int numberOfInstances;
-    private MachineDefinition machineDefinition;
-    private List<JobConstraints> hardConstraints;
-    private List<JobConstraints> softConstraints;
+    private final int numberOfInstances;
+    private final MachineDefinition machineDefinition;
+    private final List<JobConstraints> hardConstraints;
+    private final List<JobConstraints> softConstraints;
     private StageScalingPolicy scalingPolicy;
-    private boolean scalable;
+    private final boolean inheritInstanceCount;
+    private final boolean scalable;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -43,12 +44,14 @@ public class StageSchedulingInfo {
                                @JsonProperty("hardConstraints") List<JobConstraints> hardConstraints,
                                @JsonProperty("softConstraints") List<JobConstraints> softConstraints,
                                @JsonProperty("scalingPolicy") StageScalingPolicy scalingPolicy,
-                               @JsonProperty("scalable") boolean scalable) {
+                               @JsonProperty("scalable") boolean scalable,
+                               @JsonProperty("inheritInstanceCount") boolean inheritInstanceCount) {
         this.numberOfInstances = numberOfInstances;
         this.machineDefinition = machineDefinition;
         this.hardConstraints = hardConstraints;
         this.softConstraints = softConstraints;
         this.scalingPolicy = scalingPolicy;
+        this.inheritInstanceCount = inheritInstanceCount;
         this.scalable = scalable;
     }
 
@@ -86,6 +89,8 @@ public class StageSchedulingInfo {
         this.scalingPolicy = scalingPolicy;
     }
 
+    public boolean getInheritInstanceCount() { return inheritInstanceCount; }
+
     public boolean getScalable() {
         return scalable;
     }
@@ -98,6 +103,7 @@ public class StageSchedulingInfo {
                 ", hardConstraints=" + hardConstraints +
                 ", softConstraints=" + softConstraints +
                 ", scalingPolicy=" + scalingPolicy +
+                ", inheritInstanceCount=" + inheritInstanceCount +
                 ", scalable=" + scalable +
                 '}';
     }
@@ -110,6 +116,7 @@ public class StageSchedulingInfo {
         result = prime * result + ((machineDefinition == null) ? 0 : machineDefinition.hashCode());
         result = prime * result + numberOfInstances;
         result = prime * result + (scalable ? 1231 : 1237);
+        result = prime * result + ((inheritInstanceCount ? 1231 : 1237));
         result = prime * result + ((scalingPolicy == null) ? 0 : scalingPolicy.hashCode());
         result = prime * result + ((softConstraints == null) ? 0 : softConstraints.hashCode());
         return result;
@@ -136,6 +143,8 @@ public class StageSchedulingInfo {
             return false;
         if (numberOfInstances != other.numberOfInstances)
             return false;
+        if (inheritInstanceCount != other.inheritInstanceCount)
+            return false;
         if (scalable != other.scalable)
             return false;
         if (scalingPolicy == null) {
@@ -149,5 +158,61 @@ public class StageSchedulingInfo {
         } else if (!softConstraints.equals(other.softConstraints))
             return false;
         return true;
+    }
+
+    public static class Builder {
+        private int numberOfInstances;
+        private MachineDefinition machineDefinition;
+        private List<JobConstraints> hardConstraints;
+        private List<JobConstraints> softConstraints;
+        private StageScalingPolicy scalingPolicy;
+        private boolean scalable;
+        private boolean inheritInstanceCount;
+
+        public Builder setNumberOfInstances(int numberOfInstances) {
+            this.numberOfInstances = numberOfInstances;
+            return this;
+        }
+
+        public Builder setOptionalMachineDefinition(MachineDefinition machineDefinition) {
+            this.machineDefinition = machineDefinition;
+            return this;
+        }
+
+        public Builder setOptionalHardConstraints(List<JobConstraints> hardConstraints) {
+            this.hardConstraints = hardConstraints;
+            return this;
+        }
+
+        public Builder setOptionalSoftConstraints(List<JobConstraints> softConstraints) {
+            this.softConstraints = softConstraints;
+            return this;
+        }
+
+        public Builder setOptionalScalingPolicy(StageScalingPolicy scalingPolicy) {
+            this.scalingPolicy = scalingPolicy;
+            return this;
+        }
+
+        public Builder setScalable(boolean scalable) {
+            this.scalable = scalable;
+            return this;
+        }
+
+        public Builder setInheritInstanceCount(boolean inheritInstanceCount) {
+            this.inheritInstanceCount = inheritInstanceCount;
+            return this;
+        }
+
+        public StageSchedulingInfo createStageSchedulingInfo() {
+            return new StageSchedulingInfo(
+                    numberOfInstances,
+                    machineDefinition,
+                    hardConstraints,
+                    softConstraints,
+                    scalingPolicy,
+                    scalable,
+                    inheritInstanceCount);
+        }
     }
 }

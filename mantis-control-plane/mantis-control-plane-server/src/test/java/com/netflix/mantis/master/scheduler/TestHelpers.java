@@ -76,23 +76,22 @@ public class TestHelpers {
                                                             final MachineDefinition machineDefinition) {
         try {
         	JobDefinition jobDefinition = new JobDefinition.Builder()
-        													.withArtifactName("jar")
-        													.withSchedulingInfo(new SchedulingInfo(Collections.singletonMap(0,
-        						                                    new StageSchedulingInfo(1,
-        						                                            machineDefinition,
-        						                                            Collections.emptyList(),
-        						                                            Collections.emptyList(),
-        						                                            null,
-        						                                            false))
-        						                            ))
-        													.withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Perpetual, null))
-        													.build();
+                .withArtifactName("jar")
+                .withSchedulingInfo(new SchedulingInfo(Collections.singletonMap(0,
+                    new StageSchedulingInfo.Builder()
+                        .setNumberOfInstances(1)
+                        .setOptionalMachineDefinition(machineDefinition)
+                        .setOptionalHardConstraints(Collections.emptyList()).setOptionalSoftConstraints(Collections.emptyList())
+                        .createStageSchedulingInfo())
+                ))
+                .withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Perpetual, null))
+                .build();
+            
         	IMantisJobMetadata mantisJobMetadata = new MantisJobMetadataImpl.Builder()
-        																.withJobId(JobId.fromId(workerId.getJobId()).get())
-        																.withJobDefinition(jobDefinition)
-        																
-        																
-        																.build();
+                .withJobId(JobId.fromId(workerId.getJobId()).get())
+                .withJobDefinition(jobDefinition)
+                .build();
+
             return new ScheduleRequest(
                     workerId,
                     stageNum,

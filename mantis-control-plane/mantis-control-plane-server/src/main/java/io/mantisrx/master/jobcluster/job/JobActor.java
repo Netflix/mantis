@@ -331,11 +331,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.info("Job {} is autoscaled setting up Job Master", this.jobId);
         if (schedulingInfo.forStage(0) == null) {
             // create stage 0 schedulingInfo only if not already provided
-            final StageSchedulingInfo stageSchedulingInfo =
-                    new StageSchedulingInfo(1, getJobMasterMachineDef(),
-                            null, null, // for now, there are no hard or soft constraints
-                            null, false); // jobMaster stage itself is not scaled
-            schedulingInfo.addJobMasterStage(stageSchedulingInfo);
+            // jobMaster stage itself is not scaled
+            schedulingInfo.addJobMasterStage(new StageSchedulingInfo.Builder()
+                    .setNumberOfInstances(1)
+                    .setOptionalMachineDefinition(getJobMasterMachineDef())
+                    .createStageSchedulingInfo());
 
             // Update jobMetadata with the new stage added
             mantisJobMetaData = new MantisJobMetadataImpl.Builder()
