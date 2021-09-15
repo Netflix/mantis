@@ -214,6 +214,7 @@ public class CompressionUtils {
 
         int delimiterCount = 0;
         while ((line = bf.readLine()) != null) {
+            // Consider replacing this whole thing with just String.indexOf
             for (int i = 0; i < line.length(); i++) {
                 if (line.charAt(i) != delimiterArray[delimiterCount]) {
                     if (delimiterCount > 0) {
@@ -222,7 +223,11 @@ public class CompressionUtils {
                         }
                         delimiterCount = 0;
                     }
-                    sb.append(line.charAt(i));
+                    if (line.charAt(i) != delimiterArray[delimiterCount]) {
+                        sb.append(line.charAt(i));
+                    } else {
+                        delimiterCount++;
+                    }
                 } else {
                     delimiterCount++;
                 }
