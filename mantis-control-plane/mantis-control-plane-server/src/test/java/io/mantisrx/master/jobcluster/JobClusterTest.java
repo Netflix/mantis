@@ -51,13 +51,13 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLAResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import static java.util.Optional.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -1744,13 +1744,16 @@ public class JobClusterTest {
     }
 
     @Test
-    @Ignore
     public void testUpdateJobClusterArtifactWithAutoSubmit() {
         TestKit probe = new TestKit(system);
         try {
             String clusterName = "testUpdateJobClusterArtifactWithAutoSubmit";
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+            // when running concurrently with testGetJobDetailsForArchivedJob the following mock return is needed to avoid null pointer exception.
+            when(jobStoreMock.getArchivedJob(anyString())).thenReturn(empty());
+
             SLA sla = new SLA(1,1,null,null);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName, Lists.newArrayList(),sla);
 
@@ -1779,7 +1782,6 @@ public class JobClusterTest {
             String jobId2 = clusterName + "-2";
             assertTrue(JobTestHelper.verifyJobStatusWithPolling(probe, jobClusterActor,jobId2,JobState.Accepted));
 
-
             // send it worker events to move it to started state
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe,jobClusterActor,jobId2,1,new WorkerId(clusterName,jobId2,0,1));
 
@@ -1789,7 +1791,15 @@ public class JobClusterTest {
 
             assertEquals(artifact,detailsResp.getJobMetadata().get().getArtifactName());
 
-            assertTrue(JobTestHelper.verifyJobStatusWithPolling(probe, jobClusterActor,jobId,JobState.Completed));
+            // verify newly launched job inherited instance count from previous job instance.
+            detailsResp.getJobMetadata().get().getSchedulingInfo().getStages().forEach((stageId, stageInfo) -> {
+                assertEquals(
+                        jobDefn.getSchedulingInfo().forStage(stageId).getNumberOfInstances(),
+                        detailsResp.getJobMetadata().get().getSchedulingInfo().forStage(stageId).getNumberOfInstances());
+            });
+
+
+            assertTrue(JobTestHelper.verifyJobStatusWithPolling(probe, jobClusterActor, jobId2, JobState.Launched));
 
 
         } catch (InvalidJobException e) {
