@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import akka.actor.AbstractActorWithTimers;
@@ -52,6 +53,8 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
@@ -1313,6 +1316,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private BehaviorSubject<JobSchedulingInfo> jobSchedulingInfoBehaviorSubject;
         private String currentJobSchedulingInfoStr = null;
         private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter();
+        // Use expiring cache to effectively track worker resubmitted in the last hour.
+        private Cache<Integer, Boolean> recentlyResubmittedWorkersCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.HOURS)
+                .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
 
         /**
@@ -2232,7 +2239,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
 
             IMantisWorkerMetadata oldWorkerMetadata = oldWorker.getMetadata();
-            if (oldWorkerMetadata.getTotalResubmitCount()
+            if (recentlyResubmittedWorkersCache.size()
                     < ConfigurationProvider.getConfig().getMaximumResubmissionsPerWorker()) {
 
                 Integer stageNo = workerToStageMap.get(oldWorkerMetadata.getWorkerId().getWorkerNum());
@@ -2280,6 +2287,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 markStageAssignmentsChanged(true);
                 // queue the new worker for execution
                 queueTask(newWorker.getMetadata(), delayDuration);
+                recentlyResubmittedWorkersCache.put(oldWorkerMetadata.getWorkerNumber(), true);
                 LOGGER.info("Worker {} successfully queued for scheduling", newWorker);
                 numWorkerResubmissions.increment();
             } else {

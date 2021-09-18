@@ -18,7 +18,7 @@ ext {
     junitVersion = '5.3.+'
     mockitoVersion = '2.18.+'
     mqlVersion = '3.2.2'
-    spectatorVersion = 'latest.release'
+    spectatorVersion = '0.134.0'
 }
 
 dependencies {
