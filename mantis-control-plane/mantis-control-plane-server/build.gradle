@@ -29,6 +29,8 @@ ext {
 
 dependencies {
     compile project(':mantis-control-plane:mantis-control-plane-core')
+    compileOnly libraries.lombok
+    annotationProcessor libraries.lombok
 
     api "com.typesafe.akka:akka-http_2.13:$akkaHttpVersion"
     api "com.typesafe.akka:akka-http-jackson_2.13:$akkaHttpVersion"

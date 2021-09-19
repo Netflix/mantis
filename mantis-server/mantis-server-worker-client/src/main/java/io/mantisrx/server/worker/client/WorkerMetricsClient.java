@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.worker.client;
 
+import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.master.client.MasterClientWrapper;
-import io.mantisrx.server.master.client.config.ConfigurationFactory;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -84,8 +84,8 @@ public class WorkerMetricsClient {
         clientWrapper = new MasterClientWrapper(properties);
     }
 
-    public WorkerMetricsClient(ConfigurationFactory configurationFactory) {
-        clientWrapper = new MasterClientWrapper(configurationFactory);
+    public WorkerMetricsClient(CoreConfiguration configuration) {
+        clientWrapper = new MasterClientWrapper(configuration);
     }
 
 

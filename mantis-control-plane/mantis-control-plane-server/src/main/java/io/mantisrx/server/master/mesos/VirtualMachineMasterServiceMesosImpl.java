@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -162,7 +163,8 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                     scheduleRequest.getDurationType(),
                     scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
                     scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
-                    launchTaskRequest.getPorts()
+                    launchTaskRequest.getPorts(),
+                    Optional.empty()
             );
             taskInfoBuilder
                     .setName(name)

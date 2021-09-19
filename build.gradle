@@ -46,6 +46,10 @@ ext {
     vavrVersion = '0.9.2'
 }
 
+ext.libraries = [
+        lombok: "org.projectlombok:lombok:1.18.20"
+]
+
 allprojects {
     apply plugin: 'nebula.netflixoss'
 }

@@ -45,6 +45,11 @@ import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
+
+/**
+ * The goal of this class is to essentially publish status / heartbeat values to the mantis master
+ * periodically so that the mantis master is aware of the stage's current state.
+ */
 public class ReportStatusServiceHttpImpl extends BaseService implements ReportStatusService {
 
     private static final Logger logger = LoggerFactory.getLogger(ReportStatusServiceHttpImpl.class);

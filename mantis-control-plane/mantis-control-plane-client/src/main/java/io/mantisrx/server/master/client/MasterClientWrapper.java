@@ -30,7 +30,6 @@ import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.zookeeper.CuratorService;
-import io.mantisrx.server.master.client.config.ConfigurationFactory;
 import io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
@@ -59,16 +58,16 @@ public class MasterClientWrapper {
     final BehaviorSubject<Boolean> initialMaster = BehaviorSubject.create();
     private final MasterMonitor masterMonitor;
     private final Counter masterConnectRetryCounter;
-    ConfigurationFactory configurationFactory;
+    CoreConfiguration configuration;
     private MantisMasterClientApi masterClientApi;
     private PublishSubject<JobSinkNumWorkers> numSinkWorkersSubject = PublishSubject.create();
     private PublishSubject<JobNumWorkers> numWorkersSubject = PublishSubject.create();
     public MasterClientWrapper(Properties properties) {
-        this(new StaticPropertiesConfigurationFactory(properties));
+        this(new StaticPropertiesConfigurationFactory(properties).getConfig());
     }
     // blocks until getting master info from zookeeper
-    public MasterClientWrapper(ConfigurationFactory configurationFactory) {
-        this.configurationFactory = configurationFactory;
+    public MasterClientWrapper(CoreConfiguration configuration) {
+        this.configuration = configuration;
         masterMonitor = initializeMasterMonitor();
         Metrics m = new Metrics.Builder()
                 .name(MasterClientWrapper.class.getCanonicalName())
@@ -165,8 +164,7 @@ public class MasterClientWrapper {
     }
 
     private MasterMonitor initializeMasterMonitor() {
-        CoreConfiguration config = configurationFactory.getConfig();
-        CuratorService curatorService = new CuratorService(config, null);
+        CuratorService curatorService = new CuratorService(configuration, null);
         MasterMonitor masterMonitor = curatorService.getMasterMonitor();
         startInitialMasterDescriptionGetter(curatorService, masterMonitor);
         return masterMonitor;

@@ -82,7 +82,7 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-
+// stage that actually calls custom stage method
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerExecutionOperationsNetworkStage.class);
@@ -288,11 +288,14 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         // Initialize the schedulingInfo observable for current job and mark it shareable to be reused by anyone interested in this data.
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
 
+        // JobSchedulingInfo has metadata around which stage runs on which set of workers
         Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).subscribeOn(Schedulers.io()).share();
+        // represents datastructure that has the current worker information and what it represents in the overall operator DAG
         WorkerInfo workerInfo = generateWorkerInfo(executionRequest.getJobName(), executionRequest.getJobId(),
                 executionRequest.getStage(), executionRequest.getWorkerIndex(),
                 executionRequest.getWorkerNumber(), executionRequest.getDurationType(), "host", executionRequest.getWorkerPorts());
 
+        // observable that represents the number of workers for the source stage
         final Observable<Integer> sourceStageTotalWorkersObs = createSourceStageTotalWorkersObservable(selfSchedulingInfo);
         RunningWorker.Builder rwBuilder = new RunningWorker.Builder()
                 .job(setup.getMantisJob())

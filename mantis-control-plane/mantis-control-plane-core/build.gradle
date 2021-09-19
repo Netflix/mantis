@@ -28,6 +28,9 @@ ext {
 
 dependencies {
 
+    compileOnly libraries.lombok
+    annotationProcessor libraries.lombok
+
     api project(":mantis-common")
 
     api "org.skife.config:config-magic:$configMagicVersion"

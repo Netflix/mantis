@@ -24,6 +24,9 @@ ext {
 }
 
 dependencies {
+    compileOnly libraries.lombok
+    annotationProcessor libraries.lombok
+
     compile project(":mantis-runtime")
     compile project(":mantis-control-plane:mantis-control-plane-client")
     compile project(":mantis-control-plane:mantis-control-plane-core")
