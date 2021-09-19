@@ -128,9 +128,7 @@ import rx.subjects.BehaviorSubject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static akka.pattern.PatternsCS.ask;
@@ -1349,7 +1347,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // given job defn requires inheriting instance count from existing job.
             logger.info("Job requires inheriting instance count.");
             Optional<JobDefinition> jobDefnOp = createJobDefinitionInheritingInstanceCount(
-                    givenJobDefnOp.get(), jobManager.getAllNonTerminalJobsList(), jobManager.getCompletedJobsList(), jobStore);
+                    givenJobDefnOp.get(), jobManager.getAllNonTerminalJobsList());
             if(jobDefnOp.isPresent()) {
                 logger.info("Inherited stage instance count from previous job");
                 resolvedJobDefn = jobDefnOp.get();
@@ -1911,50 +1909,33 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private Optional<JobDefinition> createJobDefinitionInheritingInstanceCount(
             final JobDefinition givenJobDefn,
-            final List<JobInfo> existingJobsList,
-            final List<CompletedJob> completedJobs,
-            final MantisJobStore store) {
+            final List<JobInfo> existingJobsList) {
         if(logger.isTraceEnabled()) { logger.trace("Enter createJobDefinitionInheritingInstanceCount"); }
 
-        // use last submitted job (if present) to merge with the givenJobDefn so the result jobDefn will inherit instance count.
-        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().from(givenJobDefn);
-        Optional<JobDefinition> lastSubmittedJobDefn = getLastSubmittedJobDefinition(existingJobsList, completedJobs, empty(), store);
-        if (lastSubmittedJobDefn.isPresent()) {
-            if (givenJobDefn.getSchedulingInfo() == null) {
-                logger.error("Empty scheduling info in given job defn {}.", givenJobDefn);
-                return empty();
-            }
-
-            if (lastSubmittedJobDefn.get().getSchedulingInfo() != null &&
-                    lastSubmittedJobDefn.get().getSchedulingInfo().getStages().size() == givenJobDefn.getSchedulingInfo().getStages().size()) {
-                // Use instance count from last submitted job at each stage.
-                Map<Integer, StageSchedulingInfo> givenStages = givenJobDefn.getSchedulingInfo().getStages();
-                Map<Integer, StageSchedulingInfo> lastStages = lastSubmittedJobDefn.get().getSchedulingInfo().getStages();
-                SchedulingInfo.Builder siBuilder = new SchedulingInfo.Builder().numberOfStages(givenStages.size());
-                givenStages.forEach((stageId, givenStageInfo) -> {
-                    if (lastStages.containsKey(stageId) && givenStageInfo.getInheritInstanceCount()) {
-                        StageSchedulingInfo mergedStageInfo = new StageSchedulingInfo.Builder()
-                                .setNumberOfInstances(lastStages.get(stageId).getNumberOfInstances())
-                                .cloneWithoutNumberOfInstances(givenStageInfo)
-                                .build();
-                        siBuilder.addStage(mergedStageInfo);
-                    }
-                    else {
-                        siBuilder.addStage(givenStageInfo);
-                    }
-                });
-                jobDefnBuilder.withSchedulingInfo(siBuilder.build());
-            }
-        }
-
-        try {
-            return createNewJobDefinitionInheritSchedInfoAndParameters(jobDefnBuilder.build());
-        }
-        catch (InvalidJobException ije)
+        // use last submitted job (if non-terminal) to merge with the givenJobDefn so the result jobDefn will inherit instance count.
+        JobDefinition finalJobDefn = givenJobDefn;
+        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, Lists.newArrayList());
+        if (lastJobId.isPresent())
         {
-            logger.error("Failed to create jobDefinition inheriting instance count {} due to {}.", givenJobDefn, ije.getMessage());
-            return empty();
+            Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
+            if (jobInfoForNonTerminalJob.isPresent()) {
+                CompletableFuture<Optional<JobDefinition>> mergedJobDefnOCS =
+                        getNonTerminalJobDefnWithWorkerCountInheritance(jobInfoForNonTerminalJob.get(), givenJobDefn, false)
+                                .toCompletableFuture();
+                try {
+                    if (mergedJobDefnOCS.get(500, TimeUnit.MILLISECONDS).isPresent()) {
+                        finalJobDefn = mergedJobDefnOCS.get().get();
+                    }
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    logger.error("Failed to merge with running job's instance", e);
+                }
+            }
         }
+        else {
+            logger.info("No running job instance available to inherit stage worker instance {}", givenJobDefn.getName());
+        }
+
+        return createNewJobDefinitionInheritSchedInfoAndParameters(finalJobDefn);
     }
 
     @Override
@@ -2195,7 +2176,25 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(lastJobId.isPresent()) {
             Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
             if(jobInfoForNonTerminalJob.isPresent()) {
-                if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition {}", jobInfoForNonTerminalJob.get().jobDefinition); }
+                // On quick submit path, if there is non-terminal instance use the active job info to merge live stage worker count.
+                CompletableFuture<Optional<JobDefinition>> mergedJobDefnOCS =
+                        getNonTerminalJobDefnWithWorkerCountInheritance(
+                                jobInfoForNonTerminalJob.get(), jobInfoForNonTerminalJob.get().jobDefinition, true)
+                                .toCompletableFuture();
+                try {
+                    if (mergedJobDefnOCS.get(500, TimeUnit.MILLISECONDS).isPresent()) {
+                        if(logger.isTraceEnabled()) {
+                            logger.trace("Exit getLastSubmittedJobDefinition with merged: {}", mergedJobDefnOCS.get().get());
+                        }
+                        return mergedJobDefnOCS.get();
+                    }
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    logger.error("Failed to merge with running job's instance", e);
+                }
+
+                if(logger.isTraceEnabled()) {
+                    logger.trace("Exit getLastSubmittedJobDefinition without merge {}", jobInfoForNonTerminalJob.get().jobDefinition);
+                }
                 return of(jobInfoForNonTerminalJob.get().jobDefinition);
             } else {
                 Optional<CompletedJob> completedJob = jobManager.getCompletedJob(lastJobId.get());
@@ -2221,6 +2220,71 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition empty"); }
         return empty();
+    }
+
+
+    /*
+     * Use running job instance to merge with given job definition for each stage's worker instance count.
+     * @param runningJobInfo the running job instance with ref to its job actor.
+     * @param givenJobDefn given job definition.
+     * @param forceInheritance whether to force instance inheritance to all stages.
+     * @return CompletionStage<Optional<JobDefinition>> CompletionStage containing the merged job definition.
+     */
+    private CompletionStage<Optional<JobDefinition>> getNonTerminalJobDefnWithWorkerCountInheritance(
+            final JobInfo runningJobInfo, final JobDefinition givenJobDefn, boolean forceInheritance) {
+        // Get job details with job metadata tracked inside job actor.
+        logger.info("[Inherit worker count] apply worker count inheritance on given job: {} from {}",
+                givenJobDefn.getName(), runningJobInfo.jobId);
+
+        GetJobDetailsRequest req = new GetJobDetailsRequest("system", runningJobInfo.jobId);
+        return ask(runningJobInfo.jobActor, req, Duration.ofMillis(500))
+                .thenApply(GetJobDetailsResponse.class::cast)
+                .thenApply(res -> {
+                    if (!res.getJobMetadata().isPresent()) {
+                        logger.warn("Got empty job actor metadata.");
+                        return empty();
+                    }
+                    else if (givenJobDefn.getSchedulingInfo() == null) {
+                        logger.warn("Invalid job definition from given job info.");
+                        return empty();
+                    }
+                    else {
+                        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().from(givenJobDefn);
+                        Map<Integer, StageSchedulingInfo> givenStages = givenJobDefn.getSchedulingInfo().getStages();
+
+                        IMantisJobMetadata lastJobMeta = res.getJobMetadata().get();
+                        SchedulingInfo.Builder siBuilder = new SchedulingInfo.Builder().numberOfStages(givenStages.size());
+
+                        givenStages.keySet().stream().sorted().forEach(k -> {
+                            if (lastJobMeta.getStageMetadata(k).isPresent() &&
+                                    (forceInheritance || givenStages.get(k).getInheritInstanceCount())) {
+                                StageSchedulingInfo mergedStageInfo = new StageSchedulingInfo.Builder()
+                                        .setNumberOfInstances(lastJobMeta.getStageMetadata(k).get().getNumWorkers())
+                                        .cloneWithoutNumberOfInstances(givenStages.get(k))
+                                        .build();
+                                if (k == 0) { // handle JobMaster stage
+                                    siBuilder.addJobMasterStage(mergedStageInfo);
+                                }
+                                else { siBuilder.addStage(mergedStageInfo); }
+                            }
+                            else {
+                                if (k == 0) { // handle JobMaster stage
+                                    siBuilder.addJobMasterStage(givenStages.get(k));
+                                }
+                                else { siBuilder.addStage(givenStages.get(k)); }
+                            }
+                        });
+
+                        jobDefnBuilder.withSchedulingInfo(siBuilder.build());
+                        try {
+                            return of(jobDefnBuilder.build());
+                        }
+                        catch (InvalidJobException ije) {
+                            logger.error("Failed to build job definition with inheritance:", ije);
+                            return empty();
+                        }
+                    }
+                });
     }
 
 

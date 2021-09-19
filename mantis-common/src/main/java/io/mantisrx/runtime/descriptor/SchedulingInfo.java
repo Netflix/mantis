@@ -120,6 +120,10 @@ public class SchedulingInfo {
             return this;
         }
 
+        public void addJobMasterStage(StageSchedulingInfo schedulingInfo) {
+            builderStages.put(0, schedulingInfo);
+        }
+
         public Builder numberOfStages(int numberOfStages) {
             this.numberOfStages = numberOfStages;
             return this;
