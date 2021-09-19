@@ -41,7 +41,7 @@ import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
 
-
+// job master service is the one responsible for autoscaling
 public class JobMasterService implements Service {
 
     private static final Logger logger = LoggerFactory.getLogger(JobMasterService.class);

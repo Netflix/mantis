@@ -27,7 +27,7 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DownloadJob {
+public class DownloadJob implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(DownloadJob.class);
     private URL jobArtifactUrl;
@@ -53,10 +53,14 @@ public class DownloadJob {
         logger.info("parameters, jobName: " + args[1]);
         logger.info("parameters, locationToStore: " + args[2]);
 
-        new DownloadJob(new URL(args[0]), args[1], args[2]).execute();
+        new DownloadJob(new URL(args[0]), args[1], args[2]).run();
     }
 
-    public void execute() {
+    public static void run(URL jobArtifactUrl, String jobName, String locationToStore) {
+        new DownloadJob(jobArtifactUrl, jobName, locationToStore).run();
+    }
+
+    public void run() {
 
         String jobJarFile = jobArtifactUrl.getFile();
         String jarName = jobJarFile.substring(jobJarFile.lastIndexOf('/') + 1);

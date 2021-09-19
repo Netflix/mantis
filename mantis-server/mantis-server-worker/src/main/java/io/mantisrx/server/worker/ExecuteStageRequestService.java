@@ -21,13 +21,12 @@ import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
-import java.net.MalformedURLException;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -36,26 +35,40 @@ import rx.Subscription;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-
+@Slf4j
 public class ExecuteStageRequestService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExecuteStageRequestService.class);
-    private Observable<WrappedExecuteStageRequest> executeStageRequestObservable;
-    private Observer<Observable<Status>> tasksStatusObserver;
-    private WorkerExecutionOperations executionOperations;
-    private Optional<String> jobProviderClass;
-    private Job mantisJob;
+    private final Observable<WrappedExecuteStageRequest> executeStageRequestObservable;
+    private final Observer<Observable<Status>> tasksStatusObserver;
+    private final WorkerExecutionOperations executionOperations;
+    private final Optional<String> jobProviderClass;
+
+    private final ClassLoaderHandle classLoaderHandle;
+    /** The classpaths used by this task. */
+    private final Collection<URL> requiredClasspaths;
+    private final Job mantisJob;
+
+    /**
+     * This class loader should be set as the context class loader for threads that may dynamically
+     * load user code.
+     */
+    private UserCodeClassLoader userCodeClassLoader;
     private Subscription subscription;
 
-    public ExecuteStageRequestService(Observable<WrappedExecuteStageRequest> executeStageRequestObservable,
-                                      Observer<Observable<Status>> tasksStatusObserver,
-                                      WorkerExecutionOperations executionOperations,
-                                      Optional<String> jobProviderClass,
-                                      Job mantisJob) {
+    public ExecuteStageRequestService(
+        Observable<WrappedExecuteStageRequest> executeStageRequestObservable,
+        Observer<Observable<Status>> tasksStatusObserver,
+        WorkerExecutionOperations executionOperations,
+        Optional<String> jobProviderClass,
+        ClassLoaderHandle classLoaderHandle, Collection<URL> requiredClasspaths,
+        Job mantisJob) {
         this.executeStageRequestObservable = executeStageRequestObservable;
         this.tasksStatusObserver = tasksStatusObserver;
         this.executionOperations = executionOperations;
         this.jobProviderClass = jobProviderClass;
+        this.classLoaderHandle = classLoaderHandle;
+        this.requiredClasspaths = requiredClasspaths;
         this.mantisJob = mantisJob;
     }
 
@@ -80,39 +93,53 @@ public class ExecuteStageRequestService extends BaseService {
 
                         ExecuteStageRequest executeStageRequest =
                                 executeRequest.getExecuteRequest().getRequest();
-                        URL jobJarUrl = executeStageRequest.getJobJarUrl();
-                        // pull out file name from URL
-                        String jobJarFile = jobJarUrl.getFile();
-                        String jarName = jobJarFile.substring(jobJarFile.lastIndexOf('/') + 1);
 
-                        // path used to store job on local disk
-                        Path path = Paths.get("/tmp", "mantis-jobs", executeStageRequest.getJobId(),
-                                Integer.toString(executeStageRequest.getWorkerNumber()),
-                                "libs");
-                        URL pathLocation = null;
+//                        URL jobJarUrl = executeStageRequest.getJobJarUrl();
+//                        // pull out file name from URL
+//                        String jobJarFile = jobJarUrl.getFile();
+//                        String jarName = jobJarFile.substring(jobJarFile.lastIndexOf('/') + 1);
+//
+//                        // path used to store job on local disk
+//                        Path path = Paths.get("/tmp", "mantis-jobs", executeStageRequest.getJobId(),
+//                                Integer.toString(executeStageRequest.getWorkerNumber()),
+//                                "libs");
+//                        URL pathLocation = null;
+//                        try {
+//                            pathLocation = Paths.get(path.toString(), "*").toUri().toURL();
+//                        } catch (MalformedURLException e1) {
+//                            logger.error("Failed to convert path location to URL", e1);
+//                            executeRequest.getStatus().onError(e1);
+//                            return Observable.empty();
+//                        }
+//                        logger.info("Creating job classpath with pathLocation " + pathLocation);
+//                        ClassLoader cl = URLClassLoader.newInstance(new URL[] {pathLocation});
+                        Job mantisJob = null;
+                        ClassLoader cl = null;
                         try {
-                            pathLocation = Paths.get(path.toString(), "*").toUri().toURL();
-                        } catch (MalformedURLException e1) {
-                            logger.error("Failed to convert path location to URL", e1);
-                            executeRequest.getStatus().onError(e1);
-                            return Observable.empty();
-                        }
-                        logger.info("Creating job classpath with pathLocation " + pathLocation);
-                        ClassLoader cl = URLClassLoader.newInstance(new URL[] {pathLocation});
-                        try {
-                            if (mantisJob == null) {
+                            if (ExecuteStageRequestService.this.mantisJob == null) {
+                                // first of all, get a user-code classloader
+                                // this may involve downloading the job's JAR files and/or classes
+                                log.info("Loading JAR files for task {}.", this);
+
+                                userCodeClassLoader = createUserCodeClassloader(
+                                    executeStageRequest);
+                                cl = userCodeClassLoader.asClassLoader();
                                 if (jobProviderClass.isPresent()) {
                                     logger.info("loading job main class " + jobProviderClass.get());
-                                    final Class clazz = Class.forName(jobProviderClass.get());
-                                    final MantisJobProvider jobProvider = (MantisJobProvider) clazz.newInstance();
+                                    final MantisJobProvider jobProvider = InstantiationUtil.instantiate(
+                                        jobProviderClass.get(), MantisJobProvider.class, cl);
                                     mantisJob = jobProvider.getJobInstance();
                                 } else {
                                     logger.info("using serviceLoader to get job instance");
-                                    ServiceLoader<MantisJobProvider> provider = ServiceLoader.load(MantisJobProvider.class, cl);
+                                    ServiceLoader<MantisJobProvider> provider = ServiceLoader.load(
+                                        MantisJobProvider.class, cl);
                                     // should only be a single provider, check is made in master
-                                    MantisJobProvider mantisJobProvider = provider.iterator().next();
+                                    MantisJobProvider mantisJobProvider = provider.iterator()
+                                        .next();
                                     mantisJob = mantisJobProvider.getJobInstance();
                                 }
+                            } else {
+                                mantisJob = ExecuteStageRequestService.this.mantisJob;
                             }
                         } catch (Throwable e) {
                             logger.error("Failed to load job class", e);
@@ -168,5 +195,20 @@ public class ExecuteStageRequestService extends BaseService {
 
     @Override
     public void enterActiveMode() {}
+
+    private UserCodeClassLoader createUserCodeClassloader(ExecuteStageRequest executeStageRequest) throws Exception {
+        long startDownloadTime = System.currentTimeMillis();
+
+        // triggers the download of all missing jar files from the job manager
+        final UserCodeClassLoader userCodeClassLoader =
+            classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl()), requiredClasspaths);
+
+        log.info(
+            "Getting user code class loader for task {} at library cache manager took {} milliseconds",
+            executeStageRequest.getExecutionAttemptID(),
+            System.currentTimeMillis() - startDownloadTime);
+
+        return userCodeClassLoader;
+    }
 
 }

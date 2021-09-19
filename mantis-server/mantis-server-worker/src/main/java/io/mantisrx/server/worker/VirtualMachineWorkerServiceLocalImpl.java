@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -109,7 +110,8 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
         final ExecuteStageRequest executeStageRequest = new ExecuteStageRequest(workerInfo.getJobName(), workerInfo.getJobId(), workerInfo.getWorkerIndex(), workerInfo.getWorkerNumber(),
                 jobJarUrl, workerInfo.getStageNumber(), workerInfo.getNumStages(), ports, timeoutToReportStartSec, workerInfo.getMetricsPort(), params, schedInfo, MantisJobDurationType.Transient,
-                0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)));
+                0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)),
+            Optional.empty());
 
         return new WrappedExecuteStageRequest(PublishSubject.<Boolean>create(), executeStageRequest);
     }

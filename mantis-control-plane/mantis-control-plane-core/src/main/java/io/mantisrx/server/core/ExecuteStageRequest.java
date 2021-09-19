@@ -26,19 +26,27 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 
 public class ExecuteStageRequest {
 
+    // am I special worker 0 or not?
     private final boolean hasJobMaster;
+    // configuration to do whatever
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
+    //
     private final WorkerPorts workerPorts;
     private String jobName;
+    // ID is the instance of the job
     private String jobId;
+    // index of the worker in that stage
     private int workerIndex;
+    // rolling counter of workers for that stage
     private int workerNumber;
     private URL jobJarUrl;
+    // index of the stage
     private int stage;
     private int totalNumStages;
     private int metricsPort;
@@ -47,6 +55,7 @@ public class ExecuteStageRequest {
     private List<Parameter> parameters = new LinkedList<Parameter>();
     private SchedulingInfo schedulingInfo;
     private MantisJobDurationType durationType;
+    private Optional<String> nameOfJobProviderClass;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -65,8 +74,8 @@ public class ExecuteStageRequest {
                                @JsonProperty("durationType") MantisJobDurationType durationType,
                                @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
                                @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
-                               @JsonProperty("workerPorts") WorkerPorts workerPorts
-    ) {
+                               @JsonProperty("workerPorts") WorkerPorts workerPorts,
+                               @JsonProperty("jobProviderClass") Optional<String> nameOfJobProviderClass) {
         this.jobName = jobName;
         this.jobId = jobId;
         this.workerIndex = workerIndex;
@@ -74,6 +83,7 @@ public class ExecuteStageRequest {
         this.jobJarUrl = jobJarUrl;
         this.stage = stage;
         this.totalNumStages = totalNumStages;
+        this.nameOfJobProviderClass = nameOfJobProviderClass;
         this.ports.addAll(ports);
         this.metricsPort = metricsPort;
         this.timeoutToReportStart = timeoutToReportStart;
@@ -158,6 +168,10 @@ public class ExecuteStageRequest {
         return minRuntimeSecs;
     }
 
+    public Optional<String> getNameOfJobProviderClass() {
+        return nameOfJobProviderClass;
+    }
+
     @Override
     public String toString() {
         return "ExecuteStageRequest{" +
@@ -179,5 +193,14 @@ public class ExecuteStageRequest {
                 ", minRuntimeSecs=" + minRuntimeSecs +
                 ", workerPorts=" + workerPorts +
                 '}';
+    }
+
+    public ExecutionAttemptID getExecutionAttemptID() {
+        return ExecutionAttemptID.of(jobId, stage, workerIndex, workerNumber);
+    }
+
+    // returns the total number of workers assigned for the stage the current worker belongs to
+    public int getTotalNumWorkers() {
+        return schedulingInfo.forStage(getStage()).getNumberOfInstances();
     }
 }

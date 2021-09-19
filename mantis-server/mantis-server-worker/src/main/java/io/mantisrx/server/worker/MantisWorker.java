@@ -21,43 +21,29 @@ import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WorkerTopologyInfo;
-import io.mantisrx.server.core.WorkerTopologyInfo.Data;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
-import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.metrics.MetricsPublisherService;
-import io.mantisrx.server.core.metrics.MetricsServerService;
-import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.core.zookeeper.CuratorService;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
-import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
-import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
-import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import mantis.io.reactivex.netty.RxNetty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.subjects.PublishSubject;
 
-
+/**
+ * This class is the executable entry point for the worker. It constructs the related components (LeaderService),
+ * and starts them.
+ */
 public class MantisWorker extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisWorker.class);
@@ -70,7 +56,8 @@ public class MantisWorker extends BaseService {
     //    }
     private List<Service> mantisServices = new LinkedList<Service>();
 
-    public MantisWorker(ConfigurationFactory configFactory, io.mantisrx.server.master.client.config.ConfigurationFactory coreConfigFactory) {
+    // todo(sundaram): Consolidate configurations into one class that can be used across all components.
+    public MantisWorker(ConfigurationFactory configFactory) {
         // for rxjava
         System.setProperty("rx.ring-buffer.size", "1024");
 
@@ -85,62 +72,12 @@ public class MantisWorker extends BaseService {
         t.setDaemon(true);
         Runtime.getRuntime().addShutdownHook(t);
 
-        // shared state
-        PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
-        PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
-        PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
-
         // services
         // metrics
-        Data data = WorkerTopologyInfo.Reader.getData();
+//        Data data = WorkerTopologyInfo.Reader.getData();
 
-        // provide common tags to metrics publishing service
-        Map<String, String> commonTags = new HashMap<>();
-        commonTags.put(MetricStringConstants.MANTIS_WORKER_NUM, Integer.toString(data.getWorkerNumber()));
-        commonTags.put(MetricStringConstants.MANTIS_STAGE_NUM, Integer.toString(data.getStageNumber()));
-        commonTags.put(MetricStringConstants.MANTIS_WORKER_INDEX, Integer.toString(data.getWorkerIndex()));
-        commonTags.put(MetricStringConstants.MANTIS_JOB_NAME, data.getJobName());
-        commonTags.put(MetricStringConstants.MANTIS_JOB_ID, data.getJobId());
-        mantisServices.add(new MetricsServerService(data.getMetricsPort(), 1, commonTags)); // metrics server, publishing metrics every 1 second
-
-        mantisServices.add(new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
-                commonTags));
-
-        WorkerMetricsClient workerMetricsClient = new WorkerMetricsClient(coreConfigFactory);
-
-        // services split out by local/non-local mode
-        if (config.isLocalMode()) {
-            mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
-            /* To run MantisWorker locally in IDE, use VirualMachineWorkerServiceLocalImpl instead
-            WorkerTopologyInfo.Data workerData = new WorkerTopologyInfo.Data(data.getJobName(), data.getJobId(),
-                data.getWorkerIndex(), data.getWorkerNumber(), data.getStageNumber(), data.getNumStages(), -1, -1, data.getMetricsPort());
-            mantisServices.add(new VirtualMachineWorkerServiceLocalImpl(workerData, executeStageSubject, vmTaskStatusSubject));
-            */
-            mantisServices.add(new ReportStatusServiceHttpImpl(new LocalMasterMonitor(getInitialMasterDescription()), tasksStatusSubject));
-            mantisServices.add(new ExecuteStageRequestService(
-                    executeStageSubject,
-                    tasksStatusSubject,
-                    new WorkerExecutionOperationsNetworkStage(
-                            vmTaskStatusSubject,
-                            new MantisMasterClientApi(new LocalMasterMonitor(getInitialMasterDescription())),
-                            config,
-                            workerMetricsClient),
-                    getJobProviderClass(),
-                    null));
-        } else {
-            mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
-            CuratorService curatorService = new CuratorService(config, getInitialMasterDescription());
-            curatorService.start();
-            MasterMonitor masterMonitor = curatorService.getMasterMonitor();
-            mantisServices.add(new ReportStatusServiceHttpImpl(masterMonitor, tasksStatusSubject));
-            mantisServices.add(new ExecuteStageRequestService(
-                    executeStageSubject,
-                    tasksStatusSubject,
-                    new WorkerExecutionOperationsNetworkStage(vmTaskStatusSubject,
-                            new MantisMasterClientApi(masterMonitor), config, workerMetricsClient),
-                    getJobProviderClass(),
-                    null));
-        }
+//        mantisServices.add(new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
+//                commonTags));
     }
 
     private static Properties loadProperties(String propFile) {
@@ -188,10 +125,8 @@ public class MantisWorker extends BaseService {
 
         try {
             StaticPropertiesConfigurationFactory workerConfigFactory = new StaticPropertiesConfigurationFactory(loadProperties(propFile));
-            io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory coreConfigFactory =
-                    new io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory(loadProperties(propFile));
 
-            MantisWorker worker = new MantisWorker(workerConfigFactory, coreConfigFactory);
+            MantisWorker worker = new MantisWorker(workerConfigFactory);
             worker.start();
         } catch (Exception e) {
             // unexpected to get runtime exception, will exit
