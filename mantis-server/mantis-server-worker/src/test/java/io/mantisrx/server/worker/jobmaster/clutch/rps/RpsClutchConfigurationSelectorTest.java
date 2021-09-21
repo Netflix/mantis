@@ -16,6 +16,9 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.rps;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchConfiguration;
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
@@ -24,14 +27,10 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
+import java.util.Map;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class RpsClutchConfigurationSelectorTest {
     private static final Logger logger = LoggerFactory.getLogger(RpsClutchConfigurationSelectorTest.class);

@@ -16,12 +16,12 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.rps;
 
+import static org.junit.Assert.assertEquals;
+
 import com.netflix.control.clutch.ClutchConfiguration;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class RpsScaleComputerTest {
     @Test

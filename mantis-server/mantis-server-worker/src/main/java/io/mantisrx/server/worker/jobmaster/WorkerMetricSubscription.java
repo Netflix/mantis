@@ -18,15 +18,14 @@ package io.mantisrx.server.worker.jobmaster;
 
 import static io.mantisrx.server.core.stats.MetricStringConstants.METRIC_NAME_STR;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Set;
-
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.worker.client.MetricsClient;
 import io.mantisrx.server.worker.client.SseWorkerConnectionFunction;
 import io.mantisrx.server.worker.client.WorkerConnectionsStatus;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
+import java.io.UnsupportedEncodingException;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observer;

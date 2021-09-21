@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.worker.jobmaster.control;
 
-import java.io.IOException;
-
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import java.io.IOException;
 
 
 public class AdaptiveAutoscalerConfig {
@@ -143,4 +142,3 @@ public class AdaptiveAutoscalerConfig {
         return "AdaptiveAutoscalerConfig(metric=" + this.getMetric() + ", setPoint=" + this.getSetPoint() + ", invert=" + this.isInvert() + ", rope=" + this.getRope() + ", kp=" + this.getKp() + ", ki=" + this.getKi() + ", kd=" + this.getKd() + ", minScale=" + this.getMinScale() + ", maxScale=" + this.getMaxScale() + ")";
     }
 }
-

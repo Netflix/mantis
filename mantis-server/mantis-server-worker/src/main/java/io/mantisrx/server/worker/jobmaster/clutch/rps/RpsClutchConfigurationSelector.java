@@ -22,7 +22,6 @@ import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.vavr.Function1;
 import io.vavr.Tuple2;
-
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 

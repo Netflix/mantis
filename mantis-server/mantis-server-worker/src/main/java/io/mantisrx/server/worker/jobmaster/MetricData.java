@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import java.util.List;
-
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
+import java.util.List;
 
 
 class MetricData {

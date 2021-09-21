@@ -16,14 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import java.util.StringTokenizer;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -31,6 +23,12 @@ import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.MesosResourceUsageUtils;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.StringTokenizer;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

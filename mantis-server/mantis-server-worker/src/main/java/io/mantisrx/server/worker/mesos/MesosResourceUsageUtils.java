@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.worker.mesos;
 
-import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
-
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.OperatorOnErrorResumeNextViaFunction;
+import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;

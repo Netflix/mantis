@@ -16,6 +16,11 @@
 
 package io.mantisrx.server.worker;
 
+import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.MantisJobProvider;
+import io.mantisrx.server.core.BaseService;
+import io.mantisrx.server.core.ExecuteStageRequest;
+import io.mantisrx.server.core.Status;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -23,12 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.ServiceLoader;
-
-import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJobProvider;
-import io.mantisrx.server.core.BaseService;
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

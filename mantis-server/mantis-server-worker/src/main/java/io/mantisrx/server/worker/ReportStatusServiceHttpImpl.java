@@ -16,11 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import java.io.IOException;
-import java.net.SocketTimeoutException;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -30,6 +25,10 @@ import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterMonitor;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;

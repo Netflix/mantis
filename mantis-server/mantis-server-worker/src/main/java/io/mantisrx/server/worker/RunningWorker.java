@@ -16,9 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobState;
@@ -31,6 +28,8 @@ import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
+import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
