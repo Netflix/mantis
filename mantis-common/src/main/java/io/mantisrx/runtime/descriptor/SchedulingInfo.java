@@ -190,11 +190,16 @@ public class SchedulingInfo {
         }
 
         public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition) {
+            return multiWorkerStage(numberOfWorkers, machineDefinition, false);
+        }
+
+        public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition, boolean scalable) {
             builderStages.put(
                     currentStage,
                     new StageSchedulingInfo.Builder()
                             .setNumberOfInstances(numberOfWorkers)
                             .setOptionalMachineDefinition(machineDefinition)
+                            .setScalable(scalable)
                             .build());
             currentStage++;
             return this;

@@ -295,6 +295,13 @@ public class JobTestHelper {
         }
     }
 
+    public static void scaleStageAndVerify(final TestKit probe, ActorRef jobClusterActor,
+                                           String jobId, int stageNum, int numberOfWorkers) {
+        jobClusterActor.tell(new JobClusterManagerProto.ScaleStageRequest(jobId, stageNum, numberOfWorkers,"user", "testScale"), probe.getRef());
+        JobClusterManagerProto.ScaleStageResponse scaleResponse = probe.expectMsgClass(JobClusterManagerProto.ScaleStageResponse.class);
+        assertEquals(SUCCESS, scaleResponse.responseCode);
+        assertEquals(numberOfWorkers, scaleResponse.getActualNumWorkers());
+    }
 
     public static ActorRef submitSingleStageScalableJob(ActorSystem system, TestKit probe, String clusterName, SchedulingInfo sInfo,
                                                         MantisScheduler schedulerMock, MantisJobStore jobStoreMock,
