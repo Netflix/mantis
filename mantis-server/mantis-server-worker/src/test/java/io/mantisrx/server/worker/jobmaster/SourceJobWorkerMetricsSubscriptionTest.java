@@ -16,6 +16,9 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
+
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.NamedJobInfo;
@@ -23,17 +26,13 @@ import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
-import org.junit.Test;
-import rx.Observable;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import org.junit.Test;
+import rx.Observable;
 
 public class SourceJobWorkerMetricsSubscriptionTest {
     @Test

@@ -16,6 +16,13 @@
 
 package io.mantisrx.server.worker;
 
+import static com.mantisrx.common.utils.MantisMetricStringConstants.INCOMING;
+import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METRIC_GROUP;
+import static io.mantisrx.server.core.stats.MetricStringConstants.DROP_COUNT;
+import static io.mantisrx.server.core.stats.MetricStringConstants.ON_NEXT_COUNT;
+import static io.reactivx.mantis.operators.DropOperator.METRIC_GROUP;
+import static org.junit.Assert.assertEquals;
+
 import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -25,13 +32,6 @@ import io.reactivx.mantis.operators.DropOperator;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.mantisrx.common.utils.MantisMetricStringConstants.INCOMING;
-import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METRIC_GROUP;
-import static io.mantisrx.server.core.stats.MetricStringConstants.DROP_COUNT;
-import static io.mantisrx.server.core.stats.MetricStringConstants.ON_NEXT_COUNT;
-import static io.reactivx.mantis.operators.DropOperator.METRIC_GROUP;
-import static org.junit.Assert.assertEquals;
 
 public class DataDroppedPayloadSetterTest {
     private static final Logger logger = LoggerFactory.getLogger(DataDroppedPayloadSetterTest.class);

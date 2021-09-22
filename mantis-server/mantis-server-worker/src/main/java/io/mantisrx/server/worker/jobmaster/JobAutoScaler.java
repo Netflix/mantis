@@ -16,24 +16,29 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.parameter.ParameterUtils;
-
-import io.mantisrx.server.core.stats.UsageDataStats;
-
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchExperimental;
-
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.runtime.parameter.ParameterUtils;
+import io.mantisrx.server.core.stats.UsageDataStats;
+import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.worker.jobmaster.clutch.ClutchAutoScaler;
+import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
 import io.mantisrx.server.worker.jobmaster.clutch.experimental.MantisClutchConfigurationSelector;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.RpsClutchConfigurationSelector;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.RpsMetricComputer;
 import io.mantisrx.server.worker.jobmaster.clutch.rps.RpsScaleComputer;
+import io.mantisrx.server.worker.jobmaster.control.actuators.MantisStageActuator;
+import io.mantisrx.server.worker.jobmaster.control.utils.TransformerWrapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.io.vavr.jackson.datatype.VavrModule;
-
 import io.vavr.control.Option;
 import io.vavr.control.Try;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -41,20 +46,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-
-import io.mantisrx.server.master.client.MantisMasterClientApi;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import rx.BackpressureOverflow;
 import rx.Observable;
 import rx.Observer;
@@ -64,11 +57,6 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.observers.SerializedObserver;
 import rx.subjects.PublishSubject;
-
-import io.mantisrx.server.worker.jobmaster.clutch.ClutchAutoScaler;
-import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
-import io.mantisrx.server.worker.jobmaster.control.actuators.MantisStageActuator;
-import io.mantisrx.server.worker.jobmaster.control.utils.TransformerWrapper;
 
 
 public class JobAutoScaler {

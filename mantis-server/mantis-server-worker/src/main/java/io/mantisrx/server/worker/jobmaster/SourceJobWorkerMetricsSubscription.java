@@ -21,12 +21,11 @@ import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Manages subscriptions to source job workers.

@@ -19,7 +19,6 @@ package io.mantisrx.server.worker.jobmaster.clutch.rps;
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchConfiguration;
 import com.netflix.control.clutch.IRpsMetricComputer;
-
 import java.util.Map;
 
 public class RpsMetricComputer implements IRpsMetricComputer {

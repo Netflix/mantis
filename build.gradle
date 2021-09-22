@@ -16,6 +16,7 @@
 
 buildscript {
     repositories {
+        gradlePluginPortal()
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -26,6 +27,8 @@ buildscript {
         classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
         classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
+        classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
+        classpath 'com.palantir.baseline:gradle-baseline-java:4.0.0'
     }
 }
 
@@ -44,7 +47,6 @@ ext {
 
 allprojects {
     apply plugin: 'nebula.netflixoss'
-    apply plugin: 'idea'
 }
 
 subprojects {
@@ -91,3 +93,4 @@ subprojects {
 }
 
 apply from: file('gradle/check.gradle')
+apply from: file('baseline.gradle')

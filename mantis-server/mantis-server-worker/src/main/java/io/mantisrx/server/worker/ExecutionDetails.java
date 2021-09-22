@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.worker;
 
-import java.util.List;
-
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.Status;
+import java.util.List;
 import rx.Observer;
 
 

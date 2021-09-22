@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.worker;
 
-import java.util.List;
-
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.StatusPayloads;
+import java.util.List;
 import junit.framework.Assert;
 import org.junit.Test;
 

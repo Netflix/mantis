@@ -16,18 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MachineDefinitions;
@@ -41,6 +29,17 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.WorkerTopologyInfo;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus.TYPE;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.apache.mesos.MesosExecutorDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

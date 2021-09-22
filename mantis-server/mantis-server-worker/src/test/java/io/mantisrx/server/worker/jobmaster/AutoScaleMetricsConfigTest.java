@@ -16,14 +16,13 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
-import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
-import org.junit.Test;
-
-import java.util.Set;
-
 import static io.reactivex.mantis.network.push.PushServerSse.DROPPED_COUNTER_METRIC_NAME;
 import static io.reactivex.mantis.network.push.PushServerSse.PROCESSED_COUNTER_METRIC_NAME;
 import static org.junit.Assert.*;
+
+import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
+import java.util.Set;
+import org.junit.Test;
 
 public class AutoScaleMetricsConfigTest {
     @Test

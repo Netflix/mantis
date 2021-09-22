@@ -10,6 +10,10 @@
 
 ## Development
 
+### Setting up Intellij
+Run `./gradlew idea` to (re-) generate IntelliJ project and module files from the templates in `.baseline`. The
+generated project is pre-configured with Baseline code style settings and support for the CheckStyle-IDEA plugin.
+
 ### Building
 
 ```sh
@@ -21,6 +25,9 @@ $ ./gradlew clean build
 ```sh
 $ ./gradlew clean test
 ```
+
+### Formatting the code
+Run `./gradlew format` task which autoformats all Java files using [Spotless](https://github.com/diffplug/spotless).
 
 ### Building deployment into local Maven cache
 

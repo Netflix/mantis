@@ -17,8 +17,8 @@
 package io.mantisrx.server.worker.jobmaster.control.controllers;
 
 
-import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.mantisrx.server.worker.jobmaster.control.Controller;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 
 
 /**

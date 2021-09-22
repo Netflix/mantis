@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
+import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 
 
 class GaugeData {

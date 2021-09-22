@@ -16,19 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
@@ -52,6 +39,18 @@ import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import mantis.io.reactivex.netty.RxNetty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

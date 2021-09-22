@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.worker;
 
+import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.server.core.Status;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,9 +26,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.server.core.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

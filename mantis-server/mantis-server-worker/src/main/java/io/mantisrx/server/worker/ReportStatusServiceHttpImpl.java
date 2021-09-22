@@ -16,11 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import java.io.IOException;
-import java.net.SocketTimeoutException;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -30,6 +25,10 @@ import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterMonitor;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
@@ -45,7 +44,6 @@ import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Func1;
-
 
 public class ReportStatusServiceHttpImpl extends BaseService implements ReportStatusService {
 
@@ -70,9 +68,15 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         final MantisPropertiesService mantisPropertiesService = ServiceRegistry.INSTANCE.getPropertiesService();
-        this.defaultConnTimeout = Integer.valueOf(mantisPropertiesService.getStringValue("mantis.worker.heartbeat.connection.timeout.ms", "100"));
-        this.defaultSocketTimeout = Integer.valueOf(mantisPropertiesService.getStringValue("mantis.worker.heartbeat.socket.timeout.ms", "1000"));
-        this.defaultConnMgrTimeout = Integer.valueOf(mantisPropertiesService.getStringValue("mantis.worker.heartbeat.connectionmanager.timeout.ms", "2000"));
+        this.defaultConnTimeout = Integer.valueOf(mantisPropertiesService.getStringValue(
+                "mantis.worker.heartbeat.connection.timeout.ms",
+                "100"));
+        this.defaultSocketTimeout = Integer.valueOf(mantisPropertiesService.getStringValue(
+                "mantis.worker.heartbeat.socket.timeout.ms",
+                "1000"));
+        this.defaultConnMgrTimeout = Integer.valueOf(mantisPropertiesService.getStringValue(
+                "mantis.worker.heartbeat.connectionmanager.timeout.ms",
+                "2000"));
 
         final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
                 .name("ReportStatusServiceHttpImpl")
@@ -102,16 +106,20 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
                     public void call(Status status) {
                         try (CloseableHttpClient defaultHttpClient = buildCloseableHttpClient()) {
                             HttpPost post = new HttpPost(masterMonitor.getLatestMaster().getFullApiStatusUri());
-                            String statusUpdate = mapper.writeValueAsString(new PostJobStatusRequest(status.getJobId(), status));
+                            String statusUpdate =
+                                    mapper.writeValueAsString(new PostJobStatusRequest(status.getJobId(), status));
                             post.setEntity(new StringEntity(statusUpdate));
                             org.apache.http.HttpResponse response = defaultHttpClient.execute(post);
                             int code = response.getStatusLine().getStatusCode();
                             if (code != 200) {
-                                logger.info("Non 200 response: " + code + ", from master with state: " + status.getState()
-                                        + " for heartbeat request at URI: " + masterMonitor.getLatestMaster().getFullApiStatusUri() + " with post data: " + statusUpdate);
+                                logger.info(
+                                        "Non 200 response: " + code + ", from master with state: " + status.getState()
+                                                + " for heartbeat request at URI: " + masterMonitor.getLatestMaster()
+                                                .getFullApiStatusUri() + " with post data: " + statusUpdate);
                                 if (code > 299) {
                                     for (Header header : response.getAllHeaders()) {
-                                        logger.info("Response Header: [" + header.getName() + "=" + header.getValue() + "]");
+                                        logger.info("Response Header: [" + header.getName() + "=" + header.getValue()
+                                                + "]");
                                     }
                                 }
                             } else {
@@ -155,5 +163,4 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
                                 .build())
                 .build();
     }
-
 }

@@ -16,13 +16,12 @@
 
 package io.mantisrx.server.worker.jobmaster.control;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
 import io.mantisrx.server.worker.jobmaster.control.actuators.MantisStageActuator;
 import io.mantisrx.server.worker.jobmaster.control.controllers.PIDController;
 import io.mantisrx.server.worker.jobmaster.control.utils.ErrorComputer;
 import io.mantisrx.server.worker.jobmaster.control.utils.Integrator;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

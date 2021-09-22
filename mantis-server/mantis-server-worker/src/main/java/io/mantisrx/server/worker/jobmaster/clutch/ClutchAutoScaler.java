@@ -20,13 +20,6 @@ import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.CP
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Memory;
 import static io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason.Network;
 
-import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import io.mantisrx.shaded.com.google.common.cache.Cache;
-import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
-import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import com.yahoo.labs.samoa.instances.Attribute;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
@@ -36,8 +29,14 @@ import io.mantisrx.server.worker.jobmaster.control.actuators.ClutchMantisStageAc
 import io.mantisrx.server.worker.jobmaster.control.controllers.PIDController;
 import io.mantisrx.server.worker.jobmaster.control.utils.ErrorComputer;
 import io.mantisrx.server.worker.jobmaster.control.utils.Integrator;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import moa.core.FastVector;
 import org.slf4j.Logger;
 import rx.Observable;

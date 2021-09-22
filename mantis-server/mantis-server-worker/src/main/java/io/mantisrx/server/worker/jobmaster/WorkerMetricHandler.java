@@ -16,6 +16,15 @@
 
 package io.mantisrx.server.worker.jobmaster;
 
+import static io.mantisrx.server.core.stats.MetricStringConstants.*;
+
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.server.core.*;
+import io.mantisrx.server.core.stats.MetricStringConstants;
+import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.shaded.com.google.common.cache.Cache;
+import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import io.reactivx.mantis.operators.DropOperator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,14 +37,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.server.core.*;
-import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
-import io.mantisrx.shaded.com.google.common.cache.Cache;
-import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
-import io.reactivx.mantis.operators.DropOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -48,8 +49,6 @@ import rx.functions.Func1;
 import rx.observers.SerializedObserver;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
-
-import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 
 
 /* package */ class WorkerMetricHandler {

@@ -16,22 +16,16 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.experimental;
 
-import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
-
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchConfiguration;
-
 import com.yahoo.sketches.quantiles.UpdateDoublesSketch;
-
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-
+import io.mantisrx.shaded.com.google.common.util.concurrent.AtomicDouble;
 import io.vavr.Function1;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +60,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         double maxRps = 2500 * numberOfCpuCores;
 
         // Checking for high or low values;
-        
+
         if (isSetpointHigh(sketches)
             && System.currentTimeMillis() - initializationTime > ONE_DAY_MILLIS - TEN_MINUTES_MILLIS) {
             setPoint *= 0.9;
@@ -81,7 +75,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         }
 
         // Sanity checking against mins / maxes
-        
+
         if (setPoint < minRps) {
           logger.info("Setpoint {} was less than minimum {}. Setting to {}.", minRps, minRps);
           setPoint = minRps;
@@ -170,9 +164,9 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
     private boolean isSetpointHigh(Map<Clutch.Metric, UpdateDoublesSketch> sketches) {
         double cpuMedian = sketches.get(Clutch.Metric.CPU).getQuantile(0.5);
         double networkMedian = sketches.get(Clutch.Metric.NETWORK).getQuantile(0.5);
-        
+
         // TODO: How do we ensure we're not just always operating in a tight range?
-        boolean cpuTooHigh = cpuMedian > trueCpuMax.get() * 0.8 
+        boolean cpuTooHigh = cpuMedian > trueCpuMax.get() * 0.8
           && cpuMedian > trueCpuMin.get() * 1.2;
         boolean networkTooHigh = networkMedian > trueNetworkMax.get() * 0.8
           && networkMedian > trueNetworkMin.get() * 1.2;

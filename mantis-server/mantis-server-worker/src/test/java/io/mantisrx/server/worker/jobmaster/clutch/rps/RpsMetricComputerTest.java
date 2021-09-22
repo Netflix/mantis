@@ -16,13 +16,12 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.rps;
 
+import static org.junit.Assert.assertEquals;
+
 import com.netflix.control.clutch.Clutch;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import org.junit.Test;
-
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class RpsMetricComputerTest {
     @Test
