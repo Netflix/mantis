@@ -27,7 +27,6 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class DownloadJob {
 
     private static final Logger logger = LoggerFactory.getLogger(DownloadJob.class);
@@ -35,8 +34,9 @@ public class DownloadJob {
     private String jobName;
     private String locationToStore;
 
-    public DownloadJob(URL jobArtifactUrl, String jobName,
-                       String locationToStore) {
+    public DownloadJob(
+            URL jobArtifactUrl, String jobName,
+            String locationToStore) {
         this.jobArtifactUrl = jobArtifactUrl;
         this.locationToStore = locationToStore;
         this.jobName = jobName;
