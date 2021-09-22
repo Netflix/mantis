@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime;
 
-import java.util.Collections;
-import java.util.List;
-
 import io.mantisrx.runtime.computation.GroupToScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.reactivex.netty.codec.Codec;
+import java.util.Collections;
+import java.util.List;
 
 
 /**

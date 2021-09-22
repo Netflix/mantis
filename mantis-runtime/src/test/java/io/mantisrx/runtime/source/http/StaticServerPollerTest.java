@@ -19,12 +19,11 @@ package io.mantisrx.runtime.source.http;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import io.mantisrx.runtime.source.http.impl.StaticServerPoller;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.mantisrx.runtime.source.http.impl.StaticServerPoller;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.junit.After;
 import org.junit.Before;

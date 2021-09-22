@@ -16,10 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.ParameterUtils;
@@ -27,6 +23,9 @@ import io.mantisrx.runtime.parameter.type.EnumCSVParameter;
 import io.mantisrx.runtime.parameter.type.EnumParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 

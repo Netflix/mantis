@@ -16,6 +16,8 @@
 
 package io.mantisrx.runtime.command;
 
+import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.MantisJobProvider;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,9 +25,6 @@ import java.io.InputStreamReader;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJobProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

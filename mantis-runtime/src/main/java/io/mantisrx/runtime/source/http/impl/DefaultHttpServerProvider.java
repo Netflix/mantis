@@ -16,16 +16,15 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.ServerPoller;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import rx.Observable;
 import rx.Observable.OnSubscribe;

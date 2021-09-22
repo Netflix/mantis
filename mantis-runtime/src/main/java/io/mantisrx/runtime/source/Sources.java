@@ -16,9 +16,8 @@
 
 package io.mantisrx.runtime.source;
 
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.runtime.Context;
+import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.functions.Func1;
 

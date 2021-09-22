@@ -16,13 +16,12 @@
 
 package io.mantisrx.runtime.sink;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import java.util.ArrayList;
+import java.util.List;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;

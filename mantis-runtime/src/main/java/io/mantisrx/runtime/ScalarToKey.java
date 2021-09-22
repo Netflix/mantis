@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime;
 
-import java.util.Collections;
-import java.util.List;
-
 import io.mantisrx.runtime.computation.ToKeyComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.reactivex.netty.codec.Codec;
+import java.util.Collections;
+import java.util.List;
 
 
 public class ScalarToKey<T, K, R> extends StageConfig<T, R> {

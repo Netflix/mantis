@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2019 Netflix, Inc.
  *
@@ -26,12 +25,6 @@ import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEven
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ESTABLISHED;
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_FAILED;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import com.mantisrx.common.utils.NettyUtils;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
@@ -48,6 +41,11 @@ import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.Event
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.util.ReferenceCountUtil;
 import io.reactivx.mantis.operators.DropOperator;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import org.slf4j.Logger;
@@ -63,10 +61,9 @@ import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 import rx.subscriptions.Subscriptions;
 
-
 /**
- * An HTTP source that connects to multiple servers, and streams responses from the servers with a
- * single merged stream.
+ * An HTTP source that connects to multiple servers, and streams responses from the servers with a single merged
+ * stream.
  *
  * @param <R> The entity type of the request
  * @param <E> The entity type of the response
@@ -113,7 +110,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
      * {@link io.mantisrx.runtime.source.http.HttpServerProvider} instance.
      *
      * @param requestFactory A factory that creates a new request for the source to submit
-     * @param serverProvider The provider that specifies with servers to connect to and which servers to disconnect from
+     * @param serverProvider The provider that specifies with servers to connect to and which servers to disconnect
+     *                       from
      * @param clientFactory  The factory that creates HTTP client for the source to make connections to each server
      * @param observer       The observer that gets notified for internal events of the source
      * @param resumePolicy   The policy of resuming client response when a response terminates
@@ -177,7 +175,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
         dropped = incomingDataMetrics.getCounter("dropped");
 
-        String bufferSizeStr = ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("httpSource.buffer.size", DEFAULT_BUFFER_SIZE);
+        String bufferSizeStr = ServiceRegistry.INSTANCE.getPropertiesService()
+                .getStringValue("httpSource.buffer.size", DEFAULT_BUFFER_SIZE);
         bufferSize = Integer.parseInt(bufferSizeStr);
 
         // We use a subject here instead of directly using the observable of
@@ -190,14 +189,20 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                 serversToRemove.onNext(server);
             }
         });
-
     }
 
-    public static <R, E, T> Builder<R, E, T> builder(HttpClientFactory<R, E> clientFactory, HttpRequestFactory<R> requestFactory, Func2<ServerContext<HttpClientResponse<E>>, E, T> postProcessor) {
+    public static <R, E, T> Builder<R, E, T> builder(
+            HttpClientFactory<R, E> clientFactory,
+            HttpRequestFactory<R> requestFactory,
+            Func2<ServerContext<HttpClientResponse<E>>, E, T> postProcessor) {
         return new Builder<>(clientFactory, requestFactory, postProcessor);
     }
 
-    public static <R, E, T> Builder<R, E, T> builder(HttpClientFactory<R, E> clientFactory, HttpRequestFactory<R> requestFactory, Func2<ServerContext<HttpClientResponse<E>>, E, T> postProcessor, ClientResumePolicy<R, E> resumePolicy) {
+    public static <R, E, T> Builder<R, E, T> builder(
+            HttpClientFactory<R, E> clientFactory,
+            HttpRequestFactory<R> requestFactory,
+            Func2<ServerContext<HttpClientResponse<E>>, E, T> postProcessor,
+            ClientResumePolicy<R, E> resumePolicy) {
         return new Builder<>(clientFactory, requestFactory, postProcessor, resumePolicy);
     }
 
@@ -223,7 +228,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     public Observable<Observable<T>> call(Context context, Index index) {
         return serverProvider
                 .getServersToAdd()
-                .filter((ServerInfo serverInfo) -> !connectionManager.alreadyConnected(serverInfo) && !connectionManager.connectionAlreadyAttempted(serverInfo))
+                .filter((ServerInfo serverInfo) -> !connectionManager.alreadyConnected(serverInfo) && !connectionManager
+                        .connectionAlreadyAttempted(serverInfo))
                 .flatMap((ServerInfo serverInfo) -> {
                     return streamServers(Observable.just(serverInfo));
                 })
@@ -269,7 +275,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
             return new ServerClientContext<>(server, clientFactory.createClient(server), requestFactory, observer);
         })
                 .flatMap((final ServerClientContext<R, E> clientContext) -> {
-                    final Observable<HttpClientResponse<E>> response = streamResponseUntilServerIsRemoved(clientContext);
+                    final Observable<HttpClientResponse<E>> response =
+                            streamResponseUntilServerIsRemoved(clientContext);
 
                     return response
                             .map(new Func1<HttpClientResponse<E>, ServerContext<HttpClientResponse<E>>>() {
@@ -302,8 +309,9 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                 .map(new Func1<ServerContext<HttpClientResponse<E>>, Observable<T>>() {
 
                     @Override
-                    public Observable<T> call(final
-                                              ServerContext<HttpClientResponse<E>> context) {
+                    public Observable<T> call(
+                            final
+                            ServerContext<HttpClientResponse<E>> context) {
                         final HttpClientResponse<E> response = context.getValue();
 
                         final ServerInfo server = context.getServer();
@@ -335,10 +343,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                                         return subscriber;
                                     }
                                 });
-
-
                     }
-
                 });
     }
 
@@ -354,7 +359,10 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     private void checkResponseIsSuccessful(HttpClientResponse<E> response) {
         int status = response.getStatus().code();
         if (status != 200) {
-            throw new RuntimeException(String.format("Expected 200 but got status %d and reason: %s", status, response.getStatus().reasonPhrase()));
+            throw new RuntimeException(String.format(
+                    "Expected 200 but got status %d and reason: %s",
+                    status,
+                    response.getStatus().reasonPhrase()));
         }
     }
 
@@ -385,7 +393,6 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                     retryListGauge.set(getRetryServers().size());
                     connectionGauge.set(getConnectedServers().size());
                 });
-
     }
 
     private Observable<HttpClientResponse<E>> streamResponseUntilServerIsRemoved(final ServerClientContext<R, E> clientContext) {
@@ -423,7 +430,10 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                 )
                 .doOnNext((HttpClientResponse<E> response) -> checkResponseIsSuccessful(response))
                 .doOnError((Throwable error) -> {
-                    logger.error(String.format("Connecting to server %s failed: %s", clientContext.getServer(), error.getMessage()), error);
+                    logger.error(String.format(
+                            "Connecting to server %s failed: %s",
+                            clientContext.getServer(),
+                            error.getMessage()), error);
                     SUBSCRIPTION_FAILED.newEvent(observer, clientContext.getServer());
                     subscriptionFailedCounter.increment();
                     logger.info("server disconnected onError2: " + clientContext.getServer());
@@ -440,7 +450,6 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                 // Upon error, simply completes the observable for this particular server. The error should not be
                 // propagated to the entire http source
                 .onErrorResumeNext(Observable.empty());
-
     }
 
     Set<ServerInfo> getConnectedServers() {
@@ -515,12 +524,17 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
             // Do not resume by default
             this.clientResumePolicy = new ClientResumePolicy<R, E>() {
                 @Override
-                public Observable<HttpClientResponse<E>> onError(ServerClientContext<R, E> clientContext, int attempts, Throwable error) {
+                public Observable<HttpClientResponse<E>> onError(
+                        ServerClientContext<R, E> clientContext,
+                        int attempts,
+                        Throwable error) {
                     return null;
                 }
 
                 @Override
-                public Observable<HttpClientResponse<E>> onCompleted(ServerClientContext<R, E> clientContext, int attempts) {
+                public Observable<HttpClientResponse<E>> onCompleted(
+                        ServerClientContext<R, E> clientContext,
+                        int attempts) {
                     return null;
                 }
             };
@@ -549,7 +563,6 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
             return this;
         }
 
-
         public Builder<R, E, T> withActivityObserver(Observer<HttpSourceEvent> observer) {
             this.observer = observer;
 
@@ -563,7 +576,13 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         }
 
         public HttpSourceImpl<R, E, T> build() {
-            return new HttpSourceImpl<>(requestFactory, serverProvider, httpClientFactory, observer, postProcessor, clientResumePolicy);
+            return new HttpSourceImpl<>(
+                    requestFactory,
+                    serverProvider,
+                    httpClientFactory,
+                    observer,
+                    postProcessor,
+                    clientResumePolicy);
         }
     }
 
@@ -587,13 +606,21 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             HttpSourceEvent that = (HttpSourceEvent) o;
 
-            if (eventType != that.eventType) return false;
-            if (server != null ? !server.equals(that.server) : that.server != null) return false;
+            if (eventType != that.eventType) {
+                return false;
+            }
+            if (server != null ? !server.equals(that.server) : that.server != null) {
+                return false;
+            }
 
             return true;
         }
@@ -688,6 +715,3 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         }
     }
 }
-
-
-

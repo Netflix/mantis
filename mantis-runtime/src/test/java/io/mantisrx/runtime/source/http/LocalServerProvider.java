@@ -18,15 +18,14 @@ package io.mantisrx.runtime.source.http;
 
 import static org.junit.Assert.fail;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.nio.NioEventLoopGroup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.nio.NioEventLoopGroup;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerBuilder;

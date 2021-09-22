@@ -16,15 +16,6 @@
 
 package io.mantisrx.runtime.sink;
 
-import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-
 import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.api.Tag;
@@ -41,6 +32,14 @@ import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import io.reactivx.mantis.operators.DropOperator;
+import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import mantis.io.reactivex.netty.protocol.http.server.RequestHandler;

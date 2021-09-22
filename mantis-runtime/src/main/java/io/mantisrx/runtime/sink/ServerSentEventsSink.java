@@ -16,9 +16,6 @@
 
 package io.mantisrx.runtime.sink;
 
-import java.util.List;
-import java.util.Map;
-
 import io.mantisrx.common.properties.MantisPropertiesService;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
@@ -31,6 +28,8 @@ import io.reactivex.mantis.network.push.PushServerSse;
 import io.reactivex.mantis.network.push.PushServers;
 import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.network.push.ServerConfig;
+import java.util.List;
+import java.util.Map;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;

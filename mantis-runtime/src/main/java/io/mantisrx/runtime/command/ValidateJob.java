@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime.command;
 
-import java.util.List;
-
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.SinkHolder;
 import io.mantisrx.runtime.SourceHolder;
 import io.mantisrx.runtime.StageConfig;
+import java.util.List;
 
 
 public class ValidateJob implements Command {

@@ -16,9 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-import java.util.Iterator;
-import java.util.List;
-
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.Context;
@@ -31,6 +28,8 @@ import io.reactivex.mantis.remote.observable.PortSelectorWithinRange;
 import io.reactivex.mantis.remote.observable.RemoteObservable;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
+import java.util.Iterator;
+import java.util.List;
 import junit.framework.Assert;
 import org.junit.Test;
 import rx.Observable;

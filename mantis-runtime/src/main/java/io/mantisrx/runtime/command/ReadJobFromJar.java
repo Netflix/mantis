@@ -16,6 +16,8 @@
 
 package io.mantisrx.runtime.command;
 
+import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.MantisJobProvider;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,9 +26,6 @@ import java.util.Enumeration;
 import java.util.ServiceLoader;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJobProvider;
 
 
 public class ReadJobFromJar implements Command {

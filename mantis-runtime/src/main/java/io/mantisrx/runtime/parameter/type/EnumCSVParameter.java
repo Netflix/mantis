@@ -16,14 +16,13 @@
 
 package io.mantisrx.runtime.parameter.type;
 
+import io.mantisrx.runtime.parameter.ParameterDecoder;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import io.mantisrx.runtime.parameter.ParameterDecoder;
-import io.mantisrx.runtime.parameter.ParameterDefinition;
 
 
 /**
