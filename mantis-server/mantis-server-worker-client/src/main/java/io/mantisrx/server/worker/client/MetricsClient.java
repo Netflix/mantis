@@ -27,4 +27,3 @@ public interface MetricsClient<T> {
 
     Observable<Observable<T>> getResults();
 }
-

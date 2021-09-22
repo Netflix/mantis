@@ -16,14 +16,13 @@
 
 package io.mantisrx.server.worker;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.WriteBufferWaterMark;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.WriteBufferWaterMark;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
@@ -63,7 +62,7 @@ public class TestSseServerFactory {
                 })
                 .pipelineConfigurator(PipelineConfigurators.<String>serveSseConfigurator())
                 .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
-                
+
                 .build();
         server.start();
         synchronized (servers) {

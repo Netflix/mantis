@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.agent;
 
-import java.util.concurrent.CountDownLatch;
-
 import io.mantisrx.server.core.Service;
+import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
