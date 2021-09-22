@@ -1915,8 +1915,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         // use last submitted job (if non-terminal) to merge with the givenJobDefn so the result jobDefn will inherit instance count.
         JobDefinition finalJobDefn = givenJobDefn;
         Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, Lists.newArrayList());
-        if (lastJobId.isPresent())
-        {
+        if (lastJobId.isPresent()) {
             Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
             if (jobInfoForNonTerminalJob.isPresent()) {
                 CompletableFuture<Optional<JobDefinition>> mergedJobDefnOCS =

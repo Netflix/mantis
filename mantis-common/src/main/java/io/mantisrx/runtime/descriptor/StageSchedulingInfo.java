@@ -33,7 +33,7 @@ public class StageSchedulingInfo {
     private final MachineDefinition machineDefinition;
     private final List<JobConstraints> hardConstraints;
     private final List<JobConstraints> softConstraints;
-    private StageScalingPolicy scalingPolicy;
+    private final StageScalingPolicy scalingPolicy;
     private final boolean inheritInstanceCount;
     private final boolean scalable;
 
@@ -83,10 +83,6 @@ public class StageSchedulingInfo {
 
     public StageScalingPolicy getScalingPolicy() {
         return scalingPolicy;
-    }
-
-    public void setScalingPolicy(StageScalingPolicy scalingPolicy) {
-        this.scalingPolicy = scalingPolicy;
     }
 
     public boolean getInheritInstanceCount() { return inheritInstanceCount; }
