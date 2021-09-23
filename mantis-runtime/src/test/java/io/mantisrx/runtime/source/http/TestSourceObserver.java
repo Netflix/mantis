@@ -16,17 +16,16 @@
 
 package io.mantisrx.runtime.source.http;
 
+import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent;
+import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
+import io.mantisrx.runtime.source.http.impl.OperatorResumeOnCompleted;
+import io.mantisrx.runtime.source.http.impl.ResumeOnCompletedPolicy;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent;
-import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
-import io.mantisrx.runtime.source.http.impl.OperatorResumeOnCompleted;
-import io.mantisrx.runtime.source.http.impl.ResumeOnCompletedPolicy;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import rx.Observable;
 import rx.Observer;

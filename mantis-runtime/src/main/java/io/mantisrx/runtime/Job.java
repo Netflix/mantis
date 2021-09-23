@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime;
 
+import io.mantisrx.runtime.lifecycle.Lifecycle;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.runtime.lifecycle.Lifecycle;
-import io.mantisrx.runtime.parameter.ParameterDefinition;
 
 
 public class Job<T> {

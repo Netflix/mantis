@@ -16,9 +16,8 @@
 
 package io.mantisrx.runtime.command;
 
-import java.io.File;
-
 import io.mantisrx.runtime.Job;
+import java.io.File;
 
 
 public class LoadValidateCreateDir implements Command {

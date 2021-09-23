@@ -16,11 +16,10 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
+import io.mantisrx.runtime.source.http.ServerPoller;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import io.mantisrx.runtime.source.http.ServerPoller;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import rx.Observable;
 import rx.Scheduler;

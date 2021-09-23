@@ -16,10 +16,9 @@
 
 package io.mantisrx.runtime.executor;
 
-import java.util.Iterator;
-
 import io.mantisrx.runtime.MachineDefinitions;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import java.util.Iterator;
 import junit.framework.Assert;
 import org.junit.Test;
 

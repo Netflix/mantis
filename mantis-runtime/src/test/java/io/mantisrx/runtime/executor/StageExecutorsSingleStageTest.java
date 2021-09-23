@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime.executor;
 
-import java.util.Iterator;
-
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.StageConfig;
 import io.reactivex.mantis.remote.observable.RxMetrics;
+import java.util.Iterator;
 import junit.framework.Assert;
 import org.junit.Test;
 import rx.functions.Action0;

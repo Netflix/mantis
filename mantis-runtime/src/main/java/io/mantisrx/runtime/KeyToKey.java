@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime;
 
-import java.util.Collections;
-import java.util.List;
-
 import io.mantisrx.runtime.computation.KeyComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.reactivex.netty.codec.Codec;
+import java.util.Collections;
+import java.util.List;
 
 
 public class KeyToKey<K1, T, K2, R> extends StageConfig<T, R> {

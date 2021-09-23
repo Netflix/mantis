@@ -17,7 +17,6 @@
 package io.mantisrx.runtime.source.http;
 
 import java.util.Set;
-
 import mantis.io.reactivex.netty.client.RxClient;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import rx.Observable;

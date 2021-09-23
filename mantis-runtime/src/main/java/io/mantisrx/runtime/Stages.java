@@ -17,10 +17,9 @@
 package io.mantisrx.runtime;
 
 
+import io.mantisrx.common.codec.Codec;
 import java.util.LinkedList;
 import java.util.List;
-
-import io.mantisrx.common.codec.Codec;
 
 
 public class Stages<T> {

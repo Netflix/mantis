@@ -18,7 +18,6 @@ package io.mantisrx.runtime.sink.predicate;
 
 import java.util.List;
 import java.util.Map;
-
 import rx.functions.Func1;
 
 

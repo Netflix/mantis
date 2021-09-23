@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime.descriptor;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class JobInfo extends MetadataInfo {

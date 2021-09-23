@@ -27,6 +27,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.source.Index;
+import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
+import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
+import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
+import io.mantisrx.runtime.source.http.impl.ServerContext;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
@@ -36,13 +42,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.source.Index;
-import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
-import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
-import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
-import io.mantisrx.runtime.source.http.impl.ServerContext;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
 import org.junit.AfterClass;

@@ -15,19 +15,18 @@
  */
 package io.mantisrx.runtime.source.http;
 
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import mantis.io.reactivex.netty.protocol.http.server.RequestHandler;
@@ -233,7 +232,7 @@ public class RequestProcessor implements RequestHandler<ByteBuf, ByteBuf> {
     public Observable<Void> handle(HttpServerRequest<ByteBuf> request, HttpServerResponse<ByteBuf> response) {
         String uri = request.getUri();
         if (uri.contains("test/singleEntity")) {
-            // in case of redirect, uri starts with /test/singleEntity 
+            // in case of redirect, uri starts with /test/singleEntity
             return handleSingleEntity(response);
         } else if (uri.startsWith("test/stream")) {
             return handleStream(response);

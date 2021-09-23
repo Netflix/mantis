@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime.parameter.type;
 
+import io.mantisrx.runtime.parameter.ParameterDecoder;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import io.mantisrx.runtime.parameter.ParameterDecoder;
-import io.mantisrx.runtime.parameter.ParameterDefinition;
 
 
 public class EnumParameter<T extends Enum<T>> extends ParameterDefinition.Builder<Enum<T>> {

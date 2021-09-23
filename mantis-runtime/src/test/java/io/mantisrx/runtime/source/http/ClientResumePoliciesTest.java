@@ -25,12 +25,11 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent;
+import io.mantisrx.runtime.source.http.impl.ServerClientContext;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent;
-import io.mantisrx.runtime.source.http.impl.ServerClientContext;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;

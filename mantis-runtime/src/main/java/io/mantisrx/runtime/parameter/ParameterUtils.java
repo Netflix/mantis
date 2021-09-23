@@ -16,14 +16,6 @@
 
 package io.mantisrx.runtime.parameter;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
@@ -31,6 +23,13 @@ import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validation;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func1;

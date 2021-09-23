@@ -16,16 +16,6 @@
 
 package io.mantisrx.runtime.command;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.StageConfig;
@@ -36,6 +26,15 @@ import io.mantisrx.runtime.descriptor.ParameterInfo;
 import io.mantisrx.runtime.descriptor.StageInfo;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.ParameterUtils;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 
 public class CreateJobDescriptorFile implements Command {

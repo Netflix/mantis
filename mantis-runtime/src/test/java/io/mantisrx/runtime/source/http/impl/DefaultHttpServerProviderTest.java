@@ -18,6 +18,7 @@ package io.mantisrx.runtime.source.http.impl;
 
 import static org.junit.Assert.assertEquals;
 
+import io.mantisrx.runtime.source.http.ServerPoller;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,8 +28,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-
-import io.mantisrx.runtime.source.http.ServerPoller;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.junit.Test;
 import rx.Observable;

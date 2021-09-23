@@ -16,8 +16,6 @@
 
 package io.mantisrx.runtime.source.http;
 
-import java.nio.charset.Charset;
-
 import io.mantisrx.runtime.source.http.HttpSource.Builder;
 import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
@@ -25,6 +23,7 @@ import io.mantisrx.runtime.source.http.impl.HttpSourceImpl;
 import io.mantisrx.runtime.source.http.impl.ServerClientContext;
 import io.mantisrx.runtime.source.http.impl.ServerContext;
 import io.netty.buffer.ByteBuf;
+import java.nio.charset.Charset;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import rx.Observable;

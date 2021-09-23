@@ -16,9 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
@@ -35,6 +32,8 @@ import io.mantisrx.runtime.computation.ToScalarComputation;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Sources;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
+import java.util.LinkedList;
+import java.util.List;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func1;

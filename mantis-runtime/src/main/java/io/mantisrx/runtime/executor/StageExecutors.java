@@ -18,8 +18,6 @@ package io.mantisrx.runtime.executor;
 
 import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
@@ -44,6 +42,7 @@ import io.mantisrx.runtime.source.Index;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

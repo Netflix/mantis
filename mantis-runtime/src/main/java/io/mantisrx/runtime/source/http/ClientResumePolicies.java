@@ -16,9 +16,8 @@
 
 package io.mantisrx.runtime.source.http;
 
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.runtime.source.http.impl.ServerClientContext;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import rx.Observable;
 import rx.functions.Func0;

@@ -17,7 +17,6 @@
 package io.mantisrx.runtime.parameter.validator;
 
 import java.util.EnumSet;
-
 import rx.functions.Func1;
 
 
