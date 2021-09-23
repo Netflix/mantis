@@ -16,9 +16,6 @@
 
 package io.mantisrx.sourcejob.kafka.sink;
 
-import java.util.List;
-import java.util.Map;
-
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.sink.ServerSentEventsSink;
@@ -27,6 +24,8 @@ import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.sourcejob.kafka.core.TaggedData;
+import java.util.List;
+import java.util.Map;
 import rx.Observable;
 import rx.functions.Func2;
 

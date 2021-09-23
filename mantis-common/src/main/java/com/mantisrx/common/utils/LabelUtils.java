@@ -16,10 +16,9 @@
 
 package com.mantisrx.common.utils;
 
+import io.mantisrx.common.Label;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.mantisrx.common.Label;
 
 
 public class LabelUtils {

@@ -16,12 +16,11 @@
 
 package io.reactivex.mantis.remote.observable.ingress;
 
+import io.reactivex.mantis.remote.observable.RemoteRxEvent;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.reactivex.mantis.remote.observable.RemoteRxEvent;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import rx.Observable;
 import rx.functions.Action1;

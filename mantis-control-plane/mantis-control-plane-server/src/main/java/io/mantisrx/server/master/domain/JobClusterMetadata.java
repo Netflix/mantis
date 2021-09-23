@@ -16,18 +16,17 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class JobClusterMetadata {

@@ -18,15 +18,14 @@ package io.mantisrx.publish.netty.pipeline;
 
 import static org.mockito.Mockito.mock;
 
-import java.util.Arrays;
-import java.util.List;
-
-import io.mantisrx.publish.config.MrePublishConfiguration;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

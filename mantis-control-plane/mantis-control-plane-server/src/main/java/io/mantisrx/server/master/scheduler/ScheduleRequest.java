@@ -16,11 +16,6 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.fenzo.queues.QAttributes;
@@ -29,6 +24,10 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 public class ScheduleRequest implements QueuableTask {
@@ -207,4 +206,3 @@ public class ScheduleRequest implements QueuableTask {
                 '}';
     }
 }
-

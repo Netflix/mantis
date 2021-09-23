@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.core;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class TimeBufferedWorkerOutlierTest {
     @Test

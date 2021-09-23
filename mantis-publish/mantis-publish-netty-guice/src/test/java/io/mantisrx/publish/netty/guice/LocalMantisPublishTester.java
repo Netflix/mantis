@@ -19,17 +19,11 @@ package io.mantisrx.publish.netty.guice;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletionStage;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.archaius.guice.ArchaiusModule;
 import com.netflix.spectator.nflx.SpectatorModule;
-import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.EventPublisher;
-import io.mantisrx.publish.api.PublishStatus;
 import org.junit.jupiter.api.Test;
 
 

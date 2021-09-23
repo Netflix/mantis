@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,14 @@
 
 package io.mantisrx.connector.kafka.source.checkpoint.strategy;
 
+import io.mantisrx.connector.kafka.source.serde.OffsetAndMetadataDeserializer;
+import io.mantisrx.connector.kafka.source.serde.OffsetAndMetadataSerializer;
+import io.mantisrx.runtime.Context;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.module.SimpleModule;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,15 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.mantisrx.connector.kafka.source.serde.OffsetAndMetadataDeserializer;
-import io.mantisrx.connector.kafka.source.serde.OffsetAndMetadataSerializer;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.module.SimpleModule;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import io.mantisrx.shaded.com.google.common.base.Strings;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;

@@ -17,7 +17,6 @@
 package io.reactivex.mantis.network.push;
 
 import java.util.List;
-
 import rx.Observer;
 import rx.functions.Func1;
 

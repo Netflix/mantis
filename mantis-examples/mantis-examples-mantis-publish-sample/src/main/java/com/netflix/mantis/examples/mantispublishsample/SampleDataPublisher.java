@@ -19,7 +19,6 @@ package com.netflix.mantis.examples.mantispublishsample;
 import com.google.inject.Inject;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.EventPublisher;
-import io.mantisrx.publish.api.PublishStatus;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 

@@ -31,4 +31,3 @@ public class JobClusterAlreadyExistsException extends Exception {
         super(jobClusterName, cause);
     }
 }
-

@@ -24,19 +24,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import com.netflix.mantis.discovery.proto.MantisWorker;
+import com.netflix.spectator.api.NoopRegistry;
+import com.netflix.spectator.api.Registry;
 import io.mantisrx.publish.EventChannel;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
-import com.netflix.spectator.api.NoopRegistry;
-import com.netflix.spectator.api.Registry;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

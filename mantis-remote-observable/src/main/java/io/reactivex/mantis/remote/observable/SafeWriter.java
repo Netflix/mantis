@@ -16,11 +16,10 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.mantisrx.common.network.WritableEndpoint;
 import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

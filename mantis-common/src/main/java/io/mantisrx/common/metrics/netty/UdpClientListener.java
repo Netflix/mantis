@@ -17,7 +17,6 @@
 package io.mantisrx.common.metrics.netty;
 
 import java.util.concurrent.TimeUnit;
-
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 
 

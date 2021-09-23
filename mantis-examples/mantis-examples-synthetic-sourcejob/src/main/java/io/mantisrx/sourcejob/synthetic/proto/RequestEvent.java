@@ -16,14 +16,13 @@
 
 package io.mantisrx.sourcejob.synthetic.proto;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.mantisrx.common.codec.Codec;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 

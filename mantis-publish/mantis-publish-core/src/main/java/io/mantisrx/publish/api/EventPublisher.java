@@ -16,9 +16,8 @@
 
 package io.mantisrx.publish.api;
 
-import java.util.concurrent.CompletionStage;
-
 import io.mantisrx.publish.core.Subscription;
+import java.util.concurrent.CompletionStage;
 
 
 public interface EventPublisher {

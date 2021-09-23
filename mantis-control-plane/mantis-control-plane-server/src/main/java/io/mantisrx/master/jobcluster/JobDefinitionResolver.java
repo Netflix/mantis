@@ -16,24 +16,20 @@
 
 package io.mantisrx.master.jobcluster;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobDefinition;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is responsible for 'filling the blanks' in the provided JobDefinition during a Job Submit.

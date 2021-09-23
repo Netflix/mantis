@@ -16,22 +16,21 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

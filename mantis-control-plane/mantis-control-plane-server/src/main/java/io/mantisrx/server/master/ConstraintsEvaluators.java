@@ -16,8 +16,6 @@
 
 package io.mantisrx.server.master;
 
-import java.util.Set;
-
 import com.netflix.fenzo.AsSoftConstraint;
 import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
@@ -27,6 +25,7 @@ import com.netflix.fenzo.plugins.ExclusiveHostConstraint;
 import com.netflix.fenzo.plugins.UniqueHostAttrConstraint;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

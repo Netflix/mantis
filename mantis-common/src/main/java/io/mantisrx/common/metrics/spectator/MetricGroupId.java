@@ -16,10 +16,9 @@
 
 package io.mantisrx.common.metrics.spectator;
 
+import com.netflix.spectator.api.Tag;
 import java.util.Arrays;
 import java.util.Collections;
-
-import com.netflix.spectator.api.Tag;
 
 
 public class MetricGroupId {

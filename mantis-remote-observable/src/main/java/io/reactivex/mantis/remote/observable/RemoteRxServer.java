@@ -16,12 +16,6 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -36,6 +30,11 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.reactivex.mantis.remote.observable.ingress.IngressPolicies;
 import io.reactivex.mantis.remote.observable.ingress.IngressPolicy;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
 import mantis.io.reactivex.netty.pipeline.PipelineConfiguratorComposite;

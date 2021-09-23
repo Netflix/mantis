@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.master;
 
+import io.mantisrx.server.core.BaseService;
 import java.util.Iterator;
 import java.util.LinkedList;
-
-import io.mantisrx.server.core.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

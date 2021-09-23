@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+
 import akka.NotUsed;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.StatusCodes;
@@ -24,17 +26,12 @@ import akka.http.javadsl.server.ExceptionHandler;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.stream.javadsl.Flow;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobStatusRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobStatusRoute.class);

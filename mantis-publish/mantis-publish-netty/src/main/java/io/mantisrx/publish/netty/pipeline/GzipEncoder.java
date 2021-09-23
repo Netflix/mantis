@@ -16,19 +16,18 @@
 
 package io.mantisrx.publish.netty.pipeline;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
-
-import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
+import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.http.FullHttpRequest;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 
 class GzipEncoder extends MessageToMessageEncoder<FullHttpRequest> {

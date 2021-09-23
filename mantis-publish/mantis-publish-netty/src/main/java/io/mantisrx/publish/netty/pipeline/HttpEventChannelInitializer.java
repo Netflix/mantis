@@ -16,10 +16,8 @@
 
 package io.mantisrx.publish.netty.pipeline;
 
-import java.time.Clock;
-
-import io.mantisrx.publish.config.MrePublishConfiguration;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -29,6 +27,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import java.time.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

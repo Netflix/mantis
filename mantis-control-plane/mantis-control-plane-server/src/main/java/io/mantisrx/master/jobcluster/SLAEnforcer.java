@@ -16,19 +16,15 @@
 
 package io.mantisrx.master.jobcluster;
 
-import java.util.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
-
 import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import io.mantisrx.master.jobcluster.job.JobState;
-
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.domain.SLA;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SLAEnforcer {
 	private static final Logger logger = LoggerFactory.getLogger(SLAEnforcer.class);
@@ -40,14 +36,14 @@ public class SLAEnforcer {
             return 1;
         return Long.compare(o1.jobId.getJobNum(), o2.jobId.getJobNum());
     };
-	
+
 	public SLAEnforcer(SLA sla) {
-		
+
 		this.sla = Optional.ofNullable(sla);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param activeJobsCount
 	 * @param acceptedJobsCount
 	 * @return
@@ -65,11 +61,11 @@ public class SLAEnforcer {
 			int jobsToLaunch = sla.get().getMin()-jobsInActiveOrSubmittedState;
 			logger.info("Submit {} jobs per sla min of {}", jobsToLaunch, sla.get().getMin());
 			return jobsToLaunch;
-		}	
+		}
 		logger.debug("SLA min already satisfied");
 		return 0;
 	}
-	
+
 	/**
 	 * Walk the set of jobs in descending order (newest jobs first) track no. of  running jobs. Once this
 	 * count equals slamax mark the rest of them for deletion.
@@ -79,13 +75,13 @@ public class SLAEnforcer {
 	 */
 	public List<JobId> enforceSLAMax(List<JobInfo> list) {
 		Preconditions.checkNotNull(list, "runningOrAcceptedJobSet is null");
-		
+
 		List<JobId> jobsToDelete = Lists.newArrayList();
 		// if no max sla defined;
 		if(!sla.isPresent() || sla.get().getMax() ==0 ) {
 			return jobsToDelete;
 		}
-		
+
 		SortedSet<JobInfo> sortedJobSet = new TreeSet<>(comparator);
 		sortedJobSet.addAll(list);
 
@@ -109,7 +105,7 @@ public class SLAEnforcer {
         }
 
 		return jobsToDelete;
-		
+
 	}
 
 	public boolean hasSLA() {

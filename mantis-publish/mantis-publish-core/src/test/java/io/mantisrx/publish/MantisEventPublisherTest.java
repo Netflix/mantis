@@ -17,20 +17,10 @@
 package io.mantisrx.publish;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import com.netflix.archaius.DefaultPropertyFactory;
 import com.netflix.archaius.api.PropertyRepository;
@@ -40,6 +30,14 @@ import io.mantisrx.publish.api.PublishStatus;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 

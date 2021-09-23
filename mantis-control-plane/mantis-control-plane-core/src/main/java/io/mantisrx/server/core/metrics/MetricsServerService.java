@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.core.metrics;
 
-import java.util.Map;
-
 import io.mantisrx.common.metrics.MetricsServer;
 import io.mantisrx.server.core.Service;
+import java.util.Map;
 
 
 public class MetricsServerService implements Service {

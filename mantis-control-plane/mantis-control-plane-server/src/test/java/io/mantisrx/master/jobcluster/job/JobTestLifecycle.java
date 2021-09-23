@@ -29,66 +29,61 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
+import akka.testkit.javadsl.TestKit;
+import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.master.events.*;
+import io.mantisrx.master.jobcluster.job.JobActor.WorkerNumberGenerator;
+import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.jobcluster.job.worker.JobWorker;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.master.jobcluster.proto.JobProto;
+import io.mantisrx.runtime.JobSla;
+import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobDurationType;
+import io.mantisrx.runtime.command.InvalidJobException;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.core.domain.JobMetadata;
+import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.domain.IJobClusterDefinition;
+import io.mantisrx.server.master.domain.JobDefinition;
+import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
+import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import com.netflix.mantis.master.scheduler.TestHelpers;
-import io.mantisrx.master.events.*;
-import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-import io.mantisrx.master.jobcluster.job.worker.JobWorker;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
-import io.mantisrx.runtime.JobSla;
-import io.mantisrx.runtime.MantisJobDurationType;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
-import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import io.mantisrx.shaded.com.google.common.collect.Lists;
-
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
-import akka.testkit.javadsl.TestKit;
-import io.mantisrx.master.jobcluster.job.JobActor.WorkerNumberGenerator;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
-import io.mantisrx.master.jobcluster.proto.JobProto;
-import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.domain.IJobClusterDefinition;
-import io.mantisrx.server.master.domain.JobDefinition;
-import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
-
-import io.mantisrx.server.core.domain.JobMetadata;
-
 public class JobTestLifecycle {
 
 	static ActorSystem system;
 
-	
+
 	private static MantisJobStore jobStore;
 	private static IMantisStorageProvider storageProvider;
 	private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
 	private static final String user = "mantis";
-	
+
 
 	@BeforeClass
 	public static void setup() {
@@ -105,8 +100,8 @@ public class JobTestLifecycle {
 		TestKit.shutdownActorSystem(system);
 		system = null;
 	}
-	
-	
+
+
 	@Test
 	public void testJobSubmitWithoutInit() {
 		final TestKit probe = new TestKit(system);
@@ -161,12 +156,12 @@ public class JobTestLifecycle {
                     .withJobDefinition(jobDefn)
                     .build();
             final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
-			
+
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
 			assertEquals(SUCCESS, initMsg.responseCode);
-			
+
 			String jobId = clusterName + "-1";
 			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
 			//jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -187,9 +182,9 @@ public class JobTestLifecycle {
 
 			// send heartbeat
 			JobTestHelper.sendHeartBeat(probe, jobActor, jobId, stageNum, workerId);
-			
-			
-			
+
+
+
 			// check job status again
 			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
 			//jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -197,13 +192,13 @@ public class JobTestLifecycle {
 			System.out.println("resp " + resp2 + " msg " + resp2.message);
 			assertEquals(SUCCESS, resp2.responseCode);
 			assertEquals(JobState.Launched,resp2.getJobMetadata().get().getState());
-			
+
 			verify(jobStoreMock, times(1)).storeNewJob(any());
-			
+
 			verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
-			
+
 			verify(jobStoreMock, times(3)).updateWorker(any());
-			
+
 			verify(jobStoreMock, times(3)).updateJob(any());
 
 			//assertEquals(jobActor, probe.getLastSender());
@@ -350,7 +345,7 @@ public class JobTestLifecycle {
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
 			assertEquals(SERVER_ERROR, initMsg.responseCode);
 			System.out.println(initMsg.message);
-			
+
 			String jobId = clusterName + "-1";
 			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
 			//jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -391,12 +386,12 @@ public class JobTestLifecycle {
                     .withJobDefinition(jobDefn)
                     .build();
             final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
-			
+
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
 			assertEquals(SUCCESS, initMsg.responseCode);
-			
+
 			String jobId = clusterName + "-2";
 			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
 			//jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -408,10 +403,10 @@ public class JobTestLifecycle {
 			// send launched event
 
 			WorkerId workerId = new WorkerId(jobId, 0, 1);
-			
+
 
 			// send heartbeat
-			
+
 			JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, stageNo, workerId);
 
 			// check job status again
@@ -438,15 +433,15 @@ public class JobTestLifecycle {
 
 			// 2 worker have started so job should be started.
 			assertEquals(JobState.Launched,resp3.getJobMetadata().get().getState());
-			
+
 			verify(jobStoreMock, times(1)).storeNewJob(any());
-			
+
 			verify(jobStoreMock, times(1)).storeNewWorkers(any(),any());
-			
+
 			verify(jobStoreMock, times(6)).updateWorker(any());
-			
+
 			verify(jobStoreMock, times(3)).updateJob(any());
-			
+
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
 			// TODO Auto-generated catch block
@@ -715,8 +710,8 @@ public class JobTestLifecycle {
                 .withJobDefinition(jobDefn)
                 .build();
         final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
-        
-		
+
+
 		jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 		probe.expectMsgClass(JobProto.JobInitialized.class);
 		probe.watch(jobActor);
@@ -735,7 +730,7 @@ public class JobTestLifecycle {
 		jobActor.tell(PoisonPill.getInstance(), ActorRef.noSender());
 		probe.expectTerminated(jobActor);
 	}
-	
+
 	@Test
 	public void testHeartBeatEnforcement() {
 		final TestKit probe = new TestKit(system);
@@ -747,7 +742,7 @@ public class JobTestLifecycle {
 			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-			
+
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
 			MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 			MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
@@ -771,7 +766,7 @@ public class JobTestLifecycle {
 			assertEquals(SUCCESS, resp.responseCode);
 			assertEquals(JobState.Accepted,resp.getJobMetadata().get().getState());
 			int stageNo = 1;
-			
+
 			WorkerId workerId = new WorkerId(jobId, 0, 1);
 
 			// send Launched, Initiated and heartbeat
@@ -811,12 +806,12 @@ public class JobTestLifecycle {
 			jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(240)), probe.getRef());
 
 			Thread.sleep(1000);
-			
+
 			// 2 original submissions and 2 resubmits because of HB timeouts
 			verify(schedulerMock, times(4)).scheduleWorker(any());
 			// 2 kills due to resubmits
 			verify(schedulerMock, times(2)).unscheduleAndTerminateWorker(any(), any());
-			
+
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
 			// TODO Auto-generated catch block
@@ -830,8 +825,8 @@ public class JobTestLifecycle {
 	}
 
 //
-	
-	
+
+
 	@Test
 	public void testLostWorkerGetsReplaced() {
 		final TestKit probe = new TestKit(system);
@@ -857,13 +852,13 @@ public class JobTestLifecycle {
 	                .withJobDefinition(jobDefn)
 	                .build();
 	        jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreSpied, schedulerMock, eventPublisher));
-	        
-			
+
+
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
 			assertEquals(SUCCESS, initMsg.responseCode);
-			
+
 			String jobId = clusterName + "-2";
 			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
 			//jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -875,10 +870,10 @@ public class JobTestLifecycle {
 			// send launched event
 
 			WorkerId workerId = new WorkerId(jobId, 0, 1);
-			
+
 
 			// send heartbeat
-			
+
 			JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, stageNo, workerId);
 
 			// check job status again
@@ -905,10 +900,10 @@ public class JobTestLifecycle {
 
 			// 2 worker have started so job should be started.
 			assertEquals(JobState.Launched,resp3.getJobMetadata().get().getState());
-			
+
 			// worker 2 gets terminated abnormally
 			JobTestHelper.sendWorkerTerminatedEvent(probe, jobActor, jobId, workerId2);
-			
+
 			// replaced worker comes up and sends events
 			WorkerId workerId2_replaced = new WorkerId(jobId, 1, 3);
 			JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, stageNo, workerId2_replaced);
@@ -931,7 +926,7 @@ public class JobTestLifecycle {
 		//	verify(jobStoreMock, timeout(1_000).times(1)).archiveWorker(any());
 			Mockito.verify(jobStoreSpied).archiveWorker(any());
 
-			
+
 			//assertEquals(jobActor, probe.getLastSender());
 		} catch (InvalidJobException  e) {
 			// TODO Auto-generated catch block
@@ -953,20 +948,20 @@ public class JobTestLifecycle {
 			WorkerNumberGenerator wng = new WorkerNumberGenerator(-1, 10);
 			fail();
 		} catch(Exception e) {
-			
+
 		}
-		
+
 		try {
 			WorkerNumberGenerator wng = new WorkerNumberGenerator(0, 0);
 			fail();
 		} catch(Exception e) {
-			
+
 		}
 	}
-	
+
 	@Test
 	public void workerNumberGeneratorTest() {
-		
+
 		MantisJobMetadataImpl mantisJobMetaMock = mock(MantisJobMetadataImpl.class);
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 		int incrementStep = 10;
@@ -978,15 +973,15 @@ public class JobTestLifecycle {
 			verify(mantisJobMetaMock,times(1)).setNextWorkerNumberToUse(incrementStep, jobStoreMock);
 		//	verify(jobStoreMock, times(1)).updateJob(any());
 		} catch ( Exception e) {
-			
+
 			e.printStackTrace();
 			fail();
 		}
 	}
-	
+
 	@Test
 	public void workerNumberGeneratorWithNonZeroLastUsedTest() {
-		
+
 		MantisJobMetadataImpl mantisJobMetaMock = mock(MantisJobMetadataImpl.class);
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 		int incrementStep = 10;
@@ -999,15 +994,15 @@ public class JobTestLifecycle {
 			verify(mantisJobMetaMock,times(1)).setNextWorkerNumberToUse(lastNumber + incrementStep, jobStoreMock);
 			//verify(jobStoreMock,times(1)).updateJob(any());
 		} catch (Exception e) {
-			
+
 			e.printStackTrace();
 			fail();
 		}
 	}
-	
+
 	@Test
 	public void workerNumberGeneratorTest2() {
-		
+
 		MantisJobMetadataImpl mantisJobMetaMock = mock(MantisJobMetadataImpl.class);
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 		WorkerNumberGenerator wng = new WorkerNumberGenerator();
@@ -1015,14 +1010,14 @@ public class JobTestLifecycle {
 			assertEquals(i, wng.getNextWorkerNumber(mantisJobMetaMock, jobStoreMock));
 		}
 
-		
+
 		try {
 			InOrder inOrder = Mockito.inOrder(mantisJobMetaMock);
 			inOrder.verify(mantisJobMetaMock).setNextWorkerNumberToUse(10, jobStoreMock);
 			inOrder.verify(mantisJobMetaMock).setNextWorkerNumberToUse(20, jobStoreMock);
 			//verify(jobStoreMock, times(2)).updateJob(any());
 		} catch (Exception e) {
-			
+
 			e.printStackTrace();
 			fail();
 		}
@@ -1030,7 +1025,7 @@ public class JobTestLifecycle {
 
 	@Test
 	public void workerNumberGeneratorUpdatesStoreTest2() {
-		
+
 		//MantisJobMetadataImpl mantisJobMetaMock = mock(MantisJobMetadataImpl.class);
 		JobDefinition jobDefnMock = mock(JobDefinition.class);
 		MantisJobMetadataImpl mantisJobMeta = new MantisJobMetadataImpl(JobId.fromId("job-1").get(),
@@ -1043,20 +1038,20 @@ public class JobTestLifecycle {
 			assertEquals(i, wng.getNextWorkerNumber(mantisJobMeta, jobStoreMock));
 		}
 
-		
+
 		try {
 			//InOrder inOrder = Mockito.inOrder(mantisJobMetaMock);
 			//inOrder.verify(mantisJobMetaMock).setNextWorkerNumberToUse(10, jobStoreMock);
 			//inOrder.verify(mantisJobMetaMock).setNextWorkerNumberToUse(20, jobStoreMock);
 			verify(jobStoreMock, times(2)).updateJob(any());
 		} catch (Exception e) {
-			
+
 			e.printStackTrace();
 			fail();
 		}
 	}
 
-	
+
 	@Test
 	public void workerNumberGeneratorExceptionUpdatingJobTest() {
 		MantisJobMetadataImpl mantisJobMetaMock = mock(MantisJobMetadataImpl.class);
@@ -1068,11 +1063,11 @@ public class JobTestLifecycle {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		
-		
-	
+
+
+
 	}
 
 
-	
+
 }

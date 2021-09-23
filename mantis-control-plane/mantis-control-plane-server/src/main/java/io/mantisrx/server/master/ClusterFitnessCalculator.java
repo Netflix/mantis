@@ -16,8 +16,6 @@
 
 package io.mantisrx.server.master;
 
-import java.util.Optional;
-
 import com.netflix.fenzo.TaskRequest;
 import com.netflix.fenzo.TaskTrackerState;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
@@ -25,6 +23,7 @@ import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

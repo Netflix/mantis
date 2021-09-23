@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.core;
 
-import java.util.Properties;
-
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesService;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

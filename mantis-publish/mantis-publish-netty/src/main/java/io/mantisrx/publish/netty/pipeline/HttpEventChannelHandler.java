@@ -19,11 +19,11 @@ package io.mantisrx.publish.netty.pipeline;
 import static io.netty.channel.ChannelHandler.Sharable;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.mantisrx.publish.internal.exceptions.NonRetryableException;
-import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import io.mantisrx.publish.internal.exceptions.RetryableException;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.internal.exceptions.NonRetryableException;
+import io.mantisrx.publish.internal.exceptions.RetryableException;
+import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;

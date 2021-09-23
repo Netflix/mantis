@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,24 +20,13 @@ import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.connector.kafka.source.assignor.StaticPartitionAssignor;
 import io.mantisrx.connector.kafka.source.assignor.StaticPartitionAssignorImpl;
-import io.mantisrx.connector.kafka.source.metrics.ConsumerMetrics;
+import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategy;
 import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyFactory;
 import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;
 import io.mantisrx.connector.kafka.source.checkpoint.trigger.CheckpointTrigger;
-import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategy;
 import io.mantisrx.connector.kafka.source.checkpoint.trigger.CheckpointTriggerFactory;
+import io.mantisrx.connector.kafka.source.metrics.ConsumerMetrics;
 import io.mantisrx.runtime.Context;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.Subscription;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,6 +37,16 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.Subscription;
 
 
 public class MantisKafkaConsumer<S> {

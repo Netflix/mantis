@@ -16,11 +16,6 @@
 
 package com.netflix.mantis.samples.stage;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.mantis.samples.proto.AggregationReport;
 import com.netflix.mantis.samples.proto.RequestAggregation;
 import io.mantisrx.common.codec.Codecs;
@@ -29,6 +24,10 @@ import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 

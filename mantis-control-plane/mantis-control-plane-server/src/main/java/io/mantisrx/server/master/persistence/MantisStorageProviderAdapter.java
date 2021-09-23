@@ -16,15 +16,6 @@
 
 package io.mantisrx.server.master.persistence;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
@@ -39,6 +30,14 @@ import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStorageProvider;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.server.master.store.NamedJob;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

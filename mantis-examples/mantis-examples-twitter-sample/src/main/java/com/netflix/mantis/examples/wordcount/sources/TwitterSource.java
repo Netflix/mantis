@@ -16,9 +16,6 @@
 
 package com.netflix.mantis.examples.wordcount.sources;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.google.common.collect.Lists;
 import com.netflix.mantis.examples.core.ObservableQueue;
 import com.twitter.hbc.ClientBuilder;
@@ -34,6 +31,8 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.util.Arrays;
+import java.util.List;
 import rx.Observable;
 
 

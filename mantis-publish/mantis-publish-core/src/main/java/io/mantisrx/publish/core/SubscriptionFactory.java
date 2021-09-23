@@ -16,15 +16,14 @@
 
 package io.mantisrx.publish.core;
 
-import io.mantisrx.publish.MantisEventPublisher;
-import io.mantisrx.publish.internal.mql.MQLSubscription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+
+import io.mantisrx.publish.MantisEventPublisher;
+import io.mantisrx.publish.internal.mql.MQLSubscription;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**

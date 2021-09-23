@@ -21,16 +21,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.mantis.master.scheduler.TestHelpers;
@@ -54,9 +47,14 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -65,7 +63,7 @@ public class JobTestMigrationTests {
 
     static ActorSystem system;
 
-    
+
     private static final String user = "mantis";
     final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
@@ -75,7 +73,7 @@ public class JobTestMigrationTests {
         system = ActorSystem.create();
 
         TestHelpers.setupMasterConfig();
-    
+
     }
 
     @AfterClass
@@ -84,11 +82,11 @@ public class JobTestMigrationTests {
         TestKit.shutdownActorSystem(system);
         system = null;
     }
-    
-    
+
+
     @Test
     public void testWorkerMigration() {
-        
+
         String clusterName= "testWorkerMigration";
         TestKit probe = new TestKit(system);
         SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
@@ -99,7 +97,7 @@ public class JobTestMigrationTests {
         JobDefinition jobDefn;
         try {
             jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
-            
+
             MantisScheduler schedulerMock = new DummyScheduler(scheduleCDL, unscheduleCDL); //mock(MantisScheduler.class); //
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
@@ -117,7 +115,7 @@ public class JobTestMigrationTests {
             assertEquals(SUCCESS, initMsg.responseCode);
             String jobId = clusterName + "-2";
             int stageNo = 1;
-            
+
             WorkerId workerId = new WorkerId(jobId, 0, 1);
 
             // send Launched, Initiated and heartbeat
@@ -131,34 +129,34 @@ public class JobTestMigrationTests {
 
             //  worker has started so job should be started.
             assertEquals(JobState.Launched,resp3.getJobMetadata().get().getState());
-            
+
             // Send migrate worker message
-            
+
             jobActor.tell(new WorkerOnDisabledVM(workerId), probe.getRef());
-            
-            
+
+
             // Trigger check hb status and that should start the migration. And migrate first worker
             Instant now = Instant.now();
             jobActor.tell(new JobProto.CheckHeartBeat(), probe.getRef());
-            
+
             // send HB for the migrated worker
             WorkerId migratedWorkerId1 = new WorkerId(jobId, 0, 2);
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobActor, jobId, stageNo, migratedWorkerId1);
-            
+
             // Trigger another check should be noop
           //  jobActor.tell(new JobProto.CheckHeartBeat(now.plusSeconds(120)), probe.getRef());
             scheduleCDL.await(1, TimeUnit.SECONDS);
             unscheduleCDL.await(1, TimeUnit.SECONDS);
-            
-           
+
+
 //            // 1 original submissions and 1 resubmit because of migration
-            
-            
+
+
 //            when(schedulerMock.scheduleWorker(any())).
 //            verify(schedulerMock, times(2)).scheduleWorker(any());
 ////            // 1 kill due to resubmits
 //           verify(schedulerMock, times(1)).unscheduleWorker(any(), any());
-//            
+//
             //assertEquals(jobActor, probe.getLastSender());
         } catch (InvalidJobException  e) {
             // TODO Auto-generated catch block
@@ -170,11 +168,11 @@ public class JobTestMigrationTests {
         }
 
     }
-    
+
     class DummyScheduler implements MantisScheduler {
 
         CountDownLatch schedL;
-        CountDownLatch unschedL; 
+        CountDownLatch unschedL;
         public DummyScheduler(CountDownLatch scheduleCDL, CountDownLatch unscheduleCDL) {
             schedL = scheduleCDL;
             unschedL = unscheduleCDL;
@@ -185,7 +183,7 @@ public class JobTestMigrationTests {
             // TODO Auto-generated method stub
             System.out.println("----------------------> schedule Worker Called");
             schedL.countDown();
-            
+
         }
 
         @Override
@@ -197,49 +195,49 @@ public class JobTestMigrationTests {
         @Override
         public void unscheduleAndTerminateWorker(WorkerId workerId, Optional<String> hostname) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void updateWorkerSchedulingReadyTime(WorkerId workerId, long when) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void rescindOffer(String offerId) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void rescindOffers(String hostname) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void addOffers(List<VirtualMachineLease> offers) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void disableVM(String hostname, long durationMillis) throws IllegalStateException {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
         public void enableVM(String hostname) {
             // TODO Auto-generated method stub
-            
+
         }
 
         @Override
@@ -251,13 +249,13 @@ public class JobTestMigrationTests {
         @Override
         public void setActiveVmGroups(List<String> activeVmGroups) {
             // TODO Auto-generated method stub
-            
+
         }
-        
+
     }
-    
+
     public static void main(String[] args) {
-       
+
     }
 
 }

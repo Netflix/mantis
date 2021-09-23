@@ -22,18 +22,17 @@ import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.dispatch.BoundedMessageQueueSemantics;
 import akka.dispatch.RequiresMessageQueue;
-import io.mantisrx.shaded.com.google.common.collect.EvictingQueue;
 import io.mantisrx.master.api.akka.route.proto.JobStatus;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.server.core.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mantisrx.shaded.com.google.common.collect.EvictingQueue;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JobStatus Broker that receives StatusEvents from all actors and demultiplexes to client connections interested in

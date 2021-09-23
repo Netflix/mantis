@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.core;
 
+import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 
 
 public class WorkerTopologyInfo {

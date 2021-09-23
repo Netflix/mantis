@@ -16,61 +16,6 @@
 
 package io.mantisrx.master;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorPaths;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.SupervisorStrategy;
-import akka.actor.Terminated;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
-import io.mantisrx.master.events.LifecycleEventPublisher;
-import io.mantisrx.master.jobcluster.IJobClusterMetadata;
-import io.mantisrx.master.jobcluster.JobClusterActor;
-import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
-import io.mantisrx.master.jobcluster.job.JobHelper;
-import io.mantisrx.master.jobcluster.job.JobState;
-import io.mantisrx.master.jobcluster.proto.BaseResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterArtifactRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLARequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto;
-
-import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.domain.IJobClusterDefinition;
-import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
-import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
-import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.persistence.MantisJobStore;
-//import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.server.master.scheduler.WorkerEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.schedulers.Schedulers;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
-
 import static akka.pattern.PatternsCS.ask;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_CONFLICT;
@@ -91,10 +36,10 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobC
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
-import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
-import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitialize;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitializeResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobRequest;
@@ -126,6 +71,58 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
+import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorPaths;
+import akka.actor.ActorRef;
+import akka.actor.Props;
+import akka.actor.SupervisorStrategy;
+import akka.actor.Terminated;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.GaugeCallback;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.jobcluster.IJobClusterMetadata;
+import io.mantisrx.master.jobcluster.JobClusterActor;
+import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
+import io.mantisrx.master.jobcluster.job.JobHelper;
+import io.mantisrx.master.jobcluster.job.JobState;
+import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterArtifactRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLARequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.domain.IJobClusterDefinition;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.schedulers.Schedulers;
+
 /*
 Supervisor Actor responsible for creating/deletion/listing of all Job Clusters in the system
  */
@@ -134,7 +131,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     public static final int STATE_TRANSITION_TIMEOUT_MSECS = 5000;
     private final Logger logger = LoggerFactory.getLogger(JobClustersManagerActor.class);
     private final long checkAgainInSecs = 30;
-    
+
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
@@ -164,7 +161,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         m = MetricsRegistry.getInstance().registerAndGet(m);
         this.numJobClusterInitFailures = m.getCounter("numJobClusterInitFailures");
         this.numJobClusterInitSuccesses = m.getCounter("numJobClusterInitSuccesses");
-        
+
         initializedBehavior = getInitializedBehavior();
     }
 
@@ -308,7 +305,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
 
     private void initialize(JobClustersManagerInitialize initMsg) {
         ActorRef sender = getSender();
-        try { 
+        try {
             logger.info("In JobClustersManagerActor:initialize");
 
             this.jobListHelperActor = getContext().actorOf(JobListHelperActor.props(), "JobListHelperActor");

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,12 +15,6 @@
  */
 
 package io.mantisrx.connector.job.source;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
@@ -43,6 +37,11 @@ import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

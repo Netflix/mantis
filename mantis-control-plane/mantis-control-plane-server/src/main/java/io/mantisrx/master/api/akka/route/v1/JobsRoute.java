@@ -16,6 +16,12 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobsRequest;
+import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createWorkerStatusRequest;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest.DEFAULT_LIST_ARCHIVED_WORKERS_LIMIT;
+
 import akka.actor.ActorSystem;
 import akka.http.caching.javadsl.Cache;
 import akka.http.javadsl.model.StatusCodes;
@@ -23,7 +29,6 @@ import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.*;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.japi.Pair;
-import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
@@ -32,7 +37,6 @@ import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.runtime.MantisJobDefinition;
-
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
@@ -43,22 +47,15 @@ import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
-import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobsRequest;
-import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createWorkerStatusRequest;
-import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest.DEFAULT_LIST_ARCHIVED_WORKERS_LIMIT;
-import static akka.http.javadsl.server.directives.CachingDirectives.cache;
-import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /***
  * JobsRoute
@@ -734,4 +731,3 @@ public class JobsRoute extends BaseRoute {
     }
 
 }
-

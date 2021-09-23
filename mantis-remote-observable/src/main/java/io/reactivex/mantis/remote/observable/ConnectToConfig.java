@@ -16,10 +16,9 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.network.Endpoint;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.mantisrx.common.network.Endpoint;
 import rx.functions.Action0;
 import rx.subjects.PublishSubject;
 

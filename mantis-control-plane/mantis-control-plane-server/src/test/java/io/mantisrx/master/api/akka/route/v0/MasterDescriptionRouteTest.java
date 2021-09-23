@@ -16,40 +16,37 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpEntity;
-
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.server.core.master.MasterDescription;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 public class MasterDescriptionRouteTest {
     private final static Logger logger = LoggerFactory.getLogger(MasterDescriptionRouteTest.class);

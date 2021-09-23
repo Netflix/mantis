@@ -16,13 +16,6 @@
 
 package io.reactivex.mantis.network.push;
 
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -35,6 +28,12 @@ import io.netty.handler.codec.compression.JdkZlibDecoder;
 import io.netty.handler.codec.compression.JdkZlibEncoder;
 import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.timeout.IdleStateHandler;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.channel.ConnectionHandler;
 import mantis.io.reactivex.netty.channel.ObservableConnection;

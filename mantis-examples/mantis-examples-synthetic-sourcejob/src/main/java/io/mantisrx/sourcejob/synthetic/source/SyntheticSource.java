@@ -16,11 +16,6 @@
 
 package io.mantisrx.sourcejob.synthetic.source;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.IntParameter;
@@ -28,6 +23,10 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
 import io.mantisrx.sourcejob.synthetic.proto.RequestEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.andreinc.mockneat.MockNeat;
 import rx.Observable;

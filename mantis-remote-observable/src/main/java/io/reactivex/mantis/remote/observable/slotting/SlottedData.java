@@ -16,9 +16,8 @@
 
 package io.reactivex.mantis.remote.observable.slotting;
 
-import java.util.Set;
-
 import io.mantisrx.common.network.Endpoint;
+import java.util.Set;
 
 
 public class SlottedData<T> {

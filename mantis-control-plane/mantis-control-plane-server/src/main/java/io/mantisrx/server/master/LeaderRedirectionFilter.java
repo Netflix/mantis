@@ -16,9 +16,6 @@
 
 package io.mantisrx.server.master;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.AllDirectives;
@@ -27,6 +24,8 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

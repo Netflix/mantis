@@ -21,13 +21,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.mantisrx.common.network.ConsistentHash;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.EndpointConfiguration;
 import io.mantisrx.common.network.HashFunctions;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Test;
 
 

@@ -16,18 +16,17 @@
 
 package io.mantisrx.client;
 
+import com.sampullara.cli.Args;
+import com.sampullara.cli.Argument;
+import io.mantisrx.server.core.JobSchedulingInfo;
+import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.master.client.MantisMasterClientApi;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.sampullara.cli.Args;
-import com.sampullara.cli.Argument;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action0;

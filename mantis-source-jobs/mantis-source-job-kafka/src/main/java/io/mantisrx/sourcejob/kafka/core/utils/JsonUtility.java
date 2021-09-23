@@ -16,12 +16,11 @@
 
 package io.mantisrx.sourcejob.kafka.core.utils;
 
-import java.io.IOException;
-import java.util.Map;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectWriter;
+import java.io.IOException;
+import java.util.Map;
 
 
 public class JsonUtility {
@@ -58,4 +57,4 @@ public class JsonUtility {
             throw new RuntimeException("Unable to write JSON", e);
         }
     }
-}  
+}

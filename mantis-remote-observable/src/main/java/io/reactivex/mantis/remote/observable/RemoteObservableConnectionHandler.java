@@ -16,18 +16,17 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.codec.Encoder;
+import io.mantisrx.common.network.WritableEndpoint;
+import io.reactivex.mantis.remote.observable.ingress.IngressPolicy;
+import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
+import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import io.mantisrx.common.codec.Encoder;
-import io.mantisrx.common.network.WritableEndpoint;
-import io.reactivex.mantis.remote.observable.ingress.IngressPolicy;
-import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
-import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import mantis.io.reactivex.netty.channel.ConnectionHandler;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import org.slf4j.Logger;

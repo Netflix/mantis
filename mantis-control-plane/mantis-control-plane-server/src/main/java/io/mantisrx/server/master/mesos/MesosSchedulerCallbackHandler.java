@@ -16,17 +16,6 @@
 
 package io.mantisrx.server.master.mesos;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
@@ -38,6 +27,16 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus.VMResourceState;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.FrameworkID;

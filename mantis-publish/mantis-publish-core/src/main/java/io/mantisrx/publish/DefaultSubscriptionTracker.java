@@ -16,24 +16,23 @@
 
 package io.mantisrx.publish;
 
+import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
+import com.netflix.mantis.discovery.proto.MantisWorker;
+import com.netflix.mantis.discovery.proto.StageWorkers;
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.ipc.http.HttpClient;
+import com.netflix.spectator.ipc.http.HttpResponse;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
+import io.mantisrx.publish.internal.metrics.SpectatorUtils;
+import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import com.netflix.mantis.discovery.proto.StageWorkers;
-import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
-import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
-import com.netflix.spectator.api.Counter;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.ipc.http.HttpClient;
-import com.netflix.spectator.ipc.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

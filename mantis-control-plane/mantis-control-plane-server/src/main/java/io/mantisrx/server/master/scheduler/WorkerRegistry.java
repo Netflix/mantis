@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.master.scheduler;
 
+import io.mantisrx.server.core.domain.WorkerId;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import io.mantisrx.server.core.domain.WorkerId;
 
 
 public interface WorkerRegistry {

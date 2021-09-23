@@ -16,12 +16,11 @@
 
 package io.mantisrx.sourcejob.kafka.sink;
 
+import io.mantisrx.sourcejob.kafka.core.TaggedData;
+import io.mantisrx.sourcejob.kafka.core.utils.SourceJobConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.sourcejob.kafka.core.TaggedData;
-import io.mantisrx.sourcejob.kafka.core.utils.SourceJobConstants;
 import org.apache.log4j.Logger;
 import rx.functions.Func1;
 

@@ -16,6 +16,27 @@
 
 package io.mantisrx.publish.internal.discovery.mantisapi;
 
+import com.netflix.archaius.DefaultPropertyFactory;
+import com.netflix.archaius.api.PropertyRepository;
+import com.netflix.archaius.config.DefaultSettableConfig;
+import com.netflix.mantis.discovery.proto.AppJobClustersMap;
+import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
+import com.netflix.mantis.discovery.proto.MantisWorker;
+import com.netflix.mantis.discovery.proto.StageWorkers;
+import com.netflix.spectator.api.DefaultRegistry;
+import com.netflix.spectator.ipc.http.HttpClient;
+import com.netflix.spectator.ipc.http.HttpResponse;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
+import io.mantisrx.publish.internal.discovery.proto.JobSchedulingInfo;
+import io.mantisrx.publish.internal.discovery.proto.MantisJobState;
+import io.mantisrx.publish.internal.discovery.proto.WorkerAssignments;
+import io.mantisrx.publish.internal.discovery.proto.WorkerHost;
+import io.mantisrx.publish.internal.exceptions.NonRetryableException;
+import io.mantisrx.publish.internal.exceptions.RetryableException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,28 +49,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.netflix.archaius.DefaultPropertyFactory;
-import com.netflix.archaius.api.PropertyRepository;
-import com.netflix.archaius.config.DefaultSettableConfig;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import com.netflix.mantis.discovery.proto.StageWorkers;
-import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
-import io.mantisrx.publish.internal.discovery.proto.WorkerHost;
-import io.mantisrx.publish.internal.exceptions.NonRetryableException;
-import io.mantisrx.publish.internal.exceptions.RetryableException;
-import io.mantisrx.publish.internal.discovery.proto.JobSchedulingInfo;
-import io.mantisrx.publish.internal.discovery.proto.MantisJobState;
-import io.mantisrx.publish.internal.discovery.proto.WorkerAssignments;
-import com.netflix.spectator.api.DefaultRegistry;
-import com.netflix.spectator.ipc.http.HttpClient;
-import com.netflix.spectator.ipc.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

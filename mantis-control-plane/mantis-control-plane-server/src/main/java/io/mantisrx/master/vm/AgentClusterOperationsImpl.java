@@ -16,8 +16,6 @@
 
 package io.mantisrx.master.vm;
 
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.TaskRequest;
 import com.netflix.fenzo.VirtualMachineCurrentState;
@@ -35,11 +33,8 @@ import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import org.apache.mesos.Protos;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.schedulers.Schedulers;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +47,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import org.apache.mesos.Protos;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.schedulers.Schedulers;
 
 public class AgentClusterOperationsImpl extends BaseService implements AgentClusterOperations {
     static class ActiveVmAttributeValues {

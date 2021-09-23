@@ -33,11 +33,10 @@ import akka.japi.pf.PFBuilder;
 import akka.pattern.AskTimeoutException;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
-import scala.concurrent.duration.Duration;
-
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import scala.concurrent.duration.Duration;
 
 abstract class BaseRoute extends AllDirectives {
     protected HttpResponse toHttpResponse(final BaseResponse r) {

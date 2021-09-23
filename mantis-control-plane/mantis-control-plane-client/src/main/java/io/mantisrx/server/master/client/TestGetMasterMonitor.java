@@ -16,13 +16,6 @@
 
 package io.mantisrx.server.master.client;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.server.core.CoreConfiguration;
@@ -30,6 +23,12 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import rx.functions.Action1;
 import rx.functions.Func1;
 

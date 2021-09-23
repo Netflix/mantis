@@ -16,10 +16,18 @@
 
 package io.mantisrx.master.events;
 
+import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.INFO;
+import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
@@ -41,21 +49,12 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.util.*;
+import java.util.concurrent.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.*;
-
-import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.INFO;
-import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 public class WorkerRegistryV2Test {
 
@@ -353,7 +352,7 @@ public class WorkerRegistryV2Test {
 
 
     }
-    
+
     List<Writer> generateWriters(WorkerEventSubscriber subscriber, int count, CountDownLatch latch) {
         List<Writer> writerList = new ArrayList<>();
         for(int i=0; i<count ;i++) {

@@ -16,11 +16,10 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.network.Endpoint;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
-import io.mantisrx.common.network.Endpoint;
 import junit.framework.Assert;
 import org.junit.Test;
 import rx.observables.BlockingObservable;

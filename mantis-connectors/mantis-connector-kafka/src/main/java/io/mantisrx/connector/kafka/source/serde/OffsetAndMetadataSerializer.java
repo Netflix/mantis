@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,10 @@
 
 package io.mantisrx.connector.kafka.source.serde;
 
-import java.io.IOException;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonGenerator;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonSerializer;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 
 public class OffsetAndMetadataSerializer extends JsonSerializer<OffsetAndMetadata> {

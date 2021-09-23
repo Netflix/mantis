@@ -16,11 +16,10 @@
 
 package io.mantisrx.publish;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import io.mantisrx.publish.api.Event;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 
 /**

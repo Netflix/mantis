@@ -16,32 +16,27 @@
 
 package io.mantisrx.master.scheduler;
 
+import static io.mantisrx.master.scheduler.AgentsErrorMonitorActor.props;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
-
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import rx.functions.Action1;
-
-import java.util.ArrayList;
-import java.util.List;
-
-
-import static io.mantisrx.master.scheduler.AgentsErrorMonitorActor.props;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class AgentsErrorMonitorTest {
 
@@ -320,4 +315,3 @@ public class AgentsErrorMonitorTest {
     }
 
 }
-

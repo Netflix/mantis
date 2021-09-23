@@ -16,8 +16,9 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
+import static java.util.Optional.ofNullable;
+
 import akka.actor.ActorRef;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -26,12 +27,10 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
-
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-
-import static java.util.Optional.ofNullable;
 
 public class JobClusterProto {
 
@@ -57,7 +56,7 @@ public class JobClusterProto {
          * @param isDisabled
          * @param lastJobNumber
          * @param jobList
-         * @param completedJobsList 
+         * @param completedJobsList
          * @param user
          * @param requestor
          * @param createInStore
@@ -260,14 +259,14 @@ public class JobClusterProto {
 
         }
     }
-    
+
     public static final class ExpireOldJobsRequest {
         public final Instant timeOfEnforcement;
-   
+
         public ExpireOldJobsRequest() {
             this(Instant.now());
         }
-       
+
         public ExpireOldJobsRequest(Instant now) {
             this.timeOfEnforcement = now;
         }
@@ -283,7 +282,7 @@ public class JobClusterProto {
         }
 
     }
-    
+
     public static final class TriggerCronRequest {
         public final Instant time;
         public TriggerCronRequest(Instant time) {
@@ -292,7 +291,7 @@ public class JobClusterProto {
         public TriggerCronRequest() {
             this(Instant.now());
         }
-        
+
     }
 
 }

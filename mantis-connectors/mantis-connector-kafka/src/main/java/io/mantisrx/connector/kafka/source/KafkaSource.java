@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,24 @@
 
 package io.mantisrx.connector.kafka.source;
 
+import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.CONSUMER_RECORD_OVERHEAD_BYTES;
+import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_ENABLE_STATIC_PARTITION_ASSIGN;
+import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_MAX_BYTES_IN_PROCESSING;
+import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_NUM_KAFKA_CONSUMER_PER_WORKER;
+import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_PARSE_MSG_IN_SOURCE;
+
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.connector.kafka.KafkaAckable;
+import io.mantisrx.connector.kafka.KafkaData;
+import io.mantisrx.connector.kafka.KafkaDataNotification;
+import io.mantisrx.connector.kafka.KafkaSourceParameters;
+import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategy;
+import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;
+import io.mantisrx.connector.kafka.source.checkpoint.trigger.CheckpointTrigger;
 import io.mantisrx.connector.kafka.source.metrics.ConsumerMetrics;
 import io.mantisrx.connector.kafka.source.serde.ParseException;
 import io.mantisrx.connector.kafka.source.serde.Parser;
 import io.mantisrx.connector.kafka.source.serde.ParserType;
-import io.mantisrx.connector.kafka.KafkaData;
-import io.mantisrx.connector.kafka.KafkaDataNotification;
-import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategy;
-import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;
-import io.mantisrx.connector.kafka.source.checkpoint.trigger.CheckpointTrigger;
-import io.mantisrx.connector.kafka.KafkaSourceParameters;
-import io.mantisrx.connector.kafka.KafkaAckable;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
@@ -36,7 +42,9 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
-
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
@@ -44,22 +52,11 @@ import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.record.InvalidRecordException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import rx.Observable;
 import rx.observables.SyncOnSubscribe;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 import rx.subjects.SerializedSubject;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.CONSUMER_RECORD_OVERHEAD_BYTES;
-import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_ENABLE_STATIC_PARTITION_ASSIGN;
-import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_MAX_BYTES_IN_PROCESSING;
-import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_NUM_KAFKA_CONSUMER_PER_WORKER;
-import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_PARSE_MSG_IN_SOURCE;
 
 
 /**

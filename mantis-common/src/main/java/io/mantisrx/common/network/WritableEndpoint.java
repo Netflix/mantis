@@ -16,10 +16,9 @@
 
 package io.mantisrx.common.network;
 
-import java.util.Optional;
-
 import com.netflix.spectator.api.BasicTag;
 import io.reactivx.mantis.operators.DropOperator;
+import java.util.Optional;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import rx.Observable;
 import rx.subjects.PublishSubject;

@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.net.URL;
-import java.util.List;
-
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import java.net.URL;
+import java.util.List;
 
 
 public class JobMetadata {

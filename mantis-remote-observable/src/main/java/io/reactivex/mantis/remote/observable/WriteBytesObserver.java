@@ -16,10 +16,9 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.List;
-
 import io.mantisrx.common.network.WritableEndpoint;
 import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
+import java.util.List;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import rx.Subscription;
 import rx.functions.Action0;

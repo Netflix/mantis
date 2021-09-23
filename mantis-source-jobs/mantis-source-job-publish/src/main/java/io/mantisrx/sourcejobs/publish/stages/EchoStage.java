@@ -16,11 +16,6 @@
 
 package io.mantisrx.sourcejobs.publish.stages;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import com.mantisrx.common.utils.MantisSourceJobConstants;
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.publish.netty.proto.MantisEventEnvelope;
@@ -32,6 +27,10 @@ import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import rx.Observable;
 

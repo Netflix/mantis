@@ -16,10 +16,6 @@
 
 package io.mantisrx.server.master.client;
 
-import java.nio.charset.Charset;
-import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -28,6 +24,9 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.client.RxClient;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
 import mantis.io.reactivex.netty.protocol.http.client.CompositeHttpClientBuilder;

@@ -16,6 +16,11 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,12 +31,6 @@ import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

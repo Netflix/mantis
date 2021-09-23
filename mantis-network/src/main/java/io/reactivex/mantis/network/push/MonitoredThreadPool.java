@@ -16,12 +16,6 @@
 
 package io.reactivex.mantis.network.push;
 
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
-
 import com.mantisrx.common.utils.MantisMetricStringConstants;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.metrics.Counter;
@@ -29,6 +23,11 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

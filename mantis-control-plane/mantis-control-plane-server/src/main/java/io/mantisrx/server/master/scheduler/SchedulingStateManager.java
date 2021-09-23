@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.master.scheduler;
 
+import com.netflix.fenzo.VirtualMachineCurrentState;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.netflix.fenzo.VirtualMachineCurrentState;
 
 
 public class SchedulingStateManager {

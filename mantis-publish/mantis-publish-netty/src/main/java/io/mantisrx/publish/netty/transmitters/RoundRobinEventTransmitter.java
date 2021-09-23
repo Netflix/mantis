@@ -16,11 +16,6 @@
 
 package io.mantisrx.publish.netty.transmitters;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import com.netflix.spectator.api.Counter;
@@ -33,6 +28,10 @@ import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

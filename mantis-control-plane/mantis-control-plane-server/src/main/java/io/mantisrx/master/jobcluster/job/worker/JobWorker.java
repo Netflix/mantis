@@ -20,11 +20,6 @@ import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent;
 import static io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import static java.util.Optional.ofNullable;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.WorkerPorts;
@@ -51,6 +46,10 @@ import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
 import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,13 +16,12 @@
 
 import static org.junit.Assert.fail;
 
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.client.MantisClient;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observer;

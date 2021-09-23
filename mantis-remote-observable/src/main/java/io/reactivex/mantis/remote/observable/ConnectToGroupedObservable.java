@@ -16,10 +16,9 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.codec.Decoder;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.mantisrx.common.codec.Decoder;
 import rx.functions.Action0;
 import rx.functions.Action3;
 import rx.subjects.PublishSubject;

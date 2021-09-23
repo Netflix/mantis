@@ -18,7 +18,6 @@ package io.mantisrx.master.jobcluster.proto;
 
 import akka.actor.ActorRef;
 import io.mantisrx.server.master.domain.JobId;
-
 import java.time.Instant;
 
 public class JobProto {
@@ -28,7 +27,7 @@ public class JobProto {
 		public String getName();
 	}
 
-	
+
 	public static final class InitJob extends BaseRequest {
 		public final ActorRef requstor;
 		public final boolean isSubmit;
@@ -78,7 +77,7 @@ public class JobProto {
 	/////////////////////////////////// JOB Related Messages ///////////////////////////////////////////////
 
 
-	
+
 	public static final class RuntimeLimitReached {
 
 	}

@@ -16,6 +16,8 @@
 
 package io.mantisrx.master;
 
+import static akka.pattern.PatternsCS.ask;
+
 import akka.actor.ActorRef;
 import akka.util.Timeout;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
@@ -23,14 +25,11 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static akka.pattern.PatternsCS.ask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobClustersManagerService extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(JobClustersManagerService.class);

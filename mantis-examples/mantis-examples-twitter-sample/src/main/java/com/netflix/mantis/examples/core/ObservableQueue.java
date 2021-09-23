@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import rx.Observable;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;

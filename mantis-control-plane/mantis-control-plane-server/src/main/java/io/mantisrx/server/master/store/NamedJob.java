@@ -16,17 +16,6 @@
 
 package io.mantisrx.server.master.store;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import com.netflix.fenzo.triggers.CronTrigger;
 import com.netflix.fenzo.triggers.TriggerOperator;
 import com.netflix.fenzo.triggers.exceptions.SchedulerException;
@@ -39,6 +28,16 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.MantisJobOperations;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Action1;

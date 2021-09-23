@@ -16,12 +16,11 @@
 
 package io.mantisrx.common.metrics.spectator;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.spectator.api.Measurement;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.metrics.Timer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 
 public class TimerImpl implements Timer {

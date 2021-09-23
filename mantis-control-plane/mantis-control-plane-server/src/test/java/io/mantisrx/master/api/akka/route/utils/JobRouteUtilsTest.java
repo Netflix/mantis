@@ -16,18 +16,17 @@
 
 package io.mantisrx.master.api.akka.route.utils;
 
+import static org.junit.Assert.assertEquals;
+
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class JobRouteUtilsTest {
     @Test

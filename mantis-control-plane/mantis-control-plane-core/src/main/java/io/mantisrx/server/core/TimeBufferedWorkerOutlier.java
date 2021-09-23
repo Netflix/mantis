@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.core;
 
-import rx.functions.Action1;
-
 import java.util.HashMap;
 import java.util.Map;
+import rx.functions.Action1;
 
 /**
  * Worker outlier detector that buffers events based on time before determining outliers. This is used for high volume

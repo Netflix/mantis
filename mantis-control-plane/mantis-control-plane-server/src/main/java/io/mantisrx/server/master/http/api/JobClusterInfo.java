@@ -16,15 +16,14 @@
 
 package io.mantisrx.server.master.http.api;
 
-import java.util.List;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.store.NamedJob;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 
 public class JobClusterInfo {

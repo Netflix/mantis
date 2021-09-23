@@ -16,12 +16,11 @@
 
 package com.netflix.mantis.discovery.proto;
 
-import java.util.List;
-import java.util.Objects;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.Objects;
 
 
 public class StageWorkers {

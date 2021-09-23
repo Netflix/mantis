@@ -20,19 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Set;
-
 import com.netflix.archaius.DefaultPropertyFactory;
 import com.netflix.archaius.api.PropertyRepository;
 import com.netflix.archaius.api.config.SettableConfig;
 import com.netflix.archaius.config.DefaultSettableConfig;
+import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.core.SubscriptionFactory;
-import com.netflix.spectator.api.DefaultRegistry;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

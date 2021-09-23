@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /*
  * Copyright 2019 Netflix, Inc.
@@ -17,6 +32,9 @@
 
 package io.mantisrx.master.scheduler;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -24,10 +42,6 @@ import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.functions.Action1;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,9 +51,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.functions.Action1;
 
 public class AgentsErrorMonitorActor extends AbstractActorWithTimers implements IAgentsErrorMonitor {
 

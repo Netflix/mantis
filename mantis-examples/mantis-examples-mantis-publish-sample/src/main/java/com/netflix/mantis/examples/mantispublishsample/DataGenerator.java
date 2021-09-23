@@ -16,9 +16,8 @@
 
 package com.netflix.mantis.examples.mantispublishsample;
 
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.mantis.examples.mantispublishsample.proto.RequestEvent;
+import java.util.concurrent.TimeUnit;
 import net.andreinc.mockneat.MockNeat;
 import rx.Observable;
 

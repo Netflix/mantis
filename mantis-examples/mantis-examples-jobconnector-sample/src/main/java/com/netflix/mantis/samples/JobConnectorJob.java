@@ -16,15 +16,9 @@
 
 package com.netflix.mantis.samples;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.mantis.samples.stage.EchoStage;
-
 import io.mantisrx.connector.job.core.MantisSourceJobConnector;
 import io.mantisrx.connector.job.source.JobSource;
 import io.mantisrx.runtime.Job;
@@ -34,6 +28,10 @@ import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 

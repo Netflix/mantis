@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import java.util.Objects;
-import java.util.Optional;
-
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.domain.WorkerId;
+import java.util.Objects;
+import java.util.Optional;
 
 
 public class WorkerLaunched implements WorkerEvent {

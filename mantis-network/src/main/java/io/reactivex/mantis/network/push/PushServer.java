@@ -18,19 +18,6 @@ package io.reactivex.mantis.network.push;
 
 import static com.mantisrx.common.utils.MantisMetricStringConstants.GROUP_ID_TAG;
 
-import java.nio.ByteBuffer;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.common.messages.MantisMetaDroppedMessage;
@@ -43,6 +30,17 @@ import io.netty.channel.Channel;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import io.reactivx.mantis.operators.DropOperator;
+import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import mantis.io.reactivex.netty.channel.DefaultChannelWriter;
 import mantis.io.reactivex.netty.server.RxServer;
 import org.slf4j.Logger;

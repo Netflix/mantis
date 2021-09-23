@@ -16,16 +16,14 @@
 
 package com.netflix.mantis.examples.mantispublishsample.web.servlet;
 
+import com.netflix.mantis.examples.mantispublishsample.web.service.MyService;
 import java.io.IOException;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.netflix.mantis.examples.mantispublishsample.web.service.MyService;
 
 
 /**

@@ -16,11 +16,10 @@
 
 package io.mantisrx.publish.core;
 
-import java.util.List;
-
 import io.mantisrx.mql.jvm.core.Query;
-import io.mantisrx.publish.internal.mql.MQLSubscription;
 import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.internal.mql.MQLSubscription;
+import java.util.List;
 
 
 public interface Subscription {

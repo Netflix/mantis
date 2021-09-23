@@ -16,15 +16,14 @@
 
 package io.mantisrx.server.master.store;
 
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
 
 
 public interface MantisJobMetadata {

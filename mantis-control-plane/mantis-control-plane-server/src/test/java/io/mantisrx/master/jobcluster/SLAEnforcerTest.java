@@ -20,19 +20,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.List;
-import java.util.Set;
-
-import org.joda.time.Instant;
-import org.junit.Test;
-
-import io.mantisrx.shaded.com.google.common.collect.Lists;
-
-
-import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import io.mantisrx.master.jobcluster.job.JobState;
+import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.domain.SLA;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.util.List;
+import java.util.Set;
+import org.joda.time.Instant;
+import org.junit.Test;
 
 public class SLAEnforcerTest {
 
@@ -74,16 +70,16 @@ public class SLAEnforcerTest {
 	public void slaMinInvalidArgTest() {
 		int min = 2;
 		int max = 0;
-		
+
 		try {
 		    SLA sla = new SLA(min,max, null, null);
-		    
+
 		    SLAEnforcer slaEnf = new SLAEnforcer(sla);
 			slaEnf.enforceSLAMin(-1, 0);
 			fail();
 		} catch(Exception e) {}
-		
-		
+
+
 	}
 	@Test
 	public void slaMinDefaultsTest() {
@@ -97,37 +93,37 @@ public class SLAEnforcerTest {
 			fail();
 		}
 	}
-	
+
 	@Test
 	public void slaMinTest() {
-		
-		
-		
+
+
+
 		int min = 2;
 		int max = 10;
-		
+
 		SLA sla = new SLA(min,max, null, null);
-		
+
 		SLAEnforcer slaEnf = new SLAEnforcer(sla);
 		// min is 2 and active jobs count is 2 no need to launch any jobs
 		assertEquals(0, slaEnf.enforceSLAMin(2, 0));
 		// min is 2 and active jobs is 1 and launched jobs is 1 no need to launch any more jobs
 		assertEquals(0, slaEnf.enforceSLAMin(1, 1));
-		
+
 		// min is 2, active = 1, launched = 0, therefore launch 1 job
 		assertEquals(1, slaEnf.enforceSLAMin(1, 0));
-		
+
 	}
 	@Test
 	public void slaMaxDefaultsTest() {
 		Instant now = Instant.now();
-		
+
 		int min = 0;
 		int max = 0;
 		SLA sla = new SLA(min,max, null, null);
-		
+
 		SLAEnforcer slaEnf = new SLAEnforcer(null);
-		
+
 		List<JobInfo> jobList = Lists.newArrayList(
 										new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
 										new JobInfo(new JobId("cname", 2), null, now.getMillis(), null, JobState.Launched, null),
@@ -141,9 +137,9 @@ public class SLAEnforcerTest {
 		} catch(Exception e) {
 			fail();
 		}
-		
+
 		slaEnf = new SLAEnforcer(sla);
-		
+
 		jobList = Lists.newArrayList(
 										new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
 										new JobInfo(new JobId("cname", 2), null, now.getMillis(), null, JobState.Launched, null),
@@ -153,21 +149,21 @@ public class SLAEnforcerTest {
 	// sla max is 0 nothing to enforce
 		List<JobId>  jobsToDelete = slaEnf.enforceSLAMax(jobList);
 		assertTrue(jobsToDelete.isEmpty());
-		
-		
-		
+
+
+
 	}
-	
+
 	@Test
 	public void slaMaxTest() {
 		Instant now = Instant.now();
-		
+
 		int min = 0;
 		int max = 2;
 		SLA sla = new SLA(min,max, null, null);
-		
+
 		SLAEnforcer slaEnf = new SLAEnforcer(sla);
-		
+
 		List<JobInfo> jobList = Lists.newArrayList(
 										new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
 										new JobInfo(new JobId("cname", 2), null, now.getMillis(), null, JobState.Launched, null),
@@ -179,19 +175,19 @@ public class SLAEnforcerTest {
 		assertEquals(1, jobsToDelete.size());
 		assertEquals("cname-1", jobsToDelete.get(0).getId());
 
-		
+
 	}
-	
+
 	@Test
 	public void slaMaxTest2() {
 		Instant now = Instant.now();
-		
+
 		int min = 0;
 		int max = 2;
 		SLA sla = new SLA(min,max, null, null);
-		
+
 		SLAEnforcer slaEnf = new SLAEnforcer(sla);
-		
+
 		List<JobInfo> jobList = Lists.newArrayList(
 										new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
 										new JobInfo(new JobId("cname", 2), null, now.getMillis(), null, JobState.Launched, null),
@@ -214,19 +210,19 @@ public class SLAEnforcerTest {
         }
 
 		assertTrue(job1Found && job2Found);
-		
+
 	}
-	
+
 	@Test
 	public void slaMaxTest3() {
 		Instant now = Instant.now();
-		
+
 		int min = 0;
 		int max = 2;
 		SLA sla = new SLA(min,max, null, null);
-		
+
 		SLAEnforcer slaEnf = new SLAEnforcer(sla);
-		
+
 		List<JobInfo> jobList = Lists.newArrayList(
                                         new JobInfo(new JobId("cname", 5), null, now.getMillis(), null, JobState.Accepted, null),
 										new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
@@ -246,13 +242,13 @@ public class SLAEnforcerTest {
 	@Test
 	public void slaMaxTest4() {
 		Instant now = Instant.now();
-		
+
 		int min = 0;
 		int max = 2;
 		SLA sla = new SLA(min,max, null, null);
-		
+
 		SLAEnforcer slaEnf = new SLAEnforcer(sla);
-		
+
 		List<JobInfo> jobList = Lists.newArrayList(
                                         new JobInfo(new JobId("cname", 4), null, now.getMillis(), null, JobState.Launched, null),
 										new JobInfo(new JobId("cname", 1), null, now.getMillis(), null, JobState.Accepted, null),
@@ -272,5 +268,5 @@ public class SLAEnforcerTest {
         assertTrue(jobsToDelete.contains(new JobId("cname",5)));
 	}
 
-	
+
 }

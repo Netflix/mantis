@@ -18,14 +18,6 @@ package io.mantisrx.sourcejob.kafka;
 
 import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.mantisrx.connector.kafka.KafkaAckable;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
@@ -36,6 +28,13 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.sourcejob.kafka.core.TaggedData;
 import io.mantisrx.sourcejob.kafka.core.utils.JsonUtility;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func1;

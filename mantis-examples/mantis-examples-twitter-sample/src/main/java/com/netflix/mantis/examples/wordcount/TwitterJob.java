@@ -16,11 +16,6 @@
 
 package com.netflix.mantis.examples.wordcount;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.concurrent.TimeUnit;
-
 import com.mantisrx.common.utils.JsonUtility;
 import com.netflix.mantis.examples.config.StageConfigs;
 import com.netflix.mantis.examples.core.WordCountPair;
@@ -32,6 +27,10 @@ import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 

@@ -16,22 +16,19 @@
 
 package io.mantisrx.master;
 
+import static akka.pattern.PatternsCS.ask;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.util.Timeout;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.server.master.domain.JobId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.schedulers.Schedulers;
-import scala.concurrent.duration.Duration;
-
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,10 +36,11 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-
-import static akka.pattern.PatternsCS.ask;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.schedulers.Schedulers;
+import scala.concurrent.duration.Duration;
 
 /**
  * Helper Actor used by JobClustersManager for listing jobs and clusters.

@@ -16,17 +16,16 @@
 
 package io.mantisrx.server.core;
 
-import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
 
 
 public class ExecuteStageRequest {

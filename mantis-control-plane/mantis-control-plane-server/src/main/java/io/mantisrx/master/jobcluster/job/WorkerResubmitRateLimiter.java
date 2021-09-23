@@ -16,16 +16,15 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import com.netflix.spectator.impl.Preconditions;
+import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
-
-import com.netflix.spectator.impl.Preconditions;
-import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

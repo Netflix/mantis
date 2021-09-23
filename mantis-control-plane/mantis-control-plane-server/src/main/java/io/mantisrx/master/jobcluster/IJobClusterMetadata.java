@@ -16,10 +16,8 @@
 
 package io.mantisrx.master.jobcluster;
 
-import java.util.List;
 
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
-import io.mantisrx.server.master.domain.JobId;
 
 public interface IJobClusterMetadata {
 

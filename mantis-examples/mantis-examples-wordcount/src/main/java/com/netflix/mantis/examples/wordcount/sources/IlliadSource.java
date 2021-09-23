@@ -16,6 +16,9 @@
 
 package com.netflix.mantis.examples.wordcount.sources;
 
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.source.Index;
+import io.mantisrx.runtime.source.Source;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -23,10 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.source.Index;
-import io.mantisrx.runtime.source.Source;
 import lombok.extern.log4j.Log4j;
 import rx.Observable;
 

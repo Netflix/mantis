@@ -16,14 +16,13 @@
 
 package io.mantisrx.publish.internal.mql;
 
+import io.mantisrx.mql.jvm.core.Query;
+import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
+import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Function;
-
-import io.mantisrx.mql.jvm.core.Query;
-import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
-import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

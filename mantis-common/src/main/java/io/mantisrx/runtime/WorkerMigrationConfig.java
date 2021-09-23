@@ -16,11 +16,10 @@
 
 package io.mantisrx.runtime;
 
-import java.util.Optional;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Optional;
 
 
 public class WorkerMigrationConfig {

@@ -17,11 +17,10 @@
 package io.mantisrx.common.metrics;
 
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.spectator.api.Measurement;
 import io.mantisrx.common.metrics.spectator.MetricId;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 
 public interface Timer {

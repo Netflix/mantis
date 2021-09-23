@@ -16,18 +16,14 @@
 
 package io.mantisrx.server.master.domain;
 
-import io.mantisrx.shaded.com.google.common.collect.Lists;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import org.junit.Test;
 
 
@@ -145,9 +141,9 @@ public class JobClusterConfigTest {
                 .build();
             fail();
         } catch(Exception e) {
-            
+
         }
-        
+
         try {
             //  cluster name is not specified
                 final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
@@ -160,7 +156,7 @@ public class JobClusterConfigTest {
                     .build();
                 fail();
             } catch(Exception e) {
-                
+
             }
 
 

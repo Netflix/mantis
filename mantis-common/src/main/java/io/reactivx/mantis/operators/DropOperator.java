@@ -16,20 +16,17 @@
 
 package io.reactivx.mantis.operators;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable.Operator;
 import rx.Producer;
 import rx.Subscriber;
-import rx.functions.Action0;
 import rx.subscriptions.Subscriptions;
 
 

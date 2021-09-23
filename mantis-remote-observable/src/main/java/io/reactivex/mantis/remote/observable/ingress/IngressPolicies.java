@@ -16,11 +16,10 @@
 
 package io.reactivex.mantis.remote.observable.ingress;
 
+import io.reactivex.mantis.remote.observable.RemoteRxEvent;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import io.reactivex.mantis.remote.observable.RemoteRxEvent;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import rx.Observable;
 import rx.subjects.ReplaySubject;

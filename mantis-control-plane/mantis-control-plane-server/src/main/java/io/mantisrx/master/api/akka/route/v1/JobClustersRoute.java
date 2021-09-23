@@ -16,6 +16,11 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import static akka.http.javadsl.server.directives.CachingDirectives.cache;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
+
 import akka.actor.ActorSystem;
 import akka.http.caching.javadsl.Cache;
 import akka.http.javadsl.model.HttpResponse;
@@ -26,7 +31,6 @@ import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
-import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
@@ -35,18 +39,13 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
-import static akka.http.javadsl.server.directives.CachingDirectives.cache;
-import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
-import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /***

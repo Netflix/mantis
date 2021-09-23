@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,26 +16,23 @@
 
 package io.mantisrx.connector.kafka.sink;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.Metadata;
+import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.Parameters;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import io.mantisrx.runtime.sink.SelfDocumentingSink;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.Metadata;
-import io.mantisrx.runtime.PortRequest;
-
-import io.mantisrx.runtime.sink.SelfDocumentingSink;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;

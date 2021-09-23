@@ -16,9 +16,8 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.Map;
-
 import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
+import java.util.Map;
 import rx.functions.Func1;
 
 

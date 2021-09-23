@@ -16,17 +16,6 @@
 
 package io.mantisrx.client.examples;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisSSEJob;
@@ -37,6 +26,16 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.master.client.MasterClientWrapper;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

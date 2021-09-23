@@ -16,12 +16,8 @@
 
 package io.mantisrx.server.master.jobmgmt;
 
-import io.mantisrx.server.master.MantisJobMgr;
-import io.mantisrx.server.master.store.NamedJob;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class JobRegistry {
 //    final ConcurrentHashMap<String, MantisJobMgr> jobManagers = new ConcurrentHashMap<>();

@@ -16,14 +16,13 @@
 
 package io.mantisrx.server.master.agentdeploy;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentSkipListSet;
-
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.utils.MantisClock;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

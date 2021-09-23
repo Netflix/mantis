@@ -16,12 +16,11 @@
 
 package io.mantisrx.publish.internal.metrics;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
 import com.netflix.spectator.impl.AtomicDouble;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class StreamMetrics {

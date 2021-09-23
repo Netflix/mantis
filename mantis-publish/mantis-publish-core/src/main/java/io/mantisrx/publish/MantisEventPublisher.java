@@ -16,17 +16,16 @@
 
 package io.mantisrx.publish;
 
-import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.EventPublisher;
 import io.mantisrx.publish.api.PublishStatus;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.StreamMetrics;
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

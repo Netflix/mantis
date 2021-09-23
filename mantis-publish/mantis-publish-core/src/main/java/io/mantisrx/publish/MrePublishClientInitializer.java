@@ -16,6 +16,10 @@
 
 package io.mantisrx.publish;
 
+import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.api.EventPublisher;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -23,12 +27,6 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import io.mantisrx.publish.api.EventPublisher;
-import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
-import com.netflix.spectator.api.Registry;
-import io.mantisrx.publish.internal.mql.MQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -18,16 +18,15 @@ package io.mantisrx.sourcejob.kafka;
 
 import static io.mantisrx.connector.kafka.source.MantisKafkaSourceConfig.DEFAULT_PARSE_MSG_IN_SOURCE;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-
 import io.mantisrx.connector.kafka.KafkaAckable;
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
 import io.mantisrx.connector.kafka.source.serde.ParseException;
 import io.mantisrx.connector.kafka.source.serde.Parser;
 import io.mantisrx.connector.kafka.source.serde.ParserType;
 import io.mantisrx.runtime.Context;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,4 +84,3 @@ public class AutoAckTaggingStage extends AbstractAckableTaggingStage {
         return rawData;
     }
 }
-

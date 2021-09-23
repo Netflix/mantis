@@ -16,11 +16,11 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 
 
 @JsonFilter("workerMetadataList")

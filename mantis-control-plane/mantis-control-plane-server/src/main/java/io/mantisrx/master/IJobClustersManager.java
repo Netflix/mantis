@@ -24,14 +24,12 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobRequest
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobClustersRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobIdsRequest;
-
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.DeleteJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.InitializeJobClusterResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobResponse;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 
 public interface IJobClustersManager {
@@ -48,19 +46,19 @@ public interface IJobClustersManager {
     void onJobClusterUpdate(UpdateJobClusterRequest request);
 
     void onJobClusterUpdateSLA(JobClusterManagerProto.UpdateJobClusterSLARequest r);
-    
+
     void onJobClusterUpdateArtifact(JobClusterManagerProto.UpdateJobClusterArtifactRequest r);
-    
+
     void onJobClusterUpdateLabels(JobClusterManagerProto.UpdateJobClusterLabelsRequest r);
-    
+
     void onJobClusterUpdateWorkerMigrationConfig(JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest r);
-    
+
     void onJobClustersList(ListJobClustersRequest request);
 
     void onJobClusterGet(JobClusterManagerProto.GetJobClusterRequest r);
-    
+
     void onJobClusterEnable(JobClusterManagerProto.EnableJobClusterRequest r);
-    
+
     void onJobClusterDisable(JobClusterManagerProto.DisableJobClusterRequest r);
 
     void onGetJobStatusSubject(JobClusterManagerProto.GetJobSchedInfoRequest request);
@@ -68,18 +66,18 @@ public interface IJobClustersManager {
     void onGetLatestJobDiscoveryInfo(JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest request);
 
     void onJobListCompleted(JobClusterManagerProto.ListCompletedJobsInClusterRequest r);
-    
+
     void onJobList(ListJobsRequest request);
 
     void onJobIdList(ListJobIdsRequest request);
-    
-    
+
+
     // worker related messages
 
     void onGetLastSubmittedJobIdSubject(JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest request);
 
     void onWorkerEvent(WorkerEvent r);
-    
+
     // Job related messages
 
     void onJobSubmit(JobClusterManagerProto.SubmitJobRequest request);
@@ -87,7 +85,7 @@ public interface IJobClustersManager {
     void onJobKillRequest(KillJobRequest request);
 
     void onGetJobDetailsRequest(JobClusterManagerProto.GetJobDetailsRequest request);
-    
+
     void onScaleStage(ScaleStageRequest scaleStage);
 
     void onResubmitWorker(ResubmitWorkerRequest r);

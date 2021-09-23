@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
+import static akka.pattern.PatternsCS.ask;
+import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.JOB_CLUSTER_INFO_HB_INSTANCE;
+import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCHED_INFO_HB_INSTANCE;
+
 import akka.actor.ActorRef;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -31,11 +35,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmitt
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.subjects.BehaviorSubject;
-
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Optional;
@@ -44,10 +43,10 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static akka.pattern.PatternsCS.ask;
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.JOB_CLUSTER_INFO_HB_INSTANCE;
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCHED_INFO_HB_INSTANCE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.subjects.BehaviorSubject;
 
 public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandler {
 

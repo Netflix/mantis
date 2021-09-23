@@ -16,16 +16,15 @@
 
 package io.mantisrx.master.jobcluster.job.worker;
 
-import java.time.Instant;
-import java.util.Optional;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Metadata object for a Mantis worker. Modification operations do not perform locking. Instead, a lock can be

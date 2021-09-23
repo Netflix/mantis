@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import java.util.Objects;
-
 import io.mantisrx.server.core.domain.WorkerId;
+import java.util.Objects;
 
 
 public class WorkerResourceStatus implements WorkerEvent {

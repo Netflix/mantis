@@ -16,23 +16,21 @@
 
 package io.mantisrx.master.events;
 
+import static java.util.stream.Collectors.toMap;
+
 import akka.actor.Props;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This Actor holds a registry of all running workers for all jobs in the system.

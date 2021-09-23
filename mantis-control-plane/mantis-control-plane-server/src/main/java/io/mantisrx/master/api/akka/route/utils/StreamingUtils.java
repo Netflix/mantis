@@ -16,19 +16,18 @@
 
 package io.mantisrx.master.api.akka.route.utils;
 
+import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.JOB_CLUSTER_INFO_HB_INSTANCE;
+import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCHED_INFO_HB_INSTANCE;
+
 import akka.http.javadsl.model.sse.ServerSentEvent;
+import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
+import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
-import io.mantisrx.server.core.JobSchedulingInfo;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.JOB_CLUSTER_INFO_HB_INSTANCE;
-import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCHED_INFO_HB_INSTANCE;
 
 public class StreamingUtils {
     private static final Logger logger = LoggerFactory.getLogger(StreamingUtils.class);

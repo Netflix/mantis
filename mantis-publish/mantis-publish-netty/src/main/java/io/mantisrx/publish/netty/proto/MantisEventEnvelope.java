@@ -18,7 +18,6 @@ package io.mantisrx.publish.netty.proto;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 

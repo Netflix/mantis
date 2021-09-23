@@ -17,11 +17,10 @@
 package io.mantisrx.publish;
 
 
-import javax.inject.Singleton;
-
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.publish.api.Event;
+import javax.inject.Singleton;
 
 
 @Singleton

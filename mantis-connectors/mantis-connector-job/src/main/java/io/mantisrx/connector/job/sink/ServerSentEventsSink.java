@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,9 +15,6 @@
  */
 
 package io.mantisrx.connector.job.sink;
-
-import java.util.List;
-import java.util.Map;
 
 import io.mantisrx.common.properties.MantisPropertiesService;
 import io.mantisrx.runtime.Context;
@@ -33,6 +30,8 @@ import io.reactivex.mantis.network.push.PushServerSse;
 import io.reactivex.mantis.network.push.PushServers;
 import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.network.push.ServerConfig;
+import java.util.List;
+import java.util.Map;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;

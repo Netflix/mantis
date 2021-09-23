@@ -16,12 +16,11 @@
 
 package io.mantisrx.common.metrics.spectator;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import com.netflix.spectator.api.Id;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Tag;
+import java.util.Arrays;
+import java.util.Collections;
 
 
 public class MetricId {

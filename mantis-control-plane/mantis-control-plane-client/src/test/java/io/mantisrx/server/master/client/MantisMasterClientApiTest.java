@@ -26,16 +26,15 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.core.master.MasterMonitor;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.WriteBufferWaterMark;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.core.master.MasterMonitor;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.WriteBufferWaterMark;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;

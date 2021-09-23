@@ -21,15 +21,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
-
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
@@ -62,6 +56,11 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 import org.junit.Test;
 
 

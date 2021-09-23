@@ -16,16 +16,15 @@
 
 package io.mantisrx.server.master.persistence;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import rx.Observable;
 
 
@@ -136,4 +135,3 @@ public interface IMantisStorageProvider {
 
     void setActiveVmAttributeValuesList(final List<String> vmAttributesList) throws IOException;
 }
-

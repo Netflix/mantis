@@ -17,7 +17,6 @@
 package com.netflix.mantis.samples.proto;
 
 import java.util.Map;
-
 import lombok.Data;
 
 

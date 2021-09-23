@@ -16,12 +16,11 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.Map;
-
 import io.mantisrx.common.codec.Encoder;
 import io.reactivex.mantis.remote.observable.filter.ServerSideFilters;
 import io.reactivex.mantis.remote.observable.slotting.RoundRobin;
 import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
+import java.util.Map;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;

@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.master;
 
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import rx.Observer;
 import rx.functions.Func0;
 

@@ -16,13 +16,12 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.mantisrx.common.codec.Codecs;
 import io.reactivex.mantis.remote.observable.filter.ServerSideFilters;
 import io.reactivex.mantis.remote.observable.slotting.RoundRobin;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;

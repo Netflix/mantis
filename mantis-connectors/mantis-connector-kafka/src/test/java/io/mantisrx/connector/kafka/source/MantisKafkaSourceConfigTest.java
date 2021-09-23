@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,17 +20,16 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mantisrx.connector.kafka.KafkaSourceParameters;
+import io.mantisrx.connector.kafka.ParameterTestUtils;
+import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;
+import io.mantisrx.connector.kafka.source.serde.ParserType;
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.parameter.Parameters;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import io.mantisrx.connector.kafka.ParameterTestUtils;
-import io.mantisrx.connector.kafka.source.serde.ParserType;
-import io.mantisrx.connector.kafka.KafkaSourceParameters;
-import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategyOptions;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.parameter.Parameters;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 

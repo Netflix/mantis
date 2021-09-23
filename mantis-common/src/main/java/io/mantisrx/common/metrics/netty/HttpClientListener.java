@@ -18,13 +18,12 @@ package io.mantisrx.common.metrics.netty;
 
 import static com.mantisrx.common.utils.MantisMetricStringConstants.GROUP_ID_TAG;
 
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.metrics.HttpClientMetricEventsListener;
 

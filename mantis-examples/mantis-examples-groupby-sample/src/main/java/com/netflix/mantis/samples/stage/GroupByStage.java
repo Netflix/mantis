@@ -16,9 +16,6 @@
 
 package com.netflix.mantis.samples.stage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.netflix.mantis.samples.proto.RequestEvent;
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.runtime.Context;
@@ -27,6 +24,8 @@ import io.mantisrx.runtime.computation.ToGroupComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 

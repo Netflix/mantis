@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.core;
 
+import io.mantisrx.runtime.codec.JsonType;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.runtime.codec.JsonType;
 
 
 public class NamedJobInfo implements JsonType {

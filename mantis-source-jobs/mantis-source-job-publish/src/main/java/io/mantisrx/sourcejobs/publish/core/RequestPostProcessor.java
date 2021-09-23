@@ -17,12 +17,11 @@
 package io.mantisrx.sourcejobs.publish.core;
 
 
-import java.util.List;
-import java.util.Map;
-
 import com.mantisrx.common.utils.MantisSourceJobConstants;
 import io.mantisrx.connector.publish.core.QueryRegistry;
 import io.mantisrx.runtime.Context;
+import java.util.List;
+import java.util.Map;
 import org.apache.log4j.Logger;
 import rx.functions.Func2;
 

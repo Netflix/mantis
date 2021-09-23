@@ -16,16 +16,12 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.ExceptionHandler;
 import akka.http.javadsl.server.Route;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.WorkerMigrationConfig;
@@ -33,17 +29,20 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MasterDescriptionRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(MasterDescriptionRoute.class);

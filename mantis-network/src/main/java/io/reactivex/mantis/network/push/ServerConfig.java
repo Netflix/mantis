@@ -16,10 +16,9 @@
 
 package io.reactivex.mantis.network.push;
 
+import io.mantisrx.common.metrics.MetricsRegistry;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.common.metrics.MetricsRegistry;
 import rx.functions.Func1;
 
 

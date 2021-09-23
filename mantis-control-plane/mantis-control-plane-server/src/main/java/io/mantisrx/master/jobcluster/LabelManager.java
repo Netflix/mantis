@@ -16,13 +16,12 @@
 
 package io.mantisrx.master.jobcluster;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.server.master.domain.JobDefinition;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

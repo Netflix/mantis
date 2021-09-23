@@ -16,12 +16,6 @@
 
 package io.reactivex.mantis.remote.observable.reconciliator;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
@@ -30,6 +24,11 @@ import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointChange.Type;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

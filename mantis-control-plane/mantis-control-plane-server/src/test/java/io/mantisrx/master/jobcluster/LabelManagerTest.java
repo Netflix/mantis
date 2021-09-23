@@ -19,16 +19,15 @@ package io.mantisrx.master.jobcluster;
 import static io.mantisrx.master.jobcluster.LabelManager.SystemLabels.*;
 import static org.junit.Assert.assertEquals;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.server.master.domain.JobDefinition;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Test;
 
 

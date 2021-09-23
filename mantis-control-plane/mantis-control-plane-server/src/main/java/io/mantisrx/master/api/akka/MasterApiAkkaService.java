@@ -29,26 +29,24 @@ import akka.http.javadsl.settings.WebSocketSettings;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.spectator.impl.Preconditions;
-import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
-import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
-import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
-import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
-import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
-import io.mantisrx.master.api.akka.route.v0.JobRoute;
-
-import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
-import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
-import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
-
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
-import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
+import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
+import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
+import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
+import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
+import io.mantisrx.master.api.akka.route.v0.JobRoute;
+import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
+import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
+import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
+import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
+import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
@@ -62,15 +60,14 @@ import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import scala.concurrent.duration.Duration;
-
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.concurrent.duration.Duration;
 
 public class MasterApiAkkaService extends BaseService {
 

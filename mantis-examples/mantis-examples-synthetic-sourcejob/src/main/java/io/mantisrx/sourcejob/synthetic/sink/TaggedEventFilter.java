@@ -19,11 +19,10 @@ package io.mantisrx.sourcejob.synthetic.sink;
 import static com.mantisrx.common.utils.MantisSourceJobConstants.CLIENT_ID_PARAMETER_NAME;
 import static com.mantisrx.common.utils.MantisSourceJobConstants.SUBSCRIPTION_ID_PARAM_NAME;
 
+import io.mantisrx.sourcejob.synthetic.core.TaggedData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.sourcejob.synthetic.core.TaggedData;
 import lombok.extern.slf4j.Slf4j;
 import rx.functions.Func1;
 

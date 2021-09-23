@@ -16,12 +16,11 @@
 
 package io.mantisrx.master.jobcluster.job.worker;
 
-import java.time.Instant;
-
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import java.time.Instant;
 
 
 /**

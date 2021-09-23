@@ -19,16 +19,15 @@ package io.mantisrx.server.master.client;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.core.WorkerHost;
+import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerHost;
-import io.reactivex.mantis.remote.observable.EndpointChange;
 import org.junit.Test;
 import rx.Observable;
 import rx.functions.Func1;

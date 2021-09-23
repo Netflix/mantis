@@ -17,7 +17,6 @@
 package io.reactivex.mantis.remote.observable.filter;
 
 import java.util.Map;
-
 import rx.functions.Func1;
 
 

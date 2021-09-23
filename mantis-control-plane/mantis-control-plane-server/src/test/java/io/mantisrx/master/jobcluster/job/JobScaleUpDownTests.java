@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /*
  * Copyright 2019 Netflix, Inc.
@@ -16,12 +31,20 @@
  */
 
 package io.mantisrx.master.jobcluster.job;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -45,12 +68,9 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import rx.schedulers.Schedulers;
-import rx.subjects.BehaviorSubject;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,17 +79,11 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import rx.schedulers.Schedulers;
+import rx.subjects.BehaviorSubject;
 
 public class JobScaleUpDownTests {
 
@@ -100,10 +114,10 @@ public class JobScaleUpDownTests {
 		smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
-				.multiWorkerScalableStageWithConstraints(1, 
-						new MachineDefinition(1.0,1.0,1.0,3), 
-						Lists.newArrayList(), 
-						Lists.newArrayList(), 
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
 						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
 				.build();
 		String clusterName = "testJobScaleUp";
@@ -134,7 +148,7 @@ public class JobScaleUpDownTests {
 		verify(schedulerMock, times(3)).scheduleWorker(any());
 
 	}
-	
+
 	@Test
 	public void testJobScaleDown() throws Exception, InvalidJobException, io.mantisrx.runtime.command.InvalidJobException {
 		final TestKit probe = new TestKit(system);
@@ -144,9 +158,9 @@ public class JobScaleUpDownTests {
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
 				.multiWorkerScalableStageWithConstraints(2,
-						new MachineDefinition(1.0,1.0,1.0,3), 
-						Lists.newArrayList(), 
-						Lists.newArrayList(), 
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
 						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
 				.build();
 		String clusterName = "testJobScaleUp";
@@ -482,10 +496,10 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
-				.multiWorkerScalableStageWithConstraints(1, 
-						new MachineDefinition(1.0,1.0,1.0,3), 
-						Lists.newArrayList(), 
-						Lists.newArrayList(), 
+				.multiWorkerScalableStageWithConstraints(1,
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
 						new StageScalingPolicy(1, 0, 10, 1, 1, 0, smap))
 				.build();
 		String clusterName = "testJobScaleUpFailsIfNoScaleStrategy";
@@ -526,9 +540,9 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		SchedulingInfo sInfo = new SchedulingInfo.Builder()
 				.numberOfStages(1)
 				.multiWorkerScalableStageWithConstraints(1,
-						new MachineDefinition(1.0,1.0,1.0,3), 
-						Lists.newArrayList(), 
-						Lists.newArrayList(), 
+						new MachineDefinition(1.0,1.0,1.0,3),
+						Lists.newArrayList(),
+						Lists.newArrayList(),
 						new StageScalingPolicy(1, 1, 1, 1, 1, 0, smap))
 				.build();
 		String clusterName = "testJobScaleUpFailsIfNoScaleStrategy";
@@ -570,10 +584,10 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
 		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
-		
+
 		assertTrue(ssp.isEnabled());
 	}
-	
+
 	@Test
 	public void stageScalingPolicyNoStrategyTest() {
 		int stageNo = 1;
@@ -583,12 +597,12 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		int decrement = 1;
 		long cooldownsecs = 300;
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
-		
+
 		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
-		
+
 		assertFalse(ssp.isEnabled());
 	}
-	
+
 	@Test
 	public void stageScalingPolicyMinEqMaxTest() {
 		int stageNo = 1;
@@ -600,10 +614,10 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
 		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
-		
+
 		assertFalse(ssp.isEnabled());
 	}
-	
+
 	@Test
 	public void stageScalingPolicyMinGreaterThanMaxTest() {
 		int stageNo = 1;
@@ -615,7 +629,7 @@ SchedulingChange [jobId=testSchedulingInfo-1, workerAssignments={
 		Map<ScalingReason, Strategy> smap = new HashMap<>();
 		smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
 		StageScalingPolicy ssp = new StageScalingPolicy(stageNo, min, max, increment, decrement, cooldownsecs, smap);
-		
+
 		assertTrue(ssp.isEnabled());
 		// max will be set equal to min
 		assertEquals(10, ssp.getMax());

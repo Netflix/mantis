@@ -16,16 +16,15 @@
 
 package io.mantisrx.master.utils;
 
+import static java.util.Objects.requireNonNull;
+
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.github.benmanes.caffeine.cache.stats.StatsCounter;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
-
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNull;
 
 public final class CaffeineMetrics implements StatsCounter {
     private final Counter hitCount;

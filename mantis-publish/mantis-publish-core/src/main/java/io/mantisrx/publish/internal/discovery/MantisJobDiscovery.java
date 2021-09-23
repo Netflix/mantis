@@ -17,11 +17,10 @@
 package io.mantisrx.publish.internal.discovery;
 
 
-import java.util.Map;
-import java.util.Optional;
-
 import com.netflix.mantis.discovery.proto.AppJobClustersMap;
 import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
+import java.util.Map;
+import java.util.Optional;
 
 public interface MantisJobDiscovery {
 

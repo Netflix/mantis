@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime.codec;
 
-import java.io.IOException;
-
 import io.mantisrx.common.codec.Codec;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 
 
 public class JsonCodec<T extends JsonType> implements Codec<T> {

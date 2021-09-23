@@ -17,7 +17,6 @@ package io.reactivx.mantis.operators;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
-
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action0;

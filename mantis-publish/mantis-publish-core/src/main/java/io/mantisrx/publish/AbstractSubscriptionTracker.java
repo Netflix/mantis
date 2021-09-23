@@ -16,13 +16,6 @@
 
 package io.mantisrx.publish;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
@@ -33,6 +26,12 @@ import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.proto.MantisServerSubscription;
 import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

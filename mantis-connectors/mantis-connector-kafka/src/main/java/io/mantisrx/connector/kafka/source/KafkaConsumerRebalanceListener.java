@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +16,15 @@
 
 package io.mantisrx.connector.kafka.source;
 
+import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategy;
 import java.util.Collection;
 import java.util.Optional;
-
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.mantisrx.connector.kafka.source.checkpoint.strategy.CheckpointStrategy;
 
 
 public class KafkaConsumerRebalanceListener<S> implements ConsumerRebalanceListener {

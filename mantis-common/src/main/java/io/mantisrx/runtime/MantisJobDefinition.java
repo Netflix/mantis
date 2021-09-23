@@ -16,11 +16,6 @@
 
 package io.mantisrx.runtime;
 
-import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
@@ -29,6 +24,10 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 
 public class MantisJobDefinition {

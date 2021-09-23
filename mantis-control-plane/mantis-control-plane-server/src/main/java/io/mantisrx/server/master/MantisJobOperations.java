@@ -16,13 +16,6 @@
 
 package io.mantisrx.server.master;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.NamedJobDefinition;
@@ -32,6 +25,12 @@ import io.mantisrx.server.master.store.InvalidNamedJobException;
 import io.mantisrx.server.master.store.MantisJobStore;
 import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.server.master.store.NamedJobDeleteException;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func2;

@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.core.master;
 
+import io.mantisrx.server.core.json.DefaultObjectMapper;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.mantisrx.server.core.json.DefaultObjectMapper;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.BackgroundCallback;
 import org.apache.curator.framework.api.CuratorEvent;

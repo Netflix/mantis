@@ -17,7 +17,6 @@
 package io.mantisrx.master.api.akka.route.handlers;
 
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-
 import java.util.concurrent.CompletionStage;
 
 public interface JobClusterRouteHandler {

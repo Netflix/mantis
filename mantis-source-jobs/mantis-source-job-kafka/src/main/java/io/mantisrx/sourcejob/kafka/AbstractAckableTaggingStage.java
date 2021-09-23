@@ -16,14 +16,6 @@
 
 package io.mantisrx.sourcejob.kafka;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import io.mantisrx.common.codec.Codec;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.connector.kafka.KafkaAckable;
@@ -32,6 +24,13 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.sourcejob.kafka.core.TaggedData;
 import io.mantisrx.sourcejob.kafka.sink.MQLQueryManager;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

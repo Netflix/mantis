@@ -16,6 +16,7 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.network.Endpoint;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,8 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.mantisrx.common.network.Endpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
