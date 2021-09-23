@@ -16,6 +16,11 @@
 
 package io.mantisrx.server.worker.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.metrics.Counter;
@@ -25,6 +30,10 @@ import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.netty.buffer.Unpooled;
 import io.reactivx.mantis.operators.DropOperator;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
 import org.junit.Test;
@@ -34,16 +43,6 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
-
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SseWorkerConnectionTest {
     private static final Logger logger = LoggerFactory.getLogger(SseWorkerConnectionTest.class);

@@ -18,13 +18,6 @@ package io.mantisrx.server.worker.client;
 
 import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATOR_INCOMING_METRIC_GROUP;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.compression.CompressionUtils;
@@ -36,6 +29,12 @@ import io.mantisrx.runtime.parameter.SinkParameter;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.DropOperator;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;

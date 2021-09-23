@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.worker.client;
 
-import java.util.Properties;
-
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import io.mantisrx.server.master.client.config.ConfigurationFactory;
 import io.reactivex.mantis.remote.observable.EndpointChange;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
