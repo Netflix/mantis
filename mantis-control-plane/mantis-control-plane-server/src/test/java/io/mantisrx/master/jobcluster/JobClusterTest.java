@@ -81,7 +81,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.runtime.descriptor.*;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
@@ -118,8 +118,6 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.WorkerMigrationConfig.MigrationStrategyEnum;
 import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -1489,6 +1487,58 @@ public class JobClusterTest {
     }
 
     @Test
+    public void testJobSubmitWithoutInheritInstance() {
+        TestKit probe = new TestKit(system);
+        String clusterName = "testJobSubmitWithInheritInstance";
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        MantisJobStore jobStoreMock = mock(MantisJobStore.class);
+
+        final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMock, eventPublisher));
+        jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
+        JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
+        assertEquals(SUCCESS, createResp.responseCode);
+
+        try {
+            // default job with 1 stage == (1 worker)
+            final JobDefinition jobDefn = createJob(clusterName,1, MantisJobDurationType.Transient);
+            String jobId = clusterName + "-1";
+
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn, jobId);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
+
+            // submit another job this time with job with inheritInstance enabled
+            final String jobId2 = clusterName + "-2";
+            final SchedulingInfo schedulingInfo = new SchedulingInfo.Builder()
+                    .numberOfStages(1)
+                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
+                    .build();
+            final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo);
+            JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId2, SUCCESS, JobState.Accepted);
+
+            // verify instance count is from previous job 1.
+            final JobId jobId2Id = JobId.fromId(jobId2).get();
+            jobClusterActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId2Id), probe.getRef());
+            JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(Duration.ofSeconds(60), JobClusterManagerProto.GetJobDetailsResponse.class);
+            assertTrue(detailsResp.getJobMetadata().isPresent());
+            assertEquals(jobId2, detailsResp.getJobMetadata().get().getJobId().getId());
+
+            final SchedulingInfo actualSchedulingInfo = detailsResp.getJobMetadata().get().getSchedulingInfo();
+            assertEquals(1, actualSchedulingInfo.getStages().size());
+            assertEquals(3, actualSchedulingInfo.forStage(1).getNumberOfInstances());
+
+            JobTestHelper.killJobAndVerify(probe, clusterName, jobId2Id, jobClusterActor);
+
+            verify(jobStoreMock, times(1)).createJobCluster(any());
+            verify(jobStoreMock, times(2)).updateJobCluster(any());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
     public void testJobSubmitWithInheritInstanceFlagsSingleStage() {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitWithInheritInstance";
@@ -1513,7 +1563,12 @@ public class JobClusterTest {
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo = new SchedulingInfo.Builder()
                     .numberOfStages(1)
-                    .multiWorkerStageInheritWorkerNumberEnabled(3, DEFAULT_MACHINE_DEFINITION)
+                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
+                    .addDeploymentStrategy(
+                            DeploymentStrategy.builder()
+                                    .stage(1,
+                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                                    .build())
                     .build();
             final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
@@ -1528,7 +1583,6 @@ public class JobClusterTest {
 
             final SchedulingInfo actualSchedulingInfo = detailsResp.getJobMetadata().get().getSchedulingInfo();
             assertEquals(1, actualSchedulingInfo.getStages().size());
-            assertTrue(actualSchedulingInfo.forStage(1).getInheritInstanceCount());
             assertEquals(1, actualSchedulingInfo.forStage(1).getNumberOfInstances());
 
             JobTestHelper.killJobAndVerify(probe, clusterName, jobId2Id, jobClusterActor);
@@ -1550,7 +1604,8 @@ public class JobClusterTest {
 
         // default job with 3 stage == (2 worker)
         final SchedulingInfo schedulingInfo1 = new SchedulingInfo.Builder()
-                .numberOfStages(3)
+                .numberOfStages(4)
+                .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
                 .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
                 .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
                 .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
@@ -1574,10 +1629,20 @@ public class JobClusterTest {
             // submit another job this time with job, in which some stages with inheritInstance enabled
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo2 = new SchedulingInfo.Builder()
-                    .numberOfStages(3)
-                    .multiWorkerStageInheritWorkerNumberEnabled(3, DEFAULT_MACHINE_DEFINITION)
+                    .numberOfStages(4)
+                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
                     .multiWorkerStage(4, DEFAULT_MACHINE_DEFINITION)
-                    .multiWorkerStageInheritWorkerNumberEnabled(5, DEFAULT_MACHINE_DEFINITION)
+                    .multiWorkerStage(5, DEFAULT_MACHINE_DEFINITION)
+                    .multiWorkerStage(6, DEFAULT_MACHINE_DEFINITION)
+                    .addDeploymentStrategy(
+                            DeploymentStrategy.builder()
+                                    .stage(1,
+                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                                    .stage(3,
+                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                                    .stage(4,
+                                            StageDeploymentStrategy.builder().inheritInstanceCount(false).build())
+                                    .build())
                     .build();
             final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo2);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
@@ -1592,15 +1657,13 @@ public class JobClusterTest {
             assertEquals(jobId2, detailsResp.getJobMetadata().get().getJobId().getId());
 
             final SchedulingInfo actualSchedulingInfo = detailsResp.getJobMetadata().get().getSchedulingInfo();
-            assertEquals(3, actualSchedulingInfo.getStages().size());
-            assertTrue(actualSchedulingInfo.forStage(1).getInheritInstanceCount());
-            assertFalse(actualSchedulingInfo.forStage(2).getInheritInstanceCount());
-            assertTrue(actualSchedulingInfo.forStage(3).getInheritInstanceCount());
+            assertEquals(4, actualSchedulingInfo.getStages().size());
 
             // stage 1/3 inherits from previous job while stage 2 should apply new instance count.
             assertEquals(2, actualSchedulingInfo.forStage(1).getNumberOfInstances());
             assertEquals(4, actualSchedulingInfo.forStage(2).getNumberOfInstances());
             assertEquals(2, actualSchedulingInfo.forStage(3).getNumberOfInstances());
+            assertEquals(6, actualSchedulingInfo.forStage(4).getNumberOfInstances());
             JobTestHelper.killJobAndVerify(probe, clusterName, jobId2Id, jobClusterActor);
 
             verify(jobStoreMock, times(1)).createJobCluster(any());
@@ -1650,8 +1713,15 @@ public class JobClusterTest {
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo2 = new SchedulingInfo.Builder()
                     .numberOfStages(2)
-                    .multiWorkerStageInheritWorkerNumberEnabled(3, DEFAULT_MACHINE_DEFINITION)
-                    .multiWorkerStageInheritWorkerNumberEnabled(4, DEFAULT_MACHINE_DEFINITION)
+                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
+                    .multiWorkerStage(4, DEFAULT_MACHINE_DEFINITION)
+                    .addDeploymentStrategy(
+                            DeploymentStrategy.builder()
+                                    .stage(1,
+                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                                    .stage(2,
+                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                                    .build())
                     .build();
             final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo2);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
@@ -1667,8 +1737,6 @@ public class JobClusterTest {
 
             final SchedulingInfo actualSchedulingInfo = detailsResp.getJobMetadata().get().getSchedulingInfo();
             assertEquals(2, actualSchedulingInfo.getStages().size());
-            assertTrue(actualSchedulingInfo.forStage(1).getInheritInstanceCount());
-            assertTrue(actualSchedulingInfo.forStage(2).getInheritInstanceCount());
 
             // stage 1 inherits from previous job while stage 2 should apply new instance count.
             assertEquals(2, actualSchedulingInfo.forStage(1).getNumberOfInstances());
@@ -1910,10 +1978,8 @@ public class JobClusterTest {
                     clusterName,
                     MantisJobDurationType.Transient,
                     new SchedulingInfo.Builder().numberOfStages(1)
-                            .addStage(new StageSchedulingInfo.Builder()
-                                    .cloneWithoutNumberOfInstances(fakeJobCluster.getJobClusterConfig().getSchedulingInfo().forStage(1))
-                                    .setNumberOfInstances(job1InstanceCnt)
-                                    .setInheritInstanceCount(false)
+                            .addStage(fakeJobCluster.getJobClusterConfig().getSchedulingInfo().forStage(1).toBuilder()
+                                    .numberOfInstances(job1InstanceCnt)
                                     .build())
                             .build());
 

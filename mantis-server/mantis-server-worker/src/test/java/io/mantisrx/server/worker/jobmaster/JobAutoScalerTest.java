@@ -74,13 +74,13 @@ public class JobAutoScalerTest {
         final double scaleDownBelowPct = 15.0;
         final double workerMemoryMB = 512.0;
 
-        final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo.Builder()
-                .setNumberOfInstances(numStage1Workers)
-                .setOptionalMachineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
-                .setOptionalScalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+        final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
+                .numberOfInstances(numStage1Workers)
+                .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
+                .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
-                .setScalable(true)
+                .scalable(true)
                 .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
@@ -140,13 +140,13 @@ public class JobAutoScalerTest {
         final double scaleDownBelowPct = 15.0;
         final double workerMemoryMB = 512.0;
 
-        final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo.Builder()
-                .setNumberOfInstances(numStage1Workers)
-                .setOptionalMachineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
-                .setOptionalScalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+        final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
+                .numberOfInstances(numStage1Workers)
+                .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
+                .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
-                .setScalable(true)
+                .scalable(true)
                 .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
@@ -197,13 +197,13 @@ public class JobAutoScalerTest {
         final double scaleDownBelowPct = 15.0;
         final double workerMemoryMB = 512.0;
 
-        final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo.Builder()
-                .setNumberOfInstances(numStage1Workers)
-                .setOptionalMachineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
-                .setOptionalScalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+        final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
+                .numberOfInstances(numStage1Workers)
+                .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
+                .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
-                .setScalable(true)
+                .scalable(true)
                 .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
@@ -252,12 +252,12 @@ public class JobAutoScalerTest {
         final double scaleDownBelowPct = 15.0;
         final double workerMemoryMB = 512.0;
 
-        final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo.Builder()
-                .setNumberOfInstances(numStage1Workers).setOptionalMachineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
-                .setOptionalScalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+        final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
+                .numberOfInstances(numStage1Workers).machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
+                .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, scaleDownBelowPct, scaleUpAbovePct, new StageScalingPolicy.RollingCount(1, 2)))))
-                .setScalable(true)
+                .scalable(true)
                 .build();
 
         schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);
@@ -297,13 +297,13 @@ public class JobAutoScalerTest {
             final double scaleDownBelow = 0.0;
             final double workerMemoryMB = 512.0;
 
-            final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo.Builder()
-                    .setNumberOfInstances(numStage1Workers)
-                    .setOptionalMachineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
-                    .setOptionalScalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
+            final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
+                    .numberOfInstances(numStage1Workers)
+                    .machineDefinition(new MachineDefinition(2, workerMemoryMB, 200, 1024, 2))
+                    .scalingPolicy(new StageScalingPolicy(scalingStageNum, min, max, increment, decrement, coolDownSec,
                         Collections.singletonMap(scalingReason,
                             new StageScalingPolicy.Strategy(scalingReason, scaleDownBelow, scaleUpAbove, new StageScalingPolicy.RollingCount(1, 2)))))
-                    .setScalable(true)
+                    .scalable(true)
                     .build();
 
             schedulingInfoMap.put(scalingStageNum, stage1SchedInfo);

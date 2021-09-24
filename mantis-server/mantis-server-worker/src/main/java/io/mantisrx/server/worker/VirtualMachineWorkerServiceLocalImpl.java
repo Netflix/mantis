@@ -90,17 +90,17 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
         //                        new MachineDefinition(2, 300, 200, 1024, 2), true));
         final Map<Integer, StageSchedulingInfo> schedulingInfoMap = new HashMap<>();
-        final StageSchedulingInfo stage0SchedInfo = new StageSchedulingInfo.Builder()
-                .setNumberOfInstances(numInstances)
-                .setOptionalMachineDefinition(MachineDefinitions.micro())
+        final StageSchedulingInfo stage0SchedInfo = StageSchedulingInfo.builder()
+                .numberOfInstances(numInstances)
+                .machineDefinition(MachineDefinitions.micro())
                 .build();
-        final StageSchedulingInfo stage1SchedInfo = new StageSchedulingInfo.Builder()
-                .setNumberOfInstances(numInstances)
-                .setOptionalMachineDefinition(new MachineDefinition(2, 300, 200, 1024, 2))
-                .setOptionalScalingPolicy(new StageScalingPolicy(1, 1, 5, 1, 1, 30,
+        final StageSchedulingInfo stage1SchedInfo = StageSchedulingInfo.builder()
+                .numberOfInstances(numInstances)
+                .machineDefinition(new MachineDefinition(2, 300, 200, 1024, 2))
+                .scalingPolicy(new StageScalingPolicy(1, 1, 5, 1, 1, 30,
                     Collections.singletonMap(StageScalingPolicy.ScalingReason.Memory,
                         new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, 15.0, 25.0, new StageScalingPolicy.RollingCount(1, 2)))))
-                .setScalable(true)
+                .scalable(true)
                 .build();
 
         //        schedulingInfoMap.put(0, stage0SchedInfo);

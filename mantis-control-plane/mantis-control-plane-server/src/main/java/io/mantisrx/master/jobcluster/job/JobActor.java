@@ -332,9 +332,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         if (schedulingInfo.forStage(0) == null) {
             // create stage 0 schedulingInfo only if not already provided
             // jobMaster stage itself is not scaled
-            schedulingInfo.addJobMasterStage(new StageSchedulingInfo.Builder()
-                    .setNumberOfInstances(1)
-                    .setOptionalMachineDefinition(getJobMasterMachineDef())
+            schedulingInfo.addJobMasterStage(StageSchedulingInfo.builder()
+                    .numberOfInstances(1)
+                    .machineDefinition(getJobMasterMachineDef())
                     .build());
 
             // Update jobMetadata with the new stage added

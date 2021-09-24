@@ -16,11 +16,11 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
 
+import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
+import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -130,6 +130,14 @@ public class JobDefinition {
     public void validate(boolean schedulingInfoOptional) throws InvalidJobException {
         validateSla();
         validateSchedulingInfo(schedulingInfoOptional);
+    }
+
+    public boolean requireInheritInstanceCheck() {
+        return this.schedulingInfo != null && this.getSchedulingInfo().requireInheritInstanceCheck();
+    }
+
+    public boolean requireInheritInstanceCheck(int stageNum) {
+        return this.schedulingInfo != null && this.getSchedulingInfo().requireInheritInstanceCheck(stageNum);
     }
 
     private void validateSla() throws InvalidJobException {
@@ -308,6 +316,20 @@ public class JobDefinition {
             return this;
         }
 
+        public Builder fromWithInstanceCountInheritance(
+                final JobDefinition jobDefinition,
+                boolean forceInheritance,
+                Function<Integer, Optional<Integer>> getExistingInstanceCountForStage) {
+            this.from(jobDefinition);
+            SchedulingInfo.Builder mergedSInfoBuilder = new SchedulingInfo.Builder().createWithInstanceInheritance(
+                    jobDefinition.getSchedulingInfo().getStages(),
+                    getExistingInstanceCountForStage,
+                    jobDefinition::requireInheritInstanceCheck,
+                    forceInheritance);
+
+            this.withSchedulingInfo(mergedSInfoBuilder.build());
+            return this;
+        }
 
         public JobDefinition build() throws InvalidJobException {
             Preconditions.checkNotNull(name, "cluster name cannot be null");

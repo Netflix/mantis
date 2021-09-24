@@ -22,8 +22,8 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 
+import io.mantisrx.master.jobcluster.job.*;
 import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.fenzo.triggers.CronTrigger;
@@ -42,12 +42,6 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
-import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
-import io.mantisrx.master.jobcluster.job.JobActor;
-import io.mantisrx.master.jobcluster.job.JobHelper;
-import io.mantisrx.master.jobcluster.job.JobState;
-import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
-import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
@@ -1343,7 +1337,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 throw new Exception("Job Definition could not retrieved from a previous submission (There may not be a previous submission)");
             }
         }
-        else if (givenJobDefnOp.get().getSchedulingInfo() != null && givenJobDefnOp.get().getSchedulingInfo().requireInheritInstanceCheck()) {
+        else if (givenJobDefnOp.get().getSchedulingInfo() != null && givenJobDefnOp.get().requireInheritInstanceCheck()) {
             // given job defn requires inheriting instance count from existing job.
             logger.info("Job requires inheriting instance count.");
             Optional<JobDefinition> jobDefnOp = createJobDefinitionInheritingInstanceCount(
@@ -2248,33 +2242,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         return empty();
                     }
                     else {
-                        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().from(givenJobDefn);
-                        Map<Integer, StageSchedulingInfo> givenStages = givenJobDefn.getSchedulingInfo().getStages();
-
                         IMantisJobMetadata lastJobMeta = res.getJobMetadata().get();
-                        SchedulingInfo.Builder siBuilder = new SchedulingInfo.Builder().numberOfStages(givenStages.size());
+                        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().fromWithInstanceCountInheritance(
+                                givenJobDefn,
+                                forceInheritance,
+                                (stageId) -> lastJobMeta.getStageMetadata(stageId).map(IMantisStageMetadata::getNumWorkers));
 
-                        givenStages.keySet().stream().sorted().forEach(k -> {
-                            if (lastJobMeta.getStageMetadata(k).isPresent() &&
-                                    (forceInheritance || givenStages.get(k).getInheritInstanceCount())) {
-                                StageSchedulingInfo mergedStageInfo = new StageSchedulingInfo.Builder()
-                                        .setNumberOfInstances(lastJobMeta.getStageMetadata(k).get().getNumWorkers())
-                                        .cloneWithoutNumberOfInstances(givenStages.get(k))
-                                        .build();
-                                if (k == 0) { // handle JobMaster stage
-                                    siBuilder.addJobMasterStage(mergedStageInfo);
-                                }
-                                else { siBuilder.addStage(mergedStageInfo); }
-                            }
-                            else {
-                                if (k == 0) { // handle JobMaster stage
-                                    siBuilder.addJobMasterStage(givenStages.get(k));
-                                }
-                                else { siBuilder.addStage(givenStages.get(k)); }
-                            }
-                        });
-
-                        jobDefnBuilder.withSchedulingInfo(siBuilder.build());
                         try {
                             return of(jobDefnBuilder.build());
                         }
