@@ -14,7 +14,6 @@ task execute(type:JavaExec) {
 }
 
 dependencies {
-    annotationProcessor "org.projectlombok:lombok:1.16.16"
     implementation project(':mantis-runtime')
     implementation project(':mantis-examples:mantis-examples-core')
 
@@ -22,7 +21,6 @@ dependencies {
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
     implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
-    compileOnly "org.projectlombok:lombok:1.16.16"
 }
 
 

@@ -56,7 +56,6 @@ ext {
 
 
 dependencies {
-    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
     compile project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation "io.reactivex:rxjava:$versionRxJava"
@@ -68,6 +67,5 @@ dependencies {
     implementation "net.andreinc.mockneat:mockneat:$mockNeatVersion"
 
     implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
-    compileOnly "org.projectlombok:lombok:$lombokVersion"
 }
 

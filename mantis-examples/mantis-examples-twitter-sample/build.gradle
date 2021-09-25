@@ -14,14 +14,12 @@ task execute(type:JavaExec) {
 }
 
 dependencies {
-    annotationProcessor "org.projectlombok:lombok:1.16.16"
     implementation project(':mantis-runtime')
 
     implementation 'com.twitter:hbc-core:2.2.0'
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
     implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
-    compileOnly "org.projectlombok:lombok:1.16.16"
 }
 
 

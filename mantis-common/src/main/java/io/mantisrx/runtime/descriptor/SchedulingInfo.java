@@ -224,16 +224,27 @@ public class SchedulingInfo {
             return this;
         }
 
+        /**
+         * Setup current builder instance to use clone the stages from given stage info map and apply instance
+         * inheritance to each stage if the stage has inherit-config enabled or global force inheritance flag.
+         * Note: to add more stages to this builder, the number of stages needs to be adjusted accordingly along with
+         * calling other addStage methods.
+         * @param givenStages Source stages to be cloned from.
+         * @param getInstanceCountForStage Function to get inherited instance count for each stage.
+         * @param inheritEnabled Function to get whether a given stage has inherit-enabled.
+         * @param forceInheritance Global flag to force inheritance on all stages.
+         * @return Current builder instance.
+         */
         public Builder createWithInstanceInheritance(
                 Map<Integer, StageSchedulingInfo> givenStages,
                 Function<Integer, Optional<Integer>> getInstanceCountForStage,
-                Function<Integer, Boolean> inheritEnabled, boolean forceInheritance) {
+                Function<Integer, Boolean> inheritEnabled,
+                boolean forceInheritance) {
             this.numberOfStages(givenStages.size());
             givenStages.keySet().stream().sorted().forEach(k -> {
                 Optional<Integer> prevCntO = getInstanceCountForStage.apply(k);
                 StageSchedulingInfo resStage = givenStages.get(k);
-                if (prevCntO.isPresent() &&
-                        (forceInheritance || inheritEnabled.apply(k))) {
+                if (prevCntO.isPresent() && (forceInheritance || inheritEnabled.apply(k))) {
                     resStage = givenStages.get(k).toBuilder()
                             .numberOfInstances(prevCntO.get())
                             .build();
