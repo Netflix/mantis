@@ -241,19 +241,30 @@ public class JobClusterTest {
         return createJob(name2, 1, durationType, null, schedulingInfo, Lists.newArrayList());
     }
 
+    private JobDefinition createJob(String name2, MantisJobDurationType durationType, SchedulingInfo schedulingInfo,
+                                    String artifactName, String artifactVersion) throws InvalidJobException {
+        return createJob(name2, 1, durationType, null, schedulingInfo, Lists.newArrayList(), artifactName, artifactVersion);
+    }
+
     private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType, String userProvidedType) throws InvalidJobException {
 
         return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, SINGLE_WORKER_SCHED_INFO, Lists.newArrayList());
     }
 
     private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType, String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList) throws InvalidJobException {
+        return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, schedulingInfo, labelList, "myart", null);
+    }
+
+    private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType, String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList,
+                                    String artifactName, String artifactVersion) throws InvalidJobException {
 
         return new JobDefinition.Builder()
                 .withName(name2)
                 .withParameters(Lists.newArrayList())
                 .withLabels(labelList)
                 .withSchedulingInfo(schedulingInfo)
-                .withArtifactName("myart")
+                .withArtifactName(artifactName)
+                .withVersion(artifactVersion)
                 .withSubscriptionTimeoutSecs(subsTimeoutSecs)
                 .withUser("njoshi")
                 .withJobSla(new JobSla(0, 0, JobSla.StreamSLAType.Lossy, MantisJobDurationType.Transient, userProvidedType))
@@ -1644,7 +1655,9 @@ public class JobClusterTest {
                                             StageDeploymentStrategy.builder().inheritInstanceCount(false).build())
                                     .build())
                     .build();
-            final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo2);
+            final String artifactV2 = "artVer-2";
+            final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo2,
+                    jobDefn.getArtifactName(), artifactV2);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId2, SUCCESS, JobState.Accepted);
 
@@ -1655,6 +1668,7 @@ public class JobClusterTest {
                     probe.expectMsgClass(Duration.ofSeconds(60), JobClusterManagerProto.GetJobDetailsResponse.class);
             assertTrue(detailsResp.getJobMetadata().isPresent());
             assertEquals(jobId2, detailsResp.getJobMetadata().get().getJobId().getId());
+            assertEquals(artifactV2, detailsResp.getJobMetadata().get().getJobDefinition().getVersion());
 
             final SchedulingInfo actualSchedulingInfo = detailsResp.getJobMetadata().get().getSchedulingInfo();
             assertEquals(4, actualSchedulingInfo.getStages().size());
@@ -2362,7 +2376,7 @@ public class JobClusterTest {
 
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, BaseResponse.ResponseCode.SUCCESS, JobState.Launched);
 
-            jobClusterActor.tell(new ScaleStageRequest(jobId,1,2,user,"No reason"), probe.getRef());
+            jobClusterActor.tell(new ScaleStageRequest(jobId, 1, 2, user,"No reason"), probe.getRef());
             ScaleStageResponse scaleResp = probe.expectMsgClass(ScaleStageResponse.class);
             System.out.println("scale Resp: " + scaleResp.message);
             assertEquals(SUCCESS, scaleResp.responseCode);

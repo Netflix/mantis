@@ -326,6 +326,7 @@ public class JobDefinition {
                     getExistingInstanceCountForStage,
                     jobDefinition::requireInheritInstanceCheck,
                     forceInheritance);
+            mergedSInfoBuilder.addDeploymentStrategy(jobDefinition.getSchedulingInfo().getDeploymentStrategy());
 
             this.withSchedulingInfo(mergedSInfoBuilder.build());
             return this;

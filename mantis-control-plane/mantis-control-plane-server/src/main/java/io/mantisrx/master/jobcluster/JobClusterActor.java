@@ -1854,7 +1854,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      * @param jobDefinition
      * @return Optional JobDefinition
      */
-    private Optional<JobDefinition> createNewJobDefinitionInheritSchedInfoAndParameters(JobDefinition jobDefinition) {
+    private Optional<JobDefinition> cloneToNewJobDefinitionWithoutArtifactNameAndVersion(JobDefinition jobDefinition) {
 
         try {
             JobDefinition clonedJobDefn = new JobDefinition.Builder().withJobSla(jobDefinition.getJobSla())
@@ -1894,7 +1894,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         if(lastSubmittedJobDefn.isPresent()) {
             if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters"); }
-            return createNewJobDefinitionInheritSchedInfoAndParameters(lastSubmittedJobDefn.get());
+            return cloneToNewJobDefinitionWithoutArtifactNameAndVersion(lastSubmittedJobDefn.get());
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters empty"); }
         return empty();
@@ -1916,19 +1916,22 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         getNonTerminalJobDefnWithWorkerCountInheritance(jobInfoForNonTerminalJob.get(), givenJobDefn, false)
                                 .toCompletableFuture();
                 try {
-                    if (mergedJobDefnOCS.get(500, TimeUnit.MILLISECONDS).isPresent()) {
+                    if (mergedJobDefnOCS.get().isPresent()) {
                         finalJobDefn = mergedJobDefnOCS.get().get();
                     }
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     logger.error("Failed to merge with running job's instance", e);
                 }
+
             }
+
+            logger.info("Merged final job definition: {}", finalJobDefn);
+            return of(finalJobDefn);
         }
         else {
-            logger.info("No running job instance available to inherit stage worker instance {}", givenJobDefn.getName());
+            logger.info("No running job instance available to inherit instance, fallback to given job: {}", givenJobDefn.getName());
+            return of(givenJobDefn);
         }
-
-        return createNewJobDefinitionInheritSchedInfoAndParameters(finalJobDefn);
     }
 
     @Override
