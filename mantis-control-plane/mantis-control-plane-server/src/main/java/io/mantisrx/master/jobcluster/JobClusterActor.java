@@ -49,6 +49,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClus
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetInheritedJobDefinitionRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetInheritedJobDefinitionResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
@@ -302,7 +304,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *
      * - JOB INITED
      * - JOB STARTED
-     *
+     * - GetInheritedJobDefinitionResponse (resume job submit request)
     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -336,6 +338,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *  - LIST JOBS
      *  - LIST WORKERS -> (pass thru to each Job Actor)
      *  - SUBMIT JOB -> (INIT JOB on Job Actor)
+     *  - GetInheritedJobDefinitionResponse (resume job submit request)
      *  - GET JOB -> (pass thru Job Actor)
      *  - GET JOB SCHED INFO -> (pass thru Job Actor)
      *  - KILL JOB -> (pass thru Job Actor)
@@ -374,6 +377,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             // from user job submit request
             .match(SubmitJobRequest.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
+            .match(GetInheritedJobDefinitionResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(JobProto.JobInitialized.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(JobStartedEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
@@ -430,6 +434,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *  - LIST JOBS
      *  - LIST WORKERS -> (pass thru to each Job Actor)
      *  - SUBMIT JOB -> (INIT JOB on Job Actor)
+     *  - GetInheritedJobDefinitionResponse (resume job submit request)
      *  - GET JOB -> (pass thru Job Actor)
      *  - GET JOB SCHED INFO -> (pass thru Job Actor)
      *  - KILL JOB -> (pass thru Job Actor)
@@ -467,6 +472,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.ExpireOldJobsRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(EnableJobClusterRequest.class, (x) -> getSender().tell(new EnableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(SubmitJobRequest.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
+            .match(GetInheritedJobDefinitionResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(JobProto.JobInitialized.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(JobStartedEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
@@ -515,6 +521,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *  - LIST JOBS
      *  - LIST WORKERS -> (pass thru to each Job Actor)
      *  - SUBMIT JOB -> (INIT JOB on Job Actor)
+     *  - GetInheritedJobDefinitionResponse (resume job submit request)
      *  - GET JOB -> (pass thru Job Actor)
      *  - GET JOB SCHED INFO -> (pass thru Job Actor)
      *  - KILL JOB -> (pass thru Job Actor)
@@ -560,6 +567,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(ListJobsRequest.class, this::onJobList)
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
                 .match(SubmitJobRequest.class, this::onJobSubmit)
+                .match(GetInheritedJobDefinitionResponse.class, this::onGetInheritedJobDefinitionResponse)
                 .match(GetJobDetailsRequest.class, this::onGetJobDetailsRequest)
                 .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
                 .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
@@ -1272,6 +1280,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
                 .build();
     }
+
     @Override
     public void onJobSubmit(final SubmitJobRequest request) {
         final ActorRef sender = getSender();
@@ -1290,12 +1299,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         logger.info("Submitting job ");
         try {
+            if (requireJobActorProcess(request)) {
+                logger.info("Sending job submit request to job actor for inheritance: {}", request.requestId);
+                return;
+            }
+
             JobDefinition resolvedJobDefn = getResolvedJobDefinition(request.getSubmitter(),request.getJobDefinition());
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobClusterStatusEvent(LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
                 "Job submit request received", jobClusterMetadata.getJobClusterDefinition().getName()));
             resolvedJobDefn = LabelManager.insertSystemLabels(resolvedJobDefn, request.isAutoResubmit());
-            
-            
+
             submitJob(resolvedJobDefn, sender, request.getSubmitter());
 
             numJobSubmissions.increment();
@@ -1311,6 +1324,94 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } 
     }
 
+    public void onGetInheritedJobDefinitionResponse(GetInheritedJobDefinitionResponse request) {
+        logger.info("Resuming job submission from job actor");
+
+        // this request is returned by job actor but the response needs to be replied to the original job request sender (from API routes).
+        ActorRef originalSender = request.getOriginalSender();
+        if (request.responseCode == SERVER_ERROR || request.getJobDefinition() == null) {
+            logger.error("Failed to retrieve job definition from job actor");
+            numJobSubmissionFailures.increment();
+            originalSender.tell(new SubmitJobResponse(request.requestId, SERVER_ERROR, request.message, empty()), getSelf());
+            return;
+        }
+
+        try {
+            JobDefinition resolvedJobDefn = request.getJobDefinition();
+
+            // for quick submit the artifact version/name needs to be reset using the fork method below.
+            if (request.isQuickSubmitMode()) {
+                Optional<JobDefinition> jobDefinitionCloneO = cloneToNewJobDefinitionWithoutArtifactNameAndVersion(
+                        request.getJobDefinition());
+                if (jobDefinitionCloneO.isPresent()) {
+                    resolvedJobDefn = jobDefinitionCloneO.get();
+                }
+            }
+
+            resolvedJobDefn = this.jobDefinitionResolver.getResolvedJobDefinition(
+                    request.getUser(), resolvedJobDefn, this.jobClusterMetadata);
+            eventPublisher.publishStatusEvent(
+                    new LifecycleEventsProto.JobClusterStatusEvent(LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
+                    "Job submit request received", jobClusterMetadata.getJobClusterDefinition().getName()));
+            resolvedJobDefn = LabelManager.insertSystemLabels(resolvedJobDefn, request.isAutoResubmit());
+
+            submitJob(resolvedJobDefn, originalSender, request.getUser());
+            numJobSubmissions.increment();
+
+        }  catch (PersistException pe) {
+            logger.error("Exception submitting job {} from {}", this.name, request.getUser(), pe);
+            numJobSubmissionFailures.increment();
+            originalSender.tell(new SubmitJobResponse(request.requestId, SERVER_ERROR, pe.getMessage(), empty()), getSelf());
+        } catch (Exception e) {
+            logger.error("Exception submitting job {} from {}", this.name, request.getUser(), e);
+            numJobSubmissionFailures.increment();
+            originalSender.tell(new SubmitJobResponse(request.requestId, CLIENT_ERROR, e.getMessage(), empty()), getSelf());
+        }
+    }
+
+    /**
+     * If the job request requires process via job actor, inform the target job actor and return true to stop further
+     * processing till the job actor replies.
+     * Two cases require job actor level process:
+     * 1. Quick submit (no job definition given) + valid active last job id.
+     * 2. Regular submit with inheritance requirement + valid active last job id.
+     * @param request job submission request.
+     * @return true if further processing should stop.
+     */
+    private boolean requireJobActorProcess(final SubmitJobRequest request) {
+        String user = request.getSubmitter();
+        Optional<JobDefinition> givenJobDefn = request.getJobDefinition();
+        List<JobInfo> existingJobsList = jobManager.getAllNonTerminalJobsList();
+
+        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, Lists.newArrayList());
+        if (!lastJobId.isPresent()) {
+            logger.info("No valid last job id found for inheritance. Skip job actor process step.");
+            return false;
+        }
+
+        Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
+        if (!givenJobDefn.isPresent()) {
+            logger.info("[QuickSubmit] pass to job actor to process job definition: {}", lastJobId.get());
+            jobInfoForNonTerminalJob.ifPresent(jobInfo -> jobInfo.jobActor.tell(
+                    new GetInheritedJobDefinitionRequest(
+                            user, lastJobId.get(), jobInfo.jobDefinition,
+                            true, request.isAutoResubmit(), getSender()),
+                    getSelf()));
+            return true;
+        }
+        else if (givenJobDefn.get().requireInheritInstanceCheck()) {
+            logger.info("[Inherit request] pass to job actor to process job definition: {}", lastJobId.get());
+            jobInfoForNonTerminalJob.ifPresent(jobInfo -> jobInfo.jobActor.tell(
+                    new GetInheritedJobDefinitionRequest(
+                            user, lastJobId.get(), givenJobDefn.get(),
+                            false, request.isAutoResubmit(), getSender()),
+                    getSelf()));
+            return true;
+        }
+
+        logger.info("request doesn't require job actor process, skip job actor and continue.");
+        return false;
+    }
 
     /**
      * Two cases
@@ -1319,17 +1420,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      * 2. If JobDefinition is not provided, find the last submitted job and use its config (quick submit)
      * @param user submitter
      * @param givenJobDefnOp job defn provided by user in job submit
-     * @return jobdefinition to be used by the actual submit
+     * @return job definition to be used by the actual submit
      * @throws Exception If jobDefinition could not be resolved
      */
-
-
     private JobDefinition getResolvedJobDefinition(final String user, final Optional<JobDefinition> givenJobDefnOp) throws Exception {
         JobDefinition resolvedJobDefn;
         if(!givenJobDefnOp.isPresent()) {
             // no job definition specified , this is quick submit which is supposed to inherit from last job submitted
-            List<JobInfo> existingJobsList = jobManager.getAllNonTerminalJobsList();
-            Optional<JobDefinition> jobDefnOp = createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters(existingJobsList, jobManager.getCompletedJobsList(), empty(),jobStore);
+            // for request inheriting from non-terminal jobs, it has been sent to job actor instead.
+            Optional<JobDefinition> jobDefnOp = createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters(
+                    Lists.newArrayList(), jobManager.getCompletedJobsList(), empty(), jobStore);
             if(jobDefnOp.isPresent()) {
                 logger.info("Inherited scheduling Info and parameters from previous job");
                 resolvedJobDefn = jobDefnOp.get();
@@ -1338,23 +1438,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
         }
         else if (givenJobDefnOp.get().getSchedulingInfo() != null && givenJobDefnOp.get().requireInheritInstanceCheck()) {
-            // given job defn requires inheriting instance count from existing job.
-            logger.info("Job requires inheriting instance count.");
-            Optional<JobDefinition> jobDefnOp = createJobDefinitionInheritingInstanceCount(
-                    givenJobDefnOp.get(), jobManager.getAllNonTerminalJobsList());
-            if(jobDefnOp.isPresent()) {
-                logger.info("Inherited stage instance count from previous job");
-                resolvedJobDefn = jobDefnOp.get();
-            } else {
-                throw new Exception("Job Definition could not be created from given job definition while inheriting instance count");
-            }
+            logger.warn("Job requires inheriting instance count but has no active non-terminal job.");
+            resolvedJobDefn = givenJobDefnOp.get();
         }
         else {
             resolvedJobDefn = givenJobDefnOp.get();
         }
 
         logger.info("Resolved JobDefn {}", resolvedJobDefn);
-
         return this.jobDefinitionResolver.getResolvedJobDefinition(user,resolvedJobDefn,this.jobClusterMetadata);
 
     }
@@ -2161,55 +2252,31 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     /*package protected*/
     private Optional<JobDefinition> getLastSubmittedJobDefinition(final List<JobInfo> existingJobsList,
-                                                                  final List<CompletedJob> completedJobs, Optional<JobDefinition> jobDefinitionOp,
+                                                                  final List<CompletedJob> completedJobs,
+                                                                  Optional<JobDefinition> jobDefinitionOp,
                                                                   MantisJobStore store) {
         if(logger.isTraceEnabled()) { logger.trace("Entering getLastSubmittedJobDefinition"); }
         if(jobDefinitionOp.isPresent()) {
             return jobDefinitionOp;
         }
 
-        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList,completedJobs);
+        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, completedJobs);
         if(lastJobId.isPresent()) {
-            Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
-            if(jobInfoForNonTerminalJob.isPresent()) {
-                // On quick submit path, if there is non-terminal instance use the active job info to merge live stage worker count.
-                CompletableFuture<Optional<JobDefinition>> mergedJobDefnOCS =
-                        getNonTerminalJobDefnWithWorkerCountInheritance(
-                                jobInfoForNonTerminalJob.get(), jobInfoForNonTerminalJob.get().jobDefinition, true)
-                                .toCompletableFuture();
+            Optional<CompletedJob> completedJob = jobManager.getCompletedJob(lastJobId.get());
+            if(completedJob.isPresent()) {
                 try {
-                    if (mergedJobDefnOCS.get(500, TimeUnit.MILLISECONDS).isPresent()) {
-                        if(logger.isTraceEnabled()) {
-                            logger.trace("Exit getLastSubmittedJobDefinition with merged: {}", mergedJobDefnOCS.get().get());
-                        }
-                        return mergedJobDefnOCS.get();
+                    Optional<IMantisJobMetadata> archivedJob = store.getArchivedJob(completedJob.get().getJobId());
+                    if(archivedJob.isPresent()) {
+                        if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition returning job {} with defn {}", archivedJob.get().getJobId(), archivedJob.get().getJobDefinition()); }
+                        return of(archivedJob.get().getJobDefinition());
+                    } else {
+                        logger.warn("Could not find load archived Job {} for cluster {}", completedJob.get().getJobId(), name);
                     }
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    logger.error("Failed to merge with running job's instance", e);
+                } catch (Exception e) {
+                    logger.warn("Archived Job {} could not be loaded from the store due to {} ", completedJob.get().getJobId(), e.getMessage());
                 }
-
-                if(logger.isTraceEnabled()) {
-                    logger.trace("Exit getLastSubmittedJobDefinition without merge {}", jobInfoForNonTerminalJob.get().jobDefinition);
-                }
-                return of(jobInfoForNonTerminalJob.get().jobDefinition);
             } else {
-                Optional<CompletedJob> completedJob = jobManager.getCompletedJob(lastJobId.get());
-                if(completedJob.isPresent()) {
-                    try {
-                        Optional<IMantisJobMetadata> archivedJob = store.getArchivedJob(completedJob.get().getJobId());
-                        if(archivedJob.isPresent()) {
-                            if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition returning job {} with defn {}", archivedJob.get().getJobId(), archivedJob.get().getJobDefinition()); }
-                            return of(archivedJob.get().getJobDefinition());
-                        } else {
-                            logger.warn("Could not find load archived Job {} for cluster {}", completedJob.get().getJobId(), name);
-                        }
-                    } catch (Exception e) {
-                        logger.warn("Archived Job {} could not be loaded from the store due to {} ", completedJob.get().getJobId(), e.getMessage());
-                    }
-                } else {
-                    logger.warn("Could not find any previous submitted/completed Job for cluster {}", name);
-                }
-
+                logger.warn("Could not find any previous submitted/completed Job for cluster {}", name);
             }
         } else {
             logger.warn("Could not find any previous submitted Job for cluster {}", name);
