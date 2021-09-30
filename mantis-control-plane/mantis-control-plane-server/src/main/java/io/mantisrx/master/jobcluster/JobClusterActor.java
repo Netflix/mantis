@@ -41,7 +41,6 @@ import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
-import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.JobActor;
 import io.mantisrx.master.jobcluster.job.JobHelper;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -54,8 +53,8 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClus
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetInheritedJobDefinitionRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetInheritedJobDefinitionResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
@@ -309,7 +308,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *
      * - JOB INITED
      * - JOB STARTED
-     * - GetInheritedJobDefinitionResponse (resume job submit request)
+     * - GetJobDefinitionUpdatedFromJobActorResponse (resume job submit request)
     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -343,7 +342,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *  - LIST JOBS
      *  - LIST WORKERS -> (pass thru to each Job Actor)
      *  - SUBMIT JOB -> (INIT JOB on Job Actor)
-     *  - GetInheritedJobDefinitionResponse (resume job submit request)
+     *  - GetJobDefinitionUpdatedFromJobActorResponse (resume job submit request)
      *  - GET JOB -> (pass thru Job Actor)
      *  - GET JOB SCHED INFO -> (pass thru Job Actor)
      *  - KILL JOB -> (pass thru Job Actor)
@@ -382,7 +381,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             // from user job submit request
             .match(SubmitJobRequest.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
-            .match(GetInheritedJobDefinitionResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
+            .match(GetJobDefinitionUpdatedFromJobActorResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(JobProto.JobInitialized.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(JobStartedEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
@@ -439,7 +438,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *  - LIST JOBS
      *  - LIST WORKERS -> (pass thru to each Job Actor)
      *  - SUBMIT JOB -> (INIT JOB on Job Actor)
-     *  - GetInheritedJobDefinitionResponse (resume job submit request)
+     *  - GetJobDefinitionUpdatedFromJobActorResponse (resume job submit request)
      *  - GET JOB -> (pass thru Job Actor)
      *  - GET JOB SCHED INFO -> (pass thru Job Actor)
      *  - KILL JOB -> (pass thru Job Actor)
@@ -477,7 +476,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(JobClusterProto.ExpireOldJobsRequest.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(EnableJobClusterRequest.class, (x) -> getSender().tell(new EnableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(SubmitJobRequest.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
-            .match(GetInheritedJobDefinitionResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
+            .match(GetJobDefinitionUpdatedFromJobActorResponse.class, (x) -> getSender().tell(new SubmitJobResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(ResubmitWorkerRequest.class, (x) -> getSender().tell(new ResubmitWorkerResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(JobProto.JobInitialized.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
             .match(JobStartedEvent.class, (x) -> logger.warn(genUnexpectedMsg(x.toString(), this.name, state)))
@@ -526,7 +525,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      *  - LIST JOBS
      *  - LIST WORKERS -> (pass thru to each Job Actor)
      *  - SUBMIT JOB -> (INIT JOB on Job Actor)
-     *  - GetInheritedJobDefinitionResponse (resume job submit request)
+     *  - GetJobDefinitionUpdatedFromJobActorResponse (resume job submit request)
      *  - GET JOB -> (pass thru Job Actor)
      *  - GET JOB SCHED INFO -> (pass thru Job Actor)
      *  - KILL JOB -> (pass thru Job Actor)
@@ -572,7 +571,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(ListJobsRequest.class, this::onJobList)
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
                 .match(SubmitJobRequest.class, this::onJobSubmit)
-                .match(GetInheritedJobDefinitionResponse.class, this::onGetInheritedJobDefinitionResponse)
+                .match(GetJobDefinitionUpdatedFromJobActorResponse.class, this::onGetJobDefinitionUpdatedFromJobActorResponse)
                 .match(GetJobDetailsRequest.class, this::onGetJobDetailsRequest)
                 .match(GetJobSchedInfoRequest.class, this::onGetJobStatusSubject)
                 .match(GetLatestJobDiscoveryInfoRequest.class, this::onGetLatestJobDiscoveryInfo)
@@ -1329,7 +1328,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } 
     }
 
-    public void onGetInheritedJobDefinitionResponse(GetInheritedJobDefinitionResponse request) {
+    public void onGetJobDefinitionUpdatedFromJobActorResponse(GetJobDefinitionUpdatedFromJobActorResponse request) {
         logger.info("Resuming job submission from job actor");
 
         // this request is returned by job actor but the response needs to be replied to the original job request sender (from API routes).
@@ -1402,7 +1401,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         else if (!givenJobDefn.isPresent()) {
             logger.info("[QuickSubmit] pass to job actor to process job definition: {}", lastJobId.get());
             jobInfoForNonTerminalJob.get().jobActor.tell(
-                    new GetInheritedJobDefinitionRequest(
+                    new GetJobDefinitionUpdatedFromJobActorRequest(
                             user, lastJobId.get(), jobInfoForNonTerminalJob.get().jobDefinition,
                             true, request.isAutoResubmit(), getSender()),
                     getSelf());
@@ -1411,7 +1410,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         else if (givenJobDefn.get().requireInheritInstanceCheck()) {
             logger.info("[Inherit request] pass to job actor to process job definition: {}", lastJobId.get());
             jobInfoForNonTerminalJob.get().jobActor.tell(
-                    new GetInheritedJobDefinitionRequest(
+                    new GetJobDefinitionUpdatedFromJobActorRequest(
                             user, lastJobId.get(), givenJobDefn.get(),
                             false, request.isAutoResubmit(), getSender()),
                     getSelf());

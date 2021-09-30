@@ -75,7 +75,7 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetInheritedJobDefinitionRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
@@ -436,8 +436,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // get Job Details
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
-                // process inherit job definition request
-                .match(GetInheritedJobDefinitionRequest.class, this::onGetInheritedJobDefinition)
+                // process request to get the given job definition updated with this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
                 // list active workers request
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
@@ -504,8 +504,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // get Job Details
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
-                // process inherit job definition request
-                .match(GetInheritedJobDefinitionRequest.class, this::onGetInheritedJobDefinition)
+                // process request to get the given job definition updated by this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
                 // list active workers request
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
@@ -587,8 +587,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // EXPECTED MESSAGES BEGIN//
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
-                // process inherit job definition request
-                .match(GetInheritedJobDefinitionRequest.class, this::onGetInheritedJobDefinition)
+                // process request to get the given job definition updated by this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
                 // Worker related events
                 .match(WorkerEvent.class, r -> processWorkerEvent(r))
@@ -643,8 +643,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // EXPECTED MESSAGES BEGIN//
                 // get Job Details
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
-                // process inherit job definition request
-                .match(GetInheritedJobDefinitionRequest.class, this::onGetInheritedJobDefinition)
+                // process request to get the given job definition updated by this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
                 // Worker related events
                 .match(WorkerEvent.class, r -> processWorkerEvent(r))
                 // Heart beat accounting timers
@@ -706,8 +706,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 x.toString(), this.jobId.getId(), state), empty()), getSelf()))
 
                 // no invalid metadata to use, return intermediate job definition directly
-                .match(GetInheritedJobDefinitionRequest.class,
-                        (r) -> getSender().tell(new JobClusterManagerProto.GetInheritedJobDefinitionResponse(
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class,
+                        (r) -> getSender().tell(new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
                                     r.requestId, SUCCESS, "", r.getUser(), r.getJobDefinition(),
                                         r.isAutoResubmit(), r.isQuickSubmit(), r.getOriginalSender()),
                                 getSelf()))
@@ -791,7 +791,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
     }
 
-    public void onGetInheritedJobDefinition(GetInheritedJobDefinitionRequest r) {
+    public void onGetJobDefinitionUpdatedFromJobActor(GetJobDefinitionUpdatedFromJobActorRequest r) {
         ActorRef sender = getSender();
         sender.tell(
                 getIntermediateJobDefinition(r),
@@ -1144,7 +1144,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         return this.mantisJobMetaData;
     }
 
-    public JobClusterManagerProto.GetInheritedJobDefinitionResponse getIntermediateJobDefinition(GetInheritedJobDefinitionRequest r) {
+    public JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse getIntermediateJobDefinition(GetJobDefinitionUpdatedFromJobActorRequest r) {
         LOGGER.debug("Returning intermediate job Details {}", this.mantisJobMetaData);
         final JobDefinition givenJobDefn = r.getJobDefinition();
         final boolean forceInheritance = r.isQuickSubmit();
@@ -1157,13 +1157,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         try {
             JobDefinition mergedJobDefn = jobDefnBuilder.build();
             LOGGER.debug("Returning intermediate job definition: {}", mergedJobDefn);
-            return new JobClusterManagerProto.GetInheritedJobDefinitionResponse(
+            return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
                     r.requestId, SUCCESS, "", r.getUser(), mergedJobDefn, r.isAutoResubmit(),
                     r.isQuickSubmit(), r.getOriginalSender());
         }
         catch (io.mantisrx.runtime.command.InvalidJobException ije) {
             LOGGER.error("Failed to build job definition with inheritance:", ije);
-            return new JobClusterManagerProto.GetInheritedJobDefinitionResponse(
+            return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
                     r.requestId, SERVER_ERROR, ije.getMessage(), r.getUser(), null, r.isAutoResubmit(),
                     r.isQuickSubmit(), r.getOriginalSender());
         }

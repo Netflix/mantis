@@ -1683,7 +1683,7 @@ public class JobClusterManagerProto {
      */
     @Getter
     @ToString
-    public static final class GetInheritedJobDefinitionRequest extends BaseRequest {
+    public static final class GetJobDefinitionUpdatedFromJobActorRequest extends BaseRequest {
         private final String user;
         private final JobId jobId;
         private final JobDefinition jobDefinition;
@@ -1691,12 +1691,12 @@ public class JobClusterManagerProto {
         private final boolean isAutoResubmit;
         private final ActorRef originalSender;
 
-        public GetInheritedJobDefinitionRequest(final String user,
-                                                final JobId jobId,
-                                                final JobDefinition jobDefinition,
-                                                final boolean isQuickSubmit,
-                                                final boolean isAutoResubmit,
-                                                final ActorRef originalSender) {
+        public GetJobDefinitionUpdatedFromJobActorRequest(final String user,
+                                                          final JobId jobId,
+                                                          final JobDefinition jobDefinition,
+                                                          final boolean isQuickSubmit,
+                                                          final boolean isAutoResubmit,
+                                                          final ActorRef originalSender) {
             super();
             Preconditions.checkNotNull(user, "user");
             Preconditions.checkNotNull(jobId, "jobId");
@@ -1736,14 +1736,14 @@ public class JobClusterManagerProto {
 
     @ToString
     @Getter
-    public static final class GetInheritedJobDefinitionResponse extends BaseResponse {
+    public static final class GetJobDefinitionUpdatedFromJobActorResponse extends BaseResponse {
         private final String user;
         private final JobDefinition jobDefinition;
         private final boolean isAutoResubmit;
         private final boolean isQuickSubmitMode;
         private final ActorRef originalSender;
 
-        public GetInheritedJobDefinitionResponse(
+        public GetJobDefinitionUpdatedFromJobActorResponse(
                 final long requestId,
                 final ResponseCode responseCode,
                 final String message,
