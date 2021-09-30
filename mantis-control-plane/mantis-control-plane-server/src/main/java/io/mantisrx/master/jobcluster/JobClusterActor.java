@@ -22,8 +22,6 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 
-import io.mantisrx.master.jobcluster.job.*;
-import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.fenzo.triggers.CronTrigger;
@@ -42,6 +40,13 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
+import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
+import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
+import io.mantisrx.master.jobcluster.job.JobActor;
+import io.mantisrx.master.jobcluster.job.JobHelper;
+import io.mantisrx.master.jobcluster.job.JobState;
+import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
+import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterResponse;
@@ -1383,29 +1388,33 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         Optional<JobDefinition> givenJobDefn = request.getJobDefinition();
         List<JobInfo> existingJobsList = jobManager.getAllNonTerminalJobsList();
 
-        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, Lists.newArrayList());
+        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, Collections.emptyList());
         if (!lastJobId.isPresent()) {
             logger.info("No valid last job id found for inheritance. Skip job actor process step.");
             return false;
         }
 
         Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
-        if (!givenJobDefn.isPresent()) {
+        if (!jobInfoForNonTerminalJob.isPresent()) {
+            logger.info("Last job id doesn't map to job info instance, skip job actor process. {}", lastJobId.get());
+            return false;
+        }
+        else if (!givenJobDefn.isPresent()) {
             logger.info("[QuickSubmit] pass to job actor to process job definition: {}", lastJobId.get());
-            jobInfoForNonTerminalJob.ifPresent(jobInfo -> jobInfo.jobActor.tell(
+            jobInfoForNonTerminalJob.get().jobActor.tell(
                     new GetInheritedJobDefinitionRequest(
-                            user, lastJobId.get(), jobInfo.jobDefinition,
+                            user, lastJobId.get(), jobInfoForNonTerminalJob.get().jobDefinition,
                             true, request.isAutoResubmit(), getSender()),
-                    getSelf()));
+                    getSelf());
             return true;
         }
         else if (givenJobDefn.get().requireInheritInstanceCheck()) {
             logger.info("[Inherit request] pass to job actor to process job definition: {}", lastJobId.get());
-            jobInfoForNonTerminalJob.ifPresent(jobInfo -> jobInfo.jobActor.tell(
+            jobInfoForNonTerminalJob.get().jobActor.tell(
                     new GetInheritedJobDefinitionRequest(
                             user, lastJobId.get(), givenJobDefn.get(),
                             false, request.isAutoResubmit(), getSender()),
-                    getSelf()));
+                    getSelf());
             return true;
         }
 
@@ -1425,7 +1434,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     private JobDefinition getResolvedJobDefinition(final String user, final Optional<JobDefinition> givenJobDefnOp) throws Exception {
         JobDefinition resolvedJobDefn;
-        if(!givenJobDefnOp.isPresent()) {
+        if (givenJobDefnOp.isPresent()) {
+            if (givenJobDefnOp.get().getSchedulingInfo() != null && givenJobDefnOp.get().requireInheritInstanceCheck()) {
+                logger.warn("Job requires inheriting instance count but has no active non-terminal job.");
+            }
+            resolvedJobDefn = givenJobDefnOp.get();
+        }
+        else {
             // no job definition specified , this is quick submit which is supposed to inherit from last job submitted
             // for request inheriting from non-terminal jobs, it has been sent to job actor instead.
             Optional<JobDefinition> jobDefnOp = createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters(
@@ -1437,17 +1452,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 throw new Exception("Job Definition could not retrieved from a previous submission (There may not be a previous submission)");
             }
         }
-        else if (givenJobDefnOp.get().getSchedulingInfo() != null && givenJobDefnOp.get().requireInheritInstanceCheck()) {
-            logger.warn("Job requires inheriting instance count but has no active non-terminal job.");
-            resolvedJobDefn = givenJobDefnOp.get();
-        }
-        else {
-            resolvedJobDefn = givenJobDefnOp.get();
-        }
 
         logger.info("Resolved JobDefn {}", resolvedJobDefn);
         return this.jobDefinitionResolver.getResolvedJobDefinition(user,resolvedJobDefn,this.jobClusterMetadata);
-
     }
 
 
@@ -1991,40 +1998,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         return empty();
     }
 
-
-    private Optional<JobDefinition> createJobDefinitionInheritingInstanceCount(
-            final JobDefinition givenJobDefn,
-            final List<JobInfo> existingJobsList) {
-        if(logger.isTraceEnabled()) { logger.trace("Enter createJobDefinitionInheritingInstanceCount"); }
-
-        // use last submitted job (if non-terminal) to merge with the givenJobDefn so the result jobDefn will inherit instance count.
-        JobDefinition finalJobDefn = givenJobDefn;
-        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, Lists.newArrayList());
-        if (lastJobId.isPresent()) {
-            Optional<JobInfo> jobInfoForNonTerminalJob = jobManager.getJobInfoForNonTerminalJob(lastJobId.get());
-            if (jobInfoForNonTerminalJob.isPresent()) {
-                CompletableFuture<Optional<JobDefinition>> mergedJobDefnOCS =
-                        getNonTerminalJobDefnWithWorkerCountInheritance(jobInfoForNonTerminalJob.get(), givenJobDefn, false)
-                                .toCompletableFuture();
-                try {
-                    if (mergedJobDefnOCS.get().isPresent()) {
-                        finalJobDefn = mergedJobDefnOCS.get().get();
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    logger.error("Failed to merge with running job's instance", e);
-                }
-
-            }
-
-            logger.info("Merged final job definition: {}", finalJobDefn);
-            return of(finalJobDefn);
-        }
-        else {
-            logger.info("No running job instance available to inherit instance, fallback to given job: {}", givenJobDefn.getName());
-            return of(givenJobDefn);
-        }
-    }
-
     @Override
     public void onExpireOldJobs(JobClusterProto.ExpireOldJobsRequest request) {
         final long tooOldCutOff = System.currentTimeMillis() - (getTerminatedJobToDeleteDelayHours()*3600000L);
@@ -2284,51 +2257,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Exit getLastSubmittedJobDefinition empty"); }
         return empty();
     }
-
-
-    /*
-     * Use running job instance to merge with given job definition for each stage's worker instance count.
-     * @param runningJobInfo the running job instance with ref to its job actor.
-     * @param givenJobDefn given job definition.
-     * @param forceInheritance whether to force instance inheritance to all stages.
-     * @return CompletionStage<Optional<JobDefinition>> CompletionStage containing the merged job definition.
-     */
-    private CompletionStage<Optional<JobDefinition>> getNonTerminalJobDefnWithWorkerCountInheritance(
-            final JobInfo runningJobInfo, final JobDefinition givenJobDefn, boolean forceInheritance) {
-        // Get job details with job metadata tracked inside job actor.
-        logger.info("[Inherit worker count] apply worker count inheritance on given job: {} from {}",
-                givenJobDefn.getName(), runningJobInfo.jobId);
-
-        GetJobDetailsRequest req = new GetJobDetailsRequest("system", runningJobInfo.jobId);
-        return ask(runningJobInfo.jobActor, req, Duration.ofMillis(500))
-                .thenApply(GetJobDetailsResponse.class::cast)
-                .thenApply(res -> {
-                    if (!res.getJobMetadata().isPresent()) {
-                        logger.warn("Got empty job actor metadata.");
-                        return empty();
-                    }
-                    else if (givenJobDefn.getSchedulingInfo() == null) {
-                        logger.warn("Invalid job definition from given job info.");
-                        return empty();
-                    }
-                    else {
-                        IMantisJobMetadata lastJobMeta = res.getJobMetadata().get();
-                        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().fromWithInstanceCountInheritance(
-                                givenJobDefn,
-                                forceInheritance,
-                                (stageId) -> lastJobMeta.getStageMetadata(stageId).map(IMantisStageMetadata::getNumWorkers));
-
-                        try {
-                            return of(jobDefnBuilder.build());
-                        }
-                        catch (InvalidJobException ije) {
-                            logger.error("Failed to build job definition with inheritance:", ije);
-                            return empty();
-                        }
-                    }
-                });
-    }
-
 
     /**
      * 2 cases this can occur
