@@ -18,13 +18,13 @@ package io.mantisrx.runtime.descriptor;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Singular;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @Builder
+@EqualsAndHashCode
 public class DeploymentStrategy {
     @Singular(ignoreNullCollections = true) private Map<Integer, StageDeploymentStrategy> stages;
 
@@ -36,19 +36,6 @@ public class DeploymentStrategy {
     public StageDeploymentStrategy forStage(int stageNum) {
         if (!this.stages.containsKey(stageNum)) { return null; }
         return stages.get(stageNum);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DeploymentStrategy that = (DeploymentStrategy) o;
-        return Objects.equals(stages, that.stages);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(stages);
     }
 
     public boolean requireInheritInstanceCheck() {

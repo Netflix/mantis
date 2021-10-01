@@ -27,8 +27,9 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.EqualsAndHashCode;
 
-
+@EqualsAndHashCode
 public class SchedulingInfo {
 
     private Map<Integer, StageSchedulingInfo> stages = new HashMap<>();
@@ -78,20 +79,6 @@ public class SchedulingInfo {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SchedulingInfo that = (SchedulingInfo) o;
-        return Objects.equals(stages, that.stages);
-    }
-
-    @Override
-    public int hashCode() {
-
-        return Objects.hash(stages);
     }
 
     public Map<Integer, StageSchedulingInfo> getStages() {

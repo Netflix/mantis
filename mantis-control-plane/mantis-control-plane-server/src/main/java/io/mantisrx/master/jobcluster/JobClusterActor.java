@@ -1442,8 +1442,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         else {
             // no job definition specified , this is quick submit which is supposed to inherit from last job submitted
             // for request inheriting from non-terminal jobs, it has been sent to job actor instead.
-            Optional<JobDefinition> jobDefnOp = createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters(
-                    Lists.newArrayList(), jobManager.getCompletedJobsList(), empty(), jobStore);
+            Optional<JobDefinition> jobDefnOp = cloneJobDefinitionForQuickSubmitFromArchivedJobs(
+                    jobManager.getCompletedJobsList(), empty(), jobStore);
             if(jobDefnOp.isPresent()) {
                 logger.info("Inherited scheduling Info and parameters from previous job");
                 resolvedJobDefn = jobDefnOp.get();
@@ -1977,17 +1977,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     /**
      * Fetch JobDefn of last job and clone it to a create a new one. Inherit the schedulingInfo and parameters
-     * @param existingJobsList
      * @param completedJobs
      * @param jobDefinitionOp
      * @param store
      * @return
      */
-    private Optional<JobDefinition> createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters(final List<JobInfo> existingJobsList,
-                                                                                                         final List<CompletedJob> completedJobs, Optional<JobDefinition> jobDefinitionOp,
-                                                                                                         MantisJobStore store) {
+    private Optional<JobDefinition> cloneJobDefinitionForQuickSubmitFromArchivedJobs(final List<CompletedJob> completedJobs,
+                                                                                     Optional<JobDefinition> jobDefinitionOp,
+                                                                                     MantisJobStore store) {
         if(logger.isTraceEnabled()) { logger.trace("Enter createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters"); }
-        Optional<JobDefinition> lastSubmittedJobDefn = getLastSubmittedJobDefinition(existingJobsList, completedJobs, jobDefinitionOp, store);
+        Optional<JobDefinition> lastSubmittedJobDefn = getLastSubmittedJobDefinition(completedJobs, jobDefinitionOp, store);
 
         if(lastSubmittedJobDefn.isPresent()) {
             if(logger.isTraceEnabled()) { logger.trace("Exit createNewJobDefinitionFromLastSubmittedInheritSchedInfoAndParameters"); }
@@ -2214,17 +2213,17 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     }
 
     /**
+     * Fetch job definition for quick submit mode.
      * If a job definition is passed return it immediately
-     * Else find the last submitted job, first look in currently running jobs, next look in completed job
-     * @param existingJobsList existing job list
+     * Else find the last submitted job and look in completed job.
+     * (For quick submit with active job, the request is passed to the active job actor to process instead).
      * @param completedJobs completed job list
      * @param jobDefinitionOp optional job definition
      * @param store store reference if required to load from store
      * @return JobDefinition of last submitted job if found
      */
     /*package protected*/
-    private Optional<JobDefinition> getLastSubmittedJobDefinition(final List<JobInfo> existingJobsList,
-                                                                  final List<CompletedJob> completedJobs,
+    private Optional<JobDefinition> getLastSubmittedJobDefinition(final List<CompletedJob> completedJobs,
                                                                   Optional<JobDefinition> jobDefinitionOp,
                                                                   MantisJobStore store) {
         if(logger.isTraceEnabled()) { logger.trace("Entering getLastSubmittedJobDefinition"); }
@@ -2232,10 +2231,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             return jobDefinitionOp;
         }
 
-        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(existingJobsList, completedJobs);
+        Optional<JobId> lastJobId = JobListHelper.getLastSubmittedJobId(Collections.emptyList(), completedJobs);
         if(lastJobId.isPresent()) {
             Optional<CompletedJob> completedJob = jobManager.getCompletedJob(lastJobId.get());
-            if(completedJob.isPresent()) {
+            if (completedJob.isPresent()) {
                 try {
                     Optional<IMantisJobMetadata> archivedJob = store.getArchivedJob(completedJob.get().getJobId());
                     if(archivedJob.isPresent()) {
