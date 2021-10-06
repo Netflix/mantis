@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+
 import akka.NotUsed;
 import akka.http.javadsl.marshalling.sse.EventStreamMarshalling;
 import akka.http.javadsl.model.StatusCodes;
@@ -30,17 +32,14 @@ import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.api.akka.route.utils.StreamingUtils;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.RxReactiveStreams;
-
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.RxReactiveStreams;
 
 /***
  * LastSubmittedJobIdStreamRoute

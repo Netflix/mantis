@@ -16,10 +16,9 @@
 
 package io.mantisrx.sourcejob.synthetic.sink;
 
+import io.mantisrx.sourcejob.synthetic.core.MQLQueryManager;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.mantisrx.sourcejob.synthetic.core.MQLQueryManager;
 import lombok.extern.slf4j.Slf4j;
 
 

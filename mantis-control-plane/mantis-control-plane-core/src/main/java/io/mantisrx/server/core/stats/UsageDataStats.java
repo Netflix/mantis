@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.core.stats;
 
-import java.util.ArrayDeque;
-
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import java.util.ArrayDeque;
 
 
 public class UsageDataStats {

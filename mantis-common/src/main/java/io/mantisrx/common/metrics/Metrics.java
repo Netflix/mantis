@@ -16,13 +16,6 @@
 
 package io.mantisrx.common.metrics;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Tag;
 import com.netflix.spectator.impl.Preconditions;
@@ -32,6 +25,12 @@ import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.metrics.spectator.TimerImpl;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

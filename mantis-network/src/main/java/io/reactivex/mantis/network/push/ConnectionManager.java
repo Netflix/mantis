@@ -16,6 +16,10 @@
 
 package io.reactivex.mantis.network.push;
 
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.GaugeCallback;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -25,11 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Action0;

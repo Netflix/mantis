@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+
 import akka.NotUsed;
 import akka.http.javadsl.marshalling.sse.EventStreamMarshalling;
 import akka.http.javadsl.model.HttpHeader;
@@ -36,17 +38,14 @@ import io.mantisrx.master.api.akka.route.utils.StreamingUtils;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.domain.JobId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.RxReactiveStreams;
-
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.RxReactiveStreams;
 
 public class JobDiscoveryRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobDiscoveryRoute.class);

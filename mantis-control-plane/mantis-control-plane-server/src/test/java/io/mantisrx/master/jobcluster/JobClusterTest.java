@@ -66,23 +66,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.runtime.descriptor.*;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -105,6 +91,7 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterArtifactRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLARequest;
@@ -118,6 +105,7 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.WorkerMigrationConfig.MigrationStrategyEnum;
 import io.mantisrx.runtime.command.InvalidJobException;
+import io.mantisrx.runtime.descriptor.*;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -135,6 +123,17 @@ import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.store.NamedJob;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -2932,7 +2931,7 @@ public class JobClusterTest {
 
     }
 
-   
+
 
         @Test
     public void testExpireOldJobs() {

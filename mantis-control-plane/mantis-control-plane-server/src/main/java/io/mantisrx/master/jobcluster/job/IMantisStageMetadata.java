@@ -16,17 +16,16 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import java.util.Collection;
-import java.util.List;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Represents Metadata associated with a Mantis Job stage.

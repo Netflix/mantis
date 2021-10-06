@@ -16,6 +16,11 @@
 
 package io.mantisrx.server.master.store;
 
+import com.netflix.fenzo.functions.Action1;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
@@ -26,12 +31,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.netflix.fenzo.functions.Action1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

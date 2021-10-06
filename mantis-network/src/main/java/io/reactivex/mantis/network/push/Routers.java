@@ -18,7 +18,6 @@ package io.reactivex.mantis.network.push;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-
 import rx.functions.Func1;
 
 

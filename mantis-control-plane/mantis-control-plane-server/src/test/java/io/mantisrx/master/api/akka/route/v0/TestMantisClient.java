@@ -22,6 +22,8 @@ import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
@@ -33,9 +35,6 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 public class TestMantisClient {
     private static final Logger logger = LoggerFactory.getLogger(TestMantisClient.class);

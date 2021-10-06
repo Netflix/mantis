@@ -16,15 +16,15 @@
 
 package io.mantisrx.server.master.domain;
 
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import com.netflix.fenzo.triggers.CronTrigger;
 import com.netflix.fenzo.triggers.TriggerOperator;
 import com.netflix.fenzo.triggers.exceptions.SchedulerException;
 import com.netflix.fenzo.triggers.exceptions.TriggerNotFoundException;
 import io.mantisrx.server.master.store.NamedJob;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,4 +187,3 @@ public class SLA {
                 + scheduledTrigger + ", triggerGroup=" + triggerGroup + ", triggerId=" + triggerId + "]";
     }
 }
-

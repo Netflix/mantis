@@ -16,15 +16,6 @@
 
 package io.mantisrx.sourcejob.synthetic.stage;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.mantisrx.common.utils.JsonUtility;
 import io.mantisrx.common.codec.Codec;
 import io.mantisrx.common.metrics.Metrics;
@@ -35,6 +26,14 @@ import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.sourcejob.synthetic.core.MQLQueryManager;
 import io.mantisrx.sourcejob.synthetic.core.TaggedData;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 

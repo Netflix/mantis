@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.master;
 
-import java.util.Map;
-
 import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.TaskRequest;
 import com.netflix.fenzo.TaskTrackerState;
 import com.netflix.fenzo.VirtualMachineCurrentState;
+import java.util.Map;
 import org.apache.mesos.Protos;
 
 

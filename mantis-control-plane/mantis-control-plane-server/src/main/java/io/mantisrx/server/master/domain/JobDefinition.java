@@ -16,15 +16,6 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.util.*;
-import java.util.function.Function;
-
-import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
-import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
@@ -33,6 +24,12 @@ import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import java.util.*;
+import java.util.function.Function;
 
 
 public class JobDefinition {
@@ -345,4 +342,3 @@ public class JobDefinition {
     }
 
 }
-

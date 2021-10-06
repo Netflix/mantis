@@ -16,13 +16,12 @@
 
 package io.mantisrx.server.master.mesos;
 
+import com.netflix.fenzo.VirtualMachineLease;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.netflix.fenzo.VirtualMachineLease;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.Resource;

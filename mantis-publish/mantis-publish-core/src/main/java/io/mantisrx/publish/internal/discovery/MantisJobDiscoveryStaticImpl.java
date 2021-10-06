@@ -16,22 +16,21 @@
 
 package io.mantisrx.publish.internal.discovery;
 
+import com.netflix.mantis.discovery.proto.AppJobClustersMap;
+import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
+import com.netflix.mantis.discovery.proto.MantisWorker;
+import com.netflix.mantis.discovery.proto.StageWorkers;
+import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import com.netflix.mantis.discovery.proto.StageWorkers;
-import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

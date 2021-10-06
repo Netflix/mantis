@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.util.List;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
+import java.util.List;
 
 
 public interface IJobClusterDefinition {

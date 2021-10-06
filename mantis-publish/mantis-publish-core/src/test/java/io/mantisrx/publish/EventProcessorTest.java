@@ -25,19 +25,18 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
-
 import com.netflix.archaius.DefaultPropertyFactory;
 import com.netflix.archaius.api.PropertyRepository;
 import com.netflix.archaius.api.config.SettableConfig;
 import com.netflix.archaius.config.DefaultSettableConfig;
-import io.mantisrx.publish.internal.mql.MQLSubscription;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
+import io.mantisrx.publish.internal.mql.MQLSubscription;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

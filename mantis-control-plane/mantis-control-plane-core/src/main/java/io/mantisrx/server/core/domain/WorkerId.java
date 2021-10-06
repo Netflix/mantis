@@ -17,7 +17,6 @@
 package io.mantisrx.server.core.domain;
 
 import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

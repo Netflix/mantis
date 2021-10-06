@@ -18,11 +18,6 @@ package io.mantisrx.master.jobcluster.proto;
 
 import akka.actor.ActorRef;
 import akka.http.javadsl.model.Uri;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.google.common.base.Strings;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;
@@ -42,10 +37,11 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import lombok.Getter;
-import lombok.ToString;
-import rx.subjects.BehaviorSubject;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +50,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.ToString;
+import rx.subjects.BehaviorSubject;
 
 public class JobClusterManagerProto {
 

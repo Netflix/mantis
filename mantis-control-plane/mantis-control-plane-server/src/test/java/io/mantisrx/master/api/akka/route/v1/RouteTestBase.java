@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import akka.actor.ActorSystem;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpEntity;
@@ -25,22 +29,16 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.RequestEntity;
 import akka.http.javadsl.model.StatusCode;
-
 import akka.stream.ActorMaterializer;
 import akka.util.ByteString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.util.Strings;
-
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.util.Strings;
 
 abstract class RouteTestBase {
     private final static Logger logger = LoggerFactory.getLogger(RouteTestBase.class);

@@ -19,11 +19,6 @@ package io.mantisrx.master.jobcluster.job;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
@@ -32,6 +27,10 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,11 +16,10 @@
 
 package io.reactivex.mantis.network.push;
 
-import java.util.List;
-import java.util.Set;
-
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
+import java.util.List;
+import java.util.Set;
 import rx.functions.Func1;
 
 

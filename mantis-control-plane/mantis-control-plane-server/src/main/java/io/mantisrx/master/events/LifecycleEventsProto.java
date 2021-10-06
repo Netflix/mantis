@@ -16,6 +16,9 @@
 
 package io.mantisrx.master.events;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
+
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
@@ -24,11 +27,7 @@ import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
-
 import java.util.Optional;
-
-import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
 
 public class LifecycleEventsProto {
 

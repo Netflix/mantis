@@ -16,6 +16,10 @@
 
 package io.mantisrx.publish;
 
+import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.api.StreamType;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.core.Subscription;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,11 +27,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
-import io.mantisrx.publish.api.Event;
-import io.mantisrx.publish.api.StreamType;
-import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.core.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

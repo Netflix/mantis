@@ -17,15 +17,14 @@
 package io.mantisrx.master.api.akka.route.utils;
 
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QueryParamUtils {
     private static final Logger logger = LoggerFactory.getLogger(QueryParamUtils.class);

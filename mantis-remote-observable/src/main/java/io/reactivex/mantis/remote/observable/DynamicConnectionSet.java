@@ -16,6 +16,11 @@
 
 package io.reactivex.mantis.remote.observable;
 
+import io.mantisrx.common.MantisGroup;
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.network.Endpoint;
+import io.reactivex.mantis.remote.observable.reconciliator.ConnectionSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,12 +29,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import io.mantisrx.common.MantisGroup;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.network.Endpoint;
-import io.reactivex.mantis.remote.observable.reconciliator.ConnectionSet;
 import org.jctools.queues.SpscArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

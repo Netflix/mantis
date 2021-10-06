@@ -16,20 +16,11 @@
 
 package io.mantisrx.master.jobcluster;
 
+import io.mantisrx.server.master.domain.IJobClusterDefinition;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-
-
-import io.mantisrx.runtime.JobOwner;
-import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.server.master.domain.IJobClusterDefinition;
-import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
-import io.mantisrx.server.master.domain.JobId;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -50,7 +41,7 @@ long lastJobCount
 boolean isdisabled
 
 jobDefinitions [{
-	
+
 	String artifactName,
 	String version,
 	long uploadedAt,
@@ -98,7 +89,7 @@ jobDefinitions [{
             }
         ],
     }]
-    
+
 
 }
 
@@ -174,17 +165,17 @@ public class JobClusterMetadataImpl implements IJobClusterMetadata {
 		private boolean disabled;
 
 		public Builder() {}
-		
+
 		public Builder withJobClusterDefinition(JobClusterDefinitionImpl jobClusterDef) {
 			this.jobClusterDefinition = jobClusterDef;
 			return this;
 		}
-		
+
 		public Builder withLastJobCount(long lastJobCnt) {
 			this.lastJobCount = lastJobCnt;
 			return this;
 		}
-		
+
 		public Builder withIsDisabled(boolean disabled) {
 			this.disabled = disabled;
 			return this;
@@ -193,11 +184,11 @@ public class JobClusterMetadataImpl implements IJobClusterMetadata {
 		public IJobClusterMetadata build() {
 			return new JobClusterMetadataImpl(this.jobClusterDefinition, this.lastJobCount, this.disabled);
 		}
-		
+
 		public IJobClusterMetadata build(JobClusterDefinitionImpl def, long lastJobCnt, boolean isDisabled) {
 			return new JobClusterMetadataImpl(def, lastJobCount, isDisabled);
 		}
 	}
-	
-	
+
+
 }

@@ -19,7 +19,6 @@ package com.mantisrx.common.utils;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectWriter;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;

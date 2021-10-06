@@ -16,9 +16,6 @@
 
 package io.mantisrx.mantis.examples.sinefunction;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.mantis.examples.sinefunction.core.Point;
 import io.mantisrx.mantis.examples.sinefunction.stages.SinePointGeneratorStage;
 import io.mantisrx.runtime.Context;
@@ -39,6 +36,8 @@ import io.mantisrx.runtime.sink.ServerSentEventsSink;
 import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;

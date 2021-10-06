@@ -16,20 +16,18 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+
 import akka.NotUsed;
 import akka.http.javadsl.model.ws.Message;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.stream.javadsl.Flow;
-import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
 
 /***
  * JobStatusStreamRoute

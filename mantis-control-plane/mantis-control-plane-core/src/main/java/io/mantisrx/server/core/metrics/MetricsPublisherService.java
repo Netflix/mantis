@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.core.metrics;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.mantisrx.common.metrics.MetricsPublisher;
 import io.mantisrx.server.core.Service;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MetricsPublisherService implements Service {

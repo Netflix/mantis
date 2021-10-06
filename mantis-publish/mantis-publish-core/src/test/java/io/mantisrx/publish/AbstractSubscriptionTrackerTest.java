@@ -16,6 +16,12 @@
 
 package io.mantisrx.publish;
 
+import static io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration.MAX_SUBS_PER_STREAM_FORMAT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.netflix.archaius.DefaultPropertyFactory;
 import com.netflix.archaius.api.PropertyRepository;
 import com.netflix.archaius.api.config.SettableConfig;
@@ -32,21 +38,14 @@ import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration.MAX_SUBS_PER_STREAM_FORMAT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AbstractSubscriptionTrackerTest {
     private SettableConfig config;

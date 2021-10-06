@@ -20,12 +20,10 @@ package io.mantisrx.sourcejob.synthetic.sink;
 import static com.mantisrx.common.utils.MantisSourceJobConstants.CRITERION_PARAM_NAME;
 import static com.mantisrx.common.utils.MantisSourceJobConstants.SUBSCRIPTION_ID_PARAM_NAME;
 
+import io.mantisrx.runtime.Context;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.runtime.Context;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Logger;
 import rx.functions.Func2;
 
 

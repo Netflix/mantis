@@ -22,14 +22,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.archaius.DefaultPropertyFactory;
 import com.netflix.archaius.api.PropertyRepository;
 import com.netflix.archaius.config.DefaultSettableConfig;
@@ -57,6 +49,13 @@ import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
 import io.mantisrx.publish.netty.pipeline.HttpEventChannelManager;
 import io.mantisrx.publish.netty.transmitters.ChoiceOfTwoEventTransmitter;
 import io.netty.util.ResourceLeakDetector;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 public class LocalMrePublishClientInitializer {

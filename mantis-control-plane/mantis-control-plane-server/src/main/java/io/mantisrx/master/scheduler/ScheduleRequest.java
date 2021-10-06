@@ -24,7 +24,6 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -206,4 +205,3 @@ public class ScheduleRequest implements QueuableTask {
                 '}';
     }
 }
-

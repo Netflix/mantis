@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.master.config;
 
-import java.util.Properties;
-
 import io.mantisrx.server.core.MetricsCoercer;
 import io.mantisrx.server.master.store.MantisStorageProvider;
+import java.util.Properties;
 import org.skife.config.Coercer;
 import org.skife.config.Coercible;
 import org.skife.config.ConfigurationObjectFactory;

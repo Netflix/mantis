@@ -16,13 +16,12 @@
 
 package com.netflix.mantis.examples.config;
 
-import java.util.Map;
-
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.KeyToScalar;
 import io.mantisrx.runtime.ScalarToKey;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.codec.JacksonCodecs;
+import java.util.Map;
 
 
 public class StageConfigs {

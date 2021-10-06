@@ -16,9 +16,11 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+
 import akka.actor.ActorSystem;
 import akka.http.caching.javadsl.Cache;
-import akka.http.caching.javadsl.CachingSettings;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpMethods;
 import akka.http.javadsl.model.HttpRequest;
@@ -31,8 +33,6 @@ import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
-import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
@@ -40,17 +40,14 @@ import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
-import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
-import static akka.http.javadsl.server.directives.CachingDirectives.routeCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AgentClusterRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(AgentClusterRoute.class);

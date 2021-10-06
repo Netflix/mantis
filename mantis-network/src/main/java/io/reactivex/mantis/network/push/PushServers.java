@@ -16,10 +16,9 @@
 
 package io.reactivex.mantis.network.push;
 
+import io.mantisrx.common.MantisGroup;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.common.MantisGroup;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;

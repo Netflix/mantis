@@ -16,11 +16,10 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.network.Endpoint;
+import java.util.LinkedList;
+import java.util.List;
 import junit.framework.Assert;
 import org.junit.Test;
 import rx.Observable;

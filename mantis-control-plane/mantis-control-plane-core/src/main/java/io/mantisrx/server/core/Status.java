@@ -16,10 +16,8 @@
 
 package io.mantisrx.server.core;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
+import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -27,8 +25,9 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.server.core.domain.WorkerId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 //import io.mantisrx.server.master.domain.WorkerId;
 

@@ -16,6 +16,7 @@
 
 package io.mantisrx.common.compression;
 
+import io.mantisrx.common.MantisServerSentEvent;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,8 +29,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import io.mantisrx.common.MantisServerSentEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;

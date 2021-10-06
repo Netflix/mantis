@@ -16,12 +16,11 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import java.time.Instant;
-import java.util.List;
-
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import java.time.Instant;
+import java.util.List;
 import rx.subjects.BehaviorSubject;
 
 
@@ -99,4 +98,3 @@ public interface IWorkerManager {
      */
     void refreshAndSendWorkerAssignments();
 }
-

@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.core;
 
-import java.util.List;
-
+import io.mantisrx.runtime.codec.JsonType;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.runtime.codec.JsonType;
+import java.util.List;
 
 
 public class JobAssignmentResult implements JsonType {

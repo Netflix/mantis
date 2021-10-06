@@ -25,8 +25,6 @@ subprojects {
     // to be applied to ALL projects. And we are not prepared to address all of the build errors that
     // occur as a result at this time.
 
-    if (project.name in ['mantis-server-worker', 'mantis-server-agent', 'mantis-server-worker-client', 'mantis-runtime']) {
-        apply plugin: 'com.palantir.baseline-exact-dependencies'
-        apply plugin: 'com.palantir.baseline-format'
-    }
+    apply plugin: 'com.palantir.baseline-exact-dependencies'
+    apply plugin: 'com.palantir.baseline-format'
 }

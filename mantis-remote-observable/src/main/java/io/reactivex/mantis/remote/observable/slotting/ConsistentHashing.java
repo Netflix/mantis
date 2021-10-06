@@ -16,15 +16,14 @@
 
 package io.reactivex.mantis.remote.observable.slotting;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.HashFunction;
 import io.mantisrx.common.network.HashFunctions;
 import io.mantisrx.common.network.ServerSlotManager.SlotAssignmentManager;
 import io.mantisrx.common.network.WritableEndpoint;
+import java.util.LinkedList;
+import java.util.List;
 
 
 public class ConsistentHashing<T> extends SlottingStrategy<T> {

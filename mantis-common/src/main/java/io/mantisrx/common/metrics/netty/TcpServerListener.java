@@ -16,12 +16,11 @@
 
 package io.mantisrx.common.metrics.netty;
 
-import java.util.concurrent.TimeUnit;
-
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.metrics.ServerMetricEventsListener;
 import mantis.io.reactivex.netty.server.ServerMetricsEvent;
 

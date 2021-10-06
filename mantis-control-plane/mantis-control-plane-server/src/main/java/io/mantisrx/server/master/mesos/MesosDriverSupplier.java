@@ -16,6 +16,11 @@
 
 package io.mantisrx.server.master.mesos;
 
+import com.netflix.fenzo.VirtualMachineLease;
+import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.WorkerRegistry;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -26,12 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-
-import com.netflix.fenzo.VirtualMachineLease;
-import io.mantisrx.server.master.config.MasterConfiguration;
-import io.mantisrx.server.master.scheduler.JobMessageRouter;
-import io.mantisrx.server.master.scheduler.WorkerRegistry;
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.slf4j.Logger;

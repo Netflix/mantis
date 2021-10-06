@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,17 +17,16 @@
 package io.mantisrx.connector.job.core;
 
 
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
 import io.mantisrx.client.examples.SubmitEphemeralJob;
 import io.mantisrx.runtime.parameter.SinkParameters;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observer;

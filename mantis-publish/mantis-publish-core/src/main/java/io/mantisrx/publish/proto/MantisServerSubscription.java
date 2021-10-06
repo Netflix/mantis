@@ -16,13 +16,12 @@
 
 package io.mantisrx.publish.proto;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 
 public class MantisServerSubscription {

@@ -16,9 +16,6 @@
 
 package io.mantisrx.master.api.akka.route.proto;
 
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
@@ -36,7 +33,9 @@ import io.mantisrx.server.master.http.api.JobClusterInfo;
 import io.mantisrx.server.master.store.MantisJobMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisWorkerMetadata;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -72,7 +71,7 @@ public class JobClusterProtoAdapter {
                 jd.getLabels()
         )
 
-        , "user"        
+        , "user"
                 );
 
         return request;

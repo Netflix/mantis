@@ -16,20 +16,19 @@
 
 package io.mantisrx.server.master.client;
 
+import com.sampullara.cli.Args;
+import com.sampullara.cli.Argument;
+import io.mantisrx.server.core.JobAssignmentResult;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.sampullara.cli.Args;
-import com.sampullara.cli.Argument;
-import io.mantisrx.server.core.JobAssignmentResult;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;

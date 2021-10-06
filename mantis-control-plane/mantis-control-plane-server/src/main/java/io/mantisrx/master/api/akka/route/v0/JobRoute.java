@@ -16,9 +16,15 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobIdsRequest;
+import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobsRequest;
+import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createWorkerStatusRequest;
+import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest.DEFAULT_LIST_ARCHIVED_WORKERS_LIMIT;
+
 import akka.actor.ActorSystem;
 import akka.http.caching.javadsl.Cache;
-import akka.http.caching.javadsl.CachingSettings;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpMethods;
 import akka.http.javadsl.model.HttpRequest;
@@ -54,9 +60,6 @@ import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,14 +67,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
-import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
-import static akka.http.javadsl.server.directives.CachingDirectives.routeCache;
-import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobIdsRequest;
-import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createListJobsRequest;
-import static io.mantisrx.master.api.akka.route.utils.JobRouteUtils.createWorkerStatusRequest;
-import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest.DEFAULT_LIST_ARCHIVED_WORKERS_LIMIT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobRoute.class);

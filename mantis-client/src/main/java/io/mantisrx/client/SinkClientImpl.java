@@ -16,18 +16,17 @@
 
 package io.mantisrx.client;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import io.reactivex.mantis.remote.observable.EndpointChange;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

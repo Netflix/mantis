@@ -18,7 +18,6 @@ package io.mantisrx.server.master.client.diagnostic.plugin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import rx.Observable;
 import rx.observers.SerializedObserver;
 import rx.subjects.PublishSubject;

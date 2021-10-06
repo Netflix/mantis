@@ -35,24 +35,24 @@ import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
-import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
-import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
-import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
-import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
-import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
-import io.mantisrx.master.api.akka.route.v0.JobRoute;
-import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
-import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
-import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
-import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
+import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
+import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
+import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
+import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
+import io.mantisrx.master.api.akka.route.v0.JobRoute;
+import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
+import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
+import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
+import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
+import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
@@ -79,17 +79,14 @@ import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
-
-
 import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observer;
-
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.CompletionStage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observer;
 
 
 public class MantisMasterAPI extends AllDirectives {

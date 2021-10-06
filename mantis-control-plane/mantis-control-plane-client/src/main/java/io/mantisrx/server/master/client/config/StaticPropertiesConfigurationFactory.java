@@ -18,10 +18,8 @@ package io.mantisrx.server.master.client.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.MetricsCoercer;
-
-import org.skife.config.ConfigurationObjectFactory;
-
 import java.util.Properties;
+import org.skife.config.ConfigurationObjectFactory;
 
 public class StaticPropertiesConfigurationFactory implements ConfigurationFactory {
     private final ConfigurationObjectFactory delegate;

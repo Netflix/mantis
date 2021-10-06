@@ -16,6 +16,9 @@
 
 package com.netflix.mantis.examples.mantispublishsample.web.filter;
 
+import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.api.EventPublisher;
+import io.mantisrx.publish.api.PublishStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +30,6 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.Filter;
@@ -40,10 +42,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-
-import io.mantisrx.publish.api.Event;
-import io.mantisrx.publish.api.EventPublisher;
-import io.mantisrx.publish.api.PublishStatus;
 import lombok.extern.slf4j.Slf4j;
 
 

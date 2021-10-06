@@ -16,29 +16,27 @@
 
 package io.mantisrx.master.jobcluster;
 
-import io.mantisrx.shaded.com.google.common.collect.Lists;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.command.InvalidJobException;
-
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.SLA;
-import org.junit.Test;
-
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 public class JobDefinitionResolverTest {
 

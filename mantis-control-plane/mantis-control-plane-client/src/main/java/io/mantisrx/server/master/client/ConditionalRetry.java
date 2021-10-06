@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.master.client;
 
+import io.mantisrx.common.metrics.Counter;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.mantisrx.common.metrics.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

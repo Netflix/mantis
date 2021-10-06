@@ -16,9 +16,8 @@
 
 package io.mantisrx.publish.config;
 
-import java.util.Map;
-
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
+import java.util.Map;
 
 
 public interface MrePublishConfiguration {

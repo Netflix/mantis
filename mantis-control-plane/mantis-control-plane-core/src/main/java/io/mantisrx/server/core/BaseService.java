@@ -18,7 +18,6 @@ package io.mantisrx.server.core;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Action0;

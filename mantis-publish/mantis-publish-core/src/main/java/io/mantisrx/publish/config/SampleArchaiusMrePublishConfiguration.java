@@ -16,13 +16,11 @@
 
 package io.mantisrx.publish.config;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.netflix.archaius.api.Property;
 import com.netflix.archaius.api.PropertyRepository;
 import io.mantisrx.publish.api.StreamType;
-import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
+import java.util.HashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

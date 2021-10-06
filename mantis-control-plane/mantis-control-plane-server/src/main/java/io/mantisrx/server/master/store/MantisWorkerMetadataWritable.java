@@ -16,18 +16,17 @@
 
 package io.mantisrx.server.master.store;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
-
+import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.core.domain.WorkerId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public class MantisWorkerMetadataWritable implements MantisWorkerMetadata {

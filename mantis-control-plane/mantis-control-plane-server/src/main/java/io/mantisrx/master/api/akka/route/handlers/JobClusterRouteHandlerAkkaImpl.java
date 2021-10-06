@@ -16,20 +16,19 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
+import static akka.pattern.PatternsCS.ask;
+
 import akka.actor.ActorRef;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
-
-import static akka.pattern.PatternsCS.ask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private static final Logger logger = LoggerFactory.getLogger(JobClusterRouteHandlerAkkaImpl.class);

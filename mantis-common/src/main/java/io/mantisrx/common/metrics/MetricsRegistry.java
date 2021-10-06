@@ -16,13 +16,12 @@
 
 package io.mantisrx.common.metrics;
 
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 
 
 public class MetricsRegistry {

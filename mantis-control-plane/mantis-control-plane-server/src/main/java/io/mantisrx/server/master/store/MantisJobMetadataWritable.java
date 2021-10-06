@@ -16,6 +16,15 @@
 
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.common.Label;
+import io.mantisrx.runtime.JobSla;
+import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.runtime.WorkerMigrationConfig;
+import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -24,16 +33,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.common.Label;
-import io.mantisrx.runtime.JobSla;
-import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.runtime.parameter.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

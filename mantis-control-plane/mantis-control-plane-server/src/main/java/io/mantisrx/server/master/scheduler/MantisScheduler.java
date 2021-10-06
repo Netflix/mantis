@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.master.scheduler;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.core.domain.WorkerId;
+import java.util.List;
+import java.util.Optional;
 
 
 public interface MantisScheduler {

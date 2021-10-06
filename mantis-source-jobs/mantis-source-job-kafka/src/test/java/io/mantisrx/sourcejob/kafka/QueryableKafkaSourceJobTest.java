@@ -19,22 +19,20 @@ package io.mantisrx.sourcejob.kafka;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import info.batey.kafka.unit.KafkaUnit;
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
 import io.mantisrx.connector.kafka.source.serde.ParserType;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import rx.schedulers.Schedulers;
 
 

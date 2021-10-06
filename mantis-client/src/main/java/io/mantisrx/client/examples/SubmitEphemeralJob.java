@@ -16,17 +16,16 @@
 
 package io.mantisrx.client.examples;
 
+import com.sampullara.cli.Args;
+import com.sampullara.cli.Argument;
+import io.mantisrx.client.MantisSSEJob;
+import io.mantisrx.common.MantisServerSentEvent;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import com.sampullara.cli.Args;
-import com.sampullara.cli.Argument;
-import io.mantisrx.client.MantisSSEJob;
-import io.mantisrx.common.MantisServerSentEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

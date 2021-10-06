@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,28 +16,26 @@
 
 package io.mantisrx.connector.kafka.sink;
 
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.netflix.spectator.api.NoopRegistry;
-import info.batey.kafka.unit.KafkaUnit;
-import io.mantisrx.connector.kafka.source.KafkaSourceTest;
-import io.mantisrx.connector.kafka.ParameterTestUtils;
-import io.mantisrx.runtime.MantisJobDurationType;
-import io.mantisrx.runtime.WorkerInfo;
-import io.mantisrx.runtime.parameter.Parameters;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.netflix.spectator.api.NoopRegistry;
+import info.batey.kafka.unit.KafkaUnit;
+import io.mantisrx.connector.kafka.ParameterTestUtils;
+import io.mantisrx.connector.kafka.source.KafkaSourceTest;
 import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.PortRequest;
+import io.mantisrx.runtime.WorkerInfo;
+import io.mantisrx.runtime.parameter.Parameters;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -18,7 +18,6 @@ package io.mantisrx.server.master.store;
 
 import java.io.IOException;
 import java.util.List;
-
 import rx.Observable;
 
 

@@ -19,7 +19,6 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;

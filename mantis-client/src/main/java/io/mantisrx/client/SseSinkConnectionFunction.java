@@ -18,13 +18,6 @@ package io.mantisrx.client;
 
 import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATOR_INCOMING_METRIC_GROUP;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import com.mantisrx.common.utils.NettyUtils;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.metrics.Counter;
@@ -35,6 +28,12 @@ import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
 import io.reactivx.mantis.operators.DropOperator;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

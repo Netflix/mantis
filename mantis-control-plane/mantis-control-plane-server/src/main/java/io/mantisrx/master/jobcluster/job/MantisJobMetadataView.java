@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.jobcluster.job.worker.WorkerState;
+import io.mantisrx.server.master.domain.DataFormatAdapter;
+import io.mantisrx.server.master.store.MantisJobMetadata;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
@@ -25,15 +29,10 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
-import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-import io.mantisrx.master.jobcluster.job.worker.WorkerState;
-import io.mantisrx.server.master.domain.DataFormatAdapter;
-import io.mantisrx.server.master.store.MantisJobMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @JsonFilter("topLevelFilter")
 public class MantisJobMetadataView {
@@ -120,7 +119,7 @@ public class MantisJobMetadataView {
         if(logger.isTraceEnabled()) { logger.trace("Exit stageFilter with false for stage {}", msmd); }
         return false;
     }
-    
+
     private boolean workerFilter(IMantisWorkerMetadata mwmd, final List<Integer> workerIndexList,
             final List<Integer> workerNumberList,
             final List<WorkerState.MetaState> workerStateList) {
@@ -136,27 +135,27 @@ public class MantisJobMetadataView {
             if(workerIndex == mwmd.getWorkerIndex()) {
                 if(logger.isTraceEnabled()) { logger.trace("Exit workerFilter2 with true for worker {}", mwmd); }
                 match = true;
-            } 
+            }
             if(!match) {
                 if(logger.isTraceEnabled()) { logger.trace("Exit workerFilter3 with true for worker {}", mwmd); }
                 return false;
             }
-        } 
-        
+        }
+
         for(Integer workerNumber : workerNumberList) {
             match = workerNumber == mwmd.getWorkerNumber();
             if(!match) {
                 if(logger.isTraceEnabled()) { logger.trace("Exit workerFilter4 with false for worker {}", mwmd); }
                 return false;
             }
-        } 
-        
+        }
+
         for(WorkerState.MetaState state : workerStateList) {
             match = false;
             try {
                 match = WorkerState.toMetaState(mwmd.getState()).equals(state);
             } catch (IllegalArgumentException e) {
-                
+
             }
         }
         if(!match) {
@@ -201,6 +200,6 @@ public class MantisJobMetadataView {
                     + ", workerMetadataList=" + workerMetadataList + "]";
         }
     }
-    
-    
+
+
 }

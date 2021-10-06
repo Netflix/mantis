@@ -20,7 +20,6 @@ import static rx.Observable.create;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
 import rx.Notification;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
@@ -316,4 +315,3 @@ public final class OnSubscribeRedo<T> implements OnSubscribe<T> {
         }
     }
 }
-

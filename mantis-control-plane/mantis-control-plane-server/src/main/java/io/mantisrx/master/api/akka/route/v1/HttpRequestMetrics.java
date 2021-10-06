@@ -16,13 +16,12 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
-import io.mantisrx.shaded.com.google.common.collect.Sets;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
-
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.collect.Sets;
 import java.util.Set;
 
 public class HttpRequestMetrics {

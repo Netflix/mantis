@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,14 @@
 
 package io.mantisrx.connector.publish.source.http;
 
-import java.util.List;
-import java.util.Map;
-
 import io.mantisrx.connector.publish.core.EventFilter;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.sink.ServerSentEventsSink;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.sink.predicate.Predicate;
+import java.util.List;
+import java.util.Map;
 import rx.Observable;
 import rx.functions.Func2;
 

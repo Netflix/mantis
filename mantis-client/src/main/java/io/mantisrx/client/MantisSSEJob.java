@@ -16,10 +16,6 @@
 
 package io.mantisrx.client;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -29,6 +25,9 @@ import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.master.client.ConditionalRetry;
 import io.mantisrx.server.master.client.NoSuchJobException;
 import io.reactivx.mantis.operators.DropOperator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

@@ -18,6 +18,15 @@ package io.mantisrx.publish.internal.discovery;
 
 import static com.netflix.mantis.discovery.proto.AppJobClustersMap.DEFAULT_APP_KEY;
 
+import com.netflix.mantis.discovery.proto.AppJobClustersMap;
+import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
+import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.internal.discovery.mantisapi.MantisApiClient;
+import io.mantisrx.publish.internal.exceptions.NonRetryableException;
+import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -28,16 +37,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
-import com.netflix.spectator.api.Counter;
-import com.netflix.spectator.api.Registry;
-import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.internal.discovery.mantisapi.MantisApiClient;
-import io.mantisrx.publish.internal.exceptions.NonRetryableException;
-import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

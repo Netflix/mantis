@@ -17,7 +17,6 @@
 package io.mantisrx.master.events;
 
 import akka.actor.ActorRef;
-import io.mantisrx.master.api.akka.route.proto.JobStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

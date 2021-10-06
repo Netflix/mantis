@@ -16,11 +16,10 @@
 
 package io.mantisrx.publish.internal.discovery.proto;
 
-import java.util.List;
-
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 
 /**

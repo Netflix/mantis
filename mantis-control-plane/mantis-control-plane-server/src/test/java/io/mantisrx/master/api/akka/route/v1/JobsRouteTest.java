@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.http.javadsl.ConnectHttp;
@@ -26,9 +30,9 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
 import akka.stream.javadsl.Flow;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
@@ -47,10 +51,8 @@ import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.events.*;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
-import io.mantisrx.master.scheduler.FakeMantisScheduler;
-import io.mantisrx.master.JobClustersManagerActor;
-import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
@@ -59,25 +61,21 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-
 import io.mantisrx.server.master.scheduler.MantisScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import org.testng.util.Strings;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
-
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import org.testng.util.Strings;
 
 
 public class JobsRouteTest extends RouteTestBase {

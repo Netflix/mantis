@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.core.zookeeper;
 
-import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -26,6 +25,7 @@ import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
+import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.imps.GzipCompressionProvider;

@@ -16,25 +16,17 @@
 
 package io.mantisrx.master.api.akka.route;
 
+import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
+import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.Message;
-//import com.google.protobuf.util.JsonFormat;
-import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
-//import io.mantisrx.master.api.proto.JobArchivedWorkersResponse;
-//import io.mantisrx.master.core.proto.WorkerMetadata;
-import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
-import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import org.junit.Ignore;
+import org.junit.Test;
 
-import static org.junit.Assert.fail;
 
 public class JacksonTest {
     @Test

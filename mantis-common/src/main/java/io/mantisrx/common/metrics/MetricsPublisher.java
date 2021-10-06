@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;

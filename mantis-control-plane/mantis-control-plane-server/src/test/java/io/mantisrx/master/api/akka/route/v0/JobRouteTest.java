@@ -16,6 +16,14 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -29,12 +37,10 @@ import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpMethods;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.MediaType;
 import akka.http.javadsl.model.MediaTypes;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
@@ -42,13 +48,13 @@ import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
-import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
-import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaImpl;
-import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
 import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
@@ -56,7 +62,6 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
-//import io.mantisrx.master.api.proto.JobArchivedWorkersResponse;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -81,13 +86,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import rx.Observable;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
@@ -99,14 +98,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import rx.Observable;
 
 public class JobRouteTest {
     private final static Logger logger = LoggerFactory.getLogger(JobRouteTest.class);

@@ -19,10 +19,9 @@ package io.mantisrx.sourcejob.kafka.sink;
 import static io.mantisrx.sourcejob.kafka.core.utils.SourceJobConstants.CRITERION_PARAM_NAME;
 import static io.mantisrx.sourcejob.kafka.core.utils.SourceJobConstants.SUBSCRIPTION_ID_PARAM_NAME;
 
+import io.mantisrx.runtime.Context;
 import java.util.List;
 import java.util.Map;
-
-import io.mantisrx.runtime.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func2;

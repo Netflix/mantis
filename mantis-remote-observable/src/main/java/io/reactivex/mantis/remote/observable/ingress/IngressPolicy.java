@@ -16,9 +16,8 @@
 
 package io.reactivex.mantis.remote.observable.ingress;
 
-import java.util.List;
-
 import io.reactivex.mantis.remote.observable.RemoteRxEvent;
+import java.util.List;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 
 

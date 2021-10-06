@@ -16,10 +16,9 @@
 
 package io.mantisrx.common.metrics.spectator;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Spectator;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

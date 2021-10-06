@@ -16,29 +16,24 @@
 
 package io.reactivex.mantis.network.push;
 
+import com.mantisrx.common.utils.MantisSSEConstants;
+import com.netflix.spectator.api.BasicTag;
+import io.mantisrx.common.compression.CompressionUtils;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.mql.jvm.core.Query;
+import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
+import io.mantisrx.mql.shaded.clojure.lang.IFn;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.WriteBufferWaterMark;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import io.mantisrx.common.compression.CompressionUtils;
-import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
-import io.mantisrx.mql.shaded.clojure.lang.IFn;
-import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.mql.jvm.core.Query;
-import io.netty.channel.WriteBufferWaterMark;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.mantisrx.common.utils.MantisSSEConstants;
-
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelOption;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerRequest;
@@ -46,6 +41,8 @@ import mantis.io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import mantis.io.reactivex.netty.protocol.http.server.RequestHandler;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
 import mantis.io.reactivex.netty.server.RxServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;

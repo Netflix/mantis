@@ -16,9 +16,8 @@
 
 package io.reactivex.mantis.remote.observable.reconciliator;
 
-import java.util.Set;
-
 import io.mantisrx.common.network.Endpoint;
+import java.util.Set;
 import rx.Observable;
 
 

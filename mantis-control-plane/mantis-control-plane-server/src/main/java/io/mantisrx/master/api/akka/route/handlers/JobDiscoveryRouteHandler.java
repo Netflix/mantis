@@ -16,12 +16,11 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
+import static io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto.SchedInfoResponse;
+
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-
 import java.util.concurrent.CompletionStage;
-
-import static io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto.SchedInfoResponse;
 
 public interface JobDiscoveryRouteHandler {
     CompletionStage<SchedInfoResponse> schedulingInfoStream(final JobClusterManagerProto.GetJobSchedInfoRequest request,

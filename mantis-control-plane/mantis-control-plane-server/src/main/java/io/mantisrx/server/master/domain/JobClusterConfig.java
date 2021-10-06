@@ -17,13 +17,12 @@
 
 package io.mantisrx.server.master.domain;
 
-import java.util.Objects;
-
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
-import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import java.util.Objects;
 
 
 public class JobClusterConfig {

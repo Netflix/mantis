@@ -16,10 +16,6 @@
 
 package com.netflix.mantis.samples.stage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.mantis.samples.proto.RequestAggregation;
 import com.netflix.mantis.samples.proto.RequestEvent;
 import io.mantisrx.common.MantisGroup;
@@ -30,6 +26,9 @@ import io.mantisrx.runtime.computation.GroupToScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.observables.GroupedObservable;

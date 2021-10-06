@@ -16,6 +16,12 @@
 
 package io.mantisrx.master.api.akka.route.utils;
 
+import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValue;
+import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValueAsBool;
+import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValueAsInt;
+import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValuesAsInt;
+import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValuesAsMetaState;
+
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
@@ -25,18 +31,11 @@ import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValue;
-import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValueAsBool;
-import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValueAsInt;
-import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValuesAsInt;
-import static io.mantisrx.master.api.akka.route.utils.QueryParamUtils.paramValuesAsMetaState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobRouteUtils {
     private static final Logger logger = LoggerFactory.getLogger(JobRouteUtils.class);

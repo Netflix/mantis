@@ -17,14 +17,11 @@
 package io.mantisrx.master.api.akka.route.pagination;
 
 import akka.http.javadsl.model.Uri;
+import com.netflix.spectator.impl.Preconditions;
+import io.mantisrx.master.api.akka.route.v1.ParamName;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.shaded.com.google.common.collect.Maps;
-import com.netflix.spectator.impl.Preconditions;
-import io.mantisrx.master.api.akka.route.v1.ParamName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -34,6 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /***
  * Generic ListObject to support pagination, sorting

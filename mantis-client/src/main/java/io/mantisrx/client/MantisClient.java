@@ -16,12 +16,6 @@
 
 package io.mantisrx.client;
 
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
-
-//import io.mantisrx.master.api.proto.CreateJobClusterRequest;
-//import io.mantisrx.master.api.proto.UpdateJobClusterRequest;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
@@ -30,6 +24,9 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import io.reactivex.mantis.remote.observable.EndpointChange;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

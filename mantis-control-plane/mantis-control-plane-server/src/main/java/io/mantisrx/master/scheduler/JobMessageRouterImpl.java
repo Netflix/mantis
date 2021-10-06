@@ -26,7 +26,7 @@ public class JobMessageRouterImpl implements JobMessageRouter {
 	public JobMessageRouterImpl(final ActorRef jobClusterManagerActorRef) {
 		this.jobClusterManagerRef = jobClusterManagerActorRef;
 	}
-	
+
 	@Override
 	public boolean routeWorkerEvent(final WorkerEvent workerEvent) {
 		jobClusterManagerRef.tell(workerEvent, ActorRef.noSender());

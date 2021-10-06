@@ -16,13 +16,6 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.mantisrx.common.codec.Encoder;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
@@ -33,6 +26,12 @@ import io.reactivex.mantis.remote.observable.filter.ServerSideFilters;
 import io.reactivex.mantis.remote.observable.slotting.ConsistentHashing;
 import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Notification;

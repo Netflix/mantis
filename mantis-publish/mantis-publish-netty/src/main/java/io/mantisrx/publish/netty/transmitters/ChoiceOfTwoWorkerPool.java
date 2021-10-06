@@ -16,6 +16,16 @@
 
 package io.mantisrx.publish.netty.transmitters;
 
+import com.netflix.mantis.discovery.proto.MantisWorker;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.impl.AtomicDouble;
+import io.mantisrx.publish.EventChannel;
+import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.config.MrePublishConfiguration;
+import io.mantisrx.publish.internal.exceptions.NonRetryableException;
+import io.mantisrx.publish.internal.metrics.SpectatorUtils;
+import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
+import io.netty.channel.Channel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,17 +37,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
-
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import io.mantisrx.publish.EventChannel;
-import io.mantisrx.publish.api.Event;
-import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.internal.exceptions.NonRetryableException;
-import io.mantisrx.publish.internal.metrics.SpectatorUtils;
-import io.mantisrx.publish.netty.pipeline.HttpEventChannel;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.impl.AtomicDouble;
-import io.netty.channel.Channel;
 
 
 /**

@@ -16,12 +16,6 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import java.net.URL;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.runtime.JobSla;
@@ -30,6 +24,11 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import java.net.URL;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 /**

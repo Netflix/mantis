@@ -16,13 +16,12 @@
 
 package io.mantisrx.server.master;
 
-import java.util.List;
-import java.util.Map;
-
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import java.util.List;
+import java.util.Map;
 
 
 public interface VirtualMachineMasterService {

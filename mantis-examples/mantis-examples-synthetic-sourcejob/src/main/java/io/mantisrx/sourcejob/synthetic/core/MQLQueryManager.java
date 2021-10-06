@@ -16,10 +16,9 @@
 
 package io.mantisrx.sourcejob.synthetic.core;
 
+import io.mantisrx.mql.jvm.core.Query;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
-
-import io.mantisrx.mql.jvm.core.Query;
 
 
 public class MQLQueryManager {
@@ -64,5 +63,3 @@ public class MQLQueryManager {
         System.out.println(qm.getRegisteredQueries());
     }
 }
-
-

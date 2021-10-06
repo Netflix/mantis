@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package io.mantisrx.connector.publish.core;
 
 import static io.mantisrx.connector.publish.core.ObjectUtils.checkNotNull;
 
+import io.mantisrx.publish.proto.MantisServerSubscription;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import io.mantisrx.publish.proto.MantisServerSubscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

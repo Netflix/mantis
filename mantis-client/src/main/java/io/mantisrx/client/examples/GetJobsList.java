@@ -16,15 +16,14 @@
 
 package io.mantisrx.client.examples;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisClient;
 import io.mantisrx.runtime.MantisJobState;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 
 public class GetJobsList {

@@ -25,7 +25,6 @@ import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 

@@ -16,27 +16,15 @@
 
 package io.mantisrx.master.jobcluster;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
-import io.mantisrx.server.master.domain.JobDefinition;
-import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.persistence.MantisJobStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.mantisrx.shaded.com.google.common.collect.Lists;
-
-import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
-import io.mantisrx.master.jobcluster.job.JobState;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListJobCriteria;
-import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
-import rx.Observable;
-
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+
+import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobId;
+import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobListHelper {
     private static final Logger logger = LoggerFactory.getLogger(JobListHelper.class);

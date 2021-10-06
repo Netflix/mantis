@@ -18,9 +18,8 @@ package io.mantisrx.master.api.akka.route.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.server.core.JobSchedulingInfo;
-import rx.Observable;
-
 import java.util.Optional;
+import rx.Observable;
 
 public class JobDiscoveryRouteProto {
     public static class SchedInfoResponse extends BaseResponse {

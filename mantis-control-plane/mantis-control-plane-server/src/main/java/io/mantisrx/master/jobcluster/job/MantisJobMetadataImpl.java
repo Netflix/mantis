@@ -16,36 +16,33 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.Instant;
-import java.util.*;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
-import io.mantisrx.master.jobcluster.job.worker.JobWorker;
-import io.mantisrx.server.master.domain.DataFormatAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.mantisrx.common.Label;
+import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobStateChangeException;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.Instant;
+import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @JsonFilter("topLevelFilter")
 public class MantisJobMetadataImpl implements IMantisJobMetadata {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataImpl.class);
     private final JobId jobId;
     private final long submittedAt;
@@ -55,7 +52,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private JobState state;
     private int nextWorkerNumberToUse;
     private final JobDefinition jobDefinition;
-    
+
     @JsonIgnore
     private final Map<Integer, IMantisStageMetadata> stageMetadataMap = new HashMap<>();
     @JsonIgnore
@@ -73,7 +70,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 
     ) {
         this.jobId = jobId;
-        
+
         this.submittedAt = submittedAt;
         this.startedAt = startedAt;
         this.state = state==null? JobState.Accepted : state;
@@ -81,7 +78,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 
         this.jobDefinition = jobDefinition;
     }
-    
+
 
     @Override
     public JobId getJobId() {
@@ -95,11 +92,11 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     public Instant getSubmittedAtInstant() {
         return Instant.ofEpochMilli(submittedAt);
     }
-    
+
     public long getSubmittedAt() {
         return submittedAt;
     }
-    
+
     @Override
     public long getSubscriptionTimeoutSecs() {
         return this.jobDefinition.getSubscriptionTimeoutSecs();
@@ -108,12 +105,12 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     public int getNextWorkerNumberToUse() {
         return nextWorkerNumberToUse;
     }
-    
+
     public void setNextWorkerNumberToUse(int n, MantisJobStore store) throws Exception{
         this.nextWorkerNumberToUse = n;
         store.updateJob(this);
     }
-  
+
     @Override
     public JobState getState() {
         return state;
@@ -122,24 +119,24 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     public JobDefinition getJobDefinition() {
     	return this.jobDefinition;
     }
-    
+
     @Override
 	public String getUser() {
-		
+
 		return this.jobDefinition.getUser();
 	}
 
 	@Override
 	public Optional<JobSla> getSla() {
-		
+
 		return Optional.ofNullable(this.jobDefinition.getJobSla());
 	}
 
-	
+
 	@Override
 	public List<Parameter> getParameters() {
 		return this.jobDefinition.getParameters();
-		
+
 	}
 
 	@Override
@@ -149,9 +146,9 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 	@JsonIgnore
 	@Override
 	public int getTotalStages() {
-		
+
 		return this.getJobDefinition().getNumberOfStages();
-		
+
 	}
 
 
@@ -159,7 +156,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     @JsonIgnore
 	@Override
 	public String getArtifactName() {
-		
+
 		return this.jobDefinition.getArtifactName();
 	}
 
@@ -170,16 +167,16 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         this.state = state;
         store.updateJob(this);
     }
-    
-    
+
+
     void setStartedAt(long startedAt, MantisJobStore store) throws Exception {
         logger.info("Updating job start time  to {} ", startedAt);
 		this.startedAt = startedAt;
 		store.updateJob(this);
-		
+
 	}
 
-    
+
     /**
      * Add job stage if absent, returning true if it was actually added.
      * @param msmd The stage's metadata object.
@@ -193,16 +190,16 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         });
         return result;
     }
-    
+
     @JsonIgnore
     public Map<Integer,? extends IMantisStageMetadata> getStageMetadata() {
         return Collections.unmodifiableMap(stageMetadataMap);
     }
-    
+
     public final Map<Integer, Integer> getWorkerNumberToStageMap() {
     	return Collections.unmodifiableMap(this.workerNumberToStageMap);
     }
-    
+
     @JsonIgnore
     public Optional<IMantisStageMetadata> getStageMetadata(int stageNum) {
         return Optional.ofNullable(stageMetadataMap.get(stageNum));
@@ -238,7 +235,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         }
         return result;
     }
-    
+
      public boolean addWorkerMetadata(int stageNum, JobWorker newWorker)
             throws InvalidJobException {
          if(logger.isTraceEnabled()) { logger.trace("Adding workerMetadata {} for stage {}", stageNum, newWorker); }
@@ -274,7 +271,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         return Optional.empty();
         //throw new InvalidJobException(jobId, stageNumber, workerIndex);
     }
-    
+
     @JsonIgnore
     public Optional<JobWorker> getWorkerByNumber(int workerNumber) throws InvalidJobException {
         Integer stageNumber = workerNumberToStageMap.get(workerNumber);
@@ -297,17 +294,17 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
             if(max < id)  max = id;
         return max;
     }
-    
+
     @JsonIgnore
    	@Override
    	public SchedulingInfo getSchedulingInfo() {
    		return this.jobDefinition.getSchedulingInfo();
-   		
+
    	}
 
    	@Override
    	public long getMinRuntimeSecs() {
-   		
+
    		return this.jobDefinition.getJobSla().getMinRuntimeSecs();
    	}
    	/**
@@ -315,7 +312,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
    	 */
    	@Deprecated @Override
    	public URL getJobJarUrl() {
-   		
+
    		try {
             return DataFormatAdapter.generateURL(getArtifactName());
    		} catch (MalformedURLException e) {
@@ -323,7 +320,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
    			throw new RuntimeException(e);
    		}
    	}
-  
+
    	@Override
 	public Optional<Instant> getStartedAtInstant() {
 		if(this.startedAt == DEFAULT_STARTED_AT_EPOCH) {
@@ -331,9 +328,9 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 		} else {
 		    return Optional.of(Instant.ofEpochMilli(startedAt));
 		}
-		
+
 	}
-   	
+
 	public long getStartedAt() {
    	    return this.startedAt;
    	}
@@ -353,7 +350,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 
     public static class Builder {
     	JobId jobId;
-        
+
         String user;
         JobDefinition jobDefinition;
         long submittedAt;
@@ -363,26 +360,26 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         int nextWorkerNumberToUse = 1;
 
     	public Builder() {
-    		
+
     	}
-    	
+
     	public Builder withJobId(JobId jobId) {
     		this.jobId = jobId;
     		return this;
     	}
-    	
-    	
-    	
+
+
+
     	public Builder withJobDefinition(JobDefinition jD) {
     		this.jobDefinition = jD;
     		return this;
     	}
-    	
+
     	public Builder withSubmittedAt(long submittedAt) {
     		this.submittedAt = submittedAt;
     		return this;
     	}
-    	
+
     	public Builder withSubmittedAt(Instant submittedAt) {
             this.submittedAt = submittedAt.toEpochMilli();
             return this;
@@ -392,22 +389,22 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     	    this.startedAt = startedAt.toEpochMilli();
     	    return this;
         }
-    	
+
     	public Builder withJobState(JobState state) {
     		this.state = state;
     		return this;
     	}
-    	
 
-    	
+
+
     	public Builder withNextWorkerNumToUse(int workerNum) {
     		this.nextWorkerNumberToUse = workerNum;
     		return this;
     	}
-    	
+
     	public Builder from(MantisJobMetadataImpl mJob) {
     		this.jobId = mJob.getJobId();
-    		
+
     		this.jobDefinition = mJob.getJobDefinition();
     		this.submittedAt = mJob.getSubmittedAt();
     		this.state = mJob.getState();
@@ -419,8 +416,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     	public MantisJobMetadataImpl build() {
     		return new MantisJobMetadataImpl(jobId, submittedAt, startedAt, jobDefinition, state, nextWorkerNumberToUse);
     	}
-    	
-    	
+
+
     }
 
 

@@ -16,22 +16,21 @@
 
 package io.mantisrx.publish.netty.pipeline;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.mantis.discovery.proto.MantisWorker;
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.Timer;
 import io.mantisrx.publish.EventChannel;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
 import io.mantisrx.publish.netty.proto.MantisEvent;
-import com.netflix.spectator.api.Counter;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.Timer;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.Future;
+import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

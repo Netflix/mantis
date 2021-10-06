@@ -16,21 +16,20 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static akka.http.javadsl.server.PathMatchers.segment;
+
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.Route;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.vm.AgentClusterOperations;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
-
-import static akka.http.javadsl.server.PathMatchers.segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /***
  * Agent clusters route

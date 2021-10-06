@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.master.store;
 
-import java.util.Collection;
-import java.util.List;
-
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import java.util.Collection;
+import java.util.List;
 
 
 public interface MantisStageMetadata {

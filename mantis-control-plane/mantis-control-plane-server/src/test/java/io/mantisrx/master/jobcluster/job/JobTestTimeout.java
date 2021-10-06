@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //package io.mantisrx.master.jobcluster.job;
 //
 //import static org.junit.Assert.assertFalse;
@@ -68,7 +83,7 @@
 //
 //		storageProvider = new SimpleCachedFileStorageProvider();
 //		jobStore = new MantisJobStore(storageProvider);
-//	
+//
 //
 //	}
 //
@@ -79,9 +94,9 @@
 //		system = null;
 //	}
 //
-//	
-//	
-//	
+//
+//
+//
 //	@Test
 //	public void testHasTimedout() {
 //		long subsTimeout = 30;
@@ -92,27 +107,27 @@
 //		st.onJobStart(now);
 //		// less than min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(3)));
-//		
+//
 //		// equal to min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(5)));
-//		
+//
 //		// greater than min runtime and but subscription time out not hit
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		// if it is subscribed then min runtime does not matter
 //		st.onSubscribe();
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		st.onUnSubscribe(now.plusSeconds(10));
-//		// subs timeout timer will now start 
+//		// subs timeout timer will now start
 //		// timeout will happen at t + 10 + 30 seconds
 //		assertFalse(st.shouldTerminate(now.plusSeconds(32)));
-//		
+//
 //		assertTrue(st.shouldTerminate(now.plusSeconds(40)));
-//		
+//
 //		assertTrue(st.shouldTerminate(now.plusSeconds(42)));
 //	}
-//	
+//
 //	@Test
 //	public void testMinRuntimeGreater() {
 //		long subsTimeout = 30;
@@ -123,27 +138,27 @@
 //		st.onJobStart(now);
 //		// less than min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(35)));
-//		
+//
 //		// equal to min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(40)));
-//		
+//
 //		// greater than min runtime and  subscription time out  hit
 //		assertTrue(st.shouldTerminate(now.plusSeconds(47)));
-//		
+//
 //		// if it is subscribed then min runtime does not matter
 //		st.onSubscribe();
 //		assertFalse(st.shouldTerminate(now.plusSeconds(47)));
-//		
+//
 //		st.onUnSubscribe(now.plusSeconds(50));
-//		// subs timeout timer will now start 
+//		// subs timeout timer will now start
 //		// timeout will happen at t + 50 + 30 seconds
 //		assertFalse(st.shouldTerminate(now.plusSeconds(62)));
-//		
+//
 //		assertTrue(st.shouldTerminate(now.plusSeconds(80)));
-//		
+//
 //		assertTrue(st.shouldTerminate(now.plusSeconds(82)));
 //	}
-//	
+//
 //	@Test
 //	public void testHasNoTimeoutSet() {
 //		long subsTimeout = Long.MAX_VALUE;
@@ -154,27 +169,27 @@
 //		st.onJobStart(now);
 //		// less than min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(3)));
-//		
+//
 //		// equal to min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(5)));
-//		
+//
 //		// greater than min runtime and but subscription time out not hit
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		// if it is subscribed then min runtime does not matter
 //		st.onSubscribe();
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		st.onUnSubscribe(now.plusSeconds(10));
-//		// subs timeout timer will now start 
+//		// subs timeout timer will now start
 //		// timeout will happen at t + 10 + 30 seconds
 //		assertFalse(st.shouldTerminate(now.plusSeconds(32)));
-//		
+//
 //		assertFalse(st.shouldTerminate(now.plusSeconds(40)));
-//		
+//
 //		assertFalse(st.shouldTerminate(now.plusSeconds(42)));
 //	}
-//	
+//
 //	@Test
 //	public void testHasMinRuntimeTimeoutSetOnly() {
 //		long subsTimeout = 30;
@@ -186,27 +201,27 @@
 //		st.onJobStart(now);
 //		// less than min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(3)));
-//		
+//
 //		// equal to min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(5)));
-//		
+//
 //		// greater than min runtime and but subscription time out not hit
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		// if it is subscribed then min runtime does not matter
 //		st.onSubscribe();
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		st.onUnSubscribe(now.plusSeconds(10));
-//		// subs timeout timer will now start 
+//		// subs timeout timer will now start
 //		// timeout will happen at t + 10 + 30 seconds
 //		assertFalse(st.shouldTerminate(now.plusSeconds(32)));
-//		
+//
 //		assertTrue(st.shouldTerminate(now.plusSeconds(40)));
-//		
+//
 //		assertTrue(st.shouldTerminate(now.plusSeconds(42)));
 //	}
-//	
+//
 //	@Test
 //	public void testHasMaxRuntimeTimeout() {
 //		long subsTimeout = 30;
@@ -218,22 +233,22 @@
 //		st.onJobStart(now);
 //		// less than min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(3)));
-//		
+//
 //		// equal to min runtime will not timeout
 //		assertFalse(st.shouldTerminate(now.plusSeconds(5)));
-//		
+//
 //		// greater than min runtime and but subscription time out not hit
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
+//
 //		// if it is subscribed then min runtime does not matter
 //		st.onSubscribe();
 //		assertFalse(st.shouldTerminate(now.plusSeconds(7)));
-//		
-//		// max runtime exceeded 
-//		
+//
+//		// max runtime exceeded
+//
 //		assertFalse(st.shouldTerminate(now.plusSeconds(42)));
 //	}
-//	
+//
 //	public void testMaxLessThanMinRuntime() {
 //		long subsTimeout = 30;
 //		long minRuntime = 5;
@@ -243,9 +258,9 @@
 //			SubscriptionTracker st = new SubscriptionTracker(subsTimeout, minRuntime, maxRuntime);
 //			fail();
 //		} catch (IllegalArgumentException e) {
-//			
+//
 //		}
-//		
-//		
+//
+//
 //	}
 //}

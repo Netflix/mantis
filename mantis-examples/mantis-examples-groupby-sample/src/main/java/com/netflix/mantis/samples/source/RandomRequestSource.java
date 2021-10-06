@@ -16,12 +16,11 @@
 
 package com.netflix.mantis.samples.source;
 
-import java.util.concurrent.TimeUnit;
-
 import com.netflix.mantis.samples.proto.RequestEvent;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.andreinc.mockneat.MockNeat;
 import rx.Observable;

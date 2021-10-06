@@ -19,7 +19,6 @@ package io.mantisrx.master.api.akka.route.pagination;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;

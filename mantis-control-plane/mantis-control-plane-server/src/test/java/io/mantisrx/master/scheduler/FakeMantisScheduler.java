@@ -16,12 +16,7 @@
 
 package io.mantisrx.master.scheduler;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
 import akka.actor.ActorRef;
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.common.WorkerPorts;
@@ -35,6 +30,10 @@ import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class FakeMantisScheduler implements MantisScheduler {
 

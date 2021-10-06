@@ -16,12 +16,11 @@
 
 package io.mantisrx.server.master.store;
 
-import java.util.List;
-import java.util.Optional;
-
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
+import java.util.List;
+import java.util.Optional;
 
 
 /**
