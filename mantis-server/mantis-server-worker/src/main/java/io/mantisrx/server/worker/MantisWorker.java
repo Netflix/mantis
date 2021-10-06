@@ -125,7 +125,8 @@ public class MantisWorker extends BaseService {
                             new MantisMasterClientApi(new LocalMasterMonitor(getInitialMasterDescription())),
                             config,
                             workerMetricsClient),
-                    getJobProviderClass()));
+                    getJobProviderClass(),
+                    null));
         } else {
             mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
             CuratorService curatorService = new CuratorService(config, getInitialMasterDescription());
@@ -137,7 +138,8 @@ public class MantisWorker extends BaseService {
                     tasksStatusSubject,
                     new WorkerExecutionOperationsNetworkStage(vmTaskStatusSubject,
                             new MantisMasterClientApi(masterMonitor), config, workerMetricsClient),
-                    getJobProviderClass()));
+                    getJobProviderClass(),
+                    null));
         }
     }
 
