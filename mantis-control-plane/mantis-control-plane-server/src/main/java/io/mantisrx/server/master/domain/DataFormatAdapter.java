@@ -484,11 +484,14 @@ public class DataFormatAdapter {
     }
 
     private static StageSchedulingInfo generateStageSchedulingInfo(IMantisStageMetadata mantisStageMetadata) {
-        StageSchedulingInfo stageSchedulingInfo = new StageSchedulingInfo(mantisStageMetadata.getNumWorkers(),
-                mantisStageMetadata.getMachineDefinition(),mantisStageMetadata.getHardConstraints(),
-                mantisStageMetadata.getSoftConstraints(),mantisStageMetadata.getScalingPolicy(),
-                mantisStageMetadata.getScalable());
-        return stageSchedulingInfo;
+        return StageSchedulingInfo.builder()
+                .numberOfInstances(mantisStageMetadata.getNumWorkers())
+                .machineDefinition(mantisStageMetadata.getMachineDefinition())
+                .hardConstraints(mantisStageMetadata.getHardConstraints())
+                .softConstraints(mantisStageMetadata.getSoftConstraints())
+                .scalingPolicy(mantisStageMetadata.getScalingPolicy())
+                .scalable(mantisStageMetadata.getScalable())
+                .build();
     }
 
     private static SchedulingInfo generateSchedulingInfo(List<IMantisStageMetadata> convertedStageList) {

@@ -25,6 +25,7 @@ buildscript {
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:9.4.2'
         classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
+        classpath "io.freefair.gradle:lombok-plugin:5.3.3.3"
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
         classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
         classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
@@ -53,6 +54,10 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
+
+    // Apply lombok plugin and disabled the default config file generation.
+    apply plugin: "io.freefair.lombok"
+    generateLombokConfig.enabled = false
 
     group = 'io.mantisrx'
 

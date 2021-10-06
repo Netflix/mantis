@@ -51,6 +51,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -74,6 +75,7 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
 import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
@@ -331,11 +333,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         LOGGER.info("Job {} is autoscaled setting up Job Master", this.jobId);
         if (schedulingInfo.forStage(0) == null) {
             // create stage 0 schedulingInfo only if not already provided
-            final StageSchedulingInfo stageSchedulingInfo =
-                    new StageSchedulingInfo(1, getJobMasterMachineDef(),
-                            null, null, // for now, there are no hard or soft constraints
-                            null, false); // jobMaster stage itself is not scaled
-            schedulingInfo.addJobMasterStage(stageSchedulingInfo);
+            // jobMaster stage itself is not scaled
+            schedulingInfo.addJobMasterStage(StageSchedulingInfo.builder()
+                    .numberOfInstances(1)
+                    .machineDefinition(getJobMasterMachineDef())
+                    .build());
 
             // Update jobMetadata with the new stage added
             mantisJobMetaData = new MantisJobMetadataImpl.Builder()
@@ -434,6 +436,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // get Job Details
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
+                // process request to get the given job definition updated with this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
+
                 // list active workers request
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
 
@@ -498,6 +503,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // EXPECTED MESSAGES BEGIN//
                 // get Job Details
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
+
+                // process request to get the given job definition updated by this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
 
                 // list active workers request
                 .match(ListWorkersRequest.class, this::onListActiveWorkers)
@@ -579,6 +587,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // EXPECTED MESSAGES BEGIN//
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
 
+                // process request to get the given job definition updated by this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
+
                 // Worker related events
                 .match(WorkerEvent.class, r -> processWorkerEvent(r))
                 // explicit resubmit worker
@@ -632,6 +643,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 // EXPECTED MESSAGES BEGIN//
                 // get Job Details
                 .match(GetJobDetailsRequest.class, this::onGetJobDetails)
+                // process request to get the given job definition updated by this job actor.
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class, this::onGetJobDefinitionUpdatedFromJobActor)
                 // Worker related events
                 .match(WorkerEvent.class, r -> processWorkerEvent(r))
                 // Heart beat accounting timers
@@ -691,6 +704,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .match(GetJobDetailsRequest.class, (x) -> getSender().tell(
                         new GetJobDetailsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(
                                 x.toString(), this.jobId.getId(), state), empty()), getSelf()))
+
+                // no invalid metadata to use, return intermediate job definition directly
+                .match(GetJobDefinitionUpdatedFromJobActorRequest.class,
+                        (r) -> getSender().tell(new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
+                                    r.requestId, SUCCESS, "", r.getUser(), r.getJobDefinition(),
+                                        r.isAutoResubmit(), r.isQuickSubmit(), r.getOriginalSender()),
+                                getSelf()))
 
                 // Worker related events
                 .match(WorkerEvent.class, (x) -> LOGGER.warn(genUnexpectedMsg(x.toString(), this.jobId.getId(), state)))
@@ -768,6 +788,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         ActorRef sender = getSender();
 
         sender.tell(new GetJobDetailsResponse(r.requestId, SUCCESS, "", of(getJobDetails())), getSelf());
+
+    }
+
+    public void onGetJobDefinitionUpdatedFromJobActor(GetJobDefinitionUpdatedFromJobActorRequest r) {
+        ActorRef sender = getSender();
+        sender.tell(
+                getIntermediateJobDefinition(r),
+                getSelf());
 
     }
 
@@ -1114,6 +1142,31 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     public IMantisJobMetadata getJobDetails() {
         LOGGER.debug("Returning job Details {}", this.mantisJobMetaData);
         return this.mantisJobMetaData;
+    }
+
+    public JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse getIntermediateJobDefinition(GetJobDefinitionUpdatedFromJobActorRequest r) {
+        LOGGER.debug("Returning intermediate job Details {}", this.mantisJobMetaData);
+        final JobDefinition givenJobDefn = r.getJobDefinition();
+        final boolean forceInheritance = r.isQuickSubmit();
+        IMantisJobMetadata lastJobMeta = this.mantisJobMetaData;
+        JobDefinition.Builder jobDefnBuilder = new JobDefinition.Builder().fromWithInstanceCountInheritance(
+                givenJobDefn,
+                forceInheritance,
+                (stageId) -> lastJobMeta.getStageMetadata(stageId).map(IMantisStageMetadata::getNumWorkers));
+
+        try {
+            JobDefinition mergedJobDefn = jobDefnBuilder.build();
+            LOGGER.debug("Returning intermediate job definition: {}", mergedJobDefn);
+            return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
+                    r.requestId, SUCCESS, "", r.getUser(), mergedJobDefn, r.isAutoResubmit(),
+                    r.isQuickSubmit(), r.getOriginalSender());
+        }
+        catch (io.mantisrx.runtime.command.InvalidJobException ije) {
+            LOGGER.error("Failed to build job definition with inheritance:", ije);
+            return new JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse(
+                    r.requestId, SERVER_ERROR, ije.getMessage(), r.getUser(), null, r.isAutoResubmit(),
+                    r.isQuickSubmit(), r.getOriginalSender());
+        }
     }
 
     /**

@@ -42,6 +42,8 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import lombok.Getter;
+import lombok.ToString;
 import rx.subjects.BehaviorSubject;
 
 import java.time.Instant;
@@ -1634,7 +1636,6 @@ public class JobClusterManagerProto {
         }
     }
 
-
     public static final class GetJobDetailsRequest extends BaseRequest {
         private final String user;
         private final JobId jobId;
@@ -1676,6 +1677,40 @@ public class JobClusterManagerProto {
         }
     }
 
+    /**
+     * This request is sent to a job actor asking the job actor to use its current state to merge live metadata e.g. stage
+     * instance count to the given job definition object for job submission process to inherit from target job actor.
+     */
+    @Getter
+    @ToString
+    public static final class GetJobDefinitionUpdatedFromJobActorRequest extends BaseRequest {
+        private final String user;
+        private final JobId jobId;
+        private final JobDefinition jobDefinition;
+        private final boolean isQuickSubmit;
+        private final boolean isAutoResubmit;
+        private final ActorRef originalSender;
+
+        public GetJobDefinitionUpdatedFromJobActorRequest(final String user,
+                                                          final JobId jobId,
+                                                          final JobDefinition jobDefinition,
+                                                          final boolean isQuickSubmit,
+                                                          final boolean isAutoResubmit,
+                                                          final ActorRef originalSender) {
+            super();
+            Preconditions.checkNotNull(user, "user");
+            Preconditions.checkNotNull(jobId, "jobId");
+            Preconditions.checkNotNull(originalSender, "originalSender");
+            Preconditions.checkNotNull(jobDefinition, "jobDefinition");
+            this.jobId = jobId;
+            this.user = user;
+            this.jobDefinition = jobDefinition;
+            this.isQuickSubmit = isQuickSubmit;
+            this.isAutoResubmit = isAutoResubmit;
+            this.originalSender = originalSender;
+        }
+    }
+
 
     public static final class GetJobDetailsResponse extends BaseResponse {
         private final Optional<IMantisJobMetadata> jobMetadata;
@@ -1696,6 +1731,35 @@ public class JobClusterManagerProto {
         @Override
         public String toString() {
             return "GetJobDetailsResponse [jobMetadata=" + jobMetadata + "]";
+        }
+    }
+
+    @ToString
+    @Getter
+    public static final class GetJobDefinitionUpdatedFromJobActorResponse extends BaseResponse {
+        private final String user;
+        private final JobDefinition jobDefinition;
+        private final boolean isAutoResubmit;
+        private final boolean isQuickSubmitMode;
+        private final ActorRef originalSender;
+
+        public GetJobDefinitionUpdatedFromJobActorResponse(
+                final long requestId,
+                final ResponseCode responseCode,
+                final String message,
+                final String user,
+                final JobDefinition jobDefn,
+                final boolean isAutoResubmit,
+                final boolean isQuickSubmitMode,
+                final ActorRef originalSender) {
+            super(requestId, responseCode, message);
+            Preconditions.checkNotNull(user, "user");
+            Preconditions.checkNotNull(originalSender, "originalSender");
+            this.user = user;
+            this.jobDefinition = jobDefn;
+            this.isAutoResubmit = isAutoResubmit;
+            this.isQuickSubmitMode = isQuickSubmitMode;
+            this.originalSender = originalSender;
         }
     }
 

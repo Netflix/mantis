@@ -25,16 +25,18 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Builder;
+import lombok.Singular;
 
-
+@Builder(toBuilder = true)
 public class StageSchedulingInfo {
 
-    private int numberOfInstances;
-    private MachineDefinition machineDefinition;
-    private List<JobConstraints> hardConstraints;
-    private List<JobConstraints> softConstraints;
-    private StageScalingPolicy scalingPolicy;
-    private boolean scalable;
+    private final int numberOfInstances;
+    private final MachineDefinition machineDefinition;
+    @Singular(ignoreNullCollections = true) private final List<JobConstraints> hardConstraints;
+    @Singular(ignoreNullCollections = true) private final List<JobConstraints> softConstraints;
+    private final StageScalingPolicy scalingPolicy;
+    private final boolean scalable;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -49,6 +51,7 @@ public class StageSchedulingInfo {
         this.hardConstraints = hardConstraints;
         this.softConstraints = softConstraints;
         this.scalingPolicy = scalingPolicy;
+
         this.scalable = scalable;
     }
 
@@ -80,10 +83,6 @@ public class StageSchedulingInfo {
 
     public StageScalingPolicy getScalingPolicy() {
         return scalingPolicy;
-    }
-
-    public void setScalingPolicy(StageScalingPolicy scalingPolicy) {
-        this.scalingPolicy = scalingPolicy;
     }
 
     public boolean getScalable() {
@@ -150,4 +149,6 @@ public class StageSchedulingInfo {
             return false;
         return true;
     }
+
+
 }

@@ -17,10 +17,8 @@
 package io.mantisrx.runtime.descriptor;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
 
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;
@@ -29,21 +27,33 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.EqualsAndHashCode;
 
-
+@EqualsAndHashCode
 public class SchedulingInfo {
 
     private Map<Integer, StageSchedulingInfo> stages = new HashMap<>();
+    private final DeploymentStrategy deploymentStrategy;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public SchedulingInfo(@JsonProperty("stages") Map<Integer, StageSchedulingInfo> stages) {
+    public SchedulingInfo(
+            @JsonProperty("stages") Map<Integer, StageSchedulingInfo> stages,
+            @JsonProperty("deploymentStrategy") DeploymentStrategy deploymentStrategy) {
         this.stages = stages;
+        this.deploymentStrategy = deploymentStrategy;
+    }
+
+    @JsonIgnore
+    public SchedulingInfo(Map<Integer, StageSchedulingInfo> stages) {
+        this.stages = stages;
+        this.deploymentStrategy = null;
     }
 
     @JsonIgnore
     SchedulingInfo(Builder builder) {
         stages.putAll(builder.builderStages);
+        this.deploymentStrategy = builder.deploymentStrategy;
     }
 
     public static void main(String[] args) {
@@ -71,23 +81,11 @@ public class SchedulingInfo {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SchedulingInfo that = (SchedulingInfo) o;
-        return Objects.equals(stages, that.stages);
-    }
-
-    @Override
-    public int hashCode() {
-
-        return Objects.hash(stages);
-    }
-
     public Map<Integer, StageSchedulingInfo> getStages() {
         return stages;
     }
+
+    public DeploymentStrategy getDeploymentStrategy() { return this.deploymentStrategy; }
 
     public void addJobMasterStage(StageSchedulingInfo schedulingInfo) {
         stages.put(0, schedulingInfo);
@@ -95,6 +93,14 @@ public class SchedulingInfo {
 
     public StageSchedulingInfo forStage(int stageNum) {
         return stages.get(stageNum);
+    }
+
+    public boolean requireInheritInstanceCheck() {
+        return this.deploymentStrategy != null && this.deploymentStrategy.requireInheritInstanceCheck();
+    }
+
+    public boolean requireInheritInstanceCheck(int stageNum) {
+        return this.deploymentStrategy != null && this.deploymentStrategy.requireInheritInstanceCheck(stageNum);
     }
 
     @Override
@@ -106,28 +112,51 @@ public class SchedulingInfo {
 
     public static class Builder {
 
-        private Map<Integer, StageSchedulingInfo> builderStages = new HashMap<>();
+        private final Map<Integer, StageSchedulingInfo> builderStages = new HashMap<>();
         private Integer currentStage = 1;
         private int numberOfStages;
+
+        private DeploymentStrategy deploymentStrategy;
+
+        public Builder addDeploymentStrategy(DeploymentStrategy strategy) {
+            this.deploymentStrategy = strategy;
+            return this;
+        }
+
+        public Builder addStage(StageSchedulingInfo stageSchedulingInfo) {
+            builderStages.put(currentStage, stageSchedulingInfo);
+            currentStage++;
+            return this;
+        }
+
+        public void addJobMasterStage(StageSchedulingInfo schedulingInfo) {
+            builderStages.put(0, schedulingInfo);
+        }
 
         public Builder numberOfStages(int numberOfStages) {
             this.numberOfStages = numberOfStages;
             return this;
         }
 
-        public Builder singleWorkerStageWithConstraints(MachineDefinition machineDefinition,
-                                                        List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints) {
-            builderStages.put(currentStage, new StageSchedulingInfo(1, machineDefinition, hardConstraints,
-                    softConstraints, null, false));
-            currentStage++;
-            return this;
+        public Builder singleWorkerStageWithConstraints(
+                MachineDefinition machineDefinition,
+                List<JobConstraints> hardConstraints,
+                List<JobConstraints> softConstraints) {
+            return this.addStage(
+                    StageSchedulingInfo.builder()
+                            .numberOfInstances(1)
+                            .machineDefinition(machineDefinition)
+                            .hardConstraints(hardConstraints)
+                            .softConstraints(softConstraints)
+                            .build());
         }
 
         public Builder singleWorkerStage(MachineDefinition machineDefinition) {
-            builderStages.put(currentStage, new StageSchedulingInfo(1, machineDefinition, null,
-                    null, null, false));
-            currentStage++;
-            return this;
+            return this.addStage(
+                    StageSchedulingInfo.builder()
+                            .numberOfInstances(1)
+                            .machineDefinition(machineDefinition)
+                            .build());
         }
 
         public Builder multiWorkerScalableStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
@@ -135,24 +164,72 @@ public class SchedulingInfo {
                                                                StageScalingPolicy scalingPolicy) {
             StageScalingPolicy ssp = new StageScalingPolicy(currentStage, scalingPolicy.getMin(), scalingPolicy.getMax(),
                     scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies());
-            builderStages.put(currentStage, new StageSchedulingInfo(numberOfWorkers, machineDefinition,
-                    hardConstraints, softConstraints, ssp, ssp.isEnabled()));
-            currentStage++;
-            return this;
+            return this.addStage(
+                    StageSchedulingInfo.builder()
+                            .numberOfInstances(numberOfWorkers)
+                            .machineDefinition(machineDefinition)
+                            .hardConstraints(hardConstraints)
+                            .softConstraints(softConstraints)
+                            .scalingPolicy(ssp)
+                            .scalable(ssp.isEnabled())
+                            .build());
         }
 
         public Builder multiWorkerStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
                                                        List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints) {
-            builderStages.put(currentStage, new StageSchedulingInfo(numberOfWorkers, machineDefinition,
-                    hardConstraints, softConstraints, null, false));
-            currentStage++;
-            return this;
+            return this.addStage(
+                    StageSchedulingInfo.builder()
+                            .numberOfInstances(numberOfWorkers)
+                            .machineDefinition(machineDefinition)
+                            .hardConstraints(hardConstraints)
+                            .softConstraints(softConstraints)
+                            .build());
         }
 
         public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition) {
-            builderStages.put(currentStage, new StageSchedulingInfo(numberOfWorkers, machineDefinition,
-                    null, null, null, false));
-            currentStage++;
+            return multiWorkerStage(numberOfWorkers, machineDefinition, false);
+        }
+
+        public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition, boolean scalable) {
+            return this.addStage(
+                    StageSchedulingInfo.builder()
+                            .numberOfInstances(numberOfWorkers)
+                            .machineDefinition(machineDefinition)
+                            .scalable(scalable)
+                            .build());
+        }
+
+        /**
+         * Setup current builder instance to use clone the stages from given stage info map and apply instance
+         * inheritance to each stage if the stage has inherit-config enabled or global force inheritance flag.
+         * Note: to add more stages to this builder, the number of stages needs to be adjusted accordingly along with
+         * calling other addStage methods.
+         * @param givenStages Source stages to be cloned from.
+         * @param getInstanceCountForStage Function to get inherited instance count for each stage.
+         * @param inheritEnabled Function to get whether a given stage has inherit-enabled.
+         * @param forceInheritance Global flag to force inheritance on all stages.
+         * @return Current builder instance.
+         */
+        public Builder createWithInstanceInheritance(
+                Map<Integer, StageSchedulingInfo> givenStages,
+                Function<Integer, Optional<Integer>> getInstanceCountForStage,
+                Function<Integer, Boolean> inheritEnabled,
+                boolean forceInheritance) {
+            this.numberOfStages(givenStages.size());
+            givenStages.keySet().stream().sorted().forEach(k -> {
+                Optional<Integer> prevCntO = getInstanceCountForStage.apply(k);
+                StageSchedulingInfo resStage = givenStages.get(k);
+                if (prevCntO.isPresent() && (forceInheritance || inheritEnabled.apply(k))) {
+                    resStage = givenStages.get(k).toBuilder()
+                            .numberOfInstances(prevCntO.get())
+                            .build();
+                }
+
+                // handle JobMaster stage
+                if (k == 0) { this.addJobMasterStage(resStage); }
+                else { this.addStage(resStage); }
+            });
+
             return this;
         }
 
