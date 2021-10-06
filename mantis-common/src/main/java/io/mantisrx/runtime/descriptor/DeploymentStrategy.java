@@ -17,11 +17,10 @@
 package io.mantisrx.runtime.descriptor;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
-
-import java.util.Map;
 
 @Builder
 @EqualsAndHashCode

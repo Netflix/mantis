@@ -16,10 +16,6 @@
 
 package io.mantisrx.runtime.descriptor;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.function.Function;
-
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
@@ -27,6 +23,9 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.*;
+import java.util.function.Function;
 import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode

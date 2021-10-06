@@ -16,15 +16,13 @@
 
 package io.mantisrx.runtime.descriptor;
 
-import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.junit.Assert.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Test;
 
 public class SchedulingInfoTest {
     @Test

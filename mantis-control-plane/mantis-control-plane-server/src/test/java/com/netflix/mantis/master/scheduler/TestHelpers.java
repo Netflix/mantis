@@ -16,8 +16,10 @@
 
 package com.netflix.mantis.master.scheduler;
 
-import com.netflix.fenzo.VirtualMachineLease;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.runtime.JobSla;
@@ -33,14 +35,10 @@ import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.mesos.VirtualMachineLeaseMesosImpl;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import org.apache.mesos.Protos;
-
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.mesos.Protos;
 
 public class TestHelpers {
     public static VirtualMachineLeaseMesosImpl createMockLease(final String id,

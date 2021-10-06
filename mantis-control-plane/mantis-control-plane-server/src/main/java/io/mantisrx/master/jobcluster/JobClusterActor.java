@@ -16,13 +16,21 @@
 
 package io.mantisrx.master.jobcluster;
 
+import static akka.pattern.PatternsCS.ask;
+import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
-
-import io.mantisrx.shaded.com.google.common.collect.Lists;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.fenzo.triggers.CronTrigger;
 import com.netflix.fenzo.triggers.TriggerOperator;
@@ -53,18 +61,18 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClus
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.EnableJobClusterResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobClusterResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitializeResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWorkersRequest;
@@ -98,7 +106,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobProto;
-
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
@@ -115,31 +122,20 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsException;
-
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
-
-import static akka.pattern.PatternsCS.ask;
-import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
 
 
 /**
@@ -866,7 +862,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .build();
 
 
-        try { 
+        try {
             updateAndSaveJobCluster(jobCluster);
             sender.tell(new UpdateJobClusterResponse(request.requestId, SUCCESS, name
                     + " Job cluster updated"), getSelf());
@@ -1117,7 +1113,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      * @param request
      * @return
      */
-    
+
     private Observable<MantisJobMetadataView> getFilteredTerminalJobList(ListJobCriteria request, Set<JobId> jobIdSet) {
         if(logger.isTraceEnabled()) { logger.trace("JobClusterActor:getFilteredTerminalJobList"); }
 
@@ -1325,7 +1321,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.error("Exception submitting job {} from {}", request.getClusterName(), request.getSubmitter(), e);
             numJobSubmissionFailures.increment();
             sender.tell(new SubmitJobResponse(request.requestId, CLIENT_ERROR, e.getMessage(), empty()), getSelf());
-        } 
+        }
     }
 
     public void onGetJobDefinitionUpdatedFromJobActorResponse(GetJobDefinitionUpdatedFromJobActorResponse request) {
@@ -1783,21 +1779,21 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         } else {
             // Could be a terminated job
             Optional<CompletedJob> completedJob = jobManager.getCompletedJob(req.getJobId());
-            
+
             if(completedJob.isPresent()) {
                 if(logger.isDebugEnabled()) { logger.debug("Found Job {} in completed state ", req.getJobId()); }
                 try {
                     Optional<IMantisJobMetadata> jobMetaOp = jobStore.getArchivedJob(req.getJobId().getId());
                     if(jobMetaOp.isPresent()) {
                         response = new GetJobDetailsResponse(req.requestId, SUCCESS, "", jobMetaOp);
-                        
+
                     } else {
                         response = new GetJobDetailsResponse(req.requestId, CLIENT_ERROR_NOT_FOUND, "Job " + req.getJobId() + "  not found", empty());
                     }
                 } catch (Exception e) {
                     logger.warn("Exception {} reading Job {} from Storage ", e.getMessage(), req.getJobId());
                     response = new GetJobDetailsResponse(req.requestId, CLIENT_ERROR, "Exception reading Job " + req.getJobId() + "  " + e.getMessage(), empty());
-                    
+
                 }
             } else {
                 logger.warn("No such job {} ", req.getJobId());
@@ -1920,8 +1916,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
 
 
-            // enforce max.	
-        } else  { 
+            // enforce max.
+        } else  {
             List<JobInfo> listOfJobs = new ArrayList<>(activeJobsCount + acceptedJobsCount);
             listOfJobs.addAll(jobManager.getActiveJobsList());
             listOfJobs.addAll(jobManager.getAcceptedJobsList());
@@ -2066,7 +2062,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_UPDATE,
                         jobClusterMetadata.getJobClusterDefinition().getName(), name+" SLA update")
             );
-        } catch(IllegalArgumentException e) { 
+        } catch(IllegalArgumentException e) {
             logger.error("Invalid arguement job cluster not updated ", e);
             sender.tell(new UpdateJobClusterSLAResponse(slaRequest.requestId, CLIENT_ERROR, name + " Job cluster SLA updation failed " + e.getMessage()), getSelf());
 
@@ -2203,7 +2199,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Entering JobClusterActor:updateAndSaveJobCluster {}", jobCluster.getJobClusterDefinition().getName()); }
         jobStore.updateJobCluster(jobCluster);
         jobClusterMetadata = jobCluster;
-        // enable cluster if 
+        // enable cluster if
         if(!jobClusterMetadata.isDisabled()) {
             getContext().become(initializedBehavior);
         }
@@ -2258,9 +2254,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     /**
      * 2 cases this can occur
-     * 1. Graceful shutdown : Where the job cluster actor requests the job actor to terminate. In this case we simply clear the pending 
+     * 1. Graceful shutdown : Where the job cluster actor requests the job actor to terminate. In this case we simply clear the pending
      * delete jobs map
-     * 
+     *
      *  2. Unexpected shutdown : The job actor terminated unexpectedly in which case we need to relaunch the actor.
      * @param terminatedEvent Event describing a job actor was terminated
      */
@@ -2833,7 +2829,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             return this.activeJobsMap.size();
         }
-        
+
         Optional<CompletedJob> getCompletedJob(JobId jId) {
             return completedJobsCache.getCompletedJob(jId);
         }
@@ -2868,7 +2864,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } else if(this.terminatingJobsMap.containsKey(jId)) {
                 if(logger.isDebugEnabled() ) { logger.debug("Found {} in terminating state", jId); }
                 return of(terminatingJobsMap.get(jId));
-            } 
+            }
             return empty();
         }
 
@@ -2879,7 +2875,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
             return empty();
         }
-        
+
         Optional<JobInfo> getJobInfoByUniqueId(final String uniqueId) {
             return this.getAllNonTerminalJobsList().stream().filter((jobInfo) -> {
                 String unq = jobInfo.jobDefinition.getJobSla().getUserProvidedType();
@@ -3291,7 +3287,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             return completedJobs.containsKey(jobId);
         }
     }
-    
+
     static class CronManager {
         private static final TriggerOperator triggerOperator;
         private static final Logger logger = LoggerFactory.getLogger(CronManager.class);
@@ -3322,7 +3318,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 initCron();
             }
         }
-        
+
         private void initCron() throws Exception{
             if(cronSpec == null || triggerId != null) {
                 return;
@@ -3336,9 +3332,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } catch (IllegalArgumentException e) {
                 throw new SchedulerException(e.getMessage(), e);
             }
-            
+
         }
-        
+
         private void destroyCron() {
             try {
                 if (triggerId != null) {
@@ -3356,16 +3352,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             return isCronActive;
         }
     }
-    
+
     public static class CronTriggerAction implements Action1<ActorRef> {
 
         @Override
         public void call(ActorRef jobClusterActor) {
 
            jobClusterActor.tell(new JobClusterProto.TriggerCronRequest(), ActorRef.noSender());
-            
+
         }
-        
+
     }
 
 
