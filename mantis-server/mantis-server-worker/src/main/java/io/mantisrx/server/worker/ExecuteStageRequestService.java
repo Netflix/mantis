@@ -44,16 +44,19 @@ public class ExecuteStageRequestService extends BaseService {
     private Observer<Observable<Status>> tasksStatusObserver;
     private WorkerExecutionOperations executionOperations;
     private Optional<String> jobProviderClass;
+    private Job mantisJob;
     private Subscription subscription;
 
     public ExecuteStageRequestService(Observable<WrappedExecuteStageRequest> executeStageRequestObservable,
                                       Observer<Observable<Status>> tasksStatusObserver,
                                       WorkerExecutionOperations executionOperations,
-                                      Optional<String> jobProviderClass) {
+                                      Optional<String> jobProviderClass,
+                                      Job mantisJob) {
         this.executeStageRequestObservable = executeStageRequestObservable;
         this.tasksStatusObserver = tasksStatusObserver;
         this.executionOperations = executionOperations;
         this.jobProviderClass = jobProviderClass;
+        this.mantisJob = mantisJob;
     }
 
     @Override
@@ -96,19 +99,20 @@ public class ExecuteStageRequestService extends BaseService {
                         }
                         logger.info("Creating job classpath with pathLocation " + pathLocation);
                         ClassLoader cl = URLClassLoader.newInstance(new URL[] {pathLocation});
-                        Job mantisJob = null;
                         try {
-                            if (jobProviderClass.isPresent()) {
-                                logger.info("loading job main class " + jobProviderClass.get());
-                                final Class clazz = Class.forName(jobProviderClass.get());
-                                final MantisJobProvider jobProvider = (MantisJobProvider) clazz.newInstance();
-                                mantisJob = jobProvider.getJobInstance();
-                            } else {
-                                logger.info("using serviceLoader to get job instance");
-                                ServiceLoader<MantisJobProvider> provider = ServiceLoader.load(MantisJobProvider.class, cl);
-                                // should only be a single provider, check is made in master
-                                MantisJobProvider mantisJobProvider = provider.iterator().next();
-                                mantisJob = mantisJobProvider.getJobInstance();
+                            if (mantisJob == null) {
+                                if (jobProviderClass.isPresent()) {
+                                    logger.info("loading job main class " + jobProviderClass.get());
+                                    final Class clazz = Class.forName(jobProviderClass.get());
+                                    final MantisJobProvider jobProvider = (MantisJobProvider) clazz.newInstance();
+                                    mantisJob = jobProvider.getJobInstance();
+                                } else {
+                                    logger.info("using serviceLoader to get job instance");
+                                    ServiceLoader<MantisJobProvider> provider = ServiceLoader.load(MantisJobProvider.class, cl);
+                                    // should only be a single provider, check is made in master
+                                    MantisJobProvider mantisJobProvider = provider.iterator().next();
+                                    mantisJob = mantisJobProvider.getJobInstance();
+                                }
                             }
                         } catch (Throwable e) {
                             logger.error("Failed to load job class", e);
