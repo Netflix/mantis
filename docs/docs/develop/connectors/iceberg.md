@@ -20,7 +20,7 @@ Use this approach to decouple your application logic from Iceberg writing logic 
 may make it easier to debug your Mantis Job. This approach incurs extra encode/decode and
 network cost to move data between workers.
 
-```java hl_lines="6 7"
+```java hl_lines="7 8"
 public class ExampleIcebergSinkJob extends MantisJobProvider<Map<String, Object>> {
 
   @Override
