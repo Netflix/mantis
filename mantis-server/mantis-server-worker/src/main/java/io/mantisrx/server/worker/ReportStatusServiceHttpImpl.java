@@ -47,7 +47,7 @@ import rx.functions.Func1;
 
 public class ReportStatusServiceHttpImpl extends BaseService implements ReportStatusService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReportStatusServiceHttpImpl.class);
+    private static volatile Logger logger;
     private final MasterMonitor masterMonitor;
     private final int defaultConnTimeout;
     private final int defaultSocketTimeout;
@@ -92,6 +92,14 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
         this.workerSentHeartbeats = metrics.getCounter("workerSentHeartbeats");
     }
 
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(ReportStatusServiceHttpImpl.class);
+        }
+
+        return logger;
+    }
+
     @Override
     public void start() {
         subscription = statusObservable
@@ -112,13 +120,13 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
                             org.apache.http.HttpResponse response = defaultHttpClient.execute(post);
                             int code = response.getStatusLine().getStatusCode();
                             if (code != 200) {
-                                logger.info(
+                                logger().info(
                                         "Non 200 response: " + code + ", from master with state: " + status.getState()
                                                 + " for heartbeat request at URI: " + masterMonitor.getLatestMaster()
                                                 .getFullApiStatusUri() + " with post data: " + statusUpdate);
                                 if (code > 299) {
                                     for (Header header : response.getAllHeaders()) {
-                                        logger.info("Response Header: [" + header.getName() + "=" + header.getValue()
+                                        logger().info("Response Header: [" + header.getName() + "=" + header.getValue()
                                                 + "]");
                                     }
                                 }
@@ -126,16 +134,16 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
                                 workerSentHeartbeats.increment();
                             }
                         } catch (SocketTimeoutException e) {
-                            logger.warn("SocketTimeoutException: Failed to send status update", e);
+                            logger().warn("SocketTimeoutException: Failed to send status update", e);
                             hbSocketTimeoutCounter.increment();
                         } catch (ConnectionPoolTimeoutException e) {
-                            logger.warn("ConnectionPoolTimeoutException: Failed to send status update", e);
+                            logger().warn("ConnectionPoolTimeoutException: Failed to send status update", e);
                             hbConnectionRequestTimeoutCounter.increment();
                         } catch (ConnectTimeoutException e) {
-                            logger.warn("ConnectTimeoutException: Failed to send status update", e);
+                            logger().warn("ConnectTimeoutException: Failed to send status update", e);
                             hbConnectionTimeoutCounter.increment();
                         } catch (IOException e) {
-                            logger.warn("Failed to send status update", e);
+                            logger().warn("Failed to send status update", e);
                         }
                     }
                 });

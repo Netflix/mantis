@@ -42,7 +42,7 @@ import rx.subjects.PublishSubject;
 @SuppressWarnings("rawtypes")
 public class RunningWorker {
 
-    private static final Logger logger = LoggerFactory.getLogger(RunningWorker.class);
+    private static volatile Logger logger;
     private final int totalStagesNet;
     private Action0 onTerminateCallback;
     private Action0 onCompleteCallback;
@@ -97,7 +97,7 @@ public class RunningWorker {
         this.onCompleteCallback = new Action0() {
             @Override
             public void call() {
-                logger.info("JobId: " + jobId + " stage: " + stageNum + ", completed");
+                logger().info("JobId: " + jobId + " stage: " + stageNum + ", completed");
                 // setup a timeout to call forced exit as sure way to exit
                 new Thread() {
                     @Override
@@ -106,7 +106,7 @@ public class RunningWorker {
                             sleep(3000);
                             System.exit(1);
                         } catch (Exception e) {
-                            logger.error("Ignoring exception during exit: " + e.getMessage(), e);
+                            logger().error("Ignoring exception during exit: " + e.getMessage(), e);
                         }
                     }
                 }.start();
@@ -121,12 +121,21 @@ public class RunningWorker {
         };
     }
 
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(RunningWorker.class);
+        }
+
+        return logger;
+    }
+
+
     private String getWorkerStringPrefix(int stageNum, int index, int number) {
         return "stage " + stageNum + " worker index=" + index + " number=" + number;
     }
 
     public void signalStartedInitiated() {
-        logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
+        logger().info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling started initiated");
         vmTaskStatusObserver.onNext(new VirtualMachineTaskStatus(
                 new WorkerId(jobId, workerIndex, workerNum).getId(),
@@ -141,7 +150,7 @@ public class RunningWorker {
     }
 
     public void signalStarted() {
-        logger.info("JobId: " + jobId + ", " + getWorkerStringPrefix(stageNum, workerIndex, workerNum)
+        logger().info("JobId: " + jobId + ", " + getWorkerStringPrefix(stageNum, workerIndex, workerNum)
                 + " signaling started");
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " running",
@@ -149,7 +158,7 @@ public class RunningWorker {
     }
 
     public void signalCompleted() {
-        logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
+        logger().info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling completed");
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " completed",
@@ -164,9 +173,9 @@ public class RunningWorker {
     }
 
     public void signalFailed(Throwable t) {
-        logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
+        logger().info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
                 + " signaling failed");
-        logger.error("Worker failure detected, shutting down job", t);
+        logger().error("Worker failure detected, shutting down job", t);
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " failed. error: " + t.getMessage(),
                 MantisJobState.Failed));
@@ -176,7 +185,7 @@ public class RunningWorker {
         try {
             blockUntilTerminate.await();
         } catch (InterruptedException e) {
-            logger.error("Thread interrupted during await call", e);
+            logger().error("Thread interrupted during await call", e);
         }
     }
 

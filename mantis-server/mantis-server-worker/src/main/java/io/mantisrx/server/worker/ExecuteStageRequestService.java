@@ -39,7 +39,7 @@ import rx.subjects.PublishSubject;
 
 public class ExecuteStageRequestService extends BaseService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExecuteStageRequestService.class);
+    private static volatile Logger logger;
     private Observable<WrappedExecuteStageRequest> executeStageRequestObservable;
     private Observer<Observable<Status>> tasksStatusObserver;
     private WorkerExecutionOperations executionOperations;
@@ -57,6 +57,14 @@ public class ExecuteStageRequestService extends BaseService {
         this.executionOperations = executionOperations;
         this.jobProviderClass = jobProviderClass;
         this.mantisJob = mantisJob;
+    }
+
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(ExecuteStageRequestService.class);
+        }
+
+        return logger;
     }
 
     @Override
@@ -93,21 +101,21 @@ public class ExecuteStageRequestService extends BaseService {
                         try {
                             pathLocation = Paths.get(path.toString(), "*").toUri().toURL();
                         } catch (MalformedURLException e1) {
-                            logger.error("Failed to convert path location to URL", e1);
+                            logger().error("Failed to convert path location to URL", e1);
                             executeRequest.getStatus().onError(e1);
                             return Observable.empty();
                         }
-                        logger.info("Creating job classpath with pathLocation " + pathLocation);
+                        logger().info("Creating job classpath with pathLocation " + pathLocation);
                         ClassLoader cl = URLClassLoader.newInstance(new URL[] {pathLocation});
                         try {
                             if (mantisJob == null) {
                                 if (jobProviderClass.isPresent()) {
-                                    logger.info("loading job main class " + jobProviderClass.get());
+                                    logger().info("loading job main class " + jobProviderClass.get());
                                     final Class clazz = Class.forName(jobProviderClass.get());
                                     final MantisJobProvider jobProvider = (MantisJobProvider) clazz.newInstance();
                                     mantisJob = jobProvider.getJobInstance();
                                 } else {
-                                    logger.info("using serviceLoader to get job instance");
+                                    logger().info("using serviceLoader to get job instance");
                                     ServiceLoader<MantisJobProvider> provider = ServiceLoader.load(MantisJobProvider.class, cl);
                                     // should only be a single provider, check is made in master
                                     MantisJobProvider mantisJobProvider = provider.iterator().next();
@@ -115,11 +123,11 @@ public class ExecuteStageRequestService extends BaseService {
                                 }
                             }
                         } catch (Throwable e) {
-                            logger.error("Failed to load job class", e);
+                            logger().error("Failed to load job class", e);
                             executeRequest.getStatus().onError(e);
                             return Observable.empty();
                         }
-                        logger.info("Executing job");
+                        logger().info("Executing job");
                         return Observable.just(new ExecutionDetails(executeRequest.getExecuteRequest(),
                                 executeRequest.getStatus(), mantisJob, cl, executeStageRequest.getParameters()));
                     }
@@ -127,18 +135,18 @@ public class ExecuteStageRequestService extends BaseService {
                 .subscribe(new Observer<ExecutionDetails>() {
                     @Override
                     public void onCompleted() {
-                        logger.error("Execute stage observable completed"); // should never occur
+                        logger().error("Execute stage observable completed"); // should never occur
                         executionOperations.shutdownStage();
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        logger.error("Execute stage observable threw exception", e);
+                        logger().error("Execute stage observable threw exception", e);
                     }
 
                     @Override
                     public void onNext(final ExecutionDetails executionDetails) {
-                        logger.info("Executing stage for job ID: " + executionDetails.getExecuteStageRequest().getRequest().getJobId());
+                        logger().info("Executing stage for job ID: " + executionDetails.getExecuteStageRequest().getRequest().getJobId());
                         Thread t = new Thread("Mantis Worker Thread for " + executionDetails.getExecuteStageRequest().getRequest().getJobId()) {
                             @Override
                             public void run() {
@@ -146,7 +154,7 @@ public class ExecuteStageRequestService extends BaseService {
                                 try {
                                     executionOperations.executeStage(executionDetails);
                                 } catch (Throwable t) {
-                                    logger.error("Failed to execute job stage", t);
+                                    logger().error("Failed to execute job stage", t);
                                 }
                             }
                         };

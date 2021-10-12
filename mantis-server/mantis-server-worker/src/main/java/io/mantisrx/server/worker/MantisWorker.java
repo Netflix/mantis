@@ -60,10 +60,18 @@ import rx.subjects.PublishSubject;
 
 public class MantisWorker extends BaseService {
 
-    private static final Logger logger = LoggerFactory.getLogger(MantisWorker.class);
+    private static volatile Logger logger;
     @Argument(alias = "p", description = "Specify a configuration file", required = false)
     private static String propFile = "worker.properties";
     private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
+
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(MantisWorker.class);
+        }
+
+        return logger;
+    }
 
     //    static {
     //    	RxNetty.useNativeTransportIfApplicable();
@@ -195,21 +203,21 @@ public class MantisWorker extends BaseService {
             worker.start();
         } catch (Exception e) {
             // unexpected to get runtime exception, will exit
-            logger.error("Unexpected error: " + e.getMessage(), e);
+            logger().error("Unexpected error: " + e.getMessage(), e);
             System.exit(2);
         }
     }
 
     @Override
     public void start() {
-        logger.info("Starting Mantis Worker");
+        logger().info("Starting Mantis Worker");
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         for (Service service : mantisServices) {
-            logger.info("Starting service: " + service.getClass().getName());
+            logger().info("Starting service: " + service.getClass().getName());
             try {
                 service.start();
             } catch (Throwable e) {
-                logger.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
+                logger().error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
                 throw e;
             }
         }
@@ -223,7 +231,7 @@ public class MantisWorker extends BaseService {
 
     @Override
     public void shutdown() {
-        logger.info("Shutting down Mantis Worker");
+        logger().info("Shutting down Mantis Worker");
         for (Service service : mantisServices) {
             service.shutdown();
         }
@@ -233,7 +241,7 @@ public class MantisWorker extends BaseService {
     public MasterDescription getInitialMasterDescription() {
         String prop = System.getProperty("MASTER_DESCRIPTION");
         try {
-            logger.info("The initial master description: " + prop);
+            logger().info("The initial master description: " + prop);
             return DefaultObjectMapper.getInstance().readValue(prop, MasterDescription.class);
         } catch (IOException e) {
             throw new IllegalArgumentException(String.format("Can't convert master description %s to an object: %s", prop, e.getMessage()), e);
@@ -242,7 +250,7 @@ public class MantisWorker extends BaseService {
 
     public Optional<String> getJobProviderClass() {
         String jobProviderClass = System.getProperty("JOB_PROVIDER_CLASS");
-        logger.info("JOB_PROVIDER_CLASS: " + jobProviderClass);
+        logger().info("JOB_PROVIDER_CLASS: " + jobProviderClass);
         if (jobProviderClass == null || jobProviderClass.isEmpty()) {
             return Optional.empty();
         }

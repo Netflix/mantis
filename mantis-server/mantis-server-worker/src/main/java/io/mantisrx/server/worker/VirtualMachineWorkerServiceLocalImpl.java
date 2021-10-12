@@ -54,7 +54,7 @@ import rx.subjects.PublishSubject;
 /* Local impl to fake a task launch from mesos to allow running a MantisWorker in IDE for development */
 public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements VirtualMachineWorkerService {
 
-    private static final Logger logger = LoggerFactory.getLogger(VirtualMachineWorkerServiceLocalImpl.class);
+    private static volatile Logger logger;
     private final WorkerTopologyInfo.Data workerInfo;
     private MesosExecutorDriver mesosDriver;
     private ExecutorService executor;
@@ -75,6 +75,14 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
                 return t;
             }
         });
+    }
+
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(VirtualMachineWorkerServiceLocalImpl.class);
+        }
+
+        return logger;
     }
 
 
@@ -126,13 +134,13 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
                     @Override
                     public void onError(Throwable e) {
-                        logger.error("onError called for request failure handler");
+                        logger().error("onError called for request failure handler");
                         errorHandler.call();
                     }
 
                     @Override
                     public void onNext(List<Boolean> booleans) {
-                        logger.info("onNext called for request failure handler with items: " +
+                        logger().info("onNext called for request failure handler with items: " +
                                 ((booleans == null) ? "-1" : booleans.size()));
                         if ((booleans == null) || booleans.isEmpty())
                             errorHandler.call();
@@ -142,7 +150,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
     @Override
     public void start() {
-        logger.info("Starting VirtualMachineWorkerServiceLocalImpl");
+        logger().info("Starting VirtualMachineWorkerServiceLocalImpl");
         Schedulers.newThread().createWorker().schedule(new Action0() {
             @Override
             public void call() {
@@ -153,10 +161,10 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
                             new Action0() {
                                 @Override
                                 public void call() {
-                                    logger.error("launch error");
+                                    logger().error("launch error");
                                 }
                             });
-                    logger.info("onNext'ing WrappedExecuteStageRequest: {}", request.toString());
+                    logger().info("onNext'ing WrappedExecuteStageRequest: {}", request.toString());
                     executeStageRequestObserver.onNext(request);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -171,9 +179,9 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
             public void call(VirtualMachineTaskStatus vmTaskStatus) {
                 TYPE type = vmTaskStatus.getType();
                 if (type == TYPE.COMPLETED) {
-                    logger.info("Got COMPLETED state for " + vmTaskStatus.getTaskId());
+                    logger().info("Got COMPLETED state for " + vmTaskStatus.getTaskId());
                 } else if (type == TYPE.STARTED) {
-                    logger.info("Would send RUNNING state to mesos, worker started for " + vmTaskStatus.getTaskId());
+                    logger().info("Would send RUNNING state to mesos, worker started for " + vmTaskStatus.getTaskId());
                 }
             }
         });
@@ -181,7 +189,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
     @Override
     public void shutdown() {
-        logger.info("Unregistering Mantis Worker with Mesos executor callbacks");
+        logger().info("Unregistering Mantis Worker with Mesos executor callbacks");
         mesosDriver.stop();
         executor.shutdown();
     }

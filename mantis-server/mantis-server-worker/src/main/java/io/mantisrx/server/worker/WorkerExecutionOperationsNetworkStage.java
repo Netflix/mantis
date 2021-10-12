@@ -85,7 +85,7 @@ import rx.subjects.BehaviorSubject;
 
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {
 
-    private static final Logger logger = LoggerFactory.getLogger(WorkerExecutionOperationsNetworkStage.class);
+    private static volatile Logger logger;
     private static final long heartbeatIntervalSecs = 20; // secs ToDo make it configurable from master?
     private final WorkerConfiguration config;
     private final WorkerMetricsClient workerMetricsClient;
@@ -138,12 +138,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         Map<Integer, List<WorkerInfo>> stageToWorkerInfoMap = new HashMap<>();
         WorkerMap workerMap = new WorkerMap(stageToWorkerInfoMap);
         if (jobName == null || jobName.isEmpty() || jobId == null || jobId.isEmpty()) {
-            logger.warn("Job name/jobId cannot be null in convertJobSchedulingInfoToWorkerMap");
+            logger().warn("Job name/jobId cannot be null in convertJobSchedulingInfoToWorkerMap");
             return workerMap;
         }
 
         if (js == null || js.getWorkerAssignments() == null) {
-            logger.warn("JobSchedulingInfo or workerAssignments cannot be null in convertJobSchedulingInfoToWorkerMap");
+            logger().warn("JobSchedulingInfo or workerAssignments cannot be null in convertJobSchedulingInfoToWorkerMap");
             return workerMap;
         }
         try {
@@ -169,7 +169,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             }
             workerMap = new WorkerMap(stageToWorkerInfoMap);
         } catch (Exception e) {
-            logger.warn("Exception converting JobSchedulingInfo " + js + " to worker Map " + e.getMessage());
+            logger().warn("Exception converting JobSchedulingInfo " + js + " to worker Map " + e.getMessage());
             return workerMap;
         }
         return workerMap;
@@ -196,6 +196,14 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
         return new Context(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, workerMapObservable);
 
+    }
+
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(WorkerExecutionOperationsNetworkStage.class);
+        }
+
+        return logger;
     }
 
     private void startSendingHeartbeats(final Observer<Status> jobStatus, String workerName, double networkMbps) {
@@ -328,13 +336,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     setup.getExecuteStageRequest().getRequest().getMinRuntimeSecs()));
         }
 
-        logger.info("Running worker info: " + rw);
+        logger().info("Running worker info: " + rw);
 
         rw.signalStartedInitiated();
 
         try {
 
-            logger.info(">>>>>>>>>>>>>>>>Calling lifecycle.startup()");
+            logger().info(">>>>>>>>>>>>>>>>Calling lifecycle.startup()");
             Lifecycle lifecycle = rw.getJob().getLifecycle();
             lifecycle.startup();
             ServiceLocator serviceLocator = lifecycle.getServiceLocator();
@@ -344,7 +352,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     final Registry spectatorRegistry = serviceLocator.service(Registry.class);
                     SpectatorRegistryFactory.setRegistry(spectatorRegistry);
                 } catch (Throwable t) {
-                    logger.error("failed to init spectator registry using service locator, falling back to {}",
+                    logger().error("failed to init spectator registry using service locator, falling back to {}",
                             SpectatorRegistryFactory.getRegistry().getClass().getCanonicalName());
                 }
             }
@@ -357,7 +365,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         rw.signalCompleted();
                         // wait for completion signal to go to the master and us getting killed. Upon timeout, exit.
                         try {Thread.sleep(60000);} catch (InterruptedException ie) {
-                            logger.warn("Unexpected exception sleeping: " + ie.getMessage());
+                            logger().warn("Unexpected exception sleeping: " + ie.getMessage());
                         }
                         System.exit(0);
                     }, createWorkerMapObservable(selfSchedulingInfo, executionRequest.getJobName(), executionRequest.getJobId(), executionRequest.getDurationType())
@@ -375,7 +383,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
             // execute stage
             if (rw.getStageNum() == 0) {
-                logger.info("JobId: " + rw.getJobId() + ", executing Job Master");
+                logger().info("JobId: " + rw.getJobId() + ", executing Job Master");
 
                 final AutoScaleMetricsConfig autoScaleMetricsConfig = new AutoScaleMetricsConfig();
 
@@ -390,22 +398,22 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         final String algo = tokens.get(2);
                         try {
                             final AutoScaleMetricsConfig.AggregationAlgo aggregationAlgo = AutoScaleMetricsConfig.AggregationAlgo.valueOf(algo);
-                            logger.info("registered UserDefined auto scale metric {}:{} algo {}", metricGroup, metricName, aggregationAlgo);
+                            logger().info("registered UserDefined auto scale metric {}:{} algo {}", metricGroup, metricName, aggregationAlgo);
                             autoScaleMetricsConfig.addUserDefinedMetric(metricGroup, metricName, aggregationAlgo);
                         } catch (IllegalArgumentException e) {
                             final String errorMsg = String.format("ERROR: Invalid algorithm value %s for param %s (algo should be one of %s)",
                                     autoScaleMetricsConfig, JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM,
                                     Arrays.stream(AutoScaleMetricsConfig.AggregationAlgo.values()).map(a -> a.name()).collect(Collectors.toList()));
-                            logger.error(errorMsg);
+                            logger().error(errorMsg);
                             throw new RuntimeException(errorMsg);
                         }
                     } else {
                         final String errorMsg = String.format("ERROR: Invalid value %s for param %s", autoScaleMetricString, JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
-                        logger.error(errorMsg);
+                        logger().error(errorMsg);
                         throw new RuntimeException(errorMsg);
                     }
                 } else {
-                    logger.info("param {} is null or empty", JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
+                    logger().info("param {} is null or empty", JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
                 }
 
                 final JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
@@ -416,7 +424,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else if (rw.getStageNum() == 1 && rw.getTotalStagesNet() == 1) {
-                logger.info("JobId: " + rw.getJobId() + ", single stage job, executing entire job");
+                logger().info("JobId: " + rw.getJobId() + ", single stage job, executing entire job");
                 // single stage, execute entire job on this machine
                 PortSelector portSelector = new PortSelector() {
                     @Override
@@ -435,7 +443,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else {
-                logger.info("JobId: " + rw.getJobId() + ", executing a multi-stage job, stage: " + rw.getStageNum());
+                logger().info("JobId: " + rw.getJobId() + ", executing a multi-stage job, stage: " + rw.getStageNum());
                 if (rw.getStageNum() == 1) {
 
                     // execute source stage
@@ -450,20 +458,20 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
                             rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable());
 
-                    logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", serving remote observable for source with name: " + remoteObservableName);
+                    logger().info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", serving remote observable for source with name: " + remoteObservableName);
                     RemoteRxServer server = publisher.getServer();
                     RxMetrics rxMetrics = server.getMetrics();
                     MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
 
                     signalStarted(rw, subscriptionStateHandlerRef);
-                    logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", blocking until source observable completes");
+                    logger().info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", blocking until source observable completes");
                     server.blockUntilServerShutdown();
                 } else {
                     // execute intermediate stage or last stage plus sink
                     executeNonSourceStage(selfSchedulingInfo, rw, subscriptionStateHandlerRef);
                 }
             }
-            logger.info("Calling lifecycle.shutdown()");
+            logger().info("Calling lifecycle.shutdown()");
             lifecycle.shutdown();
         } catch (Throwable t) {
             rw.signalFailed(t);
@@ -474,7 +482,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private SubscriptionStateHandler setupSubscriptionStateHandler(String jobId, MantisMasterClientApi mantisMasterApi,
                                                                    long subscriptionTimeoutSecs, long minRuntimeSecs) {
         if (subscriptionTimeoutSecs > 0L) {
-            logger.info("Setting up subscription state handler with timeout=" + subscriptionTimeoutSecs);
+            logger().info("Setting up subscription state handler with timeout=" + subscriptionTimeoutSecs);
             final SubscriptionStateHandler subscriptionStateHandler =
                     new SubscriptionStateHandler(jobId, mantisMasterApi, subscriptionTimeoutSecs, minRuntimeSecs);
             onSinkSubscribe = () -> {
@@ -489,7 +497,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             };
             return subscriptionStateHandler;
         } else {
-            logger.info("Not setting up subscription state handler");
+            logger().info("Not setting up subscription state handler");
             onSinkSubscribe = () -> {
                 // no-op
             };
@@ -521,7 +529,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
             if (rw.getStageNum() == rw.getTotalStagesNet()) {
                 // last+sink stage
-                logger.info("JobId: " + rw.getJobId() + ", executing sink stage: " + rw.getStageNum());
+                logger().info("JobId: " + rw.getJobId() + ", executing sink stage: " + rw.getStageNum());
                 rw.getJobStatus().onNext(new Status(rw.getJobId(), rw.getStageNum(), rw.getWorkerIndex(),
                         rw.getWorkerNum(),
                         TYPE.INFO, getWorkerStringPrefix(rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum()) + " running",
@@ -555,7 +563,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 acceptSchedulingChanges.set(false);
             } else {
                 // intermediate stage
-                logger.info("JobId: " + rw.getJobId() + ", executing intermediate stage: " + rw.getStageNum());
+                logger().info("JobId: " + rw.getJobId() + ", executing intermediate stage: " + rw.getStageNum());
 
 
                 int stageNumToExecute = rw.getStageNum();
@@ -569,12 +577,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         rw.getContext());
                 RemoteRxServer server = publisher.getServer();
 
-                logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", serving intermediate remote observable with name: " + remoteObservableName);
+                logger().info("JobId: " + jobId + " stage: " + stageNumToExecute + ", serving intermediate remote observable with name: " + remoteObservableName);
                 RxMetrics rxMetrics = server.getMetrics();
                 MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 // send running signal only after server is started
                 signalStarted(rw, subscriptionStateHandlerRef);
-                logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", blocking until intermediate observable completes");
+                logger().info("JobId: " + jobId + " stage: " + stageNumToExecute + ", blocking until intermediate observable completes");
                 server.blockUntilServerShutdown();
                 acceptSchedulingChanges.set(false);
             }
@@ -604,7 +612,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private WorkerConsumer connectToObservableAtPreviousStages(Observable<JobSchedulingInfo> selfSchedulingInfo, final String jobId, final int previousStageNum,
                                                                int numInstanceAtPreviousStage, final StageConfig previousStage, final AtomicBoolean acceptSchedulingChanges,
                                                                final Observer<Status> jobStatus, final int stageNumToExecute, final int workerIndex, final int workerNumber) {
-        logger.info("Watching for scheduling changes");
+        logger().info("Watching for scheduling changes");
 
         //Observable<List<Endpoint>> schedulingUpdates = mantisMasterApi.schedulingChanges(jobId)
         Observable<List<Endpoint>> schedulingUpdates = selfSchedulingInfo
@@ -622,11 +630,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     List<Endpoint> endpoints = new LinkedList<>();
                     for (WorkerHost host : assignments.getHosts().values()) {
                         if (host.getState() == MantisJobState.Started) {
-                            logger.info("Received scheduling update from master, connect request for host: " + host.getHost() + " port: " + host.getPort() + " state: " + host.getState() +
+                            logger().info("Received scheduling update from master, connect request for host: " + host.getHost() + " port: " + host.getPort() + " state: " + host.getState() +
                                     " adding: " + connectionsPerEndpoint + " connections to host");
                             for (int i = 1; i <= connectionsPerEndpoint; i++) {
                                 final String endpointId = "stage_" + stageNumToExecute + "_index_" + Integer.toString(workerIndex) + "_partition_" + i;
-                                logger.info("Adding endpoint to endpoint injector to be considered for add, with id: " + endpointId);
+                                logger().info("Adding endpoint to endpoint injector to be considered for add, with id: " + endpointId);
                                 endpoints.add(new Endpoint(host.getHost(), host.getPort().get(0),
                                         endpointId));
                             }
@@ -643,7 +651,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     @Override
     public void shutdownStage() {
-        logger.debug("Shutdown initiated");
+        logger().debug("Shutdown initiated");
         System.exit(0);
     }
 }

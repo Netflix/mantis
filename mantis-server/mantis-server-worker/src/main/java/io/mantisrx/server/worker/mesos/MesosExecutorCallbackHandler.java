@@ -41,13 +41,21 @@ import rx.subjects.PublishSubject;
 
 public class MesosExecutorCallbackHandler implements Executor {
 
-    private static final Logger logger = LoggerFactory.getLogger(MesosExecutorCallbackHandler.class);
+    private static volatile Logger logger;
     private Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
     private ObjectMapper mapper = new ObjectMapper();
 
     public MesosExecutorCallbackHandler(Observer<WrappedExecuteStageRequest> executeStageRequestObserver) {
         this.executeStageRequestObserver = executeStageRequestObserver;
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    private static Logger logger() {
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(MesosExecutorCallbackHandler.class);
+        }
+
+        return logger;
     }
 
     @Override
@@ -58,7 +66,7 @@ public class MesosExecutorCallbackHandler implements Executor {
     @Override
     public void error(ExecutorDriver arg0, String msg) {
         // TODO Auto-generated method stub
-        logger.error(msg);
+        logger().error(msg);
     }
 
     @Override
@@ -69,7 +77,7 @@ public class MesosExecutorCallbackHandler implements Executor {
 
     @Override
     public void killTask(ExecutorDriver arg0, TaskID task) {
-        logger.info("Executor going to kill task " + task.getValue());
+        logger().info("Executor going to kill task " + task.getValue());
         executeStageRequestObserver.onCompleted();
         waitAndExit();
     }
@@ -121,13 +129,13 @@ public class MesosExecutorCallbackHandler implements Executor {
 
                     @Override
                     public void onError(Throwable e) {
-                        logger.error("onError called for request failure handler");
+                        logger().error("onError called for request failure handler");
                         errorHandler.call();
                     }
 
                     @Override
                     public void onNext(List<Boolean> booleans) {
-                        logger.info("onNext called for request failure handler with items: " +
+                        logger().info("onNext called for request failure handler with items: " +
                                 ((booleans == null) ? "-1" : booleans.size()));
                         if ((booleans == null) || booleans.isEmpty())
                             errorHandler.call();
@@ -138,7 +146,7 @@ public class MesosExecutorCallbackHandler implements Executor {
     @Override
     public void launchTask(final ExecutorDriver driver, final TaskInfo task) {
         WrappedExecuteStageRequest request = createExecuteStageRequest(task);
-        logger.info("Worker for task [" + task.getTaskId().getValue() + "] with startTimeout=" +
+        logger().info("Worker for task [" + task.getTaskId().getValue() + "] with startTimeout=" +
                 request.getRequest().getTimeoutToReportStart());
         setupRequestFailureHandler(request.getRequest().getTimeoutToReportStart(), request.getRequestSubject(),
                 new Action0() {
