@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 public class ResourceUsagePayloadSetter {
 
-    private static final Logger logger = LoggerFactory.getLogger(DataDroppedPayloadSetter.class);
+    private static final Logger logger = LoggerFactory.getLogger(ResourceUsagePayloadSetter.class);
     private static final String metricPrefix = "tcpServer";
     private static final long bigUsageChgReportingIntervalSecs = 10;
     private static final double bigIncreaseThreshold = 0.05;
@@ -164,7 +164,7 @@ public class ResourceUsagePayloadSetter {
                 delay = Math.min(delay, bigUsageChgReportingIntervalSecs);
             oldUsage = usage;
         }
-        logger.info("scheduling next metrics report with delay=" + delay);
+        logger.debug("scheduling next metrics report with delay=" + delay);
         executor.schedule(new Runnable() {
             @Override
             public void run() {

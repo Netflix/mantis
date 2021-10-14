@@ -91,7 +91,7 @@ class DataDroppedPayloadSetter {
                 dropCountGauge.set(dataDrop.getDroppedCount());
                 onNextCountGauge.set(dataDrop.getOnNextCount());
             } else
-                logger.info("Got no metrics from DropOperator");
+                logger.debug("Got no metrics from DropOperator");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
