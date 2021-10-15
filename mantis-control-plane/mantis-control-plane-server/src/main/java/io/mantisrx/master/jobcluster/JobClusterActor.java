@@ -1297,7 +1297,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             }
         }
 
-        logger.info("Submitting job ");
+        logger.info("Submitting job {}", request);
         try {
             if (requireJobActorProcess(request)) {
                 logger.info("Sending job submit request to job actor for inheritance: {}", request.requestId);

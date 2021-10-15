@@ -110,13 +110,7 @@ import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.domain.DataFormatAdapter;
-import io.mantisrx.server.master.domain.IJobClusterDefinition;
-import io.mantisrx.server.master.domain.JobClusterConfig;
-import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
-import io.mantisrx.server.master.domain.JobDefinition;
-import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.domain.SLA;
+import io.mantisrx.server.master.domain.*;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
@@ -229,39 +223,67 @@ public class JobClusterTest {
     }
 
     private JobDefinition createJob(String name, List<Label> labelList) throws InvalidJobException {
-        return createJob(name, 0, MantisJobDurationType.Perpetual,null, SINGLE_WORKER_SCHED_INFO,labelList);
+        return createJob(name, 0, MantisJobDurationType.Perpetual,null, SINGLE_WORKER_SCHED_INFO, labelList, null);
     }
 
     private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType) throws InvalidJobException {
         return createJob(name2, subsTimeoutSecs, durationType, (String) null);
     }
 
-    private JobDefinition createJob(String name2, MantisJobDurationType durationType, SchedulingInfo schedulingInfo) throws InvalidJobException {
-        return createJob(name2, 1, durationType, null, schedulingInfo, Lists.newArrayList());
+    private JobDefinition createJob(String name2, MantisJobDurationType durationType, SchedulingInfo schedulingInfo)
+            throws InvalidJobException {
+        return createJob(name2, 1, durationType, null, schedulingInfo, Lists.newArrayList(), null);
+    }
+
+    private JobDefinition createJob(String name2, MantisJobDurationType durationType, SchedulingInfo schedulingInfo,
+                                    DeploymentStrategy deploymentStrategy)
+            throws InvalidJobException {
+        return createJob(name2, 1, durationType, null, schedulingInfo, Lists.newArrayList(), deploymentStrategy);
     }
 
     private JobDefinition createJob(String name2, MantisJobDurationType durationType, SchedulingInfo schedulingInfo,
                                     String artifactName, String artifactVersion) throws InvalidJobException {
-        return createJob(name2, 1, durationType, null, schedulingInfo, Lists.newArrayList(), artifactName, artifactVersion);
+        return createJob(name2, 1, durationType, null, schedulingInfo,
+                Lists.newArrayList(), artifactName, artifactVersion, null);
+    }
+
+    private JobDefinition createJob(String name2, MantisJobDurationType durationType, SchedulingInfo schedulingInfo,
+                                    String artifactName, String artifactVersion, DeploymentStrategy deploymentStrategy) throws InvalidJobException {
+        return createJob(name2, 1, durationType, null, schedulingInfo,
+                Lists.newArrayList(), artifactName, artifactVersion, deploymentStrategy);
     }
 
     private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType, String userProvidedType) throws InvalidJobException {
 
-        return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, SINGLE_WORKER_SCHED_INFO, Lists.newArrayList());
+        return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, SINGLE_WORKER_SCHED_INFO, Lists.newArrayList(), null);
     }
 
-    private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType, String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList) throws InvalidJobException {
-        return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, schedulingInfo, labelList, "myart", null);
+    private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType,
+                                    String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList)
+            throws InvalidJobException {
+        return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, schedulingInfo, labelList,
+                "myart", null, null);
     }
 
-    private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType, String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList,
-                                    String artifactName, String artifactVersion) throws InvalidJobException {
+    private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType,
+                                    String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList,
+                                    DeploymentStrategy deploymentStrategy)
+            throws InvalidJobException {
+        return createJob(name2, subsTimeoutSecs, durationType, userProvidedType, schedulingInfo, labelList,
+                "myart", null, deploymentStrategy);
+    }
+
+    private JobDefinition createJob(String name2, long subsTimeoutSecs, MantisJobDurationType durationType,
+                                    String userProvidedType, SchedulingInfo schedulingInfo, List<Label> labelList,
+                                    String artifactName, String artifactVersion, DeploymentStrategy deploymentStrategy)
+            throws InvalidJobException {
 
         return new JobDefinition.Builder()
                 .withName(name2)
                 .withParameters(Lists.newArrayList())
                 .withLabels(labelList)
                 .withSchedulingInfo(schedulingInfo)
+                .withDeploymentStrategy(deploymentStrategy)
                 .withArtifactName(artifactName)
                 .withVersion(artifactVersion)
                 .withSubscriptionTimeoutSecs(subsTimeoutSecs)
@@ -1574,13 +1596,12 @@ public class JobClusterTest {
             final SchedulingInfo schedulingInfo = new SchedulingInfo.Builder()
                     .numberOfStages(1)
                     .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
-                    .addDeploymentStrategy(
-                            DeploymentStrategy.builder()
-                                    .stage(1,
-                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
-                                    .build())
                     .build();
-            final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo);
+            final DeploymentStrategy deploymentStrategy = DeploymentStrategy.builder()
+                    .stage(1, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                    .build();
+            final JobDefinition jobDefn2Workers = createJob(
+                    clusterName, MantisJobDurationType.Transient, schedulingInfo, deploymentStrategy);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId2, SUCCESS, JobState.Accepted);
 
@@ -1644,19 +1665,15 @@ public class JobClusterTest {
                     .multiWorkerStage(4, DEFAULT_MACHINE_DEFINITION)
                     .multiWorkerStage(5, DEFAULT_MACHINE_DEFINITION)
                     .multiWorkerStage(6, DEFAULT_MACHINE_DEFINITION)
-                    .addDeploymentStrategy(
-                            DeploymentStrategy.builder()
-                                    .stage(1,
-                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
-                                    .stage(3,
-                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
-                                    .stage(4,
-                                            StageDeploymentStrategy.builder().inheritInstanceCount(false).build())
-                                    .build())
+                    .build();
+            final DeploymentStrategy deploymentStrategy =  DeploymentStrategy.builder()
+                    .stage(1, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                    .stage(3, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                    .stage(4, StageDeploymentStrategy.builder().inheritInstanceCount(false).build())
                     .build();
             final String artifactV2 = "artVer-2";
             final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo2,
-                    jobDefn.getArtifactName(), artifactV2);
+                    jobDefn.getArtifactName(), artifactV2, deploymentStrategy);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId2, SUCCESS, JobState.Accepted);
 
@@ -1728,15 +1745,13 @@ public class JobClusterTest {
                     .numberOfStages(2)
                     .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
                     .multiWorkerStage(4, DEFAULT_MACHINE_DEFINITION)
-                    .addDeploymentStrategy(
-                            DeploymentStrategy.builder()
-                                    .stage(1,
-                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
-                                    .stage(2,
-                                            StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
-                                    .build())
                     .build();
-            final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo2);
+            final DeploymentStrategy deploymentStrategy = DeploymentStrategy.builder()
+                    .stage(1, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                    .stage(2, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
+                    .build();
+            final JobDefinition jobDefn2Workers = createJob(
+                    clusterName, MantisJobDurationType.Transient, schedulingInfo2, deploymentStrategy);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId2, SUCCESS, JobState.Accepted);
 

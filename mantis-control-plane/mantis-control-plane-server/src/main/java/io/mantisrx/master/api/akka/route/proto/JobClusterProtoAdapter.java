@@ -235,7 +235,8 @@ public class JobClusterProtoAdapter {
                     jd.getSubscriptionTimeoutSecs(),
                     jd.getSchedulingInfo(),
                     jd.getSchedulingInfo() == null ? -1 : jd.getSchedulingInfo().getStages().size(),
-                    jd.getLabels())
+                    jd.getLabels(),
+                    jd.getDeploymentStrategy())
             ));
 
         return request;

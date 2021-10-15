@@ -21,6 +21,7 @@ import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.command.InvalidJobException;
+import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
@@ -30,8 +31,9 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import java.util.*;
 import java.util.function.Function;
+import lombok.ToString;
 
-
+@ToString
 public class JobDefinition {
 
     private final String name;
@@ -43,6 +45,7 @@ public class JobDefinition {
     private final JobSla jobSla;
     private final long subscriptionTimeoutSecs;
     private final SchedulingInfo schedulingInfo;
+    private final DeploymentStrategy deploymentStrategy;
     private final int withNumberOfStages;
     private List<Label> labels;
 
@@ -57,7 +60,8 @@ public class JobDefinition {
                          @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
                          @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
                          @JsonProperty("numberOfStages") int withNumberOfStages,
-                         @JsonProperty("labels") List<Label> labels
+                         @JsonProperty("labels") List<Label> labels,
+                         @JsonProperty("deploymentStrategy") DeploymentStrategy deploymentStrategy
     ) throws InvalidJobException {
         this.name = name;
         this.user = user;
@@ -81,6 +85,7 @@ public class JobDefinition {
             this.subscriptionTimeoutSecs = 0;
         }
         this.schedulingInfo = schedulingInfo;
+        this.deploymentStrategy = deploymentStrategy;
         this.withNumberOfStages = withNumberOfStages;
         validate(true);
 
@@ -108,33 +113,18 @@ public class JobDefinition {
         return Objects.hash(name, user, artifactName, version, parameters, jobSla, subscriptionTimeoutSecs, labels, withNumberOfStages);
     }
 
-    @Override
-    public String toString() {
-        return "JobDefinition{" +
-                "name='" + name + '\'' +
-                ", user='" + user + '\'' +
-                ", artifactName='" + artifactName + '\'' +
-                ", version='" + version + '\'' +
-                ", parameters=" + parameters +
-                ", jobSla=" + jobSla +
-                ", subscriptionTimeoutSecs=" + subscriptionTimeoutSecs +
-                ", schedulingInfo=" + schedulingInfo +
-                ", labels=" + labels +
-                ", withNumberOfStages=" + withNumberOfStages +
-                '}';
-    }
-
     public void validate(boolean schedulingInfoOptional) throws InvalidJobException {
         validateSla();
         validateSchedulingInfo(schedulingInfoOptional);
     }
 
     public boolean requireInheritInstanceCheck() {
-        return this.schedulingInfo != null && this.getSchedulingInfo().requireInheritInstanceCheck();
+        return this.schedulingInfo != null && this.deploymentStrategy != null && this.getDeploymentStrategy().requireInheritInstanceCheck();
     }
 
     public boolean requireInheritInstanceCheck(int stageNum) {
-        return this.schedulingInfo != null && this.getSchedulingInfo().requireInheritInstanceCheck(stageNum);
+        return this.schedulingInfo != null && this.getSchedulingInfo().getStages().containsKey(stageNum) &&
+                this.deploymentStrategy != null && this.getDeploymentStrategy().requireInheritInstanceCheck(stageNum);
     }
 
     private void validateSla() throws InvalidJobException {
@@ -210,6 +200,7 @@ public class JobDefinition {
         return schedulingInfo;
     }
 
+    public DeploymentStrategy getDeploymentStrategy() { return deploymentStrategy; }
 
     //    // TODO make immutable
     //    public void setSchedulingInfo(SchedulingInfo schedulingInfo) {
@@ -241,6 +232,7 @@ public class JobDefinition {
         private JobSla jobSla = new JobSla(0, 0, JobSla.StreamSLAType.Lossy, MantisJobDurationType.Transient, null);
         private long subscriptionTimeoutSecs = 0L;
         private SchedulingInfo schedulingInfo;
+        private DeploymentStrategy deploymentStrategy;
         private int withNumberOfStages = 1;
 
         public Builder() {
@@ -270,6 +262,11 @@ public class JobDefinition {
 
         public Builder withSchedulingInfo(SchedulingInfo schedInfo) {
             this.schedulingInfo = schedInfo;
+            return this;
+        }
+
+        public Builder withDeploymentStrategy(DeploymentStrategy strategy) {
+            this.deploymentStrategy = strategy;
             return this;
         }
 
@@ -305,6 +302,7 @@ public class JobDefinition {
             this.withSubscriptionTimeoutSecs(jobDefinition.getSubscriptionTimeoutSecs());
             this.withUser(jobDefinition.user);
             this.withSchedulingInfo(jobDefinition.getSchedulingInfo());
+            this.withDeploymentStrategy(jobDefinition.getDeploymentStrategy());
             this.withParameters(jobDefinition.getParameters());
             this.withLabels(jobDefinition.getLabels());
             this.withName(jobDefinition.name);
@@ -323,7 +321,6 @@ public class JobDefinition {
                     getExistingInstanceCountForStage,
                     jobDefinition::requireInheritInstanceCheck,
                     forceInheritance);
-            mergedSInfoBuilder.addDeploymentStrategy(jobDefinition.getSchedulingInfo().getDeploymentStrategy());
 
             this.withSchedulingInfo(mergedSInfoBuilder.build());
             return this;
@@ -337,7 +334,9 @@ public class JobDefinition {
                 withNumberOfStages = schedulingInfo.getStages().size();
             }
             Preconditions.checkArgument(withNumberOfStages > 0, "Number of stages cannot be less than 0");
-            return new JobDefinition(name, user, artifactName, version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, withNumberOfStages, labels);
+            return new JobDefinition(
+                    name, user, artifactName, version, parameters, jobSla,
+                    subscriptionTimeoutSecs, schedulingInfo, withNumberOfStages, labels, deploymentStrategy);
         }
     }
 
