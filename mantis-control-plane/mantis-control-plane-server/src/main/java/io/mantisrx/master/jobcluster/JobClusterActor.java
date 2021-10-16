@@ -1233,8 +1233,14 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // change behavior to enabled
             getContext().become(initializedBehavior);
 
-            //start SLA timer
-            setBookkeepingTimer(BOOKKEEPING_INTERVAL_SECS);
+            //start SLA timer if there is previous job record to be able to enforce SLA.
+            if (this.jobManager.getAllNonTerminalJobsList().isEmpty() && this.jobManager.getCompletedJobsList().isEmpty()) {
+                logger.warn("No previous job found in cluster: {}, skip bookkeeping timer.", this.name);
+            }
+            else {
+                setBookkeepingTimer(BOOKKEEPING_INTERVAL_SECS);
+            }
+
             eventPublisher.publishAuditEvent(
                     new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_ENABLED,
                         this.jobClusterMetadata.getJobClusterDefinition().getName(), name + " enabled")
