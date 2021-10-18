@@ -25,6 +25,7 @@ import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
+import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.framework.imps.GzipCompressionProvider;

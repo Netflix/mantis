@@ -16,21 +16,22 @@
 
 package io.mantisrx.master.zk;
 
+import static io.mantisrx.shaded.org.apache.zookeeper.KeeperException.Code.OK;
+
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.master.ILeadershipManager;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import io.mantisrx.shaded.org.apache.zookeeper.CreateMode;
 import io.mantisrx.shaded.org.apache.zookeeper.data.Stat;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import java.io.IOException;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.concurrent.Executors;
-
-import static io.mantisrx.shaded.org.apache.zookeeper.KeeperException.Code.OK;
 
 public class LeaderElector extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(LeaderElector.class);
