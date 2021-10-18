@@ -326,11 +326,11 @@ public class JobClusterRouteTest {
             HttpRequest.POST(namedJobAPIEndpoint("quicksubmit"))
                 .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.QUICK_SUBMIT));
         responseFuture
-            .thenCompose(r -> processRespFut(r, 400))
+            .thenCompose(r -> processRespFut(r, 200))
             .whenComplete((msg, t) -> {
                 String responseMessage = getResponseMessage(msg, t);
                 logger.info("got response {}", responseMessage);
-                assertTrue(responseMessage.contains("Job Definition could not retrieved from a previous submission (There may not be a previous submission)"));
+                assertTrue(responseMessage.contains("sine-function-1"));
                 latch.countDown();
             });
         assertTrue(latch.await(1, TimeUnit.SECONDS));
@@ -385,7 +385,7 @@ public class JobClusterRouteTest {
                     assertEquals("sine-function", jc.getName());
                     // TODO fix Jars list
                     assertEquals(2, jc.getJars().size());
-                    assertEquals(1, jc.getJars().get(0).getSchedulingInfo().getStages().size());
+                    assertEquals(2, jc.getJars().get(0).getSchedulingInfo().getStages().size());
                     assertEquals(1, jc.getJars().get(0).getSchedulingInfo().getStages().get(1).getNumberOfInstances());
                     assertEquals(true, jc.getJars().get(0).getSchedulingInfo().getStages().get(1).getScalable());
                     assertEquals("sine-function", jc.getName());
@@ -412,7 +412,7 @@ public class JobClusterRouteTest {
                     logger.info("got response {}", responseMessage);
                     List<JobClusterProtoAdapter.JobIdInfo> jobIdInfos = Jackson.fromJSON(responseMessage, new TypeReference<List<JobClusterProtoAdapter.JobIdInfo>>() {
                     });
-                    assertEquals(0, jobIdInfos.size());
+                    assertEquals(1, jobIdInfos.size());
                 } catch (Exception e) {
                     fail("unexpected error "+ e.getMessage());
                 }
