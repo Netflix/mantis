@@ -459,7 +459,7 @@ public class DataFormatAdapter {
         // generate job defn
         JobDefinition jobDefn = new JobDefinition(archJob.getName(), archJob.getUser(),
                 artifactName.orElse(""), null,archJob.getParameters(), archJob.getSla(),
-                archJob.getSubscriptionTimeoutSecs(),schedulingInfo, archJob.getNumStages(),archJob.getLabels());
+                archJob.getSubscriptionTimeoutSecs(),schedulingInfo, archJob.getNumStages(),archJob.getLabels(), null);
         Optional<JobId> jIdOp = JobId.fromId(archJob.getJobId());
         if(!jIdOp.isPresent()) {
             throw new IllegalArgumentException("Invalid JobId " + archJob.getJobId());

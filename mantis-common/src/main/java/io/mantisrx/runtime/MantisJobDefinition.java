@@ -18,6 +18,7 @@ package io.mantisrx.runtime;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.command.InvalidJobException;
+import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
@@ -42,6 +43,7 @@ public class MantisJobDefinition {
     private JobSla jobSla;
     private long subscriptionTimeoutSecs = 0L;
     private SchedulingInfo schedulingInfo;
+    private DeploymentStrategy deploymentStrategy;
     private int slaMin = 0;
     private int slaMax = 0;
     private String cronSpec = "";
@@ -65,7 +67,8 @@ public class MantisJobDefinition {
                                @JsonProperty("cronPolicy") NamedJobDefinition.CronPolicy cronPolicy,
                                @JsonProperty("isReadyForJobMaster") boolean isReadyForJobMaster,
                                @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
-                               @JsonProperty("labels") List<Label> labels
+                               @JsonProperty("labels") List<Label> labels,
+                               @JsonProperty("deploymentStrategy") DeploymentStrategy deploymentStrategy
     ) {
         this.name = name;
         this.user = user;
@@ -86,6 +89,7 @@ public class MantisJobDefinition {
         if (subscriptionTimeoutSecs > 0)
             this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
         this.schedulingInfo = schedulingInfo;
+        this.deploymentStrategy = deploymentStrategy;
         this.slaMin = slaMin;
         this.slaMax = slaMax;
         this.cronSpec = cronSpec;
@@ -176,6 +180,10 @@ public class MantisJobDefinition {
 
     public void setSchedulingInfo(SchedulingInfo schedulingInfo) {
         this.schedulingInfo = schedulingInfo;
+    }
+
+    public DeploymentStrategy getDeploymentStrategy() {
+        return deploymentStrategy;
     }
 
     public int getSlaMin() {

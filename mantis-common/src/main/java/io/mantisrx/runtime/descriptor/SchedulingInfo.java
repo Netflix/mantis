@@ -27,32 +27,24 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @EqualsAndHashCode
+@ToString
 public class SchedulingInfo {
 
     private Map<Integer, StageSchedulingInfo> stages = new HashMap<>();
-    private final DeploymentStrategy deploymentStrategy;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public SchedulingInfo(
-            @JsonProperty("stages") Map<Integer, StageSchedulingInfo> stages,
-            @JsonProperty("deploymentStrategy") DeploymentStrategy deploymentStrategy) {
+            @JsonProperty("stages") Map<Integer, StageSchedulingInfo> stages) {
         this.stages = stages;
-        this.deploymentStrategy = deploymentStrategy;
-    }
-
-    @JsonIgnore
-    public SchedulingInfo(Map<Integer, StageSchedulingInfo> stages) {
-        this.stages = stages;
-        this.deploymentStrategy = null;
     }
 
     @JsonIgnore
     SchedulingInfo(Builder builder) {
         stages.putAll(builder.builderStages);
-        this.deploymentStrategy = builder.deploymentStrategy;
     }
 
     public static void main(String[] args) {
@@ -84,8 +76,6 @@ public class SchedulingInfo {
         return stages;
     }
 
-    public DeploymentStrategy getDeploymentStrategy() { return this.deploymentStrategy; }
-
     public void addJobMasterStage(StageSchedulingInfo schedulingInfo) {
         stages.put(0, schedulingInfo);
     }
@@ -94,33 +84,11 @@ public class SchedulingInfo {
         return stages.get(stageNum);
     }
 
-    public boolean requireInheritInstanceCheck() {
-        return this.deploymentStrategy != null && this.deploymentStrategy.requireInheritInstanceCheck();
-    }
-
-    public boolean requireInheritInstanceCheck(int stageNum) {
-        return this.deploymentStrategy != null && this.deploymentStrategy.requireInheritInstanceCheck(stageNum);
-    }
-
-    @Override
-    public String toString() {
-        return "SchedulingInfo{" +
-                "stages=" + stages +
-                '}';
-    }
-
     public static class Builder {
 
         private final Map<Integer, StageSchedulingInfo> builderStages = new HashMap<>();
         private Integer currentStage = 1;
         private int numberOfStages;
-
-        private DeploymentStrategy deploymentStrategy;
-
-        public Builder addDeploymentStrategy(DeploymentStrategy strategy) {
-            this.deploymentStrategy = strategy;
-            return this;
-        }
 
         public Builder addStage(StageSchedulingInfo stageSchedulingInfo) {
             builderStages.put(currentStage, stageSchedulingInfo);

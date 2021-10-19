@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2021 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
+import lombok.ToString;
 
 @Builder
 @EqualsAndHashCode
+@ToString
 public class DeploymentStrategy {
     @Singular(ignoreNullCollections = true) private Map<Integer, StageDeploymentStrategy> stages;
 

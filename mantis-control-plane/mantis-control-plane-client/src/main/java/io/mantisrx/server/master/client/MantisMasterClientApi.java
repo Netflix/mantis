@@ -23,6 +23,7 @@ import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.codec.JsonCodec;
+import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobAssignmentResult;
@@ -286,7 +287,25 @@ public class MantisMasterClientApi {
                                                    final List<Label> labels) {
         try {
             String jobDef = getJobDefinitionString(name, null, version, parameters, jobSla,
-                    subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels);
+                    subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels, null);
+            return submitJob(jobDef);
+        } catch (MalformedURLException | JsonProcessingException e) {
+            return Observable.error(e);
+        }
+    }
+
+    public Observable<JobSubmitResponse> submitJob(final String name, final String version,
+                                                   final List<Parameter> parameters,
+                                                   final JobSla jobSla,
+                                                   final long subscriptionTimeoutSecs,
+                                                   final SchedulingInfo schedulingInfo,
+                                                   final boolean readyForJobMaster,
+                                                   final WorkerMigrationConfig migrationConfig,
+                                                   final List<Label> labels,
+                                                   final DeploymentStrategy deploymentStrategy) {
+        try {
+            String jobDef = getJobDefinitionString(name, null, version, parameters, jobSla,
+                    subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels, deploymentStrategy);
             return submitJob(jobDef);
         } catch (MalformedURLException | JsonProcessingException e) {
             return Observable.error(e);
@@ -322,12 +341,12 @@ public class MantisMasterClientApi {
     private String getJobDefinitionString(String name, String jobUrl, String version, List<Parameter> parameters,
                                           JobSla jobSla, long subscriptionTimeoutSecs, SchedulingInfo schedulingInfo,
                                           boolean readyForJobMaster, final WorkerMigrationConfig migrationConfig,
-                                          final List<Label> labels)
+                                          final List<Label> labels, final DeploymentStrategy deploymentStrategy)
             throws JsonProcessingException, MalformedURLException {
         MantisJobDefinition jobDefinition = new MantisJobDefinition(name, System.getProperty("user.name"),
                 jobUrl == null ? null : new URL(jobUrl),
                 version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, 0, 0,
-                null, null, readyForJobMaster, migrationConfig, labels);
+                null, null, readyForJobMaster, migrationConfig, labels, deploymentStrategy);
         return objectMapper.writeValueAsString(jobDefinition);
     }
 
