@@ -1454,34 +1454,32 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // for request inheriting from non-terminal jobs, it has been sent to job actor instead.
             Optional<JobDefinition> jobDefnOp = cloneJobDefinitionForQuickSubmitFromArchivedJobs(
                     jobManager.getCompletedJobsList(), empty(), jobStore);
-            if(jobDefnOp.isPresent()) {
+            if (jobDefnOp.isPresent()) {
                 logger.info("Inherited scheduling Info and parameters from previous job");
                 resolvedJobDefn = jobDefnOp.get();
-            } else {
-                if (this.jobClusterMetadata != null
-                        && this.jobClusterMetadata.getJobClusterDefinition() != null &&
-                        this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig() != null) {
-                    logger.info("No previous job definition found. Fall back to cluster definition: {}", this.name);
-                    IJobClusterDefinition clusterDefinition = this.jobClusterMetadata.getJobClusterDefinition();
-                    JobClusterConfig clusterConfig =
-                            this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig();
+            } else if (this.jobClusterMetadata != null
+                    && this.jobClusterMetadata.getJobClusterDefinition() != null &&
+                    this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig() != null) {
+                logger.info("No previous job definition found. Fall back to cluster definition: {}", this.name);
+                IJobClusterDefinition clusterDefinition = this.jobClusterMetadata.getJobClusterDefinition();
+                JobClusterConfig clusterConfig =
+                        this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig();
 
-                    resolvedJobDefn = new JobDefinition.Builder()
-                            .withJobSla(new JobSla.Builder().build())
-                            .withArtifactName(clusterConfig.getArtifactName())
-                            .withVersion(clusterConfig.getVersion())
-                            .withLabels(clusterDefinition.getLabels())
-                            .withName(this.name)
-                            .withParameters(clusterDefinition.getParameters())
-                            .withSchedulingInfo(clusterConfig.getSchedulingInfo())
-                            .withUser(user)
-                            .build();
-                    logger.info("Built job definition from cluster definition: {}", resolvedJobDefn);
-                }
-                else {
+                resolvedJobDefn = new JobDefinition.Builder()
+                        .withJobSla(new JobSla.Builder().build())
+                        .withArtifactName(clusterConfig.getArtifactName())
+                        .withVersion(clusterConfig.getVersion())
+                        .withLabels(clusterDefinition.getLabels())
+                        .withName(this.name)
+                        .withParameters(clusterDefinition.getParameters())
+                        .withSchedulingInfo(clusterConfig.getSchedulingInfo())
+                        .withUser(user)
+                        .build();
+                logger.info("Built job definition from cluster definition: {}", resolvedJobDefn);
+            }
+            else {
                     throw new Exception("Job Definition could not retrieved from a previous submission (There may "
                             + "not be a previous submission)");
-                }
             }
         }
 
