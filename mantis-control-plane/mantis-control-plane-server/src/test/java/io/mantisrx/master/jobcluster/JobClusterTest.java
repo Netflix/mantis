@@ -19,7 +19,6 @@ package io.mantisrx.master.jobcluster;
 import static io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import static io.mantisrx.master.jobcluster.JobClusterActor.props;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DisableJobClusterRequest;
@@ -51,7 +50,8 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLAResponse;
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
-import static java.util.Optional.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -105,7 +105,10 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.WorkerMigrationConfig.MigrationStrategyEnum;
 import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.runtime.descriptor.*;
+import io.mantisrx.runtime.descriptor.DeploymentStrategy;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.descriptor.StageDeploymentStrategy;
+import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -1969,12 +1972,12 @@ public class JobClusterTest {
             final JobDefinition jobDefn = null;
             String jobId = clusterName + "-1";
 
-            JobTestHelper.submitJobAndVerifyStatus(probe, clusterName, jobClusterActor, jobDefn, null, CLIENT_ERROR);
+            JobTestHelper.submitJobAndVerifyStatus(probe, clusterName, jobClusterActor, jobDefn, jobId, SUCCESS);
 
-            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, CLIENT_ERROR_NOT_FOUND, JobState.Noop);
+            JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Accepted);
 
             verify(jobStoreMock, times(1)).createJobCluster(any());
-            verify(jobStoreMock, times(0)).updateJobCluster(any());
+            verify(jobStoreMock, times(1)).updateJobCluster(any());
         } catch (Exception e) {
             e.printStackTrace();
             fail();

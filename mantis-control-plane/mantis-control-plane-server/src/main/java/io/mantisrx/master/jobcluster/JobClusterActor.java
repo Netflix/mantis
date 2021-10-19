@@ -107,6 +107,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.runtime.JobConstraints;
+import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
@@ -127,8 +128,20 @@ import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1235,6 +1248,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             //start SLA timer
             setBookkeepingTimer(BOOKKEEPING_INTERVAL_SECS);
+
             eventPublisher.publishAuditEvent(
                     new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_ENABLED,
                         this.jobClusterMetadata.getJobClusterDefinition().getName(), name + " enabled")
@@ -1440,11 +1454,32 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // for request inheriting from non-terminal jobs, it has been sent to job actor instead.
             Optional<JobDefinition> jobDefnOp = cloneJobDefinitionForQuickSubmitFromArchivedJobs(
                     jobManager.getCompletedJobsList(), empty(), jobStore);
-            if(jobDefnOp.isPresent()) {
+            if (jobDefnOp.isPresent()) {
                 logger.info("Inherited scheduling Info and parameters from previous job");
                 resolvedJobDefn = jobDefnOp.get();
-            } else {
-                throw new Exception("Job Definition could not retrieved from a previous submission (There may not be a previous submission)");
+            } else if (this.jobClusterMetadata != null
+                    && this.jobClusterMetadata.getJobClusterDefinition() != null &&
+                    this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig() != null) {
+                logger.info("No previous job definition found. Fall back to cluster definition: {}", this.name);
+                IJobClusterDefinition clusterDefinition = this.jobClusterMetadata.getJobClusterDefinition();
+                JobClusterConfig clusterConfig =
+                        this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig();
+
+                resolvedJobDefn = new JobDefinition.Builder()
+                        .withJobSla(new JobSla.Builder().build())
+                        .withArtifactName(clusterConfig.getArtifactName())
+                        .withVersion(clusterConfig.getVersion())
+                        .withLabels(clusterDefinition.getLabels())
+                        .withName(this.name)
+                        .withParameters(clusterDefinition.getParameters())
+                        .withSchedulingInfo(clusterConfig.getSchedulingInfo())
+                        .withUser(user)
+                        .build();
+                logger.info("Built job definition from cluster definition: {}", resolvedJobDefn);
+            }
+            else {
+                    throw new Exception("Job Definition could not retrieved from a previous submission (There may "
+                            + "not be a previous submission)");
             }
         }
 
