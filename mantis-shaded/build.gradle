@@ -19,6 +19,10 @@ apply plugin: 'com.github.johnrengelman.shadow'
 ext {
     jacksonVersion = '2.10.+'
     guavaVersion = '18.+'
+    curatorVersion = '2.12.+'
+    zookeeperVersion = '3.4.+'
+    jlineVersion = '0.9.94'
+    nettyVersion = '3.7.0.Final'
 }
 
 configurations {
@@ -38,6 +42,12 @@ dependencies {
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
     shaded "io.vavr:vavr-jackson:$vavrVersion"
     shaded "com.google.guava:guava:$guavaVersion"
+    shaded "org.apache.curator:curator-recipes:$curatorVersion"
+    shaded "org.apache.curator:curator-framework:$curatorVersion"
+    shaded "org.apache.curator:curator-client:$curatorVersion"
+    shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
+    shaded "jline:jline:$jlineVersion"
+    shaded "io.netty:netty:$nettyVersion"
 
     implementation "io.vavr:vavr:$vavrVersion"
 }
@@ -45,9 +55,18 @@ dependencies {
 shadowJar {
     classifier = null
     configurations = [project.configurations.shaded]
+
+    exclude 'META-INF/LICENSE'
+    exclude 'META-INF/licence/*'
+
     relocate 'com.fasterxml', 'io.mantisrx.shaded.com.fasterxml'
     relocate 'io.vavr.jackson.datatype', 'io.mantisrx.shaded.io.vavr.jackson.datatype'
     relocate 'com.google', 'io.mantisrx.shaded.com.google'
+    relocate 'org.apache.curator', 'io.mantisrx.shaded.org.apache.curator'
+    relocate 'org.apache.zookeeper', 'io.mantisrx.shaded.org.apache.zookeeper'
+    relocate 'org.apache.jute', 'io.mantisrx.shaded.org.apache.jute'
+    relocate 'jline', 'io.mantisrx.shaded.jline'
+    relocate 'org.jboss.netty', 'io.mantisrx.shaded.org.jboss.netty'
 
     mergeServiceFiles()
 }

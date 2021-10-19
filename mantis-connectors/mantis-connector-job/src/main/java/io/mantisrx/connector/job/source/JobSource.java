@@ -16,7 +16,6 @@
 
 package io.mantisrx.connector.job.source;
 
-import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -35,6 +34,7 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.util.ArrayList;
