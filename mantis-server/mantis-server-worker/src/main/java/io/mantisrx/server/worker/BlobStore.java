@@ -16,16 +16,14 @@
 package io.mantisrx.server.worker;
 
 import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 
-/**
- * UserCodeClassLoader allows to register release hooks for a user code class loader.
- */
-public interface UserCodeClassLoader extends Closeable {
+public interface BlobStore extends Closeable {
+  File get(URI blobUrl) throws IOException;
 
-  /**
-   * Obtains the actual class loader.
-   *
-   * @return actual class loader
-   */
-  ClassLoader asClassLoader();
+  default BlobStore withZipCapabilities() {
+    return new ZipHandlingBlobStore(this);
+  }
 }

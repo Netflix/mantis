@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.worker;
+package io.mantisrx.master.jobcluster.job.worker;
 
-import java.io.Closeable;
+import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.scheduler.WorkerEvent;
+import lombok.Value;
 
-/**
- * UserCodeClassLoader allows to register release hooks for a user code class loader.
- */
-public interface UserCodeClassLoader extends Closeable {
+@Value
+public class WorkerRegistrationEvent implements WorkerEvent {
 
-  /**
-   * Obtains the actual class loader.
-   *
-   * @return actual class loader
-   */
-  ClassLoader asClassLoader();
+  WorkerId workerId;
+
+  long eventTimeMs;
 }

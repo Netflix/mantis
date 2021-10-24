@@ -15,17 +15,16 @@
  */
 package io.mantisrx.server.worker;
 
-import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import org.apache.hadoop.fs.FileSystem;
 
-/**
- * UserCodeClassLoader allows to register release hooks for a user code class loader.
- */
-public interface UserCodeClassLoader extends Closeable {
+public class BlobStoreFactory {
+  public static BlobStore get(URI clusterStoragePath, File localStoreDir) throws IOException {
+    final FileSystem fileSystem =
+        io.mantisrx.server.worker.FileSystem.create(clusterStoragePath);
 
-  /**
-   * Obtains the actual class loader.
-   *
-   * @return actual class loader
-   */
-  ClassLoader asClassLoader();
+    return new HadoopFileSystemBlobStore(fileSystem, localStoreDir);
+  }
 }
