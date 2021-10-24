@@ -49,6 +49,8 @@ public class MantisWorker extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(MantisWorker.class);
     @Argument(alias = "p", description = "Specify a configuration file", required = false)
     private static String propFile = "worker.properties";
+
+    private final ClassLoaderHandle classLoaderHandle;
     private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
 
     //    static {
@@ -57,11 +59,17 @@ public class MantisWorker extends BaseService {
     private List<Service> mantisServices = new LinkedList<Service>();
 
     // todo(sundaram): Consolidate configurations into one class that can be used across all components.
-    public MantisWorker(ConfigurationFactory configFactory) {
+    public MantisWorker(ConfigurationFactory configFactory) throws IOException {
         // for rxjava
         System.setProperty("rx.ring-buffer.size", "1024");
 
         WorkerConfiguration config = configFactory.getConfig();
+        FileSystem.initialize();
+
+        this.classLoaderHandle =
+            new DefaultClassLoaderHandle(
+                BlobStoreFactory.get(config.getClusterStorageDir(), config.getLocalStorageDir()),
+                config.getAlwaysParentFirstLoaderPatterns());
         // shutdown hook
         Thread t = new Thread() {
             @Override

@@ -647,6 +647,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     @Override
     public void shutdownStage() {
         logger.debug("Shutdown initiated");
-        System.exit(0);
+//        System.exit(0);
     }
 }

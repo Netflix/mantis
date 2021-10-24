@@ -27,6 +27,11 @@ dependencies {
     compileOnly libraries.lombok
     annotationProcessor libraries.lombok
 
+    implementation libraries.commonsIo
+    implementation libraries.hadoopCommon
+    implementation libraries.zip4j
+    implementation libraries.hadoopS3
+
     compile project(":mantis-runtime")
     compile project(":mantis-control-plane:mantis-control-plane-client")
     compile project(":mantis-control-plane:mantis-control-plane-core")

@@ -15,12 +15,14 @@
  */
 package io.mantisrx.server.worker;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 
 /** Handle to retrieve a user code class loader for the associated job. */
-interface ClassLoaderHandle {
+interface ClassLoaderHandle extends Closeable {
 
   /**
    * Gets or resolves the user code class loader for the associated job.
@@ -37,6 +39,6 @@ interface ClassLoaderHandle {
    * @throws IllegalStateException if the cached user code class loader does not fulfill the
    *     requirements
    */
-  UserCodeClassLoader getOrResolveClassLoader(Collection<URL> requiredJarFiles,
+  UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredJarFiles,
       Collection<URL> requiredClasspaths) throws IOException;
 }

@@ -22,6 +22,7 @@ import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Optional;
@@ -146,7 +147,7 @@ public class ExecuteStageRequestService extends BaseService {
                             executeRequest.getStatus().onError(e);
                             return Observable.empty();
                         }
-                        logger.info("Executing job");
+                        logger.info("Executing job {}", mantisJob);
                         return Observable.just(new ExecutionDetails(executeRequest.getExecuteRequest(),
                                 executeRequest.getStatus(), mantisJob, cl, executeStageRequest.getParameters()));
                     }
@@ -156,11 +157,21 @@ public class ExecuteStageRequestService extends BaseService {
                     public void onCompleted() {
                         logger.error("Execute stage observable completed"); // should never occur
                         executionOperations.shutdownStage();
+                        try {
+                            userCodeClassLoader.close();
+                        } catch (IOException ex) {
+                            log.error("Failed to close user class loader successfully", ex);
+                        }
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         logger.error("Execute stage observable threw exception", e);
+                        try {
+                            userCodeClassLoader.close();
+                        } catch (IOException ex) {
+                            log.error("Failed to close user class loader successfully", ex);
+                        }
                     }
 
                     @Override
@@ -201,7 +212,7 @@ public class ExecuteStageRequestService extends BaseService {
 
         // triggers the download of all missing jar files from the job manager
         final UserCodeClassLoader userCodeClassLoader =
-            classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl()), requiredClasspaths);
+            classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), requiredClasspaths);
 
         log.info(
             "Getting user code class loader for task {} at library cache manager took {} milliseconds",

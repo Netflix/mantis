@@ -59,8 +59,6 @@ public class Task implements Runnable, TaskPayload {
 
   private final ClassLoaderHandle classLoaderHandle;
 
-  private UserCodeClassLoader userCodeClassLoader;
-
   @Override
   public void run() {
     try {
