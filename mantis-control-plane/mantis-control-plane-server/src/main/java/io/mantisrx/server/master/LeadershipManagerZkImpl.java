@@ -32,6 +32,7 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
 
     private static final Logger logger = LoggerFactory.getLogger(LeadershipManagerZkImpl.class);
     private final Gauge isLeaderGauge;
+    private final Gauge isLeaderReadyGauge;
     private final AtomicBoolean firstTimeLeaderMode = new AtomicBoolean(false);
     private final MasterConfiguration config;
     private final ServiceLifecycle serviceLifecycle;
@@ -45,9 +46,11 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
         Metrics m = new Metrics.Builder()
                 .name(MasterMain.class.getCanonicalName())
                 .addGauge("isLeaderGauge")
+                .addGauge("isLeaderReadyGauge")
                 .build();
         m = MetricsRegistry.getInstance().registerAndGet(m);
         isLeaderGauge = m.getGauge("isLeaderGauge");
+        isLeaderReadyGauge = m.getGauge("isLeaderReadyGauge");
     }
 
     public void becomeLeader() {
@@ -71,6 +74,7 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
 
     public void setLeaderReady() {
         logger.info("marking leader READY");
+        isLeaderReadyGauge.set(1L);
         isReady = true;
     }
 
@@ -79,6 +83,7 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
         isReady = false;
         isLeader = false;
         isLeaderGauge.set(0L);
+        isLeaderReadyGauge.set(0L);
         if (!firstTimeLeaderMode.get()) {
             logger.warn("Unexpected to be told to stop being leader when we haven't entered leader mode before, ignoring.");
             return;
