@@ -1716,7 +1716,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             jobInfo.get().jobActor.tell(req, getSelf());
         } else {
             logger.info("Job {} not found", req.jobId.getId() );
-            req.requestor.tell(new JobClusterManagerProto.KillJobResponse(req.requestId, CLIENT_ERROR_NOT_FOUND, JobState.Noop, "Job " + req.jobId + " not found", req.jobId, req.user), getSelf());
+            if (req.requestor != null) {
+                req.requestor.tell(
+                        new JobClusterManagerProto.KillJobResponse(
+                                req.requestId,
+                                CLIENT_ERROR_NOT_FOUND,
+                                JobState.Noop,
+                                "Job " + req.jobId + " not found", req.jobId, req.user),
+                        getSelf());
+            }
         }
     }
 
