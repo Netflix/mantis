@@ -24,10 +24,12 @@ import static io.mantisrx.connector.iceberg.sink.config.SinkProperties.SINK_TABL
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.runtime.parameter.Parameters;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Convenient base config used by {@link WriterConfig} and {@link CommitterConfig}.
  */
+@RequiredArgsConstructor
 public class SinkConfig {
 
     private final String catalog;

@@ -37,6 +37,8 @@ import io.mantisrx.connector.iceberg.sink.writer.partitioner.PartitionerFactory;
 import io.mantisrx.connector.iceberg.sink.writer.pool.FixedIcebergWriterPool;
 import io.mantisrx.connector.iceberg.sink.writer.pool.IcebergWriterPool;
 import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.MantisJobDurationType;
+import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
 import java.io.IOException;
@@ -124,6 +126,9 @@ class IcebergWriterStageTest {
         this.context = mock(Context.class);
         when(this.context.getParameters()).thenReturn(parameters);
         when(this.context.getServiceLocator()).thenReturn(serviceLocator);
+        when(this.context.getWorkerInfo()).thenReturn(
+            new WorkerInfo("testJobName", "jobId", 1, 1, 1, MantisJobDurationType.Perpetual,
+                "host"));
 
         // Flow
         Observable<Record> source = Observable.interval(1, TimeUnit.MILLISECONDS, this.scheduler)

@@ -52,6 +52,19 @@ public class WriterConfig extends SinkConfig {
         this.hadoopConfig = hadoopConfig;
     }
 
+    public WriterConfig(String catalog, String database, String table, int writerRowGroupSize,
+        long writerFlushFrequencyBytes, long writerFlushFrequencyMsec,
+        String writerFileFormat, int writerMaximumPoolSize,
+        Configuration hadoopConfig) {
+        super(catalog, database, table);
+        this.writerRowGroupSize = writerRowGroupSize;
+        this.writerFlushFrequencyBytes = writerFlushFrequencyBytes;
+        this.writerFlushFrequencyMsec = writerFlushFrequencyMsec;
+        this.writerFileFormat = writerFileFormat;
+        this.writerMaximumPoolSize = writerMaximumPoolSize;
+        this.hadoopConfig = hadoopConfig;
+    }
+
     /**
      * Returns an int representing maximum number of rows that should exist in a file.
      */

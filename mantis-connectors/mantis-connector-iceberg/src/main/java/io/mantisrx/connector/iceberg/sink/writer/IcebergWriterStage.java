@@ -16,6 +16,7 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
@@ -34,6 +35,8 @@ import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +78,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         return new ScalarToScalar.Config<Record, DataFile>()
                 .description("")
                 .codec(IcebergCodecs.dataFile())
+                .serialInput()
                 .withParameters(parameters());
     }
 
@@ -119,15 +123,27 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
 
         LocationProvider locationProvider = context.getServiceLocator().service(LocationProvider.class);
         IcebergWriterFactory factory = new DefaultIcebergWriterFactory(config, workerInfo, table, locationProvider);
-        IcebergWriterPool writerPool = new FixedIcebergWriterPool(
-                factory,
-                config.getWriterFlushFrequencyBytes(),
-                config.getWriterMaximumPoolSize());
+        IcebergWriterPool writerPool = new FixedIcebergWriterPool(factory, config);
         WriterMetrics metrics = new WriterMetrics();
         PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
         Partitioner partitioner = partitionerFactory.getPartitioner(table);
 
-        return new Transformer(config, metrics, writerPool, partitioner, Schedulers.computation(), Schedulers.io());
+        return newTransformer(config, metrics, writerPool, partitioner, context.getWorkerInfo());
+    }
+
+    @VisibleForTesting
+    static Transformer newTransformer(
+        WriterConfig writerConfig,
+        WriterMetrics writerMetrics,
+        IcebergWriterPool writerPool,
+        Partitioner partitioner,
+        WorkerInfo workerInfo) {
+        int workerIdx = workerInfo.getWorkerIndex();
+        String nameFormat = "IcebergWriter (" + (workerIdx + 1) + ")-%d";
+        Scheduler executingService = new MantisRxSingleThreadScheduler(
+            new ThreadFactoryBuilder().setNameFormat(nameFormat).build());
+        return new Transformer(writerConfig, writerMetrics, writerPool, partitioner,
+            Schedulers.computation(), executingService);
     }
 
     public IcebergWriterStage() {
