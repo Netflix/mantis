@@ -43,6 +43,10 @@ public class FixedIcebergWriterPool implements IcebergWriterPool {
     private final long flushFrequencyBytes;
     private final int maximumPoolSize;
 
+    public FixedIcebergWriterPool(IcebergWriterFactory factory, WriterConfig writerConfig) {
+        this(factory, writerConfig.getWriterFlushFrequencyBytes(), writerConfig.getWriterMaximumPoolSize());
+    }
+
     public FixedIcebergWriterPool(IcebergWriterFactory factory, long flushFrequencyBytes, int maximumPoolSize) {
         this.factory = factory;
         this.flushFrequencyBytes = flushFrequencyBytes;

@@ -20,11 +20,24 @@ apply plugin: 'mantis'
 ext {
     hadoopVersion = '2.7.3'
     icebergVersion = '0.9.+'
-    junitVersion = '5.3.+'
+    junitVersion = '5.4.+'
     mockitoVersion = '2.18.+'
+    parquetVersion = '1.12.0'
 }
 
 dependencies {
+    configurations {
+        // we need parquet dependency to be present in testing classpath.
+        // hence we need to extend from shadow configuration
+        testImplementation.extendsFrom shadow
+        all {
+            // we want a parquet version above 1.12.0 because we need this fix
+            // https://issues.apache.org/jira/browse/PARQUET-1851
+            resolutionStrategy {
+                force "org.apache.parquet:parquet-hadoop:${parquetVersion}"
+            }
+        }
+    }
     implementation project(":mantis-runtime")
 
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
@@ -41,6 +54,7 @@ dependencies {
     shadow "org.slf4j:slf4j-log4j12:$slf4jVersion"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:$junitVersion"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
 
