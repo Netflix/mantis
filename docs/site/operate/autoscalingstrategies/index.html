@@ -1,0 +1,1449 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+    
+    
+      
+        <title>Autoscaling Strategies - Mantis</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#ef5350">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#rule-based-strategy" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Mantis" class="md-header-nav__button md-logo">
+          
+            <img src="../../images/logo.png" width="24" height="24">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Mantis
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Autoscaling Strategies
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Mantis" class="md-nav__button md-logo">
+      
+        <img src="../../images/logo.png" width="48" height="48">
+      
+    </a>
+    Mantis
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Welcome" class="md-nav__link">
+      Welcome
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Getting Started
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Getting Started
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/concepts/" title="Concepts" class="md-nav__link">
+      Concepts
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/use-cases/" title="Use Cases" class="md-nav__link">
+      Use Cases
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Tutorials
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/tutorials/local/" title="Explore Locally" class="md-nav__link">
+      Explore Locally
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/tutorials/docker/" title="Explore Using Docker" class="md-nav__link">
+      Explore Using Docker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/tutorials/cloud/" title="Explore in the Cloud" class="md-nav__link">
+      Explore in the Cloud
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Samples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Samples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/samples/sine-function/" title="Sine Function" class="md-nav__link">
+      Sine Function
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/samples/twitter/" title="Twitter" class="md-nav__link">
+      Twitter
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/samples/on-demand/" title="On-Demand" class="md-nav__link">
+      On-Demand
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Develop
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Develop
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1">
+    
+    <label class="md-nav__link" for="nav-3-1">
+      Ingestion
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        Ingestion
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/ingestion/netty/" title="Netty" class="md-nav__link">
+      Netty
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
+    
+    <label class="md-nav__link" for="nav-3-2">
+      Querying
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        Querying
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/querying/mql/" title="Mantis Query Language" class="md-nav__link">
+      Mantis Query Language
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/querying/sampling/" title="Sampling" class="md-nav__link">
+      Sampling
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+    
+    <label class="md-nav__link" for="nav-3-3">
+      Writing Jobs
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        Writing Jobs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/writing-jobs/word-count/" title="Writing Your First Job" class="md-nav__link">
+      Writing Your First Job
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/writing-jobs/twitter/" title="Writing Your Second Job" class="md-nav__link">
+      Writing Your Second Job
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/writing-jobs/group-by/" title="Writing Your Third Job" class="md-nav__link">
+      Writing Your Third Job
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
+    
+    <label class="md-nav__link" for="nav-3-4">
+      Connectors
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-4">
+        Connectors
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../develop/connectors/iceberg/" title="Iceberg (Beta)" class="md-nav__link">
+      Iceberg (Beta)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Deploy
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Deploy
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="" class="md-nav__link">
+      
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+    
+    <label class="md-nav__link" for="nav-5">
+      Operate
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Operate
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../tuning/" title="Tuning" class="md-nav__link">
+      Tuning
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../autoscaling/" title="Autoscaling" class="md-nav__link">
+      Autoscaling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Autoscaling Strategies
+      </label>
+    
+    <a href="./" title="Autoscaling Strategies" class="md-nav__link md-nav__link--active">
+      Autoscaling Strategies
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rule-based-strategy" class="md-nav__link">
+    Rule Based Strategy
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pid-control-based-strategy" class="md-nav__link">
+    PID Control Based Strategy
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clutch" class="md-nav__link">
+    Clutch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clutch-with-user-defined-configs" class="md-nav__link">
+    Clutch with User Defined Configs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clutch-rps" class="md-nav__link">
+    Clutch RPS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clutch-experimental-developmental-use-only" class="md-nav__link">
+    Clutch Experimental (Developmental Use Only)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
+    
+    <label class="md-nav__link" for="nav-6">
+      Reference
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-6">
+        Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/mql/" title="MQL" class="md-nav__link">
+      MQL
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/dsl/" title="Job DSL" class="md-nav__link">
+      Job DSL
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/api/" title="API" class="md-nav__link">
+      API
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/cli/" title="CLI" class="md-nav__link">
+      CLI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7">
+    
+    <label class="md-nav__link" for="nav-7">
+      Internals
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-7">
+        Internals
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/infrastructure-overview/" title="Infrastructure Overview" class="md-nav__link">
+      Infrastructure Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-7-2" type="checkbox" id="nav-7-2">
+    
+    <label class="md-nav__link" for="nav-7-2">
+      Mantis Jobs
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-7-2">
+        Mantis Jobs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/mantis-jobs/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/mantis-jobs/source/" title="Source" class="md-nav__link">
+      Source
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/mantis-jobs/processing-stage/" title="Processing Stage" class="md-nav__link">
+      Processing Stage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/mantis-jobs/sink/" title="Sink" class="md-nav__link">
+      Sink
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/source-jobs/" title="Source Jobs" class="md-nav__link">
+      Source Jobs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/runtime/" title="Runtime" class="md-nav__link">
+      Runtime
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../internals/mantis-publish/" title="Mantis Publish" class="md-nav__link">
+      Mantis Publish
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../community/" title="Community" class="md-nav__link">
+      Community
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../glossary/" title="Glossary" class="md-nav__link">
+      Glossary
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rule-based-strategy" class="md-nav__link">
+    Rule Based Strategy
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pid-control-based-strategy" class="md-nav__link">
+    PID Control Based Strategy
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clutch" class="md-nav__link">
+    Clutch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clutch-with-user-defined-configs" class="md-nav__link">
+    Clutch with User Defined Configs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clutch-rps" class="md-nav__link">
+    Clutch RPS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clutch-experimental-developmental-use-only" class="md-nav__link">
+    Clutch Experimental (Developmental Use Only)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/netflix/mantis/edit/master/docs/operate/autoscalingstrategies.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>Autoscaling Strategies</h1>
+                
+                <p>There are various strategies for autoscaling. These strategies affect when an autoscale activity will occur and also how
+many workers to scale up/down a stage. They fall into 2 main categories. Rule based strategies monitor a specific resource
+and scale up/down when a certain threshold is reached. PID control based strategies pick a resource utilization level
+and scale up/down dynamically to maintain that level.</p>
+<h2 id="rule-based-strategy">Rule Based Strategy<a class="headerlink" href="#rule-based-strategy" title="Permanent link">&para;</a></h2>
+<p>Rule based strategy can be defined for the following resources:</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Metric</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CPU</code></td>
+<td>group: <code>ResourceUsage</code> name: <code>cpuPctUsageCurr</code> aggregation: <code>AVG</code></td>
+</tr>
+<tr>
+<td><code>Memory</code></td>
+<td>group: <code>ResourceUsage</code> name: <code>totMemUsageCurr</code> aggregation: <code>AVG</code></td>
+</tr>
+<tr>
+<td><code>Network</code></td>
+<td>group: <code>ResourceUsage</code> name: <code>nwBytesUsageCurr</code> aggregation: <code>AVG</code></td>
+</tr>
+<tr>
+<td><code>JVMMemory</code></td>
+<td>group: <code>ResourceUsage</code> name: <code>jvmMemoryUsedBytes</code> aggregation: <code>AVG</code></td>
+</tr>
+<tr>
+<td><code>DataDrop</code></td>
+<td>group: <code>DataDrop</code> name: <code>dropCount</code> aggregation: <code>AVG</code></td>
+</tr>
+<tr>
+<td><code>KafkaLag</code></td>
+<td>group: <code>consumer-fetch-manager-metrics</code> name: <code>records-lag-max</code> aggregation: <code>MAX</code></td>
+</tr>
+<tr>
+<td><code>KafkaProcessed</code></td>
+<td>group: <code>consumer-fetch-manager-metrics</code> name: <code>records-consumed-rate</code> aggregation: <code>AVG</code></td>
+</tr>
+<tr>
+<td><code>UserDefined</code></td>
+<td>Metric is defined by user with job parameter <code>mantis.jobmaster.autoscale.metric</code> in this format <code>{group}::{name}::{aggregation}</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Each strategy has the following parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Scale down below percentage</code></td>
+<td>When the aggregated value for all workers falls below this value, the stage will scale down. It will scale down by the decrement value specified in the policy. For data drop, this is calculated as the number of data items dropped divided by the total number of data items, dropped+processed. For CPU, Memory, etc., it is calculated as a percentage of allocated resource when you defined the worker.</td>
+</tr>
+<tr>
+<td><code>Scale up above percentage</code></td>
+<td>When the aggregated value for all workers rises above this value, the stage will scale up.</td>
+</tr>
+<tr>
+<td><code>Rolling count</code></td>
+<td>This value helps to keep jitter out of the autoscaling process. Instead of scaling immediately the first time values fall outside of the scale-down and scale-up percentage thresholds you define, Mantis will wait until the thresholds are exceeded a certain number of times within a certain window. For example, a rolling count of “6 of 10” means that only if in ten consecutive observations six or more of the observations fall below the scale-down threshold will the stage be scaled down.</td>
+</tr>
+</tbody>
+</table>
+<p>It is possible to employ multiple rule based strategies for a stage. In this case, as soon as 1 strategy triggers a
+scaling action, the cooldown will prevent subsequent strategies from scaling for that duration.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Ideally, there should be zero data drop, so there isn’t an elegant way to express “scale down
+below percentage” for data drop. Specifying “0%” as the “scale down below percentage”
+effectively means the data drop percentage never trigger a scale down. For this reason, it is
+best to use the data drop strategy in conjunction with another strategy that provides the
+scale-down trigger.</p>
+</div>
+<h2 id="pid-control-based-strategy">PID Control Based Strategy<a class="headerlink" href="#pid-control-based-strategy" title="Permanent link">&para;</a></h2>
+<p>PID control system uses a continuous feedback loop to maintain a signal at a target level (set point). Mantis offers variations of
+this strategy that operates on different signals. Additionally, they try to learn the appropriate target over time
+without the need for user input. The PID controller computes the magnitude of scale up/down based on the drift between
+the observed signal and the target. Thus, this strategy can react quicker to big changes compared to rule based strategies,
+since rule based strategies use fixed step size. Cooldown still applies between scaling activities.</p>
+<h3 id="clutch">Clutch<a class="headerlink" href="#clutch" title="Permanent link">&para;</a></h3>
+<p>The strategy operates on CPU, Memory, Network and UserDefined. Every 24 hours, it will pick 1 dominant resource and use the
+P99 value as the target set point. For the next 24 hours, it will monitor that resource metric and scale the stage to
+keep the metric close to the target set point. In the initial 24 hours after the job is first launched, this strategy will
+scale the stage to max in order to learn the first dominant resource and set point. This also happens if the job is restarted.</p>
+<h3 id="clutch-with-user-defined-configs">Clutch with User Defined Configs<a class="headerlink" href="#clutch-with-user-defined-configs" title="Permanent link">&para;</a></h3>
+<p>With this strategy, the user defines the target for each resource without relying on the system to learn it. There is
+no need for an initial 24 hour pin high period, the PID controller can start working right away. You can supply the configuration as
+JSON in the job parameter <code>mantis.jobmaster.clutch.config</code>. Example:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;minSize&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+  <span class="nt">&quot;maxSize&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+  <span class="nt">&quot;cooldownSeconds&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+  <span class="nt">&quot;rps&quot;</span><span class="p">:</span> <span class="mi">8000</span><span class="p">,</span>
+  <span class="nt">&quot;cpu&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;setPoint&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>
+      <span class="nt">&quot;rope&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+      <span class="nt">&quot;kp&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+      <span class="nt">&quot;kd&quot;</span><span class="p">:</span> <span class="mf">0.01</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;memory&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;setPoint&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+      <span class="nt">&quot;rope&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+      <span class="nt">&quot;kp&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+      <span class="nt">&quot;kd&quot;</span><span class="p">:</span> <span class="mf">0.01</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;network&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;setPoint&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>
+      <span class="nt">&quot;rope&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">25.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+      <span class="nt">&quot;kp&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+      <span class="nt">&quot;kd&quot;</span><span class="p">:</span> <span class="mf">0.01</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>minSize</code></td>
+<td>Minimum number of workers in the stage. It will not scale down below this number.</td>
+</tr>
+<tr>
+<td><code>maxSize</code></td>
+<td>Maximum number of workers in the stage. It will not scale up above this number.</td>
+</tr>
+<tr>
+<td><code>cooldownSeconds</code></td>
+<td>This indicates how many seconds to wait after a scaling operation has been completed before beginning another scaling operation.</td>
+</tr>
+<tr>
+<td><code>maxAdjustment</code></td>
+<td>Optional. The maximum number of workers to scale up/down in a single operation.</td>
+</tr>
+<tr>
+<td><code>rps</code></td>
+<td>Expected RPS per worker. Must be &gt; 0.</td>
+</tr>
+<tr>
+<td><code>cpu</code>, <code>memory</code>, <code>network</code></td>
+<td>Configure PID controller for each resource.</td>
+</tr>
+<tr>
+<td><code>setPoint</code></td>
+<td>Target set point for the resource. This is expressed as a percentage of allocated resource to the worker. For example, <code>60.0</code> on <code>network</code> means network bytes should be 60% of the network limit on machine definition.</td>
+</tr>
+<tr>
+<td><code>rope</code></td>
+<td>Lower and upper buffer around the set point. Metric values within this buffer are assumed to be at set point, and thus contributes an error of 0 to the PID controller.</td>
+</tr>
+<tr>
+<td><code>kp</code></td>
+<td>Multiplier for the proportional term of the PID controller. This will affect the size of scaling actions.</td>
+</tr>
+<tr>
+<td><code>kd</code></td>
+<td>Multiplier for the derivative term of the PID controller. This will affect the size of scaling actions.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="clutch-rps">Clutch RPS<a class="headerlink" href="#clutch-rps" title="Permanent link">&para;</a></h3>
+<p>This strategy scales the stage base on number of events processed. The target set point is a percentile of RPS. The signal
+is the sum of RPS, inbound drops, Kafka lag, and outbound drops from source jobs. Therefore, it effectively tries to keep
+drops and lag at 0. It takes the first 10 minutes after job launch to learn the first RPS set point. This also applies if
+the job is restarted, the set point does not carry over. Afterwards, it may adjust the set point once every hour. Set point
+should become stable the longer a job runs, since it simply takes a percentile of historical RPS metric.</p>
+<p>The source job drop metric is not enabled by default. It is only applicable if your job connects to an upstream job as
+input. You can enable this metric by setting the job parameter <code>mantis.jobmaster.autoscale.sourcejob.metric.enabled</code> to true.
+Further, you need to specify the source job targets in the job parameter <code>mantis.jobmaster.autoscale.sourcejob.target</code>.
+You can omit this if your job already has a <code>target</code> parameter for connecting to source jobs, the auto scaler will pick
+that up automatically. Example:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;targets&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;sourceJobName&quot;</span><span class="p">:</span> <span class="s2">&quot;ConsolidatedLoggingEventKafkaSource&quot;</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Optionally, it is possible to further customize the behavior of the PID controller. You can supply the configuration as
+JSON in the job parameter <code>mantis.jobmaster.clutch.config</code>. Example:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;rpsConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;setPointPercentile&quot;</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span>
+    <span class="nt">&quot;rope&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">30.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+    <span class="nt">&quot;scaleDownBelowPct&quot;</span><span class="p">:</span> <span class="mf">40.0</span><span class="p">,</span>
+    <span class="nt">&quot;scaleUpAbovePct&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+    <span class="nt">&quot;scaleDownMultiplier&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="nt">&quot;scaleDownMultiplier&quot;</span><span class="p">:</span> <span class="mf">3.0</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setPointPercentile</code></td>
+<td>Percentile of historical RPS metric to use as the set point. Valid input is between <code>[1.0, 100.0]</code> Default is <code>75.0</code>.</td>
+</tr>
+<tr>
+<td><code>rope</code></td>
+<td>Lower and upper buffer around the set point. The value is interpreted as percentage of set point. For example, <code>[30.0, 30.0]</code> means values within 30% of set point is considered to have 0 error. Valid input is between <code>[0.0, 100.0]</code> Default is <code>[30.0, 0.0]</code>.</td>
+</tr>
+<tr>
+<td><code>scaleDownBelowPct</code></td>
+<td>Only scale down if the PID controller output is below this number. It can be used to delay a scaling action. Valid input is between <code>[0.0, 100.0]</code>. Default is <code>0.0</code>.</td>
+</tr>
+<tr>
+<td><code>scaleUpAbovePct</code></td>
+<td>Only scale up if the PID controller output is above this number. It can be used to delay a scaling action. Valid input is between <code>[0.0, 100.0]</code>. Default is <code>0.0</code>.</td>
+</tr>
+<tr>
+<td><code>scaleDownMultiplier</code></td>
+<td>Artificially increase/decrease the size of scale down by this factor. Default is <code>1.0</code>.</td>
+</tr>
+<tr>
+<td><code>scaleUpMultiplier</code></td>
+<td>Artificially increase/decrease the size of scale up by this factor. Default is <code>1.0</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="clutch-experimental-developmental-use-only">Clutch Experimental (Developmental Use Only)<a class="headerlink" href="#clutch-experimental-developmental-use-only" title="Permanent link">&para;</a></h3>
+<p>This strategy is internally used for testing new Clutch implementations. It should not be used for production jobs.</p>
+                
+                  
+                
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../autoscaling/" title="Autoscaling" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Autoscaling
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../../reference/mql/" title="MQL" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                MQL
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://twitter.com/NetflixOSS" class="md-footer-social__link fa fa-"></a>
+    
+      <a href="https://netflix.github.io/" class="md-footer-social__link fa fa-"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>

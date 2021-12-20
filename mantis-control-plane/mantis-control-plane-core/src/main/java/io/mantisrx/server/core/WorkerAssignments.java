@@ -19,9 +19,11 @@ package io.mantisrx.server.core;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
+
 import java.util.Map;
 
-
+@EqualsAndHashCode
 public class WorkerAssignments {
 
     private int stage;

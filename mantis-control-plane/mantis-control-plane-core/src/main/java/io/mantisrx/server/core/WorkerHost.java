@@ -20,9 +20,12 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
+
 import java.util.List;
 
 
+@EqualsAndHashCode
 public class WorkerHost {
 
     private final MantisJobState state;
@@ -80,43 +83,5 @@ public class WorkerHost {
     public String toString() {
         return "WorkerHost [state=" + state + ", workerIndex=" + workerIndex
                 + ", host=" + host + ", port=" + port + "]";
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((host == null) ? 0 : host.hashCode());
-        for (int p : port)
-            result = prime * result + p;
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        WorkerHost other = (WorkerHost) obj;
-        if (host == null) {
-            if (other.host != null)
-                return false;
-        } else if (!host.equals(other.host))
-            return false;
-        if (port == null) {
-            return other.port == null;
-        } else {
-            if (other.port == null)
-                return false;
-            if (port.size() != other.port.size())
-                return false;
-            for (int p = 0; p < port.size(); p++)
-                if (port.get(p) != other.port.get(p))
-                    return false;
-        }
-        return true;
     }
 }
