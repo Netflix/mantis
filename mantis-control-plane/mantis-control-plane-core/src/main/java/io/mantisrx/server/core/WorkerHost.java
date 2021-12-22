@@ -20,9 +20,8 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-
 import java.util.List;
+import lombok.EqualsAndHashCode;
 
 
 @EqualsAndHashCode

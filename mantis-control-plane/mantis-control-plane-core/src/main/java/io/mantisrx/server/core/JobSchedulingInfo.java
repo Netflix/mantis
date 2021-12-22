@@ -20,9 +20,8 @@ import io.mantisrx.runtime.codec.JsonType;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-
 import java.util.Map;
+import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
 public class JobSchedulingInfo implements JsonType {
