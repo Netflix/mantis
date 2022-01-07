@@ -710,6 +710,7 @@ public class MantisMasterClientApi {
                                     .timeout(3 * MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS, TimeUnit.SECONDS)
                                     .filter(schedulingInfo -> schedulingInfo != null
                                             && !JobSchedulingInfo.HB_JobId.equals(schedulingInfo.getJobId()))
+                                    .distinctUntilChanged()
                                     ;
                         }))
                 .repeatWhen(repeatLogic)
