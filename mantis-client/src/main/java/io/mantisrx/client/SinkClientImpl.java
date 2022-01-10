@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -56,6 +57,7 @@ public class SinkClientImpl<T> implements SinkClient<T> {
     private final long dataRecvTimeoutSecs;
     private final Metrics metrics;
     private final boolean disablePingFiltering;
+
     SinkClientImpl(String jobId, SinkConnectionFunc<T> sinkConnectionFunc, JobSinkLocator jobSinkLocator,
                    Observable<Integer> numSinkWorkersObservable,
                    Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs) {
@@ -261,6 +263,9 @@ public class SinkClientImpl<T> implements SinkClient<T> {
                 // shouldn't happen
                 logger.error("Unexpected exception on closing sinkConnection: " + e.getMessage(), e);
             }
+        } else {
+            logger.error("SinkConnections does not contain endpoint to be removed. host: {}, sinkConnections: {}",
+                    unwrappedHost, sinkConnections);
         }
         return Observable.empty();
     }
@@ -277,6 +282,7 @@ public class SinkClientImpl<T> implements SinkClient<T> {
         });
     }
 
+    @ToString
     class SinkConnections<T> {
 
         final private Map<String, SinkConnection<T>> sinkConnections = new HashMap<>();

@@ -173,9 +173,9 @@ public class SseWorkerConnection {
     }
 
     public synchronized void close() throws Exception {
+        logger.info("Closing sse connection to " + hostname + ":" + port);
         if (isShutdown)
             return;
-        logger.info("Closing sse connection to " + hostname + ":" + port);
         shutdownSubject.onNext(true);
         shutdownSubject.onCompleted();
         isShutdown = true;
