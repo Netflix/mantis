@@ -124,6 +124,10 @@ public class WorkerPorts {
         return ports;
     }
 
+    public int getNumberOfPorts() {
+        return ports.size();
+    }
+
     /**
      * Validates that this object has at least 5 valid ports and all of them are unique.
      */

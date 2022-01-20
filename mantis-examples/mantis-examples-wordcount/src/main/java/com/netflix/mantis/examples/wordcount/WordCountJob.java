@@ -62,8 +62,8 @@ public class WordCountJob extends MantisJobProvider<String> {
                                 .groupBy(WordCountPair::getWord)
                                 .flatMap((groupO) -> groupO.reduce(0, (cnt, wordCntPair) -> cnt + 1)
                                         .map((cnt) -> new WordCountPair(groupO.getKey(), cnt))))
-                                .map(WordCountPair::toString)
-                        , StageConfigs.scalarToScalarConfig())
+                                .map(WordCountPair::toString),
+                    StageConfigs.scalarToScalarConfig())
                 // Reuse built in sink that eagerly subscribes and delivers data over SSE
                 .sink(Sinks.eagerSubscribe(Sinks.sse((String data) -> data)))
                 .metadata(new Metadata.Builder()

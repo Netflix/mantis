@@ -20,6 +20,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -197,6 +198,10 @@ public class ExecuteStageRequest {
 
     public ExecutionAttemptID getExecutionAttemptID() {
         return ExecutionAttemptID.of(jobId, stage, workerIndex, workerNumber);
+    }
+
+    public WorkerId getWorkerId() {
+        return new WorkerId(jobId, workerIndex, workerNumber);
     }
 
     // returns the total number of workers assigned for the stage the current worker belongs to

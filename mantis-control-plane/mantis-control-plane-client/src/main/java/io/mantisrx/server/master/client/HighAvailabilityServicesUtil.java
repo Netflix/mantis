@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.worker;
+package io.mantisrx.server.master.client;
 
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.ExecutionAttemptID;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
+import io.mantisrx.server.core.CoreConfiguration;
 
-public interface TaskExecutorGateway {
-  CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
-
-  CompletableFuture<Ack> cancelTask(ExecutionAttemptID executionAttemptID);
-
-  CompletableFuture<String> requestThreadDump(Duration timeout);
+public class HighAvailabilityServicesUtil {
+  public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
+    return null;
+  }
 }

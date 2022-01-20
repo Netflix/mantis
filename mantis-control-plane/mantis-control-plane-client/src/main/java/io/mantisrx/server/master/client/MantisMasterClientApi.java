@@ -75,7 +75,7 @@ import rx.functions.Func2;
 /**
  *
  */
-public class MantisMasterClientApi {
+public class MantisMasterClientApi implements MantisMasterGateway {
 
     static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
     private static final ObjectMapper objectMapper;

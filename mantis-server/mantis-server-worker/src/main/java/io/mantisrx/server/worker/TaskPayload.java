@@ -16,6 +16,7 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.server.core.ExecutionAttemptID;
+import io.mantisrx.server.core.domain.WorkerId;
 
 public interface TaskPayload {
   String getJobId();
@@ -27,4 +28,6 @@ public interface TaskPayload {
   int getWorkerNumber();
 
   ExecutionAttemptID getExecutionAttemptID();
+
+  WorkerId getWorkerId();
 }

@@ -31,6 +31,8 @@ dependencies {
     implementation libraries.hadoopCommon
     implementation libraries.zip4j
     implementation libraries.hadoopS3
+    implementation libraries.spotifyFutures
+    api libraries.flinkRpc
 
     compile project(":mantis-runtime")
     compile project(":mantis-control-plane:mantis-control-plane-client")
@@ -49,8 +51,11 @@ dependencies {
     compile "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
     compile "com.yahoo.datasketches:sketches-core:0.9.1"
 
+    testCompile libraries.lombok
+    testAnnotationProcessor libraries.lombok
+    testImplementation libraries.lombok
     testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-all:$mockitoVersion"
+    testImplementation "org.mockito:mockito-all:2.+"
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
     testImplementation "io.vavr:vavr-test:$vavrVersion"
 }

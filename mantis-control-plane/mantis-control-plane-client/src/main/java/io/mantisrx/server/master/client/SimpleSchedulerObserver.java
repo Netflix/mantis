@@ -18,6 +18,8 @@ package io.mantisrx.server.master.client;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import io.mantisrx.server.core.Configurations;
+import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobAssignmentResult;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
@@ -45,7 +47,10 @@ public class SimpleSchedulerObserver {
     private final MasterClientWrapper clientWrapper;
 
     SimpleSchedulerObserver(Properties properties) {
-        clientWrapper = new MasterClientWrapper(properties);
+        HighAvailabilityServices haServices =
+            HighAvailabilityServicesUtil.createHAServices(
+                Configurations.frmProperties(properties, CoreConfiguration.class));
+        clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
     }
 
     public static void main(String[] args) {
@@ -116,9 +121,9 @@ public class SimpleSchedulerObserver {
     Observable<JobAssignmentResult> getObservable(final String jobId) {
         return clientWrapper
                 .getMasterClientApi()
-                .flatMap(new Func1<MantisMasterClientApi, Observable<? extends JobAssignmentResult>>() {
+                .flatMap(new Func1<MantisMasterGateway, Observable<? extends JobAssignmentResult>>() {
                     @Override
-                    public Observable<? extends JobAssignmentResult> call(MantisMasterClientApi mantisMasterClientApi) {
+                    public Observable<? extends JobAssignmentResult> call(MantisMasterGateway mantisMasterClientApi) {
                         return mantisMasterClientApi.assignmentResults(jobId);
                     }
                 });

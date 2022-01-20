@@ -22,12 +22,12 @@ import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.util.UserCodeClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -157,21 +157,21 @@ public class ExecuteStageRequestService extends BaseService {
                     public void onCompleted() {
                         logger.error("Execute stage observable completed"); // should never occur
                         executionOperations.shutdownStage();
-                        try {
-                            userCodeClassLoader.close();
-                        } catch (IOException ex) {
-                            log.error("Failed to close user class loader successfully", ex);
-                        }
+//                        try {
+//                            userCodeClassLoader.close();
+//                        } catch (IOException ex) {
+//                            log.error("Failed to close user class loader successfully", ex);
+//                        }
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         logger.error("Execute stage observable threw exception", e);
-                        try {
-                            userCodeClassLoader.close();
-                        } catch (IOException ex) {
-                            log.error("Failed to close user class loader successfully", ex);
-                        }
+//                        try {
+//                            userCodeClassLoader.close();
+//                        } catch (IOException ex) {
+//                            log.error("Failed to close user class loader successfully", ex);
+//                        }
                     }
 
                     @Override
@@ -212,7 +212,7 @@ public class ExecuteStageRequestService extends BaseService {
 
         // triggers the download of all missing jar files from the job manager
         final UserCodeClassLoader userCodeClassLoader =
-            classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), requiredClasspaths);
+             classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), requiredClasspaths);
 
         log.info(
             "Getting user code class loader for task {} at library cache manager took {} milliseconds",

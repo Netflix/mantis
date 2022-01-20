@@ -15,7 +15,6 @@
  */
 package io.mantisrx.server.worker;
 
-import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -26,6 +25,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.flink.util.SimpleUserCodeClassLoader;
+import org.apache.flink.util.UserCodeClassLoader;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -57,35 +58,15 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
 
     resolvedUrls.addAll(requiredClasspaths);
 
-    UserCodeClassLoader userCodeClassLoader = new UserCodeClassLoader() {
-      private final ChildFirstClassLoader loader =
-          new ChildFirstClassLoader(resolvedUrls, getClass().getClassLoader(),
-              alwaysParentFirstPatterns);
-      private volatile boolean closed = false;
-
-      @Override
-      public ClassLoader asClassLoader() {
-        Preconditions.checkArgument(!closed, "cannot get class loader after its closed");
-        return loader;
-      }
-
-      @Override
-      public void close() throws IOException {
-        if (!closed) {
-          loader.close();
-          closed = true;
-        }
-      }
-    };
-
-    openedHandles.add(userCodeClassLoader);
-    return userCodeClassLoader;
+    return SimpleUserCodeClassLoader.create(
+        new ChildFirstClassLoader(resolvedUrls, getClass().getClassLoader(),
+            alwaysParentFirstPatterns));
   }
 
   @Override
   public void close() throws IOException {
-    for (UserCodeClassLoader loader : openedHandles) {
-      loader.close();
-    }
+//    for (UserCodeClassLoader loader : openedHandles) {
+//      loader.close();
+//    }
   }
 }

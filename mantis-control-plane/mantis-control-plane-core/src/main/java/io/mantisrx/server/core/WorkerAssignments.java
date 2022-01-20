@@ -28,7 +28,7 @@ public class WorkerAssignments {
     private int stage;
     private int numWorkers;
     private int activeWorkers;
-    private Map<Integer, WorkerHost> hosts; // lookup by workerNumber
+    private Map<Integer, WorkerHost> hosts; // lookup by workerIdx
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

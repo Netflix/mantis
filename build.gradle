@@ -51,7 +51,13 @@ ext.libraries = [
         commonsIo: "commons-io:commons-io:2.11.0",
         hadoopCommon: "org.apache.hadoop:hadoop-common:2.7.7",
         hadoopS3: "org.apache.hadoop:hadoop-aws:2.7.7",
-        zip4j: "net.lingala.zip4j:zip4j:2.9.0"
+        zip4j: "net.lingala.zip4j:zip4j:2.9.0",
+        flinkRpc: [
+                "org.apache.flink:flink-rpc-core:1.14.2",
+                "org.apache.flink:flink-rpc-akka:1.14.2",
+                "org.apache.flink:flink-rpc-akka-loader:1.14.2"
+        ],
+        spotifyFutures: "com.spotify:completable-futures:0.3.1"
 ]
 
 allprojects {
@@ -82,7 +88,7 @@ subprojects {
         mavenCentral()
         /**
          * This repository locates artifacts that don't exist in maven central but we had to backup from jcenter
-         * The exclusiveContent 
+         * The exclusiveContent
          */
         exclusiveContent {
             forRepository {

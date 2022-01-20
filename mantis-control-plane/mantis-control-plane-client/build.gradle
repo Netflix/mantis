@@ -15,6 +15,11 @@
  */
 
 dependencies {
+    compileOnly libraries.lombok
+    annotationProcessor libraries.lombok
+
+    api libraries.flinkRpc
+
     compile project(":mantis-control-plane:mantis-control-plane-core")
 
     compile project(":mantis-remote-observable")

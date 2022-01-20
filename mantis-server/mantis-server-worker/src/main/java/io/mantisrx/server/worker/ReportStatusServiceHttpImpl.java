@@ -16,11 +16,11 @@
 
 package io.mantisrx.server.worker;
 
+import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.properties.MantisPropertiesService;
-import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.server.core.Status;
@@ -29,7 +29,9 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.CompletableFuture;
 import org.apache.http.Header;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -42,15 +44,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscription;
-import rx.functions.Action1;
-import rx.functions.Func1;
 
 
 /**
  * The goal of this class is to essentially publish status / heartbeat values to the mantis master
  * periodically so that the mantis master is aware of the stage's current state.
  */
-public class ReportStatusServiceHttpImpl extends BaseService implements ReportStatusService {
+public class ReportStatusServiceHttpImpl extends BaseReportStatusService {
 
     private static final Logger logger = LoggerFactory.getLogger(ReportStatusServiceHttpImpl.class);
     private final MasterMonitor masterMonitor;
@@ -68,6 +68,7 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
     public ReportStatusServiceHttpImpl(
             MasterMonitor masterMonitor,
             Observable<Observable<Status>> tasksStatusSubject) {
+        super(tasksStatusSubject);
         this.masterMonitor = masterMonitor;
         this.statusObservable = tasksStatusSubject;
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -98,61 +99,44 @@ public class ReportStatusServiceHttpImpl extends BaseService implements ReportSt
     }
 
     @Override
-    public void start() {
-        subscription = statusObservable
-                .flatMap(new Func1<Observable<Status>, Observable<Status>>() {
-                    @Override
-                    public Observable<Status> call(Observable<Status> status) {
-                        return status;
+    public CompletableFuture<Ack> updateTaskExecutionStatus(Status status) {
+        try (CloseableHttpClient defaultHttpClient = buildCloseableHttpClient()) {
+            HttpPost post = new HttpPost(masterMonitor.getLatestMaster().getFullApiStatusUri());
+            String statusUpdate = mapper.writeValueAsString(new PostJobStatusRequest(status.getJobId(), status));
+            post.setEntity(new StringEntity(statusUpdate));
+            org.apache.http.HttpResponse response = defaultHttpClient.execute(post);
+            int code = response.getStatusLine().getStatusCode();
+            if (code != 200) {
+                logger.info("Non 200 response: " + code + ", from master with state: " + status.getState()
+                    + " for heartbeat request at URI: " + masterMonitor.getLatestMaster().getFullApiStatusUri() + " with post data: " + statusUpdate);
+                if (code > 299) {
+                    for (Header header : response.getAllHeaders()) {
+                        logger.info("Response Header: [" + header.getName() + "=" + header.getValue() + "]");
                     }
-                })
-                .subscribe(new Action1<Status>() {
-                    @Override
-                    public void call(Status status) {
-                        try (CloseableHttpClient defaultHttpClient = buildCloseableHttpClient()) {
-                            HttpPost post = new HttpPost(masterMonitor.getLatestMaster().getFullApiStatusUri());
-                            String statusUpdate =
-                                    mapper.writeValueAsString(new PostJobStatusRequest(status.getJobId(), status));
-                            post.setEntity(new StringEntity(statusUpdate));
-                            org.apache.http.HttpResponse response = defaultHttpClient.execute(post);
-                            int code = response.getStatusLine().getStatusCode();
-                            if (code != 200) {
-                                logger.info(
-                                        "Non 200 response: " + code + ", from master with state: " + status.getState()
-                                                + " for heartbeat request at URI: " + masterMonitor.getLatestMaster()
-                                                .getFullApiStatusUri() + " with post data: " + statusUpdate);
-                                if (code > 299) {
-                                    for (Header header : response.getAllHeaders()) {
-                                        logger.info("Response Header: [" + header.getName() + "=" + header.getValue()
-                                                + "]");
-                                    }
-                                }
-                            } else {
-                                workerSentHeartbeats.increment();
-                            }
-                        } catch (SocketTimeoutException e) {
-                            logger.warn("SocketTimeoutException: Failed to send status update", e);
-                            hbSocketTimeoutCounter.increment();
-                        } catch (ConnectionPoolTimeoutException e) {
-                            logger.warn("ConnectionPoolTimeoutException: Failed to send status update", e);
-                            hbConnectionRequestTimeoutCounter.increment();
-                        } catch (ConnectTimeoutException e) {
-                            logger.warn("ConnectTimeoutException: Failed to send status update", e);
-                            hbConnectionTimeoutCounter.increment();
-                        } catch (IOException e) {
-                            logger.warn("Failed to send status update", e);
-                        }
-                    }
-                });
+                }
+                return CompletableFutures.exceptionallyCompletedFuture(
+                    new HttpResponseException(code, response.getStatusLine().getReasonPhrase()));
+            } else {
+                workerSentHeartbeats.increment();
+                return CompletableFuture.completedFuture(Ack.getInstance());
+            }
+        } catch (SocketTimeoutException e) {
+            logger.warn("SocketTimeoutException: Failed to send status update", e);
+            hbSocketTimeoutCounter.increment();
+            return CompletableFutures.exceptionallyCompletedFuture(e);
+        } catch (ConnectionPoolTimeoutException e) {
+            logger.warn("ConnectionPoolTimeoutException: Failed to send status update", e);
+            hbConnectionRequestTimeoutCounter.increment();
+            return CompletableFutures.exceptionallyCompletedFuture(e);
+        } catch (ConnectTimeoutException e) {
+            logger.warn("ConnectTimeoutException: Failed to send status update", e);
+            hbConnectionTimeoutCounter.increment();
+            return CompletableFutures.exceptionallyCompletedFuture(e);
+        } catch (IOException e) {
+            logger.warn("Failed to send status update", e);
+            return CompletableFutures.exceptionallyCompletedFuture(e);
+        }
     }
-
-    @Override
-    public void shutdown() {
-        subscription.unsubscribe();
-    }
-
-    @Override
-    public void enterActiveMode() { }
 
     private CloseableHttpClient buildCloseableHttpClient() {
         return HttpClients
