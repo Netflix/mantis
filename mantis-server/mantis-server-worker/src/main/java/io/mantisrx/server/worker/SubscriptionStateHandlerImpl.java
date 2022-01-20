@@ -25,19 +25,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Subscription;
 
+class SubscriptionStateHandlerImpl implements SinkSubscriptionStateHandler {
 
-class SubscriptionStateHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(SubscriptionStateHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubscriptionStateHandlerImpl.class);
     private final AtomicReference<ScheduledFuture> timedOutExitFutureRef = new AtomicReference<>();
     private final String jobId;
     private final MantisMasterClientApi masterClientApi;
-    private final ScheduledThreadPoolExecutor executor;
+    private ScheduledThreadPoolExecutor executor;
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
     private long startedAt = System.currentTimeMillis();
 
-    SubscriptionStateHandler(String jobId, MantisMasterClientApi masterClientApi, long subscriptionTimeoutSecs, long minRuntimeSecs) {
+    SubscriptionStateHandlerImpl(String jobId, MantisMasterClientApi masterClientApi, long subscriptionTimeoutSecs, long minRuntimeSecs) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
         this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
@@ -45,9 +44,10 @@ class SubscriptionStateHandler {
         executor = this.subscriptionTimeoutSecs > 0L ? new ScheduledThreadPoolExecutor(1) : null;
     }
 
-    void start() {
+    @Override
+    public synchronized void start() {
         startedAt = System.currentTimeMillis();
-        setIsUnsubscribed(); // start off as unsubscribed
+        onSinkUnsubscribed(); // start off as unsubscribed
     }
 
     private long evalSubscriberTimeoutSecs() {
@@ -57,7 +57,8 @@ class SubscriptionStateHandler {
         );
     }
 
-    synchronized void setIsUnsubscribed() {
+    @Override
+    public synchronized void onSinkUnsubscribed() {
         if (executor == null)
             return;
         if (timedOutExitFutureRef.get() == null) {
@@ -87,7 +88,8 @@ class SubscriptionStateHandler {
         }
     }
 
-    synchronized void setIsSubscribed() {
+    @Override
+    public synchronized void onSinkSubscribed() {
         if (executor == null) {
             return;
         }
@@ -96,5 +98,20 @@ class SubscriptionStateHandler {
             logger.info("Cancelled future kill upon active subscriptions of ephemeral job " + jobId);
             prevFutureKill.cancel(true);
         }
+    }
+
+    @Override
+    public synchronized void shutdown() {
+        // we need to clean up the resources. onSinkSubscribed works in the same fashion.
+        // let's call that instead.
+        onSinkSubscribed();
+        // let's shutdown the executor and reset it.
+        executor.shutdown();
+        executor = null;
+    }
+
+    @Override
+    public void enterActiveMode() {
+
     }
 }

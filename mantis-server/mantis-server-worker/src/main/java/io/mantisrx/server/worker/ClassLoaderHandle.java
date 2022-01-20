@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
+import org.apache.flink.util.UserCodeClassLoader;
 
 /** Handle to retrieve a user code class loader for the associated job. */
 interface ClassLoaderHandle extends Closeable {

@@ -48,7 +48,8 @@ import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
@@ -90,27 +91,32 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final WorkerConfiguration config;
     private final WorkerMetricsClient workerMetricsClient;
     private final AtomicReference<Heartbeat> heartbeatRef = new AtomicReference<>();
+    private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
     private Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
-    private MantisMasterClientApi mantisMasterApi;
+    private MantisMasterGateway mantisMasterApi;
     private int connectionsPerEndpoint = 2;
     private boolean lookupSpectatorRegistry = true;
     private Action0 onSinkSubscribe = null;
     private Action0 onSinkUnsubscribe = null;
 
-    public WorkerExecutionOperationsNetworkStage(Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
-                                                 MantisMasterClientApi mantisMasterApi, WorkerConfiguration config) {
-        this(vmTaskStatusObserver, mantisMasterApi, config, null);
+    public WorkerExecutionOperationsNetworkStage(
+        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
+        MantisMasterGateway mantisMasterApi, WorkerConfiguration config,
+        Factory sinkSubscriptionStateHandlerFactory) {
+        this(vmTaskStatusObserver, mantisMasterApi, config, null, sinkSubscriptionStateHandlerFactory);
     }
 
-    public WorkerExecutionOperationsNetworkStage(Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
-                                                 MantisMasterClientApi mantisMasterApi,
-                                                 WorkerConfiguration config,
-                                                 WorkerMetricsClient workerMetricsClient) {
+    public WorkerExecutionOperationsNetworkStage(
+        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
+        MantisMasterGateway mantisMasterApi,
+        WorkerConfiguration config,
+        WorkerMetricsClient workerMetricsClient,
+        Factory sinkSubscriptionStateHandlerFactory) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
         this.workerMetricsClient = workerMetricsClient;
-
+        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
 
         String connectionsPerEndpointStr =
                 ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
@@ -273,7 +279,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         return s;
     }
 
-    private void signalStarted(RunningWorker rw, AtomicReference<SubscriptionStateHandler> ref) {
+    private void signalStarted(RunningWorker rw, AtomicReference<SinkSubscriptionStateHandler> ref) {
         rw.signalStarted();
         if (ref.get() != null)
             ref.get().start();
@@ -323,12 +329,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
         final RunningWorker rw = rwBuilder.build();
 
-        AtomicReference<SubscriptionStateHandler> subscriptionStateHandlerRef = new AtomicReference<>();
+        AtomicReference<SinkSubscriptionStateHandler> subscriptionStateHandlerRef = new AtomicReference<>();
         if (rw.getStageNum() == rw.getTotalStagesNet()) {
             // set up subscription state handler only for sink (last) stage
-            subscriptionStateHandlerRef.set(setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest().getJobId(), mantisMasterApi,
-                    setup.getExecuteStageRequest().getRequest().getSubscriptionTimeoutSecs(),
-                    setup.getExecuteStageRequest().getRequest().getMinRuntimeSecs()));
+            subscriptionStateHandlerRef.set(setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest()));
         }
 
         logger.info("Running worker info: " + rw);
@@ -474,33 +478,32 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
-    private SubscriptionStateHandler setupSubscriptionStateHandler(String jobId, MantisMasterClientApi mantisMasterApi,
-                                                                   long subscriptionTimeoutSecs, long minRuntimeSecs) {
-        if (subscriptionTimeoutSecs > 0L) {
-            logger.info("Setting up subscription state handler with timeout=" + subscriptionTimeoutSecs);
-            final SubscriptionStateHandler subscriptionStateHandler =
-                    new SubscriptionStateHandler(jobId, mantisMasterApi, subscriptionTimeoutSecs, minRuntimeSecs);
+    private SinkSubscriptionStateHandler setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {
+//        if (subscriptionTimeoutSecs > 0L) {
+//            logger.info("Setting up subscription state handler with timeout=" + subscriptionTimeoutSecs);
+            final SinkSubscriptionStateHandler subscriptionStateHandler =
+                sinkSubscriptionStateHandlerFactory.apply(executeStageRequest);
             onSinkSubscribe = () -> {
                 // TODO remove this line to set heartbeat payloads when master has upgraded to having jobMaster design
                 heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(true));
-                subscriptionStateHandler.setIsSubscribed();
+                subscriptionStateHandler.onSinkSubscribed();
             };
             onSinkUnsubscribe = () -> {
                 // TODO remove this line to set heartbeat payloads when master has upgraded to having jobMaster design
                 heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(false));
-                subscriptionStateHandler.setIsUnsubscribed();
+                subscriptionStateHandler.onSinkUnsubscribed();
             };
             return subscriptionStateHandler;
-        } else {
-            logger.info("Not setting up subscription state handler");
-            onSinkSubscribe = () -> {
-                // no-op
-            };
-            onSinkUnsubscribe = () -> {
-                // no-op
-            };
-            return null;
-        }
+//        } else {
+//            logger.info("Not setting up subscription state handler");
+//            onSinkSubscribe = () -> {
+//                // no-op
+//            };
+//            onSinkUnsubscribe = () -> {
+//                // no-op
+//            };
+//            return null;
+//        }
     }
 
     private String getWorkerStringPrefix(int stageNum, int index, int number) {
@@ -508,7 +511,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw, AtomicReference<SubscriptionStateHandler> subscriptionStateHandlerRef) {
+    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw, AtomicReference<SinkSubscriptionStateHandler> subscriptionStateHandlerRef) {
         {
             // execute either intermediate (middle) stage or last+sink
             StageConfig previousStageExecuting = (StageConfig) rw.getJob().getStages()

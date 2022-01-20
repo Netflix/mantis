@@ -75,6 +75,14 @@ public enum MantisJobState {
         }
     }
 
+    public boolean isTerminalState() {
+        return isTerminalState(this);
+    }
+
+    public boolean isSuccessful() {
+        return this == MantisJobState.Completed;
+    }
+
     public static boolean isErrorState(MantisJobState started) {
         switch (started) {
             case Failed:

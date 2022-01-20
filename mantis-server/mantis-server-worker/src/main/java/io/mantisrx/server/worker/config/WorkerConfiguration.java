@@ -21,6 +21,7 @@ import io.mantisrx.shaded.com.google.common.base.Splitter;
 import java.io.File;
 import java.net.URI;
 import java.util.List;
+import org.apache.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
 
@@ -44,5 +45,48 @@ public interface WorkerConfiguration extends CoreConfiguration {
     default List<String> getAlwaysParentFirstLoaderPatterns() {
         Splitter splitter = Splitter.on(';').omitEmptyStrings();
         return splitter.splitToList(getAlwaysParentFirstLoaderPatternsString());
+    }
+
+    @Config("mantis.cluster.id")
+    String getClusterId();
+
+    @Config("mantis.ports.metrics")
+    @Default("5051")
+    int getMetricsPort();
+
+    @Config("mantis.ports.debug")
+    @Default("5052")
+    int getDebugPort();
+
+    @Config("mantis.ports.console")
+    @Default("5053")
+    int getConsolePort();
+
+    @Config("mantis.ports.custom")
+    @Default("5054")
+    int getCustomPort();
+
+    @Config("mantis.ports.sink")
+    @Default("5055")
+    int getSinkPort();
+
+    @Config("heartbeats.interval")
+    @Default("1000")
+    int heartbeatInternalInMs();
+
+    @Config("heartbeats.tolerable_consecutive_hearbeat_failures")
+    @Default("3")
+    int getTolerableConsecutiveHeartbeatFailures();
+
+    @Config("heartbeats.timeout.ms")
+    @Default("100")
+    int heartbeatTimeoutMs();
+
+    default Time getHeartbeatTimeout() {
+        return Time.milliseconds(heartbeatTimeoutMs());
+    }
+
+    default Time getHeartbeatInterval() {
+        return Time.milliseconds(heartbeatInternalInMs());
     }
 }

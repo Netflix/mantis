@@ -1,0 +1,153 @@
+/*
+ * Copyright 2022 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.mantisrx.server.worker;
+
+import static org.apache.flink.util.ExceptionUtils.stripExecutionException;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.mantisrx.common.utils.Services;
+import com.spotify.futures.CompletableFutures;
+import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.server.master.client.ClusterID;
+import io.mantisrx.server.master.client.ResourceManagerGateway;
+import io.mantisrx.server.master.client.TaskExecutorID;
+import io.mantisrx.server.master.client.TaskExecutorRegistration;
+import io.mantisrx.server.master.client.TaskExecutorReport;
+import io.mantisrx.server.worker.TaskExecutor.ResourceManagerGatewayCxn;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import org.apache.flink.api.common.time.Time;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+public class TestResourceManagerGatewayCxn {
+
+  private TaskExecutorID taskExecutorID;
+  private TaskExecutorRegistration registration;
+  private WorkerPorts workerPorts;
+  private ResourceManagerGateway gateway;
+  private ResourceManagerGatewayCxn cxn;
+  private TaskExecutorReport report;
+
+  @Before
+  public void setup() {
+    workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
+    taskExecutorID = new TaskExecutorID("resourceId", Optional.of(ClusterID.of("cluster")));
+    registration = new TaskExecutorRegistration(
+        taskExecutorID,
+        "localhost",
+        workerPorts,
+        MachineDefinitionUtils.sys(workerPorts));
+    gateway = mock(ResourceManagerGateway.class);
+    report = TaskExecutorReport.available();
+    cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
+        Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3);
+  }
+
+
+  @Test
+  public void testIfTaskExecutorRegistersItselfWithResourceManagerAndSendsHeartbeatsPeriodically()
+      throws Exception {
+    when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        CompletableFuture.completedFuture(null));
+    when(gateway.disconnectTaskExecutor(Matchers.eq(taskExecutorID))).thenReturn(
+        CompletableFuture.completedFuture(null));
+    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(taskExecutorID),
+        Matchers.eq(report))).thenReturn(CompletableFuture.completedFuture(null));
+    cxn.startAsync().awaitRunning();
+
+    Thread.sleep(1000);
+    cxn.stopAsync().awaitTerminated();
+    verify(gateway, times(1)).disconnectTaskExecutor(taskExecutorID);
+    verify(gateway, atLeastOnce()).heartBeatFromTaskExecutor(taskExecutorID, report);
+  }
+
+  @Test(expected = UnknownError.class)
+  public void testWhenRegistrationFails() throws Throwable {
+    when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception")));
+    CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
+    cxn.startAsync();
+    try {
+      result.get();
+    } catch (Exception e) {
+      throw stripExecutionException(e);
+    }
+  }
+
+  @Test
+  public void testWhenHeartbeatFailsIntermittently() throws Exception {
+    when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        CompletableFuture.completedFuture(null));
+    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(taskExecutorID), Matchers.eq(report)))
+        .thenAnswer(new Answer<CompletableFuture<Void>>() {
+          private int count = 0;
+          @Override
+          public CompletableFuture<Void> answer(InvocationOnMock invocation) {
+            count ++;
+            if (count % 2 == 0) {
+              return CompletableFuture.completedFuture(null);
+            } else {
+              return CompletableFutures.exceptionallyCompletedFuture(new Exception("error"));
+            }
+          }
+        });
+    cxn.startAsync();
+    Thread.sleep(1000);
+    assertEquals(cxn.state(), State.RUNNING);
+  }
+
+  @Test
+  public void testWhenHeartbeatFailsContinuously() throws Throwable {
+    when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        CompletableFuture.completedFuture(null));
+    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(taskExecutorID), Matchers.eq(report)))
+        .thenAnswer(new Answer<CompletableFuture<Void>>() {
+          private int count = 0;
+          @Override
+          public CompletableFuture<Void> answer(InvocationOnMock invocation) {
+            count ++;
+            if (count < 5) {
+              return CompletableFuture.completedFuture(null);
+            } else {
+              return CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error"));
+            }
+          }
+        });
+    when(gateway.disconnectTaskExecutor(Matchers.eq(taskExecutorID))).thenReturn(CompletableFuture.completedFuture(null));
+    cxn.startAsync();
+    CompletableFuture<Void> result = Services.awaitAsync(cxn, Executors.newSingleThreadExecutor());
+    Throwable throwable = null;
+    try {
+      result.get();
+    } catch (Exception e) {
+      throwable = stripExecutionException(e);
+    }
+
+    assertEquals(UnknownError.class, throwable.getClass());
+    verify(gateway, times(1)).disconnectTaskExecutor(taskExecutorID);
+  }
+}

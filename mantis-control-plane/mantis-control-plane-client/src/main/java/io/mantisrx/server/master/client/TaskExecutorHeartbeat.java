@@ -13,19 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.worker;
+package io.mantisrx.server.master.client;
 
-import java.io.Closeable;
+public class TaskExecutorHeartbeat {
 
-/**
- * UserCodeClassLoader allows to register release hooks for a user code class loader.
- */
-public interface UserCodeClassLoader extends Closeable {
-
-  /**
-   * Obtains the actual class loader.
-   *
-   * @return actual class loader
-   */
-  ClassLoader asClassLoader();
 }

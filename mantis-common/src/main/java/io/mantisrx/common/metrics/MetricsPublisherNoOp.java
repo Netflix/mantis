@@ -19,12 +19,15 @@ package io.mantisrx.common.metrics;
 import java.util.Collection;
 import java.util.Properties;
 
-
 public class MetricsPublisherNoOp extends MetricsPublisher {
 
-    public MetricsPublisherNoOp(Properties properties) {
-        super(properties);
+    public MetricsPublisherNoOp(String s) {
+        super(new Properties());
     }
+
+//    public MetricsPublisherNoOp(Properties properties) {
+//        super(properties);
+//    }
 
     @Override
     public void publishMetrics(long timestamp,

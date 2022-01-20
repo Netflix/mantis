@@ -16,9 +16,10 @@
 
 package io.mantisrx.server.worker;
 
-import io.mantisrx.server.core.Service;
+import io.mantisrx.server.core.Status;
+import java.util.concurrent.CompletableFuture;
 
 
-public interface ReportStatusService extends Service {
-
+public interface ReportStatusService {
+  CompletableFuture<Ack> updateTaskExecutionStatus(Status status);
 }

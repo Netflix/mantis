@@ -23,6 +23,3 @@ dependencies {
     testImplementation "org.mockito:mockito-all:$mockitoVersion"
     testCompile 'org.hamcrest:hamcrest-all:1.3'
 }
-
-
-

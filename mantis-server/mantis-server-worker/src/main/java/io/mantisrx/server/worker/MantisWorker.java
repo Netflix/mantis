@@ -20,7 +20,6 @@ import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.server.core.BaseService;
-import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
@@ -31,8 +30,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -52,11 +49,6 @@ public class MantisWorker extends BaseService {
 
     private final ClassLoaderHandle classLoaderHandle;
     private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
-
-    //    static {
-    //    	RxNetty.useNativeTransportIfApplicable();
-    //    }
-    private List<Service> mantisServices = new LinkedList<Service>();
 
     // todo(sundaram): Consolidate configurations into one class that can be used across all components.
     public MantisWorker(ConfigurationFactory configFactory) throws IOException {
@@ -83,9 +75,6 @@ public class MantisWorker extends BaseService {
         // services
         // metrics
 //        Data data = WorkerTopologyInfo.Reader.getData();
-
-//        mantisServices.add(new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
-//                commonTags));
     }
 
     private static Properties loadProperties(String propFile) {
@@ -147,15 +136,6 @@ public class MantisWorker extends BaseService {
     public void start() {
         logger.info("Starting Mantis Worker");
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
-        for (Service service : mantisServices) {
-            logger.info("Starting service: " + service.getClass().getName());
-            try {
-                service.start();
-            } catch (Throwable e) {
-                logger.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
-                throw e;
-            }
-        }
 
         try {
             blockUntilShutdown.await();
@@ -167,9 +147,6 @@ public class MantisWorker extends BaseService {
     @Override
     public void shutdown() {
         logger.info("Shutting down Mantis Worker");
-        for (Service service : mantisServices) {
-            service.shutdown();
-        }
         blockUntilShutdown.countDown();
     }
 

@@ -19,7 +19,7 @@ package io.mantisrx.server.worker.jobmaster;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.NamedJobInfo;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,12 +34,12 @@ public class SourceJobWorkerMetricsSubscription {
     private static final Logger logger = LoggerFactory.getLogger(SourceJobWorkerMetricsSubscription.class);
 
     private final List<SourceJobParameters.TargetInfo> targetInfos;
-    private final MantisMasterClientApi masterClient;
+    private final MantisMasterGateway masterClient;
     private final WorkerMetricsClient workerMetricsClient;
     private final AutoScaleMetricsConfig metricsConfig;
 
     public SourceJobWorkerMetricsSubscription(List<SourceJobParameters.TargetInfo> targetInfos,
-                                              MantisMasterClientApi masterClient,
+                                              MantisMasterGateway masterClient,
                                               WorkerMetricsClient workerMetricsClient,
                                               AutoScaleMetricsConfig metricsConfig) {
         this.targetInfos = targetInfos;

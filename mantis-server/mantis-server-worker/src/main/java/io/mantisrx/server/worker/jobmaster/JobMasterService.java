@@ -25,7 +25,7 @@ import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
@@ -42,6 +42,7 @@ import rx.functions.Action0;
 import rx.functions.Action1;
 
 // job master service is the one responsible for autoscaling
+// it represents stage 0.
 public class JobMasterService implements Service {
 
     private static final Logger logger = LoggerFactory.getLogger(JobMasterService.class);
@@ -56,7 +57,7 @@ public class JobMasterService implements Service {
     private final Action0 observableOnCompleteCallback;
     private final Action1<Throwable> observableOnErrorCallback;
     private final Action0 observableOnTerminateCallback;
-    private final MantisMasterClientApi masterClientApi;
+    private final MantisMasterGateway masterClientApi;
 
     private Subscription subscription = null;
 
@@ -64,7 +65,7 @@ public class JobMasterService implements Service {
                             final SchedulingInfo schedInfo,
                             final WorkerMetricsClient workerMetricsClient,
                             final AutoScaleMetricsConfig autoScaleMetricsConfig,
-                            final MantisMasterClientApi masterClientApi,
+                            final MantisMasterGateway masterClientApi,
                             final Context context,
                             final Action0 observableOnCompleteCallback,
                             final Action1<Throwable> observableOnErrorCallback,

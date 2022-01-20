@@ -15,6 +15,7 @@
  */
 
 dependencies {
+    api libraries.flinkRpc
     api project(":mantis-control-plane:mantis-control-plane-core")
 
     api project(":mantis-remote-observable")
