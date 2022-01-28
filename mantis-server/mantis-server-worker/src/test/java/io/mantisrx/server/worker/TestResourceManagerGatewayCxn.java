@@ -98,8 +98,8 @@ public class TestResourceManagerGatewayCxn {
   public void testWhenRegistrationFails() throws Throwable {
     when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
         CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception")));
-    CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
     cxn.startAsync();
+    CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
     try {
       result.get();
     } catch (Exception e) {

@@ -23,6 +23,7 @@ public class Configurations {
   public static <T> T frmProperties(Properties properties, Class<T> tClass) {
     ConfigurationObjectFactory configurationObjectFactory = new ConfigurationObjectFactory(
         properties);
+    configurationObjectFactory.addCoercible(new MetricsCoercer(properties));
     return configurationObjectFactory.build(tClass);
   }
 }
