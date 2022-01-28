@@ -269,7 +269,8 @@ public class JobRouteTest {
                         v1AgentClusterRoute,
                         v1JobDiscoveryStreamRoute,
                         v1LastSubmittedJobIdStreamRoute,
-                        v1JobStatusStreamRoute);
+                        v1JobStatusStreamRoute,
+                    null);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                               .flow(system, materializer);

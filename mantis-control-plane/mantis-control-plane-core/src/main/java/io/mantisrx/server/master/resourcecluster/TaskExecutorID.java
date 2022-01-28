@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.master.resourcecluster;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
 import lombok.Value;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Value
-public class ClusterID {
-  String resourceID;
+public class TaskExecutorID {
+  String resourceId;
 
-  public static ClusterID of(String clusterIdStr) {
-    return new ClusterID(clusterIdStr);
+  public static TaskExecutorID generate() {
+    return new TaskExecutorID(UUID.randomUUID().toString());
   }
 }

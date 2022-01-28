@@ -61,6 +61,7 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -171,6 +172,7 @@ public class JobsRouteTest extends RouteTestBase {
                         jobDiscoveryRouteHandler);
                 final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(
                         jobDiscoveryRouteHandler);
+                final ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
 
                 LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
                 LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(
@@ -193,7 +195,8 @@ public class JobsRouteTest extends RouteTestBase {
                         v1AgentClustersRoute,
                         v1JobDiscoveryStreamRoute,
                         v1LastSubmittedJobIdStreamRoute,
-                        v1JobStatusStreamRoute);
+                        v1JobStatusStreamRoute,
+                        new ResourceClustersRoute(gateway));
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                               .orElse(v1JobsRoute.createRoute(

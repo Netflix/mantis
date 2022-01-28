@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.TaskExecutorReport.Available;
-import io.mantisrx.server.master.client.TaskExecutorReport.Occupied;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;

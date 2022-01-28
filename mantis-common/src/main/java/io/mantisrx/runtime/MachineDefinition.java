@@ -122,4 +122,12 @@ public class MachineDefinition {
             return false;
         return true;
     }
+
+    public boolean canFit(MachineDefinition o) {
+        if (this.cpuCores >= o.cpuCores && this.memoryMB >= o.memoryMB && this.networkMbps >= o.networkMbps && this.diskMB >= o.diskMB && this.numPorts >= o.numPorts) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
