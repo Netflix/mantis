@@ -62,6 +62,7 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersRoute;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -83,6 +84,7 @@ import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
@@ -246,6 +248,8 @@ public class JobRouteTest {
                 final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
                 final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
                 final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
+                final ResourceClustersRoute v1ResourceClustersRoute = new ResourceClustersRoute(mock(
+                    ResourceClusterGateway.class));
 
 
                 LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
@@ -270,7 +274,7 @@ public class JobRouteTest {
                         v1JobDiscoveryStreamRoute,
                         v1LastSubmittedJobIdStreamRoute,
                         v1JobStatusStreamRoute,
-                    null);
+                        v1ResourceClustersRoute);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                               .flow(system, materializer);
