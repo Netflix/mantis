@@ -25,9 +25,9 @@ public class MetricsPublisherNoOp extends MetricsPublisher {
         super(new Properties());
     }
 
-//    public MetricsPublisherNoOp(Properties properties) {
-//        super(properties);
-//    }
+    public MetricsPublisherNoOp(Properties properties) {
+        super(properties);
+    }
 
     @Override
     public void publishMetrics(long timestamp,

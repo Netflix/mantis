@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.core;
 
-import io.mantisrx.common.metrics.MetricsPublisherNoOp;
+import io.mantisrx.common.metrics.MetricsPublisher;
 import org.skife.config.Config;
 import org.skife.config.Default;
 
@@ -56,7 +56,7 @@ public interface CoreConfiguration {
 
     @Config("mantis.metricsPublisher")
     @Default("io.mantisrx.common.metrics.MetricsPublisherNoOp")
-    MetricsPublisherNoOp getMetricsPublisher();
+    MetricsPublisher getMetricsPublisher();
 
     @Config("mantis.metricsPublisher.publishFrequencyInSeconds")
     @Default("15")
