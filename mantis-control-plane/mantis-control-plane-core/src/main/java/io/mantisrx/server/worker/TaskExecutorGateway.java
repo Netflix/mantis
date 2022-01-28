@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.worker;
 
-import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
-import rx.Observable;
+import io.mantisrx.server.core.ExecuteStageRequest;
+import io.mantisrx.server.core.domain.WorkerId;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import org.apache.flink.runtime.rpc.RpcGateway;
 
-public interface HighAvailabilityServices {
-  MantisMasterGateway getMasterClientApi();
+public interface TaskExecutorGateway extends RpcGateway {
+  CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
 
-  Observable<MasterDescription> getMasterDescription();
+  CompletableFuture<Ack> cancelTask(WorkerId workerId);
 
-  ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager();
+  CompletableFuture<String> requestThreadDump(Duration timeout);
 }

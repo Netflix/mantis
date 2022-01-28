@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.api.akka;
 
+import static org.mockito.Mockito.mock;
+
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -57,6 +59,7 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersRoute;
 import io.mantisrx.master.events.AuditEventBrokerActor;
 import io.mantisrx.master.events.AuditEventSubscriber;
 import io.mantisrx.master.events.AuditEventSubscriberAkkaImpl;
@@ -79,6 +82,7 @@ import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import java.time.Duration;
 import java.util.Collections;
@@ -237,6 +241,7 @@ public class MantisMasterAPI extends AllDirectives {
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
+        final ResourceClustersRoute v1ResourceClusterRoute = new ResourceClustersRoute(mock(ResourceClusterGateway.class));
 
         LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
         LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(masterDescription);
@@ -258,8 +263,8 @@ public class MantisMasterAPI extends AllDirectives {
                 v1AgentClustersRoute,
                 v1JobDiscoveryStreamRoute,
                 v1LastSubmittedJobIdStreamRoute,
-                v1JobStatusStreamRoute
-                );
+                v1JobStatusStreamRoute,
+                v1ResourceClusterRoute);
         final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                       .flow(system, materializer);
         final CompletionStage<ServerBinding> binding = http.bindAndHandle(

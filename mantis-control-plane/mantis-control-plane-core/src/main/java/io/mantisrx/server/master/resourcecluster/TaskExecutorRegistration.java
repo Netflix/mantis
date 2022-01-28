@@ -13,19 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 import lombok.Value;
 
 @Value
-public class TaskExecutorInfo {
+public class TaskExecutorRegistration {
+  TaskExecutorID taskExecutorID;
+
+  ClusterID clusterID;
+
   String taskExecutorAddress;
 
+  String hostname;
+
+  // ports
   WorkerPorts workerPorts;
 
+  // machine information
   MachineDefinition machineDefinition;
-
-  TaskExecutorReport taskExecutorReport;
 }

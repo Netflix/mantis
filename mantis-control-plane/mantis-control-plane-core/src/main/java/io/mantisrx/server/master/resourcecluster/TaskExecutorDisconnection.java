@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
 
-import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
-import rx.Observable;
+package io.mantisrx.server.master.resourcecluster;
 
-public interface HighAvailabilityServices {
-  MantisMasterGateway getMasterClientApi();
+import lombok.Value;
 
-  Observable<MasterDescription> getMasterDescription();
+@Value
+public class TaskExecutorDisconnection {
+  TaskExecutorID taskExecutorID;
 
-  ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager();
+  ClusterID clusterID;
 }

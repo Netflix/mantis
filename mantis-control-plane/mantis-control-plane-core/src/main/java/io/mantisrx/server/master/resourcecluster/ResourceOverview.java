@@ -13,22 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.master.resourcecluster;
 
-import java.util.Optional;
-import java.util.UUID;
 import lombok.Value;
 
 @Value
-public class TaskExecutorID {
-  String resourceId;
-  Optional<ClusterID> clusterId;
-
-  public static TaskExecutorID generate() {
-    return new TaskExecutorID(UUID.randomUUID().toString(), Optional.empty());
-  }
-
-  public static TaskExecutorID generate(ClusterID clusterId) {
-    return new TaskExecutorID(UUID.randomUUID().toString(), Optional.of(clusterId));
-  }
+public class ResourceOverview {
+  long numRegisteredTaskExecutors;
+  long numAvailableTaskExecutors;
+  long numOccupiedTaskExecutors;
+  long numAssignedTaskExecutors;
 }

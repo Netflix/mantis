@@ -44,7 +44,7 @@ import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
-import io.mantisrx.server.master.client.ResourceManagerGateway;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -82,8 +82,8 @@ public class TaskExecutorTest {
   private CountDownLatch startedSignal;
   private CountDownLatch doneSignal;
   private Status finalStatus;
-  private ResourceManagerGateway resourceManagerGateway;
-  private SimpleResourceLeaderConnection<ResourceManagerGateway> resourceManagerGatewayCxn;
+  private ResourceClusterGateway resourceManagerGateway;
+  private SimpleResourceLeaderConnection<ResourceClusterGateway> resourceManagerGatewayCxn;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Before
@@ -198,10 +198,10 @@ public class TaskExecutorTest {
 
   @Test
   public void testWhenSuccessiveHeartbeatsFail() throws Exception {
-    ResourceManagerGateway resourceManagerGateway = mock(ResourceManagerGateway.class);
+    ResourceClusterGateway resourceManagerGateway = mock(ResourceClusterGateway.class);
     when(resourceManagerGateway.registerTaskExecutor(any())).thenReturn(
         CompletableFuture.completedFuture(null));
-    when(resourceManagerGateway.heartBeatFromTaskExecutor(any(), any()))
+    when(resourceManagerGateway.heartBeatFromTaskExecutor(any()))
         .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error1")))
         .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error2")))
         .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error3")))
@@ -225,8 +225,8 @@ public class TaskExecutorTest {
     Thread.sleep(1000);
 
     // change the leader
-    ResourceManagerGateway newResourceManagerGateway = getHealthyGateway("gateway 2");
-    resourceManagerGatewayCxn.newLeaderIs(newResourceManagerGateway);
+    ResourceClusterGateway newResourceClusterGateway = getHealthyGateway("gateway 2");
+    resourceManagerGatewayCxn.newLeaderIs(newResourceClusterGateway);
 
     // wait for a second for new connections
     Thread.sleep(1000);
@@ -234,10 +234,10 @@ public class TaskExecutorTest {
     // check if the switch has been made
     verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
     verify(resourceManagerGateway, times(1)).disconnectTaskExecutor(any());
-    verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any(), any());
+    verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
-    verify(newResourceManagerGateway, times(1)).registerTaskExecutor(any());
-    verify(newResourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any(), any());
+    verify(newResourceClusterGateway, times(1)).registerTaskExecutor(any());
+    verify(newResourceClusterGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
     // check if the task executor is registered
     assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
@@ -251,7 +251,7 @@ public class TaskExecutorTest {
     Thread.sleep(1000);
 
     // change the leader
-    ResourceManagerGateway newResourceManagerGateway1 = getUnhealthyGateway("gateway 2");
+    ResourceClusterGateway newResourceManagerGateway1 = getUnhealthyGateway("gateway 2");
     resourceManagerGatewayCxn.newLeaderIs(newResourceManagerGateway1);
 
     // wait for a second for new connections
@@ -260,35 +260,35 @@ public class TaskExecutorTest {
     // check if the switch has been made
     verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
     verify(resourceManagerGateway, times(1)).disconnectTaskExecutor(any());
-    verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any(), any());
+    verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
     verify(newResourceManagerGateway1, atLeastOnce()).registerTaskExecutor(any());
     verify(newResourceManagerGateway1, atLeastOnce()).disconnectTaskExecutor(any());
-    verify(newResourceManagerGateway1, never()).heartBeatFromTaskExecutor(any(), any());
+    verify(newResourceManagerGateway1, never()).heartBeatFromTaskExecutor(any());
 
-    ResourceManagerGateway newResourceManagerGateway2 = getHealthyGateway("gateway 3");
+    ResourceClusterGateway newResourceManagerGateway2 = getHealthyGateway("gateway 3");
     resourceManagerGatewayCxn.newLeaderIs(newResourceManagerGateway2);
     Thread.sleep(1000);
 
     verify(newResourceManagerGateway2, times(1)).registerTaskExecutor(any());
     verify(newResourceManagerGateway2, never()).disconnectTaskExecutor(any());
-    verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any(), any());
+    verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
     // check if the task executor is registered
     assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
   }
 
-  private static ResourceManagerGateway getHealthyGateway(String name) {
-    ResourceManagerGateway gateway = mock(ResourceManagerGateway.class);
+  private static ResourceClusterGateway getHealthyGateway(String name) {
+    ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
     when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
-    when(gateway.heartBeatFromTaskExecutor(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+    when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
     when(gateway.disconnectTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
     when(gateway.toString()).thenReturn(name);
     return gateway;
   }
 
-  private static ResourceManagerGateway getUnhealthyGateway(String name) {
-    ResourceManagerGateway gateway = mock(ResourceManagerGateway.class);
+  private static ResourceClusterGateway getUnhealthyGateway(String name) {
+    ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
     when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
     when(gateway.disconnectTaskExecutor(any())).thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
     when(gateway.toString()).thenReturn(name);

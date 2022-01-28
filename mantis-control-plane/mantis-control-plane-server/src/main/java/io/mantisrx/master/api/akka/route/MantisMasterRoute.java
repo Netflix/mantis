@@ -31,12 +31,10 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersRoute;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MantisMasterRoute extends AllDirectives {
-    private static final Logger logger = LoggerFactory.getLogger(MantisMasterRoute.class);
 
     private final LeaderRedirectionFilter leaderRedirectionFilter;
 
@@ -55,22 +53,24 @@ public class MantisMasterRoute extends AllDirectives {
     private final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute;
     private final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute;
     private final JobStatusStreamRoute v1JobStatusStreamRoute;
+    private final ResourceClustersRoute v1ResourceClusterRoute;
 
     public MantisMasterRoute(
-            final LeaderRedirectionFilter leaderRedirectionFilter,
-            final MasterDescriptionRoute v0MasterDescriptionRoute,
-            final JobClusterRoute v0JobClusterRoute,
-            final JobRoute v0JobRoute,
-            final JobDiscoveryRoute v0JobDiscoveryRoute,
-            final JobStatusRoute v0JobStatusRoute,
-            final AgentClusterRoute v0AgentClusterRoute,
-            final JobClustersRoute v1JobClusterRoute,
-            final JobsRoute v1JobsRoute,
-            final AdminMasterRoute v1MasterRoute,
-            final AgentClustersRoute v1AgentClustersRoute,
-            final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute,
-            final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute,
-            final JobStatusStreamRoute v1JobStatusStreamRoute) {
+        final LeaderRedirectionFilter leaderRedirectionFilter,
+        final MasterDescriptionRoute v0MasterDescriptionRoute,
+        final JobClusterRoute v0JobClusterRoute,
+        final JobRoute v0JobRoute,
+        final JobDiscoveryRoute v0JobDiscoveryRoute,
+        final JobStatusRoute v0JobStatusRoute,
+        final AgentClusterRoute v0AgentClusterRoute,
+        final JobClustersRoute v1JobClusterRoute,
+        final JobsRoute v1JobsRoute,
+        final AdminMasterRoute v1MasterRoute,
+        final AgentClustersRoute v1AgentClustersRoute,
+        final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute,
+        final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute,
+        final JobStatusStreamRoute v1JobStatusStreamRoute,
+        final ResourceClustersRoute v1ResourceClusterRoute) {
         this.leaderRedirectionFilter = leaderRedirectionFilter;
         this.v0MasterDescriptionRoute = v0MasterDescriptionRoute;
         this.v0JobClusterRoute = v0JobClusterRoute;
@@ -86,6 +86,7 @@ public class MantisMasterRoute extends AllDirectives {
         this.v1JobDiscoveryStreamRoute = v1JobDiscoveryStreamRoute;
         this.v1LastSubmittedJobIdStreamRoute = v1LastSubmittedJobIdStreamRoute;
         this.v1JobStatusStreamRoute = v1JobStatusStreamRoute;
+        this.v1ResourceClusterRoute = v1ResourceClusterRoute;
     }
 
     public Route createRoute() {
@@ -102,7 +103,8 @@ public class MantisMasterRoute extends AllDirectives {
                 v1AgentClustersRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1JobDiscoveryStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1LastSubmittedJobIdStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
-                v1JobStatusStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader)
+                v1JobStatusStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
+                v1ResourceClusterRoute.createRoute(leaderRedirectionFilter::rejectIfNotLeader)
         );
     }
 }

@@ -21,16 +21,18 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.ExecutionAttemptID;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.master.client.ClusterID;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
-import io.mantisrx.server.master.client.ResourceManagerGateway;
-import io.mantisrx.server.master.client.TaskExecutorID;
-import io.mantisrx.server.master.client.TaskExecutorRegistration;
-import io.mantisrx.server.master.client.TaskExecutorReport;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -58,13 +60,14 @@ import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
   private final TaskExecutorID taskExecutorID;
+  private final ClusterID clusterID;
   private final WorkerConfiguration workerConfiguration;
   //  private final TaskTable taskTable;
   private final MantisMasterGateway masterMonitor;
   private final ClassLoaderHandle classLoaderHandle;
   private final Function<Status, CompletableFuture<Ack>> updateTaskExecutionStatusFunction;
   private final SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory;
-  private final ResourceLeaderConnection<ResourceManagerGateway> resourceManager;
+  private final ResourceLeaderConnection<ResourceClusterGateway> resourceManager;
   private final WorkerPorts workerPorts;
   private final MachineDefinition machineDefinition;
   private final TaskExecutorRegistration taskExecutorRegistration;
@@ -81,11 +84,12 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
       MantisMasterGateway masterMonitor, ClassLoaderHandle classLoaderHandle,
       Function<Status, CompletableFuture<Ack>> updateTaskExecutionStatusFunction,
       Factory subscriptionStateHandlerFactory,
-      ResourceLeaderConnection<ResourceManagerGateway> resourceManager) {
+      ResourceLeaderConnection<ResourceClusterGateway> resourceManager) {
     super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
     // this is the task executor ID that will be used for the rest of the JVM process
-    this.taskExecutorID = TaskExecutorID.generate(ClusterID.of(workerConfiguration.getClusterId()));
+    this.taskExecutorID = TaskExecutorID.generate();
+    this.clusterID = ClusterID.of(workerConfiguration.getClusterId());
     this.workerConfiguration = workerConfiguration;
 //    this.taskTable = taskTable;
     this.masterMonitor = masterMonitor;
@@ -106,7 +110,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerPorts.getNumberOfPorts());
     this.taskExecutorRegistration =
         new TaskExecutorRegistration(
-            taskExecutorID, getAddress(), workerPorts, machineDefinition);
+            taskExecutorID, clusterID, getAddress(), getHostname(), workerPorts, machineDefinition);
     this.ioExecutor =
         Executors.newFixedThreadPool(
             Hardware.getNumberCPUCores(),
@@ -234,7 +238,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
   private ResourceManagerGatewayCxn newResourceManagerCxn() {
     validateRunsInMainThread();
-    ResourceManagerGateway resourceManagerGateway = resourceManager.getCurrent();
+    ResourceClusterGateway resourceManagerGateway = resourceManager.getCurrent();
 
     // let's register ourselves with the resource manager
     return new ResourceManagerGatewayCxn(
@@ -275,7 +279,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private final int idx;
     private final TaskExecutorRegistration taskExecutorRegistration;
-    private final ResourceManagerGateway gateway;
+    private final ResourceClusterGateway gateway;
     private final Time heartBeatInterval;
     private final Time heartBeatTimeout;
     private final Time timeout = Time.of(1, TimeUnit.MILLISECONDS);
@@ -292,7 +296,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     protected Scheduler scheduler() {
       return Scheduler.newFixedDelaySchedule(
-          heartBeatInterval.getSize(),
+          0,
           heartBeatInterval.getSize(),
           heartBeatInterval.getUnit());
     }
@@ -309,7 +313,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         // do the disconnection just to be safe.
         log.info("Registration to gateway {} has failed; Disconnecting now to be safe", gateway);
         try {
-          gateway.disconnectTaskExecutor(taskExecutorRegistration.getTaskExecutorID())
+          gateway.disconnectTaskExecutor(new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID()))
               .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
         } catch (Exception inner) {
           log.error("Disconnection has also failed", inner);
@@ -324,7 +328,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         currentReportSupplier.apply(timeout)
             .thenComposeAsync(report -> {
               log.info("Sending heartbeat to resource manager {} with report {}", gateway, report);
-              return gateway.heartBeatFromTaskExecutor(taskExecutorRegistration.getTaskExecutorID(), report);
+              return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
             })
             .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 
@@ -345,17 +349,17 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public void shutDown() throws Exception {
       gateway
-          .disconnectTaskExecutor(taskExecutorRegistration.getTaskExecutorID())
+          .disconnectTaskExecutor(new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID()))
           .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
     }
   }
 
   private class ResourceManagerChangeListener implements
-      ResourceLeaderChangeListener<ResourceManagerGateway> {
+      ResourceLeaderChangeListener<ResourceClusterGateway> {
 
     @Override
-    public void onResourceLeaderChanged(ResourceManagerGateway previousResourceLeader,
-        ResourceManagerGateway newResourceLeader) {
+    public void onResourceLeaderChanged(ResourceClusterGateway previousResourceLeader,
+        ResourceClusterGateway newResourceLeader) {
       runAsync(TaskExecutor.this::reestablishResourceManagerCxnAsync);
     }
   }
@@ -398,7 +402,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   }
 
   @Override
-  public CompletableFuture<Ack> cancelTask(ExecutionAttemptID executionAttemptID) {
+  public CompletableFuture<Ack> cancelTask(WorkerId workerId) {
     return null;
   }
 

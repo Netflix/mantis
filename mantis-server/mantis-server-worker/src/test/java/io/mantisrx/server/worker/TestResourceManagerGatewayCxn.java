@@ -26,14 +26,15 @@ import static org.mockito.Mockito.when;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.server.master.client.ClusterID;
-import io.mantisrx.server.master.client.ResourceManagerGateway;
-import io.mantisrx.server.master.client.TaskExecutorID;
-import io.mantisrx.server.master.client.TaskExecutorRegistration;
-import io.mantisrx.server.master.client.TaskExecutorReport;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.worker.TaskExecutor.ResourceManagerGatewayCxn;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.apache.flink.api.common.time.Time;
@@ -46,23 +47,31 @@ import org.mockito.stubbing.Answer;
 public class TestResourceManagerGatewayCxn {
 
   private TaskExecutorID taskExecutorID;
+  private ClusterID clusterID;
   private TaskExecutorRegistration registration;
+  private TaskExecutorDisconnection disconnection;
+  private TaskExecutorHeartbeat heartbeat;
   private WorkerPorts workerPorts;
-  private ResourceManagerGateway gateway;
+  private ResourceClusterGateway gateway;
   private ResourceManagerGatewayCxn cxn;
   private TaskExecutorReport report;
 
   @Before
   public void setup() {
     workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
-    taskExecutorID = new TaskExecutorID("resourceId", Optional.of(ClusterID.of("cluster")));
+    taskExecutorID = new TaskExecutorID("taskExecutor");
+    clusterID = ClusterID.of("cluster");
     registration = new TaskExecutorRegistration(
         taskExecutorID,
+        clusterID,
         "localhost",
+        "host",
         workerPorts,
         MachineDefinitionUtils.sys(workerPorts));
-    gateway = mock(ResourceManagerGateway.class);
+    disconnection = new TaskExecutorDisconnection(taskExecutorID, clusterID);
+    gateway = mock(ResourceClusterGateway.class);
     report = TaskExecutorReport.available();
+    heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
     cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
         Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3);
   }
@@ -73,16 +82,16 @@ public class TestResourceManagerGatewayCxn {
       throws Exception {
     when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
         CompletableFuture.completedFuture(null));
-    when(gateway.disconnectTaskExecutor(Matchers.eq(taskExecutorID))).thenReturn(
+    when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(
         CompletableFuture.completedFuture(null));
-    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(taskExecutorID),
-        Matchers.eq(report))).thenReturn(CompletableFuture.completedFuture(null));
+    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
+        .thenReturn(CompletableFuture.completedFuture(null));
     cxn.startAsync().awaitRunning();
 
     Thread.sleep(1000);
     cxn.stopAsync().awaitTerminated();
-    verify(gateway, times(1)).disconnectTaskExecutor(taskExecutorID);
-    verify(gateway, atLeastOnce()).heartBeatFromTaskExecutor(taskExecutorID, report);
+    verify(gateway, times(1)).disconnectTaskExecutor(disconnection);
+    verify(gateway, atLeastOnce()).heartBeatFromTaskExecutor(heartbeat);
   }
 
   @Test(expected = UnknownError.class)
@@ -102,7 +111,7 @@ public class TestResourceManagerGatewayCxn {
   public void testWhenHeartbeatFailsIntermittently() throws Exception {
     when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
         CompletableFuture.completedFuture(null));
-    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(taskExecutorID), Matchers.eq(report)))
+    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
         .thenAnswer(new Answer<CompletableFuture<Void>>() {
           private int count = 0;
           @Override
@@ -124,7 +133,7 @@ public class TestResourceManagerGatewayCxn {
   public void testWhenHeartbeatFailsContinuously() throws Throwable {
     when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
         CompletableFuture.completedFuture(null));
-    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(taskExecutorID), Matchers.eq(report)))
+    when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
         .thenAnswer(new Answer<CompletableFuture<Void>>() {
           private int count = 0;
           @Override
@@ -137,7 +146,7 @@ public class TestResourceManagerGatewayCxn {
             }
           }
         });
-    when(gateway.disconnectTaskExecutor(Matchers.eq(taskExecutorID))).thenReturn(CompletableFuture.completedFuture(null));
+    when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(CompletableFuture.completedFuture(null));
     cxn.startAsync();
     CompletableFuture<Void> result = Services.awaitAsync(cxn, Executors.newSingleThreadExecutor());
     Throwable throwable = null;
@@ -148,6 +157,6 @@ public class TestResourceManagerGatewayCxn {
     }
 
     assertEquals(UnknownError.class, throwable.getClass());
-    verify(gateway, times(1)).disconnectTaskExecutor(taskExecutorID);
+    verify(gateway, times(1)).disconnectTaskExecutor(disconnection);
   }
 }

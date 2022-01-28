@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.worker;
+package io.mantisrx.server.master.resourcecluster;
 
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.ExecutionAttemptID;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import org.apache.flink.runtime.rpc.RpcGateway;
+import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.runtime.MachineDefinition;
+import lombok.Value;
 
-public interface TaskExecutorGateway extends RpcGateway {
-  CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
+@Value
+public class TaskExecutorInfo {
+  TaskExecutorID taskExecutorID;
 
-  CompletableFuture<Ack> cancelTask(ExecutionAttemptID executionAttemptID);
+  String taskExecutorAddress;
 
-  CompletableFuture<String> requestThreadDump(Duration timeout);
+  String hostname;
+
+  WorkerPorts workerPorts;
+
+  MachineDefinition machineDefinition;
 }
