@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.Ignore;
 import org.junit.Test;
 import rx.Observable;
 import rx.functions.Func1;
@@ -185,6 +186,7 @@ public class MasterClientWrapperTest {
 
     }
 
+    @Ignore
     @Test
     public void testNamedJobExists() {
 
