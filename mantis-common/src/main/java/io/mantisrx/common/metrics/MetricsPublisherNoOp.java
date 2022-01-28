@@ -21,10 +21,6 @@ import java.util.Properties;
 
 public class MetricsPublisherNoOp extends MetricsPublisher {
 
-    public MetricsPublisherNoOp(String s) {
-        super(new Properties());
-    }
-
     public MetricsPublisherNoOp(Properties properties) {
         super(properties);
     }
