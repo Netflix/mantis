@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker;
 
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -30,13 +30,13 @@ class SubscriptionStateHandlerImpl implements SinkSubscriptionStateHandler {
     private static final Logger logger = LoggerFactory.getLogger(SubscriptionStateHandlerImpl.class);
     private final AtomicReference<ScheduledFuture> timedOutExitFutureRef = new AtomicReference<>();
     private final String jobId;
-    private final MantisMasterClientApi masterClientApi;
+    private final MantisMasterGateway masterClientApi;
     private ScheduledThreadPoolExecutor executor;
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
     private long startedAt = System.currentTimeMillis();
 
-    SubscriptionStateHandlerImpl(String jobId, MantisMasterClientApi masterClientApi, long subscriptionTimeoutSecs, long minRuntimeSecs) {
+    SubscriptionStateHandlerImpl(String jobId, MantisMasterGateway masterClientApi, long subscriptionTimeoutSecs, long minRuntimeSecs) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
         this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;

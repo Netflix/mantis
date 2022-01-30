@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
+import org.skife.config.DefaultNull;
 
 
 public interface WorkerConfiguration extends CoreConfiguration {
@@ -81,6 +82,22 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Config("heartbeats.timeout.ms")
     @Default("100")
     int heartbeatTimeoutMs();
+
+    @Config("rpc.externalAddress")
+    @Default("${EC2_LOCAL_IPV4}")
+    String getExternalAddress();
+
+    @Config("rpc.portRange")
+    @Default("")
+    String getExternalPortRange();
+
+    @Config("rpc.bindAddress")
+    @DefaultNull
+    String getBindAddress();
+
+    @Config("rpc.bindPort")
+    @DefaultNull
+    Integer getBindPort();
 
     default Time getHeartbeatTimeout() {
         return Time.milliseconds(heartbeatTimeoutMs());

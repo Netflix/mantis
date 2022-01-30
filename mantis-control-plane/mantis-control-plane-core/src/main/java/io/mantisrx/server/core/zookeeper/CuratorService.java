@@ -33,12 +33,14 @@ import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
 import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
+import java.time.Duration;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
- * This {@link Service} implementation is responsible for managing the lifecycle of a {@link org.apache.curator.framework.CuratorFramework}
+ * This {@link Service} implementation is responsible for managing the lifecycle of a {@link io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework}
  * instance.
  */
 public class CuratorService extends BaseService {
@@ -51,7 +53,7 @@ public class CuratorService extends BaseService {
     private final CoreConfiguration configs;
     private final Gauge isConnectedGauge;
 
-    public CuratorService(CoreConfiguration configs, MasterDescription initialMasterDescription) {
+    public CuratorService(CoreConfiguration configs, @Nullable MasterDescription initialMasterDescription) {
         super(false);
         this.configs = configs;
         Metrics m = new Metrics.Builder()
@@ -97,6 +99,14 @@ public class CuratorService extends BaseService {
         setupCuratorListener();
         curator.start();
         masterMonitor.start();
+    }
+
+    public void awaitRunning() throws InterruptedException {
+        masterMonitor.awaitRunning();
+    }
+
+    public boolean awaitRunning(Duration timeout) throws InterruptedException {
+        return masterMonitor.awaitRunning(timeout);
     }
 
     @Override

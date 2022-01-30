@@ -29,12 +29,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
+import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Slf4j
@@ -57,9 +56,9 @@ public class Task extends AbstractIdleService implements TaskPayload {
 
   private final ClassLoaderHandle classLoaderHandle;
 
-  private final Function<Status, CompletableFuture<Ack>> updateTaskExecutionStatusFunction;
-
   private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
+
+  private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
   @Override
   public void startUp() {
@@ -73,22 +72,12 @@ public class Task extends AbstractIdleService implements TaskPayload {
   public void doRun() throws Exception {
     // shared state
     PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
-    // the wrapped observable tracks the status of the ExecuteStageRequest that was passed in the previous
-    // observable.
-    PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
     PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
 
     mantisServices.add(MetricsFactory.newMetricsServer(config, executeStageRequest));
     mantisServices.add(MetricsFactory.newMetricsPublisher(config, executeStageRequest));
     WorkerMetricsClient workerMetricsClient = new WorkerMetricsClient(masterMonitor);
 
-    mantisServices.add(
-        new BaseReportStatusService(tasksStatusSubject) {
-          @Override
-          public CompletableFuture<Ack> updateTaskExecutionStatus(Status status) {
-            return updateTaskExecutionStatusFunction.apply(status);
-          }
-        });
     mantisServices.add(new ExecuteStageRequestService(
         executeStageSubject,
         tasksStatusSubject,
@@ -135,5 +124,10 @@ public class Task extends AbstractIdleService implements TaskPayload {
 
   private Optional<String> getJobProviderClass() {
     return executeStageRequest.getNameOfJobProviderClass();
+  }
+
+  public Observable<Status> getStatus() {
+    return tasksStatusSubject
+        .flatMap((Func1<Observable<Status>, Observable<Status>>) status -> status);
   }
 }

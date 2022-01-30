@@ -47,6 +47,7 @@ ext {
 }
 
 ext.libraries = [
+        asyncHttpClient: 'org.asynchttpclient:async-http-client:2.12.3',
         lombok: "org.projectlombok:lombok:1.18.20",
         commonsIo: "commons-io:commons-io:2.11.0",
         hadoopCommon: "org.apache.hadoop:hadoop-common:2.7.7",

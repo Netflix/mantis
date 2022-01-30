@@ -45,6 +45,7 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -59,7 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.apache.flink.api.common.time.Time;
@@ -110,7 +111,7 @@ public class TaskExecutorTest {
   }
 
   private void start() {
-    Function<Status, CompletableFuture<Ack>> updateTaskExecutionStatusFunction = status -> {
+    Consumer<Status> updateTaskExecutionStatusFunction = status -> {
       log.info("Task Status = {}", status.getState());
       if (status.getState() == MantisJobState.Started) {
         startedSignal.countDown();
@@ -120,14 +121,13 @@ public class TaskExecutorTest {
         finalStatus = status;
         doneSignal.countDown();
       }
-
-      return CompletableFuture.completedFuture(Ack.getInstance());
     };
 
     taskExecutor =
-        new TaskExecutor(rpcService, workerConfiguration, masterMonitor,
-            classLoaderHandle, updateTaskExecutionStatusFunction,
-            executeStageRequest -> SinkSubscriptionStateHandler.noop(), resourceManagerGatewayCxn);
+        new TestingTaskExecutor(rpcService, workerConfiguration, masterMonitor,
+            classLoaderHandle,
+            executeStageRequest -> SinkSubscriptionStateHandler.noop(), resourceManagerGatewayCxn,
+            updateTaskExecutionStatusFunction);
     taskExecutor.start();
     taskExecutor.awaitRunning();
   }
@@ -193,7 +193,8 @@ public class TaskExecutorTest {
           }
         })
         .takeUntil(point -> point.getX() > threshold)
-        .subscribe(point -> log.info("point={}", point), error -> log.error("failed", error), () -> doneSignal.countDown());
+        .subscribe(point -> log.info("point={}", point), error -> log.error("failed", error),
+            () -> doneSignal.countDown());
     assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
     subscription.unsubscribe();
   }
@@ -283,7 +284,8 @@ public class TaskExecutorTest {
   private static ResourceClusterGateway getHealthyGateway(String name) {
     ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
     when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
-    when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
+    when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(
+        CompletableFuture.completedFuture(null));
     when(gateway.disconnectTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
     when(gateway.toString()).thenReturn(name);
     return gateway;
@@ -291,13 +293,17 @@ public class TaskExecutorTest {
 
   private static ResourceClusterGateway getUnhealthyGateway(String name) {
     ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
-    when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
-    when(gateway.disconnectTaskExecutor(any())).thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
+    when(gateway.registerTaskExecutor(any())).thenReturn(
+        CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
+    when(gateway.disconnectTaskExecutor(any())).thenReturn(
+        CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
     when(gateway.toString()).thenReturn(name);
     return gateway;
   }
 
-  public static class SimpleResourceLeaderConnection<ResourceT> implements ResourceLeaderConnection<ResourceT> {
+  public static class SimpleResourceLeaderConnection<ResourceT> implements
+      ResourceLeaderConnection<ResourceT> {
+
     private final AtomicReference<ResourceT> current;
     private final AtomicReference<ResourceLeaderChangeListener<ResourceT>> listener = new AtomicReference<>();
 
@@ -312,7 +318,8 @@ public class TaskExecutorTest {
 
     @Override
     public void register(ResourceLeaderChangeListener<ResourceT> changeListener) {
-      Preconditions.checkArgument(listener.compareAndSet(null, changeListener), "changeListener already set");
+      Preconditions.checkArgument(listener.compareAndSet(null, changeListener),
+          "changeListener already set");
     }
 
     public void newLeaderIs(ResourceT newLeader) {
@@ -320,6 +327,28 @@ public class TaskExecutorTest {
       if (listener.get() != null) {
         listener.get().onResourceLeaderChanged(old, newLeader);
       }
+    }
+  }
+
+  private final class TestingTaskExecutor extends TaskExecutor {
+
+    private final Consumer<Status> consumer;
+
+    public TestingTaskExecutor(RpcService rpcService,
+        WorkerConfiguration workerConfiguration,
+        MantisMasterGateway masterMonitor,
+        ClassLoaderHandle classLoaderHandle,
+        Factory subscriptionStateHandlerFactory,
+        ResourceLeaderConnection<ResourceClusterGateway> resourceManager,
+        Consumer<Status> consumer) {
+      super(rpcService, workerConfiguration, masterMonitor, classLoaderHandle,
+          subscriptionStateHandlerFactory, resourceManager);
+      this.consumer = consumer;
+    }
+
+    @Override
+    protected void updateExecutionStatus(Status status) {
+      consumer.accept(status);
     }
   }
 }

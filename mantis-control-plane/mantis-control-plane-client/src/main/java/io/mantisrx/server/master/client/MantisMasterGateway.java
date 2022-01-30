@@ -24,7 +24,10 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobAssignmentResult;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
+import io.mantisrx.server.core.Status;
+import io.mantisrx.server.worker.Ack;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import rx.Observable;
 
 public interface MantisMasterGateway {
@@ -82,9 +85,13 @@ public interface MantisMasterGateway {
 
   Observable<Void> killJob(final String jobId);
 
+  Observable<Void> killJob(final String jobId, final String user, final String reason);
+
   Observable<String> getJobsOfNamedJob(final String jobName, final MantisJobState.MetaState state);
 
   Observable<String> getJobStatusObservable(final String jobId);
 
   Observable<JobAssignmentResult> assignmentResults(String jobId);
+
+  CompletableFuture<Ack> updateStatus(Status status);
 }

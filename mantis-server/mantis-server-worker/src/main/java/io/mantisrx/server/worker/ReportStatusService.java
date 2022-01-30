@@ -19,7 +19,6 @@ package io.mantisrx.server.worker;
 import io.mantisrx.server.core.Status;
 import java.util.concurrent.CompletableFuture;
 
-
 public interface ReportStatusService {
   CompletableFuture<Ack> updateTaskExecutionStatus(Status status);
 }

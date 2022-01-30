@@ -16,6 +16,8 @@
 
 dependencies {
     api libraries.flinkRpc
+    implementation libraries.asyncHttpClient
+    implementation libraries.spotifyFutures
     api project(":mantis-control-plane:mantis-control-plane-core")
 
     api project(":mantis-remote-observable")
