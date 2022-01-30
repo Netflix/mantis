@@ -19,6 +19,8 @@ dependencies {
     annotationProcessor libraries.lombok
 
     api libraries.flinkRpc
+    implementation libraries.asyncHttpClient
+    implementation libraries.spotifyFutures
 
     compile project(":mantis-control-plane:mantis-control-plane-core")
 

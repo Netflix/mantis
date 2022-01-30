@@ -16,6 +16,10 @@
 
 package io.mantisrx.server.master.client;
 
+import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.post;
+
+import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.JobSla;
@@ -29,8 +33,11 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobAssignmentResult;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
+import io.mantisrx.server.core.PostJobStatusRequest;
+import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
+import io.mantisrx.server.worker.Ack;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
@@ -53,6 +60,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
@@ -62,6 +70,8 @@ import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
 import mantis.io.reactivex.netty.protocol.http.websocket.WebSocketClient;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.RequestBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -143,6 +153,8 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                             " swapping out client API connection to new master.");
                     return new Endpoint(description.getHostname(), description.getApiPortV2());
                 });
+
+        apiClient = asyncHttpClient();
         int a = SUBSCRIBE_ATTEMPTS_TO_MASTER;
         final String p = System.getProperty(ConnectTimeoutSecsPropertyName);
         if (p != null) {
@@ -784,4 +796,31 @@ public class MantisMasterClientApi implements MantisMasterGateway {
 
         return Observable.merge(reconciliator.observables());
     }
+
+  private final AsyncHttpClient apiClient;
+
+  @Override
+  public CompletableFuture<Ack> updateStatus(Status status) {
+
+    try {
+      final String statusUpdate = objectMapper.writeValueAsString(
+          new PostJobStatusRequest(status.getJobId(), status));
+      final RequestBuilder requestBuilder =
+          post(masterMonitor.getLatestMaster().getFullApiStatusUri())
+              .setBody(statusUpdate);
+      return apiClient
+          .executeRequest(requestBuilder)
+          .toCompletableFuture()
+          .thenCompose(response -> {
+            if (response.getStatusCode() == 200) {
+              return CompletableFuture.completedFuture(Ack.getInstance());
+            } else {
+              return CompletableFutures.exceptionallyCompletedFuture(
+                  new Exception(response.getResponseBody()));
+            }
+          });
+    } catch (Exception e) {
+      return CompletableFutures.exceptionallyCompletedFuture(e);
+    }
+  }
 }

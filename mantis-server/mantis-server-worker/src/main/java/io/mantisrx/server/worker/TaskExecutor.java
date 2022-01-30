@@ -18,6 +18,9 @@ package io.mantisrx.server.worker;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.ExecuteStageRequest;
@@ -40,6 +43,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.Listener;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -55,17 +59,20 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcEndpoint;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.runtime.rpc.RpcServiceUtils;
+import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.ConnectionPoolTimeoutException;
+import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
   private final TaskExecutorID taskExecutorID;
   private final ClusterID clusterID;
   private final WorkerConfiguration workerConfiguration;
-  //  private final TaskTable taskTable;
   private final MantisMasterGateway masterMonitor;
   private final ClassLoaderHandle classLoaderHandle;
-  private final Function<Status, CompletableFuture<Ack>> updateTaskExecutionStatusFunction;
   private final SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory;
   private final ResourceLeaderConnection<ResourceClusterGateway> resourceManager;
   private final WorkerPorts workerPorts;
@@ -77,12 +84,12 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   private ResourceManagerGatewayCxn currentResourceManagerCxn;
   private TaskExecutorReport currentReport;
   private Task currentTask;
+  private Subscription currentTaskStatusSubscription;
   private int resourceManagerCxnIdx;
 
   public TaskExecutor(RpcService rpcService,
       WorkerConfiguration workerConfiguration,
       MantisMasterGateway masterMonitor, ClassLoaderHandle classLoaderHandle,
-      Function<Status, CompletableFuture<Ack>> updateTaskExecutionStatusFunction,
       Factory subscriptionStateHandlerFactory,
       ResourceLeaderConnection<ResourceClusterGateway> resourceManager) {
     super(rpcService, RpcServiceUtils.createRandomName("worker"));
@@ -91,10 +98,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     this.taskExecutorID = TaskExecutorID.generate();
     this.clusterID = ClusterID.of(workerConfiguration.getClusterId());
     this.workerConfiguration = workerConfiguration;
-//    this.taskTable = taskTable;
     this.masterMonitor = masterMonitor;
     this.classLoaderHandle = classLoaderHandle;
-    this.updateTaskExecutionStatusFunction = updateTaskExecutionStatusFunction;
     this.subscriptionStateHandlerFactory = subscriptionStateHandlerFactory;
     this.resourceManager = resourceManager;
     this.workerPorts =
@@ -378,12 +383,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         // todo(sundaram): Take a stab at this
         Collections.emptyList(),
         classLoaderHandle,
-        updateTaskExecutionStatusFunction,
         subscriptionStateHandlerFactory);
-//    boolean taskAdded = taskTable.addTask(task);
 
     currentTask = task;
-//    if (taskAdded) {
+    currentTaskStatusSubscription =
+        task
+            .getStatus()
+            .observeOn(Schedulers.from(getMainThreadExecutor()))
+            .subscribe(this::updateExecutionStatus);
+
     try {
       task.startAsync().awaitRunning();
       return CompletableFuture.completedFuture(Ack.getInstance());
@@ -395,10 +403,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
       task.stopAsync().awaitTerminated();
       return CompletableFutures.exceptionallyCompletedFuture(new TaskCannotStartException(e));
     }
-//    } else {
-//      log.error("Failed to add the task {} to the task table", task);
-//      return CompletableFuture.failedFuture(new TaskCannotStartException(String.format("Failed to add the task %s to the task table", task)));
-//    }
   }
 
   @Override
@@ -415,6 +419,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     return callAsync(() -> {
       return this.currentResourceManagerCxn != null;
     }, timeout);
+  }
+
+  private final ReportStatus reportStatus = new ReportStatus();
+  protected void updateExecutionStatus(Status status) {
+    reportStatus.apply(status);
   }
 
   @Override
@@ -463,5 +472,53 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 //
 //      return null;
 //    }, getMainThreadExecutor());
+  }
+
+  private class ReportStatus implements Function<Status, CompletableFuture<Ack>> {
+    private final Counter hbConnectionTimeoutCounter;
+    private final Counter hbConnectionRequestTimeoutCounter;
+    private final Counter hbSocketTimeoutCounter;
+    private final Counter workerSentHeartbeats;
+
+    private ReportStatus() {
+      final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
+          .name("ReportStatusServiceHttpImpl")
+          .addCounter("hbConnectionTimeoutCounter")
+          .addCounter("hbConnectionRequestTimeoutCounter")
+          .addCounter("hbSocketTimeoutCounter")
+          .addCounter("workerSentHeartbeats")
+          .build());
+
+      this.hbConnectionTimeoutCounter = metrics.getCounter("hbConnectionTimeoutCounter");
+      this.hbConnectionRequestTimeoutCounter = metrics.getCounter(
+          "hbConnectionRequestTimeoutCounter");
+      this.hbSocketTimeoutCounter = metrics.getCounter("hbSocketTimeoutCounter");
+      this.workerSentHeartbeats = metrics.getCounter("workerSentHeartbeats");
+    }
+
+    @Override
+    public CompletableFuture<Ack> apply(Status status) {
+      return masterMonitor
+          .updateStatus(status)
+          .whenComplete((ack, throwable) -> {
+            if (ack != null) {
+              workerSentHeartbeats.increment();
+            } else {
+              Throwable cleaned = ExceptionUtils.stripExecutionException(throwable);
+              if (cleaned instanceof SocketTimeoutException) {
+                log.warn("SocketTimeoutException: Failed to send status update", cleaned);
+                hbSocketTimeoutCounter.increment();
+              } else if (cleaned instanceof ConnectionPoolTimeoutException) {
+                log.warn("ConnectionPoolTimeoutException: Failed to send status update", cleaned);
+                hbConnectionRequestTimeoutCounter.increment();
+              } else if (cleaned instanceof ConnectTimeoutException) {
+                log.warn("ConnectTimeoutException: Failed to send status update", cleaned);
+                hbConnectionTimeoutCounter.increment();
+              } else {
+                log.error("Failed to send status update", cleaned);
+              }
+            }
+          });
+    }
   }
 }

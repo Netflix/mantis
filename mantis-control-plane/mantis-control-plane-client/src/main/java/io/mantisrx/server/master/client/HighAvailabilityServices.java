@@ -16,13 +16,15 @@
 package io.mantisrx.server.master.client;
 
 import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import rx.Observable;
 
-public interface HighAvailabilityServices {
+public interface HighAvailabilityServices extends Service {
   MantisMasterGateway getMasterClientApi();
 
   Observable<MasterDescription> getMasterDescription();
 
-  ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager();
+  ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager(ClusterID clusterID);
 }
