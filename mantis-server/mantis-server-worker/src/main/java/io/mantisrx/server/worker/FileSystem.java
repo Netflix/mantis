@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceLoader;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class FileSystem {
 
   private static final Map<String, FileSystemFactory> FS_FACTORIES = new HashMap<>();
@@ -36,6 +38,7 @@ public class FileSystem {
     Iterator<FileSystemFactory> fileSystemFactoryIterator =
         ServiceLoader.load(FileSystemFactory.class).iterator();
     fileSystemFactoryIterator.forEachRemaining(fileSystemFactory -> {
+      log.info("Initializing FileSystem Factory {}", fileSystemFactory);
       FS_FACTORIES.putIfAbsent(fileSystemFactory.getScheme(), fileSystemFactory);
     });
   }
