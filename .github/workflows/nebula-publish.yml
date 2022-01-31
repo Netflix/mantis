@@ -33,7 +33,7 @@ jobs:
             - ${{ runner.os }}-gradlewrapper-
       - name: Publish candidate
         if: contains(github.ref, '-rc.')
-        run: ./gradlew --info --stacktrace -Prelease.useLastTag=true candidate
+        run: ./gradlew --info --stacktrace -Prelease.useLastTag=true -x test candidate
         env:
           NETFLIX_OSS_SIGNING_KEY: ${{ secrets.ORG_SIGNING_KEY }}
           NETFLIX_OSS_SIGNING_PASSWORD: ${{ secrets.ORG_SIGNING_PASSWORD }}
