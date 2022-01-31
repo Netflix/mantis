@@ -26,10 +26,14 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Request;
 
+@ToString(of = {"masterDescription", "clusterID"})
+@Slf4j
 public class ResourceClusterGatewayClient implements ResourceClusterGateway, Closeable {
 
   private final int connectTimeout = 100;
@@ -84,11 +88,13 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
       final String bodyStr = mapper.writeValueAsString(body);
       final Request request = post(
           getActionUri(action)).setBody(bodyStr).build();
+      log.info("request={}", request);
       return client.executeRequest(request).toCompletableFuture().thenCompose(response -> {
         if (response.getStatusCode() == 200) {
           return CompletableFuture.completedFuture(Ack.getInstance());
         } else {
           try {
+            log.error("failed request {}", response.getResponseBody());
             return CompletableFutures.exceptionallyCompletedFuture(
                 mapper.readValue(response.getResponseBody(), Throwable.class));
           } catch (Exception e) {
@@ -103,9 +109,12 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
   }
 
   private String getActionUri(String action) {
-    return String.format("http://%s:%d/api/v1/resourceClusters/%s/actions/%s",
+    String uri = String.format("http://%s:%d/api/v1/resourceClusters/%s/actions/%s",
         masterDescription.getHostname(), masterDescription.getApiPort(), clusterID.getResourceID(),
         action);
+
+    log.info("uri={}", uri);
+    return uri;
   }
 
   private AsyncHttpClient buildCloseableHttpClient() {

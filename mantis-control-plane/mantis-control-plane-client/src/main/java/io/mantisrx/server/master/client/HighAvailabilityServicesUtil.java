@@ -29,11 +29,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 
+@Slf4j
 public class HighAvailabilityServicesUtil {
 
   public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
@@ -111,6 +113,7 @@ public class HighAvailabilityServicesUtil {
               .getMasterObservable()
               .observeOn(scheduler)
               .subscribe(nextDescription -> {
+                log.info("nextDescription={}", nextDescription);
                 ResourceClusterGateway previous = currentResourceClusterGateway;
                 currentResourceClusterGateway =
                     new ResourceClusterGatewayClient(clusterID, nextDescription);
