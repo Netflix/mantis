@@ -36,7 +36,7 @@ public class TaskExecutorRunner {
 
     try {
       FileSystem.initialize();
-      RpcSystem rpcSystem = RpcSystem.load(configuration);
+      RpcSystem rpcSystem = new MantisAkkaRpcSystemLoader().loadRpcSystem(configuration);
       RpcService rpcService =
           RpcUtils.createRemoteRpcService(
               rpcSystem,
