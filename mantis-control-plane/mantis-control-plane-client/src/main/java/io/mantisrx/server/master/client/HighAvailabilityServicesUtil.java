@@ -61,10 +61,10 @@ public class HighAvailabilityServicesUtil {
     @Override
     protected void startUp() throws Exception {
       curatorService.start();
-      boolean started = curatorService.awaitRunning(startTimeout);
-      if (!started) {
-        throw new Exception("Did not start in time");
-      }
+//      boolean started = curatorService.awaitRunning(startTimeout);
+//      if (!started) {
+//        throw new Exception("Did not start in time");
+//      }
     }
 
     @Override
