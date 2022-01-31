@@ -33,7 +33,6 @@ import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
 import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
-import java.time.Duration;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,19 +94,23 @@ public class CuratorService extends BaseService {
 
     @Override
     public void start() {
-        isConnectedGauge.set(0L);
-        setupCuratorListener();
-        curator.start();
-        masterMonitor.start();
+        try {
+            isConnectedGauge.set(0L);
+            setupCuratorListener();
+            curator.start();
+            masterMonitor.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void awaitRunning() throws InterruptedException {
-        masterMonitor.awaitRunning();
-    }
+//    public void awaitRunning() throws InterruptedException {
+//        masterMonitor.awaitRunning();
+//    }
 
-    public boolean awaitRunning(Duration timeout) throws InterruptedException {
-        return masterMonitor.awaitRunning(timeout);
-    }
+//    public boolean awaitRunning(Duration timeout) throws InterruptedException {
+//        return masterMonitor.awaitRunning(timeout);
+//    }
 
     @Override
     public void shutdown() {
