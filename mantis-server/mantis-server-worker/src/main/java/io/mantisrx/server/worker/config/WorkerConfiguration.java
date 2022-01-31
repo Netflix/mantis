@@ -29,18 +29,18 @@ import org.skife.config.DefaultNull;
 
 public interface WorkerConfiguration extends CoreConfiguration {
 
-    @Config("mantis.agent.mesos.slave.port")
+    @Config("mantis.taskexecutor.agent.mesos.slave.port")
     @Default("5051")
     int getMesosSlavePort();
 
-    @Config("mantis.classloader.parent-first-patterns")
+    @Config("mantis.taskexecutor.classloader.parent-first-patterns")
     @Default("java.;scala.;org.apache.flink.;com.esotericsoftware.kryo;org.apache.hadoop.;javax.annotation.;org.xml;javax.xml;org.apache.xerces;org.w3c;org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback")
     String getAlwaysParentFirstLoaderPatternsString();
 
-    @Config("mantis.cluster.storage-dir")
+    @Config("mantis.taskexecutor.cluster.storage-dir")
     URI getClusterStorageDir();
 
-    @Config("mantis.local.storage-dir")
+    @Config("mantis.taskexecutor.local.storage-dir")
     File getLocalStorageDir();
 
     default List<String> getAlwaysParentFirstLoaderPatterns() {
@@ -48,54 +48,54 @@ public interface WorkerConfiguration extends CoreConfiguration {
         return splitter.splitToList(getAlwaysParentFirstLoaderPatternsString());
     }
 
-    @Config("mantis.cluster.id")
+    @Config("mantis.taskexecutor.cluster-id")
     String getClusterId();
 
-    @Config("mantis.ports.metrics")
+    @Config("mantis.taskexecutor.ports.metrics")
     @Default("5051")
     int getMetricsPort();
 
-    @Config("mantis.ports.debug")
+    @Config("mantis.taskexecutor.ports.debug")
     @Default("5052")
     int getDebugPort();
 
-    @Config("mantis.ports.console")
+    @Config("mantis.taskexecutor.ports.console")
     @Default("5053")
     int getConsolePort();
 
-    @Config("mantis.ports.custom")
+    @Config("mantis.taskexecutor.ports.custom")
     @Default("5054")
     int getCustomPort();
 
-    @Config("mantis.ports.sink")
+    @Config("mantis.taskexecutor.ports.sink")
     @Default("5055")
     int getSinkPort();
 
-    @Config("heartbeats.interval")
+    @Config("mantis.taskexecutor.heartbeats.interval")
     @Default("1000")
     int heartbeatInternalInMs();
 
-    @Config("heartbeats.tolerable_consecutive_hearbeat_failures")
+    @Config("mantis.taskexecutor.heartbeats.tolerable_consecutive_hearbeat_failures")
     @Default("3")
     int getTolerableConsecutiveHeartbeatFailures();
 
-    @Config("heartbeats.timeout.ms")
+    @Config("mantis.taskexecutor.heartbeats.timeout.ms")
     @Default("100")
     int heartbeatTimeoutMs();
 
-    @Config("rpc.externalAddress")
+    @Config("mantis.taskexecutor.rpc.externalAddress")
     @Default("${EC2_LOCAL_IPV4}")
     String getExternalAddress();
 
-    @Config("rpc.portRange")
+    @Config("mantis.taskexecutor.rpc.portRange")
     @Default("")
     String getExternalPortRange();
 
-    @Config("rpc.bindAddress")
+    @Config("mantis.taskexecutor.rpc.bindAddress")
     @DefaultNull
     String getBindAddress();
 
-    @Config("rpc.bindPort")
+    @Config("mantis.taskexecutor.rpc.bindPort")
     @DefaultNull
     Integer getBindPort();
 

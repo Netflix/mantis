@@ -54,7 +54,7 @@ public interface CoreConfiguration {
     @Default("true")
     boolean isLocalMode();
 
-    @Config("mantis.metricsPublisher")
+    @Config("mantis.metricsPublisher.class")
     @Default("io.mantisrx.common.metrics.MetricsPublisherNoOp")
     MetricsPublisher getMetricsPublisher();
 
@@ -62,7 +62,7 @@ public interface CoreConfiguration {
     @Default("15")
     int getMetricsPublisherFrequencyInSeconds();
 
-    @Config("mantis.metricsPublisher.config.prefix")
+    @Config("mantis.metricsPublisher.prefix")
     @Default("")
     String getMetricsPublisherConfigPrefix();
 }

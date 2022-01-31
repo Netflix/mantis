@@ -91,11 +91,12 @@ public class TaskExecutorTest {
   @Before
   public void setUp() throws Exception {
     final Properties props = new Properties();
-    props.setProperty("mantis.cluster.storage-dir", "");
-    props.setProperty("mantis.local.storage-dir", "");
     props.setProperty("mantis.zookeeper.root", "");
-    props.setProperty("mantis.cluster.id", "default");
-    props.setProperty("heartbeats.interval", "100");
+
+    props.setProperty("mantis.taskexecutor.cluster.storage-dir", "");
+    props.setProperty("mantis.taskexecutor.local.storage-dir", "");
+    props.setProperty("mantis.taskexecutor.cluster-id", "default");
+    props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
 
     startedSignal = new CountDownLatch(1);
     doneSignal = new CountDownLatch(1);
