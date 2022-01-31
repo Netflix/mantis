@@ -23,9 +23,6 @@ import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import java.io.IOException;
-import java.time.Duration;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
@@ -46,7 +43,7 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
     private final BehaviorSubject<MasterDescription> masterSubject;
     private final AtomicReference<MasterDescription> latestMaster = new AtomicReference<>();
     private final NodeCache nodeMonitor;
-    private final CountDownLatch startLatch;
+//    private final CountDownLatch startLatch;
 
     public ZookeeperMasterMonitor(CuratorFramework curator, String masterPath, @Nullable MasterDescription initValue) {
         this.curator = curator;
@@ -54,13 +51,13 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
         this.masterSubject = BehaviorSubject.create(initValue);
         this.nodeMonitor = new NodeCache(curator, masterPath);
         this.latestMaster.set(initValue);
-        startLatch = new CountDownLatch(1);
-        if (initValue != null) {
-            startLatch.countDown();
-        }
+//        startLatch = new CountDownLatch(1);
+//        if (initValue != null) {
+//            startLatch.countDown();
+//        }
     }
 
-    public void start() {
+    public void start() throws Exception {
         nodeMonitor.getListenable().addListener(new NodeCacheListener() {
             @Override
             public void nodeChanged() throws Exception {
@@ -74,19 +71,25 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
             throw new IllegalStateException("Failed to start master node monitor: " + e.getMessage(), e);
         }
 
+        byte[] initialValue = nodeMonitor.getCurrentData().getData();
+        MasterDescription description = DefaultObjectMapper.getInstance().readValue(initialValue, MasterDescription.class);
+        logger.info("initial value = {}", description);
+        latestMaster.set(description);
+        masterSubject.onNext(description);
+
         logger.info("The ZK master monitor is started");
     }
 
     /**
      * This waits for a valid master to be set.
      */
-    public void awaitRunning() throws InterruptedException {
-        startLatch.await();
-    }
-
-    public boolean awaitRunning(Duration timeout) throws InterruptedException {
-        return startLatch.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    }
+//    public void awaitRunning() throws InterruptedException {
+//        startLatch.await();
+//    }
+//
+//    public boolean awaitRunning(Duration timeout) throws InterruptedException {
+//        return startLatch.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
+//    }
 
     private void retrieveMaster() {
         try {
@@ -102,7 +105,7 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
                                             logger.info("New master retrieved: " + description);
                                             latestMaster.set(description);
                                             masterSubject.onNext(description);
-                                            startLatch.countDown();
+//                                            startLatch.countDown();
                                         }
                                     })
                                     .forPath(masterPath)
