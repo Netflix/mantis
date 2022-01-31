@@ -287,7 +287,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final ResourceClusterGateway gateway;
     private final Time heartBeatInterval;
     private final Time heartBeatTimeout;
-    private final Time timeout = Time.of(1, TimeUnit.MILLISECONDS);
+    private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
     private final Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier;
     private final int tolerableConsecutiveHeartbeatFailures;
 

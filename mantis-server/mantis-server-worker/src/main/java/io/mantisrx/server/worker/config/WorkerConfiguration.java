@@ -80,7 +80,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     int getTolerableConsecutiveHeartbeatFailures();
 
     @Config("mantis.taskexecutor.heartbeats.timeout.ms")
-    @Default("100")
+    @Default("1000")
     int heartbeatTimeoutMs();
 
     @Config("mantis.taskexecutor.rpc.externalAddress")
