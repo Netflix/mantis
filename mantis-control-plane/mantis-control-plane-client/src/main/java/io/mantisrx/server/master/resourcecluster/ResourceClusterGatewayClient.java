@@ -50,9 +50,6 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
     this.clusterID = clusterID;
     this.masterDescription = masterDescription;
     this.mapper = new ObjectMapper();
-  }
-
-  public void open() throws IOException {
     this.client = buildCloseableHttpClient();
   }
 

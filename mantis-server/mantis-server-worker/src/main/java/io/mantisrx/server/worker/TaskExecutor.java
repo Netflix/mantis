@@ -316,7 +316,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
       } catch (Exception e) {
         // the registration may or may not have succeeded. Since we don't know let's just
         // do the disconnection just to be safe.
-        log.info("Registration to gateway {} has failed; Disconnecting now to be safe", gateway);
+        log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway, e);
         try {
           gateway.disconnectTaskExecutor(new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID()))
               .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
