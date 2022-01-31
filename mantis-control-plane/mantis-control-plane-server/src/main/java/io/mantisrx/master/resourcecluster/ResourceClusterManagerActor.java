@@ -34,6 +34,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.runtime.rpc.RpcService;
 
@@ -49,7 +51,8 @@ public class ResourceClusterManagerActor extends AbstractActor {
 
   private final Map<ClusterID, ActorRef> resourceClusterActorMap;
 
-  public static Props props(MasterConfiguration masterConfiguration, Clock clock, RpcService rpcService) {
+  public static Props props(MasterConfiguration masterConfiguration, Clock clock,
+      RpcService rpcService) {
     return Props.create(ResourceClusterManagerActor.class, masterConfiguration, clock, rpcService);
   }
 
@@ -68,6 +71,8 @@ public class ResourceClusterManagerActor extends AbstractActor {
     return
         ReceiveBuilder
             .create()
+            .match(ListRequest.class, this::onListRequest)
+
             .match(TaskExecutorRegistration.class, registration ->
                 getRCActor(registration.getClusterID()).forward(registration, context()))
             .match(TaskExecutorHeartbeat.class, heartbeat ->
@@ -89,14 +94,33 @@ public class ResourceClusterManagerActor extends AbstractActor {
 
   private ActorRef createResourceClusterActorFor(ClusterID clusterID) {
     return getContext().actorOf(ResourceClusterActor.props(
-        Duration.ofMillis(masterConfiguration.getHeartbeatIntervalInMs()), clock, rpcService), "ResourceClusterActor-" + clusterID.getResourceID());
+            Duration.ofMillis(masterConfiguration.getHeartbeatIntervalInMs()), clock, rpcService),
+        "ResourceClusterActor-" + clusterID.getResourceID());
   }
 
   private ActorRef getRCActor(ClusterID clusterID) {
     if (resourceClusterActorMap.get(clusterID) != null) {
       return resourceClusterActorMap.get(clusterID);
     } else {
-      return resourceClusterActorMap.computeIfAbsent(clusterID, (dontCare) -> createResourceClusterActorFor(clusterID));
+      return resourceClusterActorMap.computeIfAbsent(clusterID,
+          (dontCare) -> createResourceClusterActorFor(clusterID));
     }
+  }
+
+  private void onListRequest(ListRequest listRequest) {
+    sender().tell(new ListResponse(
+        resourceClusterActorMap.keySet().stream().map(ClusterID::getResourceID).collect(
+            Collectors.toList())), self());
+  }
+
+  @Value
+  static class ListRequest {
+
+  }
+
+  @Value
+  static class ListResponse {
+
+    java.util.List<String> clusters;
   }
 }
