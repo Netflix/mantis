@@ -49,6 +49,8 @@ public class TaskExecutorRunner {
       HighAvailabilityServices highAvailabilityServices =
           HighAvailabilityServicesUtil.createHAServices(workerConfiguration);
 
+      highAvailabilityServices.startAsync().awaitRunning();
+
       final ClusterID clusterID = ClusterID.of(workerConfiguration.getClusterId());
 
       final TaskExecutor taskExecutor = new TaskExecutor(
