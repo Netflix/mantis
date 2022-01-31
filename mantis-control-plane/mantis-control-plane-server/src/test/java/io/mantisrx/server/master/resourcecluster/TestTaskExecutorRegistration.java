@@ -19,9 +19,7 @@ package io.mantisrx.server.master.resourcecluster;
 import static org.junit.Assert.assertEquals;
 
 import io.mantisrx.master.api.akka.route.Jackson;
-import org.apache.commons.compress.harmony.pack200.PackingUtils;
 import org.junit.Test;
-import org.omg.CORBA.PUBLIC_MEMBER;
 
 public class TestTaskExecutorRegistration {
   @Test
