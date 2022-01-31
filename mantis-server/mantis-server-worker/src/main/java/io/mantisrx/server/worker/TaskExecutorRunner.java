@@ -35,6 +35,7 @@ public class TaskExecutorRunner {
       Configuration configuration) {
 
     try {
+      FileSystem.initialize();
       RpcSystem rpcSystem = RpcSystem.load(configuration);
       RpcService rpcService =
           RpcUtils.createRemoteRpcService(

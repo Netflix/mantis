@@ -63,12 +63,7 @@ public class MantisWorker extends BaseService {
                 BlobStoreFactory.get(config.getClusterStorageDir(), config.getLocalStorageDir()),
                 config.getAlwaysParentFirstLoaderPatterns());
         // shutdown hook
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        };
+        Thread t = new Thread(this::shutdown);
         t.setDaemon(true);
         Runtime.getRuntime().addShutdownHook(t);
 
