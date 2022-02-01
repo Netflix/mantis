@@ -72,7 +72,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     int getSinkPort();
 
     @Config("mantis.taskexecutor.heartbeats.interval")
-    @Default("1000")
+    @Default("10000")
     int heartbeatInternalInMs();
 
     @Config("mantis.taskexecutor.heartbeats.tolerable_consecutive_hearbeat_failures")
@@ -80,7 +80,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     int getTolerableConsecutiveHeartbeatFailures();
 
     @Config("mantis.taskexecutor.heartbeats.timeout.ms")
-    @Default("1000")
+    @Default("5000")
     int heartbeatTimeoutMs();
 
     @Config("mantis.taskexecutor.rpc.externalAddress")

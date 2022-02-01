@@ -45,11 +45,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.runtime.rpc.RpcService;
 
+@ToString(of = {"clusterID"})
+@Slf4j
 public class ResourceClusterActor extends AbstractActor {
 
   private final Duration heartbeatTimeout;
@@ -58,14 +63,16 @@ public class ResourceClusterActor extends AbstractActor {
   private final Clock clock;
   private final Set<TaskExecutorID> taskExecutorsReadyToPerformWork;
   private final RpcService rpcService;
+  private final ClusterID clusterID;
 
-  public static Props props(final Duration heartbeatTimeout, Clock clock, RpcService rpcService) {
-    return Props.create(ResourceClusterActor.class, heartbeatTimeout, clock, rpcService);
+  public static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Clock clock, RpcService rpcService) {
+    return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, clock, rpcService);
   }
 
 
-  public ResourceClusterActor(Duration heartbeatTimeout, Clock clock,
+  public ResourceClusterActor(ClusterID clusterID, Duration heartbeatTimeout, Clock clock,
       RpcService rpcService) {
+    this.clusterID = clusterID;
     this.heartbeatTimeout = heartbeatTimeout;
     this.clock = clock;
     this.rpcService = rpcService;
@@ -115,8 +122,8 @@ public class ResourceClusterActor extends AbstractActor {
       sender().tell(new Exception(), self());
     }
 
-    if (state.isRegistered()) {
-      sender().tell(state.getGateway(), self());
+    if (state.isRegistered() && state.getGateway().isDone()) {
+      sender().tell(state.getGateway().join(), self());
     } else {
       sender().tell(new Status.Failure(new Exception("")), self());
     }
@@ -124,6 +131,7 @@ public class ResourceClusterActor extends AbstractActor {
 
   private void onTaskExecutorRegistration(TaskExecutorRegistration registration) {
     setupTaskExecutorStateIfNecessary(registration.getTaskExecutorID());
+    log.info("Request for registering {} with the resource cluster {}", registration.getTaskExecutorID(), this);
     try {
       final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
       final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
@@ -135,6 +143,7 @@ public class ResourceClusterActor extends AbstractActor {
 
         updateHeartbeatTimeout(registration.getTaskExecutorID());
       }
+      log.info("Successfully registered {} with the resource cluster {}", registration.getTaskExecutorID(), this);
       sender().tell(Ack.getInstance(), self());
     } catch (IllegalStateException e) {
       sender().tell(new Status.Failure(e), self());
@@ -321,7 +330,7 @@ public class ResourceClusterActor extends AbstractActor {
     private TaskExecutorRegistration registration;
 
     @Nullable
-    private TaskExecutorGateway gateway;
+    private CompletableFuture<TaskExecutorGateway> gateway;
 
     @Nullable
     private AvailabilityState availabilityState;
@@ -360,7 +369,13 @@ public class ResourceClusterActor extends AbstractActor {
       } else {
         this.state = RegistrationState.Registered;
         this.registration = registration;
-        this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class).join();
+        this.gateway =
+            rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
+                    .whenComplete((gateway, throwable) -> {
+                      if (throwable != null) {
+                        log.error("Failed to connect to the gateway", throwable);
+                      }
+                    });
         updateTicker();
         return true;
       }
@@ -525,7 +540,7 @@ public class ResourceClusterActor extends AbstractActor {
       return this.registration;
     }
 
-    private TaskExecutorGateway getGateway() {
+    private CompletableFuture<TaskExecutorGateway> getGateway() {
       return this.gateway;
     }
   }
