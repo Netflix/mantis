@@ -103,7 +103,7 @@ public class ResourceClustersRoute extends BaseRoute {
   private Route registerTaskExecutor(String clusterName) {
     return entity(Jackson.unmarshaller(TaskExecutorRegistration.class), request -> {
       log.info(
-          "POST /api/v1/jobClusters/{}/actions/updateLabel called {}",
+          "POST /api/v1/jobClusters/{}/actions/registerTaskExecutor called {}",
           clusterName,
           request);
 
@@ -140,7 +140,7 @@ public class ResourceClustersRoute extends BaseRoute {
   private Route disconnectTaskExecutor(String clusterName) {
     return entity(Jackson.unmarshaller(TaskExecutorDisconnection.class), request -> {
       log.info(
-          "POST /api/v1/jobClusters/{}/actions/heartbeatFromTaskExecutor called {}",
+          "POST /api/v1/jobClusters/{}/actions/disconnectTaskExecutor called {}",
           clusterName,
           request);
 
@@ -158,7 +158,7 @@ public class ResourceClustersRoute extends BaseRoute {
   private Route notifyTaskExecutorStatusChange(String clusterName) {
     return entity(Jackson.unmarshaller(TaskExecutorStatusChange.class), request -> {
       log.info(
-          "POST /api/v1/jobClusters/{}/actions/heartbeatFromTaskExecutor called {}",
+          "POST /api/v1/jobClusters/{}/actions/notifyTaskExecutorStatusChange called {}",
           clusterName,
           request);
 

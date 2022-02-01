@@ -88,8 +88,11 @@ public class ResourceClusterManagerActor extends AbstractActor {
   }
 
   private ActorRef createResourceClusterActorFor(ClusterID clusterID) {
-    return getContext().actorOf(ResourceClusterActor.props(
+    log.info("Creating resource cluster actor for {}", clusterID);
+    ActorRef clusterActor = getContext().actorOf(ResourceClusterActor.props(clusterID,
         Duration.ofMillis(masterConfiguration.getHeartbeatIntervalInMs()), clock, rpcService), "ResourceClusterActor-" + clusterID.getResourceID());
+    log.info("Created resource cluster actor for {}", clusterID);
+    return clusterActor;
   }
 
   private ActorRef getRCActor(ClusterID clusterID) {
