@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.worker;
 
+import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import java.time.Duration;

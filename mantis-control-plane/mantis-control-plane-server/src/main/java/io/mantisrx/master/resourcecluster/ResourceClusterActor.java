@@ -34,7 +34,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
-import io.mantisrx.server.worker.Ack;
+import io.mantisrx.common.Ack;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Clock;
 import java.time.Duration;
