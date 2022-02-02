@@ -20,6 +20,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.post;
 
 import com.spotify.futures.CompletableFutures;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.JobSla;
@@ -37,7 +38,6 @@ import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.common.Ack;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
