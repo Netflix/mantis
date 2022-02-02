@@ -20,8 +20,8 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 import static org.asynchttpclient.Dsl.post;
 
 import com.spotify.futures.CompletableFutures;
-import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
 import java.io.IOException;

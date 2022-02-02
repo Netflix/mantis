@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.master.client;
 
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;
@@ -25,7 +26,6 @@ import io.mantisrx.server.core.JobAssignmentResult;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.common.Ack;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import rx.Observable;
