@@ -28,7 +28,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
-import io.mantisrx.server.worker.Ack;
+import io.mantisrx.common.Ack;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;

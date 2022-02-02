@@ -17,6 +17,7 @@ package io.mantisrx.server.worker;
 
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;

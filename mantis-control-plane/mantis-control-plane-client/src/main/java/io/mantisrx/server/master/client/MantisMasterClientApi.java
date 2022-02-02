@@ -37,7 +37,7 @@ import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.worker.Ack;
+import io.mantisrx.common.Ack;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;

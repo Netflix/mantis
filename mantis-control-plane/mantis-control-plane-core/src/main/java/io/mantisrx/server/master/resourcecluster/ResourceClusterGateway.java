@@ -15,7 +15,7 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
-import io.mantisrx.server.worker.Ack;
+import io.mantisrx.common.Ack;
 import java.util.concurrent.CompletableFuture;
 
 public interface ResourceClusterGateway {

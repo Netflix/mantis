@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.worker;
 
+import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.Status;
 import java.util.concurrent.CompletableFuture;
 
