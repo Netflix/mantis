@@ -49,6 +49,7 @@ import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
 import io.mantisrx.master.zk.LeaderElector;
+import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
@@ -155,7 +156,8 @@ public class MasterMain implements Service {
             // Beginning of new stuff
             Configuration configuration = loadConfiguration();
 
-            final RpcSystem rpcSystem = RpcSystem.load(configuration);
+            final RpcSystem rpcSystem =
+                MantisAkkaRpcSystemLoader.load(configuration);
             final RpcService rpcService =
                 RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
             final ActorRef resourceClusterManagerActor =

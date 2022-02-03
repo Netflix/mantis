@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.worker;
 
+import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -36,7 +37,7 @@ public class TaskExecutorRunner {
 
     try {
       FileSystem.initialize();
-      RpcSystem rpcSystem = new MantisAkkaRpcSystemLoader().loadRpcSystem(configuration);
+      RpcSystem rpcSystem = MantisAkkaRpcSystemLoader.load(configuration);
       RpcService rpcService =
           RpcUtils.createRemoteRpcService(
               rpcSystem,
