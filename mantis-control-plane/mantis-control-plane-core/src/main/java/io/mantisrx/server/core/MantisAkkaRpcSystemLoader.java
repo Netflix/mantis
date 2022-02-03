@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker;
+package io.mantisrx.server.core;
 
-import java.net.URL;
-import org.apache.flink.configuration.CoreOptions;
-import org.apache.flink.core.classloading.ComponentClassLoader;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.rpc.RpcSystem;
+import org.apache.flink.runtime.rpc.RpcSystemLoader;
+import org.apache.flink.runtime.rpc.akka.AkkaRpcSystem;
 
-public class SubmoduleClassLoader extends ComponentClassLoader {
-  public SubmoduleClassLoader(URL[] classpath, ClassLoader parentClassLoader) {
-    super(
-        classpath,
-        parentClassLoader,
-        CoreOptions.parseParentFirstLoaderPatterns(
-            "org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback", ""),
-        new String[] {"org.apache.flink", "io.mantisrx"});
+public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
+
+  @Override
+  public RpcSystem loadRpcSystem(Configuration config) {
+    return new AkkaRpcSystem();
+  }
+
+  public static RpcSystem load(Configuration configuration) {
+    return new MantisAkkaRpcSystemLoader().loadRpcSystem(configuration);
   }
 }
