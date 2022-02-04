@@ -81,7 +81,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-		Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
+        Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         Set<String> expected = ImmutableSet.of("id1", "id2");
         assertEquals(expected, subIds);
     }
