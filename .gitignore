@@ -194,10 +194,4 @@ gradle-app.setting
 ### Gradle Patch ###
 **/build/
 
-.classpath
-.project
-.settings/
-bin/
-
 # End of https://www.gitignore.io/api/vim,java,linux,macos,gradle,intellij+all
-

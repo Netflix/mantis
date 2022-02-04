@@ -19,6 +19,7 @@ package io.mantisrx.publish;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.publish.api.Event;
+import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,6 +136,19 @@ public class StreamManager {
                 .orElse(false);
     }
 
+    private List<String> sanitizeStreamSubjects(final List<String> subjects) {
+        return subjects.stream()
+                .map(s -> {
+                    if (s.toLowerCase().equals("observable") ||
+                            s.toLowerCase().equals("stream")) {
+                        // Translate the legacy default stream names to map to the default stream.
+                        return StreamType.DEFAULT_EVENT_STREAM;
+                    } else {
+                        return s;
+                    }
+                }).collect(Collectors.toList());
+    }
+
     private void handleDuplicateSubscriptionId(final Subscription sub) {
         String subId = sub.getSubscriptionId();
         Optional.ofNullable(subscriptionIdToStreamsMap.get(subId))
@@ -141,7 +156,7 @@ public class StreamManager {
     }
 
     synchronized void addStreamSubscription(final Subscription sub) {
-        List<String> streams = sub.getSubjects();
+        List<String> streams = sanitizeStreamSubjects(sub.getSubjects());
         LOG.info("adding subscription {} with streams {}", sub, streams);
 
         handleDuplicateSubscriptionId(sub);
@@ -209,7 +224,7 @@ public class StreamManager {
 
     synchronized boolean removeStreamSubscription(final Subscription sub) {
         LOG.info("removing subscription {}", sub);
-        final List<String> streams = sub.getSubjects();
+        final List<String> streams = sanitizeStreamSubjects(sub.getSubjects());
         removeSubscriptionId(streams, sub.getSubscriptionId());
         subscriptionIdToStreamsMap.remove(sub.getSubscriptionId());
 

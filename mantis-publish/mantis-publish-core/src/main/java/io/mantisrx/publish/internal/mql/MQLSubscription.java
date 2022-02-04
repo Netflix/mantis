@@ -18,7 +18,6 @@ package io.mantisrx.publish.internal.mql;
 
 import io.mantisrx.mql.jvm.core.Query;
 import io.mantisrx.publish.api.Event;
-import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.core.Subscription;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,26 +117,8 @@ public class MQLSubscription implements Subscription, Comparable {
         }
     }
 
-	private List<String> sanitizeStreamSubjects(final List<String> subjects) {
-        return subjects.stream()
-                .map((String s) -> {
-                    if (s.toLowerCase().equals("observable") ||
-                            s.toLowerCase().equals("stream") ||
-                            s.toLowerCase().equals("defaultstream")) {
-                        // Translate the legacy default stream names to map to the default stream.
-                        return StreamType.DEFAULT_EVENT_STREAM;
-                    } else {
-                        return s;
-                    }
-                }).collect(Collectors.toList());
-    }
-
-	public List<String> getSubjects() {
-		return sanitizeStreamSubjects(getSubjectsInternal());
-	}
-
     @SuppressWarnings("unchecked")
-    public List<String> getSubjectsInternal() {
+    public List<String> getSubjects() {
         return this.query.getSubjects();
     }
 
