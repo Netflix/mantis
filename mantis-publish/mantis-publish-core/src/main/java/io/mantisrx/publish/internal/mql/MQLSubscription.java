@@ -123,7 +123,7 @@ public class MQLSubscription implements Subscription, Comparable {
                 .map((String s) -> {
                     if (s.toLowerCase().equals("observable") ||
                             s.toLowerCase().equals("stream") ||
-							s.toLowerCase().equals("defaultstream")) {
+                            s.toLowerCase().equals("defaultstream")) {
                         // Translate the legacy default stream names to map to the default stream.
                         return StreamType.DEFAULT_EVENT_STREAM;
                     } else {

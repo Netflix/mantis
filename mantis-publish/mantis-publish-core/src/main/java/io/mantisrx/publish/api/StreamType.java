@@ -21,7 +21,6 @@ public class StreamType {
     /**
      * Default Stream name for emitting events.
      */
-    //public static final String DEFAULT_EVENT_STREAM = "defaultStream";
 	public static final String DEFAULT_EVENT_STREAM = "__default__";
 
     /**
