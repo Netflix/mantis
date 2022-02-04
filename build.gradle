@@ -52,8 +52,6 @@ allprojects {
 
 subprojects {
     apply plugin: 'java-library'
-    apply plugin: 'checkstyle'
-    apply plugin: 'pmd'
 
     // Apply lombok plugin and disabled the default config file generation.
     apply plugin: "io.freefair.lombok"
@@ -97,5 +95,4 @@ subprojects {
     }
 }
 
-apply from: file('gradle/check.gradle')
 apply from: file('baseline.gradle')
