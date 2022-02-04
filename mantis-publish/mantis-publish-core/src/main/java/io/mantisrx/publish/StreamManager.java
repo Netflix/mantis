@@ -19,7 +19,6 @@ package io.mantisrx.publish;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.publish.api.Event;
-import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;
@@ -35,7 +34,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
