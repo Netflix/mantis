@@ -31,7 +31,6 @@ import com.netflix.spectator.api.Registry;
 import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
-import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.proto.MantisServerSubscription;
 import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
@@ -43,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -81,8 +79,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        Set<Subscription> subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        Set<String> subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         Set<String> expected = ImmutableSet.of("id1", "id2");
         assertEquals(expected, subIds);
     }
@@ -101,8 +98,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        Set<Subscription> subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        Set<String> subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         Set<String> expected = ImmutableSet.of("id1", "id2");
         assertEquals(expected, subIds);
 
@@ -118,8 +114,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("id1", "id2", "id3", "id4");
         assertEquals(expected, subIds);
     }
@@ -135,8 +130,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        Set<Subscription> subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        Set<String> subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         Set<String> expected = ImmutableSet.of("id1", "id2", "id3");
         assertEquals(expected, subIds);
 
@@ -149,8 +143,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("id1", "id2", "id3", "id4");
         assertEquals(expected, subIds);
 
@@ -161,8 +154,7 @@ public class AbstractSubscriptionTrackerTest {
         subscriptionTracker.setNextSubscriptions(ImmutableMap.of(StreamType.DEFAULT_EVENT_STREAM, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("id2", "id4");
         assertEquals(expected, subIds);
     }
@@ -188,13 +180,11 @@ public class AbstractSubscriptionTrackerTest {
                 requestStream, nextRequestSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        Set<Subscription> subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        Set<String> subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         Set<String> expected = ImmutableSet.of("default_id1", "default_id2", "default_id3");
         assertEquals(expected, subIds);
 
-        subs = streamManager.getStreamSubscriptions(requestStream);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(requestStream);
         expected = ImmutableSet.of("request_id1", "request_id2", "default_id3");
         assertEquals(expected, subIds);
 
@@ -211,13 +201,11 @@ public class AbstractSubscriptionTrackerTest {
                 requestStream, nextRequestSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("default_id1");
         assertEquals(expected, subIds);
 
-        subs = streamManager.getStreamSubscriptions(requestStream);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(requestStream);
         expected = ImmutableSet.of("request_id1", "request_id2", "request_id4");
         assertEquals(expected, subIds);
 
@@ -236,13 +224,11 @@ public class AbstractSubscriptionTrackerTest {
                 requestStream, nextRequestSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("default_id1", "default_id3");
         assertEquals(expected, subIds);
 
-        subs = streamManager.getStreamSubscriptions(requestStream);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(requestStream);
         expected = ImmutableSet.of("request_id1", "request_id2", "request_id4", "default_id3");
         assertEquals(expected, subIds);
     }
@@ -265,13 +251,11 @@ public class AbstractSubscriptionTrackerTest {
                 requestStream, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        Set<Subscription> subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        Set<String> subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        Set<String> subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         Set<String> expected = ImmutableSet.of("default_id1", "default_id2", "default_id3");
         assertEquals(expected, subIds);
 
-        subs = streamManager.getStreamSubscriptions(requestStream);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(requestStream);
         expected = ImmutableSet.of("request_id1", "request_id2", "default_id3");
         assertEquals(expected, subIds);
 
@@ -285,13 +269,11 @@ public class AbstractSubscriptionTrackerTest {
                 requestStream, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("default_id1");
         assertEquals(expected, subIds);
 
-        subs = streamManager.getStreamSubscriptions(requestStream);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(requestStream);
         expected = ImmutableSet.of("request_id1", "request_id2", "request_id4");
         assertEquals(expected, subIds);
 
@@ -306,13 +288,11 @@ public class AbstractSubscriptionTrackerTest {
                 requestStream, nextSubs));
         subscriptionTracker.refreshSubscriptions();
 
-        subs = streamManager.getStreamSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(StreamType.DEFAULT_EVENT_STREAM);
         expected = ImmutableSet.of("default_id1", "default_id3");
         assertEquals(expected, subIds);
 
-        subs = streamManager.getStreamSubscriptions(requestStream);
-        subIds = subs.stream().map(Subscription::getSubscriptionId).collect(Collectors.toSet());
+        subIds = subscriptionTracker.getCurrentSubIds(requestStream);
         expected = ImmutableSet.of("request_id1", "request_id2", "request_id4", "default_id3");
         assertEquals(expected, subIds);
     }
