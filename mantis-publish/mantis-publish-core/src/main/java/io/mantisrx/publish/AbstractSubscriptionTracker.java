@@ -16,6 +16,13 @@
 
 package io.mantisrx.publish;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
@@ -36,15 +43,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-/**
- * This class handles the logic for stream -> job cluster discovery. A class that extends this abstract class is
- * expected to perform the actual fetch given a stream and cluster names. The storage of the subscriptions is off loaded
- * to the stream manager (See {@link StreamManager}). Thus, the stream manager is the source of truth of current active
- * subscriptions. For the same reason, the stream manager also stores which streams are registered. This class will only
- * fetch subscriptions for streams that are registered.
- */
 public abstract class AbstractSubscriptionTracker implements SubscriptionTracker {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSubscriptionTracker.class);
+    private static final MantisServerSubscriptionEnvelope DEFAULT_EMPTY_SUB_ENVELOPE = new MantisServerSubscriptionEnvelope(Collections.emptyList());
 
     private final MrePublishConfiguration mrePublishConfiguration;
     private final Registry registry;
@@ -54,7 +55,8 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     private final Counter refreshSubscriptionSuccessCount;
     private final Counter refreshSubscriptionFailedCount;
     private final Counter staleSubscriptionRemovedCount;
-    private volatile Map<String, Long> streamLastFetchedTs = new HashMap<>();
+
+    private volatile Map<String, StreamSubscriptions> previousSubscriptions = new HashMap<>();
 
     public AbstractSubscriptionTracker(MrePublishConfiguration mrePublishConfiguration,
                                        Registry registry,
@@ -64,47 +66,43 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
         this.registry = registry;
         this.jobDiscovery = jobDiscovery;
         this.streamManager = streamManager;
-        this.refreshSubscriptionInvokedCount = SpectatorUtils.buildAndRegisterCounter(registry,
-                "refreshSubscriptionInvokedCount");
-        this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry,
-                "refreshSubscriptionSuccessCount");
-        this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry,
-                "refreshSubscriptionFailedCount");
-        this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry,
-                "staleSubscriptionRemovedCount");
+        this.refreshSubscriptionInvokedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionInvokedCount");
+        this.refreshSubscriptionSuccessCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionSuccessCount");
+        this.refreshSubscriptionFailedCount = SpectatorUtils.buildAndRegisterCounter(registry, "refreshSubscriptionFailedCount");
+        this.staleSubscriptionRemovedCount = SpectatorUtils.buildAndRegisterCounter(registry, "staleSubscriptionRemovedCount");
     }
 
-    void propagateSubscriptionChanges(String streamName, Set<MantisServerSubscription> curr) {
-        Set<String> previousIds = getCurrentSubIds(streamName);
-
-        for (MantisServerSubscription newSub : curr) {
-            // Add new subscription not present previously
-            if (!previousIds.contains(newSub.getSubscriptionId())) {
-                try {
-                    Optional<Subscription> subscription = SubscriptionFactory.getSubscription(
-                            newSub.getSubscriptionId(), newSub.getQuery());
-                    if (subscription.isPresent()) {
-                        streamManager.addStreamSubscription(subscription.get());
-                    } else {
-                        LOG.info("will not add invalid subscription {}", newSub);
-                    }
-                } catch (Throwable t) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("failed to add subscription {}", newSub, t);
-                    }
-                }
-            }
-
-            previousIds.remove(newSub.getSubscriptionId());
-        }
-
-        // Remove previous subscriptions no longer present.
-        previousIds.stream().forEach(prevId -> {
+    void propagateSubscriptionChanges(Set<MantisServerSubscription> prev, Set<MantisServerSubscription> curr) {
+        Set<MantisServerSubscription> prevSubsNotInCurr = new HashSet<>(prev);
+        prevSubsNotInCurr.removeAll(curr);
+        prevSubsNotInCurr.stream().forEach(subToRemove -> {
             try {
-                streamManager.removeStreamSubscription(prevId);
+                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToRemove.getSubscriptionId(), subToRemove.getQuery());
+                if (subscription.isPresent()) {
+                    streamManager.removeStreamSubscription(subscription.get());
+                } else {
+                    LOG.warn("unexpected to find invalid subscription to remove {}", subToRemove);
+                }
             } catch (Throwable t) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("failed to remove subscription {}", prevId);
+                    LOG.debug("failed to remove subscription {}", subToRemove, t);
+                }
+            }
+        });
+
+        Set<MantisServerSubscription> currSubsNotInPrev = new HashSet<>(curr);
+        currSubsNotInPrev.removeAll(prev);
+        currSubsNotInPrev.stream().forEach(subToAdd -> {
+            try {
+                Optional<Subscription> subscription = SubscriptionFactory.getSubscription(subToAdd.getSubscriptionId(), subToAdd.getQuery());
+                if (subscription.isPresent()) {
+                    streamManager.addStreamSubscription(subscription.get());
+                } else {
+                    LOG.info("will not add invalid subscription {}", subToAdd);
+                }
+            } catch (Throwable t) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("failed to add subscription {}", subToAdd, t);
                 }
             }
         });
@@ -112,15 +110,14 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
 
 
     private void cleanupStaleSubscriptions(String streamName) {
-        Long lastFetched = streamLastFetchedTs.get(streamName);
-        if (lastFetched != null) {
-            boolean hasStaleSubscriptionsData = (System.currentTimeMillis() - lastFetched) >
-                    mrePublishConfiguration.subscriptionExpiryIntervalSec() * 1000;
+        StreamSubscriptions streamSubscriptions = previousSubscriptions.get(streamName);
+        if (streamSubscriptions != null) {
+            boolean hasStaleSubscriptionsData = (System.currentTimeMillis() - streamSubscriptions.getCreateTimeMs()) > mrePublishConfiguration.subscriptionExpiryIntervalSec() * 1000;
             if (hasStaleSubscriptionsData) {
-                LOG.info("removing stale subscriptions data for stream {} (created {})", streamName, lastFetched);
+                LOG.info("removing stale subscriptions data for stream {} ({} created {})", streamName, streamSubscriptions.getSubsEnvelope(), streamSubscriptions.getCreateTimeMs());
                 staleSubscriptionRemovedCount.increment();
-                streamLastFetchedTs.remove(streamName);
-                propagateSubscriptionChanges(streamName, Collections.emptySet());
+                StreamSubscriptions removedSubs = previousSubscriptions.remove(streamName);
+                propagateSubscriptionChanges(removedSubs.getSubsEnvelope().getSubscriptions(), Collections.emptySet());
             }
         }
     }
@@ -138,8 +135,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
     @Override
     public void refreshSubscriptions() {
         refreshSubscriptionInvokedCount.increment();
-        // refresh subscriptions only if the Publish client is enabled and has streams registered by
-        // MantisEventPublisher
+        // refresh subscriptions only if the Publish client is enabled and has streams registered by MantisEventPublisher
         boolean mantisPublishEnabled = mrePublishConfiguration.isMREClientEnabled();
         Set<String> registeredStreams = streamManager.getRegisteredStreams();
         boolean subscriptionsFetchedForStream = false;
@@ -149,22 +145,22 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
             for (Map.Entry<String, String> e : streamJobClusterMap.entrySet()) {
                 String streamName = e.getKey();
                 LOG.debug("processing stream {} and currently registered Streams {}", streamName, registeredStreams);
-                if (registeredStreams.contains(streamName)
-                        || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
+                if (registeredStreams.contains(streamName) || StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
                     subscriptionsFetchedForStream = true;
                     String jobCluster = e.getValue();
                     try {
-                        Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(
-                                streamName, jobCluster);
+                        Optional<MantisServerSubscriptionEnvelope> subsEnvelopeO = fetchSubscriptions(streamName, jobCluster);
                         if (subsEnvelopeO.isPresent()) {
                             MantisServerSubscriptionEnvelope subsEnvelope = subsEnvelopeO.get();
-                            propagateSubscriptionChanges(streamName, subsEnvelope.getSubscriptions());
+                            propagateSubscriptionChanges(previousSubscriptions
+                                            .getOrDefault(streamName, new StreamSubscriptions(streamName, DEFAULT_EMPTY_SUB_ENVELOPE))
+                                            .getSubsEnvelope().getSubscriptions(),
+                                    subsEnvelope.getSubscriptions());
                             LOG.debug("{} subscriptions updated to {}", streamName, subsEnvelope);
-                            streamLastFetchedTs.put(streamName, System.currentTimeMillis());
+                            previousSubscriptions.put(streamName, new StreamSubscriptions(streamName, subsEnvelope));
                             refreshSubscriptionSuccessCount.increment();
                         } else {
-                            // cleanup stale subsEnvelope if we haven't seen a subscription refresh for
-                            // subscriptionExpiryIntervalSec from the Mantis workers
+                            // cleanup stale subsEnvelope if we haven't seen a subscription refresh for subscriptionExpiryIntervalSec from the Mantis workers
                             cleanupStaleSubscriptions(streamName);
                             refreshSubscriptionFailedCount.increment();
                         }
@@ -180,13 +176,38 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
                 LOG.warn("No server side mappings found for one or more streams {} ", registeredStreams);
             }
         } else {
-            LOG.debug("subscription refresh skipped (client enabled {} registered streams {})",
-                    mantisPublishEnabled, registeredStreams);
+            LOG.debug("subscription refresh skipped (client enabled {} registered streams {})", mantisPublishEnabled, registeredStreams);
         }
     }
 
-    protected Set<String> getCurrentSubIds(String streamName) {
-        return streamManager.getStreamSubscriptions(streamName).stream().map(Subscription::getSubscriptionId)
-                .collect(Collectors.toSet());
+    public Optional<MantisServerSubscriptionEnvelope> getCurrentSubs(String stream) {
+        return Optional
+                .ofNullable(previousSubscriptions.get(stream))
+                .map(StreamSubscriptions::getSubsEnvelope);
+    }
+
+    static class StreamSubscriptions {
+
+        private final String streamName;
+        private final MantisServerSubscriptionEnvelope subsEnvelope;
+        private transient final long createTimeMs;
+
+        public StreamSubscriptions(final String streamName, final MantisServerSubscriptionEnvelope subsEnvelope) {
+            this.streamName = streamName;
+            this.subsEnvelope = subsEnvelope;
+            this.createTimeMs = System.currentTimeMillis();
+        }
+
+        public String getStreamName() {
+            return streamName;
+        }
+
+        public MantisServerSubscriptionEnvelope getSubsEnvelope() {
+            return subsEnvelope;
+        }
+
+        public long getCreateTimeMs() {
+            return createTimeMs;
+        }
     }
 }
