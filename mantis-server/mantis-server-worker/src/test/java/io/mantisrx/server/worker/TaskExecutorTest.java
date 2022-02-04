@@ -42,6 +42,7 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
@@ -80,6 +81,7 @@ public class TaskExecutorTest {
   private RpcService rpcService;
   private TaskTable taskTable;
   private MantisMasterGateway masterMonitor;
+  private HighAvailabilityServices highAvailabilityServices;
   private ClassLoaderHandle classLoaderHandle;
   private TaskExecutor taskExecutor;
   private CountDownLatch startedSignal;
@@ -110,6 +112,9 @@ public class TaskExecutorTest {
     classLoaderHandle = new TestingClassLoaderHandle();
     resourceManagerGateway = getHealthyGateway("gateway 1");
     resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
+    highAvailabilityServices = mock(HighAvailabilityServices.class);
+    when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterMonitor);
+    when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
   }
 
   private void start() {
@@ -126,9 +131,9 @@ public class TaskExecutorTest {
     };
 
     taskExecutor =
-        new TestingTaskExecutor(rpcService, workerConfiguration, masterMonitor,
+        new TestingTaskExecutor(rpcService, workerConfiguration, highAvailabilityServices,
             classLoaderHandle,
-            executeStageRequest -> SinkSubscriptionStateHandler.noop(), resourceManagerGatewayCxn,
+            executeStageRequest -> SinkSubscriptionStateHandler.noop(),
             updateTaskExecutionStatusFunction);
     taskExecutor.start();
     taskExecutor.awaitRunning();
@@ -338,13 +343,12 @@ public class TaskExecutorTest {
 
     public TestingTaskExecutor(RpcService rpcService,
         WorkerConfiguration workerConfiguration,
-        MantisMasterGateway masterMonitor,
+        HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         Factory subscriptionStateHandlerFactory,
-        ResourceLeaderConnection<ResourceClusterGateway> resourceManager,
         Consumer<Status> consumer) {
-      super(rpcService, workerConfiguration, masterMonitor, classLoaderHandle,
-          subscriptionStateHandlerFactory, resourceManager);
+      super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
+          subscriptionStateHandlerFactory);
       this.consumer = consumer;
     }
 
