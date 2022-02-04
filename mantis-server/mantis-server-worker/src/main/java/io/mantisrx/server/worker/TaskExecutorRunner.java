@@ -16,12 +16,15 @@
 
 package io.mantisrx.server.worker;
 
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.mantisrx.common.utils.Services;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
+import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.rpc.RpcService;
@@ -31,49 +34,62 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 @Slf4j
 public class TaskExecutorRunner {
 
-  public static int runTaskExecutor(
+  public TaskExecutorServices createRemoteTaskExecutor(
       WorkerConfiguration workerConfiguration,
-      Configuration configuration) {
+      Configuration configuration) throws Exception {
+    RpcSystem rpcSystem =
+        MantisAkkaRpcSystemLoader.load(configuration);
+    RpcService rpcService =
+        RpcUtils.createRemoteRpcService(
+            rpcSystem,
+            configuration,
+            workerConfiguration.getExternalAddress(),
+            workerConfiguration.getExternalPortRange(),
+            workerConfiguration.getBindAddress(),
+            Optional.ofNullable(workerConfiguration.getBindPort()));
 
-    try {
+    HighAvailabilityServices highAvailabilityServices =
+        HighAvailabilityServicesUtil.createHAServices(workerConfiguration);
+
+    final TaskExecutor taskExecutor = new TaskExecutor(
+        rpcService,
+        workerConfiguration,
+        highAvailabilityServices,
+        new DefaultClassLoaderHandle(
+            BlobStoreFactory.get(workerConfiguration.getClusterStorageDir(),
+                workerConfiguration.getLocalStorageDir()),
+            workerConfiguration.getAlwaysParentFirstLoaderPatterns()),
+        executeStageRequest -> new SubscriptionStateHandlerImpl(
+            executeStageRequest.getJobId(),
+            highAvailabilityServices.getMasterClientApi(),
+            executeStageRequest.getSubscriptionTimeoutSecs(),
+            executeStageRequest.getMinRuntimeSecs()));
+
+    return new TaskExecutorServices(taskExecutor, highAvailabilityServices);
+  }
+
+  @RequiredArgsConstructor
+  public static class TaskExecutorServices extends AbstractIdleService {
+
+    private final TaskExecutor taskExecutor;
+    private final HighAvailabilityServices highAvailabilityServices;
+
+    @Override
+    protected void startUp() throws Exception {
       FileSystem.initialize();
-      RpcSystem rpcSystem = MantisAkkaRpcSystemLoader.load(configuration);
-      RpcService rpcService =
-          RpcUtils.createRemoteRpcService(
-              rpcSystem,
-              configuration,
-              workerConfiguration.getExternalAddress(),
-              workerConfiguration.getExternalPortRange(),
-              workerConfiguration.getBindAddress(),
-              Optional.ofNullable(workerConfiguration.getBindPort()));
-
-      HighAvailabilityServices highAvailabilityServices =
-          HighAvailabilityServicesUtil.createHAServices(workerConfiguration);
-
       highAvailabilityServices.startAsync().awaitRunning();
 
-      final ClusterID clusterID = ClusterID.of(workerConfiguration.getClusterId());
-
-      final TaskExecutor taskExecutor = new TaskExecutor(
-          rpcService,
-          workerConfiguration,
-          highAvailabilityServices.getMasterClientApi(),
-          new DefaultClassLoaderHandle(
-              BlobStoreFactory.get(workerConfiguration.getClusterStorageDir(),
-                  workerConfiguration.getLocalStorageDir()),
-              workerConfiguration.getAlwaysParentFirstLoaderPatterns()),
-          executeStageRequest -> new SubscriptionStateHandlerImpl(
-              executeStageRequest.getJobId(),
-              highAvailabilityServices.getMasterClientApi(),
-              executeStageRequest.getSubscriptionTimeoutSecs(),
-              executeStageRequest.getMinRuntimeSecs()),
-          highAvailabilityServices.connectWithResourceManager(clusterID));
-
       taskExecutor.start();
-      return 0;
-    } catch (Exception e) {
-      log.error("Failed to start", e);
-      return -1;
+    }
+
+    @Override
+    protected void shutDown() throws Exception {
+      taskExecutor
+          .closeAsync()
+          .exceptionally(throwable -> null)
+          .thenCompose(dontCare -> Services.stopAsync(highAvailabilityServices,
+              MoreExecutors.directExecutor()))
+          .get();
     }
   }
 }

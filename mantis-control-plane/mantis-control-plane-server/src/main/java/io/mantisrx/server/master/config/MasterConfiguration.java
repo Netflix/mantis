@@ -304,6 +304,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     int getApiCacheMinSize();
 
     @Config("mantis.agent.heartbeat.interval.ms")
-    @Default("5000")
+    @Default("60000")
     int getHeartbeatIntervalInMs();
 }

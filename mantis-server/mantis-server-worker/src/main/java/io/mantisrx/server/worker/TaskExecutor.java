@@ -27,9 +27,9 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderChangeListener;
-import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -72,16 +72,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   private final TaskExecutorID taskExecutorID;
   private final ClusterID clusterID;
   private final WorkerConfiguration workerConfiguration;
-  private final MantisMasterGateway masterMonitor;
+  private final HighAvailabilityServices highAvailabilityServices;
   private final ClassLoaderHandle classLoaderHandle;
   private final SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory;
-  private final ResourceLeaderConnection<ResourceClusterGateway> resourceManager;
   private final WorkerPorts workerPorts;
   private final MachineDefinition machineDefinition;
   private final TaskExecutorRegistration taskExecutorRegistration;
   private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
   private final ExecutorService ioExecutor;
 
+  private MantisMasterGateway masterMonitor;
   private ResourceManagerGatewayCxn currentResourceManagerCxn;
   private TaskExecutorReport currentReport;
   private Task currentTask;
@@ -90,19 +90,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
   public TaskExecutor(RpcService rpcService,
       WorkerConfiguration workerConfiguration,
-      MantisMasterGateway masterMonitor, ClassLoaderHandle classLoaderHandle,
-      Factory subscriptionStateHandlerFactory,
-      ResourceLeaderConnection<ResourceClusterGateway> resourceManager) {
+      HighAvailabilityServices highAvailabilityServices, ClassLoaderHandle classLoaderHandle,
+      Factory subscriptionStateHandlerFactory) {
     super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
     // this is the task executor ID that will be used for the rest of the JVM process
     this.taskExecutorID = TaskExecutorID.generate();
     this.clusterID = ClusterID.of(workerConfiguration.getClusterId());
     this.workerConfiguration = workerConfiguration;
-    this.masterMonitor = masterMonitor;
+    this.highAvailabilityServices = highAvailabilityServices;
+//    this.masterMonitor = masterMonitor;
     this.classLoaderHandle = classLoaderHandle;
     this.subscriptionStateHandlerFactory = subscriptionStateHandlerFactory;
-    this.resourceManager = resourceManager;
     this.workerPorts =
         new WorkerPorts(workerConfiguration.getMetricsPort(),
             workerConfiguration.getDebugPort(), workerConfiguration.getConsolePort(),
@@ -138,9 +137,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
   private void startTaskExecutorServices() throws Exception {
     validateRunsInMainThread();
+
+    masterMonitor = highAvailabilityServices.getMasterClientApi();
     RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
     establishNewResourceManagerCxnSync();
-    resourceManager.register(new ResourceManagerChangeListener());
+    highAvailabilityServices
+        .connectWithResourceManager(clusterID)
+        .register(new ResourceManagerChangeListener());
   }
 
   public CompletableFuture<Void> awaitRunning() {
@@ -244,7 +247,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
   private ResourceManagerGatewayCxn newResourceManagerCxn() {
     validateRunsInMainThread();
-    ResourceClusterGateway resourceManagerGateway = resourceManager.getCurrent();
+    ResourceClusterGateway resourceManagerGateway =
+        highAvailabilityServices.connectWithResourceManager(clusterID).getCurrent();
 
     // let's register ourselves with the resource manager
     return new ResourceManagerGatewayCxn(

@@ -226,30 +226,33 @@ public class ResourceClusterActor extends AbstractActor {
   private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {
     setupTaskExecutorStateIfNecessary(disconnection.getTaskExecutorID());
     try {
-      final TaskExecutorID taskExecutorID = disconnection.getTaskExecutorID();
-      final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
-      boolean stateChange = state.onDisconnection();
-      if (stateChange) {
-        taskExecutorsReadyToPerformWork.remove(taskExecutorID);
-        state.setNextHeartbeatChecker(null);
-      }
-
+      disconnectTaskExecutor(disconnection.getTaskExecutorID());
       sender().tell(Ack.getInstance(), self());
     } catch (IllegalStateException e) {
       sender().tell(new Status.Failure(e), self());
     }
   }
 
+  private void disconnectTaskExecutor(TaskExecutorID taskExecutorID) {
+    final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+    boolean stateChange = state.onDisconnection();
+    if (stateChange) {
+      taskExecutorsReadyToPerformWork.remove(taskExecutorID);
+      state.setNextHeartbeatChecker(null);
+    }
+  }
+
   private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
     setupTaskExecutorStateIfNecessary(timeout.getTaskExecutorID());
     try {
+      log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
       final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
       final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
       if (state.getLastActivity().compareTo(timeout.getLastActivity()) <= 0) {
-        state.onDisconnection();
+        log.info("Disconnecting task executor {}", timeout.getTaskExecutorID());
+        disconnectTaskExecutor(timeout.getTaskExecutorID());
       }
 
-      sender().tell(Ack.getInstance(), self());
     } catch (IllegalStateException e) {
       sender().tell(new Status.Failure(e), self());
     }
