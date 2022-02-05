@@ -37,6 +37,7 @@ public class TaskExecutorRunner {
   public TaskExecutorServices createRemoteTaskExecutor(
       WorkerConfiguration workerConfiguration,
       Configuration configuration) throws Exception {
+    FileSystem.initialize();
     RpcSystem rpcSystem =
         MantisAkkaRpcSystemLoader.load(configuration);
     RpcService rpcService =
@@ -76,7 +77,6 @@ public class TaskExecutorRunner {
 
     @Override
     protected void startUp() throws Exception {
-      FileSystem.initialize();
       highAvailabilityServices.startAsync().awaitRunning();
 
       taskExecutor.start();
