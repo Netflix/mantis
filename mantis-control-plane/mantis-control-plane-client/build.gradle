@@ -15,12 +15,12 @@
  */
 
 dependencies {
-    compile project(":mantis-control-plane:mantis-control-plane-core")
+    api project(":mantis-control-plane:mantis-control-plane-core")
 
-    compile project(":mantis-remote-observable")
+    api project(":mantis-remote-observable")
 
-    testCompile "junit:junit-dep:$junitVersion"
-    testCompile "org.mockito:mockito-all:$mockitoVersion"
+    testImplementation "junit:junit-dep:$junitVersion"
+    testImplementation "org.mockito:mockito-all:$mockitoVersion"
 }
 
 

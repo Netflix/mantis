@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+plugins {
+    id 'com.gradle.enterprise' version '3.4.1'
+}
+
 rootProject.name = 'mantis'
 
 include 'mantis-client'
@@ -57,3 +61,11 @@ include 'mantis-shaded'
 
 include 'mantis-source-jobs:mantis-source-job-kafka'
 include 'mantis-source-jobs:mantis-source-job-publish'
+
+gradleEnterprise {
+    buildScan {
+        publishAlways()
+        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+        termsOfServiceAgree = 'yes'
+    }
+}
