@@ -23,27 +23,11 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
       - uses: gradle/gradle-build-action@v2
+        env:
+          CI_NAME: github_actions
+          CI_BUILD_NUMBER: ${{ github.sha }}
+          CI_BUILD_URL: 'https://github.com/${{ github.repository }}'
+          CI_BRANCH: ${{ github.ref }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           arguments: build
-#      - uses: actions/cache@v1
-#        id: gradle-cache
-#        with:
-#          path: ~/.gradle/caches
-#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle/dependency-locks/*.lockfile') }}
-#          restore-keys: |
-#            - ${{ runner.os }}-gradle-
-#      - uses: actions/cache@v1
-#        id: gradle-wrapper-cache
-#        with:
-#          path: ~/.gradle/wrapper
-#          key: ${{ runner.os }}-gradlewrapper-${{ hashFiles('gradle/wrapper/*') }}
-#          restore-keys: |
-#            - ${{ runner.os }}-gradlewrapper-
-#      - name: Build with Gradle
-#        run: ./gradlew --info --stacktrace build
-#        env:
-#          CI_NAME: github_actions
-#          CI_BUILD_NUMBER: ${{ github.sha }}
-#          CI_BUILD_URL: 'https://github.com/${{ github.repository }}'
-#          CI_BRANCH: ${{ github.ref }}
-#          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
