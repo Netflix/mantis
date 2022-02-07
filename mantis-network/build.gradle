@@ -22,9 +22,9 @@ ext {
 }
 
 dependencies {
-    compile "io.netty:netty-handler:$nettyVersion"
-    compile "io.mantisrx:mql-jvm:$mqlVersion"
-    compile project(':mantis-common')
+    api "io.netty:netty-handler:$nettyVersion"
+    api "io.mantisrx:mql-jvm:$mqlVersion"
+    api project(':mantis-common')
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
