@@ -52,7 +52,6 @@ public class MantisClient {
         public Observable<EndpointChange> locatePartitionedSinkForJob(final String jobId, final int forPartition, final int totalPartitions) {
             return clientWrapper.getMasterClientApi()
                     .flatMap((MantisMasterClientApi mantisMasterClientApi) -> {
-                        Integer sinkStage = null;
                         return mantisMasterClientApi.getSinkStageNum(jobId)
                                 .take(1) // only need to figure out sink stage number once
                                 .flatMap((Integer integer) -> {
@@ -96,7 +95,7 @@ public class MantisClient {
      */
     public MantisClient(Properties properties) {
         clientWrapper = new MasterClientWrapper(properties);
-        this.disablePingFiltering = Boolean.valueOf(properties.getProperty(ENABLE_PINGS_KEY));
+        this.disablePingFiltering = Boolean.parseBoolean(properties.getProperty(ENABLE_PINGS_KEY));
     }
 
     public JobSinkLocator getSinkLocator() {
@@ -314,34 +313,20 @@ public class MantisClient {
      */
     public Observable<String> getJobsOfNamedJob(final String name, final MantisJobState.MetaState state) {
         return clientWrapper.getMasterClientApi()
-                .flatMap((MantisMasterClientApi mantisMasterClientApi) -> {
-                    return mantisMasterClientApi.getJobsOfNamedJob(name, state);
-                })
+                .flatMap(masterClientApi -> masterClientApi.getJobsOfNamedJob(name, state))
                 .first();
     }
 
     /**
      * A stream of changes associated with the given JobId
-     *
-     * @param jobId
-     *
-     * @return
      */
-
     public Observable<String> getJobStatusObservable(final String jobId) {
         return clientWrapper.getMasterClientApi()
-                .flatMap((MantisMasterClientApi mantisMasterClientApi) -> {
-                    return mantisMasterClientApi.getJobStatusObservable(jobId);
-                });
-
+                .flatMap(masterClientApi -> masterClientApi.getJobStatusObservable(jobId));
     }
 
     /**
      * A stream of scheduling changes for the given Jobid
-     *
-     * @param jobId
-     *
-     * @return
      */
     public Observable<JobSchedulingInfo> getSchedulingChanges(final String jobId) {
         return clientWrapper.getMasterClientApi()
@@ -360,7 +345,7 @@ public class MantisClient {
         return clientWrapper.getNamedJobsIds(jobCluster)
                 .doOnUnsubscribe(() -> lastJobIdRef.set(null))
                 .filter((String newJobId) -> {
-                    logger.info("Got job cluster's new jobId : {}", newJobId);
+                    logger.info("Got job cluster {}'s new jobId : {}", jobCluster, newJobId);
                     return newJobIdIsGreater(lastJobIdRef.get(), newJobId);
                 })
                 .switchMap((final String jobId) -> {

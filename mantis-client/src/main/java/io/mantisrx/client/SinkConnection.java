@@ -22,5 +22,5 @@ import rx.functions.Func0;
 
 public interface SinkConnection<T> extends Func0<Observable<T>>, AutoCloseable {
 
-    public String getName();
+    String getName();
 }

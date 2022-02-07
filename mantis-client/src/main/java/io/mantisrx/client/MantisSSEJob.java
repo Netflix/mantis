@@ -26,6 +26,7 @@ import io.mantisrx.server.master.client.ConditionalRetry;
 import io.mantisrx.server.master.client.NoSuchJobException;
 import io.reactivx.mantis.operators.DropOperator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -34,19 +35,17 @@ import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 
 public class MantisSSEJob implements AutoCloseable {
 
-    static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
+    private static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
     private static final Logger logger = LoggerFactory.getLogger(MantisSSEJob.class);
 
-    ;
     private final Builder builder;
     private final Mode mode;
-    Observable<Observable<MantisServerSentEvent>> resultsObservable;
+    private Observable<Observable<MantisServerSentEvent>> resultsObservable;
     private String jobId = null;
     private int forPartition = -1;
     private int totalPartitions = 0;
@@ -54,7 +53,7 @@ public class MantisSSEJob implements AutoCloseable {
         this.builder = builder;
         this.mode = mode;
         if (builder.connectTimeoutSecs > 0)
-            System.setProperty(ConnectTimeoutSecsPropertyName, "" + builder.connectTimeoutSecs);
+            System.setProperty(ConnectTimeoutSecsPropertyName, String.valueOf(builder.connectTimeoutSecs));
     }
 
     @Override
@@ -91,13 +90,7 @@ public class MantisSSEJob implements AutoCloseable {
 
     @Deprecated
     public synchronized Observable<MantisServerSentEvent> connectAndGetObservable() throws IllegalStateException {
-        return connectAndGet()
-                .flatMap(new Func1<Observable<MantisServerSentEvent>, Observable<MantisServerSentEvent>>() {
-                    @Override
-                    public Observable<MantisServerSentEvent> call(Observable<MantisServerSentEvent> o) {
-                        return o;
-                    }
-                });
+        return connectAndGet().flatMap(o -> o);
     }
 
     public synchronized Observable<Observable<MantisServerSentEvent>> connectAndGet() throws IllegalStateException {
@@ -125,10 +118,7 @@ public class MantisSSEJob implements AutoCloseable {
 
     @Deprecated
     public synchronized Observable<MantisServerSentEvent> submitAndGetObservable() throws IllegalStateException {
-        return submitAndGet()
-                .flatMap((Observable<MantisServerSentEvent> o) -> {
-                    return o;
-                });
+        return submitAndGet().flatMap(o -> o);
     }
 
     public synchronized Observable<Observable<MantisServerSentEvent>> submitAndGet() throws IllegalStateException {
@@ -151,7 +141,7 @@ public class MantisSSEJob implements AutoCloseable {
                                             builder.jobSla.getUserProvidedType());
                             jobId = builder.mantisClient.submitJob(builder.name, builder.jarVersion, builder.parameters,
                                     jobSla, builder.schedulingInfo);
-                            logger.info("Submitted job " + jobId);
+                            logger.info("Submitted job name " + builder.name + " and got jobId: " + jobId);
                             resultsObservable = builder.mantisClient
                                     .getSinkClientByJobId(jobId, new SseSinkConnectionFunction(true, builder.onConnectionReset),
                                             builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs)
@@ -165,7 +155,7 @@ public class MantisSSEJob implements AutoCloseable {
                 .doOnError((Throwable throwable) -> {
                     logger.warn(throwable.getMessage());
                 })
-                .lift(new DropOperator<Observable<MantisServerSentEvent>>("client_submit_sse_share"))
+                .lift(new DropOperator<>("client_submit_sse_share"))
                 .share()
                 .observeOn(Schedulers.io())
                 ;
@@ -176,9 +166,9 @@ public class MantisSSEJob implements AutoCloseable {
     public static class Builder {
 
         private final MantisClient mantisClient;
+        private final List<Parameter> parameters = new ArrayList<>();
         private String name;
         private String jarVersion;
-        private List<Parameter> parameters;
         private SinkParameters sinkParameters = new SinkParameters.Builder().build();
         private Action1<Throwable> onConnectionReset;
         private boolean ephemeral = false;
@@ -202,12 +192,10 @@ public class MantisSSEJob implements AutoCloseable {
             properties.setProperty("mantis.zookeeper.leader.announcement.path",
                     System.getenv("mantis.zookeeper.leader.announcement.path"));
             mantisClient = new MantisClient(properties);
-            parameters = new ArrayList<>();
         }
 
         public Builder(MantisClient mantisClient) {
             this.mantisClient = mantisClient;
-            parameters = new ArrayList<>();
         }
 
         public Builder name(String name) {
@@ -221,8 +209,7 @@ public class MantisSSEJob implements AutoCloseable {
         }
 
         public Builder parameters(Parameter... params) {
-            for (Parameter p : params)
-                this.parameters.add(p);
+            this.parameters.addAll(Arrays.asList(params));
             return this;
         }
 
@@ -285,8 +272,6 @@ public class MantisSSEJob implements AutoCloseable {
             return new MantisSSEJob(this, Mode.Connect);
         }
 
-
     }
-
 
 }
