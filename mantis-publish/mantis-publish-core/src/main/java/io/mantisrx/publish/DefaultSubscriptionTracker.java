@@ -64,7 +64,7 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
         this.fetchSubscriptionsNon200Count = SpectatorUtils.buildAndRegisterCounter(registry, "fetchSubscriptionsNon200Count");
     }
 
-    private Optional<MantisServerSubscriptionEnvelope> fetchSubscriptions(String streamName, String jobId, MantisWorker worker) {
+    private Optional<MantisServerSubscriptionEnvelope> fetchSubscriptions(String jobId, MantisWorker worker) {
         try {
             String uri;
             if (!subscriptionsFetchQueryParamString.isEmpty()) {
@@ -89,7 +89,7 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
                 return Optional.empty();
             }
         } catch (Exception e) {
-            LOG.info("caught exception fetching subs for stream {} from {}", streamName, worker, e);
+            LOG.info("caught exception fetching subs from {}", worker, e);
             fetchSubscriptionsFailedCount.increment();
             return Optional.empty();
         }
@@ -109,7 +109,7 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
         return workers.subList(0, subsetSize);
     }
 
-    private Optional<MantisServerSubscriptionEnvelope> subsetSubscriptionsResolver(String streamName, String jobId, List<MantisWorker> workers) {
+    private Optional<MantisServerSubscriptionEnvelope> subsetSubscriptionsResolver(String jobId, List<MantisWorker> workers) {
         Map<MantisServerSubscriptionEnvelope, Integer> subCount = new HashMap<>();
         int numWorkers = workers.size();
         int maxWorkersToFetchSubsFrom = Math.min(mrePublishConfiguration.maxNumWorkersToFetchSubscriptionsFrom(), numWorkers);
@@ -117,7 +117,7 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
 
         List<MantisWorker> subset = randomSubset(workers, maxWorkersToFetchSubsFrom);
         for (final MantisWorker mantisWorker : subset) {
-            Optional<MantisServerSubscriptionEnvelope> subscriptionsO = fetchSubscriptions(streamName, jobId, mantisWorker);
+            Optional<MantisServerSubscriptionEnvelope> subscriptionsO = fetchSubscriptions(jobId, mantisWorker);
             if (subscriptionsO.isPresent()) {
                 Integer prevCount;
                 MantisServerSubscriptionEnvelope subscriptions = subscriptionsO.get();
@@ -134,14 +134,14 @@ public class DefaultSubscriptionTracker extends AbstractSubscriptionTracker {
     }
 
     @Override
-    public Optional<MantisServerSubscriptionEnvelope> fetchSubscriptions(String streamName, String jobCluster) {
+    public Optional<MantisServerSubscriptionEnvelope> fetchSubscriptions(String jobCluster) {
         Optional<JobDiscoveryInfo> jobDiscoveryInfo = jobDiscovery.getCurrentJobWorkers(jobCluster);
 
         if (jobDiscoveryInfo.isPresent()) {
             JobDiscoveryInfo jdi = jobDiscoveryInfo.get();
             StageWorkers workers = jdi.getIngestStageWorkers();
             if (workers != null) {
-                return subsetSubscriptionsResolver(streamName, jdi.getJobId(), workers.getWorkers());
+                return subsetSubscriptionsResolver(jdi.getJobId(), workers.getWorkers());
             } else {
                 LOG.info("Subscription refresh failed, workers null for {}", jobCluster);
             }
