@@ -25,6 +25,12 @@ import java.util.concurrent.CompletableFuture;
 public interface ResourceCluster extends ResourceClusterGateway {
   CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors();
 
+  CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors();
+
+  CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors();
+
+  CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors();
+
   CompletableFuture<ResourceOverview> resourceOverview();
 
   // Can throw NoResourceAvailableException wrapped within the CompletableFuture.

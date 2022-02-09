@@ -53,7 +53,7 @@ import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.ResourceClustersRoute;
 import io.mantisrx.master.events.LifecycleEventPublisher;
-import io.mantisrx.master.resourcecluster.ResourceClusterGatewayAkkaImpl;
+import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -62,7 +62,7 @@ import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
-import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -169,8 +169,9 @@ public class MasterApiAkkaService extends BaseService {
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
-        final ResourceClusterGateway resourceClusterGateway = new ResourceClusterGatewayAkkaImpl(resourceClustersManagerActor, askTimeout);
-        final ResourceClustersRoute v1ResourceClusterRoute = new ResourceClustersRoute(resourceClusterGateway);
+//        final ResourceClusterGateway resourceClusterGateway = new ResourceClusterGatewayAkkaImpl(resourceClustersManagerActor, askTimeout);
+        final ResourceClusters resourceClusters = new ResourceClustersAkkaImpl(resourceClustersManagerActor, askTimeout);
+        final ResourceClustersRoute v1ResourceClusterRoute = new ResourceClustersRoute(resourceClusters);
 
         final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
         return new MantisMasterRoute(leaderRedirectionFilter,

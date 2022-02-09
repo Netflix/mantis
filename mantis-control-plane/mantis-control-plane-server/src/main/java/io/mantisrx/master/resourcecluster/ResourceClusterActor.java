@@ -41,11 +41,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.ToString;
@@ -85,6 +88,11 @@ public class ResourceClusterActor extends AbstractActor {
     return
         ReceiveBuilder
             .create()
+            .match(GetRegisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isRegistered), self()))
+            .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isBusy), self()))
+            .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
+            .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
+
             .match(TaskExecutorRegistration.class, this::onTaskExecutorRegistration)
             .match(TaskExecutorHeartbeat.class, this::onHeartbeat)
             .match(TaskExecutorStatusChange.class, this::onTaskExecutorStatusChange)
@@ -95,6 +103,29 @@ public class ResourceClusterActor extends AbstractActor {
             .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
             .match(TaskExecutorGatewayRequest.class, this::onTaskExecutorGatewayRequest)
             .build();
+  }
+
+  private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isRegistered =
+      e -> e.getValue().isRegistered();
+
+  private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isBusy =
+      e -> e.getValue().isRunningTask();
+
+  private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> unregistered =
+      e -> e.getValue().isDisconnected();
+
+  private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAvailable =
+      e -> e.getValue().isAvailable();
+
+  private TaskExecutorsList getTaskExecutors(Predicate<Entry<TaskExecutorID, TaskExecutorState>> predicate) {
+    return
+        new TaskExecutorsList(
+            taskExecutorStateMap
+                .entrySet()
+                .stream()
+                .filter(predicate)
+                .map(e -> e.getKey())
+                .collect(Collectors.toList()));
   }
 
   private void onTaskExecutorInfoRequest(TaskExecutorInfoRequest request) {
@@ -314,6 +345,31 @@ public class ResourceClusterActor extends AbstractActor {
     ClusterID clusterID;
   }
 
+  @Value
+  static class GetRegisteredTaskExecutorsRequest {
+    ClusterID clusterID;
+  }
+
+  @Value
+  static class GetAvailableTaskExecutorsRequest {
+    ClusterID clusterID;
+  }
+
+  @Value
+  static class GetBusyTaskExecutorsRequest {
+    ClusterID clusterID;
+  }
+
+  @Value
+  static class GetUnregisteredTaskExecutorsRequest {
+    ClusterID clusterID;
+  }
+
+  @Value
+  static class TaskExecutorsList {
+    List<TaskExecutorID> taskExecutors;
+  }
+
   @AllArgsConstructor
   private static class TaskExecutorState {
 
@@ -492,6 +548,11 @@ public class ResourceClusterActor extends AbstractActor {
         }
       }
       return false;
+    }
+
+    @Nullable
+    private WorkerId getWorkerId() {
+      return this.workerId;
     }
 
     private void throwNotRegistered(String message) throws IllegalStateException {

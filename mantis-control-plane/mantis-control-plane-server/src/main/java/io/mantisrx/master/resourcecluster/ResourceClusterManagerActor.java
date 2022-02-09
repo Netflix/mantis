@@ -20,6 +20,10 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
@@ -34,6 +38,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.runtime.rpc.RpcService;
 
@@ -68,6 +74,13 @@ public class ResourceClusterManagerActor extends AbstractActor {
     return
         ReceiveBuilder
             .create()
+            .match(ListActiveClusters.class, req -> sender().tell(getActiveClusters(), self()))
+
+            .match(GetRegisteredTaskExecutorsRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
+            .match(GetBusyTaskExecutorsRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
+            .match(GetAvailableTaskExecutorsRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
+            .match(GetUnregisteredTaskExecutorsRequest.class, req -> getRCActor(req.getClusterID()).forward(req, context()))
+
             .match(TaskExecutorRegistration.class, registration ->
                 getRCActor(registration.getClusterID()).forward(registration, context()))
             .match(TaskExecutorHeartbeat.class, heartbeat ->
@@ -101,5 +114,18 @@ public class ResourceClusterManagerActor extends AbstractActor {
     } else {
       return resourceClusterActorMap.computeIfAbsent(clusterID, (dontCare) -> createResourceClusterActorFor(clusterID));
     }
+  }
+
+  private ClusterIdSet getActiveClusters() {
+    return new ClusterIdSet(resourceClusterActorMap.keySet());
+  }
+
+  @Value
+  static class ListActiveClusters {
+  }
+
+  @Value
+  static class ClusterIdSet {
+    Set<ClusterID> clusterIDS;
   }
 }
