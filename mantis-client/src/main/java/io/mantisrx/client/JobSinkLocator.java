@@ -22,7 +22,7 @@ import rx.Observable;
 
 public interface JobSinkLocator {
 
-    public Observable<EndpointChange> locateSinkForJob(String jobId);
+    Observable<EndpointChange> locateSinkForJob(String jobId);
 
-    public Observable<EndpointChange> locatePartitionedSinkForJob(String jobId, int forPartition, int totalPartitions);
+    Observable<EndpointChange> locatePartitionedSinkForJob(String jobId, int forPartition, int totalPartitions);
 }
