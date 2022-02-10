@@ -143,13 +143,7 @@ public class ResourceClustersRoute extends BaseRoute {
   }
 
   private Route listClusters() {
-    return entity(Jackson.unmarshaller(TaskExecutorRegistration.class), request -> {
-      log.info(
-          "GET /api/v1/resourceClusters called {}",
-          request);
-
       return withFuture(gateway.listActiveClusters());
-    });
   }
 
   private Route getResourceOverview(ClusterID clusterID) {
