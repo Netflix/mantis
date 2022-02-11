@@ -123,7 +123,13 @@ public class Task extends AbstractIdleService implements TaskPayload {
   }
 
   private Optional<String> getJobProviderClass() {
-    return executeStageRequest.getNameOfJobProviderClass();
+    io.mantisrx.shaded.com.google.common.base.Optional<String> jobProviderClass =
+        executeStageRequest.getNameOfJobProviderClass();
+    if (jobProviderClass.isPresent()) {
+      return Optional.of(executeStageRequest.getNameOfJobProviderClass().get());
+    } else {
+      return Optional.empty();
+    }
   }
 
   public Observable<Status> getStatus() {

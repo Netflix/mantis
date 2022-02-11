@@ -20,7 +20,7 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import java.util.Optional;
+import io.mantisrx.shaded.com.google.common.base.Optional;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class ExecuteStageRequestUtils {
         scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
         scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
         matchedTaskExecutorInfo.getWorkerPorts(),
-        Optional.empty()
+        Optional.absent()
     );
   }
 }

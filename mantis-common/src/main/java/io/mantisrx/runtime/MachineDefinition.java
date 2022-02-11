@@ -19,9 +19,10 @@ package io.mantisrx.runtime;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 
 
-public class MachineDefinition {
+public class MachineDefinition implements Serializable {
 
     private static final double defaultMbps = 128.0;
     private static final int minPorts = 1;

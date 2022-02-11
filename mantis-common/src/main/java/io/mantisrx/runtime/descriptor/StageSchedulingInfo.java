@@ -23,12 +23,13 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import lombok.Builder;
 import lombok.Singular;
 
 @Builder(toBuilder = true)
-public class StageSchedulingInfo {
+public class StageSchedulingInfo implements Serializable {
 
     private final int numberOfInstances;
     private final MachineDefinition machineDefinition;
