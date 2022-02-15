@@ -37,6 +37,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -44,14 +45,17 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.Listener;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
+import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.net.SocketTimeoutException;
-import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import javax.annotation.Nullable;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +73,9 @@ import rx.schedulers.Schedulers;
 
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
+  @Getter
   private final TaskExecutorID taskExecutorID;
+  @Getter
   private final ClusterID clusterID;
   private final WorkerConfiguration workerConfiguration;
   private final HighAvailabilityServices highAvailabilityServices;
@@ -87,6 +93,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   private Task currentTask;
   private Subscription currentTaskStatusSubscription;
   private int resourceManagerCxnIdx;
+  private Throwable previousFailure;
 
   public TaskExecutor(RpcService rpcService,
       WorkerConfiguration workerConfiguration,
@@ -225,7 +232,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // check if we are running on the main thread first since we are operating on
     // shared mutable state
     validateRunsInMainThread();
-    Preconditions.checkArgument(this.currentResourceManagerCxn == null, "existing connection already set");
+    Preconditions.checkArgument(this.currentResourceManagerCxn == null,
+        "existing connection already set");
     cxn.addListener(new Listener() {
       @Override
       public void failed(Service.State from, Throwable failure) {
@@ -321,9 +329,12 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
       } catch (Exception e) {
         // the registration may or may not have succeeded. Since we don't know let's just
         // do the disconnection just to be safe.
-        log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway, e);
+        log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
+            e);
         try {
-          gateway.disconnectTaskExecutor(new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID()))
+          gateway.disconnectTaskExecutor(
+                  new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
+                      taskExecutorRegistration.getClusterID()))
               .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
         } catch (Exception inner) {
           log.error("Disconnection has also failed", inner);
@@ -338,7 +349,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         currentReportSupplier.apply(timeout)
             .thenComposeAsync(report -> {
               log.info("Sending heartbeat to resource manager {} with report {}", gateway, report);
-              return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
+              return gateway.heartBeatFromTaskExecutor(
+                  new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(),
+                      taskExecutorRegistration.getClusterID(), report));
             })
             .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 
@@ -351,7 +364,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
           throw e;
         } else {
-          log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}", gateway, numFailedHeartbeats, tolerableConsecutiveHeartbeatFailures);
+          log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
+              gateway, numFailedHeartbeats, tolerableConsecutiveHeartbeatFailures);
         }
       }
     }
@@ -359,7 +373,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public void shutDown() throws Exception {
       gateway
-          .disconnectTaskExecutor(new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID()))
+          .disconnectTaskExecutor(
+              new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
+                  taskExecutorRegistration.getClusterID()))
           .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
     }
   }
@@ -374,13 +390,24 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
   }
 
+  @VisibleForTesting
+  <T> CompletableFuture<T> callInMainThread(Callable<CompletableFuture<T>> tSupplier,
+      Time timeout) {
+    return this.callAsync(() -> tSupplier.call(), timeout).thenCompose(t -> t);
+  }
+
   @Override
   public CompletableFuture<Ack> submitTask(ExecuteStageRequest request) {
 
     if (currentTask != null) {
-      return CompletableFutures.exceptionallyCompletedFuture(
-          new TaskAlreadyRunningException(currentTask.getWorkerId()));
+      if (currentTask.getWorkerId().equals(request.getWorkerId())) {
+        return CompletableFuture.completedFuture(Ack.getInstance());
+      } else {
+        return CompletableFutures.exceptionallyCompletedFuture(
+            new TaskAlreadyRunningException(currentTask.getWorkerId()));
+      }
     }
+
     Task task = new Task(
         request,
         workerConfiguration,
@@ -390,34 +417,118 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         classLoaderHandle,
         subscriptionStateHandlerFactory);
 
-    currentTask = task;
-    currentTaskStatusSubscription =
-        task
-            .getStatus()
-            .observeOn(Schedulers.from(getMainThreadExecutor()))
-            .subscribe(this::updateExecutionStatus);
+    setCurrentTask(task);
 
+    scheduleRunAsync(this::startCurrentTask, 0, TimeUnit.MILLISECONDS);
+    return CompletableFuture.completedFuture(Ack.getInstance());
+  }
+
+  private void startCurrentTask() {
+    validateRunsInMainThread();
+
+    if (currentTask.state().equals(State.NEW)) {
+      CompletableFuture<Void> currentTaskSuccessfullyStartFuture =
+          Services.startAsync(currentTask, getMainThreadExecutor());
+
+      currentTaskSuccessfullyStartFuture
+          .whenCompleteAsync((dontCare, throwable) -> {
+            if (throwable != null) {
+              // okay failed to start task successfully
+              // lets stop it
+              setCurrentTask(null);
+              setPreviousFailure(throwable);
+            }
+          });
+    }
+  }
+
+  private void setCurrentTask(@Nullable Task task) {
+    validateRunsInMainThread();
+
+    this.currentTask = task;
+    if (task == null) {
+      if (currentTaskStatusSubscription != null) {
+        currentTaskStatusSubscription.unsubscribe();
+      }
+
+      setStatus(TaskExecutorReport.available());
+    } else {
+      currentTaskStatusSubscription =
+          task
+              .getStatus()
+              .observeOn(Schedulers.from(getMainThreadExecutor()))
+              .subscribe(this::updateExecutionStatus);
+      setStatus(TaskExecutorReport.occupied(task.getWorkerId()));
+    }
+  }
+
+  private void setPreviousFailure(Throwable throwable) {
+    validateRunsInMainThread();
+
+    this.previousFailure = throwable;
+  }
+
+  // tries to update the local state and the resource manager responsible for the task executor
+  // so that it's aware of the task executor state correctly.
+  // any failure to update the resource manager is not propagated upwards and instead is silently
+  // ignored with just an exception log. this is okay because the resource manager anyways gets periodic
+  // heartbeats which also contain the status of the task executor.
+  private void setStatus(TaskExecutorReport newReport) {
+    validateRunsInMainThread();
+
+    this.currentReport = newReport;
     try {
-      task.startAsync().awaitRunning();
-      return CompletableFuture.completedFuture(Ack.getInstance());
+      Preconditions.checkState(currentResourceManagerCxn != null,
+          "currentResourceManagerCxn was not expected to be null");
+      currentResourceManagerCxn.gateway.notifyTaskExecutorStatusChange(
+              new TaskExecutorStatusChange(taskExecutorID, clusterID, newReport))
+          .whenCompleteAsync((ack, throwable) -> {
+            if (throwable != null) {
+              log.warn("Failed to update the status {}", newReport, throwable);
+            }
+          }, getIOExecutor());
     } catch (Exception e) {
-      log.error("Failed to start the task", e);
-      // lets cancel the execution so that all the resources that were acquired as part of startup
-      // are given up.
-      currentTask = null;
-      task.stopAsync().awaitTerminated();
-      return CompletableFutures.exceptionallyCompletedFuture(new TaskCannotStartException(e));
+      log.warn("Failed to update the status {}", newReport, e);
     }
   }
 
   @Override
   public CompletableFuture<Ack> cancelTask(WorkerId workerId) {
-    return null;
+    if (this.currentTask == null) {
+      return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
+    } else if (!this.currentTask.getWorkerId().equals(workerId)) {
+      return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
+    } else {
+      scheduleRunAsync(this::stopCurrentTask, 0, TimeUnit.MILLISECONDS);
+      return CompletableFuture.completedFuture(Ack.getInstance());
+    }
+  }
+
+  private void stopCurrentTask() {
+    validateRunsInMainThread();
+    if (this.currentTask != null) {
+      try {
+        if (this.currentTask.state().ordinal() <= State.RUNNING.ordinal()) {
+          CompletableFuture<Void> stopTaskFuture =
+              Services.stopAsync(this.currentTask, getIOExecutor());
+
+          stopTaskFuture
+              .whenCompleteAsync((dontCare, throwable) -> {
+                setCurrentTask(null);
+                if (throwable != null) {
+                  setPreviousFailure(throwable);
+                }
+              }, getMainThreadExecutor());
+        }
+      } catch (Exception e) {
+        log.error("stopping current task failed", e);
+      }
+    }
   }
 
   @Override
-  public CompletableFuture<String> requestThreadDump(Duration timeout) {
-    return null;
+  public CompletableFuture<String> requestThreadDump() {
+    return CompletableFuture.completedFuture(JvmUtils.createThreadDumpAsString());
   }
 
   CompletableFuture<Boolean> isRegistered(Time timeout) {
@@ -427,6 +538,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   }
 
   private final ReportStatus reportStatus = new ReportStatus();
+
   protected void updateExecutionStatus(Status status) {
     reportStatus.apply(status);
   }
@@ -444,7 +556,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     final CompletableFuture<Void> currentResourceManagerCxnCompletionFuture;
     if (currentResourceManagerCxn != null) {
-      currentResourceManagerCxnCompletionFuture = Services.stopAsync(currentResourceManagerCxn, getIOExecutor());
+      currentResourceManagerCxnCompletionFuture = Services.stopAsync(currentResourceManagerCxn,
+          getIOExecutor());
     } else {
       currentResourceManagerCxnCompletionFuture = CompletableFuture.completedFuture(null);
     }
@@ -480,6 +593,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   }
 
   private class ReportStatus implements Function<Status, CompletableFuture<Ack>> {
+
     private final Counter hbConnectionTimeoutCounter;
     private final Counter hbConnectionRequestTimeoutCounter;
     private final Counter hbSocketTimeoutCounter;

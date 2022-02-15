@@ -42,11 +42,14 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -69,7 +72,6 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import rx.Observable;
 import rx.Subscription;
@@ -86,6 +88,7 @@ public class TaskExecutorTest {
   private TaskExecutor taskExecutor;
   private CountDownLatch startedSignal;
   private CountDownLatch doneSignal;
+  private CountDownLatch terminatedSignal;
   private Status finalStatus;
   private ResourceClusterGateway resourceManagerGateway;
   private SimpleResourceLeaderConnection<ResourceClusterGateway> resourceManagerGatewayCxn;
@@ -103,6 +106,7 @@ public class TaskExecutorTest {
 
     startedSignal = new CountDownLatch(1);
     doneSignal = new CountDownLatch(1);
+    terminatedSignal = new CountDownLatch(1);
 
     workerConfiguration = Configurations.frmProperties(props, WorkerConfiguration.class);
     rpcService = new TestingRpcService();
@@ -117,7 +121,7 @@ public class TaskExecutorTest {
     when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
   }
 
-  private void start() {
+  private void start() throws Exception {
     Consumer<Status> updateTaskExecutionStatusFunction = status -> {
       log.info("Task Status = {}", status.getState());
       if (status.getState() == MantisJobState.Started) {
@@ -126,7 +130,7 @@ public class TaskExecutorTest {
 
       if (status.getState().isTerminalState()) {
         finalStatus = status;
-        doneSignal.countDown();
+        terminatedSignal.countDown();
       }
     };
 
@@ -136,7 +140,7 @@ public class TaskExecutorTest {
             executeStageRequest -> SinkSubscriptionStateHandler.noop(),
             updateTaskExecutionStatusFunction);
     taskExecutor.start();
-    taskExecutor.awaitRunning();
+    taskExecutor.awaitRunning().get(2, TimeUnit.SECONDS);
   }
 
   @After
@@ -160,7 +164,9 @@ public class TaskExecutorTest {
             .build();
     when(masterMonitor.schedulingChanges("jobId-0")).thenReturn(
         Observable.just(new JobSchedulingInfo("jobId-0", stageAssignmentMap)));
-    CompletableFuture<Ack> wait = taskExecutor.submitTask(
+
+    WorkerId workerId = new WorkerId("jobId-0", 0, 1);
+    CompletableFuture<Ack> wait = taskExecutor.callInMainThread(() -> taskExecutor.submitTask(
         new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
             Resources.getResource("example-job.jar"),
             1, 1,
@@ -168,11 +174,11 @@ public class TaskExecutorTest {
             new SchedulingInfo.Builder().numberOfStages(1)
                 .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                     Lists.newArrayList(), Lists.newArrayList()).build(),
-            MantisJobDurationType.Perpetual,
+            MantisJobDurationType.Transient,
             1000L,
             1L,
             new WorkerPorts(2, 3, 4, 5, 6),
-            Optional.of(SineFunctionJobProvider.class.getName())));
+            Optional.of(SineFunctionJobProvider.class.getName()))), Time.seconds(1));
     wait.get();
     assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
     Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),
@@ -204,6 +210,18 @@ public class TaskExecutorTest {
             () -> doneSignal.countDown());
     assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
     subscription.unsubscribe();
+    verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
+        new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
+            TaskExecutorReport.occupied(workerId)));
+
+    CompletableFuture<Ack> cancelFuture =
+        taskExecutor.callInMainThread(() -> taskExecutor.cancelTask(workerId), Time.seconds(1));
+    cancelFuture.get();
+
+    Thread.sleep(5000);
+    verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
+        new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
+            TaskExecutorReport.available()));
   }
 
   @Test
@@ -290,10 +308,13 @@ public class TaskExecutorTest {
 
   private static ResourceClusterGateway getHealthyGateway(String name) {
     ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
-    when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
+    when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
     when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(
-        CompletableFuture.completedFuture(null));
-    when(gateway.disconnectTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(null));
+        CompletableFuture.completedFuture(Ack.getInstance()));
+    when(gateway.notifyTaskExecutorStatusChange(any()))
+        .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+    when(gateway.disconnectTaskExecutor(any()))
+        .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
     when(gateway.toString()).thenReturn(name);
     return gateway;
   }

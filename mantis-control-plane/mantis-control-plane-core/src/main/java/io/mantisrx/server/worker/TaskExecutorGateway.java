@@ -18,8 +18,8 @@ package io.mantisrx.server.worker;
 import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import lombok.RequiredArgsConstructor;
 import org.apache.flink.runtime.rpc.RpcGateway;
 
 public interface TaskExecutorGateway extends RpcGateway {
@@ -27,5 +27,17 @@ public interface TaskExecutorGateway extends RpcGateway {
 
   CompletableFuture<Ack> cancelTask(WorkerId workerId);
 
-  CompletableFuture<String> requestThreadDump(Duration timeout);
+  CompletableFuture<String> requestThreadDump();
+
+  @RequiredArgsConstructor
+  class TaskAlreadyRunningException extends Exception {
+    private final WorkerId currentlyRunningWorkerTask;
+  }
+
+  class TaskNotFoundException extends Exception {
+
+    public TaskNotFoundException(WorkerId workerId) {
+      super(String.format("Task %s not found", workerId.toString()));
+    }
+  }
 }

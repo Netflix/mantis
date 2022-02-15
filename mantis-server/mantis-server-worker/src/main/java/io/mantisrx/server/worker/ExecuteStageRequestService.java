@@ -202,6 +202,7 @@ public class ExecuteStageRequestService extends BaseService {
     @Override
     public void shutdown() {
         subscription.unsubscribe();
+        executionOperations.shutdownStage();
     }
 
     @Override
