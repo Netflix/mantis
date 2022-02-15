@@ -39,11 +39,12 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SchedulerActor extends AbstractActor {
+class SchedulerActor extends AbstractActor {
 
   private final ResourceCluster resourceCluster;
   private final ExecuteStageRequestUtils executeStageRequestUtils;
   private final JobMessageRouter jobMessageRouter;
+  private final int maxCancelRetries;
 
   public static Props props(
       final ResourceCluster resourceCluster,
@@ -59,6 +60,7 @@ public class SchedulerActor extends AbstractActor {
     this.resourceCluster = resourceCluster;
     this.executeStageRequestUtils = executeStageRequestUtils;
     this.jobMessageRouter = jobMessageRouter;
+    this.maxCancelRetries = 3;
   }
 
   @Override
@@ -70,6 +72,7 @@ public class SchedulerActor extends AbstractActor {
         .match(FailedToScheduleRequestEvent.class, this::onFailedScheduleRequestEvent)
         .match(SubmittedScheduleRequestEvent.class, this::onSubmittedScheduleRequestEvent)
         .match(FailedToSubmitScheduleRequestEvent.class, this::onFailedToSubmitScheduleRequestEvent)
+        .match(RetryCancelRequestEvent.class, this::onRetryCancelRequestEvent)
         .match(Noop.class, this::onNoop)
         .build();
   }
@@ -82,7 +85,8 @@ public class SchedulerActor extends AbstractActor {
 
     CompletableFuture<Object> assignedFuture =
         resourceCluster
-            .getTaskExecutorFor(event.scheduleRequest.getMachineDefinition(), event.scheduleRequest.getWorkerId())
+            .getTaskExecutorFor(event.scheduleRequest.getMachineDefinition(),
+                event.scheduleRequest.getWorkerId())
             .<Object>thenApply(
                 taskExecutorID1 -> new AssignedScheduleRequestEvent(event.getScheduleRequest(),
                     taskExecutorID1))
@@ -122,12 +126,13 @@ public class SchedulerActor extends AbstractActor {
             self(), // receiver
             event.onRetry(), // event to send
             context().dispatcher(),
-            self());  // sendder
+            self());  // sender
   }
 
   private void onSubmittedScheduleRequestEvent(SubmittedScheduleRequestEvent event) {
     final TaskExecutorID taskExecutorID = event.getTaskExecutorID();
-    final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID).join();
+    final TaskExecutorRegistration info = resourceCluster.getTaskExecutorInfo(taskExecutorID)
+        .join();
     boolean success =
         jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
             event.getScheduleRequest().getWorkerId(),
@@ -165,7 +170,24 @@ public class SchedulerActor extends AbstractActor {
     pipe(cancelFuture, context().dispatcher()).to(self());
   }
 
-  private void onNoop(Noop event) {}
+  private void onRetryCancelRequestEvent(RetryCancelRequestEvent event) {
+    if (event.getActualEvent().getAttempt() < maxCancelRetries) {
+      context().system()
+          .scheduler()
+          .scheduleOnce(
+              Duration.ofMinutes(1),
+              self(), // received
+              event.onRetry(), // event
+              getContext().getDispatcher(), // executor
+              self()); // sender
+    } else {
+      log.error("Exhausted number of retries for cancel request {}", event.getActualEvent(),
+          event.getCurrentFailure());
+    }
+  }
+
+  private void onNoop(Noop event) {
+  }
 
   @Value
   static class ScheduleRequestEvent {
@@ -227,19 +249,32 @@ public class SchedulerActor extends AbstractActor {
 
     WorkerId workerId;
     String hostName;
+    int attempt;
+    Throwable previousFailure;
+
+    static CancelRequestEvent of(WorkerId workerId, String hostName) {
+      return new CancelRequestEvent(workerId, hostName, 1, null);
+    }
 
     RetryCancelRequestEvent onFailure(Throwable throwable) {
-      return new RetryCancelRequestEvent(this, throwable, 2);
+      return new RetryCancelRequestEvent(this, throwable);
     }
   }
 
   @Value
   private static class RetryCancelRequestEvent {
+
     CancelRequestEvent actualEvent;
     Throwable currentFailure;
-    int currentAttempt;
+
+    CancelRequestEvent onRetry() {
+      return new CancelRequestEvent(actualEvent.getWorkerId(), actualEvent.getHostName(),
+          actualEvent.getAttempt() + 1, currentFailure);
+    }
   }
 
   @Value(staticConstructor = "getInstance")
-  private static class Noop {}
+  private static class Noop {
+
+  }
 }
