@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master;
+package io.mantisrx.server.master.scheduler;
 
 import akka.actor.ActorRef;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.SchedulerActor.CancelRequestEvent;
-import io.mantisrx.server.master.SchedulerActor.ScheduleRequestEvent;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.CancelRequestEvent;
+import io.mantisrx.server.master.scheduler.ResourceClusterAwareSchedulerActor.ScheduleRequestEvent;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;

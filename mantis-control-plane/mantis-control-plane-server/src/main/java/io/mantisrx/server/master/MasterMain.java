@@ -44,7 +44,7 @@ import io.mantisrx.master.events.StatusEventSubscriber;
 import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
 import io.mantisrx.master.events.WorkerRegistryV2;
-import io.mantisrx.master.resourcecluster.ResourceClusterManagerActor;
+import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
@@ -66,7 +66,10 @@ import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
+import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
@@ -75,7 +78,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -160,8 +162,8 @@ public class MasterMain implements Service {
                 MantisAkkaRpcSystemLoader.load(configuration);
             final RpcService rpcService =
                 RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
-            final ActorRef resourceClusterManagerActor =
-                system.actorOf(ResourceClusterManagerActor.props(getConfig(), Clock.systemDefaultZone(), rpcService));
+            final ResourceClusters resourceClusters =
+                ResourceClustersAkkaImpl.load(getConfig(), rpcService, system);
 
             // end of new stuff
 
@@ -176,13 +178,16 @@ public class MasterMain implements Service {
                     getDescriptionJson(),
                     mesosDriverSupplier);
             schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
+
+            final MantisSchedulerFactory mantisSchedulerFactory =
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestUtils(getConfig()), jobMessageRouter, schedulingService);
             mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
 
             // initialize agents error monitor
             agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(schedulingService), ActorRef.noSender());
 
             final boolean loadJobsFromStoreOnInit = true;
-            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, schedulingService, loadJobsFromStoreOnInit);
+            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
 
             this.agentClusterOps = new AgentClusterOperationsImpl(storageProvider,
                     jobMessageRouter,
@@ -204,13 +209,13 @@ public class MasterMain implements Service {
             if (this.config.isLocalMode()) {
                 leadershipManager.becomeLeader();
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusterManagerActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             } else {
                 curatorService = new CuratorService(this.config, leadershipManager.getDescription());
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusterManagerActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             }
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {

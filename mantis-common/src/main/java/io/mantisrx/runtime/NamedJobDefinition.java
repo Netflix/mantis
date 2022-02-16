@@ -25,7 +25,6 @@ public class NamedJobDefinition {
 
     private final MantisJobDefinition jobDefinition;
 
-    ;
     private final JobOwner owner;
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

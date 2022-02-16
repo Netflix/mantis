@@ -47,7 +47,7 @@ import org.apache.flink.runtime.rpc.RpcService;
  * Supervisor actor responsible for creating/deleting/listing all resource clusters in the system.
  */
 @Slf4j
-public class ResourceClusterManagerActor extends AbstractActor {
+public class ResourceClustersManagerActor extends AbstractActor {
 
   private final MasterConfiguration masterConfiguration;
   private final Clock clock;
@@ -56,10 +56,10 @@ public class ResourceClusterManagerActor extends AbstractActor {
   private final Map<ClusterID, ActorRef> resourceClusterActorMap;
 
   public static Props props(MasterConfiguration masterConfiguration, Clock clock, RpcService rpcService) {
-    return Props.create(ResourceClusterManagerActor.class, masterConfiguration, clock, rpcService);
+    return Props.create(ResourceClustersManagerActor.class, masterConfiguration, clock, rpcService);
   }
 
-  public ResourceClusterManagerActor(
+  public ResourceClustersManagerActor(
       MasterConfiguration masterConfiguration, Clock clock,
       RpcService rpcService) {
     this.masterConfiguration = masterConfiguration;

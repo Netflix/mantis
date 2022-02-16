@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
+class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
   protected final ActorRef resourceClusterManagerActor;
   protected final Duration askTimeout;
 

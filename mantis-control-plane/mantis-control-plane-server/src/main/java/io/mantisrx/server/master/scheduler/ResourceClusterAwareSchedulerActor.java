@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master;
+package io.mantisrx.server.master.scheduler;
 
 import static akka.pattern.Patterns.pipe;
 
@@ -22,13 +22,10 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.ExecuteStageRequestUtils;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
-import io.mantisrx.server.master.scheduler.JobMessageRouter;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import io.mantisrx.server.master.scheduler.WorkerLaunchFailed;
-import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import java.time.Duration;
@@ -39,7 +36,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-class SchedulerActor extends AbstractActor {
+class ResourceClusterAwareSchedulerActor extends AbstractActor {
 
   private final ResourceCluster resourceCluster;
   private final ExecuteStageRequestUtils executeStageRequestUtils;
@@ -50,11 +47,11 @@ class SchedulerActor extends AbstractActor {
       final ResourceCluster resourceCluster,
       final ExecuteStageRequestUtils executeStageRequestUtils,
       final JobMessageRouter jobMessageRouter) {
-    return Props.create(SchedulerActor.class, resourceCluster, executeStageRequestUtils,
+    return Props.create(ResourceClusterAwareSchedulerActor.class, resourceCluster, executeStageRequestUtils,
         jobMessageRouter);
   }
 
-  public SchedulerActor(ResourceCluster resourceCluster,
+  public ResourceClusterAwareSchedulerActor(ResourceCluster resourceCluster,
       ExecuteStageRequestUtils executeStageRequestUtils,
       JobMessageRouter jobMessageRouter) {
     this.resourceCluster = resourceCluster;

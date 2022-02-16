@@ -17,33 +17,47 @@
 package io.mantisrx.master.resourcecluster;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
+import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.apache.flink.runtime.rpc.RpcService;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class ResourceClustersAkkaImpl implements ResourceClusters {
 
-  private final ActorRef resourceClusterManagerActor;
+  private final ActorRef resourceClustersManagerActor;
   private final Duration askTimeout;
 
   @Override
   public ResourceCluster getClusterFor(ClusterID clusterID) {
-    return new ResourceClusterAkkaImpl(resourceClusterManagerActor, askTimeout, clusterID);
+    return new ResourceClusterAkkaImpl(resourceClustersManagerActor, askTimeout, clusterID);
   }
 
   @Override
   public CompletableFuture<Set<ClusterID>> listActiveClusters() {
     return
-        Patterns.ask(resourceClusterManagerActor,
-                new ResourceClusterManagerActor.ListActiveClusters(), askTimeout)
+        Patterns.ask(resourceClustersManagerActor,
+                new ResourceClustersManagerActor.ListActiveClusters(), askTimeout)
             .toCompletableFuture()
-            .thenApply(ResourceClusterManagerActor.ClusterIdSet.class::cast)
+            .thenApply(ResourceClustersManagerActor.ClusterIdSet.class::cast)
             .thenApply(clusterIdSet -> clusterIdSet.getClusterIDS());
+  }
+
+  public static ResourceClusters load(MasterConfiguration masterConfiguration, RpcService rpcService, ActorSystem actorSystem) {
+    final ActorRef resourceClusterManagerActor =
+        actorSystem.actorOf(ResourceClustersManagerActor.props(masterConfiguration, Clock.systemDefaultZone(), rpcService));
+
+    final Duration askTimeout = java.time.Duration.ofMillis(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
+    return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout);
   }
 }

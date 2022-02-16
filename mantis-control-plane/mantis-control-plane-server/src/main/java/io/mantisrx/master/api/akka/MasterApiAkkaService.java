@@ -53,7 +53,6 @@ import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.ResourceClustersRoute;
 import io.mantisrx.master.events.LifecycleEventPublisher;
-import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -79,7 +78,7 @@ public class MasterApiAkkaService extends BaseService {
     private final MasterMonitor masterMonitor;
     private final MasterDescription masterDescription;
     private final ActorRef jobClustersManagerActor;
-    private final ActorRef resourceClustersManagerActor;
+    private final ResourceClusters resourceClusters;
     private final ActorRef statusEventBrokerActor;
     private final int port;
     private final IMantisStorageProvider storageProvider;
@@ -96,7 +95,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final MasterDescription masterDescription,
                                 final ActorRef jobClustersManagerActor,
                                 final ActorRef statusEventBrokerActor,
-                                final ActorRef resourceClustersManagerActor,
+                                final ResourceClusters resourceClusters,
                                 final int serverPort,
                                 final IMantisStorageProvider mantisStorageProvider,
                                 final MantisScheduler scheduler,
@@ -117,7 +116,7 @@ public class MasterApiAkkaService extends BaseService {
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
         this.statusEventBrokerActor = statusEventBrokerActor;
-        this.resourceClustersManagerActor = resourceClustersManagerActor;
+        this.resourceClusters = resourceClusters;
         this.port = serverPort;
         this.storageProvider = mantisStorageProvider;
         this.scheduler = scheduler;
@@ -169,8 +168,6 @@ public class MasterApiAkkaService extends BaseService {
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
-//        final ResourceClusterGateway resourceClusterGateway = new ResourceClusterGatewayAkkaImpl(resourceClustersManagerActor, askTimeout);
-        final ResourceClusters resourceClusters = new ResourceClustersAkkaImpl(resourceClustersManagerActor, askTimeout);
         final ResourceClustersRoute v1ResourceClusterRoute = new ResourceClustersRoute(resourceClusters);
 
         final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);

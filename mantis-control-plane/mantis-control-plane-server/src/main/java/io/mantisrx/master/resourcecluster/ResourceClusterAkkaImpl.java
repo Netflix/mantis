@@ -39,13 +39,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
+class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
 
   private final ClusterID clusterID;
 
-  public ResourceClusterAkkaImpl(ActorRef resourceClusterActor, Duration askTimeout,
+  public ResourceClusterAkkaImpl(ActorRef resourceClusterManagerActor, Duration askTimeout,
       ClusterID clusterID) {
-    super(resourceClusterActor, askTimeout);
+    super(resourceClusterManagerActor, askTimeout);
     this.clusterID = clusterID;
   }
 

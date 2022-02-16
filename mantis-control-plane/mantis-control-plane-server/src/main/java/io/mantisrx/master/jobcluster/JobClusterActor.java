@@ -124,6 +124,7 @@ import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsException;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Duration;
@@ -189,9 +190,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final Counter numSLAEnforcementExecutions;
 
 
-    public static Props props(final String name, final MantisJobStore jobStore, final MantisScheduler mantisScheduler,
+    public static Props props(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory mantisSchedulerFactory,
                               final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisScheduler, eventPublisher);
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher);
     }
 
     private Receive initializedBehavior;
@@ -205,20 +206,20 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private SLAEnforcer slaEnforcer;
     private final JobManager jobManager;
-    private final MantisScheduler mantisScheduler;
+    private final MantisSchedulerFactory mantisSchedulerFactory;
     private final LifecycleEventPublisher eventPublisher;
 
     private BehaviorSubject<JobId> jobIdSubmissionSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
 
 
-    public JobClusterActor(final String name, final MantisJobStore jobStore, final MantisScheduler scheduler, final LifecycleEventPublisher eventPublisher) {
+    public JobClusterActor(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory schedulerFactory, final LifecycleEventPublisher eventPublisher) {
         this.name = name;
         this.jobStore = jobStore;
-        this.mantisScheduler = scheduler;
+        this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
 
-        this.jobManager = new JobManager(name, getContext(), mantisScheduler, eventPublisher, jobStore);
+        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
 
@@ -1679,7 +1680,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             if(!JobHelper.isTerminalWorkerEvent(r)) {
                 logger.warn("Event from worker {} has no valid running job. Terminating worker ", r.getWorkerId());
                 Optional<String> host = JobHelper.getWorkerHostFromWorkerEvent(r);
-                mantisScheduler.unscheduleAndTerminateWorker(r.getWorkerId(), host);
+//              mantisScheduler.unscheduleAndTerminateWorker(r.getWorkerId(), host);
             } else {
                 logger.warn("Terminal Event from worker {} has no valid running job. Ignoring event ", r.getWorkerId());
             }
@@ -2523,7 +2524,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
         private final ActorContext context;
-        private final MantisScheduler scheduler;
+        private final MantisSchedulerFactory scheduler;
         private final LifecycleEventPublisher publisher;
 
         private final MantisJobStore jobStore;
@@ -2531,11 +2532,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         private final LabelCache labelCache = new LabelCache();
 
 
-        JobManager(String clusterName, ActorContext context, MantisScheduler scheduler, LifecycleEventPublisher publisher, MantisJobStore jobStore) {
+        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore) {
             this.name = clusterName;
             this.jobStore = jobStore;
             this.context = context;
-            this.scheduler = scheduler;
+            this.scheduler = schedulerFactory;
             this.publisher = publisher;
             this.completedJobsCache = new CompletedJobCache(name, labelCache);
         }
@@ -2612,8 +2613,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         JobInfo createJobInfoAndActorAndWatchActor(MantisJobMetadataImpl jobMeta, IJobClusterMetadata jobClusterMetadata) {
 
+            MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
-                    jobMeta, jobStore, scheduler, publisher), "JobActor-" + jobMeta.getJobId().getId());
+                    jobMeta, jobStore, scheduler1, publisher), "JobActor-" + jobMeta.getJobId().getId());
 
 
             context.watch(jobActor);

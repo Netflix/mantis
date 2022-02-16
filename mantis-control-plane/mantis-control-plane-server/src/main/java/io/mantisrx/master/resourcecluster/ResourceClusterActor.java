@@ -58,7 +58,7 @@ import org.apache.flink.runtime.rpc.RpcService;
 
 @ToString(of = {"clusterID"})
 @Slf4j
-public class ResourceClusterActor extends AbstractActor {
+class ResourceClusterActor extends AbstractActor {
 
   private final Duration heartbeatTimeout;
 

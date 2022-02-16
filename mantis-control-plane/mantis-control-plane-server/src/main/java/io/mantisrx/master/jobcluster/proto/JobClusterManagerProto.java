@@ -36,7 +36,7 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -154,19 +154,19 @@ public class JobClusterManagerProto {
     }
 
     public static final class JobClustersManagerInitialize extends BaseRequest {
-        private final MantisScheduler scheduler;
+        private final MantisSchedulerFactory schedulerFactory;
         private final boolean loadJobsFromStore;
 
         public JobClustersManagerInitialize(
-                final MantisScheduler scheduler,
+                final MantisSchedulerFactory schedulerFactory,
                 final boolean loadJobsFromStore) {
-            Preconditions.checkNotNull(scheduler, "MantisScheduler cannot be null");
-            this.scheduler = scheduler;
+            Preconditions.checkNotNull(schedulerFactory, "MantisScheduler cannot be null");
+            this.schedulerFactory = schedulerFactory;
             this.loadJobsFromStore = loadJobsFromStore;
         }
 
-        public MantisScheduler getScheduler() {
-            return scheduler;
+        public MantisSchedulerFactory getScheduler() {
+            return schedulerFactory;
         }
 
         public boolean isLoadJobsFromStore() {
