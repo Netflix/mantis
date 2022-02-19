@@ -399,6 +399,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
   @Override
   public CompletableFuture<Ack> submitTask(ExecuteStageRequest request) {
 
+    log.info("Received request {} for execution", request);
     if (currentTask != null) {
       if (currentTask.getWorkerId().equals(request.getWorkerId())) {
         return CompletableFuture.completedFuture(Ack.getInstance());

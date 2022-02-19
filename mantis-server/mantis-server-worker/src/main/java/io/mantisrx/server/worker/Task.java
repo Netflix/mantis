@@ -63,6 +63,7 @@ public class Task extends AbstractIdleService implements TaskPayload {
   @Override
   public void startUp() {
     try {
+      log.info("Starting current task {}", this);
       doRun();
     } catch (Exception e) {
       log.error("Failed executing the task {}", executeStageRequest.getExecutionAttemptID(), e);
