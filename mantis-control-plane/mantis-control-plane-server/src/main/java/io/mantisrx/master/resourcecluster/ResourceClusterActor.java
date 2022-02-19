@@ -232,6 +232,7 @@ class ResourceClusterActor extends AbstractActor {
             .findAny();
 
     if (matchedExecutor.isPresent()) {
+      log.info("matched executor {} for request {}", matchedExecutor.get().getKey(), request);
       matchedExecutor.get().getValue().onAssignment(request.getWorkerId());
       sender().tell(matchedExecutor.get().getKey(), self());
     } else {
