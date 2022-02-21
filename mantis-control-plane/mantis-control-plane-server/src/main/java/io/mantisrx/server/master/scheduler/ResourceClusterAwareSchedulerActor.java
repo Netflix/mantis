@@ -151,7 +151,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActor {
   }
 
   private void onFailedToSubmitScheduleRequestEvent(FailedToSubmitScheduleRequestEvent event) {
-    log.error("Failed to submit schedule request event {}", event);
+    log.error("Failed to submit schedule request event {}", event, event.getThrowable());
     jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(event.scheduleRequest.getWorkerId(),
         event.scheduleRequest.getStageNum(),
         Throwables.getStackTraceAsString(event.throwable)));
