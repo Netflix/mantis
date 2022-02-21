@@ -93,23 +93,27 @@ class ResourceClusterAwareSchedulerActor extends AbstractActor {
   }
 
   private void onAssignedScheduleRequestEvent(AssignedScheduleRequestEvent event) {
-    TaskExecutorGateway gateway =
-        resourceCluster.getTaskExecutorGateway(event.getTaskExecutorID()).join();
+    try {
+      TaskExecutorGateway gateway =
+          resourceCluster.getTaskExecutorGateway(event.getTaskExecutorID()).join();
 
-    TaskExecutorRegistration info =
-        resourceCluster.getTaskExecutorInfo(event.getTaskExecutorID()).join();
+      TaskExecutorRegistration info =
+          resourceCluster.getTaskExecutorInfo(event.getTaskExecutorID()).join();
 
-    CompletableFuture<Object> ackFuture =
-        gateway
-            .submitTask(executeStageRequestUtils.of(event.getScheduleRequest(), info))
-            .<Object>thenApply(
-                dontCare -> new SubmittedScheduleRequestEvent(event.getScheduleRequest(),
-                    event.getTaskExecutorID()))
-            .exceptionally(
-                throwable -> new FailedToSubmitScheduleRequestEvent(event.getScheduleRequest(),
-                    event.getTaskExecutorID(), throwable));
+      CompletableFuture<Object> ackFuture =
+          gateway
+              .submitTask(executeStageRequestUtils.of(event.getScheduleRequest(), info))
+              .<Object>thenApply(
+                  dontCare -> new SubmittedScheduleRequestEvent(event.getScheduleRequest(),
+                      event.getTaskExecutorID()))
+              .exceptionally(
+                  throwable -> new FailedToSubmitScheduleRequestEvent(event.getScheduleRequest(),
+                      event.getTaskExecutorID(), throwable));
 
-    pipe(ackFuture, getContext().getDispatcher()).to(self());
+      pipe(ackFuture, getContext().getDispatcher()).to(self());
+    } catch (Exception e) {
+      log.error("Failed here", e);
+    }
   }
 
   private void onFailedScheduleRequestEvent(FailedToScheduleRequestEvent event) {
@@ -147,6 +151,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActor {
   }
 
   private void onFailedToSubmitScheduleRequestEvent(FailedToSubmitScheduleRequestEvent event) {
+    log.error("Failed to submit schedule request event {}", event);
     jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(event.scheduleRequest.getWorkerId(),
         event.scheduleRequest.getStageNum(),
         Throwables.getStackTraceAsString(event.throwable)));
