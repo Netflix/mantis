@@ -22,6 +22,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.shaded.com.google.common.base.Optional;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
@@ -36,7 +37,8 @@ public class TestExecuteStageRequest {
         new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
             new URL("http://datamesh/whatever"),
             1, 1,
-            ImmutableList.of(1, 2, 3, 4, 5), 100L, 1, ImmutableList.of(),
+            ImmutableList.of(1, 2, 3, 4, 5), 100L, 1,
+            ImmutableList.of(new Parameter("name", "value")),
             new SchedulingInfo.Builder().numberOfStages(1)
                 .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                     Lists.newArrayList(), Lists.newArrayList()).build(),
