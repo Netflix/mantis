@@ -16,7 +16,9 @@
 
 package io.mantisrx.runtime;
 
-public enum JobConstraints {
+import java.io.Serializable;
+
+public enum JobConstraints implements Serializable {
     UniqueHost,
     ExclusiveHost,
     ZoneBalance,
