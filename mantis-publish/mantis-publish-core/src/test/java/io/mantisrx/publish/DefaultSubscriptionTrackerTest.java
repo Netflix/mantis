@@ -21,11 +21,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -38,6 +38,7 @@ import com.netflix.archaius.config.DefaultSettableConfig;
 import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import com.netflix.mantis.discovery.proto.StageWorkers;
+import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.ipc.http.HttpClient;
@@ -67,7 +68,7 @@ import org.mockito.ArgumentCaptor;
 
 public class DefaultSubscriptionTrackerTest {
 
-    private static final int subscriptionExpiryIntervalSec = 1;
+    private static final int subscriptionExpiryIntervalSec = 3;
     private final Map<String, String> streamJobClusterMap = new HashMap<>();
     @Rule
     public WireMockRule mantisWorker1 = new WireMockRule(options().dynamicPort());
@@ -100,12 +101,22 @@ public class DefaultSubscriptionTrackerTest {
         return new SampleArchaiusMrePublishConfiguration(propertyRepository);
     }
 
+	protected Set<String> getCurrentSubIds(String streamName) {
+
+		String lookupKey = StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)
+			? StreamType.DEFAULT_EVENT_STREAM
+			: streamName;
+
+        return this.mockStreamManager.getStreamSubscriptions(lookupKey).stream().map(Subscription::getSubscriptionId)
+                .collect(Collectors.toSet());
+    }
+
     @BeforeEach
     public void setup() {
         MrePublishConfiguration mrePublishConfiguration = testConfig();
         Registry registry = new DefaultRegistry();
         mockJobDiscovery = mock(MantisJobDiscovery.class);
-        mockStreamManager = mock(StreamManager.class);
+        mockStreamManager = spy(new StreamManager(registry, mrePublishConfiguration));
         mantisWorker1.start();
         mantisWorker2.start();
         mantisWorker3.start();
@@ -166,12 +177,10 @@ public class DefaultSubscriptionTrackerTest {
         }
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-        assertTrue(currentSubsO.isPresent());
-        MantisServerSubscriptionEnvelope currentSubs = currentSubsO.get();
+        Set<String> currentSubIds = getCurrentSubIds(streamName);
         // subs resolved to majority among workers
-        assertEquals(majoritySubs, currentSubs);
-        assertNotEquals(w1Subs, currentSubs);
+        assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
+        assertNotEquals(w1Subs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
 
         // verify all new subscriptions propagated as ADD to StreamManager
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
@@ -215,11 +224,9 @@ public class DefaultSubscriptionTrackerTest {
         }
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-        assertTrue(currentSubsO.isPresent());
-        MantisServerSubscriptionEnvelope currentSubs = currentSubsO.get();
+        Set<String> currentSubIds = getCurrentSubIds(streamName);
         // subs resolved to majority among workers
-        assertEquals(majoritySubs, currentSubs);
+        assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
 
         // verify all new subscriptions propagated as ADD to StreamManager
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
@@ -240,28 +247,23 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubsO2 = subscriptionTracker.getCurrentSubs(streamName);
-        assertTrue(currentSubsO2.isPresent());
-        MantisServerSubscriptionEnvelope currentSubs2 = currentSubsO2.get();
+        Set<String> currentSubIds2 = getCurrentSubIds(streamName);
         // subs resolved to majority among workers
-        assertEquals(majoritySubs, currentSubs2);
+        assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds2);
 
         Thread.sleep(subscriptionExpiryIntervalSec * 1000 + 100);
 
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubs3 = subscriptionTracker.getCurrentSubs(streamName);
-        assertFalse(currentSubs3.isPresent());
+        assertTrue(getCurrentSubIds(streamName).isEmpty());
 
         // verify all previously added subscriptions cleaned up and propagated as REMOVE to StreamManager
-        ArgumentCaptor<Subscription> captor2 = ArgumentCaptor.forClass(Subscription.class);
+        ArgumentCaptor<String> captor2 = ArgumentCaptor.forClass(String.class);
         verify(mockStreamManager, times(2)).removeStreamSubscription(captor2.capture());
-        List<Subscription> subsAdded2 = captor2.getAllValues();
-        Map<String, Subscription> subIdToSubMap2 = subsAdded2.stream().collect(Collectors.toMap(Subscription::getSubscriptionId, s -> s));
-        assertEquals(majoritySubs.getSubscriptionList().size(), subIdToSubMap2.size());
+        List<String> subsAdded2 = captor2.getAllValues();
+        assertEquals(majoritySubs.getSubscriptionList().size(), subsAdded2.size());
         majoritySubs.getSubscriptionList().forEach(sub -> {
-            assertTrue(subIdToSubMap2.containsKey(sub.getSubscriptionId()));
-            assertEquals(sub.getQuery(), subIdToSubMap2.get(sub.getSubscriptionId()).getRawQuery());
+            assertTrue(subsAdded2.contains(sub.getSubscriptionId()));
         });
     }
 
@@ -296,11 +298,9 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-        assertTrue(currentSubsO.isPresent());
-        MantisServerSubscriptionEnvelope currentSubs = currentSubsO.get();
+        Set<String> currentSubIds = getCurrentSubIds(streamName);
         // subs resolved to majority among workers
-        assertEquals(majoritySubs, currentSubs);
+        assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds);
 
         // verify all new subscriptions propagated as ADD to StreamManager
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
@@ -319,28 +319,23 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubsO2 = subscriptionTracker.getCurrentSubs(streamName);
-        assertTrue(currentSubsO2.isPresent());
-        MantisServerSubscriptionEnvelope currentSubs2 = currentSubsO2.get();
+        Set<String> currentSubIds2 = getCurrentSubIds(streamName);
         // subs resolved to majority among workers
-        assertEquals(majoritySubs, currentSubs2);
+        assertEquals(majoritySubs.getSubscriptions().stream().map(MantisServerSubscription::getSubscriptionId).collect(Collectors.toSet()), currentSubIds2);
 
         // sleep for subs expiry interval and refreshSubs to trigger a cleanup of subs due to job discovery failure
         Thread.sleep(subscriptionExpiryIntervalSec * 1000 + 100);
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubs3 = subscriptionTracker.getCurrentSubs(streamName);
-        assertFalse(currentSubs3.isPresent());
+        assertTrue(getCurrentSubIds(streamName).isEmpty());
 
         // verify all previously added subscriptions cleaned up and propagated as REMOVE to StreamManager
-        ArgumentCaptor<Subscription> captor2 = ArgumentCaptor.forClass(Subscription.class);
+        ArgumentCaptor<String> captor2 = ArgumentCaptor.forClass(String.class);
         verify(mockStreamManager, times(2)).removeStreamSubscription(captor2.capture());
-        List<Subscription> subsAdded2 = captor2.getAllValues();
-        Map<String, Subscription> subIdToSubMap2 = subsAdded2.stream().collect(Collectors.toMap(Subscription::getSubscriptionId, s -> s));
-        assertEquals(majoritySubs.getSubscriptionList().size(), subIdToSubMap2.size());
+        List<String> subsAdded2 = captor2.getAllValues();
+        assertEquals(majoritySubs.getSubscriptionList().size(), subsAdded2.size());
         majoritySubs.getSubscriptionList().forEach(sub -> {
-            assertTrue(subIdToSubMap2.containsKey(sub.getSubscriptionId()));
-            assertEquals(sub.getQuery(), subIdToSubMap2.get(sub.getSubscriptionId()).getRawQuery());
+            assertTrue(subsAdded2.contains(sub.getSubscriptionId()));
         });
     }
 
@@ -375,8 +370,7 @@ public class DefaultSubscriptionTrackerTest {
 
         subscriptionTracker.refreshSubscriptions();
 
-        Optional<MantisServerSubscriptionEnvelope> currentSubsO = subscriptionTracker.getCurrentSubs(streamName);
-        assertFalse(currentSubsO.isPresent());
+        assertTrue(getCurrentSubIds(streamName).isEmpty());
         verify(mockStreamManager, times(1)).getRegisteredStreams();
         verifyZeroInteractions(mockJobDiscovery);
     }
