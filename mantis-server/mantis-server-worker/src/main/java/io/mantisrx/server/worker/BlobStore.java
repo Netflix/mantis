@@ -23,6 +23,10 @@ import java.net.URI;
 public interface BlobStore extends Closeable {
   File get(URI blobUrl) throws IOException;
 
+  default BlobStore withPrefix(URI rootUri) {
+    return new PrefixedBlobStore(rootUri, this);
+  }
+
   default BlobStore withZipCapabilities() {
     return new ZipHandlingBlobStore(this);
   }

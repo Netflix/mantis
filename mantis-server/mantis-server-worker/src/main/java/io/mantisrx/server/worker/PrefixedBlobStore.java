@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.mantisrx.server.worker;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import org.apache.hadoop.fs.FileSystem;
+import lombok.RequiredArgsConstructor;
 
-public class BlobStoreFactory {
+@RequiredArgsConstructor
+class PrefixedBlobStore implements BlobStore {
+  private final URI rootUri;
+  private final BlobStore blobStore;
 
-  public static BlobStore get(URI clusterStoragePath, File localStoreDir) throws IOException {
-    final FileSystem fileSystem =
-        io.mantisrx.server.worker.FileSystem.create(clusterStoragePath);
+  @Override
+  public File get(URI blobUrl) throws IOException {
+    return blobStore.get(rootUri.resolve(blobUrl.getHost()));
+  }
 
-    return new HadoopFileSystemBlobStore(fileSystem, localStoreDir).withPrefix(clusterStoragePath);
+  @Override
+  public void close() throws IOException {
+    blobStore.close();
   }
 }
