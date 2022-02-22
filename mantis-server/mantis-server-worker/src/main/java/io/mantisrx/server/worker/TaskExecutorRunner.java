@@ -69,6 +69,7 @@ public class TaskExecutorRunner {
     return new TaskExecutorServices(taskExecutor, highAvailabilityServices);
   }
 
+  @SuppressWarnings("UnstableApiUsage")
   @RequiredArgsConstructor
   public static class TaskExecutorServices extends AbstractIdleService {
 

@@ -62,7 +62,7 @@ public class ResourceClusterAwareScheduler implements MantisScheduler {
 
   @Override
   public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname) {
-    throw new UnsupportedOperationException();
+    log.info("initializeRunningWorker called for {} and {}", scheduleRequest, hostname);
   }
 
   @Override

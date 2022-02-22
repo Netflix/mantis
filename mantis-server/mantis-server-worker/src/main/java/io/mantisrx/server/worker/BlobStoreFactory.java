@@ -26,6 +26,9 @@ public class BlobStoreFactory {
     final FileSystem fileSystem =
         io.mantisrx.server.worker.FileSystem.create(clusterStoragePath);
 
-    return new HadoopFileSystemBlobStore(fileSystem, localStoreDir).withPrefix(clusterStoragePath);
+    return
+        new HadoopFileSystemBlobStore(fileSystem, localStoreDir)
+            .withPrefix(clusterStoragePath)
+            .withZipCapabilities();
   }
 }
