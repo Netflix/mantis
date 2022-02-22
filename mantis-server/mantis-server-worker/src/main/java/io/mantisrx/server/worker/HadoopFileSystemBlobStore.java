@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -45,6 +46,6 @@ public class HadoopFileSystemBlobStore implements BlobStore {
   }
 
   private String getStorageLocation(URI blobUri) {
-    return String.format("%s/%s", localStoreDir, blobUri);
+    return String.format("%s/%s", localStoreDir, FilenameUtils.getName(blobUri.getPath()));
   }
 }
