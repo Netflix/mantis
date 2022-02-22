@@ -43,10 +43,12 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
     for (URI requiredFile : requiredFiles) {
       // get a local version of the file that needs to be added to the classloader
       final File file = blobStore.get(requiredFile);
+      log.info("Received file {} from blob store for creating class loader", file);
       if (file.isDirectory()) {
         // let's recursively add all jar files under this directory
         final Collection<File> childJarFiles =
             FileUtils.listFiles(file, new String[]{".jar"}, true);
+        log.info("Loading files {} into the class loader", childJarFiles);
         for (File jarFile : childJarFiles) {
           resolvedUrls.add(jarFile.toURI().toURL());
         }

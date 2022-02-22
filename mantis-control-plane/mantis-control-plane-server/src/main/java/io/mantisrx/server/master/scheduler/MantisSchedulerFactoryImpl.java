@@ -25,6 +25,8 @@ import io.mantisrx.server.master.SchedulingService;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +37,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
   private final ExecuteStageRequestUtils executeStageRequestUtils;
   private final JobMessageRouter jobMessageRouter;
   private final SchedulingService mesosSchedulingService;
+  private final Map<ClusterID, ActorRef> actorRefMap = new HashMap<>();
 
   @Override
   public MantisScheduler forJob(JobDefinition jobDefinition) {
@@ -42,9 +45,17 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
 
     if (clusterIDOptional.isPresent()) {
       ActorRef resourceClusterAwareSchedulerActor =
-          actorSystem.actorOf(
-              ResourceClusterAwareSchedulerActor.props(
-                  resourceClusters.getClusterFor(clusterIDOptional.get()), executeStageRequestUtils, jobMessageRouter), "scheduler-for-" + clusterIDOptional.get().getResourceID());
+          actorRefMap.compute(clusterIDOptional.get(), (dontCare, oldRef) -> {
+            if (oldRef != null) {
+              return oldRef;
+            } else {
+              return actorSystem.actorOf(
+                  ResourceClusterAwareSchedulerActor.props(
+                      resourceClusters.getClusterFor(clusterIDOptional.get()),
+                      executeStageRequestUtils, jobMessageRouter),
+                  "scheduler-for-" + clusterIDOptional.get().getResourceID());
+            }
+          });
       return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
     } else {
       return mesosSchedulingService;
