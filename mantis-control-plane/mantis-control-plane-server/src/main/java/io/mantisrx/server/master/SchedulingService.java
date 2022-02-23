@@ -483,7 +483,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
             } catch (final TaskQueueException e) {
                 logger.warn("got exception requesting VM states from Fenzo", e);
             }
-            publishJobManagerAndFenzoWorkerMetrics();
+//            publishJobManagerAndFenzoWorkerMetrics();
         } catch (final Exception e) {
             logger.error("unexpected exception in scheduling result callback", e);
             schedulingCallbackExceptions.increment();
