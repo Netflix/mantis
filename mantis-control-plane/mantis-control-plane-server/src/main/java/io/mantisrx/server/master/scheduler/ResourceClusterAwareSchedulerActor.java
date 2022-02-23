@@ -31,6 +31,7 @@ import io.mantisrx.shaded.com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -158,18 +159,31 @@ class ResourceClusterAwareSchedulerActor extends AbstractActor {
   }
 
   private void onCancelRequestEvent(CancelRequestEvent event) {
-    final TaskExecutorID taskExecutorID =
-        resourceCluster.getTaskExecutorInfo(event.getHostName()).join().getTaskExecutorID();
-    final TaskExecutorGateway gateway =
-        resourceCluster.getTaskExecutorGateway(taskExecutorID).join();
+    if (event.getHostName() != null) {
+      final TaskExecutorID taskExecutorID =
+          resourceCluster.getTaskExecutorInfo(event.getHostName()).join().getTaskExecutorID();
+      final TaskExecutorGateway gateway =
+          resourceCluster.getTaskExecutorGateway(taskExecutorID).join();
 
-    CompletableFuture<Object> cancelFuture =
-        gateway
-            .cancelTask(event.getWorkerId())
-            .<Object>thenApply(dontCare -> Noop.getInstance())
-            .exceptionally(event::onFailure);
+      CompletableFuture<Object> cancelFuture =
+          gateway
+              .cancelTask(event.getWorkerId())
+              .<Object>thenApply(dontCare -> Noop.getInstance())
+              .exceptionally(event::onFailure);
 
-    pipe(cancelFuture, context().dispatcher()).to(self());
+      pipe(cancelFuture, context().dispatcher()).to(self());
+    } else {
+          resourceCluster
+              .getRegisteredTaskExecutors()
+              .thenApply(taskExecutorIDS ->
+                  taskExecutorIDS
+                      .stream()
+                      .map(taskExecutorID ->
+                          resourceCluster
+                              .getTaskExecutorGateway(taskExecutorID)
+                              .thenCompose(gateway -> gateway.cancelTask(event.getWorkerId())))
+                      .collect(Collectors.toList()));
+    }
   }
 
   private void onRetryCancelRequestEvent(RetryCancelRequestEvent event) {
@@ -250,11 +264,12 @@ class ResourceClusterAwareSchedulerActor extends AbstractActor {
   static class CancelRequestEvent {
 
     WorkerId workerId;
+    @Nullable
     String hostName;
     int attempt;
     Throwable previousFailure;
 
-    static CancelRequestEvent of(WorkerId workerId, String hostName) {
+    static CancelRequestEvent of(WorkerId workerId, @Nullable String hostName) {
       return new CancelRequestEvent(workerId, hostName, 1, null);
     }
 
