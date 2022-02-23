@@ -29,6 +29,10 @@ import org.skife.config.DefaultNull;
 
 public interface WorkerConfiguration extends CoreConfiguration {
 
+    @Config("mantis.taskexecutor.id")
+    @DefaultNull
+    String getTaskExecutorId();
+
     @Config("mantis.taskexecutor.agent.mesos.slave.port")
     @Default("5051")
     int getMesosSlavePort();

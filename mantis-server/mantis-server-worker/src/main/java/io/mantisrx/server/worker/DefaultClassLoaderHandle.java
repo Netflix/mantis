@@ -61,7 +61,8 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
           resolvedUrls.add(jarFile.toURI().toURL());
         }
 
-        final File userArtifactManifest = new File(file, "/manifest/mantis_runtime_version.txt");
+        final File userArtifactManifest = new File(file, "manifest/mantis_runtime_version.txt");
+        log.info("userArtifactManifest={}", userArtifactManifest);
         if (userArtifactManifest.exists()) {
           log.info("This is a thin artifact.. Now reading the mantis runtime version required");
           String runtimeVersion = Files.readAllLines(userArtifactManifest.toPath()).get(0).trim();

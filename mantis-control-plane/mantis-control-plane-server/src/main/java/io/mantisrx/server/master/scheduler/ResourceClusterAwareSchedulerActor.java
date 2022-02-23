@@ -138,7 +138,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActor {
         jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
             event.getScheduleRequest().getWorkerId(),
             event.getScheduleRequest().getStageNum(),
-            info.getHostname(),
+            info.getTaskExecutorAddress(),
             taskExecutorID.getResourceId(),
             Optional.ofNullable(info.getClusterID().getResourceID()),
             info.getWorkerPorts()));

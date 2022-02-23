@@ -22,6 +22,10 @@ import lombok.Value;
 public class TaskExecutorID {
   String resourceId;
 
+  public static TaskExecutorID of(String id) {
+    return new TaskExecutorID(id);
+  }
+
   public static TaskExecutorID generate() {
     return new TaskExecutorID(UUID.randomUUID().toString());
   }

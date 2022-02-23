@@ -48,6 +48,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.net.SocketTimeoutException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -102,11 +103,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
     // this is the task executor ID that will be used for the rest of the JVM process
-    this.taskExecutorID = TaskExecutorID.generate();
+    this.taskExecutorID =
+        Optional.ofNullable(workerConfiguration.getTaskExecutorId())
+            .map(TaskExecutorID::of)
+            .orElseGet(TaskExecutorID::generate);
     this.clusterID = ClusterID.of(workerConfiguration.getClusterId());
     this.workerConfiguration = workerConfiguration;
     this.highAvailabilityServices = highAvailabilityServices;
-//    this.masterMonitor = masterMonitor;
     this.classLoaderHandle = classLoaderHandle;
     this.subscriptionStateHandlerFactory = subscriptionStateHandlerFactory;
     this.workerPorts =
