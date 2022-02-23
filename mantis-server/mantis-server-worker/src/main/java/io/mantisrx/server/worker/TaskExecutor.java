@@ -501,6 +501,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     if (this.currentTask == null) {
       return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
     } else if (!this.currentTask.getWorkerId().equals(workerId)) {
+      log.error("my current worker id is {} while expected worker id is {}", currentTask.getWorkerId(), workerId);
       return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
     } else {
       scheduleRunAsync(this::stopCurrentTask, 0, TimeUnit.MILLISECONDS);
