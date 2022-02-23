@@ -38,7 +38,10 @@ public interface WorkerConfiguration extends CoreConfiguration {
     String getAlwaysParentFirstLoaderPatternsString();
 
     @Config("mantis.taskexecutor.cluster.storage-dir")
-    URI getClusterStorageDir();
+    URI getUserArtifactDir();
+
+    @Config("mantis.taskexecutor.runtime-artifact.storage-dir")
+    URI getRuntimeArtifactDir();
 
     @Config("mantis.taskexecutor.local.storage-dir")
     File getLocalStorageDir();

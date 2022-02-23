@@ -60,7 +60,8 @@ public class MantisWorker extends BaseService {
 
         this.classLoaderHandle =
             new DefaultClassLoaderHandle(
-                BlobStoreFactory.get(config.getClusterStorageDir(), config.getLocalStorageDir()),
+                BlobStoreFactory.get(config.getUserArtifactDir(), config.getLocalStorageDir()),
+                BlobStoreFactory.get(config.getRuntimeArtifactDir(), config.getLocalStorageDir()),
                 config.getAlwaysParentFirstLoaderPatterns());
         // shutdown hook
         Thread t = new Thread(this::shutdown);

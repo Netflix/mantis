@@ -57,7 +57,9 @@ public class TaskExecutorRunner {
         workerConfiguration,
         highAvailabilityServices,
         new DefaultClassLoaderHandle(
-            BlobStoreFactory.get(workerConfiguration.getClusterStorageDir(),
+            BlobStoreFactory.get(workerConfiguration.getUserArtifactDir(),
+                workerConfiguration.getLocalStorageDir()),
+            BlobStoreFactory.get(workerConfiguration.getRuntimeArtifactDir(),
                 workerConfiguration.getLocalStorageDir()),
             workerConfiguration.getAlwaysParentFirstLoaderPatterns()),
         executeStageRequest -> new SubscriptionStateHandlerImpl(

@@ -15,16 +15,22 @@
  */
 package io.mantisrx.server.worker;
 
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 
@@ -32,14 +38,15 @@ import org.apache.flink.util.UserCodeClassLoader;
 @RequiredArgsConstructor
 public class DefaultClassLoaderHandle implements ClassLoaderHandle {
 
-  private final BlobStore blobStore;
+  private final BlobStore userArtifactBlobStore;
+  private final BlobStore runtimeArtifactBlobStore;
   private final Collection<String> alwaysParentFirstPatterns;
   private final List<UserCodeClassLoader> openedHandles = new ArrayList<>();
 
-  @Override
-  public UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredFiles,
-      Collection<URL> requiredClasspaths) throws IOException {
+  private List<URL> getResolvedUrls(Collection<URI> requiredFiles, BlobStore blobStore)
+      throws IOException, URISyntaxException {
     final List<URL> resolvedUrls = new ArrayList<>();
+
     for (URI requiredFile : requiredFiles) {
       // get a local version of the file that needs to be added to the classloader
       final File file = blobStore.get(requiredFile);
@@ -47,10 +54,21 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
       if (file.isDirectory()) {
         // let's recursively add all jar files under this directory
         final Collection<File> childJarFiles =
-            FileUtils.listFiles(file, new String[]{".jar"}, true);
+            FileUtils.listFiles(file, new SuffixFileFilter("jar", IOCase.INSENSITIVE),
+                TrueFileFilter.INSTANCE);
         log.info("Loading files {} into the class loader", childJarFiles);
         for (File jarFile : childJarFiles) {
           resolvedUrls.add(jarFile.toURI().toURL());
+        }
+
+        final File userArtifactManifest = new File(file, "/manifest/mantis_runtime_version.txt");
+        if (userArtifactManifest.exists()) {
+          log.info("This is a thin artifact.. Now reading the mantis runtime version required");
+          String runtimeVersion = Files.readAllLines(userArtifactManifest.toPath()).get(0).trim();
+          log.info("Mantis runtime version is {}", runtimeVersion);
+          resolvedUrls.addAll(getResolvedUrls(ImmutableList.of(
+                  new URI(String.format("s3://nfmantis-runtime-%s.zip", runtimeVersion))),
+              runtimeArtifactBlobStore));
         }
       } else {
         // let's assume that this is actually a jar file
@@ -58,8 +76,20 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
       }
     }
 
-    resolvedUrls.addAll(requiredClasspaths);
+    return resolvedUrls;
+  }
 
+  @Override
+  public UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredFiles,
+      Collection<URL> requiredClasspaths) throws IOException {
+    final List<URL> resolvedUrls = new ArrayList<>();
+    try {
+      resolvedUrls.addAll(getResolvedUrls(requiredFiles, userArtifactBlobStore));
+    } catch (URISyntaxException e) {
+      throw new IOException(e);
+    }
+
+    resolvedUrls.addAll(requiredClasspaths);
     return SimpleUserCodeClassLoader.create(
         new ChildFirstClassLoader(resolvedUrls, getClass().getClassLoader(),
             alwaysParentFirstPatterns));
