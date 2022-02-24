@@ -359,7 +359,8 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
                 logger.warn("Unexpected Mesos task state " + arg1.getState());
                 return;
             }
-            jobMessageRouter.routeWorkerEvent(new WorkerResourceStatus(workerId, mesg, state));
+            logger.info("I was going to send {} to job worker", new WorkerResourceStatus(workerId, mesg, state));
+//            jobMessageRouter.routeWorkerEvent(new WorkerResourceStatus(workerId, mesg, state));
         } else {
             logger.error("Failed to parse workerId from Mesos task update {}", arg1.getTaskId().getValue());
         }
