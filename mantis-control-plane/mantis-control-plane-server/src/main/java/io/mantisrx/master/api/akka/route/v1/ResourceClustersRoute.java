@@ -139,10 +139,10 @@ public class ResourceClustersRoute extends BaseRoute {
 
             // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
             path(
-                PathMatchers.segment().slash(segment().slash("getTaskExecutorState")),
-                (clusterName, taskExecutorId) -> pathEndOrSingleSlash(() -> concat(
+                PathMatchers.segment().slash("getTaskExecutorState"),
+                (taskExecutorId) -> pathEndOrSingleSlash(() -> concat(
                     // GET
-                    get(() -> getTaskExecutorState(getClusterID(clusterName), getTaskExecutorID(taskExecutorId)))
+                    get(() -> getTaskExecutorState(getClusterID("mantistaskexecutor"), getTaskExecutorID(taskExecutorId)))
                 ))
             )
         ));
