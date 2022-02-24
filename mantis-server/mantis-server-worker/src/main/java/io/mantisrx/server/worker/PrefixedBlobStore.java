@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FilenameUtils;
 
 @RequiredArgsConstructor
 class PrefixedBlobStore implements BlobStore {
@@ -28,7 +29,8 @@ class PrefixedBlobStore implements BlobStore {
 
   @Override
   public File get(URI blobUrl) throws IOException {
-    return blobStore.get(rootUri.resolve(blobUrl.getHost()));
+    final String fileName = FilenameUtils.getName(blobUrl.toString());
+    return blobStore.get(rootUri.resolve(fileName));
   }
 
   @Override

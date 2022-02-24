@@ -41,5 +41,8 @@ public class TestBlobStore {
     final URI expectedUri =
         new URI("s3://netflix.s3.genpop.prod/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
     verify(blobStore, times(1)).get(Matchers.eq(expectedUri));
+
+    prefixedBlobStpre.get(new URI("https://mantis.us-east-1.prod.netflix.net/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
+    verify(blobStore, times(2)).get(Matchers.eq(expectedUri));
   }
 }

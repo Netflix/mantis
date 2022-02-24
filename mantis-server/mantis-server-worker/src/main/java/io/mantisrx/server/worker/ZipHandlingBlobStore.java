@@ -33,8 +33,12 @@ public class ZipHandlingBlobStore implements BlobStore {
     if (zipFile == null) {
       return localFile;
     } else {
-      zipFile.extractAll(getDestDir(zipFile));
-      return new File(getDestDir(zipFile));
+      String destDirStr = getDestDir(zipFile);
+      File destDir = new File(destDirStr);
+      if (!destDir.exists()) {
+        zipFile.extractAll(destDirStr);
+      }
+      return destDir;
     }
   }
 
