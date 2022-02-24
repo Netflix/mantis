@@ -188,6 +188,7 @@ public class ResourceClustersRoute extends BaseRoute {
   }
 
   private Route getTaskExecutorState(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+    log.info("GET /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState called", clusterID, taskExecutorID);
     CompletableFuture<TaskExecutorStatus> statusOverview =
         gateway.getClusterFor(clusterID).getTaskExecutorState(taskExecutorID);
     return withFuture(statusOverview);
