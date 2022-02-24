@@ -34,7 +34,7 @@ public class WorkerPorts implements Serializable {
     private final int consolePort;
     private final int customPort;
     private int sinkPort;
-    private List<Integer> ports;
+    private final List<Integer> ports;
 
     public WorkerPorts(final List<Integer> assignedPorts) {
         if (assignedPorts.size() < 5) {
@@ -65,16 +65,16 @@ public class WorkerPorts implements Serializable {
         ports.add(sinkPort);
 
         this.metricsPort = metricsPort;
-        ports.add(metricsPort);
+//        ports.add(metricsPort);
 
         this.debugPort = debugPort;
-        ports.add(debugPort);
+//        ports.add(debugPort);
 
         this.consolePort = consolePort;
-        ports.add(consolePort);
+//        ports.add(consolePort);
 
         this.customPort = customPort;
-        ports.add(customPort);
+//        ports.add(customPort);
 
 
     }
@@ -91,6 +91,7 @@ public class WorkerPorts implements Serializable {
         this.consolePort = consolePort;
         this.customPort = customPort;
         this.ports = ports;
+        this.sinkPort = ports.get(0);
     }
 
     public int getMetricsPort() {
@@ -125,6 +126,7 @@ public class WorkerPorts implements Serializable {
         return ports;
     }
 
+    @JsonIgnore
     public int getNumberOfPorts() {
         return ports.size();
     }
