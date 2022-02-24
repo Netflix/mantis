@@ -28,7 +28,9 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -45,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  *    /api/v1/resourceClusters/{}/getBusyTaskExecutors                   (GET)
  *    /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
  *    /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
+ *    /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
  *
  *    /api/v1/resourceClusters/{}/actions/registerTaskExecutor           (POST)
  *    /api/v1/resourceClusters/{}/actions/heartBeatFromTaskExecutor      (POST)
@@ -132,6 +135,15 @@ public class ResourceClustersRoute extends BaseRoute {
                     // POST
                     post(() -> disconnectTaskExecutor(getClusterID(clusterName)))
                 ))
+            ),
+
+            // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
+            path(
+                PathMatchers.segment().slash(segment().slash("getTaskExecutorState")),
+                (clusterName, taskExecutorId) -> pathEndOrSingleSlash(() -> concat(
+                    // GET
+                    get(() -> getTaskExecutorState(getClusterID(clusterName), getTaskExecutorID(taskExecutorId)))
+                ))
             )
         ));
   }
@@ -175,6 +187,12 @@ public class ResourceClustersRoute extends BaseRoute {
     });
   }
 
+  private Route getTaskExecutorState(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+    CompletableFuture<TaskExecutorStatus> statusOverview =
+        gateway.getClusterFor(clusterID).getTaskExecutorState(taskExecutorID);
+    return withFuture(statusOverview);
+  }
+
   private Route disconnectTaskExecutor(ClusterID clusterID) {
     return entity(Jackson.unmarshaller(TaskExecutorDisconnection.class), request -> {
       log.info(
@@ -199,6 +217,10 @@ public class ResourceClustersRoute extends BaseRoute {
 
   private ClusterID getClusterID(String clusterName) {
     return ClusterID.of(clusterName);
+  }
+
+  private TaskExecutorID getTaskExecutorID(String resourceName) {
+    return TaskExecutorID.of(resourceName);
   }
 
   private <T> Route withFuture(CompletableFuture<T> tFuture) {

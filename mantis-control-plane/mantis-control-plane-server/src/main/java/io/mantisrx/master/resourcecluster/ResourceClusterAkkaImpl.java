@@ -21,6 +21,7 @@ import akka.pattern.Patterns;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
@@ -34,6 +35,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorStatus;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Duration;
 import java.util.List;
@@ -134,6 +136,15 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         Patterns
             .ask(resourceClusterManagerActor, new TaskExecutorInfoRequest(taskExecutorID, null, clusterID), askTimeout)
             .thenApply(TaskExecutorRegistration.class::cast)
+            .toCompletableFuture();
+  }
+
+  @Override
+  public CompletableFuture<TaskExecutorStatus> getTaskExecutorState(TaskExecutorID taskExecutorID) {
+    return
+        Patterns
+            .ask(resourceClusterManagerActor, new GetTaskExecutorStatusRequest(taskExecutorID, clusterID), askTimeout)
+            .thenApply(TaskExecutorStatus.class::cast)
             .toCompletableFuture();
   }
 }

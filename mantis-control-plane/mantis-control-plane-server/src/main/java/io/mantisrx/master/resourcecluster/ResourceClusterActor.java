@@ -34,6 +34,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Clock;
@@ -92,6 +93,7 @@ class ResourceClusterActor extends AbstractActor {
             .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isBusy), self()))
             .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
             .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
+            .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
 
             .match(TaskExecutorRegistration.class, this::onTaskExecutorRegistration)
             .match(TaskExecutorHeartbeat.class, this::onHeartbeat)
@@ -255,6 +257,17 @@ class ResourceClusterActor extends AbstractActor {
     return new ResourceOverview(numRegistered, numAvailable, numOccupied, numAssigned);
   }
 
+  private TaskExecutorStatus getTaskExecutorStatus(TaskExecutorID taskExecutorID) {
+    final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+    return new TaskExecutorStatus(
+        state.getRegistration(),
+        state.isRegistered(),
+        state.isRunningTask(),
+        state.isAssigned(),
+        state.getWorkerId(),
+        state.getLastActivity());
+  }
+
   private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {
     setupTaskExecutorStateIfNecessary(disconnection.getTaskExecutorID());
     try {
@@ -363,6 +376,12 @@ class ResourceClusterActor extends AbstractActor {
 
   @Value
   static class GetUnregisteredTaskExecutorsRequest {
+    ClusterID clusterID;
+  }
+
+  @Value
+  static class GetTaskExecutorStatusRequest {
+    TaskExecutorID taskExecutorID;
     ClusterID clusterID;
   }
 
