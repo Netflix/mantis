@@ -21,8 +21,10 @@ import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJob;
 import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.runtime.Metadata;
+import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
+import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
 import java.io.IOException;
@@ -42,6 +44,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.Observer;
+import rx.Subscription;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -67,23 +70,38 @@ public class WordCountJobProvider extends MantisJobProvider<String> {
                 .map(WordCountPair::toString),
             stageConfig())
         // Reuse built in sink that eagerly subscribes and delivers data over SSE
-        .sink((context, portRequest, stringObservable) -> stringObservable.subscribe(
-            new Observer<String>() {
-              @Override
-              public void onCompleted() {
-                futureNotifier.complete(null);
-              }
+        .sink(new Sink<String>() {
+          private Subscription subscription;
 
-              @Override
-              public void onError(Throwable e) {
-                futureNotifier.completeExceptionally(e);
-              }
+          @Override
+          public void close() {
+            if (subscription != null) {
+              subscription.unsubscribe();
+            }
+          }
 
-              @Override
-              public void onNext(String s) {
-                output.add(s);
-              }
-            }))
+          @Override
+          public void call(Context context, PortRequest portRequest,
+              Observable<String> stringObservable) {
+            subscription = stringObservable.subscribe(
+                new Observer<String>() {
+                  @Override
+                  public void onCompleted() {
+                    futureNotifier.complete(null);
+                  }
+
+                  @Override
+                  public void onError(Throwable e) {
+                    futureNotifier.completeExceptionally(e);
+                  }
+
+                  @Override
+                  public void onNext(String s) {
+                    output.add(s);
+                  }
+                });
+          }
+        })
         .metadata(new Metadata.Builder()
             .name("WordCount")
             .description("Reads Homer's The Illiad faster than we can.")
@@ -137,6 +155,11 @@ public class WordCountJobProvider extends MantisJobProvider<String> {
             }
             return Observable.empty();
           });
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
   }
 

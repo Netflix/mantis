@@ -32,6 +32,7 @@ dependencies {
     api "io.netty:netty-buffer:$nettyVersion"
 
     api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
+    implementation libraries.commonsIo
 
     api "com.netflix.numerus:numerus:$numerusVersion"
     api "org.xerial.snappy:snappy-java:$snappyVersion"

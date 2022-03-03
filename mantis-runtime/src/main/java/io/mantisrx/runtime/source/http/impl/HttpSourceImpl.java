@@ -41,6 +41,7 @@ import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.Event
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.util.ReferenceCountUtil;
 import io.reactivx.mantis.operators.DropOperator;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,8 +55,8 @@ import rx.Observable;
 import rx.Observable.Operator;
 import rx.Observer;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.functions.Action0;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.subjects.PublishSubject;
@@ -104,6 +105,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     private final Metrics incomingDataMetrics;
     private final ConnectionManager<E> connectionManager = new ConnectionManager<>();
     private final int bufferSize;
+    private final Subscription serversToRemoveSubscription;
 
     /**
      * Constructs an {@code HttpSource} instance that is ready to connects to one or more servers provided by the given
@@ -183,12 +185,10 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         // servers to be removed because we do not want to complete the observable, or
         // the source will be completed.
         this.serversToRemove = PublishSubject.create();
-        serverProvider.getServersToRemove().subscribe(new Action1<ServerInfo>() {
-            @Override
-            public void call(ServerInfo server) {
-                serversToRemove.onNext(server);
-            }
-        });
+        serversToRemoveSubscription =
+            serverProvider
+                .getServersToRemove()
+                .subscribe(serversToRemove::onNext);
     }
 
     public static <R, E, T> Builder<R, E, T> builder(
@@ -266,6 +266,11 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         // Should not have to share as we are doing it at the stage level.
         //               .share()
         //              .lift(new DropOperator<Observable<T>>("http_source_impl_share"));
+    }
+
+    @Override
+    public void close() throws IOException {
+        serversToRemoveSubscription.unsubscribe();
     }
 
     private Observable<Observable<T>> streamServers(Observable<ServerInfo> servers) {

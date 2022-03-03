@@ -27,6 +27,7 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
 import io.reactivx.mantis.operators.DropOperator;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +54,8 @@ public class PushHttpSource implements Source<String> {
 
     private static final String NETTY_THREAD_COUNT_PARAM_NAME = "nettyThreadCount";
 
+    private SourceHttpServer server;
+
     public PushHttpSource(QueryRegistry registry, int serverPort) {
         this.queryRegistry = registry;
         this.serverPort = serverPort;
@@ -72,7 +75,7 @@ public class PushHttpSource implements Source<String> {
 
         LOGGER.info("PushHttpSource server starting at Port " + serverPort);
 
-        SourceHttpServer server = new NettySourceHttpServer(context, threadCount);
+        server = new NettySourceHttpServer(context, threadCount);
         try {
             server.init(queryRegistry, eventSubject, serverPort);
         } catch (InterruptedException e) {
@@ -120,5 +123,13 @@ public class PushHttpSource implements Source<String> {
                 .build());
 
         return parameters;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (server != null) {
+            server.shutdownServer();
+            server = null;
+        }
     }
 }

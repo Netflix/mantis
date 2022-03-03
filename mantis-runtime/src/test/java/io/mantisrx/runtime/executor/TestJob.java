@@ -36,7 +36,7 @@ import rx.functions.Func1;
 
 public class TestJob extends MantisJobProvider<Integer> {
 
-    private List<Integer> itemsWritten = new LinkedList<Integer>();
+    private final List<Integer> itemsWritten = new LinkedList<Integer>();
 
     public static void main(String[] args) {
         LocalJobExecutorNetworked.execute(new TestJob().getJobInstance());
@@ -94,6 +94,11 @@ public class TestJob extends MantisJobProvider<Integer> {
                                 itemsWritten.add(t1);
                             }
                         });
+                    }
+
+                    @Override
+                    public void close() throws Exception {
+
                     }
                 })
                 .create();

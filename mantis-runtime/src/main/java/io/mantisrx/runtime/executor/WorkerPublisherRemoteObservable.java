@@ -282,7 +282,7 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
     }
 
     @Override
-    public void stop() {
+    public void close() {
         server.shutdown();
     }
 

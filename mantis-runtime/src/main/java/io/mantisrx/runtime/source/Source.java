@@ -18,13 +18,14 @@ package io.mantisrx.runtime.source;
 
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import java.io.Closeable;
 import java.util.Collections;
 import java.util.List;
 import rx.Observable;
 import rx.functions.Func2;
 
 
-public interface Source<T> extends Func2<Context, Index, Observable<Observable<T>>> {
+public interface Source<T> extends Func2<Context, Index, Observable<Observable<T>>>, Closeable {
 
     default List<ParameterDefinition<?>> getParameters() {
         return Collections.emptyList();

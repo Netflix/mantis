@@ -30,6 +30,7 @@ import io.reactivex.mantis.network.push.PushServerSse;
 import io.reactivex.mantis.network.push.PushServers;
 import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.network.push.ServerConfig;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import mantis.io.reactivex.netty.RxNetty;
@@ -49,13 +50,16 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private static final Logger LOG = LoggerFactory.getLogger(ServerSentEventsSink.class);
     private final Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
     private final BehaviorSubject<Integer> portObservable = BehaviorSubject.create();
-    private Func1<T, String> encoder;
-    private Func1<Throwable, String> errorEncoder;
-    private Predicate<T> predicate;
+    private final Func1<T, String> encoder;
+    private final Func1<Throwable, String> errorEncoder;
+    private final Predicate<T> predicate;
     private Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
     private Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
     private int port = -1;
-    private MantisPropertiesService propService;
+    private final MantisPropertiesService propService;
+
+    private PushServerSse<T, Context> pushServerSse;
+    private HttpServer<ByteBuf, ServerSentEvent> httpServer;
 
     public ServerSentEventsSink(Func1<T, String> encoder) {
         this(encoder, null, null);
@@ -156,15 +160,15 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
             if (predicate != null) {
                 config.predicate(predicate.getPredicate());
             }
-            PushServerSse<T, Context> server = PushServers.infiniteStreamSse(config.build(), observable,
+            pushServerSse = PushServers.infiniteStreamSse(config.build(), observable,
                     requestPreprocessor, requestPostprocessor,
                     subscribeProcessor, context, true);
-            server.start();
+            pushServerSse.start();
         } else {
             LOG.info("Serving legacy HTTP SSE server sink on port: " + port);
 
             int batchInterval = getBatchInterval();
-            HttpServer<ByteBuf, ServerSentEvent> server = RxNetty.newHttpServerBuilder(
+            httpServer = RxNetty.newHttpServerBuilder(
                     port,
                     new ServerSentEventRequestHandler<>(
                             observable,
@@ -179,9 +183,22 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                     .channelOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 5 * 1024 * 1024)
                     .channelOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 1024 * 1024)
                     .build();
-            server.start();
+            httpServer.start();
         }
         portObservable.onNext(port);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (pushServerSse != null) {
+            pushServerSse.shutdown();
+        } else if (httpServer != null) {
+            try {
+                httpServer.shutdown();
+            } catch (InterruptedException e) {
+                throw new IOException(String.format("Failed to shut down the http server %s", httpServer), e);
+            }
+        }
     }
 
     private int getBatchInterval() {

@@ -22,6 +22,7 @@ import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Optional;
@@ -156,7 +157,11 @@ public class ExecuteStageRequestService extends BaseService {
                     @Override
                     public void onCompleted() {
                         logger.error("Execute stage observable completed"); // should never occur
-                        executionOperations.shutdownStage();
+                        try {
+                            executionOperations.shutdownStage();
+                        } catch (IOException e) {
+                            log.error("Failed to close stage cleanly", e);
+                        }
 //                        try {
 //                            userCodeClassLoader.close();
 //                        } catch (IOException ex) {
@@ -202,7 +207,11 @@ public class ExecuteStageRequestService extends BaseService {
     @Override
     public void shutdown() {
         subscription.unsubscribe();
-        executionOperations.shutdownStage();
+        try {
+            executionOperations.shutdownStage();
+        } catch (IOException e) {
+            log.error("Failed to close cleanly", e);
+        }
     }
 
     @Override

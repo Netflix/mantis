@@ -22,6 +22,7 @@ import io.mantisrx.runtime.source.Source;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent;
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
 import rx.Observable;
 import rx.Observer;
 
@@ -62,6 +63,11 @@ public class HttpSource<E, T> implements Source<T> {
     @Override
     public Observable<Observable<T>> call(Context context, Index index) {
         return impl.call(context, index);
+    }
+
+    @Override
+    public void close() throws IOException {
+        impl.close();
     }
 
     public static class Builder<E, T> {

@@ -23,6 +23,7 @@ import io.mantisrx.runtime.source.http.impl.HttpSourceImpl;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent;
 import io.mantisrx.runtime.source.http.impl.ServerContext;
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
 import rx.Observable;
 import rx.Observer;
 
@@ -59,6 +60,11 @@ public class ContextualHttpSource<E> implements Source<ServerContext<E>> {
     @Override
     public Observable<Observable<ServerContext<E>>> call(Context context, Index t2) {
         return impl.call(context, t2);
+    }
+
+    @Override
+    public void close() throws IOException {
+        impl.close();
     }
 
     public static class Builder<E> {

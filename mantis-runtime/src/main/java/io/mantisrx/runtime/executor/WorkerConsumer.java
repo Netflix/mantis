@@ -17,13 +17,11 @@
 package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.StageConfig;
+import java.io.Closeable;
 import rx.Observable;
 
 
-public interface WorkerConsumer<T, R> {
+public interface WorkerConsumer<T, R> extends Closeable {
 
     public Observable<Observable<T>> start(StageConfig<T, R> stage);
-
-    public void stop();
-
 }

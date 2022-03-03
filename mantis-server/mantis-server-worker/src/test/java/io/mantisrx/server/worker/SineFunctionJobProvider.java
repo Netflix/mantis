@@ -32,9 +32,11 @@ import io.mantisrx.runtime.sink.ServerSentEventsSink;
 import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import rx.Observable;
+import rx.Subscription;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
@@ -146,14 +148,18 @@ public class SineFunctionJobProvider extends MantisJobProvider<Point> {
    * If USE_RANDOM_FLAG is set, the source generates a random value per tick.
    */
   class TimerSource implements Source<Integer> {
+    private Subscription totalNumWorkersSubscription;
 
     @Override
     public Observable<Observable<Integer>> call(Context context, Index index) {
       // If you want to be informed of scaleup/scale down of the source stage of this job you can subscribe
       // to getTotalNumWorkersObservable like the following.
-      index.getTotalNumWorkersObservable().subscribeOn(Schedulers.io()).subscribe((workerCount) -> {
-        System.out.println("Total worker count changed to -> " + workerCount);
-      });
+      totalNumWorkersSubscription =
+          index
+              .getTotalNumWorkersObservable()
+              .subscribeOn(Schedulers.io()).subscribe((workerCount) -> {
+                System.out.println("Total worker count changed to -> " + workerCount);
+              });
       final int period = (int)
           context.getParameters().get(INTERVAL_MSEC);
       final int max = (int)
@@ -182,6 +188,13 @@ public class SineFunctionJobProvider extends MantisJobProvider<Point> {
                 return (value <= randomRate);
               })
       );
+    }
+
+    @Override
+    public void close() throws IOException {
+      if (totalNumWorkersSubscription != null) {
+        totalNumWorkersSubscription.unsubscribe();
+      }
     }
   }
 

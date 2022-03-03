@@ -42,6 +42,7 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,6 +54,7 @@ import org.apache.kafka.common.record.InvalidRecordException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.Subscription;
 import rx.observables.SyncOnSubscribe;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
@@ -77,6 +79,8 @@ public class KafkaSource implements Source<KafkaAckable> {
 
     private final SerializedSubject<KafkaDataNotification, KafkaDataNotification> ackSubject =
         new SerializedSubject<>(PublishSubject.create());
+
+    private Subscription ackSubjectSubscription;
 
 
     public KafkaSource(final Registry registry) {
@@ -275,7 +279,12 @@ public class KafkaSource implements Source<KafkaAckable> {
                 LOGGER.info("subscribed");
                 done.set(false);
             });
+    }
 
+    @Override
+    public void close() throws IOException {
+        done.set(true);
+        stopAckProcessor();
     }
 
     private void processAckNotification(final KafkaDataNotification notification) {
@@ -299,8 +308,16 @@ public class KafkaSource implements Source<KafkaAckable> {
 
     private void startAckProcessor() {
         LOGGER.info("Acknowledgement processor started");
-        ackSubject.subscribe((KafkaDataNotification notification) -> processAckNotification(notification));
+        ackSubjectSubscription = ackSubject.subscribe((KafkaDataNotification notification) -> processAckNotification(notification));
     }
+
+    private void stopAckProcessor() {
+        if (ackSubjectSubscription != null) {
+            ackSubjectSubscription.unsubscribe();
+            ackSubjectSubscription = null;
+        }
+    }
+
 
     @Override
     public List<ParameterDefinition<?>> getParameters() {

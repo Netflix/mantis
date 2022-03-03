@@ -37,22 +37,24 @@ import io.mantisrx.runtime.source.Source;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
-
+@Slf4j
 public class JobSource extends AbstractSourceJobSource implements Source<MantisServerSentEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JobSource.class);
     private static JsonParser parser = new JsonParser();
     protected List<TargetInfo> targets;
-
+    private final List<MantisSSEJob> jobs = new ArrayList<>();
 
     public JobSource(List<TargetInfo> targets) {
         this.targets = targets;
@@ -110,6 +112,7 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
             boolean enableCompressedBinary = targetInfo.enableCompressedBinary;
 
             job = getSourceJob(sourceJobName, criterion, clientId, samplePerSec, enableMetaMessages, enableCompressedBinary, obs, Optional.<SinkParameters>empty());
+            jobs.add(job);
 
             if (sourceObs == null) {
                 sourceObs = job.connectAndGet();
@@ -127,6 +130,22 @@ public class JobSource extends AbstractSourceJobSource implements Source<MantisS
             }
         }
         return sourceObs;
+    }
+
+    @Override
+    public void close() throws IOException {
+        IOException exception = null;
+        for (MantisSSEJob job: jobs) {
+            try {
+                job.close();
+            } catch (Exception e) {
+                exception = new IOException(String.format("Failed to close the job %s", job), e);
+            }
+        }
+
+        if (exception != null) {
+            throw exception;
+        }
     }
 
     /**

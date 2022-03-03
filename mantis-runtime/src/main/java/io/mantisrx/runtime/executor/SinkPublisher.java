@@ -24,10 +24,12 @@ import io.mantisrx.runtime.SinkHolder;
 import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.sink.Sink;
 import io.reactivex.mantis.remote.observable.RxMetrics;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
 
@@ -35,14 +37,16 @@ import rx.functions.Action1;
 public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
 
     private static final Logger logger = LoggerFactory.getLogger(SinkPublisher.class);
-    private SinkHolder<R> sinkHolder;
-    private PortSelector portSelector;
-    private Context context;
-    private Action0 observableTerminatedCallback;
-    private Action0 onSubscribeAction;
-    private Action0 onUnsubscribeAction;
-    private Action0 observableOnCompleteCallback;
-    private Action1<Throwable> observableOnErrorCallback;
+    private final SinkHolder<R> sinkHolder;
+    private final PortSelector portSelector;
+    private final Context context;
+    private final Action0 observableTerminatedCallback;
+    private final Action0 onSubscribeAction;
+    private final Action0 onUnsubscribeAction;
+    private final Action0 observableOnCompleteCallback;
+    private final Action1<Throwable> observableOnErrorCallback;
+    private Subscription eagerSubscription;
+    private Sink<R> sink;
 
     public SinkPublisher(SinkHolder<R> sinkHolder,
                          PortSelector portSelector,
@@ -63,7 +67,7 @@ public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
     @SuppressWarnings( {"unchecked", "rawtypes"})
     public void start(StageConfig<T, R> stage,
                       Observable<Observable<R>> observablesToPublish) {
-        final Sink<R> sink = sinkHolder.getSinkAction();
+        sink = sinkHolder.getSinkAction();
 
         int sinkPort = -1;
         if (sinkHolder.isPortRequested()) {
@@ -101,17 +105,26 @@ public class SinkPublisher<T, R> implements WorkerPublisher<T, R> {
                 .share();
         if (context.getWorkerInfo().getDurationType() == MantisJobDurationType.Perpetual) {
             // eager subscribe, don't allow unsubscribe back
-            o.subscribe();
+            eagerSubscription = o.subscribe();
         }
         sink.init(context);
-        sink.call(context, new PortRequest(sinkPort),
-                o);
-        //o.lift(new DoOnRequestOperator("beforeShare")).share().lift(new DropOperator<>("sink_share")));
+        sink.call(context, new PortRequest(sinkPort), o);
     }
 
     @Override
     public RxMetrics getMetrics() {return null;}
 
     @Override
-    public void stop() {}
+    public void close() throws IOException {
+        try {
+            sink.close();
+        } finally {
+            if (eagerSubscription != null) {
+                eagerSubscription.unsubscribe();
+                eagerSubscription = null;
+            }
+        }
+
+
+    }
 }

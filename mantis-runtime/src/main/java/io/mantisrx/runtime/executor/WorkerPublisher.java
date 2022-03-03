@@ -18,14 +18,13 @@ package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.StageConfig;
 import io.reactivex.mantis.remote.observable.RxMetrics;
+import java.io.Closeable;
 import rx.Observable;
 
 
-public interface WorkerPublisher<T, R> {
+public interface WorkerPublisher<T, R> extends Closeable {
 
     public void start(StageConfig<T, R> stage, Observable<Observable<R>> observableToPublish);
 
     public RxMetrics getMetrics();
-
-    public void stop();
 }

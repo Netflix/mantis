@@ -19,13 +19,14 @@ package io.mantisrx.runtime.sink;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import java.io.Closeable;
 import java.util.Collections;
 import java.util.List;
 import rx.Observable;
 import rx.functions.Action3;
 
 
-public interface Sink<T> extends Action3<Context, PortRequest, Observable<T>> {
+public interface Sink<T> extends Action3<Context, PortRequest, Observable<T>>, Closeable {
 
     default void init(Context context) {}
     default List<ParameterDefinition<?>> getParameters() {
