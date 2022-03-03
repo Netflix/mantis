@@ -18,6 +18,7 @@ package io.mantisrx.runtime.executor;
 
 import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
+import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
@@ -519,27 +520,9 @@ public class StageExecutors {
         }
 
         publisher.start(stage, toSink);
-        return new Closeable() {
-            @Override
-            public void close() throws IOException {
-                IOException exception = null;
-                try {
-                    consumer.close();
-                } catch (IOException e) {
-                    exception = new IOException(String.format("Failed to close source %s", consumer), e);
-                }
-
-                try {
-                    publisher.close();
-                } catch (IOException e) {
-                    exception = new IOException(String.format("Failed to close sink %s", publisher), e);
-                }
-
-                if (exception != null) {
-                    throw exception;
-                }
-            }
-        };
+        // the ordering is important here as we want to first close the sinks so that the subscriptions
+        // are first cut off before closing the sources.
+        return Closeables.combine(publisher, consumer);
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
