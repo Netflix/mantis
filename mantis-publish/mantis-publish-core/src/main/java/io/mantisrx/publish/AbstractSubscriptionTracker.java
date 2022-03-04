@@ -149,7 +149,7 @@ public abstract class AbstractSubscriptionTracker implements SubscriptionTracker
 					|| StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)) {
 				jobClustersToFetch.add(e.getValue());
 			} else {
-				LOG.warn("No server side mappings found for one or more streams {} ", registeredStreams);
+				LOG.debug("No server side mappings found for one or more streams {} ", registeredStreams);
 				LOG.debug("will not fetch subscriptions for un-registered stream {}", streamName);
 			}
 		}
