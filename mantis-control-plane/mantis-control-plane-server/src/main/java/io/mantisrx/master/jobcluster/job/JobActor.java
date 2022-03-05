@@ -1328,7 +1328,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private String currentJobSchedulingInfoStr = null;
         private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter();
         // Use expiring cache to effectively track worker resubmitted in the last hour.
-        private Cache<Integer, Boolean> recentlyResubmittedWorkersCache = CacheBuilder.newBuilder()
+        private Cache<Integer, Boolean> recentErrorWorkersCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(1, TimeUnit.HOURS)
                 .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
@@ -2123,7 +2123,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                         eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,
                                 "resubmitting lost worker ", wm.getStageNum(),
                                 wm.getWorkerId(), wm.getState()));
-
+                        recentErrorWorkersCache.put(wm.getWorkerNumber(), true);
                         resubmitWorker(workerOp.get());
                         return;
                     } else if (WorkerState.isTerminalState(wm.getState())) { // worker has explicitly
@@ -2251,7 +2251,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
 
             IMantisWorkerMetadata oldWorkerMetadata = oldWorker.getMetadata();
-            if (recentlyResubmittedWorkersCache.size()
+            if (recentErrorWorkersCache.size()
                     < ConfigurationProvider.getConfig().getMaximumResubmissionsPerWorker()) {
 
                 Integer stageNo = workerToStageMap.get(oldWorkerMetadata.getWorkerId().getWorkerNum());
@@ -2298,7 +2298,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 markStageAssignmentsChanged(true);
                 // queue the new worker for execution
                 queueTask(newWorker.getMetadata(), delayDuration);
-                recentlyResubmittedWorkersCache.put(oldWorkerMetadata.getWorkerNumber(), true);
                 LOGGER.info("Worker {} successfully queued for scheduling", newWorker);
                 numWorkerResubmissions.increment();
             } else {
