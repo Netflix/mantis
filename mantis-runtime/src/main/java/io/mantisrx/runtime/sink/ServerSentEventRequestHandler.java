@@ -30,6 +30,7 @@ import io.mantisrx.common.network.WritableEndpoint;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import io.reactivx.mantis.operators.DropOperator;
 import java.net.InetSocketAddress;
@@ -142,6 +143,43 @@ public class ServerSentEventRequestHandler<T> implements
 
         String uniqueClientId = socketAddrStr;
 
+        Tag[] tags = new Tag[2];
+        final String clientId = Optional.ofNullable(uniqueClientId).orElse("none");
+        final String sockAddr = Optional.ofNullable(socketAddrStr).orElse("none");
+        tags[0] = new BasicTag("clientId", clientId);
+        tags[1] = new BasicTag("sockAddr", sockAddr);
+
+        Metrics sseSinkMetrics = new Metrics.Builder()
+                .id("ServerSentEventRequestHandler", tags)
+                .addCounter("processedCounter")
+                .addCounter("pingCounter")
+                .addCounter("errorCounter")
+                .addCounter("droppedCounter")
+                .addCounter("flushCounter")
+                .addCounter("sourceJobNameMismatchRejection")
+                .build();
+
+
+        final Counter msgProcessedCounter = sseSinkMetrics.getCounter("processedCounter");
+        final Counter pingCounter = sseSinkMetrics.getCounter("pingCounter");
+        final Counter errorCounter = sseSinkMetrics.getCounter("errorCounter");
+        final Counter droppedWrites = sseSinkMetrics.getCounter("droppedCounter");
+        final Counter flushCounter = sseSinkMetrics.getCounter("flushCounter");
+        final Counter sourceJobNameMismatchRejectionCounter = sseSinkMetrics.getCounter("sourceJobNameMismatchRejection");
+
+
+        if (queryParameters != null && queryParameters.containsKey(MantisSSEConstants.TARGET_JOB)) {
+            String targetJob = queryParameters.get(MantisSSEConstants.TARGET_JOB).get(0);
+            String currentJob = this.context.getWorkerInfo().getJobClusterName();
+            if (!currentJob.equalsIgnoreCase(targetJob)) {
+                LOG.info("Rejecting connection from {}. Client is targeting job {} but this is job {}.", uniqueClientId, targetJob, currentJob);
+                sourceJobNameMismatchRejectionCounter.increment();
+                response.setStatus(HttpResponseStatus.BAD_REQUEST);
+                response.writeStringAndFlush("data: " + MantisSSEConstants.TARGET_JOB + " is " + targetJob + " but this is " + currentJob + "." + TWO_NEWLINES);
+                return response.close();
+            }
+        }
+
         if (queryParameters != null && queryParameters.containsKey(CLIENT_ID_PARAM)) {
             // enablePings
             uniqueClientId = queryParameters.get(CLIENT_ID_PARAM).get(0);
@@ -201,28 +239,6 @@ public class ServerSentEventRequestHandler<T> implements
                 && queryParameters.get(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER).get(0) != null
                 ? queryParameters.get(MantisSSEConstants.MANTIS_COMPRESSION_DELIMITER).get(0).getBytes()
                 : null;
-
-        Tag[] tags = new Tag[2];
-        final String clientId = Optional.ofNullable(uniqueClientId).orElse("none");
-        final String sockAddr = Optional.ofNullable(socketAddrStr).orElse("none");
-        tags[0] = new BasicTag("clientId", clientId);
-        tags[1] = new BasicTag("sockAddr", sockAddr);
-
-        Metrics sseSinkMetrics = new Metrics.Builder()
-                .id("ServerSentEventRequestHandler", tags)
-                .addCounter("processedCounter")
-                .addCounter("pingCounter")
-                .addCounter("errorCounter")
-                .addCounter("droppedCounter")
-                .addCounter("flushCounter")
-                .build();
-
-
-        final Counter msgProcessedCounter = sseSinkMetrics.getCounter("processedCounter");
-        final Counter pingCounter = sseSinkMetrics.getCounter("pingCounter");
-        final Counter errorCounter = sseSinkMetrics.getCounter("errorCounter");
-        final Counter droppedWrites = sseSinkMetrics.getCounter("droppedCounter");
-        final Counter flushCounter = sseSinkMetrics.getCounter("flushCounter");
 
         // get predicate, defaults to return true for all T
         Func1<T, Boolean> filterFunction = new Func1<T, Boolean>() {
