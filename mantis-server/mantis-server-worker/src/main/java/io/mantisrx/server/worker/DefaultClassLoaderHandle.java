@@ -15,6 +15,8 @@
  */
 package io.mantisrx.server.worker;
 
+import static io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.collect.Iterables.getFirst;
+
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
@@ -61,11 +63,12 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
           resolvedUrls.add(jarFile.toURI().toURL());
         }
 
-        final File userArtifactManifest = new File(file, "manifest/mantis_runtime_version.txt");
+        final Collection<File> userArtifactManifest =
+            FileUtils.listFiles(file, new SuffixFileFilter("mantis_runtime_version.txt"), TrueFileFilter.INSTANCE);
         log.info("userArtifactManifest={}", userArtifactManifest);
-        if (userArtifactManifest.exists()) {
+        if (userArtifactManifest.size() == 1) {
           log.info("This is a thin artifact.. Now reading the mantis runtime version required");
-          String runtimeVersion = Files.readAllLines(userArtifactManifest.toPath()).get(0).trim();
+          String runtimeVersion = Files.readAllLines(getFirst(userArtifactManifest, null).toPath()).get(0).trim();
           log.info("Mantis runtime version is {}", runtimeVersion);
           resolvedUrls.addAll(getResolvedUrls(ImmutableList.of(
                   new URI(String.format("s3://nfmantis-runtime-%s.zip", runtimeVersion))),
