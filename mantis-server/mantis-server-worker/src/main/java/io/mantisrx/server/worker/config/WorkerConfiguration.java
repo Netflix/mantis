@@ -38,7 +38,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     int getMesosSlavePort();
 
     @Config("mantis.taskexecutor.classloader.parent-first-patterns")
-    @Default("java.;scala.;org.apache.flink.;com.esotericsoftware.kryo;org.apache.hadoop.;javax.annotation.;org.xml;javax.xml;org.apache.xerces;org.w3c;org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback")
+    @Default("java.;scala.;org.apache.flink.;com.esotericsoftware.kryo;org.apache.hadoop.;javax.annotation.;org.xml;javax.xml;org.apache.xerces;org.w3c;org.slf4j;org.apache.log4j;org.apache.logging;org.apache.commons.logging;ch.qos.logback;io.mantisrx.")
     String getAlwaysParentFirstLoaderPatternsString();
 
     @Config("mantis.taskexecutor.cluster.storage-dir")
