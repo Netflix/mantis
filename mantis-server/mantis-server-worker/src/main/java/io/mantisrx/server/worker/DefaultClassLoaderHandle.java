@@ -27,12 +27,14 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.flink.util.FlinkUserCodeClassLoader;
 import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 
@@ -95,8 +97,20 @@ public class DefaultClassLoaderHandle implements ClassLoaderHandle {
 
     resolvedUrls.addAll(requiredClasspaths);
     return SimpleUserCodeClassLoader.create(
-        new ChildFirstClassLoader(resolvedUrls, getClass().getClassLoader(),
-            alwaysParentFirstPatterns));
+        new ParentFirstClassLoader(resolvedUrls.toArray(new URL[0]), getClass().getClassLoader(),
+            error -> log.error("Failed to load class", error)));
+  }
+
+  public static class ParentFirstClassLoader extends FlinkUserCodeClassLoader {
+
+    ParentFirstClassLoader(
+        URL[] urls, ClassLoader parent, Consumer<Throwable> classLoadingExceptionHandler) {
+      super(urls, parent, classLoadingExceptionHandler);
+    }
+
+    static {
+      ClassLoader.registerAsParallelCapable();
+    }
   }
 
   @Override
