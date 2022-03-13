@@ -144,10 +144,10 @@ public class SinkClientImpl<T> implements SinkClient<T> {
                 })
                 .doOnUnsubscribe(() -> {
                     try {
-                        logger.warn("Closing connections to sink of job " + jobId);
+                        logger.warn("Closing connections to sink of job {}", jobId);
                         closeAllConnections();
                     } catch (Exception e) {
-                        Observable.error(e);
+                        logger.warn("Error closing all connections to sink of job {}", jobId, e);
                     }
                 })
                 .share()
@@ -212,7 +212,7 @@ public class SinkClientImpl<T> implements SinkClient<T> {
             }
         }
         return ((SinkConnection<T>) sinkConnection).call()
-                //.flatMap(o -> o)
+                .takeWhile(e -> !nowClosed.get())
                 ;
     }
 
