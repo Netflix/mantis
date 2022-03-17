@@ -182,7 +182,7 @@ public class ExecuteStageRequestService extends BaseService {
                     @Override
                     public void onNext(final ExecutionDetails executionDetails) {
                         logger.info("Executing stage for job ID: " + executionDetails.getExecuteStageRequest().getRequest().getJobId());
-                        Thread t = new Thread("Mantis Worker Thread for " + executionDetails.getExecuteStageRequest().getRequest().getJobId()) {
+                        Thread t = new Thread("mantis-worker-thread-" + executionDetails.getExecuteStageRequest().getRequest().getJobId()) {
                             @Override
                             public void run() {
                                 // Add ports here
