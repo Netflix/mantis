@@ -17,6 +17,7 @@ package io.mantisrx.server.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
 
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import org.junit.Test;
 
@@ -81,5 +82,13 @@ public class SerializationDeserializationTest {
         String encoded = serializer.toJson(heartbeat);
 
         assertEquals(serializer.fromJSON(encoded, TaskExecutorHeartbeat.class), heartbeat);
+    }
+
+    @Test
+    public void testAckInstance() throws Exception {
+        Ack ack = Ack.getInstance();
+        String serialized = serializer.toJson(ack);
+        Ack actual = serializer.fromJSON(serialized, Ack.class);
+        assertEquals(ack, actual);
     }
 }
