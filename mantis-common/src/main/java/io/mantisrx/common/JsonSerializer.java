@@ -15,12 +15,10 @@
  */
 package io.mantisrx.common;
 
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.FilterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
@@ -39,31 +37,6 @@ public class JsonSerializer {
     static {
         DEFAULT_FILTER_PROVIDER = new SimpleFilterProvider();
         DEFAULT_FILTER_PROVIDER.setFailOnUnknownId(false);
-    }
-
-    private static String toJSON(
-            ObjectMapper mapper,
-            FilterProvider filters,
-            Object object) throws JsonProcessingException {
-        if (filters == null) {
-            filters = DEFAULT_FILTER_PROVIDER;
-        }
-        return mapper.writer(filters).writeValueAsString(object);
-
-    }
-
-    public static <T> T fromJSON(
-            ObjectMapper mapper,
-            String json,
-            TypeReference<T> expectedType) throws IOException {
-        return mapper.readerFor(expectedType).readValue(json);
-    }
-
-    public static <T> T fromJSON(
-            ObjectMapper mapper,
-            String json,
-            Class<T> expectedType) throws IOException {
-        return mapper.readerFor(expectedType).readValue(json);
     }
 
     public <T> T fromJSON(String json, Class<T> expectedType) throws IOException {

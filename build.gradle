@@ -56,6 +56,9 @@ subprojects {
     // Apply lombok plugin and disabled the default config file generation.
     apply plugin: "io.freefair.lombok"
     generateLombokConfig.enabled = false
+    lombok {
+        version = "1.18.20"
+    }
 
     group = 'io.mantisrx'
 

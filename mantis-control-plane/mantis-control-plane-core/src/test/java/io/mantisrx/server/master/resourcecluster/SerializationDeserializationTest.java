@@ -20,11 +20,11 @@ import static org.junit.Assert.assertEquals;
 import io.mantisrx.common.JsonSerializer;
 import org.junit.Test;
 
-public class TestTaskExecutorRegistration {
+public class SerializationDeserializationTest {
     private final JsonSerializer serializer = new JsonSerializer();
 
     @Test
-    public void testDeserialization() throws Exception {
+    public void testTaskExecutorRegistrationDeserialization() throws Exception {
         String str = "{\n"
                 + "    \"taskExecutorID\":\n"
                 + "    {\n"
@@ -66,11 +66,18 @@ public class TestTaskExecutorRegistration {
 
         final TaskExecutorRegistration registration =
                 serializer.fromJSON(str, TaskExecutorRegistration.class);
+        final TaskExecutorRegistration deserialized =
+                serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
+        assertEquals(registration, deserialized);
     }
 
     @Test
     public void testHeartbeat() throws Exception {
-        TaskExecutorHeartbeat heartbeat = new TaskExecutorHeartbeat(TaskExecutorID.generate(), ClusterID.of("cluster"), TaskExecutorReport.available());
+        TaskExecutorHeartbeat heartbeat =
+                new TaskExecutorHeartbeat(
+                        TaskExecutorID.generate(),
+                        ClusterID.of("cluster"),
+                        TaskExecutorReport.available());
         String encoded = serializer.toJson(heartbeat);
 
         assertEquals(serializer.fromJSON(encoded, TaskExecutorHeartbeat.class), heartbeat);
