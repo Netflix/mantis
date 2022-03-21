@@ -17,11 +17,10 @@ package io.mantisrx.server.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
 
-import io.mantisrx.common.Ack;
 import io.mantisrx.common.JsonSerializer;
 import org.junit.Test;
 
-public class SerializationDeserializationTest {
+public class TaskExecutorRegistrationTest {
     private final JsonSerializer serializer = new JsonSerializer();
 
     @Test
@@ -70,25 +69,5 @@ public class SerializationDeserializationTest {
         final TaskExecutorRegistration deserialized =
                 serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
         assertEquals(registration, deserialized);
-    }
-
-    @Test
-    public void testHeartbeat() throws Exception {
-        TaskExecutorHeartbeat heartbeat =
-                new TaskExecutorHeartbeat(
-                        TaskExecutorID.generate(),
-                        ClusterID.of("cluster"),
-                        TaskExecutorReport.available());
-        String encoded = serializer.toJson(heartbeat);
-
-        assertEquals(serializer.fromJSON(encoded, TaskExecutorHeartbeat.class), heartbeat);
-    }
-
-    @Test
-    public void testAckInstance() throws Exception {
-        Ack ack = Ack.getInstance();
-        String serialized = serializer.toJson(ack);
-        Ack actual = serializer.fromJSON(serialized, Ack.class);
-        assertEquals(ack, actual);
     }
 }
