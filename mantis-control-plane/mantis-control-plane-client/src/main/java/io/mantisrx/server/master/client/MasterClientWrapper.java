@@ -22,24 +22,18 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.server.core.Configurations;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.zookeeper.CuratorService;
-import io.mantisrx.server.master.client.config.ConfigurationFactory;
-import io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -47,29 +41,20 @@ import rx.Observer;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
-
 
 public class MasterClientWrapper {
 
     public static final String InvalidNamedJob = "No_such_named_job";
     private static final Logger logger = LoggerFactory.getLogger(MasterClientWrapper.class);
-    final CountDownLatch latch = new CountDownLatch(1);
-    final BehaviorSubject<Boolean> initialMaster = BehaviorSubject.create();
-    private final MasterMonitor masterMonitor;
     private final Counter masterConnectRetryCounter;
-    ConfigurationFactory configurationFactory;
-    private MantisMasterClientApi masterClientApi;
-    private PublishSubject<JobSinkNumWorkers> numSinkWorkersSubject = PublishSubject.create();
-    private PublishSubject<JobNumWorkers> numWorkersSubject = PublishSubject.create();
-    public MasterClientWrapper(Properties properties) {
-        this(new StaticPropertiesConfigurationFactory(properties));
-    }
+    private final MantisMasterGateway masterClientApi;
+    private final PublishSubject<JobSinkNumWorkers> numSinkWorkersSubject = PublishSubject.create();
+    private final PublishSubject<JobNumWorkers> numWorkersSubject = PublishSubject.create();
+
     // blocks until getting master info from zookeeper
-    public MasterClientWrapper(ConfigurationFactory configurationFactory) {
-        this.configurationFactory = configurationFactory;
-        masterMonitor = initializeMasterMonitor();
+    public MasterClientWrapper(MantisMasterGateway gateway) {
+        this.masterClientApi = gateway;
         Metrics m = new Metrics.Builder()
                 .name(MasterClientWrapper.class.getCanonicalName())
                 .addCounter("MasterConnectRetryCount")
@@ -95,11 +80,11 @@ public class MasterClientWrapper {
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
         String jobId = "GroupByIPNJ-12";
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(zkProps);
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class)).getMasterClientApi());
         clientWrapper.getMasterClientApi()
-                .flatMap(new Func1<MantisMasterClientApi, Observable<EndpointChange>>() {
+                .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
                     @Override
-                    public Observable<EndpointChange> call(MantisMasterClientApi mantisMasterClientApi) {
+                    public Observable<EndpointChange> call(MantisMasterGateway mantisMasterClientApi) {
                         Integer sinkStage = null;
                         return mantisMasterClientApi.getSinkStageNum(jobId)
                                 .take(1) // only need to figure out sink stage number once
@@ -115,12 +100,6 @@ public class MasterClientWrapper {
             System.out.println("Endpoint Change -> " + ep);
         });
         Thread.sleep(50000);
-
-
-    }
-
-    public MasterMonitor getMasterMonitor() {
-        return masterMonitor;
     }
 
     public void addNumSinkWorkersObserver(Observer<JobSinkNumWorkers> numSinkWorkersObserver) {
@@ -134,42 +113,8 @@ public class MasterClientWrapper {
     /**
      * Returns an Observable that emits only once, after the MasterClientApi has been initialized
      */
-    public Observable<MantisMasterClientApi> getMasterClientApi() {
-        return initialMaster
-                .onErrorResumeNext((Throwable throwable) -> {
-                    logger.warn("Error getting initial master from zookeeper: " + throwable.getMessage());
-                    return Observable.empty();
-                })
-                .take(1)
-                .map((Boolean aBoolean) -> {
-                    return masterClientApi;
-                });
-    }
-
-    private void startInitialMasterDescriptionGetter(CuratorService curatorService, final MasterMonitor masterMonitor) {
-        final AtomicBoolean initialMasterGotten = new AtomicBoolean(false);
-        masterMonitor.getMasterObservable()
-                .takeWhile((MasterDescription masterDescription) -> {
-                    return !initialMasterGotten.get();
-                })
-                .subscribe((MasterDescription masterDescription) -> {
-                    if (masterDescription == null) {
-                        return;
-                    }
-                    logger.info("Initialized master description=" + masterDescription);
-                    initialMasterGotten.set(true);
-                    masterClientApi = new MantisMasterClientApi(masterMonitor);
-                    initialMaster.onNext(true);
-                });
-        curatorService.start();
-    }
-
-    private MasterMonitor initializeMasterMonitor() {
-        CoreConfiguration config = configurationFactory.getConfig();
-        CuratorService curatorService = new CuratorService(config, null);
-        MasterMonitor masterMonitor = curatorService.getMasterMonitor();
-        startInitialMasterDescriptionGetter(curatorService, masterMonitor);
-        return masterMonitor;
+    public Observable<MantisMasterGateway> getMasterClientApi() {
+        return Observable.just(masterClientApi);
     }
 
     private List<Endpoint> getAllNonJobMasterEndpoints(final String jobId, final Map<Integer, WorkerAssignments> workerAssignments) {
@@ -225,12 +170,7 @@ public class MasterClientWrapper {
     public Observable<EndpointChange> getAllWorkerMetricLocations(final String jobId) {
         final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "AllSchedInfoRetry", 10);
         Observable<List<Endpoint>> schedulingUpdates =
-                getMasterClientApi()
-                        .take(1)
-                        .flatMap(new Func1<MantisMasterClientApi, Observable<? extends List<Endpoint>>>() {
-                            @Override
-                            public Observable<? extends List<Endpoint>> call(MantisMasterClientApi mantisMasterClientApi) {
-                                return mantisMasterClientApi
+                                masterClientApi
                                         .schedulingChanges(jobId)
                                         .doOnError(new Action1<Throwable>() {
                                             @Override
@@ -264,8 +204,6 @@ public class MasterClientWrapper {
                                                 logger.error(throwable.getMessage(), throwable);
                                             }
                                         });
-                            }
-                        });
 
         return (new ToDeltaEndpointInjector(schedulingUpdates)).deltas();
     }
@@ -274,10 +212,7 @@ public class MasterClientWrapper {
                                                        final int forPartition, final int totalPartitions) {
         final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "SchedInfoRetry", 10);
         Observable<List<Endpoint>> schedulingUpdates =
-                getMasterClientApi()
-                        .take(1)
-                        .flatMap((MantisMasterClientApi mantisMasterClientApi) -> {
-                            return mantisMasterClientApi
+                masterClientApi
                                     .schedulingChanges(jobId)
                                     .doOnError((Throwable throwable) -> {
                                         logger.warn(throwable.getMessage());
@@ -321,7 +256,6 @@ public class MasterClientWrapper {
                                     .doOnError((Throwable throwable) -> {
                                         logger.error(throwable.getMessage(), throwable);
                                     });
-                        });
 
         return (new ToDeltaEndpointInjector(schedulingUpdates)).deltas();
     }
@@ -337,37 +271,27 @@ public class MasterClientWrapper {
 
     public Observable<Boolean> namedJobExists(final String jobName) {
         final ConditionalRetry namedJobRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobExists", Integer.MAX_VALUE);
-        return getMasterClientApi()
-                .flatMap((final MantisMasterClientApi mantisMasterClientApi) -> {
-                    logger.info("verifying if job name exists: " + jobName);
-                    return mantisMasterClientApi.namedJobExists(jobName);
-                })
-                .retryWhen(namedJobRetry.getRetryLogic());
+        logger.info("verifying if job name exists: " + jobName);
+        return masterClientApi.namedJobExists(jobName).retryWhen(namedJobRetry.getRetryLogic());
     }
 
     public Observable<String> getNamedJobsIds(final String jobName) {
         final ConditionalRetry namedJobsIdsRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobsIds", Integer.MAX_VALUE);
-        return getMasterClientApi()
-                .flatMap((final MantisMasterClientApi mantisMasterClientApi) -> {
-                    logger.info("verifying if job name exists: " + jobName);
-                    return mantisMasterClientApi.namedJobExists(jobName)
-                            .map((Boolean aBoolean) -> {
-                                return aBoolean ? mantisMasterClientApi : null;
-                            });
-                })
+        logger.info("verifying if job name exists: " + jobName);
+        return masterClientApi.namedJobExists(jobName)
                 .onErrorResumeNext((Throwable throwable) -> {
                     logger.error(throwable.getMessage());
                     return Observable.empty();
                 })
                 .take(1)
-                .map((MantisMasterClientApi mantisMasterClientApi) -> {
-                    if (mantisMasterClientApi == null) {
+                .map((exists) -> {
+                    if (!exists) {
                         final Exception exception = new Exception("No such Job Cluster " + jobName);
                         namedJobsIdsRetry.setErrorRef(exception);
                         return Observable.just(new NamedJobInfo(jobName, InvalidNamedJob));
                     }
                     logger.info("Getting Job cluster info for " + jobName);
-                    return mantisMasterClientApi.namedJobInfo(jobName);
+                    return masterClientApi.namedJobInfo(jobName);
                 })
                 .doOnError((Throwable throwable) -> {
                     logger.error(throwable.getMessage(), throwable);

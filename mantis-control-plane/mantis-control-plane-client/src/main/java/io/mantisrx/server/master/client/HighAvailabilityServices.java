@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.mantisrx.server.master.client;
 
-dependencies {
-    implementation libraries.asyncHttpClient
-    implementation libraries.spotifyFutures
-    api project(":mantis-control-plane:mantis-control-plane-core")
+import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.core.master.MasterMonitor;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
+import rx.Observable;
 
-    api project(":mantis-remote-observable")
+public interface HighAvailabilityServices extends Service {
+  MantisMasterGateway getMasterClientApi();
 
-    testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-all:$mockitoVersion"
+  Observable<MasterDescription> getMasterDescription();
+
+  MasterMonitor getMasterMonitor();
 }
-
-
