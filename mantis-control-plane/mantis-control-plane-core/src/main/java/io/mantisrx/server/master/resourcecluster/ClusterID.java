@@ -15,19 +15,14 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 /**
  * Represents the cluster that the task executor belongs to.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(staticName="of")
 @Value
 public class ClusterID {
   String resourceID;
-
-  public static ClusterID of(String clusterIdStr) {
-    return new ClusterID(clusterIdStr);
-  }
 }
