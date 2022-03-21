@@ -31,6 +31,7 @@ dependencies {
     api project(":mantis-common")
 
     api "org.skife.config:config-magic:$configMagicVersion"
+    api libraries.flinkRpcApi
 
     api "org.apache.mesos:mesos:$mesosVersion"
     api "org.json:json:$jsonVersion"
