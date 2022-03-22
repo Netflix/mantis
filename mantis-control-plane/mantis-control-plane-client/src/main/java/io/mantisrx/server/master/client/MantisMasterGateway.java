@@ -93,5 +93,12 @@ public interface MantisMasterGateway {
 
   Observable<JobAssignmentResult> assignmentResults(String jobId);
 
+  /**
+   * Update the status of the worker to the mantis-master.
+   *
+   * @param status status that contains all the information about the worker such as the WorkerId,
+   *               State of the worker, etc...
+   * @return Acknowledgement if the update was received by the mantis-master.
+   */
   CompletableFuture<Ack> updateStatus(Status status);
 }

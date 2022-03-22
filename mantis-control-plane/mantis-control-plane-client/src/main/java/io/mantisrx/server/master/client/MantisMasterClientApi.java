@@ -797,30 +797,36 @@ public class MantisMasterClientApi implements MantisMasterGateway {
         return Observable.merge(reconciliator.observables());
     }
 
-  private final AsyncHttpClient apiClient;
+    private final AsyncHttpClient apiClient;
 
-  @Override
-  public CompletableFuture<Ack> updateStatus(Status status) {
+    /**
+     * Implementation of updateStatus that updates the status of the worker on the mantis-master.
+     * @param status status that contains all the information about the worker such as the WorkerId,
+     *               State of the worker, etc...
+     * @return Acknowledgement if the update was received by the mantis-master leader.
+     */
+    @Override
+    public CompletableFuture<Ack> updateStatus(Status status) {
 
-    try {
-      final String statusUpdate = objectMapper.writeValueAsString(
-          new PostJobStatusRequest(status.getJobId(), status));
-      final RequestBuilder requestBuilder =
-          post(masterMonitor.getLatestMaster().getFullApiStatusUri())
-              .setBody(statusUpdate);
-      return apiClient
-          .executeRequest(requestBuilder)
-          .toCompletableFuture()
-          .thenCompose(response -> {
-            if (response.getStatusCode() == 200) {
-              return CompletableFuture.completedFuture(Ack.getInstance());
-            } else {
-              return CompletableFutures.exceptionallyCompletedFuture(
-                  new Exception(response.getResponseBody()));
-            }
-          });
-    } catch (Exception e) {
-      return CompletableFutures.exceptionallyCompletedFuture(e);
+        try {
+          final String statusUpdate = objectMapper.writeValueAsString(
+              new PostJobStatusRequest(status.getJobId(), status));
+          final RequestBuilder requestBuilder =
+              post(masterMonitor.getLatestMaster().getFullApiStatusUri())
+                  .setBody(statusUpdate);
+          return apiClient
+              .executeRequest(requestBuilder)
+              .toCompletableFuture()
+              .thenCompose(response -> {
+                if (response.getStatusCode() == 200) {
+                  return CompletableFuture.completedFuture(Ack.getInstance());
+                } else {
+                  return CompletableFutures.exceptionallyCompletedFuture(
+                      new Exception(response.getResponseBody()));
+                }
+              });
+        } catch (Exception e) {
+          return CompletableFutures.exceptionallyCompletedFuture(e);
+        }
     }
-  }
 }
