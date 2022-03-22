@@ -30,9 +30,6 @@ import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -40,6 +37,9 @@ import rx.Observer;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class JobMasterService implements Service {
@@ -105,8 +105,6 @@ public class JobMasterService implements Service {
 
         } catch (JsonProcessingException e) {
             logger.error("failed to parse json", e);
-        } catch (IOException e) {
-            logger.error("failed to process json", e);
         } catch (Exception e) {
             logger.error("caught exception", e);
         }

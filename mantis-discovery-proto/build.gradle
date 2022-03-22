@@ -15,7 +15,7 @@
  */
 
 dependencies {
-    api project(path: ':mantis-shaded', configuration: 'shadow')
+    api "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
 
     testImplementation "junit:junit-dep:$junitVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
