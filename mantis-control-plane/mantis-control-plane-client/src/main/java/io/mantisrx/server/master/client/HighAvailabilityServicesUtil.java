@@ -16,13 +16,14 @@
 package io.mantisrx.server.master.client;
 
 import io.mantisrx.server.core.CoreConfiguration;
-import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import lombok.extern.slf4j.Slf4j;
-import rx.Observable;
 
+/**
+ * HighAvailabilityServicesUtil helps you create HighAvailabilityServices instance based on the core configuration.
+ */
 @Slf4j
 public class HighAvailabilityServicesUtil {
 
@@ -34,6 +35,10 @@ public class HighAvailabilityServicesUtil {
     }
   }
 
+  /**
+   * Zookeeper based implementation of HighAvailabilityServices that finds the various leader instances
+   * through metadata stored on zookeeper.
+   */
   private static class ZkHighAvailabilityServices extends AbstractIdleService implements
       HighAvailabilityServices {
 
@@ -56,11 +61,6 @@ public class HighAvailabilityServicesUtil {
     @Override
     public MantisMasterGateway getMasterClientApi() {
       return new MantisMasterClientApi(curatorService.getMasterMonitor());
-    }
-
-    @Override
-    public Observable<MasterDescription> getMasterDescription() {
-      return curatorService.getMasterMonitor().getMasterObservable();
     }
 
     @Override

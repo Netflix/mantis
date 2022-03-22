@@ -15,15 +15,22 @@
  */
 package io.mantisrx.server.master.client;
 
-import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
-import rx.Observable;
 
+/**
+ * HighAvailabilityServices is a container for a group of services which are considered to be highly available because
+ * of multiple standbys capable of handling the service in case the leader goes down for instance.
+ *
+ * In Mantis, the following services are considered highly-available:
+ *   1. Mantis master which handles all the job-cluster/job/stage/worker interactions.
+ *   2. Resource Manager which handles all the resource specific interactions such as resource status updates,
+ *   registrations and heartbeats.
+ *
+ * These services can be obtained from the HighAvailabilityServices implementation.
+ */
 public interface HighAvailabilityServices extends Service {
   MantisMasterGateway getMasterClientApi();
-
-  Observable<MasterDescription> getMasterDescription();
 
   MasterMonitor getMasterMonitor();
 }
