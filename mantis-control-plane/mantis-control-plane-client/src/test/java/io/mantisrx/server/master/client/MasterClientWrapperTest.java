@@ -19,6 +19,8 @@ package io.mantisrx.server.master.client;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.mantisrx.server.core.Configurations;
+import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.reactivex.mantis.remote.observable.EndpointChange;
@@ -28,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.Ignore;
 import org.junit.Test;
 import rx.Observable;
 import rx.functions.Func1;
@@ -43,13 +46,16 @@ public class MasterClientWrapperTest {
         zkProps.put("mantis.zookeeper.connectString", "100.67.80.172:2181,100.67.71.221:2181,100.67.89.26:2181,100.67.71.34:2181,100.67.80.18:2181");
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
+        zkProps.put("mantis.localmode", "false");
     }
 
     MasterClientWrapper clientWrapper = null;
 
     //@Before
     public void init() {
-        clientWrapper = new MasterClientWrapper(zkProps);
+      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+          Configurations.frmProperties(zkProps, CoreConfiguration.class));
+      clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
     }
 
     //	@Test
@@ -106,7 +112,7 @@ public class MasterClientWrapperTest {
 
         Observable<String> jobidO = clientWrapper.getNamedJobsIds(jobname).take(1).cache().subscribeOn(Schedulers.io());
 
-        Observable<MantisMasterClientApi> mmciO = clientWrapper.getMasterClientApi().take(1).cache().subscribeOn(Schedulers.io());
+        Observable<MantisMasterGateway> mmciO = clientWrapper.getMasterClientApi().take(1).cache().subscribeOn(Schedulers.io());
 
         Observable<EndpointChange> epO = jobidO.map((jId) -> clientWrapper.getSinkLocations(jId, sinkStageNumber, 0, 0))
                 .flatMap(e -> e)
@@ -114,7 +120,7 @@ public class MasterClientWrapperTest {
                 .doOnNext((ep) -> System.out.println("Ep change: " + ep))
                 .doOnNext((ep) -> cdLatch.countDown());
 
-        Observable<Boolean> deleteWorkerO = jobidO.zipWith(mmciO, (String jId, MantisMasterClientApi mmci) -> {
+        Observable<Boolean> deleteWorkerO = jobidO.zipWith(mmciO, (String jId, MantisMasterGateway mmci) -> {
             System.out.println("Job id is " + jId);
             return mmci.schedulingChanges(jId)
                     .map(jsi -> {
@@ -158,13 +164,15 @@ public class MasterClientWrapperTest {
 
     //	@Test
     public void testJobStatusEndpoint() {
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(zkProps);
+      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+          Configurations.frmProperties(zkProps, CoreConfiguration.class));
+      MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         String jobId = "PriamRequestSource-45";
 
         clientWrapper.getMasterClientApi()
-                .flatMap(new Func1<MantisMasterClientApi, Observable<String>>() {
+                .flatMap(new Func1<MantisMasterGateway, Observable<String>>() {
                     @Override
-                    public Observable<String> call(MantisMasterClientApi mantisMasterClientApi) {
+                    public Observable<String> call(MantisMasterGateway mantisMasterClientApi) {
                         Integer sinkStage = null;
                         return mantisMasterClientApi.getJobStatusObservable(jobId)
                                 .map((status) -> {
@@ -181,7 +189,9 @@ public class MasterClientWrapperTest {
     @Test
     public void testNamedJobExists() {
 
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(zkProps);
+      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+          Configurations.frmProperties(zkProps, CoreConfiguration.class));
+      MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
 
         CountDownLatch cdLatch = new CountDownLatch(1);
         clientWrapper.namedJobExists("APIRequestSource")
