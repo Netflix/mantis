@@ -16,7 +16,7 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
-import com.google.common.io.Files;
+import io.mantisrx.shaded.com.google.common.io.Files;
 import java.io.File;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,57 +53,57 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 @Slf4j
 @Builder
 public class IcebergTableExtension implements BeforeAllCallback, BeforeEachCallback,
-    AfterEachCallback {
+        AfterEachCallback {
 
-  private File rootDir;
+    private File rootDir;
 
-  @Getter
-  @Builder.Default
-  private String catalog = "catalog";
+    @Getter
+    @Builder.Default
+    private String catalog = "catalog";
 
-  @Getter
-  @Builder.Default
-  private String database = "database";
+    @Getter
+    @Builder.Default
+    private String database = "database";
 
-  @Getter
-  @Builder.Default
-  private String tableName = "table";
+    @Getter
+    @Builder.Default
+    private String tableName = "table";
 
-  @Getter
-  private Schema schema;
-  private PartitionSpec spec;
+    @Getter
+    private Schema schema;
+    private PartitionSpec spec;
 
-  @Getter
-  private Table table;
+    @Getter
+    private Table table;
 
-  @Override
-  public void beforeAll(ExtensionContext context) throws Exception {
-    log.info("Before All");
-  }
-
-  @Override
-  public void beforeEach(ExtensionContext context) throws Exception {
-    log.info("Before Each");
-    if (rootDir == null) {
-      rootDir = Files.createTempDir();
+    @Override
+    public void beforeAll(ExtensionContext context) throws Exception {
+        log.info("Before All");
     }
 
-    final File tableDir = new File(rootDir, getTableIdentifier().toString());
-    final HadoopTables tables = new HadoopTables();
-    table = tables.create(schema, spec, tableDir.getPath());
-  }
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+        log.info("Before Each");
+        if (rootDir == null) {
+            rootDir = Files.createTempDir();
+        }
 
-  @Override
-  public void afterEach(ExtensionContext context) throws Exception {
-    FileUtils.deleteDirectory(rootDir);
-    rootDir = null;
-  }
+        final File tableDir = new File(rootDir, getTableIdentifier().toString());
+        final HadoopTables tables = new HadoopTables();
+        table = tables.create(schema, spec, tableDir.getPath());
+    }
 
-  public LocationProvider getLocationProvider() {
-    return table.locationProvider();
-  }
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        FileUtils.deleteDirectory(rootDir);
+        rootDir = null;
+    }
 
-  public TableIdentifier getTableIdentifier() {
-    return TableIdentifier.of(catalog, database, tableName);
-  }
+    public LocationProvider getLocationProvider() {
+        return table.locationProvider();
+    }
+
+    public TableIdentifier getTableIdentifier() {
+        return TableIdentifier.of(catalog, database, tableName);
+    }
 }

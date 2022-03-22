@@ -19,7 +19,7 @@ ext {
 }
 
 dependencies {
-    implementation project(":mantis-shaded")
+    implementation "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
     implementation project(":mantis-runtime")
 
     api project(":mantis-control-plane:mantis-control-plane-core")

@@ -16,6 +16,14 @@
 
 apply plugin: 'com.github.johnrengelman.shadow'
 
+/**
+ * NOTE: About releasing
+ * When updating dependencies here, you need to release/publish twice
+ * because all the subprojects depend on the artifactory version as
+ * opposed to subproject.
+ * On the first publish, you update mantis-shaded artifacts in artifactory
+ * On the second publish, you update all subprojects that depend on mantis-shaded
+ */
 ext {
     jacksonVersion = '2.10.+'
     guavaVersion = '18.+'
