@@ -16,9 +16,9 @@
 apply plugin: 'mantis'
 
 ext {
-    junitVersion = '5.3.+'
-    mockitoVersion = '2.18.+'
-    slf4jVersion = '1.7.+'
+    versionJunit = '5.3.+'
+    versionMockito = '2.18.+'
+    versionSlf4j = '1.7.+'
 }
 
 dependencies {
@@ -26,11 +26,11 @@ dependencies {
     implementation project(":mantis-publish:mantis-publish-netty")
     implementation project(":mantis-connectors:mantis-connector-publish")
 
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    implementation "org.slf4j:slf4j-api:$versionSlf4j"
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunit"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunit"
+    testImplementation "org.mockito:mockito-core:$versionMockito"
 }
 
 test {

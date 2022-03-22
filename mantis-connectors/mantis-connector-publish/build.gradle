@@ -15,7 +15,7 @@
  */
 
 ext {
-    junitVersion = '5.3.+'
+    versionJunit = '5.3.+'
 }
 
 dependencies {
@@ -25,8 +25,8 @@ dependencies {
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-publish:mantis-publish-core")
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunit"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunit"
 }
 
 test {

@@ -17,8 +17,8 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 ext {
     archaiusVersion = 'latest.release'
-    junitVersion = '5.3.+'
-    mockitoVersion = '2.18.+'
+    versionJunit = '5.3.+'
+    versionMockito = '2.18.+'
     spectatorVersion = 'latest.release'
     nettyVersion = '4.1.34.Final'
 }
@@ -30,12 +30,12 @@ dependencies {
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    implementation "org.slf4j:slf4j-api:$versionSlf4j"
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
-    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunit"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunit"
+    testImplementation "org.mockito:mockito-core:$versionMockito"
+    testImplementation "org.slf4j:slf4j-log4j12:$versionSlf4j"
 }
 
 test {
@@ -50,7 +50,7 @@ shadowJar {
     relocate('META-INF/native/netty', 'META-INF/native/io_mantisrx_shaded_netty')
     exclude('com.netflix.spectator.*')
     dependencies {
-      exclude(dependency('com.netflix.spectator:.*:.*'))
+        exclude(dependency('com.netflix.spectator:.*:.*'))
     }
 }
 
@@ -66,15 +66,15 @@ afterEvaluate {
             withType(MavenPublication) {
                 pom.withXml {
                     asNode()
-                        .dependencies
-                        .dependency
-                        .findAll {
-                            ['jackson-databind',
-                             'jackson-datatype-jdk8',
-                             'netty-all',
-                            ].contains(it.artifactId.text())
-                        }
-                        .each { it.parent().remove(it) }
+                            .dependencies
+                            .dependency
+                            .findAll {
+                                ['jackson-databind',
+                                 'jackson-datatype-jdk8',
+                                 'netty-all',
+                                ].contains(it.artifactId.text())
+                            }
+                            .each { it.parent().remove(it) }
                 }
             }
         }

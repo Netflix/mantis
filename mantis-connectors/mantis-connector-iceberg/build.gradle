@@ -20,8 +20,8 @@ apply plugin: 'mantis'
 ext {
     hadoopVersion = '2.7.3'
     icebergVersion = '0.9.+'
-    junitVersion = '5.4.+'
-    mockitoVersion = '2.18.+'
+    versionJunit = '5.4.+'
+    versionMockito = '2.18.+'
     parquetVersion = '1.12.0'
 }
 
@@ -49,18 +49,18 @@ dependencies {
     shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
 
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    implementation "org.slf4j:slf4j-api:$versionSlf4j"
     // We only need this for local mains(). Users bring their own implementation.
-    shadow "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    shadow "org.slf4j:slf4j-log4j12:$versionSlf4j"
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testImplementation "org.junit.jupiter:junit-jupiter-params:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunit"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:$versionJunit"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunit"
+    testImplementation "org.mockito:mockito-core:$versionMockito"
 
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
     testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion"
-    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    testImplementation "org.slf4j:slf4j-log4j12:$versionSlf4j"
 }
 
 tasks.jar.dependsOn tasks.shadowJar
@@ -94,16 +94,16 @@ afterEvaluate {
             withType(MavenPublication) {
                 pom.withXml {
                     asNode()
-                        .dependencies
-                        .dependency
-                        .findAll {
-                            ['hadoop-common',
-                             'iceberg-core',
-                             'iceberg-data',
-                             'iceberg-parquet'
-                            ].contains(it.artifactId.text())
-                        }
-                        .each { it.parent().remove(it) }
+                            .dependencies
+                            .dependency
+                            .findAll {
+                                ['hadoop-common',
+                                 'iceberg-core',
+                                 'iceberg-data',
+                                 'iceberg-parquet'
+                                ].contains(it.artifactId.text())
+                            }
+                            .each { it.parent().remove(it) }
                 }
             }
         }

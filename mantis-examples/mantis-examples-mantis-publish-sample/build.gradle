@@ -50,7 +50,7 @@ ext {
     spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
     mockNeatVersion = '0.3.7'
-    slf4jVersion = '1.7.28'
+    versionSlf4j = '1.7.28'
     lombokVersion = '1.16.16'
 }
 
@@ -66,6 +66,5 @@ dependencies {
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
     implementation "net.andreinc.mockneat:mockneat:$mockNeatVersion"
 
-    implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    implementation "org.slf4j:slf4j-log4j12:$versionSlf4j"
 }
-
