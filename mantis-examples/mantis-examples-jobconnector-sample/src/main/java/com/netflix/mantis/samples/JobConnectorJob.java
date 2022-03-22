@@ -16,8 +16,6 @@
 
 package com.netflix.mantis.samples;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.mantis.samples.stage.EchoStage;
 import io.mantisrx.connector.job.core.MantisSourceJobConnector;
 import io.mantisrx.connector.job.source.JobSource;
@@ -28,6 +26,8 @@ import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,11 +41,11 @@ import lombok.extern.slf4j.Slf4j;
  * by passing an MQL query.
  * In this example we connect to the latest running instance of SyntheticSourceJob using the query
  * select country from stream where status==500 and simply echo the output.
- *
+ * <p>
  * Run this sample by executing the main method of this class. Then look for the SSE port where the output of this job
  * will be available for streaming. E.g  Serving modern HTTP SSE server sink on port: 8299
  * via command line do ../gradlew execute
- *
+ * <p>
  * Note: this sample may not work in your IDE as the Mantis runtime needs to discover the location of the
  * SyntheticSourceJob.
  */
@@ -77,7 +77,7 @@ public class JobConnectorJob extends MantisJobProvider<String> {
     }
 
     public static void main(String[] args) throws JsonProcessingException {
-        Map<String,Object> targetMap = new HashMap<>();
+        Map<String, Object> targetMap = new HashMap<>();
         List<JobSource.TargetInfo> targetInfos = new ArrayList<>();
 
         JobSource.TargetInfo targetInfo = new JobSource.TargetInfoBuilder().withClientId("abc")
@@ -85,7 +85,7 @@ public class JobConnectorJob extends MantisJobProvider<String> {
                 .withQuery("select country from stream where status==500")
                 .build();
         targetInfos.add(targetInfo);
-        targetMap.put("targets",targetInfos);
+        targetMap.put("targets", targetInfos);
         ObjectMapper mapper = new ObjectMapper();
         String target = mapper.writeValueAsString(targetMap);
 

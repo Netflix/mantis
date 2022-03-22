@@ -16,12 +16,12 @@
 
 package com.netflix.mantis.samples.stage;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
@@ -30,8 +30,9 @@ import rx.Observable;
  * A simple stage that extracts data from the incoming {@link MantisServerSentEvent} and echoes it.
  */
 @Slf4j
-public class EchoStage implements ScalarComputation<MantisServerSentEvent,String> {
+public class EchoStage implements ScalarComputation<MantisServerSentEvent, String> {
     private static final ObjectMapper mapper = new ObjectMapper();
+
     @Override
     public Observable<String> call(Context context, Observable<MantisServerSentEvent> eventsO) {
         return eventsO
@@ -47,8 +48,8 @@ public class EchoStage implements ScalarComputation<MantisServerSentEvent,String
 
     }
 
-    public static ScalarToScalar.Config<MantisServerSentEvent,String> config(){
-        return new ScalarToScalar.Config<MantisServerSentEvent,String>()
+    public static ScalarToScalar.Config<MantisServerSentEvent, String> config() {
+        return new ScalarToScalar.Config<MantisServerSentEvent, String>()
                 .codec(Codecs.string());
     }
 

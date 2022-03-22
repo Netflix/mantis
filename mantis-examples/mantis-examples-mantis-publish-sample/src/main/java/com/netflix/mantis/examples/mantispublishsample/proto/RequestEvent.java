@@ -16,9 +16,9 @@
 
 package com.netflix.mantis.examples.mantispublishsample.proto;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
@@ -41,8 +41,8 @@ public class RequestEvent {
     private final String country;
     private final String deviceType;
 
-    public Map<String,Object> toMap() {
-        Map<String,Object> data = new HashMap<>();
+    public Map<String, Object> toMap() {
+        Map<String, Object> data = new HashMap<>();
         data.put("userId", userId);
         data.put("uri", uri);
         data.put("status", status);
@@ -59,7 +59,6 @@ public class RequestEvent {
             return null;
         }
     }
-
 
 
 }
