@@ -69,16 +69,19 @@ subprojects {
         }
     }
 
-    configurations.all {
+    configurations.compileClasspath {
         if (!"mantis-shaded".equals(project.name)) {
-            exclude group: 'com.fasterxml'
-            exclude group: 'io.vavr.jackson.datatype'
-            exclude group: 'com.google'
+            exclude group: 'com.fasterxml.jackson.core'
+            exclude group: 'com.fasterxml.jackson.datatype'
+            exclude group: 'com.fasterxml.jackson.module'
+            exclude group: 'com.fasterxml.jackson.dataformat'
+            exclude group: 'com.google.guava', module: 'guava'
+            exclude group: 'io.netty', module: 'netty'
+            exclude group: 'io.vavr', module: 'vavr-jackson'
+            exclude group: 'jline', module: 'jline'
             exclude group: 'org.apache.curator'
             exclude group: 'org.apache.zookeeper'
             exclude group: 'org.apache.jute'
-            exclude group: 'jline'
-            exclude group: 'org.jboss.netty'
         }
         exclude group: 'ch.qos.logback', module: 'logback-classic'
     }
