@@ -70,6 +70,16 @@ subprojects {
     }
 
     configurations.all {
+        if (!"mantis-shaded".equals(project.name)) {
+            exclude group: 'com.fasterxml'
+            exclude group: 'io.vavr.jackson.datatype'
+            exclude group: 'com.google'
+            exclude group: 'org.apache.curator'
+            exclude group: 'org.apache.zookeeper'
+            exclude group: 'org.apache.jute'
+            exclude group: 'jline'
+            exclude group: 'org.jboss.netty'
+        }
         exclude group: 'ch.qos.logback', module: 'logback-classic'
     }
 
