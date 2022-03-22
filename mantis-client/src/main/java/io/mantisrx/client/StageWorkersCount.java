@@ -20,7 +20,7 @@ import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,9 +90,9 @@ public class StageWorkersCount {
         return mantisClient
                 .getClientWrapper()
                 .getMasterClientApi()
-                .flatMap(new Func1<MantisMasterClientApi, Observable<Integer>>() {
+                .flatMap(new Func1<MantisMasterGateway, Observable<Integer>>() {
                     @Override
-                    public Observable<Integer> call(MantisMasterClientApi mantisMasterClientApi) {
+                    public Observable<Integer> call(MantisMasterGateway mantisMasterClientApi) {
                         return mantisMasterClientApi
                                 .schedulingChanges(jobId)
                                 .map(new Func1<JobSchedulingInfo, Integer>() {

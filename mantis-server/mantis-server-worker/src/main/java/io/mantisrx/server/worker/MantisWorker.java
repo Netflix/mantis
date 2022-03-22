@@ -31,7 +31,8 @@ import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterClientApi;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
@@ -106,10 +107,12 @@ public class MantisWorker extends BaseService {
         mantisServices.add(new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
                 commonTags));
 
-        WorkerMetricsClient workerMetricsClient = new WorkerMetricsClient(coreConfigFactory);
+        final WorkerMetricsClient workerMetricsClient;
 
         // services split out by local/non-local mode
         if (config.isLocalMode()) {
+            workerMetricsClient =
+                    new WorkerMetricsClient(new MantisMasterClientApi(new LocalMasterMonitor(getInitialMasterDescription())));
             mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
             /* To run MantisWorker locally in IDE, use VirualMachineWorkerServiceLocalImpl instead
             WorkerTopologyInfo.Data workerData = new WorkerTopologyInfo.Data(data.getJobName(), data.getJobId(),
@@ -129,9 +132,11 @@ public class MantisWorker extends BaseService {
                     null));
         } else {
             mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
-            CuratorService curatorService = new CuratorService(config, getInitialMasterDescription());
-            curatorService.start();
-            MasterMonitor masterMonitor = curatorService.getMasterMonitor();
+
+            HighAvailabilityServices highAvailabilityServices =
+                    HighAvailabilityServicesUtil.createHAServices(config);
+            final MasterMonitor masterMonitor = highAvailabilityServices.getMasterMonitor();
+            workerMetricsClient = new WorkerMetricsClient(highAvailabilityServices.getMasterClientApi());
             mantisServices.add(new ReportStatusServiceHttpImpl(masterMonitor, tasksStatusSubject));
             mantisServices.add(new ExecuteStageRequestService(
                     executeStageSubject,

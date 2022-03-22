@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.mantisrx.server.core;
 
-dependencies {
-    implementation libraries.asyncHttpClient
-    implementation libraries.spotifyFutures
-    api project(":mantis-control-plane:mantis-control-plane-core")
+import java.util.Properties;
+import org.skife.config.ConfigurationObjectFactory;
 
-    api project(":mantis-remote-observable")
+public class Configurations {
 
-    testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-all:$mockitoVersion"
+  public static <T> T frmProperties(Properties properties, Class<T> tClass) {
+    ConfigurationObjectFactory configurationObjectFactory = new ConfigurationObjectFactory(
+        properties);
+    configurationObjectFactory.addCoercible(new MetricsCoercer(properties));
+    return configurationObjectFactory.build(tClass);
+  }
 }
-
-

@@ -21,10 +21,14 @@ import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
 import io.mantisrx.common.MantisServerSentEvent;
+import io.mantisrx.server.core.Configurations;
+import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -74,11 +78,13 @@ public class ConnectToNamedJob {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(properties);
+        HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+            Configurations.frmProperties(properties, CoreConfiguration.class));
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
-                .doOnNext(new Action1<MantisMasterClientApi>() {
+                .doOnNext(new Action1<MantisMasterGateway>() {
                     @Override
-                    public void call(MantisMasterClientApi clientApi) {
+                    public void call(MantisMasterGateway clientApi) {
                         logger.info("************** connecting to schedInfo for job " + jobId);
                         clientApi.schedulingChanges(jobId)
                                 .doOnNext(new Action1<JobSchedulingInfo>() {

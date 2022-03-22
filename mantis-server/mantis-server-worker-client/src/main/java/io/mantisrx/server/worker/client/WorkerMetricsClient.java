@@ -16,9 +16,12 @@
 
 package io.mantisrx.server.worker.client;
 
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.core.Configurations;
+import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
-import io.mantisrx.server.master.client.config.ConfigurationFactory;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -39,9 +42,9 @@ public class WorkerMetricsClient {
         @Override
         public Observable<EndpointChange> locateWorkerMetricsForJob(final String jobId) {
             return clientWrapper.getMasterClientApi()
-                    .flatMap(new Func1<MantisMasterClientApi, Observable<EndpointChange>>() {
+                    .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
                         @Override
-                        public Observable<EndpointChange> call(MantisMasterClientApi mantisMasterClientApi) {
+                        public Observable<EndpointChange> call(MantisMasterGateway mantisMasterClientApi) {
                             logger.info("Getting worker metrics locations for " + jobId);
                             return clientWrapper.getAllWorkerMetricLocations(jobId);
                         }
@@ -81,11 +84,17 @@ public class WorkerMetricsClient {
      * @param properties
      */
     public WorkerMetricsClient(Properties properties) {
-        clientWrapper = new MasterClientWrapper(properties);
+        this(Configurations.frmProperties(properties, CoreConfiguration.class));
     }
 
-    public WorkerMetricsClient(ConfigurationFactory configurationFactory) {
-        clientWrapper = new MasterClientWrapper(configurationFactory);
+    public WorkerMetricsClient(CoreConfiguration configuration) {
+        HighAvailabilityServices haServices =
+            HighAvailabilityServicesUtil.createHAServices(configuration);
+        clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+    }
+
+    public WorkerMetricsClient(MantisMasterGateway gateway) {
+        clientWrapper = new MasterClientWrapper(gateway);
     }
 
 

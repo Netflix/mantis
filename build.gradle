@@ -48,13 +48,15 @@ ext {
 }
 
 ext.libraries = [
+        asyncHttpClient: 'org.asynchttpclient:async-http-client:2.12.3',
         flinkRpcApi: [
                 "org.apache.flink:flink-rpc-core:1.14.2"
         ],
         flinkRpcImpl: [
                 "org.apache.flink:flink-rpc-akka:1.14.2",
                 "org.apache.flink:flink-rpc-akka-loader:1.14.2"
-        ]
+        ],
+        spotifyFutures: "com.spotify:completable-futures:0.3.1"
 ]
 
 allprojects {
