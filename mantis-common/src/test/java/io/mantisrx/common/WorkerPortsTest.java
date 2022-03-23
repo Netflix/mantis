@@ -15,15 +15,16 @@
  */
 package io.mantisrx.common;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
+import org.apache.commons.lang3.SerializationUtils;
 import org.junit.Test;
-
 
 public class WorkerPortsTest {
 
+    private final JsonSerializer serializer = new JsonSerializer();
     /**
      * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} which expects
      * at least 5 ports: metrics, debug, console, custom.
@@ -61,6 +62,24 @@ public class WorkerPortsTest {
     @Test
     public void shouldConstructValidWorkerPorts() {
         WorkerPorts workerPorts = new WorkerPorts(Arrays.asList(1, 2, 3, 4, 5));
-        assertTrue(workerPorts.isValid());
+    }
+
+    @Test
+    public void testIfWorkerPortsIsSerializableByJson() throws Exception {
+        final WorkerPorts workerPorts =
+                new WorkerPorts(1, 2, 3, 4, 5);
+        String workerPortsJson = serializer.toJson(workerPorts);
+        assertEquals(workerPortsJson, "{\"metricsPort\":1,\"debugPort\":2,\"consolePort\":3,\"customPort\":4,\"ports\":[5],\"sinkPort\":5}");
+
+        final WorkerPorts actual = serializer.fromJSON(workerPortsJson, WorkerPorts.class);
+        assertEquals(workerPorts, actual);
+    }
+
+    @Test
+    public void testWorkerPortsIsSerializableByJava() {
+        final WorkerPorts workerPorts =
+                new WorkerPorts(1, 2, 3, 4, 5);
+        byte[] serialized = SerializationUtils.serialize(workerPorts);
+        assertEquals(workerPorts, SerializationUtils.deserialize(serialized));
     }
 }

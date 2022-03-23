@@ -1480,7 +1480,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                     Optional<WorkerPorts> workerPortsOptional = wm.getPorts();
                     if (WorkerState.isRunningState(wm.getState()) &&
-                            (!workerPortsOptional.isPresent() || !workerPortsOptional.get().isValid())) {
+                            (!workerPortsOptional.isPresent())) {
 
                         LOGGER.info("marking corrupted worker {} for Job ID {} as {}",
                                 worker.getMetadata().getWorkerId(), jobId, WorkerState.Failed);

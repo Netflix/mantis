@@ -20,20 +20,29 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-
-public class WorkerPorts {
+/**
+ * Worker Ports has the following semantics:
+ *   1. capture the individual ports for each of metrics, debugging, console, custom, sink
+ *   2. ports[0] should capture the sink port because of legacy reasons.
+ */
+@EqualsAndHashCode
+@ToString
+public class WorkerPorts implements Serializable {
 
     private final int metricsPort;
     private final int debugPort;
     private final int consolePort;
     private final int customPort;
-    private int sinkPort;
-    private List<Integer> ports;
+    private final int sinkPort;
+    private final List<Integer> ports;
 
     public WorkerPorts(final List<Integer> assignedPorts) {
         if (assignedPorts.size() < 5) {
@@ -43,13 +52,9 @@ public class WorkerPorts {
         this.debugPort = assignedPorts.get(1);
         this.consolePort = assignedPorts.get(2);
         this.customPort = assignedPorts.get(3);
-        this.ports = new ArrayList<>(3);
-        for (int idx = 4; idx < assignedPorts.size(); idx++) {
-            ports.add(assignedPorts.get(idx));
-
-            sinkPort = assignedPorts.get(idx);
-            break;
-        }
+        this.sinkPort = assignedPorts.get(4);
+        this.ports = new ArrayList<>(1);
+        ports.add(assignedPorts.get(4));
 
         if (!isValid()) {
             throw new IllegalStateException("worker validation failed on port allocation");
@@ -57,25 +62,19 @@ public class WorkerPorts {
     }
 
     public WorkerPorts(int metricsPort, int debugPort, int consolePort, int customPort, int sinkPort) {
-        this.ports = new ArrayList<>(5);
+        this.ports = new ArrayList<>(1);
 
 
         this.sinkPort = sinkPort;
         ports.add(sinkPort);
 
         this.metricsPort = metricsPort;
-        ports.add(metricsPort);
 
         this.debugPort = debugPort;
-        ports.add(debugPort);
 
         this.consolePort = consolePort;
-        ports.add(consolePort);
 
         this.customPort = customPort;
-        ports.add(customPort);
-
-
     }
 
     @JsonCreator
@@ -90,6 +89,11 @@ public class WorkerPorts {
         this.consolePort = consolePort;
         this.customPort = customPort;
         this.ports = ports;
+        this.sinkPort = ports.get(0);
+
+        if (!isValid()) {
+            throw new IllegalStateException("worker validation failed on port allocation");
+        }
     }
 
     public int getMetricsPort() {
@@ -127,7 +131,7 @@ public class WorkerPorts {
     /**
      * Validates that this object has at least 5 valid ports and all of them are unique.
      */
-    public boolean isValid() {
+    private boolean isValid() {
         Set<Integer> uniquePorts = new HashSet<>();
         uniquePorts.add(metricsPort);
         uniquePorts.add(consolePort);
@@ -149,39 +153,5 @@ public class WorkerPorts {
      */
     private boolean isValidPort(int port) {
         return port > 0 && port <= 65535;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        WorkerPorts that = (WorkerPorts) o;
-
-        if (metricsPort != that.metricsPort) return false;
-        if (debugPort != that.debugPort) return false;
-        if (consolePort != that.consolePort) return false;
-        return ports != null ? ports.equals(that.ports) : that.ports == null;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = metricsPort;
-        result = 31 * result + debugPort;
-        result = 31 * result + consolePort;
-        result = 31 * result + (ports != null ? ports.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "WorkerPorts{"
-                + " metricsPort=" + metricsPort
-                + ", debugPort=" + debugPort
-                + ", consolePort=" + consolePort
-                + ", customPort=" + customPort
-                + ", sinkPort=" + sinkPort
-                + ", ports=" + ports
-                + '}';
     }
 }
