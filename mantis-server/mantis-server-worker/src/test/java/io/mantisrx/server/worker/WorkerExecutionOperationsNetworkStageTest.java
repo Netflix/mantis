@@ -26,7 +26,7 @@ import io.mantisrx.runtime.WorkerMap;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import java.util.ArrayList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,8 +69,8 @@ public class WorkerExecutionOperationsNetworkStageTest {
             assertEquals(i, workerInfo.getWorkerIndex());
             assertEquals(i + 1, workerInfo.getWorkerNumber());
             assertEquals(durationType, workerInfo.getDurationType());
-            assertEquals(i, workerInfo.getWorkerPorts().getMetricsPort());
-            assertEquals(i + 1, workerInfo.getWorkerPorts().getCustomPort());
+            assertEquals(i + 2, workerInfo.getWorkerPorts().getMetricsPort());
+            assertEquals(i + 3, workerInfo.getWorkerPorts().getCustomPort());
         }
 
         List<WorkerInfo> workersForStage2 = workerMap.getWorkersForStage(2);
@@ -83,8 +83,8 @@ public class WorkerExecutionOperationsNetworkStageTest {
             assertEquals(i, workerInfo.getWorkerIndex());
             assertEquals(i + 1, workerInfo.getWorkerNumber());
             assertEquals(durationType, workerInfo.getDurationType());
-            assertEquals(i, workerInfo.getWorkerPorts().getMetricsPort());
-            assertEquals(i + 1, workerInfo.getWorkerPorts().getCustomPort());
+            assertEquals(i + 2, workerInfo.getWorkerPorts().getMetricsPort());
+            assertEquals(i + 3, workerInfo.getWorkerPorts().getCustomPort());
         }
 
 
@@ -145,12 +145,9 @@ public class WorkerExecutionOperationsNetworkStageTest {
 
         Map<Integer, WorkerHost> workerHostMap = new HashMap<>();
         for (int i = 0; i < noWorkers; i++) {
-            List<Integer> ports = new ArrayList<>();
-            ports.add(i);
-            ports.add(i);
-            ports.add(i + 1);
-            ports.add(i + 1);
-            workerHostMap.put(i, new WorkerHost("host" + i, i, ports, MantisJobState.Launched, i + 1, i, i + 1));
+            List<Integer> ports =
+                    ImmutableList.of(i + 1);
+            workerHostMap.put(i, new WorkerHost("host" + i, i, ports, MantisJobState.Launched, i + 1, i + 2, i + 3));
         }
 
         return new WorkerAssignments(stageNo, noWorkers, workerHostMap);
