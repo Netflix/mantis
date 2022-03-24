@@ -53,6 +53,7 @@ dependencies {
     // We only need this for local mains(). Users bring their own implementation.
     shadow "org.slf4j:slf4j-log4j12:$slf4jVersion"
 
+    testImplementation project(':mantis-runtime').sourceSets.test.output
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     testImplementation "org.junit.jupiter:junit-jupiter-params:$junitVersion"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"

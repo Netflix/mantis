@@ -30,6 +30,7 @@ import io.mantisrx.connector.kafka.KafkaSourceParameters;
 import io.mantisrx.connector.kafka.ParameterTestUtils;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
+import io.mantisrx.runtime.TestWorkerInfo;
 import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.parameter.Parameters;
 import io.mantisrx.runtime.source.Index;
@@ -91,7 +92,7 @@ public class KafkaSourceTest {
                                                                 KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
-        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
+        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new TestWorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
         when(context.getJobId()).then((Answer<String>) invocation -> "testJobName-1");
         Index index = new Index(0, 10);
         Observable<Observable<KafkaAckable>> sourceObs = kafkaSource.call(context, index);
@@ -136,7 +137,7 @@ public class KafkaSourceTest {
                                                                 KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
-        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
+        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new TestWorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
         when(context.getJobId()).then((Answer<String>) invocation -> "testJobName-1");
         Index index = new Index(0, 10);
         Observable<Observable<KafkaAckable>> sourceObs = kafkaSource.call(context, index);
@@ -183,7 +184,7 @@ public class KafkaSourceTest {
                                                                 KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
-        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
+        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new TestWorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
         when(context.getJobId()).then((Answer<String>) invocation -> "testJobName-1");
         Index index = new Index(0, 10);
         Observable<Observable<KafkaAckable>> sourceObs = kafkaSource.call(context, index);
@@ -250,7 +251,7 @@ public class KafkaSourceTest {
                                                                 KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "testKafkaConsumer-" + random.nextInt());
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
-        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
+        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new TestWorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
         when(context.getJobId()).then((Answer<String>) invocation -> "testJobName-1");
         // Force all consumer instances to be created on same JVM by setting total number of workers for this job to 1
         int totalNumWorkerForJob = 1;

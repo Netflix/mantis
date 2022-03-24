@@ -33,6 +33,7 @@ dependencies {
     api "com.netflix.archaius:archaius2-api:$archaiusVersion"
     api "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
+    testImplementation project(':mantis-runtime').sourceSets.test.output
     testImplementation "junit:junit"
     testImplementation "org.mockito:mockito-all:1.9.5"
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"

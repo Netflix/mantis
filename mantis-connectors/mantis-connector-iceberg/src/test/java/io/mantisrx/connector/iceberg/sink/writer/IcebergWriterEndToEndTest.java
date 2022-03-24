@@ -33,6 +33,7 @@ import io.mantisrx.connector.iceberg.sink.writer.pool.FixedIcebergWriterPool;
 import io.mantisrx.connector.iceberg.sink.writer.pool.IcebergWriterPool;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
+import io.mantisrx.runtime.TestWorkerInfo;
 import io.mantisrx.runtime.WorkerInfo;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +77,7 @@ public class IcebergWriterEndToEndTest {
           .build();
 
   private static final WorkerInfo WORKER_INFO =
-      new WorkerInfo("testJobName", "jobId", 1, 1, 1, MantisJobDurationType.Perpetual,
+      new TestWorkerInfo("testJobName", "jobId", 1, 1, 1, MantisJobDurationType.Perpetual,
           "host");
 
   private Partitioner partitioner = record -> {
