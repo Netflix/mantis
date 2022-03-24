@@ -19,9 +19,9 @@ dependencies {
     implementation project(":mantis-control-plane:mantis-control-plane-client")
     implementation project(':mantis-server:mantis-server-worker-client')
 
-    implementation "org.slf4j:slf4j-api:$versionSlf4j"
-    testImplementation "junit:junit-dep:$versionJunit"
-    testImplementation "org.mockito:mockito-core:$versionMockito"
+    implementation libraries.slf4jApi
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoCore
 }
 
 task runsubmit(type: JavaExec) {

@@ -15,8 +15,8 @@
  */
 
 dependencies {
-    api "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
+    api libraries.mantisShaded
 
-    testImplementation "junit:junit-dep:$versionJunit"
-    testImplementation "org.mockito:mockito-core:$versionMockito"
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoCore
 }

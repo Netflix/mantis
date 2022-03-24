@@ -28,5 +28,5 @@ dependencies {
     implementation project(":mantis-publish:mantis-publish-core")
 
     implementation "com.google.code.gson:gson:$gsonVersion"
-    implementation "io.vavr:vavr:$versionVavr"
+    implementation libraries.vavr
 }

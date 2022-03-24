@@ -31,8 +31,8 @@ dependencies {
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
 
     implementation 'net.andreinc.mockneat:mockneat:0.3.7'
-    implementation "org.slf4j:slf4j-api:$versionSlf4j"
-    implementation "org.slf4j:slf4j-log4j12:$versionSlf4j"
+    implementation libraries.slf4jApi
+    implementation libraries.slf4jLog4j12
 
     testImplementation "org.mockito:mockito-all:1.9.5"
 }

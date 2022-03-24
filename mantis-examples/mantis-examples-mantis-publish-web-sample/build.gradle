@@ -50,7 +50,7 @@ dependencies {
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
-    implementation "org.slf4j:slf4j-log4j12:$versionSlf4j"
+    implementation libraries.slf4jLog4j12
 
     compile 'com.google.inject.extensions:guice-servlet:4.0'
 }

@@ -40,6 +40,6 @@ dependencies {
     api "joda-time:joda-time:$jodaTimeVersion"
 
 
-    testCompile "junit:junit:4.+"
-    testCompile "org.mockito:mockito-all:2.+"
+    testCompile libraries.junit4
+    testCompile libraries.mockitoAll
 }

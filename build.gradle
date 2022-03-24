@@ -33,28 +33,44 @@ buildscript {
     }
 }
 
-ext {
-    versionIoNetty = '4.1.5.Final'
-    versionJunit = '4.11'
-    versionMantisShaded = '1.3+'
-    versionMockito = '1.9.+'
-    versionRxJava = '1.3.8'
-    versionRxNetty = '0.4.19'
-    versionSlf4j = '1.7.0'
-    versionSuffixRxNettyShaded = '1'
-    versionVavr = '0.9.2'
-}
+ext.versions = [
+        flink  : "1.14.2",
+        junit4 : "4.11",
+        junit5 : "5.4.+",
+        mockito: "2.0.+",
+        slf4j  : "1.7.0",
+        vavr   : "0.9.2",
+]
 
 ext.libraries = [
-        asyncHttpClient: 'org.asynchttpclient:async-http-client:2.12.3',
-        flinkRpcApi: [
-                "org.apache.flink:flink-rpc-core:1.14.2"
+        asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
+        flinkRpcApi    : [
+                "org.apache.flink:flink-rpc-core:${versions.flink}",
         ],
-        flinkRpcImpl: [
-                "org.apache.flink:flink-rpc-akka:1.14.2",
-                "org.apache.flink:flink-rpc-akka-loader:1.14.2"
+        flinkRpcImpl   : [
+                "org.apache.flink:flink-rpc-akka:${versions.flink}",
+                "org.apache.flink:flink-rpc-akka-loader:${versions.flink}",
         ],
-        spotifyFutures: "com.spotify:completable-futures:0.3.1"
+        junit4         : [
+                "junit:junit:${versions.junit4}",
+                "junit:junit-dep:${versions.junit4}",
+        ],
+        junitJupiter   : [
+                "org.junit.jupiter:junit-jupiter-api:${versions.junit5}",
+                "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",
+                "org.junit.jupiter:junit-jupiter-params:${versions.junit5}",
+        ],
+        mantisShaded   : "io.mantisrx:mantis-shaded:1.3.+",
+        mockitoAll     : "org.mockito:mockito-all:${versions.mockito}",
+        mockitoCore    : "org.mockito:mockito-core:${versions.mockito}",
+        rxJava         : "io.reactivex:rxjava:1.3.8",
+        rxNettyShaded  : "com.netflix:mantis-rxnetty:0.4.19.1",
+        slf4jApi       : "org.slf4j:slf4j-api:${versions.slf4j}",
+        slf4jLog4j12   : "org.slf4j:slf4j-log4j12:${versions.slf4j}",
+        spotifyFutures : "com.spotify:completable-futures:0.3.1",
+        vavr           : "io.vavr:vavr:${versions.vavr}",
+        vavrJackson    : "io.vavr:vavr-jackson:${versions.vavr}",
+        vavrTest       : "io.vavr:vavr-test:${versions.vavr}",
 ]
 
 allprojects {

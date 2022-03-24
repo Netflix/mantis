@@ -21,13 +21,12 @@ ext {
     numerusVersion = '1.+'
     snappyVersion = '1.1.+'
     spectatorVersion = '0.92.+'
-    versionJunit = '4.11'
 }
 
 dependencies {
-    api "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
-    api "com.netflix:mantis-rxnetty:${rootProject.versionRxNetty}.${rootProject.versionSuffixRxNettyShaded}"
-    api "io.reactivex:rxjava:$versionRxJava"
+    api libraries.mantisShaded
+    api libraries.rxNettyShaded
+    api libraries.rxJava
     api "io.netty:netty-codec-http:$nettyVersion"
     api "io.netty:netty-buffer:$nettyVersion"
 
@@ -38,9 +37,9 @@ dependencies {
     api "org.jctools:jctools-core:$jctoolsVersion"
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
 
-    api "org.slf4j:slf4j-api:$versionSlf4j"
-    api "org.slf4j:slf4j-log4j12:$versionSlf4j"
+    api libraries.slf4jApi
+    api libraries.slf4jLog4j12
     testImplementation "org.hamcrest:hamcrest-core:1.3"
-    testImplementation "junit:junit-dep:$versionJunit"
-    testImplementation "org.mockito:mockito-core:$versionMockito"
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoCore
 }

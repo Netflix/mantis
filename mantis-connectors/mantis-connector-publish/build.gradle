@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-ext {
-    versionJunit = '5.3.+'
-}
-
 dependencies {
-    implementation "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
+    implementation libraries.mantisShaded
     implementation project(":mantis-runtime")
 
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-publish:mantis-publish-core")
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunit"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunit"
+    testImplementation libraries.junitJupiter
 }
 
 test {

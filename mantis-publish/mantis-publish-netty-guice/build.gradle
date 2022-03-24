@@ -16,8 +16,6 @@
 ext {
     archaiusVersion = 'latest.release'
     guiceVersion = '4.2.2'
-    versionJunit = '5.3.+'
-    versionMockito = '2.18.+'
     spectatorVersion = '0.96.0'
 }
 
@@ -31,12 +29,11 @@ dependencies {
     implementation "com.google.inject:guice:$guiceVersion"
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
 
-    implementation "org.slf4j:slf4j-api:$versionSlf4j"
+    implementation libraries.slf4jApi
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$versionJunit"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versionJunit"
-    testImplementation "org.mockito:mockito-core:$versionMockito"
-    testImplementation "org.slf4j:slf4j-log4j12:$versionSlf4j"
+    testImplementation libraries.junitJupiter
+    testImplementation libraries.mockitoCore
+    testImplementation libraries.slf4jLog4j12
 }
 
 test {

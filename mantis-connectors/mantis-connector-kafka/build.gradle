@@ -23,17 +23,17 @@ ext {
 }
 
 dependencies {
-    implementation "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
+    implementation libraries.mantisShaded
     implementation project(":mantis-runtime")
 
     api "org.apache.kafka:kafka-clients:$kafkaVersion"
 
-    api "io.reactivex:rxjava:$versionRxJava"
+    api libraries.rxJava
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
     api "com.netflix.archaius:archaius2-api:$archaiusVersion"
     api "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
-    testImplementation "junit:junit"
+    testImplementation libraries.junit4
     testImplementation "org.mockito:mockito-all:1.9.5"
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
     testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
