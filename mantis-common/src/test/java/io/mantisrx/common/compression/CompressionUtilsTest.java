@@ -45,9 +45,8 @@ public class CompressionUtilsTest {
         }
     }
 
-    @Ignore
     @Test public void shouldTokenizeWithEventsContainingPartialDelimiterMatchesWithCustomDelimiter() {
-        String delimiter = UUID.randomUUID().toString();
+        String delimiter = "a04f0418-bdff-4f53-af7d-9f5a093b9d65";
 
         String event1 = "ab" + delimiter.substring(0, 9) + "cdef";
         String event2 = "ghi" + delimiter.substring(0, 5) + "jkl";
