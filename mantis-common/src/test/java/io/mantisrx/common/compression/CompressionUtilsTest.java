@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CompressionUtilsTest {
@@ -44,6 +45,7 @@ public class CompressionUtilsTest {
         }
     }
 
+    @Ignore
     @Test public void shouldTokenizeWithEventsContainingPartialDelimiterMatchesWithCustomDelimiter() {
         String delimiter = UUID.randomUUID().toString();
 
