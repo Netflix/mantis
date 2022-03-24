@@ -20,6 +20,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,33 +49,20 @@ public class WorkerPorts implements Serializable {
         if (assignedPorts.size() < 5) {
             throw new IllegalArgumentException("assignedPorts should have at least 5 ports");
         }
+
         this.metricsPort = assignedPorts.get(0);
         this.debugPort = assignedPorts.get(1);
         this.consolePort = assignedPorts.get(2);
         this.customPort = assignedPorts.get(3);
         this.sinkPort = assignedPorts.get(4);
-        this.ports = new ArrayList<>(1);
-        ports.add(assignedPorts.get(4));
-
+        this.ports = ImmutableList.of(assignedPorts.get(4));
         if (!isValid()) {
             throw new IllegalStateException("worker validation failed on port allocation");
         }
     }
 
     public WorkerPorts(int metricsPort, int debugPort, int consolePort, int customPort, int sinkPort) {
-        this.ports = new ArrayList<>(1);
-
-
-        this.sinkPort = sinkPort;
-        ports.add(sinkPort);
-
-        this.metricsPort = metricsPort;
-
-        this.debugPort = debugPort;
-
-        this.consolePort = consolePort;
-
-        this.customPort = customPort;
+        this(ImmutableList.of(metricsPort, debugPort, consolePort, customPort, sinkPort));
     }
 
     @JsonCreator
@@ -84,16 +72,13 @@ public class WorkerPorts implements Serializable {
                        @JsonProperty("consolePort") int consolePort,
                        @JsonProperty("customPort") int customPort,
                        @JsonProperty("ports") List<Integer> ports) {
-        this.metricsPort = metricsPort;
-        this.debugPort = debugPort;
-        this.consolePort = consolePort;
-        this.customPort = customPort;
-        this.ports = ports;
-        this.sinkPort = ports.get(0);
-
-        if (!isValid()) {
-            throw new IllegalStateException("worker validation failed on port allocation");
-        }
+        this(ImmutableList.<Integer>builder()
+                .add(metricsPort)
+                .add(debugPort)
+                .add(consolePort)
+                .add(customPort)
+                .addAll(ports)
+                .build());
     }
 
     public int getMetricsPort() {
@@ -116,11 +101,12 @@ public class WorkerPorts implements Serializable {
 
     @JsonIgnore
     public List<Integer> getAllPorts() {
-        final List<Integer> allPorts = new ArrayList<>(ports);
+        final List<Integer> allPorts = new ArrayList<>();
         allPorts.add(metricsPort);
         allPorts.add(debugPort);
         allPorts.add(consolePort);
         allPorts.add(customPort);
+        allPorts.addAll(ports);
         return allPorts;
     }
 
