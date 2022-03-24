@@ -49,6 +49,7 @@ ext {
 
 ext.libraries = [
         asyncHttpClient: 'org.asynchttpclient:async-http-client:2.12.3',
+        commonsLang3: 'org.apache.commons:commons-lang3:3.5',
         flinkRpcApi: [
                 "org.apache.flink:flink-rpc-core:1.14.2"
         ],

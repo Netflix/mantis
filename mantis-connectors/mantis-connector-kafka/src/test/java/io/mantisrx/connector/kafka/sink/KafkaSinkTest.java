@@ -27,6 +27,7 @@ import io.mantisrx.connector.kafka.source.KafkaSourceTest;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.PortRequest;
+import io.mantisrx.runtime.TestWorkerInfo;
 import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.parameter.Parameters;
 import java.util.List;
@@ -73,7 +74,8 @@ public class KafkaSinkTest {
         Parameters params = ParameterTestUtils.createParameters(KafkaSinkJobParameters.TOPIC, testTopic);
 
         when(context.getParameters()).then((Answer<Parameters>) invocation -> params);
-        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation -> new WorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
+        when(context.getWorkerInfo()).then((Answer<WorkerInfo>) invocation ->
+                new TestWorkerInfo("testJobName", "testJobName-1", 1, 0, 1, MantisJobDurationType.Perpetual, "1.1.1.1"));
         when(context.getJobId()).then((Answer<String>) invocation -> "testJobName-1");
 
         kafkaSink.call(context, mock(PortRequest.class), Observable.range(0, numMessages).map(x -> String.valueOf(x)));

@@ -179,7 +179,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
 
         int sinkPort = Optional.ofNullable(workerHost.getPort()).map(ports -> (ports.size() >= 1 ? ports.get(0) : -1)).orElse(-1);
-        WorkerPorts wPorts = new WorkerPorts(workerHost.getMetricsPort(), -1, -1, workerHost.getCustomPort(), sinkPort);
+        WorkerPorts wPorts = new WorkerPorts(workerHost.getMetricsPort(), 65534, 65535, workerHost.getCustomPort(), sinkPort);
         return generateWorkerInfo(jobName, jobId, stageNumber, workerIndex, workerNumber, durationType, host, wPorts);
 
     }
