@@ -20,7 +20,6 @@ apply plugin: 'mantis'
 ext {
     hadoopVersion = '2.7.3'
     icebergVersion = '0.9.+'
-    versionMockito = '2.18.+'
     parquetVersion = '1.12.0'
 }
 

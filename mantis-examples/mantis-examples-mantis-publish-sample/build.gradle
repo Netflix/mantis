@@ -50,8 +50,6 @@ ext {
     spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
     mockNeatVersion = '0.3.7'
-    versionSlf4j = '1.7.28'
-    lombokVersion = '1.16.16'
 }
 
 

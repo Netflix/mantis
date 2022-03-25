@@ -18,7 +18,6 @@ apply plugin: 'mantis'
 
 ext {
     gsonVersion = '2.8.+'
-    versionVavr = '0.9.+'
 }
 
 dependencies {

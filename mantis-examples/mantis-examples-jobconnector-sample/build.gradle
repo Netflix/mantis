@@ -14,8 +14,6 @@ task execute(type: JavaExec) {
 
 ext {
     mantisConnectorsVersion = '1.2.5'
-    versionSlf4j = '1.7.28'
-
 }
 
 dependencies {
