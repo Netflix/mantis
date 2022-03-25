@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -251,7 +252,7 @@ public class DefaultSubscriptionTrackerTest {
         });
     }
 
-    //@Test
+    @Disabled("broken test; somewhere from git commit: de88e88ba8b..a64e8d1ad68")
     public void testJobDiscoveryFailureHandling() throws IOException, InterruptedException {
         String streamName = StreamType.DEFAULT_EVENT_STREAM;
         String jobCluster = streamJobClusterMap.get(streamName);

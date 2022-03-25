@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,7 @@ public class TimedChunkerTest {
         assertEquals(expected, processor.getProcessed());
     }
 
-    //@Test
+    @Disabled("flaky test")
     public void testLongProcessing() throws Exception {
         // Processing time take longer than drain interval.
         processor = new TestProcessor<>(400);
