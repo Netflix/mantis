@@ -125,7 +125,7 @@ public class TimedChunkerTest {
         assertEquals(expected, processor.getProcessed());
     }
 
-    @Test
+    //@Test
     public void testLongProcessing() throws Exception {
         // Processing time take longer than drain interval.
         processor = new TestProcessor<>(400);

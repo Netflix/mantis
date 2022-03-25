@@ -251,7 +251,7 @@ public class DefaultSubscriptionTrackerTest {
         });
     }
 
-    @Test
+    //@Test
     public void testJobDiscoveryFailureHandling() throws IOException, InterruptedException {
         String streamName = StreamType.DEFAULT_EVENT_STREAM;
         String jobCluster = streamJobClusterMap.get(streamName);
