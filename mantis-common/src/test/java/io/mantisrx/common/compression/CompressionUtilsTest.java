@@ -19,14 +19,11 @@ import static org.junit.Assert.assertEquals;
 
 import io.mantisrx.common.MantisServerSentEvent;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.junit.Assert;
 import org.junit.Test;
 
 public class CompressionUtilsTest {
