@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Func1;
@@ -65,7 +64,7 @@ public class Task extends AbstractIdleService {
       log.info("Starting current task {}", this);
       doRun();
     } catch (Exception e) {
-      log.error("Failed executing the task {}", executeStageRequest.getExecutionAttemptID(), e);
+      log.error("Failed executing the task {}", executeStageRequest, e);
     }
   }
 

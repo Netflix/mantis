@@ -197,10 +197,6 @@ public class ExecuteStageRequest implements Serializable {
                 '}';
     }
 
-    public ExecutionAttemptID getExecutionAttemptID() {
-        return ExecutionAttemptID.of(jobId, stage, workerIndex, workerNumber);
-    }
-
     public WorkerId getWorkerId() {
         return new WorkerId(jobId, workerIndex, workerNumber);
     }

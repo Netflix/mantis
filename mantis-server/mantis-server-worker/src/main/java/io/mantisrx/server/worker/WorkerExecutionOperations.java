@@ -16,10 +16,12 @@
 
 package io.mantisrx.server.worker;
 
+import java.io.IOException;
+
 public interface WorkerExecutionOperations {
 
-    public void executeStage(ExecutionDetails setup);
+    void executeStage(ExecutionDetails setup) throws IOException;
 
-    public void shutdownStage();
+    void shutdownStage() throws IOException;
 
 }

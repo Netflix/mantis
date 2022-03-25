@@ -24,7 +24,7 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.server.core.stats.UsageDataStats;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchAutoScaler;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchConfiguration;
 import io.mantisrx.server.worker.jobmaster.clutch.experimental.MantisClutchConfigurationSelector;
@@ -82,12 +82,12 @@ public class JobAutoScaler {
     }
 
     private final String jobId;
-    private final MantisMasterClientApi masterClientApi;
+    private final MantisMasterGateway masterClientApi;
     private final SchedulingInfo schedulingInfo;
     private final PublishSubject<Event> subject;
     private final Context context;
 
-    JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterClientApi masterClientApi,
+    JobAutoScaler(String jobId, SchedulingInfo schedulingInfo, MantisMasterGateway masterClientApi,
                   Context context) {
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
