@@ -217,10 +217,19 @@ public class CompressionUtils {
             for (int i = 0; i < line.length(); i++) {
                 if (line.charAt(i) != delimiterArray[delimiterCount]) {
                     if (delimiterCount > 0) {
-                        for (int j = 0; j < delimiterCount; ++j) {
-                            sb.append(delimiterArray[j]);
+                        boolean prefixMatch = true;
+                        for (int j = delimiterCount - 1; j >= 0; j--) {
+                            if (line.charAt(i) != delimiterArray[j]) {
+                                prefixMatch = false;
+                                break;
+                            }
                         }
-                        delimiterCount = 0;
+                        if (!prefixMatch) {
+                            for (int j = 0; j < delimiterCount; ++j) {
+                                sb.append(delimiterArray[j]);
+                            }
+                            delimiterCount = 0;
+                        }
                     }
                     if (line.charAt(i) != delimiterArray[delimiterCount]) {
                         sb.append(line.charAt(i));
