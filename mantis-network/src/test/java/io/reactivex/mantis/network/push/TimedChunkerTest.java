@@ -20,13 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,13 +119,14 @@ public class TimedChunkerTest {
                 }
             }
         });
+
         Thread.sleep(6000);
         assertTrue(senderFuture.isDone());
         chunkerFuture.cancel(true);
         assertEquals(expected, processor.getProcessed());
     }
 
-    @Test
+    @Disabled("flaky test")
     public void testLongProcessing() throws Exception {
         // Processing time take longer than drain interval.
         processor = new TestProcessor<>(400);
@@ -174,8 +171,8 @@ public class TimedChunkerTest {
             if (processingTimeMs > 0) {
                 ScheduledFuture<Boolean> f = scheduledService.schedule(() -> true, processingTimeMs,
                         TimeUnit.MILLISECONDS);
-                    while (!f.isDone()) {
-                    }
+                while (!f.isDone()) {
+                }
             }
             logger.info("processing {}", chunks);
             processed.addAll(chunks);
