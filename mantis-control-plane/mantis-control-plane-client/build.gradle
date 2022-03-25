@@ -21,8 +21,6 @@ dependencies {
 
     api project(":mantis-remote-observable")
 
-    testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-all:$mockitoVersion"
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoAll
 }
-
-

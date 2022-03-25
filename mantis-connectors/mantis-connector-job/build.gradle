@@ -18,7 +18,6 @@ apply plugin: 'mantis'
 
 ext {
     gsonVersion = '2.8.+'
-    vavrVersion = '0.9.+'
 }
 
 dependencies {
@@ -28,5 +27,5 @@ dependencies {
     implementation project(":mantis-publish:mantis-publish-core")
 
     implementation "com.google.code.gson:gson:$gsonVersion"
-    implementation "io.vavr:vavr:$vavrVersion"
+    implementation libraries.vavr
 }

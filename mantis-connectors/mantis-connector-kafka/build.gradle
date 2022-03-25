@@ -23,19 +23,19 @@ ext {
 }
 
 dependencies {
-    implementation "io.mantisrx:mantis-shaded:${rootProject.versionMantisShaded}"
+    implementation libraries.mantisShaded
     implementation project(":mantis-runtime")
 
     api "org.apache.kafka:kafka-clients:$kafkaVersion"
 
-    api "io.reactivex:rxjava:$versionRxJava"
+    api libraries.rxJava
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
     api "com.netflix.archaius:archaius2-api:$archaiusVersion"
     api "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
+    testImplementation libraries.junit4
     testImplementation project(':mantis-runtime').sourceSets.test.output
-    testImplementation "junit:junit"
-    testImplementation "org.mockito:mockito-all:1.9.5"
+    testImplementation libraries.mockitoAll
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
     testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
     // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69

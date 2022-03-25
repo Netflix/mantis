@@ -90,6 +90,7 @@ public class IcebergWriterEndToEndTest {
         when(stageContext.getWorkerInfo()).thenReturn(WORKER_INFO);
     }
 
+
     @Disabled("flaky test; probably needs a higher value in sleep!")
     public void testTransformerEndToEnd() throws Exception {
         final WriterConfig writerConfig = new WriterConfig(
@@ -150,7 +151,7 @@ public class IcebergWriterEndToEndTest {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         List<DataFile> dataFileList = new ArrayList<>();
         Subscription subscription = dataFileObservable.subscribe(dataFileList::add, failure::set);
-        Thread.sleep(2 * size);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(15));
         if (failure.get() != null) {
             throw new Exception(failure.get());
         }

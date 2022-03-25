@@ -29,9 +29,7 @@ dependencies {
     implementation("com.netflix.rxjava:rxjava-math:$rxJavaMathVersion") {
         exclude module: 'rxjava-core'
     }
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
-    implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
-    testImplementation "junit:junit-dep:$junitVersion"
+    implementation libraries.slf4jApi
+    implementation libraries.slf4jLog4j12
+    testImplementation libraries.junit4
 }
-
-

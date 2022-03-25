@@ -48,7 +48,7 @@ dependencies {
     shaded "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
     shaded "com.fasterxml.jackson.module:jackson-module-afterburner:$jacksonVersion"
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
-    shaded "io.vavr:vavr-jackson:$vavrVersion"
+    shaded libraries.vavrJackson
     shaded "com.google.guava:guava:$guavaVersion"
     shaded "org.apache.curator:curator-recipes:$curatorVersion"
     shaded "org.apache.curator:curator-framework:$curatorVersion"
@@ -57,7 +57,7 @@ dependencies {
     shaded "jline:jline:$jlineVersion"
     shaded "io.netty:netty:$nettyVersion"
 
-    implementation "io.vavr:vavr:$vavrVersion"
+    implementation libraries.vavr
 }
 
 shadowJar {

@@ -19,10 +19,7 @@ dependencies {
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-control-plane:mantis-control-plane-client")
 
-    testImplementation "junit:junit-dep:$junitVersion"
-    testImplementation "org.mockito:mockito-all:$mockitoVersion"
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoAll
     testCompile 'org.hamcrest:hamcrest-all:1.3'
 }
-
-
-

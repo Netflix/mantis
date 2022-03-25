@@ -280,7 +280,6 @@ public class DefaultSubscriptionTrackerTest {
             }
         }
 
-
         subscriptionTracker.refreshSubscriptions();
 
         Set<String> currentSubIds = getCurrentSubIds(streamName);

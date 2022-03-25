@@ -45,8 +45,8 @@ dependencies {
     api "org.skife.config:config-magic:$configMagicVersion"
 
     testCompile "com.typesafe.akka:akka-testkit_2.13:$akkaVersion"
-    testCompile "junit:junit:4.+"
-    testCompile "org.mockito:mockito-all:2.+"
+    testCompile libraries.junit4
+    testCompile libraries.mockitoAll
     testCompile "org.testng:testng:$testngVersion"
 }
 

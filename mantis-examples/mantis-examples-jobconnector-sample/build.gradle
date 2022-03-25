@@ -7,23 +7,19 @@ configurations.all {
     }
 }
 
-task execute(type:JavaExec) {
+task execute(type: JavaExec) {
     main = "com.netflix.mantis.samples.JobConnectorJob"
     classpath = sourceSets.main.runtimeClasspath
 }
 
 ext {
     mantisConnectorsVersion = '1.2.5'
-    slf4jVersion = '1.7.28'
-
 }
 
 dependencies {
     implementation project(':mantis-runtime')
     implementation "io.mantisrx:mantis-connector-job:$mantisConnectorsVersion"
 
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
-    implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    implementation libraries.slf4jApi
+    implementation libraries.slf4jLog4j12
 }
-
-

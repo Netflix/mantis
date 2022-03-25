@@ -15,8 +15,7 @@
  */
 ext {
     archaiusVersion = 'latest.release'
-    junitVersion = '5.3.+'
-    mockitoVersion = '2.18.+'
+    versionMockito = '2.18.+'
     mqlVersion = '3.2.2'
     spectatorVersion = '0.134.0'
 }
@@ -34,12 +33,11 @@ dependencies {
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
     testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    implementation libraries.slf4jApi
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
-    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    testImplementation libraries.junitJupiter
+    testImplementation libraries.mockitoCore
+    testImplementation libraries.slf4jLog4j12
 }
 
 test {

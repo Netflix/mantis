@@ -50,15 +50,13 @@ ext {
     spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
     mockNeatVersion = '0.3.7'
-    slf4jVersion = '1.7.28'
-    lombokVersion = '1.16.16'
 }
 
 
 dependencies {
     compile project(":mantis-publish:mantis-publish-netty-guice")
 
-    implementation "io.reactivex:rxjava:$versionRxJava"
+    implementation libraries.rxJava
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
     implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
@@ -66,6 +64,5 @@ dependencies {
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
     implementation "net.andreinc.mockneat:mockneat:$mockNeatVersion"
 
-    implementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    implementation libraries.slf4jLog4j12
 }
-

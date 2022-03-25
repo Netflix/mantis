@@ -17,8 +17,6 @@
 ext {
     mqlVersion = '3.2.+'
     nettyVersion = '4.1.17.Final'
-    junitVersion = '5.3.+'
-    mockitoVersion = '2.18.+'
 }
 
 dependencies {
@@ -26,10 +24,9 @@ dependencies {
     api "io.mantisrx:mql-jvm:$mqlVersion"
     api project(':mantis-common')
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
-    testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
+    testImplementation libraries.junitJupiter
+    testImplementation libraries.mockitoCore
+    testImplementation libraries.slf4jLog4j12
 }
 
 test {
