@@ -37,6 +37,7 @@ dependencies {
         }
     }
     implementation project(":mantis-runtime")
+    implementation libraries.slf4jApi
 
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
     shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
@@ -47,15 +48,14 @@ dependencies {
     shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
 
-    implementation libraries.slf4jApi
     // We only need this for local mains(). Users bring their own implementation.
     shadow libraries.slf4jLog4j12
 
-    testImplementation libraries.junitJupiter
-    testImplementation libraries.mockitoCore
-
+    testImplementation project(":mantis-runtime").sourceSets.test.output
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
     testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion"
+    testImplementation libraries.junitJupiter
+    testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12
 }
 
