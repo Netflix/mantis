@@ -16,20 +16,12 @@
 
 package io.mantisrx.publish;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.netflix.archaius.DefaultPropertyFactory;
@@ -50,14 +42,7 @@ import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.proto.MantisServerSubscription;
 import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
@@ -101,11 +86,11 @@ public class DefaultSubscriptionTrackerTest {
         return new SampleArchaiusMrePublishConfiguration(propertyRepository);
     }
 
-	protected Set<String> getCurrentSubIds(String streamName) {
+    protected Set<String> getCurrentSubIds(String streamName) {
 
-		String lookupKey = StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)
-			? StreamType.DEFAULT_EVENT_STREAM
-			: streamName;
+        String lookupKey = StreamJobClusterMap.DEFAULT_STREAM_KEY.equals(streamName)
+                ? StreamType.DEFAULT_EVENT_STREAM
+                : streamName;
 
         return this.mockStreamManager.getStreamSubscriptions(lookupKey).stream().map(Subscription::getSubscriptionId)
                 .collect(Collectors.toSet());
@@ -295,7 +280,6 @@ public class DefaultSubscriptionTrackerTest {
             }
         }
 
-
         subscriptionTracker.refreshSubscriptions();
 
         Set<String> currentSubIds = getCurrentSubIds(streamName);
@@ -352,15 +336,15 @@ public class DefaultSubscriptionTrackerTest {
         // worker 1 subs list
         MantisServerSubscriptionEnvelope majoritySubs = SubscriptionsHelper.createSubsEnvelope(2, 0);
         mantisWorker1.stubFor(get(urlMatching("/\\?jobId=.*"))
-                                  .willReturn(aResponse()
-                                                  .withStatus(200)
-                                                  .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(majoritySubs)))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(majoritySubs)))
         );
 
         JobDiscoveryInfo jdi = new JobDiscoveryInfo(jobCluster, jobId,
-                                                    Collections.singletonMap(1, new StageWorkers(jobCluster, jobId, 1, Collections.singletonList(
-                                                        new MantisWorker("127.0.0.1", mantisWorker1.port())
-                                                    ))));
+                Collections.singletonMap(1, new StageWorkers(jobCluster, jobId, 1, Collections.singletonList(
+                        new MantisWorker("127.0.0.1", mantisWorker1.port())
+                ))));
         when(mockJobDiscovery.getCurrentJobWorkers(jobCluster)).thenReturn(Optional.of(jdi));
         for (String stream : streamJobClusterMap.keySet()) {
             if (!stream.equals(StreamType.DEFAULT_EVENT_STREAM)) {
