@@ -28,7 +28,8 @@ import org.junit.Test;
 
 public class CompressionUtilsTest {
 
-    @Test public void shouldTokenizeWithEventsContainingPartialDelimiterMatches() {
+    @Test
+    public void shouldTokenizeWithEventsContainingPartialDelimiterMatches() {
         String testInput = "ab$cdef$$$ghi$jkl$$$lmno$$pqrst$";
         try (BufferedReader reader = new BufferedReader(new StringReader(testInput))) {
             List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader);
@@ -43,7 +44,8 @@ public class CompressionUtilsTest {
         }
     }
 
-    @Test public void shouldTokenizeWithEventsContainingPartialDelimiterMatchesWithCustomDelimiter() {
+    @Test
+    public void shouldTokenizeWithEventsContainingPartialDelimiterMatchesWithCustomDelimiter() {
         String delimiter = "a04f0418-bdff-4f53-af7d-9f5a093b9d65";
 
         String event1 = "ab" + delimiter.substring(0, 9) + "cdef";
@@ -67,7 +69,8 @@ public class CompressionUtilsTest {
         }
     }
 
-    @Test public void testDelimiterWiithPrefixMatchingEndOfMEssage() {
+    @Test
+    public void testDelimiterWiithPrefixMatchingEndOfMEssage() {
         // Delimiter starts with 'c', event1 ends with 'c'
         String delimiter = "ccd";
 
@@ -92,7 +95,8 @@ public class CompressionUtilsTest {
         }
     }
 
-    @Test public void testMultiline() {
+    @Test
+    public void testMultiline() {
         String delimiter = "ccd";
 
         String event1 = "abc";
