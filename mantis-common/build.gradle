@@ -24,21 +24,21 @@ ext {
 }
 
 dependencies {
-    api libraries.mantisShaded
-    api libraries.rxNettyShaded
-    api libraries.rxJava
     api "io.netty:netty-codec-http:$nettyVersion"
     api "io.netty:netty-buffer:$nettyVersion"
-
     api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
-
     api "com.netflix.numerus:numerus:$numerusVersion"
     api "org.xerial.snappy:snappy-java:$snappyVersion"
     api "org.jctools:jctools-core:$jctoolsVersion"
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
 
+    api libraries.mantisShaded
+    api libraries.rxNettyShaded
+    api libraries.rxJava
     api libraries.slf4jApi
     api libraries.slf4jLog4j12
+
+    testImplementation libraries.commonsLang3
     testImplementation "org.hamcrest:hamcrest-core:1.3"
     testImplementation libraries.junit4
     testImplementation libraries.mockitoCore

@@ -17,7 +17,6 @@
 package io.mantisrx.runtime;
 
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 
 public class WorkerInfo {
 
@@ -31,11 +30,6 @@ public class WorkerInfo {
     private final WorkerPorts workerPorts;
 
     private final MantisJobDurationType durationType;
-
-    @VisibleForTesting
-    public WorkerInfo(String jobName, String jobId, int stageNumber, int workerIndex, int workerNumber, MantisJobDurationType durationType, String host) {
-        this(jobName, jobId, stageNumber, workerIndex, workerNumber, durationType, host, new WorkerPorts(-1, -1, -1, -1, -1));
-    }
 
     public WorkerInfo(String jobName, String jobId, int stageNumber, int workerIndex, int workerNumber, MantisJobDurationType durationType, String host, WorkerPorts workerPorts) {
         this.jobName = jobName;

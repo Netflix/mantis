@@ -34,7 +34,8 @@ dependencies {
     api "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
     testImplementation libraries.junit4
-    testImplementation "org.mockito:mockito-all:1.9.5"
+    testImplementation project(':mantis-runtime').sourceSets.test.output
+    testImplementation libraries.mockitoAll
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
     testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
     // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69
