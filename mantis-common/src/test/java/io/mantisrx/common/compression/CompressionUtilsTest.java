@@ -24,12 +24,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 public class CompressionUtilsTest {
 
     @Test
-    public void shouldTokenizeWithEventsContainingPartialDelimiterMatches() {
+    public void shouldTokenizeWithEventsContainingPartialDelimiterMatches() throws Exception {
         String testInput = "ab$cdef$$$ghi$jkl$$$lmno$$pqrst$";
         BufferedReader reader = new BufferedReader(new StringReader(testInput));
         List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader);
@@ -41,7 +43,7 @@ public class CompressionUtilsTest {
     }
 
     @Test
-    public void shouldTokenizeWithEventsContainingPartialDelimiterMatchesWithCustomDelimiter() {
+    public void shouldTokenizeWithEventsContainingPartialDelimiterMatchesWithCustomDelimiter() throws Exception {
         String delimiter = "a04f0418-bdff-4f53-af7d-9f5a093b9d65";
 
         String event1 = "ab" + delimiter.substring(0, 9) + "cdef";
@@ -103,63 +105,6 @@ public class CompressionUtilsTest {
 
         List<String> actual = result.stream().map(e -> e.getEventAsString()).collect(Collectors.toList());
         assertEquals("Delimiter: '" + delimiter + "'", Arrays.asList(event1,event2,event3), actual);
-    }
-
-    @Test
-    public void testDelimiterWiithPrefixMatchingEndOfMEssage() {
-        // Delimiter starts with 'c', event1 ends with 'c'
-        String delimiter = "ccd";
-
-        String event1 = "abc";
-        String event2 = "def";
-        String event3 = "ghi";
-        String testInput = event1
-                + delimiter
-                + event2
-                + delimiter
-                + event3;
-        try (BufferedReader reader = new BufferedReader(new StringReader(testInput))) {
-            List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
-
-            assertEquals("Delimiter: '" + delimiter + "'", result.size(), 3);
-            assertEquals(event1, result.get(0).getEventAsString());
-            assertEquals(event2, result.get(1).getEventAsString());
-            assertEquals(event3, result.get(2).getEventAsString());
-
-        } catch (IOException ex) {
-            Assert.fail("Tokenization threw an IO exception that was unexpected");
-        }
-    }
-
-    @Test
-    public void testMultiline() {
-        String delimiter = "ccd";
-
-        String event1 = "abc";
-        String event2 = "def";
-        String event3 = "ghi";
-        StringBuffer buf = new StringBuffer();
-        String testInput = event1
-                + delimiter
-                + event2
-                + delimiter
-                + event3;
-        for (int i = 0; i < testInput.length(); i++) {
-            buf.append(testInput.charAt(i)).append("\n");
-        }
-        testInput = buf.toString();
-
-        try (BufferedReader reader = new BufferedReader(new StringReader(testInput))) {
-            List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
-
-            assertEquals("Delimiter: '" + delimiter + "'", result.size(), 3);
-            assertEquals(event1, result.get(0).getEventAsString());
-            assertEquals(event2, result.get(1).getEventAsString());
-            assertEquals(event3, result.get(2).getEventAsString());
-
-        } catch (IOException ex) {
-            Assert.fail("Tokenization threw an IO exception that was unexpected");
-        }
     }
 
     @Test
