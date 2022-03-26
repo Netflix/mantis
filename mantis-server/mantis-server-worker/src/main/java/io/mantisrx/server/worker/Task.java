@@ -87,11 +87,6 @@ public class Task extends AbstractIdleService {
             workerMetricsClient, sinkSubscriptionStateHandlerFactory),
         getJobProviderClass(), classLoaderHandle, requiredClasspaths, null));
 
-    // first of all, get a user-code classloader
-    // this may involve downloading the job's JAR files and/or classes
-//    log.info("Loading JAR files for task {}.", this);
-//    DownloadJob.run(executeStageRequest.getJobJarUrl(), executeStageRequest.getJobName(), "");
-
     log.info("Starting Mantis Worker for task {}", this);
     for (Service service : mantisServices) {
       log.info("Starting service: " + service.getClass().getName());

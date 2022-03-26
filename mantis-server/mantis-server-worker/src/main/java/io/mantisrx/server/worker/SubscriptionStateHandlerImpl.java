@@ -80,9 +80,7 @@ class SubscriptionStateHandlerImpl implements SinkSubscriptionStateHandler {
                                     subscription.unsubscribe(); // unsubscribe from previous one before retrying
                                 }
                             },
-                            evalSubscriberTimeoutSecs(), TimeUnit.SECONDS
-                    )
-            );
+                            evalSubscriberTimeoutSecs(), TimeUnit.SECONDS));
             logger.info("Setup future job kill (in " + subscriptionTimeoutSecs +
                     " secs) upon no subscribers for ephemeral job " + jobId);
         }

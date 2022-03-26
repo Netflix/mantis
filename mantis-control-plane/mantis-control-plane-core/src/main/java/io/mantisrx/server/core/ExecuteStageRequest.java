@@ -30,18 +30,22 @@ import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
-
+/**
+ * ExecuteStageRequest represents the data structure that defines the StageTask workload a given worker needs to run.
+ * The data structure is sent over the wire using java serialization when the server requests a given task executor to
+ * perform a certain stage task.
+ */
 public class ExecuteStageRequest implements Serializable {
 
-    // am I special worker 0 or not?
+    // indicates whether this is stage 0 or not. stage 0 runs the autoscaler for the mantis job.
     private final boolean hasJobMaster;
-    // configuration to do whatever
+    // subscription threshold for when a sink should considered to be inactive so that ephemeral jobs producing the sink
+    // can be shutdown.
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
-    //
     private final WorkerPorts workerPorts;
     private String jobName;
-    // ID is the instance of the job
+    // jobId represents the instance of the job.
     private String jobId;
     // index of the worker in that stage
     private int workerIndex;
@@ -57,6 +61,7 @@ public class ExecuteStageRequest implements Serializable {
     private List<Parameter> parameters = new LinkedList<Parameter>();
     private SchedulingInfo schedulingInfo;
     private MantisJobDurationType durationType;
+    // class name that provides the job provider.
     private Optional<String> nameOfJobProviderClass;
 
     @JsonCreator
@@ -199,10 +204,5 @@ public class ExecuteStageRequest implements Serializable {
 
     public WorkerId getWorkerId() {
         return new WorkerId(jobId, workerIndex, workerNumber);
-    }
-
-    // returns the total number of workers assigned for the stage the current worker belongs to
-    public int getTotalNumWorkers() {
-        return schedulingInfo.forStage(getStage()).getNumberOfInstances();
     }
 }

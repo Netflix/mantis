@@ -22,11 +22,13 @@ import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.slf4j.Logger;
@@ -49,6 +51,7 @@ public class ExecuteStageRequestService extends BaseService {
     private final ClassLoaderHandle classLoaderHandle;
     /** The classpaths used by this task. */
     private final Collection<URL> requiredClasspaths;
+    @Nullable
     private final Job mantisJob;
 
     /**
@@ -64,7 +67,7 @@ public class ExecuteStageRequestService extends BaseService {
         WorkerExecutionOperations executionOperations,
         Optional<String> jobProviderClass,
         ClassLoaderHandle classLoaderHandle, Collection<URL> requiredClasspaths,
-        Job mantisJob) {
+        @Nullable Job mantisJob) {
         this.executeStageRequestObservable = executeStageRequestObservable;
         this.tasksStatusObserver = tasksStatusObserver;
         this.executionOperations = executionOperations;
@@ -96,25 +99,6 @@ public class ExecuteStageRequestService extends BaseService {
                         ExecuteStageRequest executeStageRequest =
                                 executeRequest.getExecuteRequest().getRequest();
 
-//                        URL jobJarUrl = executeStageRequest.getJobJarUrl();
-//                        // pull out file name from URL
-//                        String jobJarFile = jobJarUrl.getFile();
-//                        String jarName = jobJarFile.substring(jobJarFile.lastIndexOf('/') + 1);
-//
-//                        // path used to store job on local disk
-//                        Path path = Paths.get("/tmp", "mantis-jobs", executeStageRequest.getJobId(),
-//                                Integer.toString(executeStageRequest.getWorkerNumber()),
-//                                "libs");
-//                        URL pathLocation = null;
-//                        try {
-//                            pathLocation = Paths.get(path.toString(), "*").toUri().toURL();
-//                        } catch (MalformedURLException e1) {
-//                            logger.error("Failed to convert path location to URL", e1);
-//                            executeRequest.getStatus().onError(e1);
-//                            return Observable.empty();
-//                        }
-//                        logger.info("Creating job classpath with pathLocation " + pathLocation);
-//                        ClassLoader cl = URLClassLoader.newInstance(new URL[] {pathLocation});
                         Job mantisJob = null;
                         ClassLoader cl = null;
                         try {
@@ -162,21 +146,13 @@ public class ExecuteStageRequestService extends BaseService {
                         } catch (IOException e) {
                             log.error("Failed to close stage cleanly", e);
                         }
-//                        try {
-//                            userCodeClassLoader.close();
-//                        } catch (IOException ex) {
-//                            log.error("Failed to close user class loader successfully", ex);
-//                        }
+                        closeUserCodeClassLoader();
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         logger.error("Execute stage observable threw exception", e);
-//                        try {
-//                            userCodeClassLoader.close();
-//                        } catch (IOException ex) {
-//                            log.error("Failed to close user class loader successfully", ex);
-//                        }
+                        closeUserCodeClassLoader();
                     }
 
                     @Override
@@ -212,6 +188,12 @@ public class ExecuteStageRequestService extends BaseService {
         } catch (IOException e) {
             log.error("Failed to close cleanly", e);
         }
+
+        try {
+            classLoaderHandle.close();
+        } catch (IOException e) {
+            log.error("Failed to close classLoader {}", classLoaderHandle, e);
+        }
     }
 
     @Override
@@ -232,4 +214,15 @@ public class ExecuteStageRequestService extends BaseService {
         return userCodeClassLoader;
     }
 
+    private void closeUserCodeClassLoader() {
+        if (userCodeClassLoader != null) {
+            if (userCodeClassLoader.asClassLoader() instanceof Closeable) {
+                try {
+                    ((Closeable) userCodeClassLoader.asClassLoader()).close();
+                } catch (IOException ex) {
+                    log.error("Failed to close user class loader successfully", ex);
+                }
+            }
+        }
+    }
 }
