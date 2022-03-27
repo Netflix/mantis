@@ -29,6 +29,7 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.WorkerTopologyInfo;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus.TYPE;
+import io.mantisrx.shaded.com.google.common.base.Optional;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -109,7 +110,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
         final ExecuteStageRequest executeStageRequest = new ExecuteStageRequest(workerInfo.getJobName(), workerInfo.getJobId(), workerInfo.getWorkerIndex(), workerInfo.getWorkerNumber(),
                 jobJarUrl, workerInfo.getStageNumber(), workerInfo.getNumStages(), ports, timeoutToReportStartSec, workerInfo.getMetricsPort(), params, schedInfo, MantisJobDurationType.Transient,
-                0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)));
+                0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)), Optional.absent());
 
         return new WrappedExecuteStageRequest(PublishSubject.<Boolean>create(), executeStageRequest);
     }

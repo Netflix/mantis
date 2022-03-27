@@ -20,25 +20,39 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Optional;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * ExecuteStageRequest represents the data structure that defines the StageTask workload a given worker needs to run.
+ * The data structure is sent over the wire using java serialization when the server requests a given task executor to
+ * perform a certain stage task.
+ */
+public class ExecuteStageRequest implements Serializable {
 
-public class ExecuteStageRequest {
-
+    // indicates whether this is stage 0 or not. stage 0 runs the autoscaler for the mantis job.
     private final boolean hasJobMaster;
+    // subscription threshold for when a sink should considered to be inactive so that ephemeral jobs producing the sink
+    // can be shutdown.
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
     private final WorkerPorts workerPorts;
     private String jobName;
+    // jobId represents the instance of the job.
     private String jobId;
+    // index of the worker in that stage
     private int workerIndex;
+    // rolling counter of workers for that stage
     private int workerNumber;
     private URL jobJarUrl;
+    // index of the stage
     private int stage;
     private int totalNumStages;
     private int metricsPort;
@@ -47,6 +61,8 @@ public class ExecuteStageRequest {
     private List<Parameter> parameters = new LinkedList<Parameter>();
     private SchedulingInfo schedulingInfo;
     private MantisJobDurationType durationType;
+    // class name that provides the job provider.
+    private Optional<String> nameOfJobProviderClass;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -65,8 +81,8 @@ public class ExecuteStageRequest {
                                @JsonProperty("durationType") MantisJobDurationType durationType,
                                @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
                                @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
-                               @JsonProperty("workerPorts") WorkerPorts workerPorts
-    ) {
+                               @JsonProperty("workerPorts") WorkerPorts workerPorts,
+                               @JsonProperty("jobProviderClass") Optional<String> nameOfJobProviderClass) {
         this.jobName = jobName;
         this.jobId = jobId;
         this.workerIndex = workerIndex;
@@ -74,6 +90,7 @@ public class ExecuteStageRequest {
         this.jobJarUrl = jobJarUrl;
         this.stage = stage;
         this.totalNumStages = totalNumStages;
+        this.nameOfJobProviderClass = nameOfJobProviderClass;
         this.ports.addAll(ports);
         this.metricsPort = metricsPort;
         this.timeoutToReportStart = timeoutToReportStart;
@@ -158,6 +175,10 @@ public class ExecuteStageRequest {
         return minRuntimeSecs;
     }
 
+    public Optional<String> getNameOfJobProviderClass() {
+        return nameOfJobProviderClass;
+    }
+
     @Override
     public String toString() {
         return "ExecuteStageRequest{" +
@@ -179,5 +200,9 @@ public class ExecuteStageRequest {
                 ", minRuntimeSecs=" + minRuntimeSecs +
                 ", workerPorts=" + workerPorts +
                 '}';
+    }
+
+    public WorkerId getWorkerId() {
+        return new WorkerId(jobId, workerIndex, workerNumber);
     }
 }

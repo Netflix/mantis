@@ -29,6 +29,9 @@ dependencies {
     compile project(":mantis-control-plane:mantis-control-plane-core")
     compile project(":mantis-server:mantis-server-worker-client")
 
+    api libraries.flinkRpcApi
+    implementation libraries.flinkRpcImpl
+
     compile "org.apache.mesos:mesos:$mesosVersion"
     compile libraries.slf4jApi
     compile libraries.slf4jLog4j12

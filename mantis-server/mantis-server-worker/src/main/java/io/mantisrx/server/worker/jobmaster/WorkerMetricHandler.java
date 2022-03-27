@@ -21,7 +21,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.*;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.reactivx.mantis.operators.DropOperator;
@@ -56,7 +56,7 @@ import rx.subjects.PublishSubject;
     private static final Logger logger = LoggerFactory.getLogger(WorkerMetricHandler.class);
     private final PublishSubject<MetricData> metricDataSubject = PublishSubject.create();
     private final Observer<JobAutoScaler.Event> jobAutoScaleObserver;
-    private final MantisMasterClientApi masterClientApi;
+    private final MantisMasterGateway masterClientApi;
     private final AutoScaleMetricsConfig autoScaleMetricsConfig;
     private final MetricAggregator metricAggregator;
     private final Map<Integer, Integer> numWorkersByStage = new HashMap<>();
@@ -74,7 +74,7 @@ import rx.subjects.PublishSubject;
 
     public WorkerMetricHandler(final String jobId,
                                final Observer<JobAutoScaler.Event> jobAutoScaleObserver,
-                               final MantisMasterClientApi masterClientApi,
+                               final MantisMasterGateway masterClientApi,
                                final AutoScaleMetricsConfig autoScaleMetricsConfig) {
         this.jobId = jobId;
         this.jobAutoScaleObserver = jobAutoScaleObserver;

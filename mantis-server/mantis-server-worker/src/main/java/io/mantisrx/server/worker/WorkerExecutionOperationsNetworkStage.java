@@ -48,7 +48,8 @@ import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.MantisMasterClientApi;
+import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
@@ -60,6 +61,7 @@ import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -82,7 +84,7 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
-
+// stage that actually calls custom stage method
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerExecutionOperationsNetworkStage.class);
@@ -90,27 +92,33 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final WorkerConfiguration config;
     private final WorkerMetricsClient workerMetricsClient;
     private final AtomicReference<Heartbeat> heartbeatRef = new AtomicReference<>();
-    private Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
-    private MantisMasterClientApi mantisMasterApi;
+    private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
+    private final Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
+    private final MantisMasterGateway mantisMasterApi;
     private int connectionsPerEndpoint = 2;
     private boolean lookupSpectatorRegistry = true;
+    private SinkSubscriptionStateHandler subscriptionStateHandler;
     private Action0 onSinkSubscribe = null;
     private Action0 onSinkUnsubscribe = null;
 
-    public WorkerExecutionOperationsNetworkStage(Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
-                                                 MantisMasterClientApi mantisMasterApi, WorkerConfiguration config) {
-        this(vmTaskStatusObserver, mantisMasterApi, config, null);
+    public WorkerExecutionOperationsNetworkStage(
+        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
+        MantisMasterGateway mantisMasterApi, WorkerConfiguration config,
+        Factory sinkSubscriptionStateHandlerFactory) {
+        this(vmTaskStatusObserver, mantisMasterApi, config, null, sinkSubscriptionStateHandlerFactory);
     }
 
-    public WorkerExecutionOperationsNetworkStage(Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
-                                                 MantisMasterClientApi mantisMasterApi,
-                                                 WorkerConfiguration config,
-                                                 WorkerMetricsClient workerMetricsClient) {
+    public WorkerExecutionOperationsNetworkStage(
+        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
+        MantisMasterGateway mantisMasterApi,
+        WorkerConfiguration config,
+        WorkerMetricsClient workerMetricsClient,
+        Factory sinkSubscriptionStateHandlerFactory) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
         this.workerMetricsClient = workerMetricsClient;
-
+        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
 
         String connectionsPerEndpointStr =
                 ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
@@ -209,6 +217,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         // start heartbeat payload setter for incoming data drops
         DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get());
         droppedPayloadSetter.start(heartbeatIntervalSecs);
+
         ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, workerName, networkMbps);
         usagePayloadSetter.start(heartbeatIntervalSecs);
     }
@@ -273,26 +282,30 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         return s;
     }
 
-    private void signalStarted(RunningWorker rw, AtomicReference<SubscriptionStateHandler> ref) {
+    private void signalStarted(RunningWorker rw) {
         rw.signalStarted();
-        if (ref.get() != null)
-            ref.get().start();
+        if (subscriptionStateHandler != null) {
+            subscriptionStateHandler.startAsync().awaitRunning();
+        }
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
     @Override
-    public void executeStage(final ExecutionDetails setup) {
+    public void executeStage(final ExecutionDetails setup) throws IOException {
 
         ExecuteStageRequest executionRequest = setup.getExecuteStageRequest().getRequest();
 
         // Initialize the schedulingInfo observable for current job and mark it shareable to be reused by anyone interested in this data.
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
 
+        // JobSchedulingInfo has metadata around which stage runs on which set of workers
         Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).subscribeOn(Schedulers.io()).share();
+        // represents datastructure that has the current worker information and what it represents in the overall operator DAG
         WorkerInfo workerInfo = generateWorkerInfo(executionRequest.getJobName(), executionRequest.getJobId(),
                 executionRequest.getStage(), executionRequest.getWorkerIndex(),
                 executionRequest.getWorkerNumber(), executionRequest.getDurationType(), "host", executionRequest.getWorkerPorts());
 
+        // observable that represents the number of workers for the source stage
         final Observable<Integer> sourceStageTotalWorkersObs = createSourceStageTotalWorkersObservable(selfSchedulingInfo);
         RunningWorker.Builder rwBuilder = new RunningWorker.Builder()
                 .job(setup.getMantisJob())
@@ -320,12 +333,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
         final RunningWorker rw = rwBuilder.build();
 
-        AtomicReference<SubscriptionStateHandler> subscriptionStateHandlerRef = new AtomicReference<>();
         if (rw.getStageNum() == rw.getTotalStagesNet()) {
             // set up subscription state handler only for sink (last) stage
-            subscriptionStateHandlerRef.set(setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest().getJobId(), mantisMasterApi,
-                    setup.getExecuteStageRequest().getRequest().getSubscriptionTimeoutSecs(),
-                    setup.getExecuteStageRequest().getRequest().getMinRuntimeSecs()));
+            setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest());
         }
 
         logger.info("Running worker info: " + rw);
@@ -412,7 +422,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
                 jobMasterService.start();
 
-                signalStarted(rw, subscriptionStateHandlerRef);
+                signalStarted(rw);
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else if (rw.getStageNum() == 1 && rw.getTotalStagesNet() == 1) {
@@ -431,7 +441,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         rw.getSourceStageTotalWorkersObservable(),
                         onSinkSubscribe, onSinkUnsubscribe,
                         rw.getOnCompleteCallback(), rw.getOnErrorCallback());
-                signalStarted(rw, subscriptionStateHandlerRef);
+                signalStarted(rw);
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else {
@@ -455,12 +465,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     RxMetrics rxMetrics = server.getMetrics();
                     MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
 
-                    signalStarted(rw, subscriptionStateHandlerRef);
+                    signalStarted(rw);
                     logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", blocking until source observable completes");
                     server.blockUntilServerShutdown();
                 } else {
                     // execute intermediate stage or last stage plus sink
-                    executeNonSourceStage(selfSchedulingInfo, rw, subscriptionStateHandlerRef);
+                    executeNonSourceStage(selfSchedulingInfo, rw);
                 }
             }
             logger.info("Calling lifecycle.shutdown()");
@@ -471,33 +481,21 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
-    private SubscriptionStateHandler setupSubscriptionStateHandler(String jobId, MantisMasterClientApi mantisMasterApi,
-                                                                   long subscriptionTimeoutSecs, long minRuntimeSecs) {
-        if (subscriptionTimeoutSecs > 0L) {
-            logger.info("Setting up subscription state handler with timeout=" + subscriptionTimeoutSecs);
-            final SubscriptionStateHandler subscriptionStateHandler =
-                    new SubscriptionStateHandler(jobId, mantisMasterApi, subscriptionTimeoutSecs, minRuntimeSecs);
-            onSinkSubscribe = () -> {
-                // TODO remove this line to set heartbeat payloads when master has upgraded to having jobMaster design
-                heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(true));
-                subscriptionStateHandler.setIsSubscribed();
-            };
-            onSinkUnsubscribe = () -> {
-                // TODO remove this line to set heartbeat payloads when master has upgraded to having jobMaster design
-                heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(false));
-                subscriptionStateHandler.setIsUnsubscribed();
-            };
-            return subscriptionStateHandler;
-        } else {
-            logger.info("Not setting up subscription state handler");
-            onSinkSubscribe = () -> {
-                // no-op
-            };
-            onSinkUnsubscribe = () -> {
-                // no-op
-            };
-            return null;
-        }
+    private void setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {
+        final SinkSubscriptionStateHandler subscriptionStateHandler =
+                sinkSubscriptionStateHandlerFactory.apply(executeStageRequest);
+        onSinkSubscribe = () -> {
+            // TODO remove this line to set heartbeat payloads when master has upgraded to having jobMaster design
+            heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(true));
+            subscriptionStateHandler.onSinkSubscribed();
+        };
+        onSinkUnsubscribe = () -> {
+            // TODO remove this line to set heartbeat payloads when master has upgraded to having jobMaster design
+            heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(false));
+            subscriptionStateHandler.onSinkUnsubscribed();
+        };
+
+        this.subscriptionStateHandler = subscriptionStateHandler;
     }
 
     private String getWorkerStringPrefix(int stageNum, int index, int number) {
@@ -505,7 +503,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw, AtomicReference<SubscriptionStateHandler> subscriptionStateHandlerRef) {
+    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw) {
         {
             // execute either intermediate (middle) stage or last+sink
             StageConfig previousStageExecuting = (StageConfig) rw.getJob().getStages()
@@ -573,7 +571,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 RxMetrics rxMetrics = server.getMetrics();
                 MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 // send running signal only after server is started
-                signalStarted(rw, subscriptionStateHandlerRef);
+                signalStarted(rw);
                 logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", blocking until intermediate observable completes");
                 server.blockUntilServerShutdown();
                 acceptSchedulingChanges.set(false);
@@ -644,6 +642,14 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     @Override
     public void shutdownStage() {
         logger.debug("Shutdown initiated");
+        if (subscriptionStateHandler != null) {
+            try {
+                subscriptionStateHandler.stopAsync().awaitTerminated();
+            } finally {
+                subscriptionStateHandler = null;
+            }
+        }
+
         System.exit(0);
     }
 }

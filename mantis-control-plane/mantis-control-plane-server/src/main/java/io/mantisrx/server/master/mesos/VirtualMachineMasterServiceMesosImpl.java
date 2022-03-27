@@ -34,6 +34,7 @@ import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.google.common.base.Optional;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -162,7 +163,8 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                     scheduleRequest.getDurationType(),
                     scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
                     scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
-                    launchTaskRequest.getPorts()
+                    launchTaskRequest.getPorts(),
+                    Optional.absent()
             );
             taskInfoBuilder
                     .setName(name)
