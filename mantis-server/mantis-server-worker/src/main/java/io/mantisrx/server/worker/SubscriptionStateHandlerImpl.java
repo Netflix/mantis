@@ -24,9 +24,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * SubscriptionStateHandler that kills the job if the sink has been unsubscribed for subscriptionTimeout seconds.
+ */
 @Slf4j
 class SubscriptionStateHandlerImpl extends AbstractScheduledService implements SinkSubscriptionStateHandler {
 
@@ -84,8 +89,9 @@ class SubscriptionStateHandlerImpl extends AbstractScheduledService implements S
         currentState.updateAndGet(SubscriptionState::onSinkSubscribed);
     }
 
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     @Value
-    private static class SubscriptionState {
+    static class SubscriptionState {
         boolean subscribed;
         Instant startedAt;
         Instant lastUnsubscriptionTime;
@@ -120,6 +126,7 @@ class SubscriptionStateHandlerImpl extends AbstractScheduledService implements S
         }
 
         public Duration getUnsubscribedDuration() {
+            Preconditions.checkState(!isSubscribed());
             return Duration.between(lastUnsubscriptionTime, clock.instant());
         }
     }

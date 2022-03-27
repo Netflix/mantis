@@ -17,6 +17,7 @@ package io.mantisrx.server.worker;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import java.time.Clock;
 import java.util.function.Function;
@@ -31,12 +32,43 @@ public interface SinkSubscriptionStateHandler extends Service {
     // to be executed in Mantis.
     interface Factory extends Function<ExecuteStageRequest, SinkSubscriptionStateHandler> {
         static Factory forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(MantisMasterGateway gateway, Clock clock) {
-            return executeStageRequest -> new SubscriptionStateHandlerImpl(
-                    executeStageRequest.getJobId(),
-                    gateway,
-                    executeStageRequest.getSubscriptionTimeoutSecs(),
-                    executeStageRequest.getMinRuntimeSecs(),
-                    clock);
+            return executeStageRequest -> {
+                if (executeStageRequest.getSubscriptionTimeoutSecs() > 0) {
+                    return new SubscriptionStateHandlerImpl(
+                            executeStageRequest.getJobId(),
+                            gateway,
+                            executeStageRequest.getSubscriptionTimeoutSecs(),
+                            executeStageRequest.getMinRuntimeSecs(),
+                            clock);
+                } else {
+                    return NOOP_INSTANCE;
+                }
+            };
+        }
+    }
+
+    static SinkSubscriptionStateHandler noop() {
+        return NOOP_INSTANCE;
+    }
+
+    static final SinkSubscriptionStateHandler NOOP_INSTANCE =
+            new NoopSinkSubscriptionStateHandler();
+
+    class NoopSinkSubscriptionStateHandler extends AbstractIdleService implements SinkSubscriptionStateHandler {
+        @Override
+        public void onSinkSubscribed() {
+        }
+
+        @Override
+        public void onSinkUnsubscribed() {
+        }
+
+        @Override
+        protected void startUp() throws Exception {
+        }
+
+        @Override
+        protected void shutDown() throws Exception {
         }
     }
 }
