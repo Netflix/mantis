@@ -48,6 +48,7 @@ import java.util.concurrent.CountDownLatch;
 import mantis.io.reactivex.netty.RxNetty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Subscription;
 import rx.subjects.PublishSubject;
 
 
@@ -85,12 +86,15 @@ public class MantisWorker extends BaseService {
         // services
         // metrics
         Data data = WorkerTopologyInfo.Reader.getData();
+        TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
         PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
         mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
         mantisServices.add(new Service() {
             private Task task;
+            private Subscription taskStatusUpdateSubscription;
+
             @Override
             public void start() {
                 executeStageSubject
@@ -108,6 +112,10 @@ public class MantisWorker extends BaseService {
                                             .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                                                     gateway,
                                                     Clock.systemDefaultZone()));
+                            taskStatusUpdateSubscription =
+                                    task
+                                            .getStatus()
+                                            .subscribe(statusUpdateHandler::onStatusUpdate);
                             task.startAsync();
                         });
             }
@@ -115,7 +123,11 @@ public class MantisWorker extends BaseService {
             @Override
             public void shutdown() {
                 if (task != null) {
-                    task.stopAsync().awaitTerminated();
+                    try {
+                        task.stopAsync().awaitTerminated();
+                    } finally {
+                        taskStatusUpdateSubscription.unsubscribe();
+                    }
                 }
             }
 
