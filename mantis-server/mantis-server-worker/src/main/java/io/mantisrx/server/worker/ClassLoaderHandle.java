@@ -20,26 +20,48 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
+import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 
-/** Handle to retrieve a user code class loader for the associated job. */
+/**
+ * Handle to retrieve a user code class loader for the associated job.
+ */
 interface ClassLoaderHandle extends Closeable {
 
-  /**
-   * Gets or resolves the user code class loader for the associated job.
-   *
-   * <p>In order to retrieve the user code class loader the caller has to specify the required
-   * jars and class paths. Upon calling this method first for a job, it will make sure that
-   * the required jars are present and potentially cache the created user code class loader.
-   * Every subsequent call to this method, will ensure that created user code class loader can
-   * fulfill the required jar files and class paths.
-   *
-   * @param requiredJarFiles requiredJarFiles the user code class loader needs to load
-   * @return the user code class loader fulfilling the requirements
-   * @throws IOException if the required jar files cannot be downloaded
-   * @throws IllegalStateException if the cached user code class loader does not fulfill the
-   *     requirements
-   */
-  UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredJarFiles,
-      Collection<URL> requiredClasspaths) throws IOException;
+    /**
+     * Gets or resolves the user code class loader for the associated job.
+     *
+     * <p>In order to retrieve the user code class loader the caller has to specify the required
+     * jars and class paths. Upon calling this method first for a job, it will make sure that
+     * the required jars are present and potentially cache the created user code class loader.
+     * Every subsequent call to this method, will ensure that created user code class loader can
+     * fulfill the required jar files and class paths.
+     *
+     * @param requiredJarFiles requiredJarFiles the user code class loader needs to load
+     * @return the user code class loader fulfilling the requirements
+     * @throws IOException           if the required jar files cannot be downloaded
+     * @throws IllegalStateException if the cached user code class loader does not fulfill the
+     *                               requirements
+     */
+    UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredJarFiles,
+                                                Collection<URL> requiredClasspaths) throws IOException;
+
+    /**
+     * ClassLoaderHandle that just returns the classloader field that's assigned at the time of construction
+     * on query for any new handles.
+     * <p>
+     * This is primarily used for testing purposes when the classloader doesn't need to get any files.
+     */
+    static ClassLoaderHandle fixed(ClassLoader classLoader) {
+        return new ClassLoaderHandle() {
+            @Override
+            public UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredJarFiles, Collection<URL> requiredClasspaths) throws IOException {
+                return SimpleUserCodeClassLoader.create(classLoader);
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
+    }
 }

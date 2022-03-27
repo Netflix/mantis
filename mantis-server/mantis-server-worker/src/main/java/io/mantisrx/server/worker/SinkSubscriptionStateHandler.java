@@ -16,47 +16,27 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.Service;
+import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
+import java.time.Clock;
 import java.util.function.Function;
 
 public interface SinkSubscriptionStateHandler extends Service {
-  public void onSinkSubscribed();
+    void onSinkSubscribed();
 
-  public void onSinkUnsubscribed();
+    void onSinkUnsubscribed();
 
-  // Factory for making subscription state handlers. the first argument of the apply() function
-  // corresponds to the ExecuteStageRequest which contains details about the job/stage that needs
-  // to be executed in Mantis.
-  interface Factory extends Function<ExecuteStageRequest, SinkSubscriptionStateHandler> {
-
-  }
-
-  public static SinkSubscriptionStateHandler noop() {
-    return new SinkSubscriptionStateHandler() {
-      @Override
-      public void onSinkSubscribed() {
-
-      }
-
-      @Override
-      public void onSinkUnsubscribed() {
-
-      }
-
-      @Override
-      public void start() {
-
-      }
-
-      @Override
-      public void shutdown() {
-
-      }
-
-      @Override
-      public void enterActiveMode() {
-
-      }
-    };
-  }
+    // Factory for making subscription state handlers. the first argument of the apply() function
+    // corresponds to the ExecuteStageRequest which contains details about the job/stage that needs
+    // to be executed in Mantis.
+    interface Factory extends Function<ExecuteStageRequest, SinkSubscriptionStateHandler> {
+        static Factory forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(MantisMasterGateway gateway, Clock clock) {
+            return executeStageRequest -> new SubscriptionStateHandlerImpl(
+                    executeStageRequest.getJobId(),
+                    gateway,
+                    executeStageRequest.getSubscriptionTimeoutSecs(),
+                    executeStageRequest.getMinRuntimeSecs(),
+                    clock);
+        }
+    }
 }

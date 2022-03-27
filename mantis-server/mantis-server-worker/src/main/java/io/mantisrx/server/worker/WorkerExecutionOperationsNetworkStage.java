@@ -97,6 +97,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final MantisMasterGateway mantisMasterApi;
     private int connectionsPerEndpoint = 2;
     private boolean lookupSpectatorRegistry = true;
+    private SinkSubscriptionStateHandler subscriptionStateHandler;
     private Action0 onSinkSubscribe = null;
     private Action0 onSinkUnsubscribe = null;
 
@@ -281,10 +282,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         return s;
     }
 
-    private void signalStarted(RunningWorker rw, AtomicReference<SinkSubscriptionStateHandler> ref) {
+    private void signalStarted(RunningWorker rw) {
         rw.signalStarted();
-        if (ref.get() != null)
-            ref.get().start();
+        if (subscriptionStateHandler != null) {
+            subscriptionStateHandler.startAsync().awaitRunning();
+        }
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -331,10 +333,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
         final RunningWorker rw = rwBuilder.build();
 
-        AtomicReference<SinkSubscriptionStateHandler> subscriptionStateHandlerRef = new AtomicReference<>();
         if (rw.getStageNum() == rw.getTotalStagesNet()) {
             // set up subscription state handler only for sink (last) stage
-            subscriptionStateHandlerRef.set(setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest()));
+            setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest());
         }
 
         logger.info("Running worker info: " + rw);
@@ -421,7 +422,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
                 jobMasterService.start();
 
-                signalStarted(rw, subscriptionStateHandlerRef);
+                signalStarted(rw);
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else if (rw.getStageNum() == 1 && rw.getTotalStagesNet() == 1) {
@@ -440,7 +441,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         rw.getSourceStageTotalWorkersObservable(),
                         onSinkSubscribe, onSinkUnsubscribe,
                         rw.getOnCompleteCallback(), rw.getOnErrorCallback());
-                signalStarted(rw, subscriptionStateHandlerRef);
+                signalStarted(rw);
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else {
@@ -464,12 +465,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     RxMetrics rxMetrics = server.getMetrics();
                     MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
 
-                    signalStarted(rw, subscriptionStateHandlerRef);
+                    signalStarted(rw);
                     logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", blocking until source observable completes");
                     server.blockUntilServerShutdown();
                 } else {
                     // execute intermediate stage or last stage plus sink
-                    executeNonSourceStage(selfSchedulingInfo, rw, subscriptionStateHandlerRef);
+                    executeNonSourceStage(selfSchedulingInfo, rw);
                 }
             }
             logger.info("Calling lifecycle.shutdown()");
@@ -480,7 +481,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         }
     }
 
-    private SinkSubscriptionStateHandler setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {
+    private void setupSubscriptionStateHandler(ExecuteStageRequest executeStageRequest) {
         final SinkSubscriptionStateHandler subscriptionStateHandler =
                 sinkSubscriptionStateHandlerFactory.apply(executeStageRequest);
         onSinkSubscribe = () -> {
@@ -493,7 +494,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             heartbeatRef.get().setPayload(StatusPayloads.Type.SubscriptionState.toString(), Boolean.toString(false));
             subscriptionStateHandler.onSinkUnsubscribed();
         };
-        return subscriptionStateHandler;
+
+        this.subscriptionStateHandler = subscriptionStateHandler;
     }
 
     private String getWorkerStringPrefix(int stageNum, int index, int number) {
@@ -501,7 +503,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw, AtomicReference<SinkSubscriptionStateHandler> subscriptionStateHandlerRef) {
+    private void executeNonSourceStage(Observable<JobSchedulingInfo> selfSchedulingInfo, final RunningWorker rw) {
         {
             // execute either intermediate (middle) stage or last+sink
             StageConfig previousStageExecuting = (StageConfig) rw.getJob().getStages()
@@ -569,7 +571,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 RxMetrics rxMetrics = server.getMetrics();
                 MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 // send running signal only after server is started
-                signalStarted(rw, subscriptionStateHandlerRef);
+                signalStarted(rw);
                 logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", blocking until intermediate observable completes");
                 server.blockUntilServerShutdown();
                 acceptSchedulingChanges.set(false);
@@ -640,6 +642,14 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     @Override
     public void shutdownStage() {
         logger.debug("Shutdown initiated");
+        if (subscriptionStateHandler != null) {
+            try {
+                subscriptionStateHandler.stopAsync().awaitTerminated();
+            } finally {
+                subscriptionStateHandler = null;
+            }
+        }
+
         System.exit(0);
     }
 }

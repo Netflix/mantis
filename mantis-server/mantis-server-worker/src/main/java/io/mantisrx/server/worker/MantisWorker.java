@@ -39,6 +39,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -101,8 +102,12 @@ public class MantisWorker extends BaseService {
                                     config,
                                     gateway,
                                     ImmutableList.of(),
-                                    SimpleClassLoaderHandle.of(getClass().getClassLoader()),
-                                    request -> new SubscriptionStateHandlerImpl(request.getJobId(), gateway, request.getSubscriptionTimeoutSecs(), request.getMinRuntimeSecs()));
+                                    ClassLoaderHandle.fixed(getClass().getClassLoader()),
+                                    SinkSubscriptionStateHandler
+                                            .Factory
+                                            .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                                                    gateway,
+                                                    Clock.systemDefaultZone()));
                             task.startAsync();
                         });
             }

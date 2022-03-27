@@ -17,99 +17,110 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Subscription;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
-class SubscriptionStateHandlerImpl implements SinkSubscriptionStateHandler {
+@Slf4j
+class SubscriptionStateHandlerImpl extends AbstractScheduledService implements SinkSubscriptionStateHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(SubscriptionStateHandlerImpl.class);
-    private final AtomicReference<ScheduledFuture> timedOutExitFutureRef = new AtomicReference<>();
     private final String jobId;
     private final MantisMasterGateway masterClientApi;
-    private ScheduledThreadPoolExecutor executor;
-    private final long subscriptionTimeoutSecs;
-    private final long minRuntimeSecs;
-    private long startedAt = System.currentTimeMillis();
+    private final Duration subscriptionTimeout;
+    private final Duration minRuntime;
+    private final AtomicReference<SubscriptionState> currentState = new AtomicReference<>();
+    private final Clock clock;
 
-    SubscriptionStateHandlerImpl(String jobId, MantisMasterGateway masterClientApi, long subscriptionTimeoutSecs, long minRuntimeSecs) {
+    SubscriptionStateHandlerImpl(String jobId, MantisMasterGateway masterClientApi, long subscriptionTimeoutSecs, long minRuntimeSecs, Clock clock) {
+        Preconditions.checkArgument(subscriptionTimeoutSecs > 0, "subscriptionTimeoutSecs should be > 0");
         this.jobId = jobId;
         this.masterClientApi = masterClientApi;
-        this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
-        this.minRuntimeSecs = minRuntimeSecs;
-        executor = this.subscriptionTimeoutSecs > 0L ? new ScheduledThreadPoolExecutor(1) : null;
+        this.subscriptionTimeout = Duration.ofSeconds(subscriptionTimeoutSecs);
+        this.minRuntime = Duration.ofSeconds(minRuntimeSecs);
+        this.clock = clock;
     }
 
     @Override
-    public synchronized void start() {
-        startedAt = System.currentTimeMillis();
-        onSinkUnsubscribed(); // start off as unsubscribed
-    }
-
-    private long evalSubscriberTimeoutSecs() {
-        return Math.max(
-                minRuntimeSecs - ((System.currentTimeMillis() - startedAt) / 1000L),
-                subscriptionTimeoutSecs
-        );
+    public void startUp() {
+        currentState.set(SubscriptionState.of(clock));
     }
 
     @Override
-    public synchronized void onSinkUnsubscribed() {
-        if (executor == null)
-            return;
-        if (timedOutExitFutureRef.get() == null) {
-            timedOutExitFutureRef.set(
-                    executor.schedule(
-                            () -> {
-                                final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-                                while (true) {
-                                    logger.info("Calling master to kill due to subscription timeout");
-                                    final Subscription subscription = masterClientApi.killJob(jobId, "MantisWorker", "No subscriptions for " +
-                                            subscriptionTimeoutSecs + " secs")
-                                            .subscribe();
-                                    // wait for kill to happen, we won't be running if it succeeds
-                                    try {Thread.sleep(60000);} // arbitrary sleep before we retry the kill
-                                    catch (InterruptedException ie) {
-                                        logger.info("Interrupted while waiting to kill job upon timeout, cancelling");
-                                        return;
-                                    }
-                                    subscription.unsubscribe(); // unsubscribe from previous one before retrying
-                                }
-                            },
-                            evalSubscriberTimeoutSecs(), TimeUnit.SECONDS));
-            logger.info("Setup future job kill (in " + subscriptionTimeoutSecs +
-                    " secs) upon no subscribers for ephemeral job " + jobId);
+    protected Scheduler scheduler() {
+        // scheduler that runs every second to check if the subscriber is unsubscribed for subscriptionTimeoutSecs.
+        return Scheduler.newFixedDelaySchedule(1, 1, TimeUnit.SECONDS);
+    }
+
+    @Override
+    protected void runOneIteration() {
+        SubscriptionState state = currentState.get();
+        if (state.isUnsubscribedFor(subscriptionTimeout) && state.hasRunFor(minRuntime)) {
+            try {
+                log.info("Calling master to kill due to subscription timeout");
+                masterClientApi.killJob(jobId, "MantisWorker", "No subscriptions for " +
+                                subscriptionTimeout.getSeconds() + " secs")
+                        .single()
+                        .toBlocking()
+                        .first();
+            } catch (Exception e) {
+                log.error("Failed to kill job {} due to no subscribers for {} seconds", jobId, state.getUnsubscribedDuration().getSeconds());
+            }
         }
     }
 
     @Override
-    public synchronized void onSinkSubscribed() {
-        if (executor == null) {
-            return;
-        }
-        final ScheduledFuture prevFutureKill = timedOutExitFutureRef.getAndSet(null);
-        if (prevFutureKill != null && !prevFutureKill.isCancelled() && !prevFutureKill.isDone()) {
-            logger.info("Cancelled future kill upon active subscriptions of ephemeral job " + jobId);
-            prevFutureKill.cancel(true);
-        }
+    public void onSinkUnsubscribed() {
+        currentState.updateAndGet(SubscriptionState::onSinkUnsubscribed);
     }
 
     @Override
-    public synchronized void shutdown() {
-        // we need to clean up the resources. onSinkSubscribed works in the same fashion.
-        // let's call that instead.
-        onSinkSubscribed();
-        // let's shutdown the executor and reset it.
-        executor.shutdown();
-        executor = null;
+    public void onSinkSubscribed() {
+        currentState.updateAndGet(SubscriptionState::onSinkSubscribed);
     }
 
-    @Override
-    public void enterActiveMode() {
+    @Value
+    private static class SubscriptionState {
+        boolean subscribed;
+        Instant startedAt;
+        Instant lastUnsubscriptionTime;
+        Clock clock;
 
+        static SubscriptionState of(Clock clock) {
+            return new SubscriptionState(false, clock.instant(), clock.instant(), clock);
+        }
+
+        public SubscriptionState onSinkSubscribed() {
+            if (isSubscribed()) {
+                return this;
+            } else {
+                return new SubscriptionState(true, startedAt, lastUnsubscriptionTime, clock);
+            }
+        }
+
+        public SubscriptionState onSinkUnsubscribed() {
+            if (isSubscribed()) {
+                return new SubscriptionState(false, startedAt, clock.instant(), clock);
+            } else {
+                return this;
+            }
+        }
+
+        public boolean hasRunFor(Duration duration) {
+            return Duration.between(startedAt, clock.instant()).compareTo(duration) >= 0;
+        }
+
+        public boolean isUnsubscribedFor(Duration duration) {
+            return !isSubscribed() && Duration.between(lastUnsubscriptionTime, clock.instant()).compareTo(duration) >= 0;
+        }
+
+        public Duration getUnsubscribedDuration() {
+            return Duration.between(lastUnsubscriptionTime, clock.instant());
+        }
     }
 }

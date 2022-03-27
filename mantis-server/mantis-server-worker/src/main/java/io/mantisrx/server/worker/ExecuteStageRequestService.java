@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,6 @@ import rx.Subscription;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-@Slf4j
 public class ExecuteStageRequestService extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExecuteStageRequestService.class);
@@ -105,7 +103,7 @@ public class ExecuteStageRequestService extends BaseService {
                             if (ExecuteStageRequestService.this.mantisJob == null) {
                                 // first of all, get a user-code classloader
                                 // this may involve downloading the job's JAR files and/or classes
-                                log.info("Loading JAR files for task {}.", this);
+                                logger.info("Loading JAR files for task {}.", this);
 
                                 userCodeClassLoader = createUserCodeClassloader(
                                     executeStageRequest);
@@ -144,7 +142,7 @@ public class ExecuteStageRequestService extends BaseService {
                         try {
                             executionOperations.shutdownStage();
                         } catch (IOException e) {
-                            log.error("Failed to close stage cleanly", e);
+                            logger.error("Failed to close stage cleanly", e);
                         }
                         closeUserCodeClassLoader();
                     }
@@ -186,13 +184,13 @@ public class ExecuteStageRequestService extends BaseService {
         try {
             executionOperations.shutdownStage();
         } catch (IOException e) {
-            log.error("Failed to close cleanly", e);
+            logger.error("Failed to close cleanly", e);
         }
 
         try {
             classLoaderHandle.close();
         } catch (IOException e) {
-            log.error("Failed to close classLoader {}", classLoaderHandle, e);
+            logger.error("Failed to close classLoader {}", classLoaderHandle, e);
         }
     }
 
@@ -206,7 +204,7 @@ public class ExecuteStageRequestService extends BaseService {
         final UserCodeClassLoader userCodeClassLoader =
              classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), requiredClasspaths);
 
-        log.info(
+        logger.info(
             "Getting user code class loader for task {} at library cache manager took {} milliseconds",
             executeStageRequest,
             System.currentTimeMillis() - startDownloadTime);
@@ -220,7 +218,7 @@ public class ExecuteStageRequestService extends BaseService {
                 try {
                     ((Closeable) userCodeClassLoader.asClassLoader()).close();
                 } catch (IOException ex) {
-                    log.error("Failed to close user class loader successfully", ex);
+                    logger.error("Failed to close user class loader successfully", ex);
                 }
             }
         }
