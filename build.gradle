@@ -44,6 +44,7 @@ ext.versions = [
 
 ext.libraries = [
         asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
+        commonsIo      : "commons-io:commons-io:2.11.0",
         commonsLang3   : 'org.apache.commons:commons-lang3:3.5',
         flinkRpcApi    : [
                 "org.apache.flink:flink-rpc-core:${versions.flink}",
@@ -56,6 +57,8 @@ ext.libraries = [
                 "junit:junit:${versions.junit4}",
                 "junit:junit-dep:${versions.junit4}",
         ],
+        hadoopCommon   : "org.apache.hadoop:hadoop-common:2.7.7",
+        hadoopS3       : "org.apache.hadoop:hadoop-aws:2.7.7",
         junitJupiter   : [
                 "org.junit.jupiter:junit-jupiter-api:${versions.junit5}",
                 "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",
@@ -72,6 +75,7 @@ ext.libraries = [
         vavr           : "io.vavr:vavr:${versions.vavr}",
         vavrJackson    : "io.vavr:vavr-jackson:${versions.vavr}",
         vavrTest       : "io.vavr:vavr-test:${versions.vavr}",
+        zip4j          : "net.lingala.zip4j:zip4j:2.9.0",
 ]
 
 allprojects {
