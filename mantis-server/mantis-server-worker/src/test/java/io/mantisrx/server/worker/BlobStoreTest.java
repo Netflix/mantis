@@ -28,22 +28,22 @@ import java.net.URI;
 import org.junit.Test;
 import org.mockito.Matchers;
 
-public class TestBlobStore {
-  @Test
-  public void testPrefixedBlobStore() throws Exception {
-    final BlobStore blobStore = mock(BlobStore.class);
-    final File file = mock(File.class);
-    when(blobStore.get(any())).thenReturn(file);
+public class BlobStoreTest {
+    @Test
+    public void testPrefixedBlobStore() throws Exception {
+        final BlobStore blobStore = mock(BlobStore.class);
+        final File file = mock(File.class);
+        when(blobStore.get(any())).thenReturn(file);
 
-    final BlobStore prefixedBlobStpre =
-        new PrefixedBlobStore(new URI("s3://netflix.s3.genpop.prod/mantis/jobs/"), blobStore);
-    prefixedBlobStpre.get(new URI("http://sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
+        final BlobStore prefixedBlobStpre =
+            new PrefixedBlobStore(new URI("s3://netflix.s3.genpop.prod/mantis/jobs/"), blobStore);
+        prefixedBlobStpre.get(new URI("http://sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
 
-    final URI expectedUri =
-        new URI("s3://netflix.s3.genpop.prod/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
-    verify(blobStore, times(1)).get(Matchers.eq(expectedUri));
+        final URI expectedUri =
+            new URI("s3://netflix.s3.genpop.prod/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
+        verify(blobStore, times(1)).get(Matchers.eq(expectedUri));
 
-    prefixedBlobStpre.get(new URI("https://mantis.us-east-1.prod.netflix.net/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
-    verify(blobStore, times(2)).get(Matchers.eq(expectedUri));
-  }
+        prefixedBlobStpre.get(new URI("https://mantis.us-east-1.prod.netflix.net/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
+        verify(blobStore, times(2)).get(Matchers.eq(expectedUri));
+    }
 }
