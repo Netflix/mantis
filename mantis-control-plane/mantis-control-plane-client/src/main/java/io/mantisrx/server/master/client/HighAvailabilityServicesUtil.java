@@ -18,8 +18,19 @@ package io.mantisrx.server.master.client;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
+import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
+import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
+import rx.Scheduler;
+import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 /**
  * HighAvailabilityServicesUtil helps you create HighAvailabilityServices instance based on the core configuration.
@@ -43,6 +54,7 @@ public class HighAvailabilityServicesUtil {
       HighAvailabilityServices {
 
     private final CuratorService curatorService;
+    private final AtomicInteger rmConnections = new AtomicInteger(0);
 
     public ZkHighAvailabilityServices(CoreConfiguration configuration) {
       curatorService = new CuratorService(configuration, null);
@@ -66,6 +78,49 @@ public class HighAvailabilityServicesUtil {
     @Override
     public MasterMonitor getMasterMonitor() {
       return curatorService.getMasterMonitor();
+    }
+
+    @Override
+    public ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager(
+        ClusterID clusterID) {
+      return new ResourceLeaderConnection<ResourceClusterGateway>() {
+        final MasterMonitor masterMonitor = curatorService.getMasterMonitor();
+
+        ResourceClusterGateway currentResourceClusterGateway =
+            new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster());
+
+        final String nameFormat =
+            "ResourceClusterGatewayCxn (" + rmConnections.getAndIncrement() + ")-%d";
+        final Scheduler scheduler =
+            Schedulers
+                .from(
+                    Executors
+                        .newSingleThreadExecutor(
+                            new ThreadFactoryBuilder().setNameFormat(nameFormat).build()));
+
+        final List<Subscription> subscriptions = new ArrayList<>();
+
+        @Override
+        public ResourceClusterGateway getCurrent() {
+          return currentResourceClusterGateway;
+        }
+
+        @Override
+        public void register(ResourceLeaderChangeListener<ResourceClusterGateway> changeListener) {
+          Subscription subscription = masterMonitor
+              .getMasterObservable()
+              .observeOn(scheduler)
+              .subscribe(nextDescription -> {
+                log.info("nextDescription={}", nextDescription);
+                ResourceClusterGateway previous = currentResourceClusterGateway;
+                currentResourceClusterGateway =
+                    new ResourceClusterGatewayClient(clusterID, nextDescription);
+                changeListener.onResourceLeaderChanged(previous, currentResourceClusterGateway);
+              });
+
+          subscriptions.add(subscription);
+        }
+      };
     }
   }
 }

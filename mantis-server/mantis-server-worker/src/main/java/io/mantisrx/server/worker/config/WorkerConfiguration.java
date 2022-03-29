@@ -17,13 +17,69 @@
 package io.mantisrx.server.worker.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
+import org.apache.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
+import org.skife.config.DefaultNull;
 
 
 public interface WorkerConfiguration extends CoreConfiguration {
 
+    // Old configurations for mesos
     @Config("mantis.agent.mesos.slave.port")
     @Default("5051")
     int getMesosSlavePort();
+
+    // New resource manager unaware configurations
+    @Config("mantis.taskexecutor.id")
+    @DefaultNull
+    String getTaskExecutorId();
+
+    @Config("mantis.taskexecutor.cluster-id")
+    @Default("DEFAULT_CLUSTER")
+    String getClusterId();
+
+    @Config("mantis.taskexecutor.ports.metrics")
+    @Default("5051")
+    int getMetricsPort();
+
+    @Config("mantis.taskexecutor.ports.debug")
+    @Default("5052")
+    int getDebugPort();
+
+    @Config("mantis.taskexecutor.ports.console")
+    @Default("5053")
+    int getConsolePort();
+
+    @Config("mantis.taskexecutor.ports.custom")
+    @Default("5054")
+    int getCustomPort();
+
+    @Config("mantis.taskexecutor.ports.sink")
+    @Default("5055")
+    int getSinkPort();
+
+    @Config("mantis.taskexecutor.heartbeats.interval")
+    @Default("10000")
+    int heartbeatInternalInMs();
+
+    @Config("mantis.taskexecutor.heartbeats.tolerable_consecutive_hearbeat_failures")
+    @Default("3")
+    int getTolerableConsecutiveHeartbeatFailures();
+
+    @Config("mantis.taskexecutor.heartbeats.timeout.ms")
+    @Default("5000")
+    int heartbeatTimeoutMs();
+
+    @Config("mantis.taskexecutor.rpc.externalAddress")
+    @Default("${EC2_LOCAL_IPV4}")
+    String getExternalAddress();
+
+    default Time getHeartbeatTimeout() {
+        return Time.milliseconds(heartbeatTimeoutMs());
+    }
+
+    default Time getHeartbeatInterval() {
+        return Time.milliseconds(heartbeatInternalInMs());
+    }
 }
