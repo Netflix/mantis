@@ -62,7 +62,7 @@ public class Services {
      * @param executor executor on which the caller needs to be notified.
      * @return future
      */
-    private static CompletableFuture<Void> awaitAsync(Service service, Executor executor) {
+    public static CompletableFuture<Void> awaitAsync(Service service, Executor executor) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         service.addListener(new Listener() {
             @Override

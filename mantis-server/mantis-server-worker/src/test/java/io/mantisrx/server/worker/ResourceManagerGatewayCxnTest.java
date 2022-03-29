@@ -146,7 +146,8 @@ public class ResourceManagerGatewayCxnTest {
                 }
             });
         when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(CompletableFuture.completedFuture(null));
-        CompletableFuture<Void> result = Services.startAsync(cxn, Executors.newSingleThreadExecutor());
+        cxn.startAsync();
+        CompletableFuture<Void> result = Services.awaitAsync(cxn, Executors.newSingleThreadExecutor());
         Throwable throwable = null;
         try {
             result.get();
