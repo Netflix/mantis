@@ -268,7 +268,7 @@ public class JobTestHelper {
         while (cnt < 100 || !result) {
             cnt++;
             actorRef.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", JobId.fromId(jobId1).get()), probe.getRef());
-            JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(JobClusterManagerProto.GetJobDetailsResponse.class);
+            JobClusterManagerProto.GetJobDetailsResponse detailsResp = probe.expectMsgClass(Duration.ofSeconds(2), JobClusterManagerProto.GetJobDetailsResponse.class);
             if (detailsResp.getJobMetadata().isPresent() && expectedState.equals(detailsResp.getJobMetadata().get().getState())) {
                 result = true;
                 break;
