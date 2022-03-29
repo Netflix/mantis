@@ -74,16 +74,20 @@ public interface BlobStore extends Closeable {
         @Override
         public File get(URI blobUrl) throws IOException {
             final File localFile = blobStore.get(blobUrl);
-            final ZipFile zipFile = isZipFile(localFile);
+            final ZipFile zipFile = getZipFile(localFile);
             if (zipFile == null) {
                 return localFile;
             } else {
-                String destDirStr = getDestDir(zipFile);
-                File destDir = new File(destDirStr);
-                if (!destDir.exists()) {
-                    zipFile.extractAll(destDirStr);
+                try (ZipFile z = zipFile) {
+                    String destDirStr = getUnzippedDestDir(z);
+                    File destDir = new File(destDirStr);
+                    if (!destDir.exists()) {
+                        z.extractAll(destDirStr);
+                    } else {
+                        throw new IOException(String.format("destDir %s exists when it was expected to be empty", destDir));
+                    }
+                    return destDir;
                 }
-                return destDir;
             }
         }
 
@@ -92,11 +96,11 @@ public interface BlobStore extends Closeable {
             blobStore.close();
         }
 
-        private String getDestDir(ZipFile zipFile) {
+        private String getUnzippedDestDir(ZipFile zipFile) {
             return zipFile.getFile().getPath() + "-unzipped";
         }
 
-        private ZipFile isZipFile(File file) {
+        private ZipFile getZipFile(File file) {
             ZipFile file1 = new ZipFile(file);
             if (file1.isValidZipFile()) {
                 return file1;
