@@ -18,6 +18,7 @@ package io.mantisrx.server.worker;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
@@ -129,5 +130,9 @@ public class Task extends AbstractIdleService {
     public Observable<Status> getStatus() {
         return tasksStatusSubject
             .flatMap((Func1<Observable<Status>, Observable<Status>>) status -> status);
+    }
+
+    public WorkerId getWorkerId() {
+        return executeStageRequest.getWorkerId();
     }
 }
