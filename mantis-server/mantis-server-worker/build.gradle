@@ -30,6 +30,10 @@ dependencies {
     compile project(":mantis-server:mantis-server-worker-client")
 
     api libraries.flinkRpcApi
+    implementation libraries.commonsIo
+    implementation libraries.hadoopCommon
+    implementation libraries.zip4j
+    implementation libraries.hadoopS3
     implementation libraries.flinkRpcImpl
 
     compile "org.apache.mesos:mesos:$mesosVersion"

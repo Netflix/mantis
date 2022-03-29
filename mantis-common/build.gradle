@@ -37,6 +37,7 @@ dependencies {
     api libraries.rxJava
     api libraries.slf4jApi
     api libraries.slf4jLog4j12
+    implementation libraries.commonsIo
 
     testImplementation libraries.commonsLang3
     testImplementation "org.hamcrest:hamcrest-core:1.3"
