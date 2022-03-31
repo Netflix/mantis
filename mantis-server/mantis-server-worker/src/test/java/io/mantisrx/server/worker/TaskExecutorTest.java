@@ -71,6 +71,7 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import rx.Observable;
 import rx.Subscription;
@@ -145,6 +146,7 @@ public class TaskExecutorTest {
         taskExecutor.close();
     }
 
+    @Ignore
     @Test
     public void testTaskExecutorEndToEndWithASingleStageJobByLoadingFromClassLoader()
         throws Exception {
