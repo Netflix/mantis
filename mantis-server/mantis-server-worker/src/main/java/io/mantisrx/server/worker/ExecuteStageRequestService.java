@@ -24,8 +24,6 @@ import io.mantisrx.server.core.Status;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URL;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import javax.annotation.Nullable;
@@ -47,8 +45,6 @@ public class ExecuteStageRequestService extends BaseService {
     private final Optional<String> jobProviderClass;
 
     private final ClassLoaderHandle classLoaderHandle;
-    /** The classpaths used by this task. */
-    private final Collection<URL> requiredClasspaths;
     @Nullable
     private final Job mantisJob;
 
@@ -64,14 +60,13 @@ public class ExecuteStageRequestService extends BaseService {
         Observer<Observable<Status>> tasksStatusObserver,
         WorkerExecutionOperations executionOperations,
         Optional<String> jobProviderClass,
-        ClassLoaderHandle classLoaderHandle, Collection<URL> requiredClasspaths,
+        ClassLoaderHandle classLoaderHandle,
         @Nullable Job mantisJob) {
         this.executeStageRequestObservable = executeStageRequestObservable;
         this.tasksStatusObserver = tasksStatusObserver;
         this.executionOperations = executionOperations;
         this.jobProviderClass = jobProviderClass;
         this.classLoaderHandle = classLoaderHandle;
-        this.requiredClasspaths = requiredClasspaths;
         this.mantisJob = mantisJob;
     }
 
@@ -202,7 +197,7 @@ public class ExecuteStageRequestService extends BaseService {
 
         // triggers the download of all missing jar files from the job manager
         final UserCodeClassLoader userCodeClassLoader =
-             classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), requiredClasspaths);
+             classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), ImmutableList.of());
 
         logger.info(
             "Getting user code class loader for task {} at library cache manager took {} milliseconds",

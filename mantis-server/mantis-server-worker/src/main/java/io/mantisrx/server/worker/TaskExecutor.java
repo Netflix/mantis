@@ -29,6 +29,7 @@ import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -47,7 +48,6 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service.Listener;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.net.SocketTimeoutException;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -92,7 +92,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
 
+    // the reason the MantisMasterGateway field is not final is because we expect the HighAvailabilityServices
+    // to be started before we can get the MantisMasterGateway
     private MantisMasterGateway masterMonitor;
+    private ResourceLeaderConnection<ResourceClusterGateway> resourceClusterGatewaySupplier;
+    // represents the current connection to the resource manager.
     private ResourceManagerGatewayCxn currentResourceManagerCxn;
     private TaskExecutorReport currentReport;
     private Task currentTask;
@@ -152,10 +156,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         masterMonitor = highAvailabilityServices.getMasterClientApi();
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
+        resourceClusterGatewaySupplier =
+            highAvailabilityServices.connectWithResourceManager(clusterID);
+        resourceClusterGatewaySupplier.register(new ResourceManagerChangeListener());
         establishNewResourceManagerCxnSync();
-        highAvailabilityServices
-            .connectWithResourceManager(clusterID)
-            .register(new ResourceManagerChangeListener());
     }
 
     public CompletableFuture<Void> awaitRunning() {
@@ -260,8 +264,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private ResourceManagerGatewayCxn newResourceManagerCxn() {
         validateRunsInMainThread();
-        ResourceClusterGateway resourceManagerGateway =
-            highAvailabilityServices.connectWithResourceManager(clusterID).getCurrent();
+        ResourceClusterGateway resourceManagerGateway = resourceClusterGatewaySupplier.getCurrent();
 
         // let's register ourselves with the resource manager
         return new ResourceManagerGatewayCxn(
@@ -272,13 +275,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration.getHeartbeatTimeout(),
             this::getCurrentReport,
             workerConfiguration.getTolerableConsecutiveHeartbeatFailures());
-
-//    CompletableFuture<Void> serviceStartedFuture =
-//        Services.startAsync(cxn, getIOExecutor());
-
-        // if somehow we are not able to register with the resource manager or something else errors out
-        // while trying to connect to the resource manager, then we expect the startup to fail.
-//    return serviceStartedFuture.thenApply(dontCare -> cxn);
     }
 
     private ExecutorService getIOExecutor() {
@@ -418,8 +414,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             request,
             workerConfiguration,
             masterMonitor,
-            // todo(sundaram): Take a stab at this
-            Collections.emptyList(),
             classLoaderHandle,
             subscriptionStateHandlerFactory);
 
