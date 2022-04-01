@@ -133,7 +133,10 @@ public class TaskExecutorTest {
         };
 
         taskExecutor =
-            new TestingTaskExecutor(rpcService, workerConfiguration, highAvailabilityServices,
+            new TestingTaskExecutor(
+                rpcService,
+                workerConfiguration,
+                highAvailabilityServices,
                 classLoaderHandle,
                 executeStageRequest -> SinkSubscriptionStateHandler.noop(),
                 updateTaskExecutionStatusFunction);
