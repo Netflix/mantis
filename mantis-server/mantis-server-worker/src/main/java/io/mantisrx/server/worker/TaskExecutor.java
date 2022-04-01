@@ -151,7 +151,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
-    private void startTaskExecutorServices() throws Exception {
+    private void startTaskExecutorServices() {
         validateRunsInMainThread();
 
         masterMonitor = highAvailabilityServices.getMasterClientApi();
@@ -166,7 +166,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return startFuture;
     }
 
-    private void establishNewResourceManagerCxnSync() throws Exception {
+    private void establishNewResourceManagerCxnSync() {
         // check if we are running on the main thread first
         validateRunsInMainThread();
         Preconditions.checkArgument(
@@ -309,7 +309,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         @Override
         protected String serviceName() {
-            return "ResourceManagerGatewayCxn-" + String.valueOf(idx);
+            return "ResourceManagerGatewayCxn-" + idx;
         }
 
         @Override
@@ -394,7 +394,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @VisibleForTesting
     <T> CompletableFuture<T> callInMainThread(Callable<CompletableFuture<T>> tSupplier,
                                               Time timeout) {
-        return this.callAsync(() -> tSupplier.call(), timeout).thenCompose(t -> t);
+        return this.callAsync(tSupplier, timeout).thenCompose(t -> t);
     }
 
     @Override
@@ -533,9 +533,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     CompletableFuture<Boolean> isRegistered(Time timeout) {
-        return callAsync(() -> {
-            return this.currentResourceManagerCxn != null;
-        }, timeout);
+        return callAsync(() -> this.currentResourceManagerCxn != null, timeout);
     }
 
     private final ReportStatus reportStatus = new ReportStatus();

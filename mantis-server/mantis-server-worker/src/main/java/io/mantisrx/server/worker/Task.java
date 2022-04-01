@@ -79,7 +79,7 @@ public class Task extends AbstractIdleService {
                 masterMonitor,
                 config,
                 workerMetricsClient, sinkSubscriptionStateHandlerFactory),
-            getJobProviderClass(), classLoaderHandle, requiredClasspaths, null));
+            getJobProviderClass(), classLoaderHandle, null));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {
