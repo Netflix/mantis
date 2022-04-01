@@ -25,9 +25,7 @@ import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -47,11 +45,6 @@ public class Task extends AbstractIdleService {
     private final List<Service> mantisServices = new ArrayList<>();
 
     private final MantisMasterGateway masterMonitor;
-
-    /**
-     * The classpaths used by this task.
-     */
-    private final Collection<URL> requiredClasspaths;
 
     private final ClassLoaderHandle classLoaderHandle;
 
@@ -86,7 +79,7 @@ public class Task extends AbstractIdleService {
                 masterMonitor,
                 config,
                 workerMetricsClient, sinkSubscriptionStateHandlerFactory),
-            getJobProviderClass(), classLoaderHandle, requiredClasspaths, null));
+            getJobProviderClass(), classLoaderHandle, null));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {

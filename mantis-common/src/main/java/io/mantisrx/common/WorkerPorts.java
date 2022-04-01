@@ -17,6 +17,7 @@
 package io.mantisrx.common;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -118,6 +119,11 @@ public class WorkerPorts implements Serializable {
                 && isValidPort(debugPort)
                 && isValidPort(customPort)
                 && isValidPort(sinkPort);
+    }
+
+    @JsonIgnore
+    public int getNumberOfPorts() {
+        return ports.size();
     }
 
     /**

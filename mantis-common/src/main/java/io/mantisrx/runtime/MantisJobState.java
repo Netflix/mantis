@@ -65,6 +65,10 @@ public enum MantisJobState {
         return false;
     }
 
+    public boolean isTerminalState() {
+        return isTerminalState(this);
+    }
+
     public static boolean isTerminalState(MantisJobState state) {
         switch (state) {
             case Failed:
