@@ -83,16 +83,15 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
   private CompletableFuture<Ack> performAction(String action, Object body) {
     try {
       final String bodyStr = mapper.writeValueAsString(body);
-      log.info("bodyStr={}", bodyStr);
       final Request request = post(
           getActionUri(action)).setBody(bodyStr).addHeader("Content-Type", "application/json").build();
-      log.info("request={}", request);
+      log.debug("request={}", request);
       return client.executeRequest(request).toCompletableFuture().thenCompose(response -> {
         if (response.getStatusCode() == 200) {
           return CompletableFuture.completedFuture(Ack.getInstance());
         } else {
           try {
-            log.error("failed request {}", response.getResponseBody());
+            log.error("failed request {} with response {}", request, response.getResponseBody());
             return CompletableFutures.exceptionallyCompletedFuture(
                 mapper.readValue(response.getResponseBody(), Throwable.class));
           } catch (Exception e) {
@@ -111,7 +110,7 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
         masterDescription.getHostname(), masterDescription.getApiPort(), clusterID.getResourceID(),
         action);
 
-    log.info("uri={}", uri);
+    log.debug("uri={}", uri);
     return uri;
   }
 
