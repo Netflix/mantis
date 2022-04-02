@@ -34,6 +34,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.Subscription;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
@@ -42,6 +43,7 @@ public class KafkaSink<T> implements SelfDocumentingSink<T> {
     private final Func1<T, byte[]> encoder;
     private final Registry registry;
     private final AtomicReference<KafkaProducer<byte[], byte[]>> kafkaProducerAtomicRef = new AtomicReference<>(null);
+    private Subscription subscription;
 
     KafkaSink(Registry registry, Func1<T, byte[]> encoder) {
         this.encoder = encoder;
@@ -61,7 +63,7 @@ public class KafkaSink<T> implements SelfDocumentingSink<T> {
         Parameters parameters = context.getParameters();
         String topic = (String)parameters.get(KafkaSinkJobParameters.TOPIC);
 
-        dataO.map(encoder::call)
+        subscription = dataO.map(encoder::call)
             .flatMap((dataBytes) ->
                          Observable.from(kafkaProducer.send(new ProducerRecord<>(topic, dataBytes)))
                              .subscribeOn(Schedulers.io()))
@@ -90,5 +92,10 @@ public class KafkaSink<T> implements SelfDocumentingSink<T> {
             .name("Mantis Kafka Sink")
             .description(description.toString())
             .build();
+    }
+
+    @Override
+    public void close() {
+        subscription.unsubscribe();
     }
 }

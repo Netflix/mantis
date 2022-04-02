@@ -27,16 +27,16 @@ import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
-
 public class TestJob extends MantisJobProvider<Integer> {
 
-    private List<Integer> itemsWritten = new LinkedList<Integer>();
+    private final List<Integer> itemsWritten = new LinkedList<Integer>();
 
     public static void main(String[] args) {
         LocalJobExecutorNetworked.execute(new TestJob().getJobInstance());
@@ -94,6 +94,11 @@ public class TestJob extends MantisJobProvider<Integer> {
                                 itemsWritten.add(t1);
                             }
                         });
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+
                     }
                 })
                 .create();

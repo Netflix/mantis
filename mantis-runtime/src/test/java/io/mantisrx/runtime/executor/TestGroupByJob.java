@@ -126,6 +126,11 @@ public class TestGroupByJob extends MantisJobProvider<Pair> {
                                     }
                                 });
                     }
+
+                  @Override
+                  public void close() {
+
+                  }
                 })
                 .create();
     }
