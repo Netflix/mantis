@@ -20,6 +20,6 @@ import lombok.Value;
 @Value
 public class Point {
 
-  private double x;
-  private double y;
+    private double x;
+    private double y;
 }
