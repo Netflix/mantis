@@ -33,7 +33,6 @@ import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
-
 public class TestJobThreeStage extends MantisJobProvider<Integer> {
 
     private List<Integer> itemsWritten = new LinkedList<Integer>();
@@ -108,6 +107,11 @@ public class TestJobThreeStage extends MantisJobProvider<Integer> {
                                 itemsWritten.add(t1);
                             }
                         });
+                    }
+
+                    @Override
+                    public void close() {
+
                     }
                 })
                 .create();

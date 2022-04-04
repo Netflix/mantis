@@ -24,17 +24,18 @@ import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.sourcejob.kafka.core.TaggedData;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import rx.Observable;
+import rx.Subscription;
 import rx.functions.Func2;
-
 
 public class TaggedDataSourceSink implements Sink<TaggedData> {
 
-    private Func2<Map<String, List<String>>, Context, Void> preProcessor = new NoOpProcessor();
-    private Func2<Map<String, List<String>>, Context, Void> postProcessor = new NoOpProcessor();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final ServerSentEventsSink<TaggedData> sink;
+    private Subscription subscription;
 
     static class NoOpProcessor implements Func2<Map<String, List<String>>, Context, Void> {
 
@@ -45,24 +46,15 @@ public class TaggedDataSourceSink implements Sink<TaggedData> {
     }
 
     public TaggedDataSourceSink() {
+        this(new NoOpProcessor(), new NoOpProcessor());
     }
 
     public TaggedDataSourceSink(Func2<Map<String, List<String>>, Context, Void> preProcessor,
                                 Func2<Map<String, List<String>>, Context, Void> postProcessor) {
-        this.postProcessor = postProcessor;
-        this.preProcessor = preProcessor;
-    }
-
-    @Override
-    public void call(Context context, PortRequest portRequest,
-                     Observable<TaggedData> observable) {
-        observable = observable
-            .filter((t1) -> !t1.getPayload().isEmpty());
-        ServerSentEventsSink<TaggedData> sink = new ServerSentEventsSink.Builder<TaggedData>()
+        this.sink = new ServerSentEventsSink.Builder<TaggedData>()
             .withEncoder((data) -> {
                 try {
-                    String json = OBJECT_MAPPER.writeValueAsString(data.getPayload());
-                    return json;
+                    return OBJECT_MAPPER.writeValueAsString(data.getPayload());
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                     return "{\"error\":" + e.getMessage() + "}";
@@ -72,8 +64,24 @@ public class TaggedDataSourceSink implements Sink<TaggedData> {
             .withRequestPreprocessor(preProcessor)
             .withRequestPostprocessor(postProcessor)
             .build();
+    }
 
-        observable.subscribe();
+    @Override
+    public void call(Context context, PortRequest portRequest,
+                     Observable<TaggedData> observable) {
+        observable = observable
+            .filter((t1) -> !t1.getPayload().isEmpty());
+
+        subscription = observable.subscribe();
         sink.call(context, portRequest, observable);
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            sink.close();
+        } finally {
+            subscription.unsubscribe();
+        }
     }
 }

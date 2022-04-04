@@ -22,18 +22,17 @@ import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.sink.ServerSentEventsSink;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.sink.predicate.Predicate;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import rx.Observable;
+import rx.Subscription;
 import rx.functions.Func2;
-
 
 public class SourceSink implements Sink<String> {
 
-    private final String clientId;
-
-    private Func2<Map<String, List<String>>, Context, Void> preProcessor = new NoOpProcessor();
-    private Func2<Map<String, List<String>>, Context, Void> postProcessor = new NoOpProcessor();
+    private final ServerSentEventsSink<String> sink;
+    private Subscription subscription;
 
     static class NoOpProcessor implements Func2<Map<String, List<String>>, Context, Void> {
 
@@ -46,9 +45,12 @@ public class SourceSink implements Sink<String> {
 
     public SourceSink(Func2<Map<String, List<String>>, Context, Void> preProcessor,
                       Func2<Map<String, List<String>>, Context, Void> postProcessor, String mantisClientId) {
-        this.postProcessor = postProcessor;
-        this.preProcessor = preProcessor;
-        this.clientId = mantisClientId;
+        this.sink = new ServerSentEventsSink.Builder<String>()
+            .withEncoder(data -> data)
+            .withPredicate(new Predicate<>("description", new EventFilter(mantisClientId)))
+            .withRequestPreprocessor(preProcessor)
+            .withRequestPostprocessor(postProcessor)
+            .build();
     }
 
     @Override
@@ -56,15 +58,17 @@ public class SourceSink implements Sink<String> {
                      Observable<String> observable) {
         observable = observable.filter(t1 -> !t1.isEmpty());
 
-        ServerSentEventsSink<String> sink = new ServerSentEventsSink.Builder<String>()
-                .withEncoder(data -> data)
-                .withPredicate(new Predicate<>("description", new EventFilter(clientId)))
-                .withRequestPreprocessor(preProcessor)
-                .withRequestPostprocessor(postProcessor)
-                .build();
-
-        observable.subscribe();
+        subscription = observable.subscribe();
 
         sink.call(context, portRequest, observable);
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            sink.close();
+        } finally {
+            subscription.unsubscribe();
+        }
     }
 }

@@ -16,29 +16,35 @@
 
 package io.mantisrx.runtime.sink;
 
+import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import rx.Observable;
 import rx.Observer;
+import rx.Subscription;
 import rx.functions.Func1;
 
 
 public class Sinks {
 
 
+    @SuppressWarnings("unused")
     public static <T> Sink<T> eagerSubscribe(final Sink<T> sink) {
         return new Sink<T>() {
+            private Subscription subscription;
+
             @Override
             public List<ParameterDefinition<?>> getParameters() {
                 return sink.getParameters();
             }
             @Override
             public void call(Context c, PortRequest p, Observable<T> o) {
-                o.subscribe();
+                subscription = o.subscribe();
                 sink.call(c, p, o);
             }
 
@@ -46,18 +52,29 @@ public class Sinks {
             public void init(Context t) {
                 sink.init(t);
             }
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    sink.close();
+                } finally {
+                    subscription.unsubscribe();
+                }
+            }
         };
     }
 
     public static <T> SelfDocumentingSink<T> eagerSubscribe(final SelfDocumentingSink<T> sink) {
         return new SelfDocumentingSink<T>() {
+            private Subscription subscription;
+
             @Override
             public List<ParameterDefinition<?>> getParameters() {
                 return sink.getParameters();
             }
             @Override
             public void call(Context c, PortRequest p, Observable<T> o) {
-                o.subscribe();
+                subscription = o.subscribe();
                 sink.call(c, p, o);
             }
 
@@ -69,6 +86,15 @@ public class Sinks {
             @Override
             public void init(Context t) {
                 sink.init(t);
+            }
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    sink.close();
+                } finally {
+                    subscription.unsubscribe();
+                }
             }
         };
     }
@@ -96,18 +122,25 @@ public class Sinks {
                     sink.init(t);
                 }
             }
+
+            @Override
+            public void close() throws IOException {
+                Closeables.combine(many).close();
+            }
         };
     }
 
     public static <T> ServerSentEventsSink<T> sse(Func1<T, String> encoder) {
-        return new ServerSentEventsSink<T>(encoder);
+        return new ServerSentEventsSink<>(encoder);
     }
 
     public static <T> Sink<T> sysout() {
         return new Sink<T>() {
+            private Subscription subscription;
+
             @Override
             public void call(Context t1, PortRequest p, Observable<T> t2) {
-                t2.subscribe(new Observer<T>() {
+                subscription = t2.subscribe(new Observer<T>() {
                     @Override
                     public void onCompleted() {
                         System.out.println("completed");
@@ -123,6 +156,11 @@ public class Sinks {
                         System.out.println(t);
                     }
                 });
+            }
+
+            @Override
+            public void close() {
+                subscription.unsubscribe();
             }
         };
     }

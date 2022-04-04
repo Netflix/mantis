@@ -28,6 +28,7 @@ import io.reactivex.mantis.network.push.PushServerSse;
 import io.reactivex.mantis.network.push.PushServers;
 import io.reactivex.mantis.network.push.Routers;
 import io.reactivex.mantis.network.push.ServerConfig;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import mantis.io.reactivex.netty.RxNetty;
@@ -47,21 +48,24 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private static final Logger LOG = LoggerFactory.getLogger(ServerSentEventsSink.class);
     private final Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
     private final BehaviorSubject<Integer> portObservable = BehaviorSubject.create();
-    private Func1<T, String> encoder;
-    private Func1<Throwable, String> errorEncoder;
-    private Predicate<T> predicate;
+    private final Func1<T, String> encoder;
+    private final Func1<Throwable, String> errorEncoder;
+    private final Predicate<T> predicate;
     private Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
     private Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
     private int port = -1;
-    private MantisPropertiesService propService;
+    private final MantisPropertiesService propService;
+
+    private PushServerSse<T, Context> pushServerSse;
+    private HttpServer<ByteBuf, ServerSentEvent> httpServer;
 
     public ServerSentEventsSink(Func1<T, String> encoder) {
         this(encoder, null, null);
     }
 
-    public ServerSentEventsSink(Func1<T, String> encoder,
-                         Func1<Throwable, String> errorEncoder,
-                         Predicate<T> predicate) {
+    ServerSentEventsSink(Func1<T, String> encoder,
+        Func1<Throwable, String> errorEncoder,
+        Predicate<T> predicate) {
         if (errorEncoder == null) {
             // default
             errorEncoder = Throwable::getMessage;
@@ -73,7 +77,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.subscribeProcessor = null;
     }
 
-    public ServerSentEventsSink(Builder<T> builder) {
+    ServerSentEventsSink(Builder<T> builder) {
         this.encoder = builder.encoder;
         this.errorEncoder = builder.errorEncoder;
         this.predicate = builder.predicate;
@@ -88,18 +92,18 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
 
         StringBuilder description = new StringBuilder();
         description.append("HTTP server streaming results using Server-sent events.  The sink"
-                + " supports optional subscription (GET) parameters to change the events emitted"
-                + " by the stream.  A sampling interval can be applied to the stream using"
-                + " the GET parameter sample=numSeconds.  This will limit the stream rate to"
-                + " events-per-numSeconds.");
+            + " supports optional subscription (GET) parameters to change the events emitted"
+            + " by the stream.  A sampling interval can be applied to the stream using"
+            + " the GET parameter sample=numSeconds.  This will limit the stream rate to"
+            + " events-per-numSeconds.");
         if (predicate != null && predicate.getDescription() != null) {
             description.append("  Predicate description: ").append(predicate.getDescription());
         }
 
         return new Metadata.Builder()
-                .name("Server Sent Event Sink")
-                .description(description.toString())
-                .build();
+            .name("Server Sent Event Sink")
+            .description(description.toString())
+            .build();
     }
 
     private boolean runNewSseServerImpl(String jobName) {
@@ -141,41 +145,65 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
 
             String serverName = "SseSink";
             ServerConfig.Builder<T> config = new ServerConfig.Builder<T>()
-                    .name(serverName)
-                    .groupRouter(Routers.roundRobinSse(serverName, encoder))
-                    .port(port)
-                    .metricsRegistry(context.getMetricsRegistry())
-                    .maxChunkTimeMSec(maxReadTime())
-                    .maxChunkSize(maxChunkSize())
-                    .bufferCapacity(bufferCapacity())
-                    .numQueueConsumers(numConsumerThreads())
-                    .useSpscQueue(useSpsc())
-                    .maxChunkTimeMSec(getBatchInterval());
+                .name(serverName)
+                .groupRouter(Routers.roundRobinSse(serverName, encoder))
+                .port(port)
+                .metricsRegistry(context.getMetricsRegistry())
+                .maxChunkTimeMSec(maxReadTime())
+                .maxChunkSize(maxChunkSize())
+                .bufferCapacity(bufferCapacity())
+                .numQueueConsumers(numConsumerThreads())
+                .useSpscQueue(useSpsc())
+                .maxChunkTimeMSec(getBatchInterval());
             if (predicate != null) {
                 config.predicate(predicate.getPredicate());
             }
-            PushServerSse<T, Context> server = PushServers.infiniteStreamSse(config.build(), observable,
-                    requestPreprocessor, requestPostprocessor,
-                    subscribeProcessor, context, true);
-            server.start();
+            pushServerSse = PushServers.infiniteStreamSse(config.build(), observable,
+                requestPreprocessor, requestPostprocessor,
+                subscribeProcessor, context, true);
+            pushServerSse.start();
         } else {
             LOG.info("Serving legacy HTTP SSE server sink on port: " + port);
 
             int batchInterval = getBatchInterval();
-            HttpServer<ByteBuf, ServerSentEvent> server = RxNetty.newHttpServerBuilder(port, new ServerSentEventRequestHandler<>(observable, encoder,
-                    errorEncoder, predicate, requestPreprocessor, requestPostprocessor, context, batchInterval))
-                    .pipelineConfigurator(PipelineConfigurators.<ByteBuf>serveSseConfigurator())
-                    .channelOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 5 * 1024 * 1024)
-                    .channelOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 1024 * 1024)
-                    .build();
-            server.start();
+            httpServer = RxNetty.newHttpServerBuilder(
+                    port,
+                    new ServerSentEventRequestHandler<>(
+                        observable,
+                        encoder,
+                        errorEncoder,
+                        predicate,
+                        requestPreprocessor,
+                        requestPostprocessor,
+                        context,
+                        batchInterval))
+                .pipelineConfigurator(PipelineConfigurators.<ByteBuf>serveSseConfigurator())
+                .channelOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 5 * 1024 * 1024)
+                .channelOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 1024 * 1024)
+                .build();
+            httpServer.start();
         }
         portObservable.onNext(port);
     }
 
+    @Override
+    public void close() throws IOException {
+        if (pushServerSse != null) {
+            pushServerSse.shutdown();
+        } else if (httpServer != null) {
+            try {
+                httpServer.shutdown();
+            } catch (InterruptedException e) {
+                throw new IOException(String.format("Failed to shut down the http server %s", httpServer), e);
+            }
+        }
+    }
+
     private int getBatchInterval() {
         //default flush interval
-        String flushIntervalMillisStr = ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.sse.batchInterval", "100");
+        String flushIntervalMillisStr =
+            ServiceRegistry.INSTANCE.getPropertiesService()
+                .getStringValue("mantis.sse.batchInterval", "100");
         LOG.info("Read fast property mantis.sse.batchInterval" + flushIntervalMillisStr);
         return Integer.parseInt(flushIntervalMillisStr);
     }
@@ -183,15 +211,15 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private int getHighWaterMark() {
         String jobName = propService.getStringValue("JOB_NAME", "default");
         int highWaterMark = 5 * 1024 * 1024;
-        String highWaterMarkStr = propService.getStringValue(jobName + ".sse.highwater.mark", Integer.toString(5 * 1024 * 1024));
+        String highWaterMarkStr = propService.getStringValue(
+            jobName + ".sse.highwater.mark",
+            Integer.toString(5 * 1024 * 1024));
         LOG.info("Read fast property:" + jobName + ".sse.highwater.mark ->" + highWaterMarkStr);
-
         try {
             highWaterMark = Integer.parseInt(highWaterMarkStr);
         } catch (Exception e) {
             LOG.error("Error parsing string " + highWaterMarkStr + " exception " + e.getMessage());
         }
-
         return highWaterMark;
     }
 
@@ -200,8 +228,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     }
 
     /**
-     * notifies you when the mantis job is available to listen to, for use when you want to
-     * write unit or regressions tests with the local runner that verify the output
+     * Notifies you when the mantis job is available to listen to, for use when you want to
+     * write unit or regressions tests with the local runner that verify the output.
      */
     public Observable<Integer> portConnections() {
         return portObservable;
@@ -209,11 +237,11 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
 
     public static class Builder<T> {
 
-        Func1<T, String> encoder;
-        Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
-        Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
-        Func1<Throwable, String> errorEncoder = Throwable::getMessage;
-        Predicate<T> predicate;
+        private Func1<T, String> encoder;
+        private Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
+        private Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
+        private Func1<Throwable, String> errorEncoder = Throwable::getMessage;
+        private Predicate<T> predicate;
         private Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
 
         public Builder<T> withEncoder(Func1<T, String> encoder) {
@@ -236,7 +264,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
             return this;
         }
 
-        public Builder<T> withSubscribePreprocessor(Func2<Map<String, List<String>>, Context, Void> subscribeProcessor) {
+        public Builder<T> withSubscribePreprocessor(
+            Func2<Map<String, List<String>>, Context, Void> subscribeProcessor) {
             this.subscribeProcessor = subscribeProcessor;
             return this;
         }
@@ -247,7 +276,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         }
 
         public ServerSentEventsSink<T> build() {
-            return new ServerSentEventsSink<T>(this);
+            return new ServerSentEventsSink<>(this);
         }
     }
 }

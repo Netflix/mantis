@@ -38,7 +38,6 @@ import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
-
 public class TestJobParameterized extends MantisJobProvider<Integer> {
 
     private List<Integer> itemsWritten = new LinkedList<Integer>();
@@ -102,6 +101,11 @@ public class TestJobParameterized extends MantisJobProvider<Integer> {
                                 itemsWritten.add(t1);
                             }
                         });
+                    }
+
+                    @Override
+                    public void close() {
+
                     }
                 })
                 .metadata(new Metadata.Builder()
