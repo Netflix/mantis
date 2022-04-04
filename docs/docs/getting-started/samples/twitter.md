@@ -47,6 +47,6 @@ You should see output of the Twitter job being streamed below
 ## Terminate the job
 To stop the job click on the red `Kill Job` button on the top right corner.
 
-* Explore the [code](https://github.com/Netflix/mantis-examples/tree/master/twitter-sample)
+* Explore the [code](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-twitter-sample)
 
 * Checkout out the other samples

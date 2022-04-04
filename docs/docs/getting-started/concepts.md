@@ -125,20 +125,20 @@ Works the the mantis-publish library to fetch data on-demand from external appli
 available to downstream consumers. See the [On-Demand Sample](samples/on-demand.md) to see
 this in action.
 
-Users can also build their own source jobs see the [Synthetic Source Job](https://github.com/Netflix/mantis-examples/tree/master/synthetic-sourcejob) example.
+Users can also build their own source jobs see the [Synthetic Source Job](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-synthetic-sourcejob) example.
 
 ## Job Chaining
 
 One of the unique capabilities of Mantis is the ability for Jobs to communicate with each other to form a kind of
 streaming microservices architecture. The Source Job -> Downstream job flow is an example of this Job chaining. 
 In this case the `source` of the downstream job is the output of the upstream Data source job. 
-All a job needs to do to connect to the sink of another job is to include the in-built [Job Connnector](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java)
+All a job needs to do to connect to the sink of another job is to include the in-built [Job Connnector](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java).
 
-See the [Job Connector Sample](https://github.com/Netflix/mantis-examples/tree/master/jobconnector-sample) to see this in action.
+See the [Job Connector Sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-jobconnector-sample) to see this in action.
 
 These job to job communications happen directly via in memory socket connections with no intermediate disk persistence.
 If buffering/persistence of results is desired then it is recommended to sink the data into persistence queue like Kafka using
-the [Kafka Connector](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-kafka/src/main/java/io/mantisrx/connector/kafka/sink/KafkaSink.java)
+the [Kafka Connector](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-kafka/src/main/java/io/mantisrx/connector/kafka/sink/KafkaSink.java)
 
 Job chaining has proven to be extremely useful while operating at scale. It is widely used in the Netflix deployment of Mantis.
   
@@ -156,7 +156,7 @@ as a library within a Job that can benefit from the query and aggregation featur
 
 ## Mantis Master
 
-The [Mantis Master](https://github.com/netflix/mantis-control-plane) is a leader elected control plane for the Mantis platform.
+The [Mantis Master](https://github.com/Netflix/mantis/tree/master/mantis-control-plane) is a leader elected control plane for the Mantis platform.
 It is responsible for managing the life cycle of Job Clusters, Jobs and workers. It also acts as a Resource scheduler
 to optimally allocate and schedule resources required by the Jobs. The master stores its meta-data into an external source.
 The OSS version ships with a sample file based store. For production deployments a highly available store is recommended.

@@ -5,7 +5,7 @@ Our first tutorial primed us for writing and executing a job end-to-end but it w
 To proceed you'll need to head over to Twitter and grab yourself a pair of API keys.
 
 ## The Source
-The source is responsible for ingesting data to be processed within the job. Many Mantis jobs will subscribe to other jobs and can simply use a templatized source such as [`io.mantisrx.connectors.job.source.JobSource`](https://github.com/Netflix/mantis-connectors/blob/master/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java) which handles all the minutiae of connecting to other jobs for us. If however your job exists on the edge of Mantis it will need to pull data in via a custom source. Since we're reading from the Twitter API we'll need to do this ourselves.
+The source is responsible for ingesting data to be processed within the job. Many Mantis jobs will subscribe to other jobs and can simply use a templatized source such as [`io.mantisrx.connectors.job.source.JobSource`](https://github.com/Netflix/mantis/blob/master/mantis-connectors/mantis-connector-job/src/main/java/io/mantisrx/connector/job/source/JobSource.java) which handles all the minutiae of connecting to other jobs for us. If however your job exists on the edge of Mantis it will need to pull data in via a custom source. Since we're reading from the Twitter API we'll need to do this ourselves.
 
 Our [`TwitterSource`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java) must implement [`io.mantisrx.runtime.source.Source`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java) which requires us to implement `call` and optionally `init`. Mantis provides some guarantees here in that `init` will be invoked exactly once and before `call` which will be invoked at least once. This makes `init` the ideal location to perform one time setup and configuration for the source and `call` the ideal location for performing work on the incoming stream. The objective of this entire class is to have `call` return an `Observable<Observable<T>>` which will be passed as a parameter to the first stage of our job.
 
@@ -153,4 +153,9 @@ The stage is nearly equivalent to the previous tutorial. We need to add a few li
 # Conclusion
 We've learned how to create a parameterized source which reads from Twitter and pulls data into the ecosystem. With some slight modifications our previous example's stage deserializes the messages and extracts the data to perform the same word count.
 
-If you've checked out the [`mantis-examples`](https://github.com/Netflix/mantis-examples) repository then running `./gradlew :mantis-examples-twitter-sample:execute --args='consumerKey consumerSecret token tokensecret'` at the root of the repository should begin running the job and expose a local port for SSE streaming. As an exercise consider how you might begin to scale this work out over multiple machines if the workload were too large to perform on a single host. This will be the topic of the next tutorial.
+If you've checked out the [`mantis`](https://github.com/Netflix/mantis) repository, then running following commands should begin running the job and expose a local port for SSE streaming.
+```bash
+$ cd mantis-examples/mantis-examples-twitter-sample
+$ ../../gradlew execute --args='consumerKey consumerSecret token tokensecret'
+```
+As an exercise consider how you might begin to scale this work out over multiple machines if the workload were too large to perform on a single host. This will be the topic of the next tutorial.
