@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime.sink;
 
+import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
@@ -124,20 +125,7 @@ public class Sinks {
 
             @Override
             public void close() throws IOException {
-                IOException last = null;
-                for (Sink<T> sink: many) {
-                    try {
-                        sink.close();
-                    } catch (IOException e) {
-                        if (last == null) {
-                            last = e;
-                        }
-                    }
-                }
-
-                if (last != null) {
-                    throw last;
-                }
+                Closeables.combine(many).close();
             }
         };
     }
