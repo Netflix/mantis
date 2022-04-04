@@ -45,7 +45,7 @@ dependencies {
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
 
-    testCompile "com.typesafe.akka:akka-testkit_2.13:$akkaVersion"
+    testCompile "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
     testCompile libraries.junit4
     testCompile libraries.mockitoAll
     testCompile "org.testng:testng:$testngVersion"
