@@ -32,12 +32,12 @@ import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
 import io.reactivex.mantis.remote.observable.reconciliator.Reconciliator;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
-
-public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T, R> {
+public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerConsumerRemoteObservable.class);
 
@@ -55,7 +55,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T, R
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
     @Override
-    public Observable<Observable<T>> start(StageConfig<T, R> stage) {
+    public Observable<Observable<T>> start(StageConfig<T, ?> stage) {
         if (stage instanceof KeyToKey || stage instanceof KeyToScalar || stage instanceof GroupToScalar || stage instanceof GroupToGroup) {
 
             logger.info("Remote connection to stage " + name + " is KeyedStage");
@@ -100,6 +100,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T, R
     }
 
     @Override
-    public void stop() {}
+    public void close() throws IOException {
+    }
 
 }

@@ -30,20 +30,23 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivx.mantis.operators.DropOperator;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-class DataDroppedPayloadSetter {
+class DataDroppedPayloadSetter implements Closeable {
 
     private static final String metricNamePrefix = DROP_OPERATOR_INCOMING_METRIC_GROUP;
     private static final Logger logger = LoggerFactory.getLogger(DataDroppedPayloadSetter.class);
     private final Heartbeat heartbeat;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ScheduledThreadPoolExecutor executor;
+    private ScheduledFuture<?> future;
 
     private final Gauge dropCountGauge;
     private final Gauge onNextCountGauge;
@@ -98,11 +101,19 @@ class DataDroppedPayloadSetter {
     }
 
     void start(final long intervalSecs) {
-        executor.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                setPayload(intervalSecs);
-            }
-        }, intervalSecs, intervalSecs, TimeUnit.SECONDS);
+        future =
+            executor.scheduleAtFixedRate(
+                () -> setPayload(intervalSecs),
+                intervalSecs,
+                intervalSecs,
+                TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (future != null) {
+            future.cancel(false);
+        }
+        executor.shutdownNow();
     }
 }

@@ -25,6 +25,8 @@ import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.MesosResourceUsageUtils;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.StringTokenizer;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -32,8 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-public class ResourceUsagePayloadSetter {
+public class ResourceUsagePayloadSetter implements Closeable {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceUsagePayloadSetter.class);
     private static final String metricPrefix = "tcpServer";
@@ -165,12 +166,7 @@ public class ResourceUsagePayloadSetter {
             oldUsage = usage;
         }
         logger.debug("scheduling next metrics report with delay=" + delay);
-        executor.schedule(new Runnable() {
-            @Override
-            public void run() {
-                setPayloadAndMetrics();
-            }
-        }, delay, TimeUnit.SECONDS);
+        executor.schedule(this::setPayloadAndMetrics, delay, TimeUnit.SECONDS);
     }
 
     private boolean closeToLimit(StatusPayloads.ResourceUsage usage) {
@@ -203,13 +199,14 @@ public class ResourceUsagePayloadSetter {
         return (curr - old) / old > bigIncreaseThreshold;
     }
 
+    // todo(sundaram): why is this argument not used?
     void start(long intervalSecs) {
-        executor.schedule(new Runnable() {
-            @Override
-            public void run() {
-                setPayloadAndMetrics();
-            }
-        }, getNextDelay(), TimeUnit.SECONDS);
+        executor.schedule(this::setPayloadAndMetrics, getNextDelay(), TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void close() throws IOException {
+        executor.shutdownNow();
     }
 
     private StatusPayloads.ResourceUsage evalResourceUsage() {
@@ -228,8 +225,8 @@ public class ResourceUsagePayloadSetter {
         double memCache = Math.max(0.0, usage.getMem_rss_bytes() - usage.getMem_anon_bytes());
         if (memCache > peakMemCache)
             peakMemCache = memCache;
-        double readBw = (usage.getNetwork_read_bytes() - prev_bytes_read) / (double) duration; // TODO check if byteCounts are already rate counts
-        double writeBw = (usage.getNetwork_write_bytes() - prev_bytes_written) / (double) duration;
+        double readBw = (usage.getNetwork_read_bytes() - prev_bytes_read) / duration; // TODO check if byteCounts are already rate counts
+        double writeBw = (usage.getNetwork_write_bytes() - prev_bytes_written) / duration;
         if (readBw > peakBytesRead)
             peakBytesRead = readBw;
         if (writeBw > peakBytesWritten)
@@ -238,7 +235,7 @@ public class ResourceUsagePayloadSetter {
         setPreviousStats(usage);
         return new StatusPayloads.ResourceUsage(usage.getCpus_limit(), cpuSecs, peakCpuUsage, usage.getMem_limit() / MB,
                 memCache / MB, peakMemCache / MB, usage.getMem_rss_bytes() / MB, peakTotMem / MB,
-                readBw > writeBw ? readBw : writeBw, Math.max(peakBytesRead, peakBytesWritten));
+            Math.max(readBw, writeBw), Math.max(peakBytesRead, peakBytesWritten));
     }
 
     private void setPreviousStats(MesosResourceUsageUtils.Usage usage) {

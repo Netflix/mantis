@@ -17,13 +17,17 @@
 package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.StageConfig;
+import java.io.Closeable;
 import rx.Observable;
 
+/**
+ * Abstraction for executing source observables. Source observables can be of two forms:
+ * 1). ones that consume from previous jobs or act as direct sources somehow
+ * 2). ones that consume from workers in previous stages.
+ *
+ * @param <T> type of the data that the observable emits
+ */
+public interface WorkerConsumer<T> extends Closeable {
 
-public interface WorkerConsumer<T, R> {
-
-    public Observable<Observable<T>> start(StageConfig<T, R> stage);
-
-    public void stop();
-
+    Observable<Observable<T>> start(StageConfig<T, ?> stage);
 }

@@ -18,14 +18,16 @@ package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.StageConfig;
 import io.reactivex.mantis.remote.observable.RxMetrics;
+import java.io.Closeable;
 import rx.Observable;
 
+/**
+ * WorkerPublisher is an abstraction for a sink operator execution.
+ * @param <T> type of the observable that's getting published
+ */
+public interface WorkerPublisher<T> extends Closeable {
 
-public interface WorkerPublisher<T, R> {
+    void start(StageConfig<?, T> stage, Observable<Observable<T>> observableToPublish);
 
-    public void start(StageConfig<T, R> stage, Observable<Observable<R>> observableToPublish);
-
-    public RxMetrics getMetrics();
-
-    public void stop();
+    RxMetrics getMetrics();
 }
