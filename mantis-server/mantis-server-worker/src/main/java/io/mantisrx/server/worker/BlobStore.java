@@ -51,7 +51,7 @@ public interface BlobStore extends Closeable {
 
     static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws Exception {
         final org.apache.hadoop.fs.FileSystem fileSystem =
-            io.mantisrx.server.worker.FileSystem.create(clusterStoragePath);
+            FileSystemInitializer.create(clusterStoragePath);
 
         return
             new HadoopFileSystemBlobStore(fileSystem, localStoreDir)

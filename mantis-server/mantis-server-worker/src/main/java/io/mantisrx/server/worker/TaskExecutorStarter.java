@@ -99,21 +99,21 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
+        private RpcSystem getRpcSystem() {
+            if (this.rpcSystem == null) {
+                return MantisAkkaRpcSystemLoader.getInstance();
+            } else {
+                return this.rpcSystem;
+            }
+        }
+
         public TaskExecutorStarterBuilder rpcService(RpcService rpcService) {
             Preconditions.checkNotNull(rpcService);
             this.rpcService = rpcService;
             return this;
         }
 
-        public RpcSystem getRpcSystem() {
-            if (this.rpcSystem == null) {
-                return MantisAkkaRpcSystemLoader.load(configuration);
-            } else {
-                return this.rpcSystem;
-            }
-        }
-
-        public RpcService getRpcService() throws Exception {
+        private RpcService getRpcService() throws Exception {
             if (this.rpcService == null) {
                 return RpcUtils.createRemoteRpcService(
                     getRpcSystem(),
@@ -132,7 +132,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
-        public ClassLoaderHandle getClassLoaderHandle() throws Exception {
+        private ClassLoaderHandle getClassLoaderHandle() throws Exception {
             if (this.classLoaderHandle == null) {
                 return new BlobStoreAwareClassLoaderHandle(
                     BlobStore.forHadoopFileSystem(
@@ -148,7 +148,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
-        public SinkSubscriptionStateHandler.Factory getSinkSubscriptionHandlerFactory() {
+        private SinkSubscriptionStateHandler.Factory getSinkSubscriptionHandlerFactory() {
             if (this.sinkSubscriptionHandlerFactory == null) {
                 return SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                     highAvailabilityServices.getMasterClientApi(),

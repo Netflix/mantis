@@ -35,7 +35,6 @@ dependencies {
     api "com.typesafe.akka:akka-http-jackson_$scalaBinaryVersion:$akkaHttpVersion"
     api "com.typesafe.akka:akka-http-caching_$scalaBinaryVersion:$akkaHttpVersion"
     api "com.typesafe.akka:akka-stream_$scalaBinaryVersion:$akkaVersion"
-    compile group: 'com.typesafe.akka', name: "akka-stream_$scalaBinaryVersion", version: "$akkaVersion"
     api "com.typesafe.akka:akka-slf4j_$scalaBinaryVersion:$akkaVersion"
     api "com.typesafe.akka:akka-actor_$scalaBinaryVersion:$akkaVersion"
 

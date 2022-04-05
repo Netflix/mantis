@@ -27,12 +27,13 @@ import org.apache.flink.runtime.rpc.akka.AkkaRpcSystem;
  */
 public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
 
+    private static final RpcSystem INSTANCE = new AkkaRpcSystem();
     @Override
     public RpcSystem loadRpcSystem(Configuration config) {
-        return new AkkaRpcSystem();
+        return INSTANCE;
     }
 
-    public static RpcSystem load(Configuration configuration) {
-        return new MantisAkkaRpcSystemLoader().loadRpcSystem(configuration);
+    public static RpcSystem getInstance() {
+        return INSTANCE;
     }
 }
