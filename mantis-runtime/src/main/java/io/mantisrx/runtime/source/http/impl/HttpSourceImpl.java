@@ -47,7 +47,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import lombok.Value;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
+import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -702,5 +704,11 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
             retryServers.clear();
             logger.info("CM: reset");
         }
+    }
+
+    @Value
+    static class ClientWithResponse<R, E> {
+        HttpClient<R, E> client;
+        HttpClientResponse<E> response;
     }
 }
