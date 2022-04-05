@@ -26,7 +26,6 @@ import io.mantisrx.server.master.client.ConditionalRetry;
 import io.mantisrx.server.master.client.NoSuchJobException;
 import io.reactivx.mantis.operators.DropOperator;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
