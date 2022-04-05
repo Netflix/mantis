@@ -27,6 +27,7 @@ import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import rx.Observable;
@@ -54,6 +55,11 @@ public class TestJobSingleStage extends MantisJobProvider<Integer> {
                     public Observable<Observable<Integer>> call(Context t1,
                                                                 Index t2) {
                         return Observable.just(Observable.range(0, 10));
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+
                     }
                 })
                 // doubles number

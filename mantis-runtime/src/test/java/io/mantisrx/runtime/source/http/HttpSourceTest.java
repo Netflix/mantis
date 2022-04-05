@@ -43,6 +43,7 @@ import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
@@ -425,6 +426,11 @@ public class HttpSourceTest {
                                 return aLong.toString();
                             }
                         }));
+            }
+
+            @Override
+            public void close() throws IOException {
+
             }
         };
 

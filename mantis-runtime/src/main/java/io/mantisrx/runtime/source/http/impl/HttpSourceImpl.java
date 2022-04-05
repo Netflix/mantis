@@ -41,6 +41,7 @@ import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.Event
 import io.mantisrx.server.core.ServiceRegistry;
 import io.netty.util.ReferenceCountUtil;
 import io.reactivx.mantis.operators.DropOperator;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,8 +55,8 @@ import rx.Observable;
 import rx.Observable.Operator;
 import rx.Observer;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.functions.Action0;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.subjects.PublishSubject;
@@ -104,6 +105,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     private final Metrics incomingDataMetrics;
     private final ConnectionManager<E> connectionManager = new ConnectionManager<>();
     private final int bufferSize;
+    private final Subscription serversToRemoveSubscription;
 
     /**
      * Constructs an {@code HttpSource} instance that is ready to connects to one or more servers provided by the given
@@ -183,12 +185,10 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         // servers to be removed because we do not want to complete the observable, or
         // the source will be completed.
         this.serversToRemove = PublishSubject.create();
-        serverProvider.getServersToRemove().subscribe(new Action1<ServerInfo>() {
-            @Override
-            public void call(ServerInfo server) {
-                serversToRemove.onNext(server);
-            }
-        });
+        serversToRemoveSubscription =
+            serverProvider
+                .getServersToRemove()
+                .subscribe(serversToRemove::onNext);
     }
 
     public static <R, E, T> Builder<R, E, T> builder(
@@ -268,6 +268,12 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         //              .lift(new DropOperator<Observable<T>>("http_source_impl_share"));
     }
 
+    @Override
+    public void close() throws IOException {
+        serversToRemoveSubscription.unsubscribe();
+        connectionManager.reset();
+    }
+
     private Observable<Observable<T>> streamServers(Observable<ServerInfo> servers) {
         return servers.map((ServerInfo server) -> {
             SERVER_FOUND.newEvent(observer, server);
@@ -279,40 +285,34 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                             streamResponseUntilServerIsRemoved(clientContext);
 
                     return response
-                            .map(new Func1<HttpClientResponse<E>, ServerContext<HttpClientResponse<E>>>() {
-                                @Override
-                                public ServerContext<HttpClientResponse<E>> call(HttpClientResponse<E> response) {
-                                    // We delay the event until it here because we need to make sure
-                                    // the response observable is not completed for any reason
-                                    CONNECTION_ESTABLISHED.newEvent(observer, clientContext.getServer());
-                                    connectionEstablishedCounter.increment();
-                                    return new ServerContext<>(clientContext.getServer(), response);
-                                }
+                            .map(response1 -> {
+                                // We delay the event until it here because we need to make sure
+                                // the response observable is not completed for any reason
+                                CONNECTION_ESTABLISHED.newEvent(observer, clientContext.getServer());
+                                connectionEstablishedCounter.increment();
+                                return new ServerContext<>(clientContext.getServer(), new ClientWithResponse<>(clientContext.getClient(), response1));
                             })
-                            .lift(new Operator<ServerContext<HttpClientResponse<E>>, ServerContext<HttpClientResponse<E>>>() {
-                                @Override
-                                public Subscriber<? super ServerContext<HttpClientResponse<E>>> call(Subscriber<? super ServerContext<HttpClientResponse<E>>> subscriber) {
-                                    subscriber.add(Subscriptions.create(new Action0() {
-                                        @Override
-                                        public void call() {
-                                            // Note a connection is not equivalent to a subscription. A subscriber subscribes to
-                                            // to valid connection, while a connection may return server errors.
-                                            connectionUnsubscribedCounter.increment();
-                                            CONNECTION_UNSUBSCRIBED.newEvent(observer, clientContext.getServer());
-                                        }
-                                    }));
+                            .lift((Operator<ServerContext<ClientWithResponse<R, E>>, ServerContext<ClientWithResponse<R, E>>>) subscriber -> {
+                                subscriber.add(Subscriptions.create(new Action0() {
+                                    @Override
+                                    public void call() {
+                                        // Note a connection is not equivalent to a subscription. A subscriber subscribes to
+                                        // to valid connection, while a connection may return server errors.
+                                        connectionUnsubscribedCounter.increment();
+                                        CONNECTION_UNSUBSCRIBED.newEvent(observer, clientContext.getServer());
+                                    }
+                                }));
 
-                                    return subscriber;
-                                }
+                                return subscriber;
                             });
                 })
-                .map(new Func1<ServerContext<HttpClientResponse<E>>, Observable<T>>() {
+                .map(new Func1<ServerContext<ClientWithResponse<R, E>>, Observable<T>>() {
 
                     @Override
                     public Observable<T> call(
                             final
-                            ServerContext<HttpClientResponse<E>> context) {
-                        final HttpClientResponse<E> response = context.getValue();
+                            ServerContext<ClientWithResponse<R, E>> context) {
+                        final HttpClientResponse<E> response = context.getValue().getResponse();
 
                         final ServerInfo server = context.getServer();
                         SUBSCRIPTION_ESTABLISHED.newEvent(observer, server);
@@ -325,7 +325,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                                     @Override
                                     public T call(E e) {
                                         ReferenceCountUtil.retain(e);
-                                        return postProcessor.call(context, e);
+                                        return postProcessor.call(context.map(c -> c.getResponse()), e);
                                     }
                                 })
                                 .lift(new DropOperator<T>(incomingDataMetrics))
@@ -462,32 +462,6 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
     Set<ServerInfo> getConnectionAttemptedServers() {
         return connectionManager.getConnectionAttemptedServers();
-    }
-
-    private static class UnsubscriptionLoggingOperator<R> implements Operator<R, R> {
-
-        private final String streamDesciption;
-
-        public UnsubscriptionLoggingOperator(String streamDesciption) {
-
-            this.streamDesciption = streamDesciption;
-        }
-
-        public static <R> UnsubscriptionLoggingOperator<R> create(String stream) {
-            return new UnsubscriptionLoggingOperator<>(stream);
-        }
-
-        @Override
-        public Subscriber<? super R> call(Subscriber<? super R> subscriber) {
-            subscriber.add(Subscriptions.create(new Action0() {
-                @Override
-                public void call() {
-                    logger.debug("{} unsubscribed", streamDesciption);
-                }
-            }));
-
-            return subscriber;
-        }
     }
 
     public static class Builder<R, E, T> {
@@ -654,12 +628,12 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
     private static class ConnectionManager<E> {
 
-        private final ConcurrentMap<ServerInfo, HttpClientResponse<E>> connectedServers = new ConcurrentHashMap<>();
+        private final ConcurrentMap<ServerInfo, ClientWithResponse<?, E>> connectedServers = new ConcurrentHashMap<>();
         private final Set<ServerInfo> retryServers = new CopyOnWriteArraySet<>();
         private final Set<ServerInfo> connectionAttempted = new CopyOnWriteArraySet<>();
 
         //private final Set<ServerInfo> connectedServers = new CopyOnWriteArraySet<>();
-        public void serverConnected(ServerInfo server, HttpClientResponse<E> response) {
+        public void serverConnected(ServerInfo server, ClientWithResponse<?, E> response) {
             connectedServers.put(server, response);
             retryServers.remove(server);
             connectionAttempted.remove(server);
@@ -681,7 +655,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         }
 
         public void serverDisconnected(ServerInfo server) {
-            connectedServers.remove(server);
+            removeConnectedServer(server);
             connectionAttempted.remove(server);
             retryServers.add(server);
             logger.info("CM: Server disconnected: " + server + " count " + connectedServers.size());
@@ -689,10 +663,21 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
         public void serverRemoved(ServerInfo server) {
 
-            connectedServers.remove(server);
+            removeConnectedServer(server);
             connectionAttempted.remove(server);
             retryServers.remove(server);
             logger.info("CM: Server removed: " + server + " count " + connectedServers.size());
+        }
+
+        private void removeConnectedServer(ServerInfo serverInfo) {
+            ClientWithResponse<?, E> stored = connectedServers.remove(serverInfo);
+            if (stored != null) {
+                try {
+                    stored.getClient().shutdown();
+                } catch (Exception e) {
+                    logger.error("Failed to shut the client for {} successfully", serverInfo, e);
+                }
+            }
         }
 
         public Set<ServerInfo> getConnectedServers() {
@@ -708,7 +693,11 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         }
 
         public void reset() {
-            connectedServers.clear();
+            Set<ServerInfo> connectedServerInfos = connectedServers.keySet();
+            for (ServerInfo serverInfo: connectedServerInfos) {
+                removeConnectedServer(serverInfo);
+            }
+
             connectionAttempted.clear();
             retryServers.clear();
             logger.info("CM: reset");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.source;
+package io.mantisrx.runtime.source.http.impl;
 
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.parameter.ParameterDefinition;
-import java.io.Closeable;
-import java.util.Collections;
-import java.util.List;
-import rx.Observable;
-import rx.functions.Func2;
+import lombok.Value;
+import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
+import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 
-
-public interface Source<T> extends Func2<Context, Index, Observable<Observable<T>>>, Closeable {
-
-    default List<ParameterDefinition<?>> getParameters() {
-        return Collections.emptyList();
-    }
-
-    default void init(Context context, Index index) {
-
-    }
+@Value
+class ClientWithResponse<R, E> {
+    HttpClient<R, E> client;
+    HttpClientResponse<E> response;
 }

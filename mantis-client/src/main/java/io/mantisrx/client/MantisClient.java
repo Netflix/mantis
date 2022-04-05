@@ -268,7 +268,7 @@ public class MantisClient {
                 .getJobId();
     }
 
-    public void killJob(final String jobId) throws Exception {
+    public void killJob(final String jobId) {
         clientWrapper.getMasterClientApi()
                 .flatMap((MantisMasterGateway mantisMasterClientApi) -> {
                     return mantisMasterClientApi.killJob(jobId)

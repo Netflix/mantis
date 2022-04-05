@@ -31,6 +31,7 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import rx.Observable;
@@ -148,5 +149,10 @@ public class TwitterSource implements Source<String> {
                 .build();
 
         client.connect();
+    }
+
+    @Override
+    public void close() throws IOException {
+        client.stop();
     }
 }

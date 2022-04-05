@@ -32,6 +32,7 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import rx.Observable;
@@ -67,6 +68,11 @@ public class TestJobParameterized extends MantisJobProvider<Integer> {
                         Integer start = (Integer) context.getParameters().get("start-range");
                         Integer end = (Integer) context.getParameters().get("end-range");
                         return Observable.just(Observable.range(start, end));
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+
                     }
                 })
                 // doubles number

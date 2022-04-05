@@ -56,6 +56,11 @@ public class TestJob extends MantisJobProvider<Integer> {
                                                                 Index t2) {
                         return Observable.just(Observable.range(0, 10));
                     }
+
+                    @Override
+                    public void close() throws IOException {
+
+                    }
                 })
                 // doubles number
                 .stage(new ScalarComputation<Integer, Integer>() {

@@ -36,6 +36,7 @@ import io.mantisrx.runtime.sink.ServerSentEventsSink;
 import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import rx.Observable;
@@ -212,6 +213,11 @@ public class SineFunctionJob extends MantisJobProvider<Point> {
                                 return (value <= randomRate);
                             })
             );
+        }
+
+        @Override
+        public void close() throws IOException {
+
         }
     }
 }
