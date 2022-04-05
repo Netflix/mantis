@@ -17,7 +17,7 @@ This end-to-end example highlights two powerful Mantis concepts
 
 * `SharedMrePublishEventSource` Job Cluster exists.
 * `JobConnectorSample` Job cluster exists
-* [Java Sample](https://github.com/Netflix/mantis-examples/tree/master/mantis-publish-sample) is setup and running.
+* [Java Sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-mantis-publish-sample) is setup and running.
 
 > **Note** If you are following the [Mantis Cluster using Docker](../tutorials/docker.md) instructions all of this
 >will be already set up. 
@@ -25,8 +25,9 @@ This end-to-end example highlights two powerful Mantis concepts
 
 ## Publishing events into Mantis
 
->  **Note**: The local docker setup has already preconfigured a simple [Java Sample](https://github.com/Netflix/mantis-examples/tree/master/mantis-publish-sample) application to publish events
-to Mantis. 
+>  **Note**: The local docker setup has already preconfigured a simple
+[Java Sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-mantis-publish-sample)
+application to publish events to Mantis..
 
 ## Setting up a Publish Data Source Job
 

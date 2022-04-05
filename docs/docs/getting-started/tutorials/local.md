@@ -6,28 +6,25 @@ JDK 8 or higher
 
 ## Build and run the synthetic-sourcejob sample
 
-Clone the mantis-examples repo:
-
-```bash
-$ git clone https://github.com/Netflix/mantis-examples.git
-```
-
-Run the synthetic-sourcejob sample via gradle.
-
 This job outputs request events sourced from an imaginary service. The RequestEvent data
 has information such as uri, status, userId, country etc.
 Data Source Jobs are mantis jobs that allow consumers to filter the raw stream down to just the events 
 they are interested in. 
 This filtering is done by specifying an [MQL query](../../develop/querying/mql.md) while connecting to the sink.
 
-To run the sample execute the following command.
+Clone the mantis repo:
 ```bash
-$ cd mantis-examples/synthetic-sourcejob
-$ ../gradlew execute
+$ git clone https://github.com/Netflix/mantis.git
 ```
+
+Run the synthetic-sourcejob sample via gradle.
+```bash
+$ cd mantis/mantis-examples/mantis-examples-synthetic-sourcejob
+$ ../../gradlew execute
+```
+
 This will launch the job and you would see output like
 ```bash
-
 2019-10-06 14:14:07 INFO  StageExecutors:254 main - initializing io.mantisrx.sourcejob.synthetic.stage.TaggingStage
 2019-10-06 14:14:07 INFO  SinkPublisher:82 main - Got sink subscription, onSubscribe=null
 2019-10-06 14:14:07 INFO  ServerSentEventsSink:141 main - Serving modern HTTP SSE server sink on port: 8436
@@ -66,7 +63,7 @@ data: {"country":"Liberia","mantis.meta.sourceName":"SyntheticRequestSource","ma
 ## Next Steps
 
 * Import the project into your IDE to explore the code.
-* Try out other samples from the [Mantis examples repository](https://github.com/netflix/mantis-examples).
+* Try out other samples from the [Mantis examples module](https://github.com/Netflix/mantis/tree/master/mantis-examples).
 * [Set up Mantis locally using Docker](docker.md) and run the samples.
 * [Set up Mantis in AWS](cloud.md) and run the samples.
 * Learn to write your [first Mantis Job](../../develop/writing-jobs/word-count.md).

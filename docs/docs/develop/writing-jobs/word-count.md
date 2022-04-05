@@ -1,5 +1,5 @@
 # Writing Your First Mantis Job
-We'll be doing the classic word count example for streaming data for the tutorial section. For this example we'll be keeping it simple and focusing on the processing logic and job provider. The tutorials are structured progressively to allow us to incrementally build some experience writing jobs without getting overwhelmed with details. We'll stream text from a Project Gutenberg book, perform some application logic on the stream, and then write the data to a sink for consumption by other Mantis jobs. If you want to follow along check out the [Word Count](https://github.com/Netflix/mantis-examples/tree/master/wordcount) project in the [mantis-examples](https://github.com/Netflix/mantis-examples/) repository.
+We'll be doing the classic word count example for streaming data for the tutorial section. For this example we'll be keeping it simple and focusing on the processing logic and job provider. The tutorials are structured progressively to allow us to incrementally build some experience writing jobs without getting overwhelmed with details. We'll stream text from a Project Gutenberg book, perform some application logic on the stream, and then write the data to a sink for consumption by other Mantis jobs. If you want to follow along, please check the [Word Count](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-wordcount) module in Mantis repository.
 
 There are a few things to keep in mind when implementing a Mantis Job;
 
@@ -10,7 +10,7 @@ There are a few things to keep in mind when implementing a Mantis Job;
 
 ## WordCountJob
 
-The full source of the [WordCountJob](https://github.com/Netflix/mantis-examples/wordcount/...) class is included below with imports elided. This class implements the [`io.mantisrx.runtime.MantisJobProvider`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java) interface which the Mantis runtime loads. `MantisJobProvider#getJobInstance()` provides the runtime with an entry point to your job's code.
+The full source of the [WordCountJob](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-wordcount/src/main/java/com/netflix/mantis/examples/wordcount/WordCountJob.java) class is included below with imports elided. This class implements the [`io.mantisrx.runtime.MantisJobProvider`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java) interface which the Mantis runtime loads. `MantisJobProvider#getJobInstance()` provides the runtime with an entry point to your job's code.
 
 ```java
 /**
@@ -20,9 +20,6 @@ The full source of the [WordCountJob](https://github.com/Netflix/mantis-examples
  * E.g
  * <code> Serving modern HTTP SSE server sink on port: 8650 </code>
  * You can curl this port <code> curl localhost:8650</code> to view the output of the job.
- *
- * To run via gradle
- * /gradlew :mantis-examples-wordcount:execute
  */
 @Slf4j
 public class WordCountJob extends MantisJobProvider<String> {
@@ -115,11 +112,15 @@ public static ScalarToScalar.Config<String, String> scalarToScalarConfig() {
 
 ### The Job Provider
 
-The [`MantisJobProvider`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java) interface is what the Mantis runtime expects to load. The runtime reads [`resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider`](https://github.com/Netflix/mantis-examples/blob/master/wordcount/src/main/resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider) to discover the fully qualified classname of the MantisJobProvider to be used as an entry point for the application.
+The [`MantisJobProvider`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java) interface is what the Mantis runtime expects to load. The runtime reads [`resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider`](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-wordcount/src/main/resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider) to discover the fully qualified classname of the MantisJobProvider to be used as an entry point for the application.
 
 ### Main Method
 
-The main method invokes the [`LocalJobExecutorNetworked`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/executor/LocalJobExecutorNetworked.java) `execute` method to run our job locally. The first three tutorials will take advantage of the ability to run jobs locally. In the fourth tutorial we will explore uploading and submitting our job on a Mantis cloud deployment for greater scalability. We can and should run this main method by invoking `./gradlew :mantis-examples-wordcount:execute` at the root of the `mantis-examples` directory.
+The main method invokes the [`LocalJobExecutorNetworked`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/executor/LocalJobExecutorNetworked.java) `execute` method to run our job locally. The first three tutorials will take advantage of the ability to run jobs locally. In the fourth tutorial we will explore uploading and submitting our job on a Mantis cloud deployment for greater scalability. We can and should run this main method by following commands from the Mantis repository:
+```bash
+$ cd mantis-examples/mantis-examples-wordcount
+$ ../../gradlew execute
+```
 
 ```java
     public static void main(String[] args) {

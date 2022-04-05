@@ -45,6 +45,6 @@ To stop the job click on the red `Kill Job` button on the top right corner.
 
 ## Next Steps
 
-* Explore the [code](https://github.com/Netflix/mantis-examples/tree/master/sine-function)
+* Explore the [code](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-sine-function)
 
 * Checkout out the other samples

@@ -22,3 +22,6 @@ into your job.
 
 ## mantis-publish-sample
 An example of using the mantis-publish library to send events to Mantis.
+
+## mantis-examples-wordcount
+The classic word count example for streaming data for the tutorial section.
