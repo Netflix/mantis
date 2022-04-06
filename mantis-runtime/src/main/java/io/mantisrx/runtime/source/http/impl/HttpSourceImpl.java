@@ -43,6 +43,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.reactivx.mantis.operators.DropOperator;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -695,7 +696,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         }
 
         public void reset() {
-            Set<ServerInfo> connectedServerInfos = connectedServers.keySet();
+            Set<ServerInfo> connectedServerInfos = new HashSet<>(connectedServers.keySet());
             for (ServerInfo serverInfo: connectedServerInfos) {
                 removeConnectedServer(serverInfo);
             }
