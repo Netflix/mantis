@@ -23,6 +23,7 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
 import io.mantisrx.sourcejob.synthetic.proto.RequestEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +60,7 @@ public class SyntheticSource implements Source<String> {
         mockDataGenerator = MockNeat.threadLocal();
         dataGenerateRateMsec = (int)context.getParameters().get(DATA_GENERATION_RATE_MSEC_PARAM,250);
     }
+
     @Override
     public List<ParameterDefinition<?>> getParameters() {
         List<ParameterDefinition<?>> params = new ArrayList<>();
@@ -106,4 +108,7 @@ public class SyntheticSource implements Source<String> {
                 .build();
     }
 
+    @Override
+    public void close() throws IOException {
+    }
 }

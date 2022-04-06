@@ -59,4 +59,9 @@ public class IlliadSource implements Source<String> {
                     return Observable.empty();
                 });
     }
+
+  @Override
+  public void close() throws IOException {
+
+  }
 }

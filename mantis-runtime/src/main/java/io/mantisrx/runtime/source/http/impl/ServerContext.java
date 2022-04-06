@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
+import java.util.function.Function;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 
 
@@ -30,7 +31,6 @@ public class ServerContext<T> {
     private final ServerInfo server;
     private final T value;
 
-
     public ServerContext(ServerInfo server, T value) {
         this.server = server;
         this.value = value;
@@ -42,5 +42,9 @@ public class ServerContext<T> {
 
     public T getValue() {
         return value;
+    }
+
+    public <R> ServerContext<R> map(Function<? super T, ? extends R> mapper) {
+        return new ServerContext<>(server, mapper.apply(value));
     }
 }

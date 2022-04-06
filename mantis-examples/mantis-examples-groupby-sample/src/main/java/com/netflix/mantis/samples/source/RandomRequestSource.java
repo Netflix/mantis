@@ -20,6 +20,7 @@ import com.netflix.mantis.samples.proto.RequestEvent;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.andreinc.mockneat.MockNeat;
@@ -55,4 +56,8 @@ public class RandomRequestSource implements Source<RequestEvent> {
         mockDataGenerator = MockNeat.threadLocal();
     }
 
+    @Override
+    public void close() throws IOException {
+
+    }
 }

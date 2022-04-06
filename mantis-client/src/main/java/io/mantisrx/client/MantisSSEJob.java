@@ -25,6 +25,7 @@ import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.master.client.ConditionalRetry;
 import io.mantisrx.server.master.client.NoSuchJobException;
 import io.reactivx.mantis.operators.DropOperator;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +39,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 
-public class MantisSSEJob implements AutoCloseable {
+public class MantisSSEJob implements Closeable {
 
     private static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
     private static final Logger logger = LoggerFactory.getLogger(MantisSSEJob.class);
@@ -57,7 +58,7 @@ public class MantisSSEJob implements AutoCloseable {
     }
 
     @Override
-    public synchronized void close() throws Exception {
+    public synchronized void close() {
         if (mode == Mode.Submit && builder.ephemeral) {
             if (jobId != null) {
                 builder.mantisClient.killJob(jobId);

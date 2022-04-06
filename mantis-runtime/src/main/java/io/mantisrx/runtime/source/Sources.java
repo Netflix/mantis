@@ -17,6 +17,7 @@
 package io.mantisrx.runtime.source;
 
 import io.mantisrx.runtime.Context;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.functions.Func1;
@@ -32,6 +33,11 @@ public class Sources {
             public Observable<Observable<T>> call(Context context, Index t1) {
                 return Observable.just(o);
             }
+
+            @Override
+            public void close() throws IOException {
+
+            }
         };
     }
 
@@ -40,6 +46,11 @@ public class Sources {
             @Override
             public Observable<Observable<T>> call(Context context, Index t1) {
                 return o;
+            }
+
+            @Override
+            public void close() throws IOException {
+
             }
         };
     }
@@ -63,6 +74,11 @@ public class Sources {
                                 return (int) (long) t1;
                             }
                         }));
+            }
+
+            @Override
+            public void close() throws IOException {
+
             }
         };
     }
