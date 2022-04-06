@@ -16,14 +16,15 @@
 
 package io.mantisrx.server.core.domain;
 
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//import com.google.common.base.Preconditions;
-
-
-public class WorkerId {
+public class WorkerId implements Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerId.class);
     private static final String DELIMITER = "-";
@@ -40,14 +41,11 @@ public class WorkerId {
         this(WorkerId.getJobClusterFromId(jobId), jobId, wIndex, wNum);
     }
 
-    public WorkerId(final String jobCluster,
-                    final String jobId,
-                    final int wIndex,
-                    final int wNum) {
-        //        Preconditions.checkNotNull(jobCluster, "jobCluster");
-        //        Preconditions.checkNotNull(jobId, "jobId");
-        //        Preconditions.checkArgument(wIndex >= 0);
-        //        Preconditions.checkArgument(wNum >= 0);
+    @JsonCreator
+    public WorkerId(@JsonProperty("jobCluster") final String jobCluster,
+                    @JsonProperty("jobId") final String jobId,
+                    @JsonProperty("workerIndex") final int wIndex,
+                    @JsonProperty("workerNum") final int wNum) {
         this.jobCluster = jobCluster;
         this.jobId = jobId;
         this.wIndex = wIndex;
@@ -116,6 +114,7 @@ public class WorkerId {
         return wNum;
     }
 
+    @JsonIgnore
     public String getId() {
         return id;
     }
