@@ -35,7 +35,7 @@ import rx.functions.Action1;
 
 /**
  * Implementation that publishes the results of a stage to a sink such as an SSE port.
- * @param <T>
+ * @param <T> type of the data-item that's getting consumed by the sink.
  */
 public class SinkPublisher<T> implements WorkerPublisher<T> {
 
@@ -48,14 +48,19 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
     private final Action0 onUnsubscribeAction;
     private final Action0 observableOnCompleteCallback;
     private final Action1<Throwable> observableOnErrorCallback;
+
+    // state created during the lifecycle of the sink.
     private Subscription eagerSubscription;
     private Sink<T> sink;
 
     public SinkPublisher(SinkHolder<T> sinkHolder,
                          PortSelector portSelector,
                          Context context,
-                         Action0 observableTerminatedCallback, Action0 onSubscribeAction, Action0 onUnsubscribeAction,
-                         Action0 observableOnCompleteCallback, Action1<Throwable> observableOnErrorCallback) {
+                         Action0 observableTerminatedCallback,
+                         Action0 onSubscribeAction,
+                         Action0 onUnsubscribeAction,
+                         Action0 observableOnCompleteCallback,
+                         Action1<Throwable> observableOnErrorCallback) {
         this.sinkHolder = sinkHolder;
         this.portSelector = portSelector;
         this.context = context;
@@ -122,6 +127,7 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
         try {
             sink.close();
         } finally {
+            sink = null;
             if (eagerSubscription != null) {
                 eagerSubscription.unsubscribe();
                 eagerSubscription = null;

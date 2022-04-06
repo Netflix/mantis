@@ -41,10 +41,10 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerConsumerRemoteObservable.class);
 
-    private String name;
-    private DynamicConnectionSet<T> connectionSet;
-    private EndpointInjector injector;
+    private final String name;
+    private final EndpointInjector injector;
 
+    private DynamicConnectionSet<T> connectionSet;
     private Reconciliator<T> reconciliator;
 
     public WorkerConsumerRemoteObservable(String name,
@@ -66,8 +66,6 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
                             .keyDecoder(Codecs.string())
                             .valueDecoder(stage.getInputCodec())
                             .subscribeAttempts(30); // max retry before failure
-
-            //connectionSet = DynamicConnectionSet.create(connectToBuilder);
 
             connectionSet = DynamicConnectionSet.createMGO(connectToBuilder);
 
