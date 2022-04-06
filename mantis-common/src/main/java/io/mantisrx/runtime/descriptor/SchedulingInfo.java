@@ -24,6 +24,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Function;
 import lombok.EqualsAndHashCode;
@@ -31,7 +32,7 @@ import lombok.ToString;
 
 @EqualsAndHashCode
 @ToString
-public class SchedulingInfo {
+public class SchedulingInfo implements Serializable {
 
     private Map<Integer, StageSchedulingInfo> stages = new HashMap<>();
 

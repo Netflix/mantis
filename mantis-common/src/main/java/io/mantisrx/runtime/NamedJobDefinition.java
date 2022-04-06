@@ -24,9 +24,8 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 public class NamedJobDefinition {
 
     private final MantisJobDefinition jobDefinition;
-
-    ;
     private final JobOwner owner;
+
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public NamedJobDefinition(@JsonProperty("jobDefinition") MantisJobDefinition jobDefinition,
