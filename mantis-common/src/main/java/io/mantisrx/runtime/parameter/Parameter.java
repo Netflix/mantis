@@ -19,9 +19,10 @@ package io.mantisrx.runtime.parameter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 
 
-public class Parameter {
+public class Parameter implements Serializable {
 
     private String name;
     private String value;

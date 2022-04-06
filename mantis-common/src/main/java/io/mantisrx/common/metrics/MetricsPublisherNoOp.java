@@ -19,7 +19,6 @@ package io.mantisrx.common.metrics;
 import java.util.Collection;
 import java.util.Properties;
 
-
 public class MetricsPublisherNoOp extends MetricsPublisher {
 
     public MetricsPublisherNoOp(Properties properties) {
