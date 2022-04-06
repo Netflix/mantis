@@ -17,11 +17,12 @@
 package io.mantisrx.server.worker.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
+import java.io.File;
+import java.net.URI;
 import org.apache.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
 import org.skife.config.DefaultNull;
-
 
 public interface WorkerConfiguration extends CoreConfiguration {
 
@@ -30,7 +31,9 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("5051")
     int getMesosSlavePort();
 
-    // New resource manager unaware configurations
+    // ------------------------------------------------------------------------
+    //  Task Executor machine related configurations
+    // ------------------------------------------------------------------------
     @Config("mantis.taskexecutor.id")
     @DefaultNull
     String getTaskExecutorId();
@@ -59,21 +62,20 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("5055")
     int getSinkPort();
 
+    // ------------------------------------------------------------------------
+    //  heartbeat connection related configurations
+    // ------------------------------------------------------------------------
     @Config("mantis.taskexecutor.heartbeats.interval")
     @Default("10000")
     int heartbeatInternalInMs();
 
-    @Config("mantis.taskexecutor.heartbeats.tolerable_consecutive_hearbeat_failures")
+    @Config("mantis.taskexecutor.heartbeats.tolerable-consecutive-heartbeat-failures")
     @Default("3")
     int getTolerableConsecutiveHeartbeatFailures();
 
     @Config("mantis.taskexecutor.heartbeats.timeout.ms")
     @Default("5000")
     int heartbeatTimeoutMs();
-
-    @Config("mantis.taskexecutor.rpc.externalAddress")
-    @Default("${EC2_LOCAL_IPV4}")
-    String getExternalAddress();
 
     default Time getHeartbeatTimeout() {
         return Time.milliseconds(heartbeatTimeoutMs());
@@ -82,4 +84,34 @@ public interface WorkerConfiguration extends CoreConfiguration {
     default Time getHeartbeatInterval() {
         return Time.milliseconds(heartbeatInternalInMs());
     }
+
+    // ------------------------------------------------------------------------
+    //  RPC related configurations
+    // ------------------------------------------------------------------------
+    @Config("mantis.taskexecutor.rpc.external-address")
+    @Default("${EC2_LOCAL_IPV4}")
+    String getExternalAddress();
+
+    @Config("mantis.taskexecutor.rpc.port-range")
+    @Default("")
+    String getExternalPortRange();
+
+    @Config("mantis.taskexecutor.rpc.bind-address")
+    @DefaultNull
+    String getBindAddress();
+
+    @Config("mantis.taskexecutor.rpc.bind-port")
+    @DefaultNull
+    Integer getBindPort();
+
+    // ------------------------------------------------------------------------
+    //  BlobStore related configurations
+    // ------------------------------------------------------------------------
+    @Config("mantis.taskexecutor.blob-store.storage-dir")
+    @DefaultNull
+    URI getBlobStoreArtifactDir();
+
+    @Config("mantis.taskexecutor.blob-store.local-cache")
+    @DefaultNull
+    File getLocalStorageDir();
 }

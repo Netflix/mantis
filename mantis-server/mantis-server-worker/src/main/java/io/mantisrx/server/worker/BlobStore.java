@@ -49,6 +49,16 @@ public interface BlobStore extends Closeable {
         return new ZipHandlingBlobStore(this);
     }
 
+    static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws Exception {
+        final org.apache.hadoop.fs.FileSystem fileSystem =
+            FileSystemInitializer.create(clusterStoragePath);
+
+        return
+            new HadoopFileSystemBlobStore(fileSystem, localStoreDir)
+                .withPrefix(clusterStoragePath)
+                .withZipCapabilities();
+    }
+
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     class PrefixedBlobStore implements BlobStore {
         private final URI rootUri;
@@ -109,6 +119,4 @@ public interface BlobStore extends Closeable {
             }
         }
     }
-
-
 }
