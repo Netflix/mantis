@@ -40,6 +40,7 @@ import io.mantisrx.server.core.Configurations;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;

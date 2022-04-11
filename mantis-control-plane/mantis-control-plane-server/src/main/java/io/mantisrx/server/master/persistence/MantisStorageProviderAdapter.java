@@ -23,6 +23,8 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.store.InvalidNamedJobException;
 import io.mantisrx.server.master.store.JobAlreadyExistsException;
 import io.mantisrx.server.master.store.JobNameAlreadyExistsException;
@@ -380,5 +382,13 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
 
     }
 
+    @Override
+    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
+        return sProvider.getTaskExecutorFor(taskExecutorID);
+    }
 
+    @Override
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException {
+        sProvider.storeNewTaskExecutor(registration);
+    }
 }

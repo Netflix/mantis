@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -131,5 +133,15 @@ public class NoopStorageProvider implements MantisStorageProvider {
 
     @Override
     public void shutdown() {
+    }
+
+    @Override
+    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
+
     }
 }

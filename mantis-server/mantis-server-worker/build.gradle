@@ -53,6 +53,8 @@ dependencies {
     testImplementation libraries.mockitoAll
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
     testImplementation libraries.vavrTest
+    testImplementation(testFixtures(project(":mantis-common")))
+    testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }
 
 // exclude any signed jars

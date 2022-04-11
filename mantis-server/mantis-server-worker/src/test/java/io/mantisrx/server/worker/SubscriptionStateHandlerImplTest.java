@@ -20,13 +20,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import io.mantisrx.common.util.DelegateClock;
 import io.mantisrx.server.worker.SubscriptionStateHandlerImpl.SubscriptionState;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.RequiredArgsConstructor;
 import org.junit.Test;
 
 public class SubscriptionStateHandlerImplTest {
@@ -56,23 +56,4 @@ public class SubscriptionStateHandlerImplTest {
         assertEquals(Duration.ofSeconds(0), state.getUnsubscribedDuration());
     }
 
-    @RequiredArgsConstructor
-    static class DelegateClock extends Clock {
-        private final AtomicReference<Clock> delegate;
-
-        @Override
-        public ZoneId getZone() {
-            return delegate.get().getZone();
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return delegate.get().withZone(zone);
-        }
-
-        @Override
-        public Instant instant() {
-            return delegate.get().instant();
-        }
-    }
 }
