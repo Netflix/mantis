@@ -71,6 +71,7 @@ import org.apache.flink.runtime.rpc.RpcService;
 class ResourceClusterActor extends AbstractActor {
 
     private final Duration heartbeatTimeout;
+    private final Duration assignmentTimeout;
 
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap;
     private final Clock clock;
@@ -79,18 +80,20 @@ class ResourceClusterActor extends AbstractActor {
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Clock clock, RpcService rpcService) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, clock, rpcService);
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Clock clock, RpcService rpcService) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, clock, rpcService);
     }
 
     ResourceClusterActor(
         ClusterID clusterID,
         Duration heartbeatTimeout,
+        Duration assignmentTimeout,
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
+        this.assignmentTimeout = assignmentTimeout;
         this.clock = clock;
         this.rpcService = rpcService;
         this.taskExecutorStateMap = new HashMap<>();
@@ -108,6 +111,7 @@ class ResourceClusterActor extends AbstractActor {
                 .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
+                .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorRegistration.class, this::onTaskExecutorRegistration)
                 .match(InitializeTaskExecutorRequest.class, this::onTaskExecutorInitialization)
@@ -272,11 +276,38 @@ class ResourceClusterActor extends AbstractActor {
         if (matchedExecutor.isPresent()) {
             log.info("matched executor {} for request {}", matchedExecutor.get().getKey(), request);
             matchedExecutor.get().getValue().onAssignment(request.getWorkerId());
+            // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
+            // will be returned back to the pool.
+            context()
+                .system()
+                .scheduler()
+                .scheduleOnce(
+                    assignmentTimeout,
+                    self(),
+                    new TaskExecutorAssignmentTimeout(matchedExecutor.get().getKey()),
+                    getContext().getDispatcher(),
+                    self());
             sender().tell(matchedExecutor.get().getKey(), self());
         } else {
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
+        }
+    }
+
+    private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
+        try {
+            TaskExecutorState state = taskExecutorStateMap.get(request.getTaskExecutorID());
+            if (state.isRunningTask()) {
+                log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
+            } else {
+                boolean stateChange = state.onUnassignment();
+                if (stateChange) {
+                    taskExecutorsReadyToPerformWork.add(request.getTaskExecutorID());
+                }
+            }
+        } catch (IllegalStateException e) {
+            log.error("Failed to un-assign taskExecutor {}", request.getTaskExecutorID(), e);
         }
     }
 
@@ -370,6 +401,11 @@ class ResourceClusterActor extends AbstractActor {
         MachineDefinition machineDefinition;
         WorkerId workerId;
         ClusterID clusterID;
+    }
+
+    @Value
+    static class TaskExecutorAssignmentTimeout {
+        TaskExecutorID taskExecutorID;
     }
 
     @Value
@@ -549,6 +585,24 @@ class ResourceClusterActor extends AbstractActor {
                     default:
                         throwInvalidTransition(workerId);
                 }
+            }
+            return false;
+        }
+
+        boolean onUnassignment() throws IllegalStateException {
+            if (this.availabilityState == null) {
+                throw new IllegalStateException("availability state was null when unassignment was issued");
+            }
+
+            switch (this.availabilityState) {
+                case Assigned:
+                    this.workerId = null;
+                    this.availabilityState = AvailabilityState.Pending;
+                    return true;
+                case Pending:
+                    return false;
+                default:
+                    throwInvalidTransition(workerId);
             }
             return false;
         }
