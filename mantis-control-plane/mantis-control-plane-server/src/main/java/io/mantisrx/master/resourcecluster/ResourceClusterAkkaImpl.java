@@ -44,18 +44,18 @@ import java.util.concurrent.CompletableFuture;
 
 class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
 
-  private final ClusterID clusterID;
-  private final ResourceClusterTaskExecutorMapper mapper;
+    private final ClusterID clusterID;
+    private final ResourceClusterTaskExecutorMapper mapper;
 
-  public ResourceClusterAkkaImpl(
-      ActorRef resourceClusterManagerActor,
-      Duration askTimeout,
-      ClusterID clusterID,
-      ResourceClusterTaskExecutorMapper mapper) {
-    super(resourceClusterManagerActor, askTimeout, mapper);
-    this.clusterID = clusterID;
-      this.mapper = mapper;
-  }
+    public ResourceClusterAkkaImpl(
+        ActorRef resourceClusterManagerActor,
+        Duration askTimeout,
+        ClusterID clusterID,
+        ResourceClusterTaskExecutorMapper mapper) {
+        super(resourceClusterManagerActor, askTimeout, mapper);
+        this.clusterID = clusterID;
+        this.mapper = mapper;
+    }
 
     @Override
     public CompletableFuture<Ack> initializeTaskExecutor(TaskExecutorID taskExecutorID, WorkerId workerId) {
@@ -70,99 +70,99 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-  public CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors() {
-    return Patterns.ask(
-            resourceClusterManagerActor,
-            new GetRegisteredTaskExecutorsRequest(clusterID), askTimeout)
-        .thenApply(TaskExecutorsList.class::cast)
-        .toCompletableFuture()
-        .thenApply(l -> l.getTaskExecutors());
-  }
+    public CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors() {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                new GetRegisteredTaskExecutorsRequest(clusterID), askTimeout)
+            .thenApply(TaskExecutorsList.class::cast)
+            .toCompletableFuture()
+            .thenApply(l -> l.getTaskExecutors());
+    }
 
-  @Override
-  public CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors() {
-    return Patterns.ask(
-            resourceClusterManagerActor,
-            new GetAvailableTaskExecutorsRequest(clusterID), askTimeout)
-        .thenApply(TaskExecutorsList.class::cast)
-        .toCompletableFuture()
-        .thenApply(l -> l.getTaskExecutors());
-  }
+    @Override
+    public CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors() {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                new GetAvailableTaskExecutorsRequest(clusterID), askTimeout)
+            .thenApply(TaskExecutorsList.class::cast)
+            .toCompletableFuture()
+            .thenApply(l -> l.getTaskExecutors());
+    }
 
-  @Override
-  public CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors() {
-    return Patterns.ask(
-            resourceClusterManagerActor,
-            new GetBusyTaskExecutorsRequest(clusterID), askTimeout)
-        .thenApply(TaskExecutorsList.class::cast)
-        .toCompletableFuture()
-        .thenApply(l -> l.getTaskExecutors());
-  }
+    @Override
+    public CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors() {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                new GetBusyTaskExecutorsRequest(clusterID), askTimeout)
+            .thenApply(TaskExecutorsList.class::cast)
+            .toCompletableFuture()
+            .thenApply(l -> l.getTaskExecutors());
+    }
 
-  @Override
-  public CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors() {
-    return Patterns.ask(
-            resourceClusterManagerActor,
-            new GetUnregisteredTaskExecutorsRequest(clusterID), askTimeout)
-        .thenApply(TaskExecutorsList.class::cast)
-        .toCompletableFuture()
-        .thenApply(l -> l.getTaskExecutors());
-  }
+    @Override
+    public CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors() {
+        return Patterns.ask(
+                resourceClusterManagerActor,
+                new GetUnregisteredTaskExecutorsRequest(clusterID), askTimeout)
+            .thenApply(TaskExecutorsList.class::cast)
+            .toCompletableFuture()
+            .thenApply(l -> l.getTaskExecutors());
+    }
 
-  @Override
-  public CompletableFuture<ResourceOverview> resourceOverview() {
-    return
-        Patterns
-            .ask(resourceClusterManagerActor, new ResourceOverviewRequest(clusterID), askTimeout)
-            .thenApply(ResourceOverview.class::cast)
-            .toCompletableFuture();
-  }
+    @Override
+    public CompletableFuture<ResourceOverview> resourceOverview() {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new ResourceOverviewRequest(clusterID), askTimeout)
+                .thenApply(ResourceOverview.class::cast)
+                .toCompletableFuture();
+    }
 
-  @Override
-  public CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition,
-      WorkerId workerId) {
-    return
-        Patterns
-            .ask(resourceClusterManagerActor, new TaskExecutorAssignmentRequest(machineDefinition, workerId, clusterID), askTimeout)
-            .thenApply(TaskExecutorID.class::cast)
-            .toCompletableFuture();
-  }
+    @Override
+    public CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition,
+                                                                WorkerId workerId) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new TaskExecutorAssignmentRequest(machineDefinition, workerId, clusterID), askTimeout)
+                .thenApply(TaskExecutorID.class::cast)
+                .toCompletableFuture();
+    }
 
-  @Override
-  public CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(
-      TaskExecutorID taskExecutorID) {
-    return
-        Patterns
-            .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID), askTimeout)
-            .thenApply(TaskExecutorGateway.class::cast)
-            .toCompletableFuture();
-  }
+    @Override
+    public CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(
+        TaskExecutorID taskExecutorID) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new TaskExecutorGatewayRequest(taskExecutorID, clusterID), askTimeout)
+                .thenApply(TaskExecutorGateway.class::cast)
+                .toCompletableFuture();
+    }
 
-  @Override
-  public CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(String hostName) {
-    return
-        Patterns
-            .ask(resourceClusterManagerActor, new TaskExecutorInfoRequest(null, hostName, clusterID), askTimeout)
-            .thenApply(TaskExecutorRegistration.class::cast)
-            .toCompletableFuture();
-  }
+    @Override
+    public CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(String hostName) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new TaskExecutorInfoRequest(null, hostName, clusterID), askTimeout)
+                .thenApply(TaskExecutorRegistration.class::cast)
+                .toCompletableFuture();
+    }
 
-  @Override
-  public CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(
-      TaskExecutorID taskExecutorID) {
-    return
-        Patterns
-            .ask(resourceClusterManagerActor, new TaskExecutorInfoRequest(taskExecutorID, null, clusterID), askTimeout)
-            .thenApply(TaskExecutorRegistration.class::cast)
-            .toCompletableFuture();
-  }
+    @Override
+    public CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(
+        TaskExecutorID taskExecutorID) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new TaskExecutorInfoRequest(taskExecutorID, null, clusterID), askTimeout)
+                .thenApply(TaskExecutorRegistration.class::cast)
+                .toCompletableFuture();
+    }
 
-  @Override
-  public CompletableFuture<TaskExecutorStatus> getTaskExecutorState(TaskExecutorID taskExecutorID) {
-    return
-        Patterns
-            .ask(resourceClusterManagerActor, new GetTaskExecutorStatusRequest(taskExecutorID, clusterID), askTimeout)
-            .thenApply(TaskExecutorStatus.class::cast)
-            .toCompletableFuture();
-  }
+    @Override
+    public CompletableFuture<TaskExecutorStatus> getTaskExecutorState(TaskExecutorID taskExecutorID) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new GetTaskExecutorStatusRequest(taskExecutorID, clusterID), askTimeout)
+                .thenApply(TaskExecutorStatus.class::cast)
+                .toCompletableFuture();
+    }
 }
