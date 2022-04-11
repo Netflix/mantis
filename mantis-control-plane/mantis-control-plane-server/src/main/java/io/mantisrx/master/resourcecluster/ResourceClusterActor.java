@@ -432,8 +432,9 @@ class ResourceClusterActor extends AbstractActor {
         List<TaskExecutorID> taskExecutors;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     @AllArgsConstructor
-    private static class TaskExecutorState {
+    static class TaskExecutorState {
 
         enum RegistrationState {
             Registered,

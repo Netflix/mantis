@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+apply plugin: 'java-test-fixtures'
+
 ext {
     jacksonVersion = '2.10.+'
     jctoolsVersion = '1.+'
