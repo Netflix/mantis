@@ -79,11 +79,11 @@ class ResourceClusterActor extends AbstractActor {
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
 
-    public static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Clock clock, RpcService rpcService) {
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Clock clock, RpcService rpcService) {
         return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, clock, rpcService);
     }
 
-    public ResourceClusterActor(
+    ResourceClusterActor(
         ClusterID clusterID,
         Duration heartbeatTimeout,
         Clock clock,
