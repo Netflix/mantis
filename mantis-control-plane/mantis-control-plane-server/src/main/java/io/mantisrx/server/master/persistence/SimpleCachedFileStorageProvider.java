@@ -656,13 +656,36 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         return null;
     }
 
-    @Override
-    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
-        return null;
+    private File getFileFor(TaskExecutorID taskExecutorID) {
+        return new File(SPOOL_DIR + "/TaskExecutor-" + taskExecutorID.getResourceId());
     }
 
     @Override
-    public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
+    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
+        File tmpFile = getFileFor(taskExecutorID);
+        if (tmpFile.exists()) {
+            try (FileInputStream fis = new FileInputStream(tmpFile)) {
+                return mapper.readValue(fis, TaskExecutorRegistration.class);
+            }
+        } else {
+            throw new IOException(String.format("File %s for taskExecutor %s does not exist", tmpFile, taskExecutorID));
+        }
+    }
 
+    @Override
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException {
+        File tmpFile = getFileFor(registration.getTaskExecutorID());
+        if (!tmpFile.exists()) {
+            if (!tmpFile.delete()) {
+                throw new IOException(String.format("File %s cannot be deleted for storing taskExecutor %s", tmpFile, registration.getTaskExecutorID()));
+            }
+        }
+        if (!tmpFile.createNewFile()) {
+            throw new IOException(String.format("File %s cannot be created for storing taskExecutor %s", tmpFile, registration.getTaskExecutorID()));
+        }
+
+        try (PrintWriter pwrtr = new PrintWriter(tmpFile)) {
+            mapper.writeValue(pwrtr, registration);
+        }
     }
 }

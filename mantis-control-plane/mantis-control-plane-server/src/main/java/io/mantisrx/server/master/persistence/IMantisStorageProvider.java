@@ -139,5 +139,5 @@ public interface IMantisStorageProvider {
 
     TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException;
 
-    void storeNewTaskExecutor(TaskExecutorRegistration registration);
+    void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException;
 }
