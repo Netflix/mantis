@@ -116,6 +116,24 @@ public class TaskExecutorStateTest {
         assertEquals(currentTime, state.getLastActivity());
     }
 
+    @Test
+    public void testInitializationLifecycle() {
+        Instant currentTime;
+        // Registration
+        assertTrue(state.onRegistration(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, TASK_EXECUTOR_ADDRESS, HOST_NAME, WORKER_PORTS, MACHINE_DEFINITION)));
+        assertTrue(state.isRegistered());
+        assertFalse(state.isDisconnected());
+
+        // heartbeat after registration
+        currentTime = tick();
+        assertTrue(state.onHeartbeat(new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))));
+        assertTrue(state.isRegistered());
+        assertFalse(state.isAssigned());
+        assertTrue(state.isRunningTask());
+        assertFalse(state.isAvailable());
+        assertEquals(currentTime, state.getLastActivity());
+    }
+
     private Instant tick() {
         return actual.updateAndGet(currentTime -> Clock.offset(currentTime, Duration.ofSeconds(1))).instant();
     }
