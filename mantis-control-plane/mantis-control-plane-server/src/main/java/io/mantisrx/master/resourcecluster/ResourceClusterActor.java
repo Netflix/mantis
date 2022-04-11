@@ -159,7 +159,7 @@ class ResourceClusterActor extends AbstractActor {
             if (taskExecutorRegistration.isPresent()) {
                 sender().tell(taskExecutorRegistration.get(), self());
             } else {
-                sender().tell(new Status.Failure(new Exception("")), self());
+                sender().tell(new Status.Failure(new Exception(String.format("Unknown task executor for hostname %s", request.getHostName()))), self());
             }
         }
     }
