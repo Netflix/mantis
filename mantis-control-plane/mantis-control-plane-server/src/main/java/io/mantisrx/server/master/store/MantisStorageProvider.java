@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
 import java.util.List;
 import rx.Observable;
@@ -169,4 +171,8 @@ public interface MantisStorageProvider {
     List<String> initActiveVmAttributeValuesList() throws IOException;
 
     void setActiveVmAttributeValuesList(List<String> vmAttributesList) throws IOException;
+
+    TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException;
+
+    void storeNewTaskExecutor(TaskExecutorRegistration registration);
 }

@@ -25,6 +25,8 @@ import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
@@ -157,6 +159,14 @@ public class MantisJobStore {
         storageProvider.storeNewJob(jobMetadata);
         if (logger.isTraceEnabled()) { logger.trace("Stored new Job {}", jobMetadata);}
 
+    }
+
+    public TaskExecutorRegistration getTaskExecutor(TaskExecutorID taskExecutorID) throws IOException {
+        return storageProvider.getTaskExecutorFor(taskExecutorID);
+    }
+
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException {
+        storageProvider.storeNewTaskExecutor(registration);
     }
 
     public void replaceTerminatedWorker(IMantisWorkerMetadata oldWorker, IMantisWorkerMetadata replacement) throws Exception {

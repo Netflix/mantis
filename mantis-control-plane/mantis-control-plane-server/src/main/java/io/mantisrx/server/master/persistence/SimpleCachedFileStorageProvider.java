@@ -34,6 +34,8 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsException;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.store.InvalidNamedJobException;
 import io.mantisrx.server.master.store.JobAlreadyExistsException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
@@ -654,5 +656,13 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         return null;
     }
 
+    @Override
+    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
+        return null;
+    }
 
+    @Override
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
+
+    }
 }

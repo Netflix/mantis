@@ -22,6 +22,8 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -134,4 +136,8 @@ public interface IMantisStorageProvider {
     List<String> initActiveVmAttributeValuesList() throws IOException;
 
     void setActiveVmAttributeValuesList(final List<String> vmAttributesList) throws IOException;
+
+    TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException;
+
+    void storeNewTaskExecutor(TaskExecutorRegistration registration);
 }

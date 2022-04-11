@@ -17,6 +17,8 @@
 package io.mantisrx.server.master.store;
 
 import com.netflix.fenzo.functions.Action1;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -521,4 +523,13 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
         }
     }
 
+    @Override
+    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
+
+    }
 }
