@@ -19,6 +19,7 @@ package io.mantisrx.server.core.domain;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -96,6 +97,11 @@ public class WorkerId implements Serializable {
         }
         logger.warn("failed to parse workerId from {}", id);
         return Optional.empty();
+    }
+
+    @VisibleForTesting
+    public static WorkerId fromIdUnsafe(String id) {
+        return fromId(id).get();
     }
 
     public String getJobCluster() {

@@ -477,15 +477,15 @@ class ResourceClusterActor extends AbstractActor {
                 rpcService);
         }
 
-        private boolean isRegistered() {
+        boolean isRegistered() {
             return state == RegistrationState.Registered;
         }
 
-        private boolean isDisconnected() {
+        boolean isDisconnected() {
             return !isRegistered();
         }
 
-        private boolean onRegistration(TaskExecutorRegistration registration) {
+        boolean onRegistration(TaskExecutorRegistration registration) {
             if (state == RegistrationState.Registered) {
                 return false;
             } else {
@@ -503,7 +503,7 @@ class ResourceClusterActor extends AbstractActor {
             }
         }
 
-        private boolean onDisconnection() {
+        boolean onDisconnection() {
             if (state == RegistrationState.Unregistered) {
                 return false;
             } else {
@@ -527,7 +527,7 @@ class ResourceClusterActor extends AbstractActor {
             }
         }
 
-        private boolean onAssignment(WorkerId workerId) throws IllegalStateException {
+        boolean onAssignment(WorkerId workerId) throws IllegalStateException {
             if (!isRegistered()) {
                 throwNotRegistered(String.format("assignment to %s", workerId));
             }
@@ -553,7 +553,7 @@ class ResourceClusterActor extends AbstractActor {
             return false;
         }
 
-        private boolean onHeartbeat(TaskExecutorHeartbeat heartbeat) throws IllegalStateException {
+        boolean onHeartbeat(TaskExecutorHeartbeat heartbeat) throws IllegalStateException {
             if (!isRegistered()) {
                 throwNotRegistered(String.format("heartbeat %s", heartbeat));
             }
@@ -563,7 +563,7 @@ class ResourceClusterActor extends AbstractActor {
             return result;
         }
 
-        private boolean onTaskExecutorStatusChange(TaskExecutorStatusChange statusChange) {
+        boolean onTaskExecutorStatusChange(TaskExecutorStatusChange statusChange) {
             if (!isRegistered()) {
                 throwNotRegistered(String.format("status change %s", statusChange));
             }
@@ -647,19 +647,21 @@ class ResourceClusterActor extends AbstractActor {
             this.lastActivity = clock.instant();
         }
 
-        private boolean isAvailable() {
+        boolean isAvailable() {
             return this.availabilityState == AvailabilityState.Pending;
         }
 
-        private boolean isRunningTask() {
+        boolean isRunningTask() {
             return this.availabilityState == AvailabilityState.Running;
         }
 
-        private boolean isAssigned() {
+        boolean isAssigned() {
             return this.availabilityState == AvailabilityState.Assigned;
         }
 
-        private Instant getLastActivity() {
+        // Captures the last interaction from the task executor. Any interactions
+        // that are caused from within the server do not cause an uptick.
+        Instant getLastActivity() {
             return this.lastActivity;
         }
 
