@@ -388,7 +388,7 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
     }
 
     @Override
-    public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
+    public void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException {
         sProvider.storeNewTaskExecutor(registration);
     }
 }
