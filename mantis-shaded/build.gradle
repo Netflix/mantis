@@ -25,7 +25,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
  * On the second publish, you update all subprojects that depend on mantis-shaded
  */
 ext {
-    jacksonVersion = '2.10.+'
+    jacksonVersion = '2.12.+'
     guavaVersion = '18.+'
     curatorVersion = '2.12.+'
     zookeeperVersion = '3.4.+'
