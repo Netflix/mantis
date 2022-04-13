@@ -61,18 +61,14 @@ public class Parameters {
     /**
      * Get parameter value given key without validation.
      *
-     * If the key is not defined or missing a provided value, the given default value will be returned.
+     * If the key is not defined, value is missing or is null, given {@code defaultValue} will be returned.
      */
     public Object get(String key, Object defaultValue) {
-        Object value;
         try {
-            value = get(key);
-            if (value == null) {
-                value = defaultValue;
-            }
+            final Object value = get(key);
+            return value != null ? value : defaultValue;
         } catch (ParameterException ex) {
-            value = defaultValue;
+            return defaultValue;
         }
-        return value;
     }
 }

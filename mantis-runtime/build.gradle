@@ -25,6 +25,7 @@ dependencies {
     api project(':mantis-common')
     api libraries.slf4jApi
     testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
 
 }
