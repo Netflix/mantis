@@ -58,6 +58,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     public SimpleCachedFileStorageProvider() {
         logger.debug(SimpleCachedFileStorageProvider.class.getName() + " created");
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(new Jdk8Module());
     }
 
     private static String getWorkerFilename(String prefix, String jobId, int workerIndex, int workerNumber) {
