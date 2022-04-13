@@ -18,6 +18,7 @@ package io.mantisrx.server.worker;
 
 import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
 
+import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -61,7 +62,9 @@ import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
+import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -70,6 +73,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,6 +105,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private SinkSubscriptionStateHandler subscriptionStateHandler;
     private Action0 onSinkSubscribe = null;
     private Action0 onSinkUnsubscribe = null;
+    private final List<Closeable> closeables = new ArrayList<>();
+    private final ScheduledExecutorService scheduledExecutorService;
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
@@ -129,6 +136,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         String locateSpectatorRegistry =
                 ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
         lookupSpectatorRegistry = Boolean.valueOf(locateSpectatorRegistry);
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
     }
 
     /**
@@ -206,20 +214,23 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     }
 
-    private void startSendingHeartbeats(final Observer<Status> jobStatus, String workerName, double networkMbps) {
+    private Closeable startSendingHeartbeats(final Observer<Status> jobStatus, String workerName, double networkMbps) {
         heartbeatRef.get().setPayload("" + StatusPayloads.Type.SubscriptionState, "" + false);
-        new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                jobStatus.onNext(heartbeatRef.get().getCurrentHeartbeatStatus());
-            }
-        }, heartbeatIntervalSecs, heartbeatIntervalSecs, TimeUnit.SECONDS);
+        Future<?> heartbeatFuture =
+            scheduledExecutorService
+                .scheduleWithFixedDelay(
+                    () -> jobStatus.onNext(heartbeatRef.get().getCurrentHeartbeatStatus()),
+                    heartbeatIntervalSecs,
+                    heartbeatIntervalSecs,
+                    TimeUnit.SECONDS);
         // start heartbeat payload setter for incoming data drops
         DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get());
         droppedPayloadSetter.start(heartbeatIntervalSecs);
 
         ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, workerName, networkMbps);
         usagePayloadSetter.start(heartbeatIntervalSecs);
+
+        return Closeables.combine(() -> heartbeatFuture.cancel(false), droppedPayloadSetter, usagePayloadSetter);
     }
 
     /**
@@ -379,9 +390,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
                     rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum()));
             final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
-            startSendingHeartbeats(rw.getJobStatus(),
+            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(),
                     new WorkerId(executionRequest.getJobId(), executionRequest.getWorkerIndex(),
                             executionRequest.getWorkerNumber()).getId(), networkMbps);
+            closeables.add(heartbeatCloseable);
 
             // execute stage
             if (rw.getStageNum() == 0) {
@@ -418,9 +430,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     logger.info("param {} is null or empty", JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM);
                 }
 
-                final JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
+                JobMasterService jobMasterService = new JobMasterService(rw.getJobId(), rw.getSchedulingInfo(),
                         workerMetricsClient, autoScaleMetricsConfig, mantisMasterApi, rw.getContext(), rw.getOnCompleteCallback(), rw.getOnErrorCallback(), rw.getOnTerminateCallback());
                 jobMasterService.start();
+                closeables.add(jobMasterService::shutdown);
 
                 signalStarted(rw);
                 // block until worker terminates
@@ -435,12 +448,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     }
                 };
                 RxMetrics rxMetrics = new RxMetrics();
-                StageExecutors.executeSingleStageJob(rw.getJob().getSource(), rw.getStage(),
+                closeables.add(StageExecutors.executeSingleStageJob(rw.getJob().getSource(), rw.getStage(),
                         rw.getJob().getSink(), portSelector, rxMetrics, rw.getContext(),
                         rw.getOnTerminateCallback(), rw.getWorkerIndex(),
                         rw.getSourceStageTotalWorkersObservable(),
                         onSinkSubscribe, onSinkUnsubscribe,
-                        rw.getOnCompleteCallback(), rw.getOnErrorCallback());
+                        rw.getOnCompleteCallback(), rw.getOnErrorCallback()));
                 signalStarted(rw);
                 // block until worker terminates
                 rw.waitUntilTerminate();
@@ -457,8 +470,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                             remoteObservableName, numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1),
                             rw.getJobName());
 
-                    StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
-                            rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable());
+                    closeables.add(StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
+                            rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable()));
 
                     logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", serving remote observable for source with name: " + remoteObservableName);
                     RemoteRxServer server = publisher.getServer();
@@ -540,10 +553,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         blockUntilComplete.countDown();
                     }
                 };
-                StageExecutors.executeSink(consumer, rw.getStage(),
+                closeables.add(StageExecutors.executeSink(consumer, rw.getStage(),
                         rw.getJob().getSink(), portSelector, rxMetrics,
                         rw.getContext(), countDownLatch, onSinkSubscribe, onSinkUnsubscribe,
-                        rw.getOnCompleteCallback(), rw.getOnErrorCallback());
+                        rw.getOnCompleteCallback(), rw.getOnErrorCallback()));
                 // block until completes
                 try {
                     blockUntilComplete.await();
@@ -563,8 +576,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 WorkerPublisherRemoteObservable publisher
                         = new WorkerPublisherRemoteObservable<>(workerPort, remoteObservableName,
                         numWorkersAtStage(selfSchedulingInfo, rw.getJobId(), rw.getStageNum() + 1), rw.getJobName());
-                StageExecutors.executeIntermediate(consumer, rw.getStage(), publisher,
-                        rw.getContext());
+                closeables.add(StageExecutors.executeIntermediate(consumer, rw.getStage(), publisher,
+                        rw.getContext()));
                 RemoteRxServer server = publisher.getServer();
 
                 logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", serving intermediate remote observable with name: " + remoteObservableName);
@@ -640,7 +653,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     @Override
-    public void shutdownStage() {
+    public void shutdownStage() throws IOException  {
         logger.debug("Shutdown initiated");
         if (subscriptionStateHandler != null) {
             try {
@@ -650,6 +663,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             }
         }
 
-        System.exit(0);
+        Closeables.combine(closeables).close();
+        scheduledExecutorService.shutdownNow();
     }
 }

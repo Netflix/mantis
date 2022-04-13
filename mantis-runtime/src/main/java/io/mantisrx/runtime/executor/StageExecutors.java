@@ -18,6 +18,7 @@ package io.mantisrx.runtime.executor;
 
 import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
+import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
@@ -42,6 +43,8 @@ import io.mantisrx.runtime.source.Index;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +88,7 @@ public class StageExecutors {
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static void executeSingleStageJob(final SourceHolder source, final StageConfig stage,
+    public static Closeable executeSingleStageJob(final SourceHolder source, final StageConfig stage,
                                              final SinkHolder sink, final PortSelector portSelector, RxMetrics rxMetrics,
                                              final Context context, Action0 sinkObservableTerminatedCallback,
                                              final int workerIndex,
@@ -112,17 +115,19 @@ public class StageExecutors {
             }
 
             @Override
-            public void stop() {}
+            public void close() throws IOException {
+                source.getSourceFunction().close();
+            }
         };
         // sink publisher with metrics
         WorkerPublisher sinkPublisher = new SinkPublisher(sink, portSelector, context,
                 sinkObservableTerminatedCallback, onSinkSubscribe, onSinkUnsubscribe,
                 observableOnCompleteCallback, observableOnErrorCallback);
-        StageExecutors.executeIntermediate(sourceConsumer, stage, sinkPublisher, context);
+        return StageExecutors.executeIntermediate(sourceConsumer, stage, sinkPublisher, context);
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static void executeSource(final int workerIndex, final SourceHolder source, final StageConfig stage,
+    public static Closeable executeSource(final int workerIndex, final SourceHolder source, final StageConfig stage,
                                      WorkerPublisher publisher, final Context context, final Observable<Integer> totalWorkerAtStageObservable) {
         // create a consumer from passed in source
         WorkerConsumer sourceConsumer = new WorkerConsumer() {
@@ -137,9 +142,11 @@ public class StageExecutors {
             }
 
             @Override
-            public void stop() {}
+            public void close() throws IOException {
+                source.getSourceFunction().close();
+            }
         };
-        executeIntermediate(sourceConsumer, stage, publisher, context);
+        return executeIntermediate(sourceConsumer, stage, publisher, context);
     }
 
 
@@ -452,7 +459,7 @@ public class StageExecutors {
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static <T, R> void executeIntermediate(WorkerConsumer consumer,
+    public static <T, R> Closeable executeIntermediate(WorkerConsumer consumer,
                                                   final StageConfig<T, R> stage, WorkerPublisher publisher, final Context context) {
         if (consumer == null) {
             throw new IllegalArgumentException("consumer cannot be null");
@@ -513,10 +520,13 @@ public class StageExecutors {
         }
 
         publisher.start(stage, toSink);
+        // the ordering is important here as we want to first close the sinks so that the subscriptions
+        // are first cut off before closing the sources.
+        return Closeables.combine(publisher, consumer);
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static void executeSink(WorkerConsumer consumer, StageConfig stage, SinkHolder sink,
+    public static Closeable executeSink(WorkerConsumer consumer, StageConfig stage, SinkHolder sink,
                                    PortSelector portSelector, RxMetrics rxMetrics, Context context,
                                    Action0 sinkObservableCompletedCallback,
                                    final Action0 onSinkSubscribe, final Action0 onSinkUnsubscribe,
@@ -524,6 +534,6 @@ public class StageExecutors {
         WorkerPublisher sinkPublisher = new SinkPublisher(sink, portSelector, context,
                 sinkObservableCompletedCallback, onSinkSubscribe, onSinkUnsubscribe,
                 observableOnCompleteCallback, observableOnErrorCallback);
-        executeIntermediate(consumer, stage, sinkPublisher, context);
+        return executeIntermediate(consumer, stage, sinkPublisher, context);
     }
 }

@@ -190,12 +190,7 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                                 resetActiveConnections();
                             }
                         })
-                        .groupBy(new Func1<EndpointChange, String>() {
-                            @Override
-                            public String call(EndpointChange t1) {
-                                return Endpoint.uniqueHost(t1.getEndpoint().getHost(), t1.getEndpoint().getPort(), t1.getEndpoint().getSlotId());
-                            }
-                        })
+                        .groupBy(t1 -> Endpoint.uniqueHost(t1.getEndpoint().getHost(), t1.getEndpoint().getPort(), t1.getEndpoint().getSlotId()))
                         .flatMap(new Func1<GroupedObservable<String, EndpointChange>, Observable<Observable<T>>>() {
                             @Override
                             public Observable<Observable<T>> call(

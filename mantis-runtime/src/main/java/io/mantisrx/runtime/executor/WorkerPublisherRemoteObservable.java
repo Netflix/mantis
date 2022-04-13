@@ -42,16 +42,19 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 
-
-public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T, R> {
+/**
+ * Execution of WorkerPublisher that publishes the stream to the next stage.
+ *
+ * @param <T> incoming codec
+ */
+public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerPublisherRemoteObservable.class);
 
-    private String name;
-    private int serverPort;
+    private final String name;
+    private final int serverPort;
     private RemoteRxServer server;
-    private Observable<Integer> minConnectionsToSubscribe;
-    private MantisPropertiesService propService;
+    private final MantisPropertiesService propService;
     private String jobName;
 
     public WorkerPublisherRemoteObservable(int serverPort,
@@ -59,14 +62,13 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
                                            String jobName) {
         this.name = name;
         this.serverPort = serverPort;
-        this.minConnectionsToSubscribe = minConnectionsToSubscribe;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.jobName = jobName;
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
     @Override
-    public void start(final StageConfig<T, R> stage, Observable<Observable<R>> toServe) {
+    public void start(final StageConfig<?, T> stage, Observable<Observable<T>> toServe) {
 
         RemoteRxServer.Builder serverBuilder = new RemoteRxServer.Builder();
 
@@ -82,22 +84,12 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
                     expiryTimeInSecs = ((ScalarToKey) stage).getKeyExpireTimeSeconds();
                 }
 
-                Func1<R, byte[]> valueEncoder = new Func1<R, byte[]>() {
-                    @Override
-                    public byte[] call(R t1) {
-                        return stage.getOutputCodec().encode(t1);
-                    }
-                };
+                Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
 
-                Func1<String, byte[]> keyEncoder = new Func1<String, byte[]>() {
-                    @Override
-                    public byte[] call(String t1) {
-                        return Codecs.string().encode(t1);
-                    }
-                };
+                Func1<String, byte[]> keyEncoder = t1 -> Codecs.string().encode(t1);
 
 
-                ServerConfig<KeyValuePair<String, R>> config = new ServerConfig.Builder<KeyValuePair<String, R>>()
+                ServerConfig<KeyValuePair<String, T>> config = new ServerConfig.Builder<KeyValuePair<String, T>>()
                         .name(name)
                         .port(serverPort)
                         .metricsRegistry(MetricsRegistry.getInstance())
@@ -109,14 +101,10 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
                         .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
                         .build();
 
-                // remove type
-                Observable go = toServe;
-
-
                 if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
 
-                    final LegacyTcpPushServer<KeyValuePair<String, R>> modernServer =
-                            PushServers.infiniteStreamLegacyTcpNestedMantisGroup(config, go, expiryTimeInSecs, keyEncoder,
+                    final LegacyTcpPushServer<KeyValuePair<String, T>> modernServer =
+                            PushServers.infiniteStreamLegacyTcpNestedMantisGroup(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
                                     io.reactivex.mantis.network.push.HashFunctions.ketama());
 
                     modernServer.start();
@@ -146,8 +134,8 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
                 } else { // ScalarToKey or KeyTKey
 
 
-                    final LegacyTcpPushServer<KeyValuePair<String, R>> modernServer =
-                            PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(config, go, expiryTimeInSecs, keyEncoder,
+                    final LegacyTcpPushServer<KeyValuePair<String, T>> modernServer =
+                            PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
                                     io.reactivex.mantis.network.push.HashFunctions.ketama());
 
                     modernServer.start();
@@ -181,20 +169,15 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
             if (runNewW2Wserver(jobName)) {
                 logger.info("Modern server setup for name: " + name + " type: Scalarstage");
 
-                Func1<R, byte[]> encoder = new Func1<R, byte[]>() {
-                    @Override
-                    public byte[] call(R t1) {
-                        return stage.getOutputCodec().encode(t1);
-                    }
-                };
+                Func1<T, byte[]> encoder = t1 -> stage.getOutputCodec().encode(t1);
 
-                ServerConfig<R> config = new ServerConfig.Builder<R>()
+                ServerConfig<T> config = new ServerConfig.Builder<T>()
                         .name(name)
                         .port(serverPort)
                         .metricsRegistry(MetricsRegistry.getInstance())
                         .router(Routers.roundRobinLegacyTcpProtocol(name, encoder))
                         .build();
-                final LegacyTcpPushServer<R> modernServer =
+                final LegacyTcpPushServer<T> modernServer =
                         PushServers.infiniteStreamLegacyTcpNested(config, toServe);
                 modernServer.start();
 
@@ -282,7 +265,7 @@ public class WorkerPublisherRemoteObservable<T, R> implements WorkerPublisher<T,
     }
 
     @Override
-    public void stop() {
+    public void close() {
         server.shutdown();
     }
 
