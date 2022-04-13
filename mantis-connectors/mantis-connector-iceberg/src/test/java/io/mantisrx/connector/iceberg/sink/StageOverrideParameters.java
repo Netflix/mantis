@@ -16,13 +16,18 @@
 
 package io.mantisrx.connector.iceberg.sink;
 
+import com.google.common.collect.Lists;
+import io.mantisrx.connector.iceberg.sink.committer.IcebergCommitterStage;
 import io.mantisrx.connector.iceberg.sink.config.SinkProperties;
+import io.mantisrx.connector.iceberg.sink.writer.IcebergWriterStage;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
+import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
+import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.Parameters;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class StageOverrideParameters {
 
@@ -30,21 +35,18 @@ public class StageOverrideParameters {
     }
 
     public static Parameters newParameters() {
-        Map<String, Object> state = new HashMap<>();
-        Set<String> required = new HashSet<>();
+        Map<String, ParameterDefinition<?>> definition = new HashMap<>();
+        IcebergWriterStage.parameters().forEach(p -> definition.put(p.getName(), p));
+        IcebergCommitterStage.parameters().forEach(p -> definition.put(p.getName(), p));
 
-        required.add(SinkProperties.SINK_CATALOG);
-        state.put(SinkProperties.SINK_CATALOG, "catalog");
+        List<Parameter> parameters = Lists.newArrayList(
+            new Parameter(SinkProperties.SINK_CATALOG, "catalog"),
+            new Parameter(SinkProperties.SINK_DATABASE, "database"),
+            new Parameter(SinkProperties.SINK_TABLE, "table"),
+            new Parameter(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC, "500"),
+            new Parameter(WriterProperties.WRITER_MAXIMUM_POOL_SIZE, "10")
+        );
 
-        required.add(SinkProperties.SINK_DATABASE);
-        state.put(SinkProperties.SINK_DATABASE, "database");
-
-        required.add(SinkProperties.SINK_TABLE);
-        state.put(SinkProperties.SINK_TABLE, "table");
-
-        required.add(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC);
-        state.put(WriterProperties.WRITER_FLUSH_FREQUENCY_MSEC, "500");
-
-        return new Parameters(state, required, required);
+        return ParameterUtils.createContextParameters(definition, parameters);
     }
 }
