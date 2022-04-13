@@ -39,16 +39,11 @@ public class WriterConfig extends SinkConfig {
      */
     public WriterConfig(Parameters parameters, Configuration hadoopConfig) {
         super(parameters);
-        this.writerRowGroupSize = (int) parameters.get(
-                WRITER_ROW_GROUP_SIZE, WRITER_ROW_GROUP_SIZE_DEFAULT);
-        this.writerFlushFrequencyBytes = Long.parseLong((String) parameters.get(
-                WRITER_FLUSH_FREQUENCY_BYTES, WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT));
-        this.writerFlushFrequencyMsec = Long.parseLong((String) parameters.get(
-                WRITER_FLUSH_FREQUENCY_MSEC, WRITER_FLUSH_FREQUENCY_MSEC_DEFAULT));
-        this.writerFileFormat = (String) parameters.get(
-                WRITER_FILE_FORMAT, WRITER_FILE_FORMAT_DEFAULT);
-        this.writerMaximumPoolSize = (int) parameters.get(
-                WRITER_MAXIMUM_POOL_SIZE, WRITER_MAXIMUM_POOL_SIZE_DEFAULT);
+        this.writerRowGroupSize = (int) parameters.get(WRITER_ROW_GROUP_SIZE);
+        this.writerFlushFrequencyBytes = Long.parseLong((String) parameters.get(WRITER_FLUSH_FREQUENCY_BYTES));
+        this.writerFlushFrequencyMsec = Long.parseLong((String) parameters.get(WRITER_FLUSH_FREQUENCY_MSEC));
+        this.writerFileFormat = (String) parameters.get(WRITER_FILE_FORMAT);
+        this.writerMaximumPoolSize = (int) parameters.get(WRITER_MAXIMUM_POOL_SIZE);
         this.hadoopConfig = hadoopConfig;
     }
 

@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-
 public class Parameters {
 
     private Set<String> requiredParameters = new HashSet<>();
@@ -38,22 +37,34 @@ public class Parameters {
         this.parameterDefinitions = parameterDefinitions;
     }
 
+    /**
+     * Get parameter value given key with validation.
+     *
+     * If the key is required, parameters must have a value provided otherwise it will throw an exception.
+     * If the key is not defined, it will throw an exception.
+     */
     public Object get(String key) {
-        // check if required parameter, make sure
-        // has a value
+        // check if required parameter, make sure has a value
         if (requiredParameters.contains(key) &&
                 !state.containsKey(key)) {
-            throw new ParameterException("Attempting to reference a required parameter witn no value: " + key + ", check parameter definitions for job.");
+            throw new ParameterException("Attempting to reference a required parameter witn no value: " + key +
+                ", check parameter definitions for job.");
         }
         // check if parameter definition exists
         if (!parameterDefinitions.contains(key)) {
-            throw new ParameterException("Attempting to reference parameter: " + key + ", with no definition, check parameter definitions in job.");
+            throw new ParameterException("Attempting to reference parameter: " + key +
+                ", with no definition, check parameter definitions in job.");
         }
         return state.get(key);
     }
 
+    /**
+     * Get parameter value given key without validation.
+     *
+     * If the key is not defined or missing a provided value, the given default value will be returned.
+     */
     public Object get(String key, Object defaultValue) {
-        Object value = defaultValue;
+        Object value;
         try {
             value = get(key);
             if (value == null) {
