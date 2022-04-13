@@ -109,7 +109,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
@@ -125,6 +127,9 @@ public class JobClusterManagerTest {
             new StatusEventSubscriberLoggingImpl(),
             new WorkerEventSubscriberLoggingImpl());
     private static final String user = "nj";
+
+    @Rule
+    public TemporaryFolder rootDir = new TemporaryFolder();
 
     @BeforeClass
     public static void setup() {
@@ -245,7 +250,7 @@ public class JobClusterManagerTest {
                 "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
                 JobClusterManagerProto.CreateJobClusterResponse.class);
-        assertEquals(SUCCESS_CREATED, resp.responseCode);
+        assertEquals(resp.toString(), SUCCESS_CREATED, resp.responseCode);
     }
 
     private void submitJobAndAssert(ActorRef jobClusterManagerActor, String cluster) {
@@ -277,7 +282,7 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new MantisStorageProviderAdapter(
-                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(),
+                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(rootDir.getRoot()),
                 eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -379,7 +384,7 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new MantisStorageProviderAdapter(
-                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(),
+                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(rootDir.getRoot()),
                 eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -626,7 +631,7 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new MantisStorageProviderAdapter(
-                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(),
+                new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(rootDir.getRoot()),
                 eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         MantisScheduler schedulerMock = mock(MantisScheduler.class);

@@ -48,28 +48,40 @@ import rx.Observable;
  */
 public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
-    private final static String SPOOL_DIR = "/tmp/MantisSpool";
-    private final static String ARCHIVE_DIR = "/tmp/MantisArchive";
+    private final File spoolDir;
+    private final File archiveDir;
+    private final File namedJobsDir;
+    private final ObjectMapper mapper;
+
     private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
-    private static final String NAMED_JOBS_DIR = SPOOL_DIR + "/namedJobs";
     private static final String NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX = "-completedJobs";
     private static final String ACTIVE_VMS_FILENAME = "activeVMs";
-    private final ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-    private boolean _debug = false;
 
     public SimpleCachedFileStorageProvider() {
-        logger.debug(SimpleCachedFileStorageProvider.class.getName() + " created");
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this(new File("/tmp"));
     }
 
-    private static String getWorkerFilename(String prefix, String jobId, int workerIndex, int workerNumber) {
-        return prefix + File.separator + "Worker-" + jobId + "-" + workerIndex + "-" + workerNumber;
+    public SimpleCachedFileStorageProvider(File rootDir) {
+        this.spoolDir = new File(rootDir, "MantisSpool");
+        createDir(spoolDir);
+
+        this.archiveDir = new File(rootDir, "MantisArchive");
+        createDir(archiveDir);
+
+        this.namedJobsDir = new File(rootDir, "namedJobs");
+        createDir(namedJobsDir);
+
+        this.mapper = new ObjectMapper().registerModule(new Jdk8Module()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    private static File getWorkerFilename(File rootDir, String jobId, int workerIndex, int workerNumber) {
+        return new File(rootDir, "Worker-" + jobId + "-" + workerIndex + "-" + workerNumber);
     }
 
     @Override
     public void storeNewJob(MantisJobMetadataWritable jobMetadata)
             throws JobAlreadyExistsException, IOException {
-        File tmpFile = new File(SPOOL_DIR + "/Job-" + jobMetadata.getJobId());
+        File tmpFile = getJobFileName(spoolDir, jobMetadata.getJobId());
         if (!tmpFile.createNewFile()) {
             throw new JobAlreadyExistsException(jobMetadata.getJobId());
         }
@@ -80,7 +92,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public void updateJob(MantisJobMetadataWritable jobMetadata) throws InvalidJobException, IOException {
-        File jobFile = new File(getJobFileName(SPOOL_DIR, jobMetadata.getJobId()));
+        File jobFile = getJobFileName(spoolDir, jobMetadata.getJobId());
         if (!jobFile.exists()) {
             throw new InvalidJobException(jobMetadata.getJobId());
         }
@@ -91,21 +103,21 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
         }
     }
 
-    private String getJobFileName(String dirName, String jobId) {
-        return dirName + "/Job-" + jobId;
+    private File getJobFileName(File jobsDir, String jobId) {
+        return new File(jobsDir, "/Job-" + jobId);
     }
 
     @Override
     public void archiveJob(String jobId) throws IOException {
-        File jobFile = new File(getJobFileName(SPOOL_DIR, jobId));
-        jobFile.renameTo(new File(getJobFileName(ARCHIVE_DIR, jobId)));
+        File jobFile = getJobFileName(spoolDir, jobId);
+        jobFile.renameTo(getJobFileName(archiveDir, jobId));
         archiveStages(jobId);
         archiveWorkers(jobId);
     }
 
     @Override
     public MantisJobMetadataWritable loadArchivedJob(String jobId) throws IOException {
-        File jobFile = new File(getJobFileName(ARCHIVE_DIR, jobId));
+        File jobFile = getJobFileName(archiveDir, jobId);
         MantisJobMetadataWritable job = null;
         if (jobFile.exists()) {
             try (FileInputStream fis = new FileInputStream(jobFile)) {
@@ -126,9 +138,8 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     }
 
     private List<MantisStageMetadataWritable> loadArchivedJobStages(String jobId) throws IOException {
-        File archiveDirFile = new File(ARCHIVE_DIR);
         List<MantisStageMetadataWritable> result = new LinkedList<>();
-        for (File jobFile : archiveDirFile.listFiles((dir, name) -> {
+        for (File jobFile : archiveDir.listFiles((dir, name) -> {
             return name.startsWith("Stage-" + jobId + "-");
         })) {
             try (FileInputStream fis = new FileInputStream(jobFile)) {
@@ -139,7 +150,6 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     }
 
     private List<MantisWorkerMetadataWritable> loadArchivedJobWorkers(String jobId, int maxWorkerNumber) throws IOException {
-        File archiveDir = new File(ARCHIVE_DIR);
         List<MantisWorkerMetadataWritable> result = new LinkedList<>();
         for (File wFile : archiveDir.listFiles((dir, name) -> {
             return name.startsWith("Worker-" + jobId + "-");
@@ -153,19 +163,18 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public void deleteJob(String jobId) throws InvalidJobException, IOException {
-        File tmpFile = new File(SPOOL_DIR + "/Job-" + jobId);
+        File tmpFile = getJobFileName(spoolDir, jobId);
         tmpFile.delete();
-        deleteFiles(SPOOL_DIR, jobId, "Stage-");
-        deleteFiles(SPOOL_DIR, jobId, "Worker-");
-        tmpFile = new File(ARCHIVE_DIR + "/Job-" + jobId);
+        deleteFiles(spoolDir, jobId, "Stage-");
+        deleteFiles(spoolDir, jobId, "Worker-");
+        tmpFile = getJobFileName(archiveDir, jobId);
         tmpFile.delete();
-        deleteFiles(ARCHIVE_DIR, jobId, "Stage-");
-        deleteFiles(ARCHIVE_DIR, jobId, "Worker-");
+        deleteFiles(archiveDir, jobId, "Stage-");
+        deleteFiles(archiveDir, jobId, "Worker-");
     }
 
-    private void deleteFiles(String dirName, final String jobId, final String filePrefix) {
-        File spoolDir = new File(dirName);
-        for (File stageFile : spoolDir.listFiles((dir, name) -> {
+    private static void deleteFiles(File rootDir, final String jobId, final String filePrefix) {
+        for (File stageFile : rootDir.listFiles((dir, name) -> {
             return name.startsWith(filePrefix + jobId + "-");
         })) {
             stageFile.delete();
@@ -178,7 +187,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     }
 
     private void storeStage(MantisStageMetadataWritable msmd, boolean rewrite) throws IOException {
-        File stageFile = new File(getStageFileName(SPOOL_DIR, msmd.getJobId(), msmd.getStageNum()));
+        File stageFile = getStageFileName(spoolDir, msmd.getJobId(), msmd.getStageNum());
         if (rewrite)
             stageFile.delete();
         try {stageFile.createNewFile();} catch (SecurityException se) {
@@ -195,16 +204,15 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     }
 
     private void archiveStages(String jobId) {
-        File spoolDir = new File(SPOOL_DIR);
         for (File sFile : spoolDir.listFiles((dir, name) -> {
             return name.startsWith("Stage-" + jobId + "-");
         })) {
-            sFile.renameTo(new File(ARCHIVE_DIR + File.separator + sFile.getName()));
+            sFile.renameTo(new File(archiveDir, sFile.getName()));
         }
     }
 
-    private String getStageFileName(String dirName, String jobId, int stageNum) {
-        return dirName + "/Stage-" + jobId + "-" + stageNum;
+    private File getStageFileName(File dirName, String jobId, int stageNum) {
+        return new File(dirName, "/Stage-" + jobId + "-" + stageNum);
     }
 
     @Override
@@ -236,11 +244,10 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
         storeWorker(mwmd.getJobId(), mwmd, true);
     }
 
-    private void createDir(String dirName) {
-        File spoolDirLocation = new File(dirName);
+    private void createDir(File spoolDirLocation) {
         if (spoolDirLocation.exists() &&
                 !(spoolDirLocation.isDirectory() && spoolDirLocation.canWrite()))
-            throw new UnsupportedOperationException("Directory [" + dirName + "] not writeable");
+            throw new UnsupportedOperationException("Directory [" + spoolDirLocation + "] not writeable");
         if (!spoolDirLocation.exists())
             try {spoolDirLocation.mkdirs();} catch (SecurityException se) {
                 throw new UnsupportedOperationException("Can't create dir for writing state - " + se.getMessage(), se);
@@ -249,10 +256,10 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public List<MantisJobMetadataWritable> initJobs() throws IOException {
-        createDir(SPOOL_DIR);
-        createDir(ARCHIVE_DIR);
+        createDir(spoolDir);
+        createDir(archiveDir);
         List<MantisJobMetadataWritable> retList = new ArrayList<>();
-        File spoolDirFile = new File(SPOOL_DIR);
+        File spoolDirFile = spoolDir;
         for (File jobFile : spoolDirFile.listFiles((dir, name) -> {
             return name.startsWith("Job-");
         })) {
@@ -270,6 +277,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
                 logger.warn(e.getMessage());
             }
         }
+        boolean _debug = false;
         if (_debug) {
             // print all jobs read
             for (MantisJobMetadata mjmd : retList) {
@@ -287,7 +295,6 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public Observable<MantisJobMetadata> initArchivedJobs() {
-        final File archiveDir = new File(ARCHIVE_DIR);
         return Observable.create(subscriber -> {
             for (File jobFile : archiveDir.listFiles((dir, name) -> {
                 return name.startsWith("Job-");
@@ -314,9 +321,8 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public List<NamedJob> initNamedJobs() throws IOException {
-        createDir(NAMED_JOBS_DIR);
+        createDir(namedJobsDir);
         List<NamedJob> returnList = new ArrayList<>();
-        File namedJobsDir = new File(NAMED_JOBS_DIR);
         for (File namedJobFile : namedJobsDir.listFiles(
                 (dir, name) -> !name.endsWith(NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX)
         )) {
@@ -329,9 +335,8 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public Observable<NamedJob.CompletedJob> initNamedJobCompletedJobs() throws IOException {
-        createDir(NAMED_JOBS_DIR);
+        createDir(namedJobsDir);
         List<NamedJob> returnList = new ArrayList<>();
-        File namedJobsDir = new File(NAMED_JOBS_DIR);
         return Observable.create(subscriber -> {
             for (File namedJobFile : namedJobsDir.listFiles(
                     (dir, name) -> name.endsWith(NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX)
@@ -356,7 +361,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     private void storeWorker(String jobId, MantisWorkerMetadataWritable workerMetadata, boolean rewrite)
             throws IOException {
-        File workerFile = new File(getWorkerFilename(SPOOL_DIR, jobId, workerMetadata.getWorkerIndex(), workerMetadata.getWorkerNumber()));
+        File workerFile = getWorkerFilename(spoolDir, jobId, workerMetadata.getWorkerIndex(), workerMetadata.getWorkerNumber());
         if (rewrite)
             workerFile.delete();
         workerFile.createNewFile();
@@ -395,25 +400,23 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     private void archiveWorkers(String jobId)
             throws IOException {
-        File spoolDir = new File(SPOOL_DIR);
         for (File wFile : spoolDir.listFiles((dir, name) -> {
             return name.startsWith("Worker-" + jobId + "-");
         })) {
-            wFile.renameTo(new File(ARCHIVE_DIR + File.separator + wFile.getName()));
+            wFile.renameTo(new File(archiveDir, wFile.getName()));
         }
     }
 
     @Override
     public void archiveWorker(MantisWorkerMetadataWritable mwmd) throws IOException {
-        File wFile = new File(getWorkerFilename(SPOOL_DIR, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber()));
+        File wFile = getWorkerFilename(spoolDir, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber());
         if (wFile.exists())
-            wFile.renameTo(new File(getWorkerFilename(ARCHIVE_DIR, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber())));
+            wFile.renameTo(getWorkerFilename(archiveDir, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber()));
     }
 
     public List<MantisWorkerMetadataWritable> getArchivedWorkers(final String jobid)
             throws IOException {
         List<MantisWorkerMetadataWritable> workerList = new ArrayList<>();
-        File archiveDir = new File(ARCHIVE_DIR);
         for (File workerFile : archiveDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -427,13 +430,13 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
         return workerList;
     }
 
-    private String getNamedJobFileName(String name) {
-        return NAMED_JOBS_DIR + "/" + name + ".job";
+    private File getNamedJobFileName(String name) {
+        return new File(namedJobsDir, name + ".job");
     }
 
     @Override
     public void storeNewNamedJob(NamedJob namedJob) throws JobNameAlreadyExistsException, IOException {
-        File tmpFile = new File(NAMED_JOBS_DIR + "/" + namedJob.getName());
+        File tmpFile = getNamedJobFileName(namedJob.getName());
         logger.info("Storing job cluster " + namedJob.getName() + " to file " + tmpFile.getAbsolutePath());
         if (!tmpFile.createNewFile())
             throw new JobNameAlreadyExistsException(namedJob.getName());
@@ -444,7 +447,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public void updateNamedJob(NamedJob namedJob) throws InvalidNamedJobException, IOException {
-        File jobFile = new File(NAMED_JOBS_DIR + "/" + namedJob.getName());
+        File jobFile = getNamedJobFileName(namedJob.getName());
         if (!jobFile.exists())
             throw new InvalidNamedJobException(namedJob.getName() + " doesn't exist");
         jobFile.delete();
@@ -456,9 +459,9 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public boolean deleteNamedJob(String name) throws IOException {
-        File jobFile = new File(NAMED_JOBS_DIR + File.separator + name);
+        File jobFile = getNamedJobFileName(name);
         final boolean deleted = jobFile.delete();
-        File completedJobsFile = new File(NAMED_JOBS_DIR + File.separator + name + NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
+        File completedJobsFile = new File(namedJobsDir, name + NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
         completedJobsFile.delete();
         return deleted;
     }
@@ -470,7 +473,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     private void modifyCompletedJobsForNamedJob(String name, Action1<List<NamedJob.CompletedJob>> modifier)
             throws IOException {
-        File completedJobsFile = new File(NAMED_JOBS_DIR + File.separator + name + NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
+        File completedJobsFile = new File(namedJobsDir, name + NAMED_JOBS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
         List<NamedJob.CompletedJob> completedJobs = new LinkedList<>();
         if (completedJobsFile.exists()) {
             try (FileInputStream fis = new FileInputStream(completedJobsFile)) {
@@ -503,7 +506,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public void setActiveVmAttributeValuesList(List<String> vmAttributesList) throws IOException {
-        File activeSlavesFile = new File(SPOOL_DIR + File.separator + ACTIVE_VMS_FILENAME);
+        File activeSlavesFile = new File(spoolDir, ACTIVE_VMS_FILENAME);
         logger.info("Storing file " + activeSlavesFile.getAbsolutePath());
         if (activeSlavesFile.exists())
             activeSlavesFile.delete();
@@ -515,7 +518,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public List<String> initActiveVmAttributeValuesList() throws IOException {
-        File activeSlavesFile = new File(SPOOL_DIR + File.separator + ACTIVE_VMS_FILENAME);
+        File activeSlavesFile = new File(spoolDir, ACTIVE_VMS_FILENAME);
         if (!activeSlavesFile.exists())
             return Collections.EMPTY_LIST;
         try (FileInputStream fis = new FileInputStream(activeSlavesFile)) {
@@ -524,7 +527,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     }
 
     private File getFileFor(TaskExecutorID taskExecutorID) {
-        return new File(SPOOL_DIR + "/TaskExecutor-" + taskExecutorID.getResourceId());
+        return new File(spoolDir, "TaskExecutor-" + taskExecutorID.getResourceId());
     }
 
     @Override
