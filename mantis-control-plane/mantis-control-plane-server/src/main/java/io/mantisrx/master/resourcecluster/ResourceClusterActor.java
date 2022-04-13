@@ -16,9 +16,8 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import akka.actor.AbstractActor;
+import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
-import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
@@ -68,7 +67,7 @@ import org.apache.flink.runtime.rpc.RpcService;
  */
 @ToString(of = {"clusterID"})
 @Slf4j
-class ResourceClusterActor extends AbstractActor {
+class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final Duration heartbeatTimeout;
     private final Duration assignmentTimeout;
@@ -80,8 +79,8 @@ class ResourceClusterActor extends AbstractActor {
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Clock clock, RpcService rpcService) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, clock, rpcService);
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, clock, rpcService, mantisJobStore);
     }
 
     ResourceClusterActor(
@@ -113,6 +112,7 @@ class ResourceClusterActor extends AbstractActor {
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
+                .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
                 .match(TaskExecutorRegistration.class, this::onTaskExecutorRegistration)
                 .match(InitializeTaskExecutorRequest.class, this::onTaskExecutorInitialization)
                 .match(TaskExecutorHeartbeat.class, this::onHeartbeat)
@@ -278,15 +278,10 @@ class ResourceClusterActor extends AbstractActor {
             matchedExecutor.get().getValue().onAssignment(request.getWorkerId());
             // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
             // will be returned back to the pool.
-            context()
-                .system()
-                .scheduler()
-                .scheduleOnce(
-                    assignmentTimeout,
-                    self(),
-                    new TaskExecutorAssignmentTimeout(matchedExecutor.get().getKey()),
-                    getContext().getDispatcher(),
-                    self());
+            getTimers().startSingleTimer(
+                "Assignment-" + matchedExecutor.get().getKey().toString(),
+                new TaskExecutorAssignmentTimeout(matchedExecutor.get().getKey()),
+                assignmentTimeout);
             sender().tell(matchedExecutor.get().getKey(), self());
         } else {
             sender().tell(new Status.Failure(new NoResourceAvailableException(
@@ -350,8 +345,12 @@ class ResourceClusterActor extends AbstractActor {
         boolean stateChange = state.onDisconnection();
         if (stateChange) {
             taskExecutorsReadyToPerformWork.remove(taskExecutorID);
-            state.setNextHeartbeatChecker(null);
+            getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
         }
+    }
+
+    private String getHeartbeatTimerFor(TaskExecutorID taskExecutorID) {
+        return "Heartbeat-" + taskExecutorID.toString();
     }
 
     private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
@@ -376,17 +375,10 @@ class ResourceClusterActor extends AbstractActor {
 
     private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {
         final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
-        final Cancellable nextHeartbeatChecker =
-            context()
-                .system()
-                .scheduler()
-                .scheduleOnce(
-                    heartbeatTimeout,
-                    self(),
-                    new HeartbeatTimeout(taskExecutorID, state.getLastActivity()),
-                    getContext().getDispatcher(),
-                    self());
-        state.setNextHeartbeatChecker(nextHeartbeatChecker);
+        getTimers().startSingleTimer(
+            getHeartbeatTimerFor(taskExecutorID),
+            new HeartbeatTimeout(taskExecutorID, state.getLastActivity()),
+            heartbeatTimeout);
     }
 
     @Value
@@ -494,8 +486,6 @@ class ResourceClusterActor extends AbstractActor {
         private AvailabilityState availabilityState;
         @Nullable
         private WorkerId workerId;
-        @Nullable
-        private Cancellable nextHeartbeatChecker;
         private Instant lastActivity;
         private final Clock clock;
         private final RpcService rpcService;
@@ -503,7 +493,6 @@ class ResourceClusterActor extends AbstractActor {
         static TaskExecutorState of(Clock clock, RpcService rpcService) {
             return new TaskExecutorState(
                 RegistrationState.Unregistered,
-                null,
                 null,
                 null,
                 null,
@@ -687,14 +676,6 @@ class ResourceClusterActor extends AbstractActor {
             throw new IllegalStateException(
                 String.format("availability state was %s, workerId was %s when workerId %s was assigned",
                     this.availabilityState, this.workerId, workerId));
-        }
-
-        private void setNextHeartbeatChecker(@Nullable Cancellable nextHeartbeatChecker) {
-            if (this.nextHeartbeatChecker != null) {
-                this.nextHeartbeatChecker.cancel();
-            }
-
-            this.nextHeartbeatChecker = nextHeartbeatChecker;
         }
 
         private void updateTicker() {
