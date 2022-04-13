@@ -96,6 +96,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         new File(ARCHIVE_DIR).mkdirs();
         new File(JOB_CLUSTERS_DIR).mkdirs();
         logger.debug(" created");
+        mapper.registerModule(new Jdk8Module());
         mapper.setFilterProvider(DEFAULT_FILTER_PROVIDER);
     }
 
