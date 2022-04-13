@@ -46,11 +46,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 public class LeaderRedirectionRouteTest {
     private final static Logger logger = LoggerFactory.getLogger(LeaderRedirectionRouteTest.class);
@@ -187,7 +187,8 @@ public class LeaderRedirectionRouteTest {
         assertTrue(latch2.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testMasterInfoAPIWhenLeader" })
+//    (dependsOnMethods = { "testMasterInfoAPIWhenLeader" })
+    @Test
     public void testMasterInfoAPIWhenNotLeader() throws InterruptedException {
         leadershipMgr.stopBeingLeader();
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(

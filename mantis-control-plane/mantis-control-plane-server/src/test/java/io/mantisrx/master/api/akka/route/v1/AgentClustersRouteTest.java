@@ -63,11 +63,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import rx.Observer;
 
 public class AgentClustersRouteTest extends RouteTestBase {
@@ -232,7 +232,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = {"testSetActiveAgentClusters"})
+//    (dependsOnMethods = {"testSetActiveAgentClusters"})
+    @Test
     public void testGetJobsOnAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -249,7 +250,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"testGetJobsOnAgentClusters"})
+//    (dependsOnMethods = {"testGetJobsOnAgentClusters"})
+    @Test
     public void testGetAutoScalePolicy() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -282,7 +284,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"testGetAutoScalePolicy"})
+//    (dependsOnMethods = {"testGetAutoScalePolicy"})
+    @Test
     public void testGetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(

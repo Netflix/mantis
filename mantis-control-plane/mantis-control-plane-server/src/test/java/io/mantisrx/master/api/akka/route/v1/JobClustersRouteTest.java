@@ -49,11 +49,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 public class JobClustersRouteTest extends RouteTestBase {
     private final static Logger logger = LoggerFactory.getLogger(JobClustersRouteTest.class);
@@ -138,7 +138,8 @@ public class JobClustersRouteTest extends RouteTestBase {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"cleanupExistingJobs"})
+//    (dependsOnMethods = {"cleanupExistingJobs"})
+    @Test
     public void testJobClusterCreate() throws InterruptedException {
         testPost(
                 getJobClustersEndpoint(),
@@ -151,7 +152,8 @@ public class JobClustersRouteTest extends RouteTestBase {
         assert this.isClusterExist(TEST_CLUSTER_NAME);
     }
 
-    @Test(dependsOnMethods = {"testJobClusterCreate"})
+//    (dependsOnMethods = {"testJobClusterCreate"})
+    @Test
     public void testDuplicateJobClusterCreate() throws InterruptedException {
         testPost(
                 getJobClustersEndpoint(),
@@ -162,7 +164,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testDuplicateJobClusterCreate"})
+//    (dependsOnMethods = {"testDuplicateJobClusterCreate"})
+    @Test
     public void testNonExistentJobClusterLatestJobDiscoveryInfo() throws InterruptedException {
         testGet(
             getJobClusterLatestJobDiscoveryInfoEp("NonExistentCluster"),
@@ -170,7 +173,8 @@ public class JobClustersRouteTest extends RouteTestBase {
             null);
     }
 
-    @Test(dependsOnMethods = {"testDuplicateJobClusterCreate"})
+//    (dependsOnMethods = {"testDuplicateJobClusterCreate"})
+    @Test
     public void testJobClusterLatestJobDiscoveryInfoNoRunningJobs() throws InterruptedException {
         testGet(
             getJobClusterLatestJobDiscoveryInfoEp(TEST_CLUSTER_NAME),
@@ -178,7 +182,8 @@ public class JobClustersRouteTest extends RouteTestBase {
             null);
     }
 
-    @Test(dependsOnMethods = "testDuplicateJobClusterCreate")
+//    (dependsOnMethods = "testDuplicateJobClusterCreate")
+    @Test
     public void testJobClustersList() throws InterruptedException {
         testGet(
                 getJobClustersEndpoint(),
@@ -204,7 +209,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClustersList")
+//    (dependsOnMethods = "testJobClustersList")
+    @Test
     public void testJobClusterInstanceGET() throws InterruptedException {
         testGet(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
@@ -212,7 +218,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 this::compareClusterInstancePayload);
     }
 
-    @Test(dependsOnMethods = "testJobClusterInstanceGET")
+//    (dependsOnMethods = "testJobClusterInstanceGET")
+    @Test
     public void testNonExistentJobClusterInstanceGET() throws InterruptedException {
         testGet(
                 getJobClusterInstanceEndpoint("doesNotExist"),
@@ -221,7 +228,8 @@ public class JobClustersRouteTest extends RouteTestBase {
         );
     }
 
-    @Test(dependsOnMethods = "testNonExistentJobClusterInstanceGET")
+//    (dependsOnMethods = "testNonExistentJobClusterInstanceGET")
+    @Test
     public void testJobClusterInstancePOSTNotAllowed() throws InterruptedException {
         testPost(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
@@ -229,7 +237,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterInstancePOSTNotAllowed")
+//    (dependsOnMethods = "testJobClusterInstancePOSTNotAllowed")
+    @Test
     public void testJobClusterInstanceValidUpdate() throws InterruptedException {
 
         testPut(
@@ -241,7 +250,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 this::compareClusterInstancePayload);
     }
 
-    @Test(dependsOnMethods = "testJobClusterInstanceValidUpdate")
+//    (dependsOnMethods = "testJobClusterInstanceValidUpdate")
+    @Test
     public void testJobClusterInstanceInvalidUpdate() throws InterruptedException {
         testPut(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
@@ -252,7 +262,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterInstanceInvalidUpdate")
+//    (dependsOnMethods = "testJobClusterInstanceInvalidUpdate")
+    @Test
     public void testJobClusterInstanceNonExistentUpdate() throws InterruptedException {
         testPut(
                 getJobClusterInstanceEndpoint("NonExistent"),
@@ -263,7 +274,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterInstanceNonExistentUpdate")
+//    (dependsOnMethods = "testJobClusterInstanceNonExistentUpdate")
+    @Test
     public void testJobClusterNonExistentDelete() throws InterruptedException {
         testDelete(
                 getJobClusterInstanceEndpoint("NonExistent") + "?user=test&reason=unittest",
@@ -271,7 +283,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterNonExistentDelete")
+//    (dependsOnMethods = "testJobClusterNonExistentDelete")
+    @Test
     public void testJobClusterActionUpdateArtifactPost() throws InterruptedException {
         testPost(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
@@ -282,7 +295,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 EMPTY_RESPONSE_VALIDATOR);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactPost")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPost")
+    @Test
     public void testJobClusterActionUpdateArtifactPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateArtifactEp("NonExistent"),
@@ -297,7 +311,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 });
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactPostNonExistent")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPostNonExistent")
+    @Test
     public void testJobClusterActionUpdateArtifactPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateArtifactEp("NonExistent"),
@@ -308,7 +323,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactPostNonMatchedResource")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPostNonMatchedResource")
+    @Test
     public void testJobClusterActionUpdateArtifactGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
@@ -316,7 +332,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactGetNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactGetNotAllowed")
+    @Test
     public void testJobClusterActionUpdateArtifactPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
@@ -327,7 +344,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactPUTNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPUTNotAllowed")
+    @Test
     public void testJobClusterActionUpdateArtifactDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
@@ -337,7 +355,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
     /** test Update SLA actions **/
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactDELETENotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactDELETENotAllowed")
+    @Test
     public void testJobClusterActionUpdateSlaPost() throws InterruptedException {
         testPost(getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
                  HttpEntities.create(
@@ -346,7 +365,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                  StatusCodes.NO_CONTENT, null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateSlaPost")
+//    (dependsOnMethods = "testJobClusterActionUpdateSlaPost")
+    @Test
     public void testJobClusterActionUpdateSlaPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateSlaEp("NonExistent"),
@@ -357,7 +377,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateSlaPostNonExistent")
+//    (dependsOnMethods = "testJobClusterActionUpdateSlaPostNonExistent")
+    @Test
     public void testJobClusterActionUpdateSlaPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateSlaEp("NonExistent"),
@@ -368,7 +389,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateSlaPostNonMatchedResource")
+//    (dependsOnMethods = "testJobClusterActionUpdateSlaPostNonMatchedResource")
+    @Test
     public void testJobClusterActionUpdateSlaGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
@@ -376,7 +398,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateSlaGetNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateSlaGetNotAllowed")
+    @Test
     public void testJobClusterActionUpdateSlaPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
@@ -388,7 +411,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateArtifactPUTNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPUTNotAllowed")
+    @Test
     public void testJobClusterActionUpdateSlaDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
@@ -398,7 +422,8 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     /** Update migration strategy actions tests **/
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateSlaDELETENotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateSlaDELETENotAllowed")
+    @Test
     public void testJobClusterActionUpdateMigrationPost() throws InterruptedException {
         testPost(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
@@ -410,7 +435,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateMigrationPost")
+//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPost")
+    @Test
     public void testJobClusterActionUpdateMigrationPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateMigrationStrategyEp("NonExistent"),
@@ -421,7 +447,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateMigrationPostNonExistent")
+//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPostNonExistent")
+    @Test
     public void testJobClusterActionUpdateMigrationPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateMigrationStrategyEp("NonExistent"),
@@ -432,7 +459,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateMigrationPostNonMatchedResource")
+//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPostNonMatchedResource")
+    @Test
     public void testJobClusterActionUpdateMigrationGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
@@ -440,7 +468,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateMigrationGetNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateMigrationGetNotAllowed")
+    @Test
     public void testJobClusterActionUpdateMigrationPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
@@ -451,7 +480,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateMigrationPUTNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPUTNotAllowed")
+    @Test
     public void testJobClusterActionUpdateMigrationDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
@@ -461,7 +491,8 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     /** Update label actions tests **/
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateMigrationDELETENotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateMigrationDELETENotAllowed")
+    @Test
     public void testJobClusterActionUpdateLabelPost() throws InterruptedException {
         testPost(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
@@ -472,7 +503,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateLabelPost")
+//    (dependsOnMethods = "testJobClusterActionUpdateLabelPost")
+    @Test
     public void testJobClusterActionUpdateLabelPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateLabelEp("NonExistent"),
@@ -483,7 +515,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateLabelPostNonExistent")
+//    (dependsOnMethods = "testJobClusterActionUpdateLabelPostNonExistent")
+    @Test
     public void testJobClusterActionUpdateLabelPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateLabelEp("NonExistent"),
@@ -494,7 +527,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateLabelPostNonMatchedResource")
+//    (dependsOnMethods = "testJobClusterActionUpdateLabelPostNonMatchedResource")
+    @Test
     public void testJobClusterActionUpdateLabelGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
@@ -502,7 +536,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateLabelGetNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateLabelGetNotAllowed")
+    @Test
     public void testJobClusterActionUpdateLabelPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
@@ -514,7 +549,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateLabelPUTNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateLabelPUTNotAllowed")
+    @Test
     public void testJobClusterActionUpdateLabelDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
@@ -524,7 +560,8 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     /** enable cluster action test **/
 
-    @Test(dependsOnMethods = "testJobClusterActionUpdateLabelDELETENotAllowed")
+//    (dependsOnMethods = "testJobClusterActionUpdateLabelDELETENotAllowed")
+    @Test
     public void testJobClusterActionEnablePost() throws InterruptedException {
         testPost(
                 getJobClusterEnableEp(TEST_CLUSTER_NAME),
@@ -536,7 +573,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionEnablePost")
+//    (dependsOnMethods = "testJobClusterActionEnablePost")
+    @Test
     public void testJobClusterActionEnablePostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterEnableEp("NonExistent"),
@@ -547,7 +585,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionEnablePostNonExistent")
+//    (dependsOnMethods = "testJobClusterActionEnablePostNonExistent")
+    @Test
     public void testJobClusterActionEnablePostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterEnableEp("NonExistent"),
@@ -558,12 +597,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionEnablePostNonMatchedResource")
+//    (dependsOnMethods = "testJobClusterActionEnablePostNonMatchedResource")
+    @Test
     public void testJobClusterActionEnableGetNotAllowed() throws InterruptedException {
         testGet(getJobClusterEnableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionEnableGetNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionEnableGetNotAllowed")
+    @Test
     public void testJobClusterActionEnablePUTNotAllowed() throws InterruptedException {
         testPut(getJobClusterEnableEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -573,7 +614,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionEnablePUTNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionEnablePUTNotAllowed")
+    @Test
     public void testJobClusterActionEnableDELETENotAllowed() throws InterruptedException {
         testDelete(getJobClusterEnableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
@@ -581,7 +623,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     /** disable cluster action test **/
 
 
-    @Test(dependsOnMethods = "testJobClusterActionEnableDELETENotAllowed")
+//    (dependsOnMethods = "testJobClusterActionEnableDELETENotAllowed")
+    @Test
     public void testJobClusterActionDisablePost() throws InterruptedException {
         testPost(
                 getJobClusterDisableEp(TEST_CLUSTER_NAME),
@@ -594,7 +637,8 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionDisablePost")
+//    (dependsOnMethods = "testJobClusterActionDisablePost")
+    @Test
     public void testJobClusterActionDisablePostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterDisableEp("NonExistent"),
@@ -605,7 +649,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionDisablePostNonExistent")
+//    (dependsOnMethods = "testJobClusterActionDisablePostNonExistent")
+    @Test
     public void testJobClusterActionDisablePostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterDisableEp("NonExistent"),
@@ -616,12 +661,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionDisablePostNonMatchedResource")
+//    (dependsOnMethods = "testJobClusterActionDisablePostNonMatchedResource")
+    @Test
     public void testJobClusterActionDisableGetNotAllowed() throws InterruptedException {
         testGet(getJobClusterDisableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionDisableGetNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionDisableGetNotAllowed")
+    @Test
     public void testJobClusterActionDisablePUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterDisableEp(TEST_CLUSTER_NAME),
@@ -633,12 +680,14 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = "testJobClusterActionDisablePUTNotAllowed")
+//    (dependsOnMethods = "testJobClusterActionDisablePUTNotAllowed")
+    @Test
     public void testJobClusterActionDisableDELETENotAllowed() throws InterruptedException {
         testDelete(getJobClusterDisableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterActionDisableDELETENotAllowed")
+//    (dependsOnMethods = "testJobClusterActionDisableDELETENotAllowed")
+    @Test
     public void testJobClusterDeleteWithoutRequiredParam() throws InterruptedException {
         testDelete(
                 getJobClusterInstanceEndpoint("sine-function"),
@@ -646,7 +695,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = "testJobClusterDeleteWithoutRequiredParam")
+//    (dependsOnMethods = "testJobClusterDeleteWithoutRequiredParam")
+    @Test
     public void testJobClusterValidDelete() throws InterruptedException {
         assert isClusterExist("sine-function");
 

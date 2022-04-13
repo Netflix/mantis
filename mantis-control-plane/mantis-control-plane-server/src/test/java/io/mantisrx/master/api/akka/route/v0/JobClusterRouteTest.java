@@ -64,11 +64,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 public class JobClusterRouteTest {
     private final static Logger logger = LoggerFactory.getLogger(JobClusterRouteTest.class);
@@ -175,7 +175,8 @@ public class JobClusterRouteTest {
 //        assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "cleanupExistingJobs" })
+//    (dependsOnMethods = { "cleanupExistingJobs" })
+    @Test
     public void testJobClusterCreate() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -194,7 +195,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterCreate" })
+//    (dependsOnMethods = { "testJobClusterCreate" })
+    @Test
     public void testDuplicateJobClusterCreateFails() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -213,7 +215,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testDuplicateJobClusterCreateFails" })
+//    (dependsOnMethods = { "testDuplicateJobClusterCreateFails" })
+    @Test
     public void testJobClusterDisable() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -232,7 +235,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterDisable" })
+//    (dependsOnMethods = { "testJobClusterDisable" })
+    @Test
     public void testJobClusterEnable() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -251,7 +255,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterEnable" })
+//    (dependsOnMethods = { "testJobClusterEnable" })
+    @Test
     public void testJobClusterUpdateArtifact() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -268,7 +273,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateArtifact" })
+//    (dependsOnMethods = { "testJobClusterUpdateArtifact" })
+    @Test
     public void testJobClusterUpdateSLA() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -285,7 +291,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateSLA" })
+//    (dependsOnMethods = { "testJobClusterUpdateSLA" })
+    @Test
     public void testJobClusterUpdateLabels() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -302,7 +309,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateLabels" })
+//    (dependsOnMethods = { "testJobClusterUpdateLabels" })
+    @Test
     public void testJobClusterUpdateMigrateStrategy() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -319,7 +327,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateMigrateStrategy" })
+//    (dependsOnMethods = { "testJobClusterUpdateMigrateStrategy" })
+    @Test
     public void testJobClusterQuickSubmit() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -336,7 +345,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterQuickSubmit" })
+//    (dependsOnMethods = { "testJobClusterQuickSubmit" })
+    @Test
     public void testJobClustersList() throws InterruptedException {
         int numIter = 10;
         final CountDownLatch latch = new CountDownLatch(numIter);
@@ -368,7 +378,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClustersList" })
+//    (dependsOnMethods = { "testJobClustersList" })
+    @Test
     public void testJobClusterGetDetail() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -398,7 +409,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterGetDetail" })
+//    (dependsOnMethods = { "testJobClusterGetDetail" })
+    @Test
     public void testJobClusterGetJobIds() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -422,7 +434,8 @@ public class JobClusterRouteTest {
     }
 
 
-    @Test(dependsOnMethods = { "testJobClusterGetJobIds" })
+//    (dependsOnMethods = { "testJobClusterGetJobIds" })
+    @Test
     public void testJobClusterGetAllJobIds() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -438,7 +451,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterGetAllJobIds" })
+//    (dependsOnMethods = { "testJobClusterGetAllJobIds" })
+    @Test
     public void testJobClusterDisable2() throws InterruptedException {
         // Disable cluster to terminate all running jobs
         final CountDownLatch latch = new CountDownLatch(1);
@@ -458,7 +472,8 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterDisable2" })
+//    (dependsOnMethods = { "testJobClusterDisable2" })
+    @Test
     public void testJobClusterDelete() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(

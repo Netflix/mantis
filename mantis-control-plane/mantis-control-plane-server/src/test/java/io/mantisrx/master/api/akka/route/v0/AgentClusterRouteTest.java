@@ -63,11 +63,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import rx.Observer;
 
 public class AgentClusterRouteTest {
@@ -237,7 +237,8 @@ public class AgentClusterRouteTest {
     }
 
 
-    @Test(dependsOnMethods = {"testSetActiveVMs"})
+//    (dependsOnMethods = {"testSetActiveVMs"})
+    @Test
     public void testGetJobsOnVMs() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -254,7 +255,8 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"testGetJobsOnVMs"})
+//    (dependsOnMethods = {"testGetJobsOnVMs"})
+    @Test
     public void testGetAgentClustersList() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -285,7 +287,8 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"testGetAgentClustersList"})
+//    (dependsOnMethods = {"testGetAgentClustersList"})
+    @Test
     public void testGetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
