@@ -102,7 +102,12 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
                         .description(WriterProperties.WRITER_FILE_FORMAT_DESCRIPTION)
                         .validator(Validators.alwaysPass())
                         .defaultValue(WriterProperties.WRITER_FILE_FORMAT_DEFAULT)
-                        .build()
+                        .build(),
+                new IntParameter().name(WriterProperties.WRITER_MAXIMUM_POOL_SIZE)
+                    .description(WriterProperties.WRITER_MAXIMUM_POOL_SIZE_DESCRIPTION)
+                    .validator(Validators.alwaysPass())
+                    .defaultValue(WriterProperties.WRITER_MAXIMUM_POOL_SIZE_DEFAULT)
+                    .build()
         );
     }
 
