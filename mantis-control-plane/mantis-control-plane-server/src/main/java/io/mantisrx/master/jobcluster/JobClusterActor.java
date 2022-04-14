@@ -125,6 +125,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsException;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.shaded.com.google.common.base.Throwables;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.Instant;
@@ -754,7 +755,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     logger.error("job cluster not created due to {}", e.getMessage(), e);
                     sender.tell(new JobClusterProto.InitializeJobClusterResponse(initReq.requestId,
                             SERVER_ERROR, String.format("JobCluster %s not created due to %s",
-                            initReq.jobClusterDefinition.getName(), e.getMessage()),
+                            initReq.jobClusterDefinition.getName(), Throwables.getStackTraceAsString(e)),
                             initReq.jobClusterDefinition.getName(), initReq.requestor), getSelf());
                     // TODO: send PoisonPill to self if job cluster was not created ? Return'ing for now,
                     //  so we don't send back 2 InitJobClusterResponses

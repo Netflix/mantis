@@ -38,11 +38,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 public class AdminMasterRouteTest extends RouteTestBase {
     private final static Logger logger = LoggerFactory.getLogger(AdminMasterRouteTest.class);
@@ -66,12 +66,12 @@ public class AdminMasterRouteTest extends RouteTestBase {
         masterDescRoute = new AdminMasterRoute(fakeMasterDesc);
     }
 
-    AdminMasterRouteTest(){
+    public AdminMasterRouteTest(){
         super("MasterDescriptionRouteTest", 8205);
     }
 
     @BeforeClass
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -84,9 +84,9 @@ public class AdminMasterRouteTest extends RouteTestBase {
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = masterDescRoute.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("starting test server on port {}", ADMIN_MASTER_PORT);
-                latch.countDown();
                 binding = http.bindAndHandle(routeFlow,
                     ConnectHttp.toHost("localhost", ADMIN_MASTER_PORT), materializer);
+                latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
                 latch.countDown();
@@ -99,7 +99,7 @@ public class AdminMasterRouteTest extends RouteTestBase {
     }
 
     @AfterClass
-    public void teardown() {
+    public static void teardown() {
         logger.info("MasterDescriptionRouteTest teardown");
         binding
             .thenCompose(ServerBinding::unbind) // trigger unbinding from the port

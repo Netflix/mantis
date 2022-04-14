@@ -70,11 +70,11 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import org.testng.util.Strings;
 
 
@@ -87,12 +87,12 @@ public class JobsRouteTest extends RouteTestBase {
     private static final String TEST_CLUSTER = "sine-function";
     private static final String TEST_JOB_ID = "sine-function-1";
 
-    JobsRouteTest() {
+    public JobsRouteTest() {
         super("JobsRoute", SERVER_PORT);
     }
 
     @BeforeClass
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
@@ -202,11 +202,11 @@ public class JobsRouteTest extends RouteTestBase {
                                                                                       system,
                                                                                       materializer);
                 logger.info("starting test server on port {}", SERVER_PORT);
-                latch.countDown();
                 binding = http.bindAndHandle(
                         routeFlow,
                         ConnectHttp.toHost("localhost", SERVER_PORT),
                         materializer);
+                latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
                 latch.countDown();
@@ -219,22 +219,51 @@ public class JobsRouteTest extends RouteTestBase {
     }
 
     @AfterClass
-    public void teardown() {
+    public static void teardown() {
         logger.info("V1JobsRouteTest teardown");
         binding.thenCompose(ServerBinding::unbind) // trigger unbinding from the port
                .thenAccept(unbound -> system.terminate()); // and shutdown when done
         t.interrupt();
     }
 
-
     @Test
-    public void cleanupExistingJobs() throws InterruptedException {
+    public void testIt() throws InterruptedException {
+        cleanupExistingJobs();
+        setupJobCluster();
+        testJobSubmit();
+        testPostOnJobInstanceEp_NotAllowed();
+        testPutOnJobInstanceEp_NotAllowed();
+        testGetLatestJobDiscoveryInfo();
+        testGetOnJobInstanceActionsEp_NotAllowed();
+        testValidJobSubmitToNonExistentCluster();
+        testInvalidJobSubmitToNonExistentCluster();
+        testGetJobsRouteViaClusterJobsEp();
+        testGetJobsRouteViaJobsEp();
+        testGetJobsRouteViaJobsEpCompactResp();
+        testGetJobsRouteViaClusterJobEpCompactResp();
+        testGetJobInstanceWithClusterName();
+        testGetJobInstanceWithoutClusterName();
+        testGetNonExistentJobInstanceWithoutClusterName();
+        testGetJobInstanceWithNonMatchingClusterName();
+        testGetNonExistentJobInstance();
+        testJobQuickSubmit();
+        testNonExistentJobQuickSubmit();
+        testJobResubmitWorker();
+        testNonExistentJobResubmitWorker();
+        testJobScaleStage();
+        testNonExistentJobScaleStage();
+        testInvalidJobScaleStage();
+        testJobKill();
+        testNonExistentJobKill();
+    }
+
+
+    private void cleanupExistingJobs() throws InterruptedException {
         super.deleteClusterIfExist(TEST_CLUSTER);
         assert !this.isClusterExist(TEST_CLUSTER);
     }
 
-    @Test(dependsOnMethods = {"cleanupExistingJobs"})
-    public void setupJobCluster() throws InterruptedException {
+    private void setupJobCluster() throws InterruptedException {
         testPost(
                 getJobClustersEndpoint(),
                 HttpEntities.create(
@@ -246,8 +275,7 @@ public class JobsRouteTest extends RouteTestBase {
         assert this.isClusterExist(TEST_CLUSTER);
     }
 
-    @Test(dependsOnMethods = {"setupJobCluster"})
-    public void testJobSubmit() throws InterruptedException {
+    private void testJobSubmit() throws InterruptedException {
         testPost(
                 getClusterJobsEndpoint(TEST_CLUSTER),
                 HttpEntities.create(
@@ -257,7 +285,7 @@ public class JobsRouteTest extends RouteTestBase {
                 this::validateJobResponse);
     }
 
-    @Test()
+    @Test
     public void testPutOnJobsEp_NotAllowed() throws InterruptedException {
         testPut(
                 getJobsEndpoint(),
@@ -270,7 +298,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test()
+    @Test
     public void testDeleteOnJobsEp_NotAllowed() throws InterruptedException {
         testDelete(
                 getJobsEndpoint(),
@@ -283,8 +311,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testPostOnJobInstanceEp_NotAllowed() throws InterruptedException {
+    private void testPostOnJobInstanceEp_NotAllowed() throws InterruptedException {
         testPost(
                 getJobInstanceEndpoint(TEST_JOB_ID),
                 StatusCodes.METHOD_NOT_ALLOWED,
@@ -296,8 +323,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testPutOnJobInstanceEp_NotAllowed() throws InterruptedException {
+    private void testPutOnJobInstanceEp_NotAllowed() throws InterruptedException {
         testPut(
                 getJobInstanceEndpoint(TEST_JOB_ID),
                 StatusCodes.METHOD_NOT_ALLOWED,
@@ -309,16 +335,14 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetLatestJobDiscoveryInfo() throws InterruptedException {
+    private void testGetLatestJobDiscoveryInfo() throws InterruptedException {
         testGet(
             getJobClusterLatestJobDiscoveryInfoEp(TEST_CLUSTER),
             StatusCodes.OK,
             this::validateSchedulingInfo);
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetOnJobInstanceActionsEp_NotAllowed() throws InterruptedException {
+    private void testGetOnJobInstanceActionsEp_NotAllowed() throws InterruptedException {
 
         for (String action : new String[]{"resubmitWorker", "quickSubmit", "scaleStage"}) {
             testPut(
@@ -333,9 +357,7 @@ public class JobsRouteTest extends RouteTestBase {
         }
     }
 
-
-    @Test(dependsOnMethods = {"setupJobCluster"})
-    public void testValidJobSubmitToNonExistentCluster() throws InterruptedException {
+    private void testValidJobSubmitToNonExistentCluster() throws InterruptedException {
         testPost(
                 getClusterJobsEndpoint("NonExistent"),
                 HttpEntities.create(
@@ -347,8 +369,7 @@ public class JobsRouteTest extends RouteTestBase {
                 });
     }
 
-    @Test(dependsOnMethods = {"setupJobCluster"})
-    public void testInvalidJobSubmitToNonExistentCluster() throws InterruptedException {
+    private void testInvalidJobSubmitToNonExistentCluster() throws InterruptedException {
         testPost(
                 getClusterJobsEndpoint("NonExistent"),
                 HttpEntities.create(
@@ -361,56 +382,49 @@ public class JobsRouteTest extends RouteTestBase {
                 });
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobsRouteViaClusterJobsEp() throws InterruptedException {
+    private void testGetJobsRouteViaClusterJobsEp() throws InterruptedException {
         testGet(
                 getClusterJobsEndpoint(TEST_CLUSTER),
                 StatusCodes.OK,
                 resp -> validateJobsListResponse(resp, 1, false));
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobsRouteViaJobsEp() throws InterruptedException {
+    private void testGetJobsRouteViaJobsEp() throws InterruptedException {
         testGet(
                 getJobsEndpoint(),
                 StatusCodes.OK,
                 resp -> validateJobsListResponse(resp, 1, false));
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobsRouteViaJobsEpCompactResp() throws InterruptedException {
+    private void testGetJobsRouteViaJobsEpCompactResp() throws InterruptedException {
         testGet(
                 getJobsEndpoint() + "?compact=true",
                 StatusCodes.OK,
                 resp -> validateJobsListResponse(resp, 1, true));
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobsRouteViaClusterJobEpCompactResp() throws InterruptedException {
+    private void testGetJobsRouteViaClusterJobEpCompactResp() throws InterruptedException {
         testGet(
                 getClusterJobsEndpoint(TEST_CLUSTER) + "?compact=true",
                 StatusCodes.OK,
                 resp -> validateJobsListResponse(resp, 1, true));
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobInstanceWithClusterName() throws InterruptedException {
+    private void testGetJobInstanceWithClusterName() throws InterruptedException {
         testGet(
                 getJobInstanceEndpoint(TEST_CLUSTER, TEST_JOB_ID),
                 StatusCodes.OK,
                 this::validateJobDetails);
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobInstanceWithoutClusterName() throws InterruptedException {
+    private void testGetJobInstanceWithoutClusterName() throws InterruptedException {
         testGet(
                 getJobInstanceEndpoint(TEST_JOB_ID),
                 StatusCodes.OK,
                 this::validateJobDetails);
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetNonExistentJobInstanceWithoutClusterName() throws InterruptedException {
+    private void testGetNonExistentJobInstanceWithoutClusterName() throws InterruptedException {
         testGet(
                 getJobInstanceEndpoint("NonExistent-1"),
                 StatusCodes.NOT_FOUND,
@@ -419,8 +433,7 @@ public class JobsRouteTest extends RouteTestBase {
                 });
     }
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetJobInstanceWithNonMatchingClusterName() throws InterruptedException {
+    private void testGetJobInstanceWithNonMatchingClusterName() throws InterruptedException {
         testGet(
                 getJobInstanceEndpoint("NonExistent", TEST_JOB_ID),
                 StatusCodes.NOT_FOUND,
@@ -431,8 +444,7 @@ public class JobsRouteTest extends RouteTestBase {
     }
 
 
-    @Test(dependsOnMethods = {"testJobSubmit"})
-    public void testGetNonExistentJobInstance() throws InterruptedException {
+    private void testGetNonExistentJobInstance() throws InterruptedException {
         testGet(
                 getJobInstanceEndpoint(TEST_CLUSTER, "NonExistent-1"),
                 StatusCodes.NOT_FOUND,
@@ -441,8 +453,7 @@ public class JobsRouteTest extends RouteTestBase {
                 });
     }
 
-    @Test(dependsOnMethods = {"testGetNonExistentJobInstance"})
-    public void testJobQuickSubmit() throws InterruptedException {
+    private void testJobQuickSubmit() throws InterruptedException {
         testPost(
                 getJobsEndpoint() + "/actions/quickSubmit",
                 HttpEntities.create(
@@ -452,8 +463,7 @@ public class JobsRouteTest extends RouteTestBase {
                 this::validateJobResponse);
     }
 
-    @Test(dependsOnMethods = {"testJobQuickSubmit"})
-    public void testNonExistentJobQuickSubmit() throws InterruptedException {
+    private void testNonExistentJobQuickSubmit() throws InterruptedException {
         testPost(
                 getJobsEndpoint() + "/actions/quickSubmit",
                 HttpEntities.create(
@@ -463,9 +473,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-
-    @Test(dependsOnMethods = {"testNonExistentJobQuickSubmit"})
-    public void testJobResubmitWorker() throws InterruptedException {
+    private void testJobResubmitWorker() throws InterruptedException {
         testPost(
                 getJobInstanceEndpoint(TEST_JOB_ID) + "/actions/resubmitWorker",
                 HttpEntities.create(
@@ -475,8 +483,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testJobResubmitWorker"})
-    public void testNonExistentJobResubmitWorker() throws InterruptedException {
+    private void testNonExistentJobResubmitWorker() throws InterruptedException {
         testPost(
                 getJobInstanceEndpoint("NonExistent-1") + "/actions/resubmitWorker",
                 HttpEntities.create(
@@ -488,8 +495,7 @@ public class JobsRouteTest extends RouteTestBase {
 
 
 
-    @Test(dependsOnMethods = {"testNonExistentJobResubmitWorker"})
-    public void testJobScaleStage() throws InterruptedException {
+    private void testJobScaleStage() throws InterruptedException {
         testPost(
                 getJobInstanceEndpoint(TEST_JOB_ID) + "/actions/scaleStage",
                 HttpEntities.create(
@@ -499,8 +505,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testJobScaleStage"})
-    public void testNonExistentJobScaleStage() throws InterruptedException {
+    private void testNonExistentJobScaleStage() throws InterruptedException {
         testPost(
                 getJobInstanceEndpoint("NonExistent-1") + "/actions/scaleStage",
                 HttpEntities.create(
@@ -510,8 +515,7 @@ public class JobsRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test(dependsOnMethods = {"testNonExistentJobScaleStage"})
-    public void testInvalidJobScaleStage() throws InterruptedException {
+    private void testInvalidJobScaleStage() throws InterruptedException {
         testPost(
                 getJobInstanceEndpoint("NonExistent-1") + "/actions/scaleStage",
                 HttpEntities.create(
@@ -524,17 +528,14 @@ public class JobsRouteTest extends RouteTestBase {
                 });
     }
 
-
-    @Test(dependsOnMethods = {"testInvalidJobScaleStage"})
-    public void testJobKill() throws InterruptedException {
+    private void testJobKill() throws InterruptedException {
         testDelete(
                 getJobInstanceEndpoint(TEST_JOB_ID) + "?user=test&reason=unittest",
                 StatusCodes.ACCEPTED,
                 null);
     }
 
-    @Test(dependsOnMethods = {"testJobResubmitWorker"})
-    public void testNonExistentJobKill() throws InterruptedException {
+    private void testNonExistentJobKill() throws InterruptedException {
         testDelete(
                 getJobInstanceEndpoint("NonExistent-1") + "?user=test&reason=unittest",
                 StatusCodes.NOT_FOUND,

@@ -64,11 +64,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 public class JobClusterRouteTest {
     private final static Logger logger = LoggerFactory.getLogger(JobClusterRouteTest.class);
@@ -156,27 +156,25 @@ public class JobClusterRouteTest {
     }
 
     @Test
-    public void cleanupExistingJobs() throws InterruptedException {
-//        final CountDownLatch latch = new CountDownLatch(1);
-//        final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
-//            HttpRequest.POST(namedJobAPIEndpoint("delete"))
-//                .withEntity(HttpEntities.create(ContentTypes.APPLICATION_JSON, JobClusterPayloads.JOB_CLUSTER_DELETE)));
-//        responseFuture.thenCompose(r -> {
-//            CompletionStage<HttpEntity.Strict> strictEntity = r.entity().toStrict(1000, materializer);
-//            return strictEntity.thenCompose(s ->
-//                s.getDataBytes()
-//                    .runFold(ByteString.empty(), (acc, b) -> acc.concat(b), materializer)
-//                    .thenApply(s2 -> s2.utf8String()));
-//        }).whenComplete((msg, t) -> {
-//                String responseMessage = getResponseMessage(msg, t);
-//                logger.info("got response {}", responseMessage);
-//                latch.countDown();
-//            });
-//        assertTrue(latch.await(1, TimeUnit.SECONDS));
+    public void testIt() throws Exception {
+        testJobClusterCreate();
+        testDuplicateJobClusterCreateFails();
+        testJobClusterDisable();
+        testJobClusterEnable();
+        testJobClusterUpdateArtifact();
+        testJobClusterUpdateSLA();
+        testJobClusterUpdateLabels();
+        testJobClusterUpdateMigrateStrategy();
+        testJobClusterQuickSubmit();
+        testJobClustersList();
+        testJobClusterGetDetail();
+        testJobClusterGetJobIds();
+        testJobClusterGetAllJobIds();
+        testJobClusterDisable2();
+        testJobClusterDelete();
     }
 
-    @Test(dependsOnMethods = { "cleanupExistingJobs" })
-    public void testJobClusterCreate() throws InterruptedException {
+    private void testJobClusterCreate() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("create"))
@@ -194,8 +192,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterCreate" })
-    public void testDuplicateJobClusterCreateFails() throws InterruptedException {
+    private void testDuplicateJobClusterCreateFails() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("create"))
@@ -213,8 +210,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testDuplicateJobClusterCreateFails" })
-    public void testJobClusterDisable() throws InterruptedException {
+    private void testJobClusterDisable() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("disable"))
@@ -232,8 +228,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterDisable" })
-    public void testJobClusterEnable() throws InterruptedException {
+    private void testJobClusterEnable() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("enable"))
@@ -251,8 +246,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterEnable" })
-    public void testJobClusterUpdateArtifact() throws InterruptedException {
+    private void testJobClusterUpdateArtifact() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("quickupdate"))
@@ -268,8 +262,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateArtifact" })
-    public void testJobClusterUpdateSLA() throws InterruptedException {
+    private void testJobClusterUpdateSLA() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("updatesla"))
@@ -285,8 +278,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateSLA" })
-    public void testJobClusterUpdateLabels() throws InterruptedException {
+    private void testJobClusterUpdateLabels() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("updatelabels"))
@@ -302,8 +294,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateLabels" })
-    public void testJobClusterUpdateMigrateStrategy() throws InterruptedException {
+    private void testJobClusterUpdateMigrateStrategy() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("migratestrategy"))
@@ -319,8 +310,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterUpdateMigrateStrategy" })
-    public void testJobClusterQuickSubmit() throws InterruptedException {
+    private void testJobClusterQuickSubmit() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("quicksubmit"))
@@ -336,8 +326,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterQuickSubmit" })
-    public void testJobClustersList() throws InterruptedException {
+    private void testJobClustersList() throws InterruptedException {
         int numIter = 10;
         final CountDownLatch latch = new CountDownLatch(numIter);
         AtomicReference<String> prevResp = new AtomicReference<>(null);
@@ -368,8 +357,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClustersList" })
-    public void testJobClusterGetDetail() throws InterruptedException {
+    private void testJobClusterGetDetail() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(namedJobAPIEndpoint("list/sine-function")));
@@ -398,8 +386,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterGetDetail" })
-    public void testJobClusterGetJobIds() throws InterruptedException {
+    private void testJobClusterGetJobIds() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(namedJobAPIEndpoint("listJobIds/sine-function")));
@@ -422,8 +409,7 @@ public class JobClusterRouteTest {
     }
 
 
-    @Test(dependsOnMethods = { "testJobClusterGetJobIds" })
-    public void testJobClusterGetAllJobIds() throws InterruptedException {
+    private void testJobClusterGetAllJobIds() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(namedJobAPIEndpoint("listJobIds")));
@@ -438,8 +424,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterGetAllJobIds" })
-    public void testJobClusterDisable2() throws InterruptedException {
+    private void testJobClusterDisable2() throws InterruptedException {
         // Disable cluster to terminate all running jobs
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
@@ -458,8 +443,7 @@ public class JobClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = { "testJobClusterDisable2" })
-    public void testJobClusterDelete() throws InterruptedException {
+    private void testJobClusterDelete() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(namedJobAPIEndpoint("delete"))

@@ -30,23 +30,27 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.RequestEntity;
 import akka.http.javadsl.model.StatusCode;
 import akka.stream.ActorMaterializer;
+import akka.testkit.javadsl.TestKit;
 import akka.util.ByteString;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.util.Strings;
 
-abstract class RouteTestBase {
+public abstract class RouteTestBase {
     private final static Logger logger = LoggerFactory.getLogger(RouteTestBase.class);
 
-    final ActorSystem system;
-    final ActorMaterializer materializer;
-    final Http http;
-    final private int serverPort;
+    static ActorSystem system;
+    static ActorMaterializer materializer;
+    static Http http;
+    private final int serverPort;
+    private final String testName;
 
     static ResponseValidatorFunc EMPTY_RESPONSE_VALIDATOR = (msg) -> {
 
@@ -54,10 +58,22 @@ abstract class RouteTestBase {
     };
 
     RouteTestBase(String testName, int port) {
-        this.system = ActorSystem.create(testName);
-        this.materializer = ActorMaterializer.create(system);
-        this.http = Http.get(system);
+        this.testName = testName;
         this.serverPort = port;
+    }
+
+    @BeforeClass
+    public static void setupActorSystem() {
+        system = ActorSystem.create();
+        materializer = ActorMaterializer.create(system);
+        http = Http.get(system);
+    }
+
+    @AfterClass
+    public static void tearDownActorSystem() {
+        http.shutdownAllConnectionPools();
+        materializer.shutdown();
+        TestKit.shutdownActorSystem(system);
     }
 
     final String getJobClustersEndpoint() {

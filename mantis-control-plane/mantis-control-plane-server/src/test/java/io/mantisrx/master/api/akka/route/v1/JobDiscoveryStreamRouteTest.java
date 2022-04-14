@@ -46,11 +46,11 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import rx.Observable;
 
 public class JobDiscoveryStreamRouteTest extends RouteTestBase {
@@ -59,15 +59,15 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
     private static final int SERVER_PORT = 8201;
 
     private static volatile CompletionStage<ServerBinding> binding;
-    private ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
+    private static ActorRef agentsErrorMonitorActor;
     private final TestMantisClient mantisClient = new TestMantisClient(SERVER_PORT);
 
-    JobDiscoveryStreamRouteTest(){
+    public JobDiscoveryStreamRouteTest(){
         super("JobDiscoveryRoute", SERVER_PORT);
     }
 
     @BeforeClass
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -86,6 +86,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeScheduler, false), ActorRef.noSender());
 
+                agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
                 agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
                 Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
@@ -109,7 +110,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
     }
 
     @AfterClass
-    public void teardown() {
+    public static void teardown() {
         logger.info("JobDiscoveryRouteTest teardown");
         if (binding != null) {
             binding

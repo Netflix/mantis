@@ -63,11 +63,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import rx.Observer;
 
 public class AgentClusterRouteTest {
@@ -220,8 +220,15 @@ public class AgentClusterRouteTest {
         }
     }
 
-    @Test()
-    public void testSetActiveVMs() throws InterruptedException {
+    @Test
+    public void testIt() throws Exception {
+        testSetActiveVMs();
+        testGetJobsOnVMs();
+        testGetAgentClustersList();
+        testGetActiveAgentClusters();
+    }
+
+    private void testSetActiveVMs() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(agentClusterEndpoint(AgentClusterRoute.SETACTIVE))
@@ -236,9 +243,7 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-
-    @Test(dependsOnMethods = {"testSetActiveVMs"})
-    public void testGetJobsOnVMs() throws InterruptedException {
+    private void testGetJobsOnVMs() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(agentClusterEndpoint(AgentClusterRoute.LISTJOBSONVMS)));
@@ -254,8 +259,7 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"testGetJobsOnVMs"})
-    public void testGetAgentClustersList() throws InterruptedException {
+    private void testGetAgentClustersList() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(agentClusterEndpoint(AgentClusterRoute.LISTAGENTCLUSTERS)));
@@ -285,8 +289,7 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-    @Test(dependsOnMethods = {"testGetAgentClustersList"})
-    public void testGetActiveAgentClusters() throws InterruptedException {
+    private void testGetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(agentClusterEndpoint(AgentClusterRoute.LISTACTIVE)));
