@@ -50,6 +50,7 @@ dependencies {
     testCompile "org.testng:testng:$testngVersion"
     testImplementation testFixtures(project(":mantis-common"))
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
+    testImplementation "org.mockito:mockito-core:3.+"
 }
 
 mainClassName = "io.mantisrx.server.master.MasterMain"
