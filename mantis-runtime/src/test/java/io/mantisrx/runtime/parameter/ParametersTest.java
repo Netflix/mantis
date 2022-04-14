@@ -17,6 +17,7 @@
 package io.mantisrx.runtime.parameter;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
@@ -40,13 +41,17 @@ public class ParametersTest {
         parameterDefinitions.add("r1");
         state.put("r1", "v1");
 
-        // required parameter r2 -> null
+        // required parameter r2 -> N/A
         requiredParameters.add("r2");
         parameterDefinitions.add("r2");
 
         // optional parameter o1 -> v1
         parameterDefinitions.add("o1");
         state.put("o1", "v1");
+
+        // optional parameter o2 -> null
+        parameterDefinitions.add("o2");
+        state.put("o2", null);
 
         parameters = new Parameters(state, requiredParameters, parameterDefinitions);
     }
@@ -55,10 +60,12 @@ public class ParametersTest {
     public void testGet() {
         // Get required parameter r1 should succeed
         assertEquals("v1", parameters.get("r1"));
-        // Get optional parameter o1 should succeed
-        assertEquals("v1", parameters.get("o1"));
         // Get required parameter r2 should fail because it does not have a value
         assertThrows(ParameterException.class, () -> parameters.get("r2"));
+        // Get optional parameter o1 should succeed
+        assertEquals("v1", parameters.get("o1"));
+        // Get optional parameter o2 should succeed with null value
+        assertNull(parameters.get("o2"));
         // Get undefined parameter u1 should fail
         assertThrows(ParameterException.class, () -> parameters.get("u1"));
     }
@@ -67,10 +74,12 @@ public class ParametersTest {
     public void testGetWithDefaultValue() {
         // Get required parameter r1 should return value in state
         assertEquals("v1", parameters.get("r1", "defaultValue"));
-        // Get optional parameter o1 should return value in state
-        assertEquals("v1", parameters.get("o1", "defaultValue"));
         // Get required parameter r2 should return the provided default value
         assertEquals("defaultValue", parameters.get("r2", "defaultValue"));
+        // Get optional parameter o1 should return value in state
+        assertEquals("v1", parameters.get("o1", "defaultValue"));
+        // Get optional parameter o2 should return the provided default value instead of null
+        assertEquals("defaultValue", parameters.get("o2", "defaultValue"));
         // Get undefined parameter u1 should return the provided default value
         assertEquals("defaultValue", parameters.get("u2", "defaultValue"));
     }
