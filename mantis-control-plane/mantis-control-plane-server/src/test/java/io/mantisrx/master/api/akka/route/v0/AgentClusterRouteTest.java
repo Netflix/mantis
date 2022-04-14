@@ -220,8 +220,15 @@ public class AgentClusterRouteTest {
         }
     }
 
-    @Test()
-    public void testSetActiveVMs() throws InterruptedException {
+    @Test
+    public void testIt() throws Exception {
+        testSetActiveVMs();
+        testGetJobsOnVMs();
+        testGetAgentClustersList();
+        testGetActiveAgentClusters();
+    }
+
+    private void testSetActiveVMs() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.POST(agentClusterEndpoint(AgentClusterRoute.SETACTIVE))
@@ -236,10 +243,7 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-
-//    (dependsOnMethods = {"testSetActiveVMs"})
-    @Test
-    public void testGetJobsOnVMs() throws InterruptedException {
+    private void testGetJobsOnVMs() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(agentClusterEndpoint(AgentClusterRoute.LISTJOBSONVMS)));
@@ -255,9 +259,7 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-//    (dependsOnMethods = {"testGetJobsOnVMs"})
-    @Test
-    public void testGetAgentClustersList() throws InterruptedException {
+    private void testGetAgentClustersList() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(agentClusterEndpoint(AgentClusterRoute.LISTAGENTCLUSTERS)));
@@ -287,9 +289,7 @@ public class AgentClusterRouteTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-//    (dependsOnMethods = {"testGetAgentClustersList"})
-    @Test
-    public void testGetActiveAgentClusters() throws InterruptedException {
+    private void testGetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(agentClusterEndpoint(AgentClusterRoute.LISTACTIVE)));
