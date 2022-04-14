@@ -117,9 +117,9 @@ public class LeaderRedirectionRouteTest {
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(leaderRedirectionFilter::redirectIfNotLeader).flow(system, materializer);
                 logger.info("starting test server on port {}", serverPort);
-                latch.countDown();
                 binding = http.bindAndHandle(routeFlow,
                     ConnectHttp.toHost("localhost", serverPort), materializer);
+                latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
                 latch.countDown();
@@ -148,7 +148,7 @@ public class LeaderRedirectionRouteTest {
     public void testMasterInfoAPIWhenLeader() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         // leader is not ready by default
-        final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
+        CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
         responseFuture
             .thenCompose(r -> processRespFut(r, Optional.of(503)))
@@ -185,13 +185,9 @@ public class LeaderRedirectionRouteTest {
                 latch2.countDown();
             });
         assertTrue(latch2.await(2, TimeUnit.SECONDS));
-    }
 
-//    (dependsOnMethods = { "testMasterInfoAPIWhenLeader" })
-    @Test
-    public void testMasterInfoAPIWhenNotLeader() throws InterruptedException {
         leadershipMgr.stopBeingLeader();
-        final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
+        responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
         try {
             responseFuture
@@ -218,13 +214,12 @@ public class LeaderRedirectionRouteTest {
                         fail("unexpected error "+ e.getMessage());
                     }
                 }).toCompletableFuture()
-            .get(2, TimeUnit.SECONDS);
+                .get(2, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
         }
         leadershipMgr.becomeLeader();
-        testMasterInfoAPIWhenLeader();
     }
 }
