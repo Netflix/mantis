@@ -24,7 +24,7 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * This interface provides the API to connect resource cluster management actor to actual
- * implmentations of different resource cluster clients e.g k8s.
+ * implementations of different resource cluster clients e.g. k8s.
  */
 public interface IResourceClusterProvider {
     /**

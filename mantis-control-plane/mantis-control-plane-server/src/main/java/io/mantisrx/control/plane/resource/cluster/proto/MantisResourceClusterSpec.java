@@ -27,7 +27,10 @@ import lombok.Singular;
 import lombok.Value;
 
 /**
- * Contract class to define a Mantis resource cluster.
+ * Contract class to define a Mantis resource cluster. This contrace provides the abstraction to provide a generic
+ * definition from Mantis control perspective, and it's up to the implementations of each
+ * {@link io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider} to translate this spec
+ * to corresponding framework's cluster/node(s) definition.
  */
 @Value
 @Builder
