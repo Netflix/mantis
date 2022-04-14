@@ -36,7 +36,11 @@ import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
-import io.mantisrx.master.events.*;
+import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.events.LifecycleEventPublisherImpl;
+import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -65,13 +69,13 @@ public class JobClustersRouteTest extends RouteTestBase {
     private static String TEST_CLUSTER_NAME = "sine-function";
 
 
-    JobClustersRouteTest() {
+    public JobClustersRouteTest() {
         super("JobClustersRouteTest", SERVER_PORT);
 
     }
 
     @BeforeClass
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -104,11 +108,11 @@ public class JobClustersRouteTest extends RouteTestBase {
                         app.createRoute(Function.identity())
                            .flow(system, materializer);
                 logger.info("starting test server on port {}", SERVER_PORT);
-                latch.countDown();
                 binding = http.bindAndHandle(
                         routeFlow,
                         ConnectHttp.toHost("localhost", SERVER_PORT),
                         materializer);
+                latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
                 latch.countDown();
@@ -121,7 +125,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
     @AfterClass
-    public void teardown() {
+    public static void tearDown() {
         logger.info("V1JobClusterRouteTest teardown");
         binding.thenCompose(ServerBinding::unbind) // trigger unbinding from the port
                .thenAccept(unbound -> system.terminate()); // and shutdown when done
@@ -129,7 +133,64 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
     @Test
-    public void cleanupExistingJobs() throws InterruptedException {
+    public void testIt() throws Exception {
+        cleanupExistingJobs();
+        testJobClusterCreate();
+        testDuplicateJobClusterCreate();
+        testNonExistentJobClusterLatestJobDiscoveryInfo();
+        testJobClusterLatestJobDiscoveryInfoNoRunningJobs();
+        testJobClustersList();
+        testJobClustersDelete();
+        testJobClustersPut();
+        testJobClusterInstanceGET();
+        testNonExistentJobClusterInstanceGET();
+        testJobClusterInstancePOSTNotAllowed();
+        testJobClusterInstanceValidUpdate();
+        testJobClusterInstanceInvalidUpdate();
+        testJobClusterInstanceNonExistentUpdate();
+        testJobClusterNonExistentDelete();
+        testJobClusterActionUpdateArtifactPost();
+        testJobClusterActionUpdateArtifactPostNonExistent();
+        testJobClusterActionUpdateArtifactPostNonMatchedResource();
+        testJobClusterActionUpdateArtifactGetNotAllowed();
+        testJobClusterActionUpdateArtifactPUTNotAllowed();
+        testJobClusterActionUpdateArtifactDELETENotAllowed();
+        testJobClusterActionUpdateSlaPost();
+        testJobClusterActionUpdateSlaPostNonExistent();
+        testJobClusterActionUpdateSlaPostNonMatchedResource();
+        testJobClusterActionUpdateSlaGetNotAllowed();
+        testJobClusterActionUpdateSlaPUTNotAllowed();
+        testJobClusterActionUpdateSlaDELETENotAllowed();
+        testJobClusterActionUpdateMigrationPost();
+        testJobClusterActionUpdateMigrationPostNonExistent();
+        testJobClusterActionUpdateMigrationPostNonMatchedResource();
+        testJobClusterActionUpdateMigrationGetNotAllowed();
+        testJobClusterActionUpdateMigrationPUTNotAllowed();
+        testJobClusterActionUpdateMigrationDELETENotAllowed();
+        testJobClusterActionUpdateLabelPost();
+        testJobClusterActionUpdateLabelPostNonExistent();
+        testJobClusterActionUpdateLabelPostNonMatchedResource();
+        testJobClusterActionUpdateLabelGetNotAllowed();
+        testJobClusterActionUpdateLabelPUTNotAllowed();
+        testJobClusterActionUpdateLabelDELETENotAllowed();
+        testJobClusterActionEnablePost();
+        testJobClusterActionEnablePostNonExistent();
+        testJobClusterActionEnablePostNonMatchedResource();
+        testJobClusterActionEnableGetNotAllowed();
+        testJobClusterActionEnablePUTNotAllowed();
+        testJobClusterActionEnableDELETENotAllowed();
+        testJobClusterActionDisablePost();
+        testJobClusterActionDisablePostNonExistent();
+        testJobClusterActionDisablePostNonMatchedResource();
+        testJobClusterActionDisableGetNotAllowed();
+        testJobClusterActionDisablePUTNotAllowed();
+        testJobClusterActionDisableDELETENotAllowed();
+        testJobClusterDeleteWithoutRequiredParam();
+        testJobClusterValidDelete();
+    }
+
+
+    private void cleanupExistingJobs() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
                 HttpRequest.DELETE(getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME))
@@ -138,9 +199,7 @@ public class JobClustersRouteTest extends RouteTestBase {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-//    (dependsOnMethods = {"cleanupExistingJobs"})
-    @Test
-    public void testJobClusterCreate() throws InterruptedException {
+    private void testJobClusterCreate() throws InterruptedException {
         testPost(
                 getJobClustersEndpoint(),
                 HttpEntities.create(
@@ -152,9 +211,7 @@ public class JobClustersRouteTest extends RouteTestBase {
         assert this.isClusterExist(TEST_CLUSTER_NAME);
     }
 
-//    (dependsOnMethods = {"testJobClusterCreate"})
-    @Test
-    public void testDuplicateJobClusterCreate() throws InterruptedException {
+    private void testDuplicateJobClusterCreate() throws InterruptedException {
         testPost(
                 getJobClustersEndpoint(),
                 HttpEntities.create(
@@ -164,27 +221,21 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = {"testDuplicateJobClusterCreate"})
-    @Test
-    public void testNonExistentJobClusterLatestJobDiscoveryInfo() throws InterruptedException {
+    private void testNonExistentJobClusterLatestJobDiscoveryInfo() throws InterruptedException {
         testGet(
             getJobClusterLatestJobDiscoveryInfoEp("NonExistentCluster"),
             StatusCodes.NOT_FOUND,
             null);
     }
 
-//    (dependsOnMethods = {"testDuplicateJobClusterCreate"})
-    @Test
-    public void testJobClusterLatestJobDiscoveryInfoNoRunningJobs() throws InterruptedException {
+    private void testJobClusterLatestJobDiscoveryInfoNoRunningJobs() throws InterruptedException {
         testGet(
             getJobClusterLatestJobDiscoveryInfoEp(TEST_CLUSTER_NAME),
             StatusCodes.NOT_FOUND,
             null);
     }
 
-//    (dependsOnMethods = "testDuplicateJobClusterCreate")
-    @Test
-    public void testJobClustersList() throws InterruptedException {
+    private void testJobClustersList() throws InterruptedException {
         testGet(
                 getJobClustersEndpoint(),
                 StatusCodes.OK,
@@ -192,8 +243,7 @@ public class JobClustersRouteTest extends RouteTestBase {
         );
     }
 
-    @Test()
-    public void testJobClustersDelete() throws InterruptedException {
+    private void testJobClustersDelete() throws InterruptedException {
 
         testDelete(
                 getJobClustersEndpoint(),
@@ -201,26 +251,21 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-    @Test()
-    public void testJobClustersPut() throws InterruptedException {
+    private void testJobClustersPut() throws InterruptedException {
         testPut(
                 getJobClustersEndpoint(),
                 StatusCodes.METHOD_NOT_ALLOWED,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClustersList")
-    @Test
-    public void testJobClusterInstanceGET() throws InterruptedException {
+    private void testJobClusterInstanceGET() throws InterruptedException {
         testGet(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
                 StatusCodes.OK,
                 this::compareClusterInstancePayload);
     }
 
-//    (dependsOnMethods = "testJobClusterInstanceGET")
-    @Test
-    public void testNonExistentJobClusterInstanceGET() throws InterruptedException {
+    private void testNonExistentJobClusterInstanceGET() throws InterruptedException {
         testGet(
                 getJobClusterInstanceEndpoint("doesNotExist"),
                 StatusCodes.NOT_FOUND,
@@ -228,18 +273,14 @@ public class JobClustersRouteTest extends RouteTestBase {
         );
     }
 
-//    (dependsOnMethods = "testNonExistentJobClusterInstanceGET")
-    @Test
-    public void testJobClusterInstancePOSTNotAllowed() throws InterruptedException {
+    private void testJobClusterInstancePOSTNotAllowed() throws InterruptedException {
         testPost(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterInstancePOSTNotAllowed")
-    @Test
-    public void testJobClusterInstanceValidUpdate() throws InterruptedException {
+    private void testJobClusterInstanceValidUpdate() throws InterruptedException {
 
         testPut(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
@@ -250,9 +291,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 this::compareClusterInstancePayload);
     }
 
-//    (dependsOnMethods = "testJobClusterInstanceValidUpdate")
-    @Test
-    public void testJobClusterInstanceInvalidUpdate() throws InterruptedException {
+    private void testJobClusterInstanceInvalidUpdate() throws InterruptedException {
         testPut(
                 getJobClusterInstanceEndpoint(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -262,9 +301,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterInstanceInvalidUpdate")
-    @Test
-    public void testJobClusterInstanceNonExistentUpdate() throws InterruptedException {
+    private void testJobClusterInstanceNonExistentUpdate() throws InterruptedException {
         testPut(
                 getJobClusterInstanceEndpoint("NonExistent"),
                 HttpEntities.create(
@@ -274,18 +311,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterInstanceNonExistentUpdate")
-    @Test
-    public void testJobClusterNonExistentDelete() throws InterruptedException {
+    private void testJobClusterNonExistentDelete() throws InterruptedException {
         testDelete(
                 getJobClusterInstanceEndpoint("NonExistent") + "?user=test&reason=unittest",
                 StatusCodes.NOT_FOUND,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterNonExistentDelete")
-    @Test
-    public void testJobClusterActionUpdateArtifactPost() throws InterruptedException {
+    private void testJobClusterActionUpdateArtifactPost() throws InterruptedException {
         testPost(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -295,9 +328,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 EMPTY_RESPONSE_VALIDATOR);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPost")
-    @Test
-    public void testJobClusterActionUpdateArtifactPostNonExistent() throws InterruptedException {
+    private void testJobClusterActionUpdateArtifactPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateArtifactEp("NonExistent"),
                 HttpEntities.create(
@@ -311,9 +342,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 });
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPostNonExistent")
-    @Test
-    public void testJobClusterActionUpdateArtifactPostNonMatchedResource() throws InterruptedException {
+    private void testJobClusterActionUpdateArtifactPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateArtifactEp("NonExistent"),
                 HttpEntities.create(
@@ -323,18 +352,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPostNonMatchedResource")
-    @Test
-    public void testJobClusterActionUpdateArtifactGetNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateArtifactGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactGetNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateArtifactPUTNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateArtifactPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -344,9 +369,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPUTNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateArtifactDELETENotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateArtifactDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateArtifactEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
@@ -355,9 +378,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
     /** test Update SLA actions **/
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactDELETENotAllowed")
-    @Test
-    public void testJobClusterActionUpdateSlaPost() throws InterruptedException {
+    private void testJobClusterActionUpdateSlaPost() throws InterruptedException {
         testPost(getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
                  HttpEntities.create(
                          ContentTypes.APPLICATION_JSON,
@@ -365,9 +386,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                  StatusCodes.NO_CONTENT, null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateSlaPost")
-    @Test
-    public void testJobClusterActionUpdateSlaPostNonExistent() throws InterruptedException {
+    private void testJobClusterActionUpdateSlaPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateSlaEp("NonExistent"),
                 HttpEntities.create(
@@ -377,9 +396,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateSlaPostNonExistent")
-    @Test
-    public void testJobClusterActionUpdateSlaPostNonMatchedResource() throws InterruptedException {
+    private void testJobClusterActionUpdateSlaPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateSlaEp("NonExistent"),
                 HttpEntities.create(
@@ -389,18 +406,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateSlaPostNonMatchedResource")
-    @Test
-    public void testJobClusterActionUpdateSlaGetNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateSlaGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateSlaGetNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateSlaPUTNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateSlaPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -411,9 +424,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionUpdateArtifactPUTNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateSlaDELETENotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateSlaDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateSlaEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
@@ -422,9 +433,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     /** Update migration strategy actions tests **/
 
-//    (dependsOnMethods = "testJobClusterActionUpdateSlaDELETENotAllowed")
-    @Test
-    public void testJobClusterActionUpdateMigrationPost() throws InterruptedException {
+    private void testJobClusterActionUpdateMigrationPost() throws InterruptedException {
         testPost(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -435,9 +444,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPost")
-    @Test
-    public void testJobClusterActionUpdateMigrationPostNonExistent() throws InterruptedException {
+    private void testJobClusterActionUpdateMigrationPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateMigrationStrategyEp("NonExistent"),
                 HttpEntities.create(
@@ -447,9 +454,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPostNonExistent")
-    @Test
-    public void testJobClusterActionUpdateMigrationPostNonMatchedResource() throws InterruptedException {
+    private void testJobClusterActionUpdateMigrationPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateMigrationStrategyEp("NonExistent"),
                 HttpEntities.create(
@@ -459,18 +464,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPostNonMatchedResource")
-    @Test
-    public void testJobClusterActionUpdateMigrationGetNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateMigrationGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateMigrationGetNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateMigrationPUTNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateMigrationPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -480,9 +481,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateMigrationPUTNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateMigrationDELETENotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateMigrationDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateMigrationStrategyEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
@@ -491,9 +490,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     /** Update label actions tests **/
 
-//    (dependsOnMethods = "testJobClusterActionUpdateMigrationDELETENotAllowed")
-    @Test
-    public void testJobClusterActionUpdateLabelPost() throws InterruptedException {
+    private void testJobClusterActionUpdateLabelPost() throws InterruptedException {
         testPost(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -503,9 +500,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateLabelPost")
-    @Test
-    public void testJobClusterActionUpdateLabelPostNonExistent() throws InterruptedException {
+    private void testJobClusterActionUpdateLabelPostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterUpdateLabelEp("NonExistent"),
                 HttpEntities.create(
@@ -515,9 +510,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateLabelPostNonExistent")
-    @Test
-    public void testJobClusterActionUpdateLabelPostNonMatchedResource() throws InterruptedException {
+    private void testJobClusterActionUpdateLabelPostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterUpdateLabelEp("NonExistent"),
                 HttpEntities.create(
@@ -527,18 +520,14 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateLabelPostNonMatchedResource")
-    @Test
-    public void testJobClusterActionUpdateLabelGetNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateLabelGetNotAllowed() throws InterruptedException {
         testGet(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionUpdateLabelGetNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateLabelPUTNotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateLabelPUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -549,9 +538,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionUpdateLabelPUTNotAllowed")
-    @Test
-    public void testJobClusterActionUpdateLabelDELETENotAllowed() throws InterruptedException {
+    private void testJobClusterActionUpdateLabelDELETENotAllowed() throws InterruptedException {
         testDelete(
                 getJobClusterUpdateLabelEp(TEST_CLUSTER_NAME),
                 StatusCodes.METHOD_NOT_ALLOWED,
@@ -560,9 +547,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     /** enable cluster action test **/
 
-//    (dependsOnMethods = "testJobClusterActionUpdateLabelDELETENotAllowed")
-    @Test
-    public void testJobClusterActionEnablePost() throws InterruptedException {
+    private void testJobClusterActionEnablePost() throws InterruptedException {
         testPost(
                 getJobClusterEnableEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -573,9 +558,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionEnablePost")
-    @Test
-    public void testJobClusterActionEnablePostNonExistent() throws InterruptedException {
+    private void testJobClusterActionEnablePostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterEnableEp("NonExistent"),
                 HttpEntities.create(
@@ -585,9 +568,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionEnablePostNonExistent")
-    @Test
-    public void testJobClusterActionEnablePostNonMatchedResource() throws InterruptedException {
+    private void testJobClusterActionEnablePostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterEnableEp("NonExistent"),
                 HttpEntities.create(
@@ -597,15 +578,11 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionEnablePostNonMatchedResource")
-    @Test
-    public void testJobClusterActionEnableGetNotAllowed() throws InterruptedException {
+    private void testJobClusterActionEnableGetNotAllowed() throws InterruptedException {
         testGet(getJobClusterEnableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionEnableGetNotAllowed")
-    @Test
-    public void testJobClusterActionEnablePUTNotAllowed() throws InterruptedException {
+    private void testJobClusterActionEnablePUTNotAllowed() throws InterruptedException {
         testPut(getJobClusterEnableEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
                         ContentTypes.APPLICATION_JSON,
@@ -614,18 +591,14 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionEnablePUTNotAllowed")
-    @Test
-    public void testJobClusterActionEnableDELETENotAllowed() throws InterruptedException {
+    private void testJobClusterActionEnableDELETENotAllowed() throws InterruptedException {
         testDelete(getJobClusterEnableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
     /** disable cluster action test **/
 
 
-//    (dependsOnMethods = "testJobClusterActionEnableDELETENotAllowed")
-    @Test
-    public void testJobClusterActionDisablePost() throws InterruptedException {
+    private void testJobClusterActionDisablePost() throws InterruptedException {
         testPost(
                 getJobClusterDisableEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -637,9 +610,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionDisablePost")
-    @Test
-    public void testJobClusterActionDisablePostNonExistent() throws InterruptedException {
+    private void testJobClusterActionDisablePostNonExistent() throws InterruptedException {
         testPost(
                 getJobClusterDisableEp("NonExistent"),
                 HttpEntities.create(
@@ -649,9 +620,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionDisablePostNonExistent")
-    @Test
-    public void testJobClusterActionDisablePostNonMatchedResource() throws InterruptedException {
+    private void testJobClusterActionDisablePostNonMatchedResource() throws InterruptedException {
         testPost(
                 getJobClusterDisableEp("NonExistent"),
                 HttpEntities.create(
@@ -661,15 +630,11 @@ public class JobClustersRouteTest extends RouteTestBase {
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionDisablePostNonMatchedResource")
-    @Test
-    public void testJobClusterActionDisableGetNotAllowed() throws InterruptedException {
+    private void testJobClusterActionDisableGetNotAllowed() throws InterruptedException {
         testGet(getJobClusterDisableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionDisableGetNotAllowed")
-    @Test
-    public void testJobClusterActionDisablePUTNotAllowed() throws InterruptedException {
+    private void testJobClusterActionDisablePUTNotAllowed() throws InterruptedException {
         testPut(
                 getJobClusterDisableEp(TEST_CLUSTER_NAME),
                 HttpEntities.create(
@@ -680,24 +645,18 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = "testJobClusterActionDisablePUTNotAllowed")
-    @Test
-    public void testJobClusterActionDisableDELETENotAllowed() throws InterruptedException {
+    private void testJobClusterActionDisableDELETENotAllowed() throws InterruptedException {
         testDelete(getJobClusterDisableEp(TEST_CLUSTER_NAME), StatusCodes.METHOD_NOT_ALLOWED, null);
     }
 
-//    (dependsOnMethods = "testJobClusterActionDisableDELETENotAllowed")
-    @Test
-    public void testJobClusterDeleteWithoutRequiredParam() throws InterruptedException {
+    private void testJobClusterDeleteWithoutRequiredParam() throws InterruptedException {
         testDelete(
                 getJobClusterInstanceEndpoint("sine-function"),
                 StatusCodes.BAD_REQUEST,
                 null);
     }
 
-//    (dependsOnMethods = "testJobClusterDeleteWithoutRequiredParam")
-    @Test
-    public void testJobClusterValidDelete() throws InterruptedException {
+    private void testJobClusterValidDelete() throws InterruptedException {
         assert isClusterExist("sine-function");
 
         testDelete(getJobClusterInstanceEndpoint("sine-function") + "?user=test&reason=unittest",

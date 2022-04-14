@@ -84,12 +84,12 @@ public class AgentClustersRouteTest extends RouteTestBase {
 
     private static CompletionStage<ServerBinding> binding;
 
-    AgentClustersRouteTest(){
+    public AgentClustersRouteTest() {
         super("AgentClusterRoutes", 8202);
-
     }
+
     @BeforeClass
-    public void setup() throws InterruptedException {
+    public static void setup() throws InterruptedException {
         TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
         t = new Thread(() -> {
@@ -129,10 +129,10 @@ public class AgentClustersRouteTest extends RouteTestBase {
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = agentClusterV2Route.createRoute(
                         Function.identity()).flow(system, materializer);
                 logger.info("test server starting on port {}", serverPort);
-                latch.countDown();
                 binding = http.bindAndHandle(routeFlow,
                                              ConnectHttp.toHost("localhost", serverPort),
                                              materializer);
+                latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
                 latch.countDown();
@@ -145,7 +145,7 @@ public class AgentClustersRouteTest extends RouteTestBase {
     }
 
     @AfterClass
-    public void teardown() {
+    public static void teardown() {
         logger.info("V1AgentClusterRouteTest teardown");
         binding
                 .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
@@ -213,8 +213,14 @@ public class AgentClustersRouteTest extends RouteTestBase {
         }
     }
 
-    @Test()
-    public void testSetActiveAgentClusters() throws InterruptedException {
+    @Test
+    public void testIt() throws InterruptedException {
+        testSetActiveAgentClusters();
+        testGetJobsOnAgentClusters();
+        testGetActiveAgentClusters();
+    }
+
+    private void testSetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
                 HttpRequest.POST(SERVER_ENDPOINT)
@@ -232,9 +238,7 @@ public class AgentClustersRouteTest extends RouteTestBase {
     }
 
 
-//    (dependsOnMethods = {"testSetActiveAgentClusters"})
-    @Test
-    public void testGetJobsOnAgentClusters() throws InterruptedException {
+    private void testGetJobsOnAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
                 HttpRequest.GET(SERVER_ENDPOINT + "/jobs"));
@@ -250,9 +254,7 @@ public class AgentClustersRouteTest extends RouteTestBase {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-//    (dependsOnMethods = {"testGetJobsOnAgentClusters"})
-    @Test
-    public void testGetAutoScalePolicy() throws InterruptedException {
+    private void testGetAutoScalePolicy() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
                 HttpRequest.GET(SERVER_ENDPOINT + "/autoScalePolicy"));
@@ -284,9 +286,7 @@ public class AgentClustersRouteTest extends RouteTestBase {
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
-//    (dependsOnMethods = {"testGetAutoScalePolicy"})
-    @Test
-    public void testGetActiveAgentClusters() throws InterruptedException {
+    private void testGetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
                 HttpRequest.GET(SERVER_ENDPOINT));
