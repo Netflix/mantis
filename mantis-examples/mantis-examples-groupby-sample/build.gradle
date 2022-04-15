@@ -15,6 +15,7 @@ task execute(type: JavaExec) {
 dependencies {
     implementation project(':mantis-runtime')
 
+    implementation 'net.andreinc.mockneat:mockneat:0.3.7'
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
 }
