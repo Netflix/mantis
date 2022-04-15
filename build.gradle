@@ -132,6 +132,7 @@ subprojects {
                 maven {
                     url "https://artifactory-oss.prod.netflix.net/artifactory/required-jcenter-modules-backup"
                 }
+                jcenter()
             }
             filter {
                 includeGroupByRegex "net\\.andreinc.*"
