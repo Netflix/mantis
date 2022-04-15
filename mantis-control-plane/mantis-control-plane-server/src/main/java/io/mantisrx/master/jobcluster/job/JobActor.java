@@ -1760,7 +1760,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private IMantisWorkerMetadata addWorker(SchedulingInfo schedulingInfo, int stageNo, int workerIndex)
                 throws InvalidJobException {
 
-            LOGGER.trace("In addWorker for index {} for Job {} with sched info", workerIndex, jobId, schedulingInfo);
+            LOGGER.trace("In addWorker for index {} for Job {} with sched info {}", workerIndex, jobId, schedulingInfo);
 
             StageSchedulingInfo stageSchedInfo = schedulingInfo.getStages().get(stageNo);
             int workerNumber = workerNumberGenerator.getNextWorkerNumber(mantisJobMetaData, jobStore);
