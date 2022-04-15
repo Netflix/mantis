@@ -18,6 +18,7 @@ package io.mantisrx.server.master.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.MantisStorageProvider;
+import java.time.Duration;
 import org.skife.config.Config;
 import org.skife.config.Default;
 import org.skife.config.DefaultNull;
@@ -302,4 +303,20 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.api.cache.size.min")
     @Default("5")
     int getApiCacheMinSize();
+
+    @Config("mantis.agent.heartbeat.interval.ms")
+    @Default("300000") // 5 minutes
+    int getHeartbeatIntervalInMs();
+
+    @Config("mantis.agent.assignment.interval.ms")
+    @Default("60000") // 1 minute
+    int getAssignmentIntervalInMs();
+
+    default Duration getHeartbeatInterval() {
+        return Duration.ofMillis(getHeartbeatIntervalInMs());
+    }
+
+    default Duration getMaxAssignmentThreshold() {
+        return Duration.ofMillis(getAssignmentIntervalInMs());
+    }
 }
