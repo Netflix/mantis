@@ -35,7 +35,6 @@ ext {
     guiceVersion = '4.2.2'
     spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
-    mockNeatVersion = '0.3.7'
     guiceServletVersion = '4.0'
 }
 
