@@ -36,6 +36,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.flink.runtime.rpc.RpcService;
 
+/**
+ * This class is an implementation of {@link ResourceClusters} that uses the Akka actor implementation under the hood.
+ * You can think of this class as a more java typed-way of sharing the functionalities of the akka actor.
+ */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class ResourceClustersAkkaImpl implements ResourceClusters {
 
@@ -68,8 +72,11 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
                 .thenApply(clusterIdSet -> clusterIdSet.getClusterIDS());
     }
 
-    public static ResourceClusters load(MasterConfiguration masterConfiguration,
-        RpcService rpcService, ActorSystem actorSystem, MantisJobStore mantisJobStore) {
+    public static ResourceClusters load(
+        MasterConfiguration masterConfiguration,
+        RpcService rpcService,
+        ActorSystem actorSystem,
+        MantisJobStore mantisJobStore) {
         final ActorRef resourceClusterManagerActor =
             actorSystem.actorOf(
                 ResourceClustersManagerActor.props(masterConfiguration, Clock.systemDefaultZone(),
