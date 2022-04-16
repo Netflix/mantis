@@ -18,7 +18,7 @@ package io.mantisrx.runtime.parameter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,5 +82,16 @@ public class ParametersTest {
         assertEquals("defaultValue", parameters.get("o2", "defaultValue"));
         // Get undefined parameter u1 should return the provided default value
         assertEquals("defaultValue", parameters.get("u2", "defaultValue"));
+    }
+
+    static <T extends Throwable> void assertThrows(Class<T> expectedType, Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Throwable t) {
+            if (expectedType.isInstance(t)) {
+                return;
+            }
+        }
+        fail("Should have failed with exception class " + expectedType);
     }
 }
