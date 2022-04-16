@@ -17,7 +17,6 @@
 package io.mantisrx.connector.iceberg.sink.committer.config;
 
 import static io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties.COMMIT_FREQUENCY_MS;
-import static io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties.COMMIT_FREQUENCY_MS_DEFAULT;
 
 import io.mantisrx.connector.iceberg.sink.config.SinkConfig;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -34,8 +33,7 @@ public class CommitterConfig extends SinkConfig {
      */
     public CommitterConfig(Parameters parameters) {
         super(parameters);
-        this.commitFrequencyMs =
-                Long.parseLong((String) parameters.get(COMMIT_FREQUENCY_MS, COMMIT_FREQUENCY_MS_DEFAULT));
+        this.commitFrequencyMs = Long.parseLong((String) parameters.get(COMMIT_FREQUENCY_MS));
     }
 
     /**
