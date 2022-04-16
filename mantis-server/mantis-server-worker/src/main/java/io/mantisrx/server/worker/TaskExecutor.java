@@ -84,6 +84,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final TaskExecutorRegistration taskExecutorRegistration;
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
+    private final String hostName;
 
     // the reason the MantisMasterGateway field is not final is because we expect the HighAvailabilityServices
     // to be started before we can get the MantisMasterGateway
@@ -125,9 +126,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             Hardware.getSizeOfPhysicalMemory(),
             Hardware.getSizeOfDisk(),
             workerPorts.getNumberOfPorts());
+        this.hostName = workerConfiguration.getExternalAddress();
         this.taskExecutorRegistration =
             new TaskExecutorRegistration(
-                taskExecutorID, clusterID, getAddress(), workerConfiguration.getExternalAddress(), workerPorts, machineDefinition);
+                taskExecutorID, clusterID, getAddress(), hostName, workerPorts, machineDefinition);
         this.ioExecutor =
             Executors.newFixedThreadPool(
                 Hardware.getNumberCPUCores(),
@@ -412,7 +414,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration,
             masterMonitor,
             classLoaderHandle,
-            subscriptionStateHandlerFactory);
+            subscriptionStateHandlerFactory,
+            Optional.of(getHostname()));
 
         setCurrentTask(task);
 

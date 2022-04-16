@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -39,11 +40,18 @@ class Heartbeat {
     private final int workerNumber;
     private final ConcurrentMap<String, String> payloads;
     private final BlockingQueue<PayloadPair> singleUsePayloads = new LinkedBlockingQueue<>();
+    private final Optional<String> host;
+
     Heartbeat(String jobId, int stageNumber, int workerIndex, int workerNumber) {
+        this(jobId, stageNumber, workerIndex, workerNumber, Optional.empty());
+    }
+
+    Heartbeat(String jobId, int stageNumber, int workerIndex, int workerNumber, Optional<String> host) {
         this.jobId = jobId;
         this.stageNumber = stageNumber;
         this.workerIndex = workerIndex;
         this.workerNumber = workerNumber;
+        this.host = host;
         payloads = new ConcurrentHashMap<>();
     }
 
@@ -79,6 +87,7 @@ class Heartbeat {
                 payloadList.add(new Status.Payload(entry.getKey(), entry.getValue()));
         }
         Status status = new Status(jobId, stageNumber, workerIndex, workerNumber, Status.TYPE.HEARTBEAT, "heartbeat", MantisJobState.Noop);
+        host.ifPresent(status::setHostname);
         if (!payloadList.isEmpty())
             status.setPayloads(payloadList);
         return status;

@@ -107,20 +107,15 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private Action0 onSinkUnsubscribe = null;
     private final List<Closeable> closeables = new ArrayList<>();
     private final ScheduledExecutorService scheduledExecutorService;
-
-    public WorkerExecutionOperationsNetworkStage(
-        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
-        MantisMasterGateway mantisMasterApi, WorkerConfiguration config,
-        Factory sinkSubscriptionStateHandlerFactory) {
-        this(vmTaskStatusObserver, mantisMasterApi, config, null, sinkSubscriptionStateHandlerFactory);
-    }
+    private final Optional<String> hostname;
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
-        Factory sinkSubscriptionStateHandlerFactory) {
+        Factory sinkSubscriptionStateHandlerFactory,
+        Optional<String> hostname) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
@@ -137,6 +132,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
         lookupSpectatorRegistry = Boolean.valueOf(locateSpectatorRegistry);
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
+        this.hostname = hostname;
     }
 
     /**
@@ -388,7 +384,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             rw.setContext(context);
             // setup heartbeats
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
-                    rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum()));
+                    rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), hostname));
             final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
             Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(),
                     new WorkerId(executionRequest.getJobId(), executionRequest.getWorkerIndex(),
