@@ -22,18 +22,15 @@ import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.server.master.store.InvalidJobException;
 import io.mantisrx.server.master.store.InvalidNamedJobException;
-import io.mantisrx.server.master.store.MantisJobStore;
 import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.server.master.store.NamedJobDeleteException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import rx.Observable;
 import rx.functions.Action1;
-import rx.functions.Func2;
 
 
 public interface MantisJobOperations {
@@ -81,8 +78,6 @@ public interface MantisJobOperations {
     Observable<MantisJobStatus> jobs();
 
     MantisJobStatus status(String jobId);
-
-    Func2<MantisJobStore, Map<String, MantisJobDefinition>, Collection<NamedJob>> getJobsInitializer();
 
     Collection<MantisJobMgr> getAllJobMgrs();
 

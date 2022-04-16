@@ -50,7 +50,6 @@ import io.mantisrx.server.master.http.api.JobClusterInfo;
 import io.mantisrx.server.master.store.InvalidNamedJobException;
 import io.mantisrx.server.master.store.MantisJobMetadata;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
-import io.mantisrx.server.master.store.MantisJobStore;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadata;
@@ -74,7 +73,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Action1;
-import rx.functions.Func2;
 
 
 public class DataFormatAdapter {
@@ -827,12 +825,6 @@ class NoOpMantisJobOperations implements MantisJobOperations {
 
     @Override
     public MantisJobStatus status(String jobId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Func2<MantisJobStore, Map<String, MantisJobDefinition>, Collection<NamedJob>> getJobsInitializer() {
         // TODO Auto-generated method stub
         return null;
     }
