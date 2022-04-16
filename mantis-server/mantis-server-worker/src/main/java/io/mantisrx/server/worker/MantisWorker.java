@@ -50,7 +50,10 @@ import org.slf4j.LoggerFactory;
 import rx.Subscription;
 import rx.subjects.PublishSubject;
 
-
+/**
+ * This class is the executable entry point for the worker. It constructs the related components (LeaderService),
+ * and starts them.
+ */
 public class MantisWorker extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisWorker.class);
@@ -109,7 +112,8 @@ public class MantisWorker extends BaseService {
                                             .Factory
                                             .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                                                     gateway,
-                                                    Clock.systemDefaultZone()));
+                                                    Clock.systemDefaultZone()),
+                                Optional.empty());
                             taskStatusUpdateSubscription =
                                     task
                                             .getStatus()

@@ -52,6 +52,8 @@ public class Task extends AbstractIdleService {
 
     private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
+    private final Optional<String> hostname;
+
     @Override
     public void startUp() {
         try {
@@ -78,7 +80,9 @@ public class Task extends AbstractIdleService {
                 vmTaskStatusSubject,
                 masterMonitor,
                 config,
-                workerMetricsClient, sinkSubscriptionStateHandlerFactory),
+                workerMetricsClient,
+                sinkSubscriptionStateHandlerFactory,
+                hostname),
             getJobProviderClass(), classLoaderHandle, null));
 
         log.info("Starting Mantis Worker for task {}", this);
