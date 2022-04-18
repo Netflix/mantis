@@ -19,6 +19,7 @@ package io.mantisrx.control.plane.resource.cluster;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -162,7 +163,7 @@ public class ResourceClusterManagerActorTests {
         assertEquals(ResponseCode.SERVER_ERROR, createResp.responseCode);
 
         verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
-        verify(responseHandler, times(1)).handleProvisionResponse(
+        verify(responseHandler, atMost(1)).handleProvisionResponse(
                 argThat(ar -> ar.getResponse().equals(err.toString())));
 
         probe.getSystem().stop(resourceClusterActor);
