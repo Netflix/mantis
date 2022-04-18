@@ -34,76 +34,76 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ResourceClusterAwareScheduler implements MantisScheduler {
 
-  private final ActorRef schedulerActor;
+    private final ActorRef schedulerActor;
 
-  @Override
-  public void scheduleWorker(ScheduleRequest scheduleRequest) {
-    schedulerActor.tell(ScheduleRequestEvent.of(scheduleRequest), null);
-  }
-
-  @Override
-  public void unscheduleWorker(WorkerId workerId, Optional<String> hostname) {
-    throw new UnsupportedOperationException(
-        "This seems to be used only within the SchedulingService which is a MantisScheduler implementation itself; so it's not clear if this is needed or not");
-  }
-
-  @Override
-  public void unscheduleAndTerminateWorker(WorkerId workerId,
-      Optional<String> hostname) {
-    schedulerActor.tell(CancelRequestEvent.of(workerId, hostname.orElse(null)), null);
-
-    if (!hostname.isPresent()) {
-      log.error("Request for cancelling worker {} without hostname", workerId, new Exception());
+    @Override
+    public void scheduleWorker(ScheduleRequest scheduleRequest) {
+        schedulerActor.tell(ScheduleRequestEvent.of(scheduleRequest), null);
     }
-  }
 
-  @Override
-  public void updateWorkerSchedulingReadyTime(WorkerId workerId, long when) {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public void unscheduleWorker(WorkerId workerId, Optional<String> hostname) {
+        throw new UnsupportedOperationException(
+            "This seems to be used only within the SchedulingService which is a MantisScheduler implementation itself; so it's not clear if this is needed or not");
+    }
 
-  @Override
-  public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname) {
-      log.info("initializeRunningWorker called for {} and {}", scheduleRequest, hostname);
-      schedulerActor.tell(
-          new InitializeRunningWorkerRequestEvent(scheduleRequest, TaskExecutorID.of(hostname)),
-          null);
-  }
+    @Override
+    public void unscheduleAndTerminateWorker(WorkerId workerId,
+                                             Optional<String> hostname) {
+        schedulerActor.tell(CancelRequestEvent.of(workerId, hostname.orElse(null)), null);
 
-  @Override
-  public void rescindOffer(String offerId) {
-    throw new UnsupportedOperationException();
-  }
+        if (!hostname.isPresent()) {
+            log.error("Request for cancelling worker {} without hostname", workerId, new Exception());
+        }
+    }
 
-  @Override
-  public void rescindOffers(String hostname) {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public void updateWorkerSchedulingReadyTime(WorkerId workerId, long when) {
+        throw new UnsupportedOperationException();
+    }
 
-  @Override
-  public void addOffers(List<VirtualMachineLease> offers) {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname) {
+        log.info("initializeRunningWorker called for {} and {}", scheduleRequest, hostname);
+        schedulerActor.tell(
+            new InitializeRunningWorkerRequestEvent(scheduleRequest, TaskExecutorID.of(hostname)),
+            null);
+    }
 
-  @Override
-  public void disableVM(String hostname, long durationMillis)
-      throws IllegalStateException {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public void rescindOffer(String offerId) {
+        throw new UnsupportedOperationException();
+    }
 
-  @Override
-  public void enableVM(String hostname) {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public void rescindOffers(String hostname) {
+        throw new UnsupportedOperationException();
+    }
 
-  @Override
-  public List<VirtualMachineCurrentState> getCurrentVMState() {
-    throw new UnsupportedOperationException();
-  }
+    @Override
+    public void addOffers(List<VirtualMachineLease> offers) {
+        throw new UnsupportedOperationException();
+    }
 
-  @Override
-  public void setActiveVmGroups(List<String> activeVmGroups) {
-    log.info("Active VM Groups is {} as per this stack-trace {}", activeVmGroups,
-        Throwables.getStackTraceAsString(new Throwable()));
-  }
+    @Override
+    public void disableVM(String hostname, long durationMillis)
+        throws IllegalStateException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void enableVM(String hostname) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<VirtualMachineCurrentState> getCurrentVMState() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setActiveVmGroups(List<String> activeVmGroups) {
+        log.info("Active VM Groups is {} as per this stack-trace {}", activeVmGroups,
+            Throwables.getStackTraceAsString(new Throwable()));
+    }
 }

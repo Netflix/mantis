@@ -22,9 +22,11 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.SchedulingService;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +39,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
   private final ExecuteStageRequestFactory executeStageRequestFactory;
   private final JobMessageRouter jobMessageRouter;
   private final SchedulingService mesosSchedulingService;
+  private final MasterConfiguration masterConfiguration;
   private final Map<ClusterID, ActorRef> actorRefMap = new HashMap<>();
 
   @Override
@@ -51,6 +54,9 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
             } else {
               return actorSystem.actorOf(
                   ResourceClusterAwareSchedulerActor.props(
+                      masterConfiguration.getSchedulerMaxRetries(),
+                      masterConfiguration.getSchedulerMaxRetries(),
+                      masterConfiguration.getSchedulerIntervalBetweenRetries(),
                       resourceClusters.getClusterFor(clusterIDOptional.get()),
                       executeStageRequestFactory, jobMessageRouter),
                   "scheduler-for-" + clusterIDOptional.get().getResourceID());
