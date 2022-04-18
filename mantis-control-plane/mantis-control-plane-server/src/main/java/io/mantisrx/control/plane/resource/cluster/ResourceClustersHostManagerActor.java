@@ -25,7 +25,7 @@ import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterReque
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissiomResponse;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterStorageProvider;
@@ -43,13 +43,13 @@ import lombok.extern.slf4j.Slf4j;
  * actors to binded resource cluster provider implementation.
  */
 @Slf4j
-public class ResourceClustersManagerActor extends AbstractActorWithTimers {
+public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
     @VisibleForTesting
     static Props props(
             final IResourceClusterProvider resourceClusterProvider) {
         return Props.create(
-                ResourceClustersManagerActor.class,
+                ResourceClustersHostManagerActor.class,
                 resourceClusterProvider,
                 new InMemoryOnlyResourceClusterStorageProvider());
     }
@@ -58,13 +58,13 @@ public class ResourceClustersManagerActor extends AbstractActorWithTimers {
             final IResourceClusterProvider resourceClusterProvider,
             final IResourceClusterStorageProvider resourceStorageProvider) {
         // TODO(andyz): investigate atlas metered-mailbox.
-        return Props.create(ResourceClustersManagerActor.class, resourceClusterProvider, resourceStorageProvider);
+        return Props.create(ResourceClustersHostManagerActor.class, resourceClusterProvider, resourceStorageProvider);
     }
 
     private final IResourceClusterProvider resourceClusterProvider;
     private final IResourceClusterStorageProvider resourceClusterStorageProvider;
 
-    public ResourceClustersManagerActor(
+    public ResourceClustersHostManagerActor(
             final IResourceClusterProvider resourceClusterProvider,
             final IResourceClusterStorageProvider resourceStorageProvider) {
         this.resourceClusterProvider = resourceClusterProvider;
@@ -78,11 +78,11 @@ public class ResourceClustersManagerActor extends AbstractActorWithTimers {
                 .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
                 .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
                 .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
-                .match(ResourceClusterProvisionSubmissiomResponse.class, this::onResourceClusterProvisionResponse)
+                .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
                 .build();
     }
 
-    private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissiomResponse resp) {
+    private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
         this.resourceClusterProvider.getResponseHandler().handleProvisionResponse(resp);
     }
 
@@ -161,16 +161,16 @@ public class ResourceClustersManagerActor extends AbstractActorWithTimers {
         log.debug("[Pipe finish] storing cluster spec.");
 
         // Provision response is directed back to this actor to handle its submission result.
-        CompletionStage<ResourceClusterProvisionSubmissiomResponse> provisionFut =
+        CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionFut =
                 updateSpecToStoreFut
                         .thenCompose(resp -> {
                             if (resp.responseCode.equals(ResponseCode.SUCCESS)) {
                                 return this.resourceClusterProvider.provisionClusterIfNotPresent(req);
                             }
                             return CompletableFuture.completedFuture(
-                                ResourceClusterProvisionSubmissiomResponse.builder().response(resp.message).build());
+                                ResourceClusterProvisionSubmissionResponse.builder().response(resp.message).build());
                         })
-                        .exceptionally(err -> ResourceClusterProvisionSubmissiomResponse.builder().error(err).build());
+                        .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
         pipe(provisionFut, getContext().dispatcher()).to(getSelf());
         log.debug("[Pipe finish 2]: returned provision fut.");
     }

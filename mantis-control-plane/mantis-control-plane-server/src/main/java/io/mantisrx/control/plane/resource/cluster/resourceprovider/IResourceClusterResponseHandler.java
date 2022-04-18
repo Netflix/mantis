@@ -16,11 +16,11 @@
 
 package io.mantisrx.control.plane.resource.cluster.resourceprovider;
 
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissiomResponse;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 
 /**
 * Callback handler for {@link IResouceClusterProvider} responses.
 */
 public interface IResourceClusterResponseHandler {
-    void handleProvisionResponse(ResourceClusterProvisionSubmissiomResponse resp);
+    void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp);
 }

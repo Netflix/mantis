@@ -17,7 +17,7 @@
 package io.mantisrx.control.plane.resource.cluster.resourceprovider;
 
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissiomResponse;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
 import java.util.concurrent.CompletionStage;
@@ -33,7 +33,7 @@ public interface IResourceClusterProvider {
     * accepted/started and doesn't need to represent the whole provisioning completion(s) of
     * every nodes in the cluster.
     */
-    CompletionStage<ResourceClusterProvisionSubmissiomResponse> provisionClusterIfNotPresent(
+    CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionClusterIfNotPresent(
             ProvisionResourceClusterRequest clusterSpec);
 
     /**

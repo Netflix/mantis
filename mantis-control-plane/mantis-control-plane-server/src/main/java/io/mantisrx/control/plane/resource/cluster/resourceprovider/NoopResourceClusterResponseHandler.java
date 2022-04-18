@@ -16,13 +16,13 @@
 
 package io.mantisrx.control.plane.resource.cluster.resourceprovider;
 
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissiomResponse;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class NoopResourceClusterResponseHandler implements IResourceClusterResponseHandler {
     @Override
-    public void handleProvisionResponse(ResourceClusterProvisionSubmissiomResponse resp) {
+    public void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
         log.info(resp.toString());
     }
 }

@@ -37,7 +37,7 @@ import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterSpe
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissiomResponse;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterResponseHandler;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterStorageProvider;
@@ -48,7 +48,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ResourceClusterManagerActorTests {
+public class ResourceClustersHostManagerActorTests {
     static ActorSystem system;
 
     @BeforeClass
@@ -73,14 +73,14 @@ public class ResourceClusterManagerActorTests {
         TestKit probe = new TestKit(system);
         IResourceClusterProvider resProvider = mock(IResourceClusterProvider.class);
         IResourceClusterResponseHandler responseHandler = mock(IResourceClusterResponseHandler.class);
-        ResourceClusterProvisionSubmissiomResponse provisionResponse =
-                ResourceClusterProvisionSubmissiomResponse.builder().response("123").build();
+        ResourceClusterProvisionSubmissionResponse provisionResponse =
+                ResourceClusterProvisionSubmissionResponse.builder().response("123").build();
         when(resProvider.provisionClusterIfNotPresent(any())).thenReturn(CompletableFuture.completedFuture(
                 provisionResponse
         ));
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
-        ActorRef resourceClusterActor = system.actorOf(ResourceClustersManagerActor.props(resProvider));
+        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 
@@ -140,8 +140,8 @@ public class ResourceClusterManagerActorTests {
         IResourceClusterProvider resProvider = mock(IResourceClusterProvider.class);
         IResourceClusterResponseHandler responseHandler = mock(IResourceClusterResponseHandler.class);
 
-        ResourceClusterProvisionSubmissiomResponse provisionResponse =
-                ResourceClusterProvisionSubmissiomResponse.builder().response("123").build();
+        ResourceClusterProvisionSubmissionResponse provisionResponse =
+                ResourceClusterProvisionSubmissionResponse.builder().response("123").build();
         when(resProvider.provisionClusterIfNotPresent(any())).thenReturn(CompletableFuture.completedFuture(
                 provisionResponse
         ));
@@ -153,7 +153,7 @@ public class ResourceClusterManagerActorTests {
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
         ActorRef resourceClusterActor = system.actorOf(
-                ResourceClustersManagerActor.props(resProvider, resStorageProvider));
+                ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 
@@ -180,7 +180,7 @@ public class ResourceClusterManagerActorTests {
 
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
-        ActorRef resourceClusterActor = system.actorOf(ResourceClustersManagerActor.props(resProvider));
+        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 

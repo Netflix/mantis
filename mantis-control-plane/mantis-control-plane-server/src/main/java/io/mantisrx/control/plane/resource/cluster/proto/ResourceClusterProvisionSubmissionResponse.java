@@ -24,7 +24,7 @@ import lombok.Value;
  */
 @Builder
 @Value
-public class ResourceClusterProvisionSubmissiomResponse {
+public class ResourceClusterProvisionSubmissionResponse {
     String response;
 
     Throwable error;
