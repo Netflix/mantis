@@ -34,7 +34,6 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import java.io.IOException;
 import java.time.Instant;

@@ -166,7 +166,7 @@ public class MasterMain implements Service {
                 RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
             final ResourceClusters resourceClusters =
                 ResourceClustersAkkaImpl.load(getConfig(), rpcService, system, mantisJobStore);
-            
+
             // end of new stuff
 
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
