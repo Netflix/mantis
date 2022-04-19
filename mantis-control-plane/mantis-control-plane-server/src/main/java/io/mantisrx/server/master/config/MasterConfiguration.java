@@ -167,6 +167,19 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60")
     long getDisableSlaveDurationSecs();
 
+    // Sleep interval between consecutive scheduler retries
+    @Config("mantis.master.scheduler.retry-interval.millis")
+    @Default("60000") // 1 minute
+    int getSchedulerIntervalBetweenRetriesInMs();
+
+    default Duration getSchedulerIntervalBetweenRetries() {
+        return Duration.ofMillis(getSchedulerIntervalBetweenRetriesInMs());
+    }
+
+    @Config("mantis.master.scheduler.max-retries")
+    @Default("10")
+    int getSchedulerMaxRetries();
+
     @Config("mantis.zookeeper.leader.election.path")
     String getLeaderElectionPath();
 

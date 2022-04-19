@@ -36,7 +36,8 @@ public class LabelManager {
         MANTIS_OWNER_EMAIL_LABEL("_mantis.ownerEmail"),
         MANTIS_CRITIALITY_LABEL("_mantis.criticality"),
         MANTIS_DATA_ORIGIN_LABEL("_mantis.dataOrigin"),
-        MANTIS_JOB_TYPE_LABEL("_mantis.jobType");
+        MANTIS_JOB_TYPE_LABEL("_mantis.jobType"),
+        MANTIS_RESOURCE_CLUSTER_NAME_LABEL("_mantis.resourceCluster");
         public final String label;
         SystemLabels(String s) {
             this.label = s;
