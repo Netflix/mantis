@@ -102,9 +102,10 @@ import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
+import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.time.Duration;
@@ -142,7 +143,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
 
     private final MantisJobStore jobStore;
     private final LifecycleEventPublisher eventPublisher;
-    private MantisScheduler mantisScheduler = null;
+    private MantisSchedulerFactory mantisSchedulerFactory = null;
 
     JobClusterInfoManager jobClusterInfoManager;
 
@@ -311,10 +312,10 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             this.jobListHelperActor = getContext().actorOf(JobListHelperActor.props(), "JobListHelperActor");
             getContext().watch(jobListHelperActor);
 
-            mantisScheduler = initMsg.getScheduler();
+            mantisSchedulerFactory = initMsg.getScheduler();
             Map<String, IJobClusterMetadata> jobClusterMap = new HashMap<>();
 
-            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisScheduler, eventPublisher);
+            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher);
 
             if (!initMsg.isLoadJobsFromStore()) {
                 getContext().become(initializedBehavior);
@@ -537,7 +538,15 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             if(!JobHelper.isTerminalWorkerEvent(workerEvent)) {
                 logger.warn("Event from Worker {} for a cluster {} that no longer exists. Terminate worker", workerEvent, workerEvent.getWorkerId().getJobCluster());
                 Optional<String> host = JobHelper.getWorkerHostFromWorkerEvent(workerEvent);
-                mantisScheduler.unscheduleAndTerminateWorker(workerEvent.getWorkerId(), host);
+                Optional<JobDefinition> archivedJobDefinition =
+                    jobClusterInfoManager.getArchivedJobDefinition(workerEvent.getWorkerId().getJobId());
+                if (archivedJobDefinition.isPresent()) {
+                    mantisSchedulerFactory
+                        .forJob(archivedJobDefinition.get())
+                        .unscheduleAndTerminateWorker(workerEvent.getWorkerId(), host);
+                } else {
+                    logger.error("Non-Terminal Event {} from worker {} for a cluster {} that no longer exists and the job definition not yet archived", workerEvent, workerEvent.getWorkerId(), workerEvent.getWorkerId().getJobCluster());
+                }
             } else {
                 logger.warn("Terminal Event from Worker {} for a cluster {} that no longer exists. Ignore worker", workerEvent, workerEvent.getWorkerId().getJobCluster());
             }
@@ -802,13 +811,13 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         private final Map<String, JobClusterInfo> jobClusterNameToInfoMap = new HashMap<>();
 
         private final LifecycleEventPublisher eventPublisher;
-        private MantisScheduler mantisScheduler;
+        private MantisSchedulerFactory mantisSchedulerFactory;
         private final MantisJobStore jobStore;
         private final Metrics metrics;
 
-        JobClusterInfoManager(MantisJobStore jobStore, MantisScheduler mantisScheduler, LifecycleEventPublisher eventPublisher) {
+        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher) {
             this.eventPublisher = eventPublisher;
-            this.mantisScheduler  = mantisScheduler;
+            this.mantisSchedulerFactory  = mantisSchedulerFactory;
             this.jobStore = jobStore;
 
 
@@ -835,7 +844,10 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                     logger.error("Cannot create actor for cluster with invalid name {}", clusterName);
                     return empty();
                 }
-                ActorRef jobClusterActor = getContext().actorOf(JobClusterActor.props(clusterName, this.jobStore, this.mantisScheduler, this.eventPublisher), "JobClusterActor-" + clusterName);
+                ActorRef jobClusterActor =
+                    getContext().actorOf(
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher),
+                        "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 
                 JobClusterInfo jobClusterInfo = new JobClusterInfo(clusterName, jobClusterDefn, jobClusterActor);
@@ -895,6 +907,10 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
 
         Optional<JobClusterInfo> getJobClusterInfo(String jobClusterName) {
             return ofNullable(jobClusterNameToInfoMap.get(jobClusterName));
+        }
+
+        Optional<JobDefinition> getArchivedJobDefinition(String jobId) {
+            return jobStore.getArchivedJob(jobId).map(IMantisJobMetadata::getJobDefinition);
         }
 
         Map<String, JobClusterInfo> getAllJobClusterInfo() {
