@@ -133,8 +133,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import rx.schedulers.Schedulers;
@@ -151,10 +154,13 @@ public class JobClusterTest {
     static ActorSystem system;
     //private static TestKit probe;
 
-    private static MantisJobStore jobStore;
-    private static IMantisStorageProvider storageProvider;
+    private MantisJobStore jobStore;
+    private IMantisStorageProvider storageProvider;
     private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
     private static final String user = "mantis";
+    @Rule
+    public TemporaryFolder rootDir = new TemporaryFolder();
+
     @BeforeClass
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
@@ -168,17 +174,21 @@ public class JobClusterTest {
 
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
-        storageProvider = new MantisStorageProviderAdapter(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(), eventPublisher);
-        jobStore = new MantisJobStore(storageProvider);
-
     }
 
     @AfterClass
     public static void tearDown() {
-        //((SimpleCachedFileStorageProvider)storageProvider).deleteAllFiles();
         JobTestHelper.deleteAllFiles();
         TestKit.shutdownActorSystem(system);
         system = null;
+    }
+
+    @Before
+    public void setupStorageProvider() {
+        storageProvider = new MantisStorageProviderAdapter(
+            new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(rootDir.getRoot()),
+            eventPublisher);
+        jobStore = new MantisJobStore(storageProvider);
     }
 
 
@@ -2203,6 +2213,8 @@ public class JobClusterTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testListArchivedWorkers";
         MantisSchedulerFactory schedulerMock = mock(MantisSchedulerFactory.class);
+        MantisScheduler scheduler = mock(MantisScheduler.class);
+        when(schedulerMock.forJob(any())).thenReturn(scheduler);
 
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
@@ -2316,11 +2328,13 @@ public class JobClusterTest {
     public void testResubmitWorker() {
         TestKit probe = new TestKit(system);
         String clusterName = "testResubmitWorker";
-        MantisSchedulerFactory schedulerMock = mock(MantisSchedulerFactory.class);
+        MantisSchedulerFactory schedulerMockFactory = mock(MantisSchedulerFactory.class);
+        MantisScheduler schedulerMock = mock(MantisScheduler.class);
+        when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMock, eventPublisher));
+        ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMockFactory, eventPublisher));
         jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
         JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
         assertEquals(SUCCESS, createResp.responseCode);
