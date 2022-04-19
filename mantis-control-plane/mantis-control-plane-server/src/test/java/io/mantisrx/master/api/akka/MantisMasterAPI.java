@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.api.akka;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -79,6 +83,7 @@ import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import java.time.Duration;
 import java.util.Collections;
@@ -168,9 +173,11 @@ public class MantisMasterAPI extends AllDirectives {
                 JobClustersManagerActor.props(
                         new MantisJobStore(storageProvider), lifecycleEventPublisher),
                 "JobClustersManager");
+        MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
         final FakeMantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManager);
+        when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
         jobClustersManager.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                fakeScheduler,
+                fakeSchedulerFactory,
                 true), ActorRef.noSender());
 
 
