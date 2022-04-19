@@ -27,7 +27,7 @@ import lombok.Singular;
 import lombok.Value;
 
 /**
- * Contract class to define a Mantis resource cluster. This contrace provides the abstraction to provide a generic
+ * Contract class to define a Mantis resource cluster. This contract provides the abstraction to provide a generic
  * definition from Mantis control perspective, and it's up to the implementations of each
  * {@link io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider} to translate this spec
  * to corresponding framework's cluster/node(s) definition.
@@ -60,6 +60,9 @@ public class MantisResourceClusterSpec {
     @Singular
     Map<String, String> clusterMetadataFields;
 
+    /** [Note] The @JsonCreator + @JasonProperty is needed when using this class with mixed shaded/non-shaded Jackson.
+     * The new @Jacksonized annotation is currently not usable with shaded Jackson here.
+     */
     @JsonCreator
     public MantisResourceClusterSpec(
             @JsonProperty("name") final String name,

@@ -24,7 +24,7 @@ import lombok.NonNull;
 import lombok.Value;
 
 /**
- * Persistency contract of resource cluster spec.
+ * Persistence contract of resource cluster spec.
  */
 @Value
 @Builder
@@ -38,6 +38,9 @@ public class ResourceClusterSpecWritable {
     @NonNull
     MantisResourceClusterSpec clusterSpec;
 
+    /** [Note] The @JsonCreator + @JasonProperty is needed when using this class with mixed shaded/non-shaded Jackson.
+     * The new @Jacksonized annotation is currently not usable with shaded Jackson here.
+     */
     @JsonCreator
     public ResourceClusterSpecWritable(
             @JsonProperty("version") final String version,

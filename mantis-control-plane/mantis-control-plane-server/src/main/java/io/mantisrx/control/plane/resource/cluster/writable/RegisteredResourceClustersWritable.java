@@ -47,6 +47,9 @@ public class RegisteredResourceClustersWritable {
 
         String version;
 
+        /** [Note] The @JsonCreator + @JasonProperty is needed when using this class with mixed shaded/non-shaded Jackson.
+         * The new @Jacksonized annotation is currently not usable with shaded Jackson here.
+         */
         @JsonCreator
         public ClusterRegistration(
                 @JsonProperty("clusterId") final String clusterId,

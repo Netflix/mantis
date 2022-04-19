@@ -37,12 +37,12 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletionStage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A simple file-based implementation for {@link IResourceClusterStorageProvider}. Not meant for production usage.
  */
+@Slf4j
 public class SimpleFileResourceClusterStorageProvider implements IResourceClusterStorageProvider {
     public final static String SPOOL_DIR = "/tmp/MantisSpool";
 
@@ -50,7 +50,6 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
 
     private final static ObjectMapper mapper = new ObjectMapper();
 
-    private final Logger logger = LoggerFactory.getLogger(SimpleFileResourceClusterStorageProvider.class);
     private final ActorSystem system;
 
     public SimpleFileResourceClusterStorageProvider(ActorSystem system) {
@@ -61,7 +60,7 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(
             ResourceClusterSpecWritable clusterSpecWritable) {
-        logger.info("Starting registerAndUpdateClusterSpec: " + clusterSpecWritable.getId());
+        log.info("Starting registerAndUpdateClusterSpec: {}", clusterSpecWritable.getId());
         CompletionStage<ResourceClusterSpecWritable> fut =
                 Source
                 .single(clusterSpecWritable)
@@ -82,7 +81,7 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
                 .mapAsync(1, rc -> updateClusterSpecImpl(clusterSpecWritable))
                 .mapAsync(1, rc -> getResourceClusterSpecWritable(rc.getId()))
                 .runWith(Sink.last(), system);
-        logger.info("Return future on registerAndUpdateClusterSpec: " + clusterSpecWritable.getId());
+        log.info("Return future on registerAndUpdateClusterSpec: {}", clusterSpecWritable.getId());
         return fut;
     }
 
@@ -110,13 +109,12 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
         Sink<ByteString, CompletionStage<IOResult>> listFileSink = FileIO.toPath(
                 getClusterListFilePath());
         Source<RegisteredResourceClustersWritable, NotUsed> textSource = Source.single(clusters);
-        return
-                textSource
-                        .map(mapper::writeValueAsString)
-                        .map(ByteString::fromString)
-                        .runWith(listFileSink, system)
-                        .exceptionally(e -> { throw new RuntimeException("failed to save cluster list. ", e); })
-                        .thenApply(ioRes -> true); // IOResult result is always true.
+        return textSource
+                .map(mapper::writeValueAsString)
+                .map(ByteString::fromString)
+                .runWith(listFileSink, system)
+                .exceptionally(e -> { throw new RuntimeException("failed to save cluster list. ", e); })
+                .thenApply(ioRes -> true); // IOResult result is always true.
     }
 
     @Override
@@ -134,7 +132,7 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
 
         return fromFile
                 .via(Flow.of(RegisteredResourceClustersWritable.class)
-                        .alsoTo(Sink.foreach(c -> logger.info("Read cluster: " + c))))
+                        .alsoTo(Sink.foreach(c -> log.info("Read cluster: {}", c))))
                 .runWith(Sink.seq(), system)
                 .exceptionally(e -> {
                     throw new RuntimeException("failed to get registered clusters: " + e.getMessage(), e);
@@ -144,9 +142,8 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String clusterId) {
-        final ObjectReader readOrder = mapper.readerFor(ResourceClusterSpecWritable.class);
         final Flow<String, ResourceClusterSpecWritable, NotUsed> jsonToRegisteredClusters =
-                Flow.of(String.class).map(readOrder::<ResourceClusterSpecWritable>readValue);
+                Flow.of(String.class).map(mapper.readerFor(ResourceClusterSpecWritable.class)::readValue);
 
         final Source<ResourceClusterSpecWritable, ?> fromFile = FileIO
                 .fromPath(getClusterSpecFilePath(SPOOL_DIR, clusterId))
@@ -155,7 +152,7 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
 
         return fromFile
                 .via(Flow.of(ResourceClusterSpecWritable.class)
-                        .alsoTo((Sink.foreach(c -> logger.info(("Got cluster spec: " + c))))))
+                    .alsoTo(Sink.foreach(c -> log.info("Got cluster spec: {}", c))))
                 .runWith(Sink.last(), Materializer.createMaterializer(system))
                 .exceptionally(e -> { throw new RuntimeException("Failed to retrieve clsuter spec: " + clusterId, e); });
     }
