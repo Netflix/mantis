@@ -26,7 +26,7 @@ import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.stream.ActorMaterializer;
+import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -80,7 +80,7 @@ public class AdminMasterRouteTest extends RouteTestBase {
             try {
                 // boot up server using the route as defined below
                 final Http http = Http.get(system);
-                final ActorMaterializer materializer = ActorMaterializer.create(system);
+                final Materializer materializer = Materializer.createMaterializer(system);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = masterDescRoute.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("starting test server on port {}", ADMIN_MASTER_PORT);

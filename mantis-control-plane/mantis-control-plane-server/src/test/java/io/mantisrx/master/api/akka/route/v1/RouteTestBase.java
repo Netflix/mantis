@@ -29,8 +29,8 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.RequestEntity;
 import akka.http.javadsl.model.StatusCode;
-import akka.stream.ActorMaterializer;
 import akka.testkit.javadsl.TestKit;
+import akka.stream.Materializer;
 import akka.util.ByteString;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -47,10 +47,10 @@ public abstract class RouteTestBase {
     private final static Logger logger = LoggerFactory.getLogger(RouteTestBase.class);
 
     static ActorSystem system;
-    static ActorMaterializer materializer;
+    static Materializer materializer;
     static Http http;
-    private final int serverPort;
     private final String testName;
+    final private int serverPort;
 
     static ResponseValidatorFunc EMPTY_RESPONSE_VALIDATOR = (msg) -> {
 
@@ -59,6 +59,9 @@ public abstract class RouteTestBase {
 
     RouteTestBase(String testName, int port) {
         this.testName = testName;
+        this.system = ActorSystem.create(testName);
+        this.materializer = Materializer.createMaterializer(system);
+        this.http = Http.get(system);
         this.serverPort = port;
     }
 
