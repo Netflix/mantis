@@ -27,8 +27,8 @@ import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterStorageProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
@@ -47,7 +47,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
     @VisibleForTesting
     static Props props(
-            final IResourceClusterProvider resourceClusterProvider) {
+            final ResourceClusterProvider resourceClusterProvider) {
         return Props.create(
                 ResourceClustersHostManagerActor.class,
                 resourceClusterProvider,
@@ -55,18 +55,18 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     }
 
     public static Props props(
-            final IResourceClusterProvider resourceClusterProvider,
-            final IResourceClusterStorageProvider resourceStorageProvider) {
+            final ResourceClusterProvider resourceClusterProvider,
+            final ResourceClusterStorageProvider resourceStorageProvider) {
         // TODO(andyz): investigate atlas metered-mailbox.
         return Props.create(ResourceClustersHostManagerActor.class, resourceClusterProvider, resourceStorageProvider);
     }
 
-    private final IResourceClusterProvider resourceClusterProvider;
-    private final IResourceClusterStorageProvider resourceClusterStorageProvider;
+    private final ResourceClusterProvider resourceClusterProvider;
+    private final ResourceClusterStorageProvider resourceClusterStorageProvider;
 
     public ResourceClustersHostManagerActor(
-            final IResourceClusterProvider resourceClusterProvider,
-            final IResourceClusterStorageProvider resourceStorageProvider) {
+            final ResourceClusterProvider resourceClusterProvider,
+            final ResourceClusterStorageProvider resourceStorageProvider) {
         this.resourceClusterProvider = resourceClusterProvider;
         this.resourceClusterStorageProvider = resourceStorageProvider;
     }

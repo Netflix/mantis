@@ -17,7 +17,6 @@
 package io.mantisrx.control.plane.resource.cluster.proto;
 
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
 
 /**
@@ -26,7 +25,6 @@ import lombok.Value;
 @Builder
 @Value
 public class ProvisionResourceClusterRequest {
-    @NonNull
     String clusterId;
 
     MantisResourceClusterSpec clusterSpec;

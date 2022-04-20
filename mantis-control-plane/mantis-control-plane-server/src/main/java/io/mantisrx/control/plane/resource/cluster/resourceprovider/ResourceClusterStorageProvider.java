@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Interface for persisting resource cluster related data.
  */
-public interface IResourceClusterStorageProvider {
+public interface ResourceClusterStorageProvider {
     /**
      * Register and save the given cluster spec. Once the returned CompletionStage
      * finishes successfully the given cluster should be available in list cluster response.

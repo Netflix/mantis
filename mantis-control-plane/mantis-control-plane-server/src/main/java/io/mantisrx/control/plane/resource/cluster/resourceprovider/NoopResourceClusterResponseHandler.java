@@ -20,7 +20,7 @@ import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvision
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class NoopResourceClusterResponseHandler implements IResourceClusterResponseHandler {
+public class NoopResourceClusterResponseHandler implements ResourceClusterResponseHandler {
     @Override
     public void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
         log.info(resp.toString());

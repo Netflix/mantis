@@ -20,7 +20,6 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
 
@@ -42,7 +41,6 @@ public class RegisteredResourceClustersWritable {
     @Value
     @Builder
     public static class ClusterRegistration {
-        @NonNull
         String clusterId;
 
         String version;

@@ -18,22 +18,17 @@ package io.mantisrx.control.plane.resource.cluster.proto;
 
 import io.mantisrx.shaded.com.google.common.base.Joiner;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
 
 @Builder
 @Value
 public class ScaleResourceRequest {
-    @NonNull
     String clusterId;
 
-    @NonNull
     String skuId;
 
-    @NonNull
     String region;
 
-    @NonNull
     MantisResourceClusterEnvType envType;
 
     int desireSize;

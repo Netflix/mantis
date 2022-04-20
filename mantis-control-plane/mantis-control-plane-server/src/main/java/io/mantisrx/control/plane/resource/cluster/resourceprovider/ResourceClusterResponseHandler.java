@@ -19,8 +19,8 @@ package io.mantisrx.control.plane.resource.cluster.resourceprovider;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 
 /**
-* Callback handler for {@link IResouceClusterProvider} responses.
+* Callback handler for {@link ResourceClusterProvider} responses.
 */
-public interface IResourceClusterResponseHandler {
+public interface ResourceClusterResponseHandler {
     void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp);
 }

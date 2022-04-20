@@ -40,10 +40,10 @@ import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * A simple file-based implementation for {@link IResourceClusterStorageProvider}. Not meant for production usage.
+ * A simple file-based implementation for {@link ResourceClusterStorageProvider}. Not meant for production usage.
  */
 @Slf4j
-public class SimpleFileResourceClusterStorageProvider implements IResourceClusterStorageProvider {
+public class SimpleFileResourceClusterStorageProvider implements ResourceClusterStorageProvider {
     public final static String SPOOL_DIR = "/tmp/MantisSpool";
 
     private final static String CLUSTER_LIST_FILE_NAME = "mantisResourceClusterRegistrations";

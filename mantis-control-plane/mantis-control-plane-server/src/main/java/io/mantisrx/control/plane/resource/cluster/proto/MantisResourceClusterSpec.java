@@ -16,42 +16,37 @@
 
 package io.mantisrx.control.plane.resource.cluster.proto;
 
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
 
 /**
  * Contract class to define a Mantis resource cluster. This contract provides the abstraction to provide a generic
  * definition from Mantis control perspective, and it's up to the implementations of each
- * {@link io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider} to translate this spec
+ * {@link ResourceClusterProvider} to translate this spec
  * to corresponding framework's cluster/node(s) definition.
  */
 @Value
 @Builder
 public class MantisResourceClusterSpec {
 
-    @NonNull
     String name;
 
     /**
      * ID fields maps to cluster name or spinnaker app name.
      */
-    @NonNull
     String id;
 
-    @NonNull
     String ownerName;
 
-    @NonNull
     String ownerEmail;
 
-    @NonNull
     MantisResourceClusterEnvType envType;
 
     @Singular
@@ -85,14 +80,11 @@ public class MantisResourceClusterSpec {
     @Value
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     public static class SkuTypeSpec {
-        @NonNull
         @EqualsAndHashCode.Include
         String skuId;
 
-        @NonNull
         SkuCapacity capacity;
 
-        @NonNull
         String imageId;
 
         int cpuCoreCount;
@@ -127,10 +119,13 @@ public class MantisResourceClusterSpec {
         }
     }
 
+    /**
+     * This class defined the capacity required for the given skuId mapping to hosting framework nodes
+     * e.g. containers/virtual machines.
+     */
     @Builder
     @Value
     public static class SkuCapacity {
-        @NonNull
         String skuId;
 
         int minSize;

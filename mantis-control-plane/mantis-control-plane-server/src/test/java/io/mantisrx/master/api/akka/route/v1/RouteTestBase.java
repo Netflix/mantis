@@ -68,7 +68,7 @@ public abstract class RouteTestBase {
     @BeforeClass
     public static void setupActorSystem() {
         system = ActorSystem.create();
-        materializer = ActorMaterializer.create(system);
+        materializer = Materializer.createMaterializer(system);
         http = Http.get(system);
     }
 

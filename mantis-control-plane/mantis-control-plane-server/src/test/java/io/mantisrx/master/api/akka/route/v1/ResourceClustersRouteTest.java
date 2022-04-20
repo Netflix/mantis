@@ -28,13 +28,13 @@ import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.StatusCodes;
 import com.netflix.mantis.master.scheduler.TestHelpers;
-import io.mantisrx.control.plane.resource.cluster.ResourceClustersManagerActor;
+import io.mantisrx.control.plane.resource.cluster.ResourceClustersHostManagerActor;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissiomResponse;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterResponseHandler;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads;
@@ -78,13 +78,13 @@ public class ResourceClustersRouteTest extends RouteTestBase {
             try {
                 // boot up server using the route as defined below
                 final Http http = Http.get(system);
-                ActorRef resourceClustersManagerActor = system.actorOf(
-                        ResourceClustersManagerActor.props(
+                ActorRef resourceClustersHostManagerActor = system.actorOf(
+                        ResourceClustersHostManagerActor.props(
                                 resourceProviderAdapter, new InMemoryOnlyResourceClusterStorageProvider()),
                         "jobClustersManager");
 
                 final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
-                        resourceClustersManagerActor);
+                        resourceClustersHostManagerActor);
 
                 final ResourceClustersRoute app = new ResourceClustersRoute(resourceClusterRouteHandler, system);
                 log.info("starting test server on port {}", SERVER_PORT);
@@ -213,11 +213,11 @@ public class ResourceClustersRouteTest extends RouteTestBase {
         }
     }
 
-    private static class UnitTestResourceProviderAdapter implements IResourceClusterProvider {
+    private static class UnitTestResourceProviderAdapter implements ResourceClusterProvider {
 
-        private IResourceClusterProvider injectedProvider;
+        private ResourceClusterProvider injectedProvider;
 
-        public void setInjectedProvider(IResourceClusterProvider injectedProvider) {
+        public void setInjectedProvider(ResourceClusterProvider injectedProvider) {
             this.injectedProvider = injectedProvider;
         }
 
@@ -226,13 +226,13 @@ public class ResourceClustersRouteTest extends RouteTestBase {
         }
 
         @Override
-        public CompletionStage<ResourceClusterProvisionSubmissiomResponse> provisionClusterIfNotPresent(
+        public CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionClusterIfNotPresent(
                 ProvisionResourceClusterRequest clusterSpec) {
             if (this.injectedProvider != null) return this.injectedProvider.provisionClusterIfNotPresent(clusterSpec);
             return CompletableFuture.supplyAsync(() -> {
                 try {
                     Thread.sleep(500);
-                    return ResourceClusterProvisionSubmissiomResponse.builder().response("mock resp").build();
+                    return ResourceClusterProvisionSubmissionResponse.builder().response("mock resp").build();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -255,7 +255,7 @@ public class ResourceClustersRouteTest extends RouteTestBase {
         }
 
         @Override
-        public IResourceClusterResponseHandler getResponseHandler() {
+        public ResourceClusterResponseHandler getResponseHandler() {
             if (this.injectedProvider != null) return this.injectedProvider.getResponseHandler();
             return new NoopResourceClusterResponseHandler();
         }
