@@ -23,7 +23,6 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.testkit.JUnitRouteTest;
 import akka.http.javadsl.testkit.TestRoute;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
