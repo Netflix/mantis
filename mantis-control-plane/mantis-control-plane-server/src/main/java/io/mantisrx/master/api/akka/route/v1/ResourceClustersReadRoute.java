@@ -32,100 +32,98 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Resource Cluster Route
  * Defines the following end points:
- *    /api/v1/resourceClusters/list                                      (GET)
- *
- *    /api/v1/resourceClusters/{}/getResourceOverview                    (GET)
- *    /api/v1/resourceClusters/{}/getRegisteredTaskExecutors             (GET)
- *    /api/v1/resourceClusters/{}/getBusyTaskExecutors                   (GET)
- *    /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
- *    /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
- *
- *    /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
+ * /api/v1/resourceClusters/list                                      (GET)
+ * <p>
+ * /api/v1/resourceClusters/{}/getResourceOverview                    (GET)
+ * /api/v1/resourceClusters/{}/getRegisteredTaskExecutors             (GET)
+ * /api/v1/resourceClusters/{}/getBusyTaskExecutors                   (GET)
+ * /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
+ * /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
+ * <p>
+ * /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
  */
 @Slf4j
 @RequiredArgsConstructor
 public class ResourceClustersReadRoute extends BaseRoute {
 
-  private static final PathMatcher0 RESOURCECLUSTERS_API_PREFIX =
-      segment("api").slash("v1").slash("resourceClusters");
+    private static final PathMatcher0 RESOURCECLUSTERS_API_PREFIX =
+        segment("api").slash("v1").slash("resourceClusters");
 
-  private final ResourceClusters gateway;
+    private final ResourceClusters gateway;
 
-  @Override
-  protected Route constructRoutes() {
-    return pathPrefix(
-        RESOURCECLUSTERS_API_PREFIX,
-        () -> concat(
-            // /list
-            pathPrefix(
-                "list",
-                () -> concat(
-                    // GET
-                    get(this::listClusters))
-            ),
-            // /{}/getResourceOverview
-            path(
-                PathMatchers.segment().slash("getResourceOverview"),
-                (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> getResourceOverview(getClusterID(clusterName)))))
-            ),
-            // /{}/getRegisteredTaskExecutors
-            path(
-                PathMatchers.segment().slash("getRegisteredTaskExecutors"),
-                (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getRegisteredTaskExecutors()))))
-            ),
-            // /{}/getBusyTaskExecutors
-            path(
-                PathMatchers.segment().slash("getBusyTaskExecutors"),
-                (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getBusyTaskExecutors()))))
-            ),
-            // /{}/getAvailableTaskExecutors
-            path(
-                PathMatchers.segment().slash("getAvailableTaskExecutors"),
-                (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getAvailableTaskExecutors()))))
-            ),
-            // /{}/getUnregisteredTaskExecutors
-            path(
-                PathMatchers.segment().slash("getUnregisteredTaskExecutors"),
-                (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getUnregisteredTaskExecutors()))))
-            ),
+    @Override
+    protected Route constructRoutes() {
+        Route result = pathPrefix(
+            RESOURCECLUSTERS_API_PREFIX,
+            () -> concat(
+                // /list
+                pathPrefix(
+                    "list",
+                    () -> concat(
+                        // GET
+                        get(this::listClusters))
+                ),
+                // /{}/getResourceOverview
+                path(
+                    PathMatchers.segment().slash("getResourceOverview"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> getResourceOverview(getClusterID(clusterName)))))
+                ),
+                // /{}/getRegisteredTaskExecutors
+                path(
+                    PathMatchers.segment().slash("getRegisteredTaskExecutors"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getRegisteredTaskExecutors()))))
+                ),
+                // /{}/getBusyTaskExecutors
+                path(
+                    PathMatchers.segment().slash("getBusyTaskExecutors"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getBusyTaskExecutors()))))
+                ),
+                // /{}/getAvailableTaskExecutors
+                path(
+                    PathMatchers.segment().slash("getAvailableTaskExecutors"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getAvailableTaskExecutors()))))
+                ),
+                // /{}/getUnregisteredTaskExecutors
+                path(
+                    PathMatchers.segment().slash("getUnregisteredTaskExecutors"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getUnregisteredTaskExecutors()))))
+                ),
 
-            // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
-            path(
-                PathMatchers.segment().slash("taskExecutors"),
-                (clusterName) -> concat(
-                    path(
-                        PathMatchers.segment().slash("getTaskExecutorState"),
-                        (taskExecutorId) -> pathEndOrSingleSlash(() -> concat(
-                            // GET
-                            get(() -> getTaskExecutorState(getClusterID(clusterName), getTaskExecutorID(taskExecutorId)))
-                        ))
-                ))
-            )
-        ));
-  }
+                // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
+                pathPrefix(
+                    PathMatchers.segment().slash("taskExecutors"),
+                    (clusterName) ->
+                        path(
+                            PathMatchers.segment().slash("getTaskExecutorState"),
+                            (taskExecutorId) ->
+                                pathEndOrSingleSlash(() -> concat(get(() -> getTaskExecutorState(getClusterID(clusterName), getTaskExecutorID(taskExecutorId))))))
+                )
+            ));
 
-  private Route listClusters() {
-      return withFuture(gateway.listActiveClusters());
-  }
+        return result;
+    }
 
-  private Route getResourceOverview(ClusterID clusterID) {
-    CompletableFuture<ResourceCluster.ResourceOverview> resourceOverview =
-        gateway.getClusterFor(clusterID).resourceOverview();
-    return withFuture(resourceOverview);
-  }
+    private Route listClusters() {
+        return withFuture(gateway.listActiveClusters());
+    }
 
-  private Route getTaskExecutorState(ClusterID clusterID, TaskExecutorID taskExecutorID) {
-    log.info("GET /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState called", clusterID, taskExecutorID);
-    CompletableFuture<ResourceCluster.TaskExecutorStatus> statusOverview =
-        gateway.getClusterFor(clusterID).getTaskExecutorState(taskExecutorID);
-    return withFuture(statusOverview);
-  }
+    private Route getResourceOverview(ClusterID clusterID) {
+        CompletableFuture<ResourceCluster.ResourceOverview> resourceOverview =
+            gateway.getClusterFor(clusterID).resourceOverview();
+        return withFuture(resourceOverview);
+    }
 
-  private ClusterID getClusterID(String clusterName) {
-    return ClusterID.of(clusterName);
-  }
+    private Route getTaskExecutorState(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+        CompletableFuture<ResourceCluster.TaskExecutorStatus> statusOverview =
+            gateway.getClusterFor(clusterID).getTaskExecutorState(taskExecutorID);
+        return withFuture(statusOverview);
+    }
 
-  private TaskExecutorID getTaskExecutorID(String resourceName) {
-    return TaskExecutorID.of(resourceName);
-  }
+    private ClusterID getClusterID(String clusterName) {
+        return ClusterID.of(clusterName);
+    }
+
+    private TaskExecutorID getTaskExecutorID(String resourceName) {
+        return TaskExecutorID.of(resourceName);
+    }
 }
