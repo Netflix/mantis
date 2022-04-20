@@ -18,6 +18,9 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import akka.NotUsed;
 import akka.actor.ActorRef;
@@ -46,6 +49,7 @@ import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -94,10 +98,12 @@ public class JobClustersRouteTest extends RouteTestBase {
                                 new MantisJobStore(new SimpleCachedFileStorageProvider(true)),
                                 lifecycleEventPublisher),
                         "jobClustersManager");
+                MantisSchedulerFactory mantisSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
+                when(mantisSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
                 jobClustersManagerActor.tell(
                         new JobClusterManagerProto.JobClustersManagerInitialize(
-                                fakeScheduler, false), ActorRef.noSender());
+                                mantisSchedulerFactory, false), ActorRef.noSender());
 
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(

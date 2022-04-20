@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.master;
 
+import static org.apache.flink.configuration.GlobalConfiguration.loadConfiguration;
+
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
@@ -42,10 +44,12 @@ import io.mantisrx.master.events.StatusEventSubscriber;
 import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
 import io.mantisrx.master.events.WorkerRegistryV2;
+import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
 import io.mantisrx.master.zk.LeaderElector;
+import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
@@ -62,7 +66,10 @@ import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
+import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
@@ -74,10 +81,15 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.rpc.RpcService;
+import org.apache.flink.runtime.rpc.RpcSystem;
+import org.apache.flink.runtime.rpc.RpcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -143,6 +155,20 @@ public class MasterMain implements Service {
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
 
+            // Beginning of new stuff
+            Configuration configuration = loadConfiguration();
+
+            final RpcSystem rpcSystem =
+                MantisAkkaRpcSystemLoader.getInstance();
+            // the RPCService implementation will only be used for communicating with task executors but not for running a server itself.
+            // Thus, there's no need for any valid external and bind addresses.
+            final RpcService rpcService =
+                RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
+            final ResourceClusters resourceClusters =
+                ResourceClustersAkkaImpl.load(getConfig(), rpcService, system, mantisJobStore);
+
+            // end of new stuff
+
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
 
@@ -154,13 +180,16 @@ public class MasterMain implements Service {
                     getDescriptionJson(),
                     mesosDriverSupplier);
             schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
+
+            final MantisSchedulerFactory mantisSchedulerFactory =
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig());
             mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
 
             // initialize agents error monitor
             agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(schedulingService), ActorRef.noSender());
 
             final boolean loadJobsFromStoreOnInit = true;
-            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, schedulingService, loadJobsFromStoreOnInit);
+            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
 
             this.agentClusterOps = new AgentClusterOperationsImpl(storageProvider,
                     jobMessageRouter,

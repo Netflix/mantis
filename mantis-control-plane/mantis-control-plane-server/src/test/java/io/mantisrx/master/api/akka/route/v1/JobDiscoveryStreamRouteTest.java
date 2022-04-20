@@ -16,6 +16,10 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.http.javadsl.ConnectHttp;
@@ -42,6 +46,7 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -83,8 +88,10 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
                     new MantisJobStore(new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(true)), lifecycleEventPublisher), "jobClustersManager");
 
+                MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
-                jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeScheduler, false), ActorRef.noSender());
+                when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
+                jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
                 agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
                 agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
