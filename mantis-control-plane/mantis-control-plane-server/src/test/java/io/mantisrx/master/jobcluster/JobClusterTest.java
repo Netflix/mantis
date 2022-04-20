@@ -2790,7 +2790,7 @@ public class JobClusterTest {
             MantisScheduler schedulerMock = mock(MantisScheduler.class);
             MantisJobStore jobStoreMock = mock(MantisJobStore.class);
             final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(clusterName);
-            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, schedulerMock, eventPublisher));
+            ActorRef jobClusterActor = system.actorOf(props(clusterName, jobStoreMock, jobDfn -> schedulerMock, eventPublisher));
             jobClusterActor.tell(new JobClusterProto.InitializeJobClusterRequest(fakeJobCluster, user, probe.getRef()), probe.getRef());
             JobClusterProto.InitializeJobClusterResponse createResp = probe.expectMsgClass(JobClusterProto.InitializeJobClusterResponse.class);
             assertEquals(SUCCESS, createResp.responseCode);
