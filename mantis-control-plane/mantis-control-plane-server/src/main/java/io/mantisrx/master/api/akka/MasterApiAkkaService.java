@@ -59,6 +59,7 @@ import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -75,6 +76,7 @@ public class MasterApiAkkaService extends BaseService {
     private final MasterMonitor masterMonitor;
     private final MasterDescription masterDescription;
     private final ActorRef jobClustersManagerActor;
+    private final ResourceClusters resourceClusters;
     private final ActorRef statusEventBrokerActor;
     private final int port;
     private final IMantisStorageProvider storageProvider;
@@ -91,6 +93,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final MasterDescription masterDescription,
                                 final ActorRef jobClustersManagerActor,
                                 final ActorRef statusEventBrokerActor,
+                                final ResourceClusters resourceClusters,
                                 final int serverPort,
                                 final IMantisStorageProvider mantisStorageProvider,
                                 final MantisScheduler scheduler,
@@ -111,6 +114,7 @@ public class MasterApiAkkaService extends BaseService {
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
         this.statusEventBrokerActor = statusEventBrokerActor;
+        this.resourceClusters = resourceClusters;
         this.port = serverPort;
         this.storageProvider = mantisStorageProvider;
         this.scheduler = scheduler;
@@ -162,19 +166,20 @@ public class MasterApiAkkaService extends BaseService {
 
         final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
         return new MantisMasterRoute(leaderRedirectionFilter,
-                                     masterDescriptionRoute,
-                                     v0JobClusterRoute,
-                                     v0JobRoute,
-                                     v0JobDiscoveryRoute,
-                                     v0JobStatusRoute,
-                                     v0AgentClusterRoute,
-                                     v1JobClusterRoute,
-                                     v1JobsRoute,
-                                     v1AdminMasterRoute,
-                                     v1AgentClustersRoute,
-                                     v1JobDiscoveryStreamRoute,
-                                     v1LastSubmittedJobIdStreamRoute,
-                                     v1JobStatusStreamRoute);
+            masterDescriptionRoute,
+            v0JobClusterRoute,
+            v0JobRoute,
+            v0JobDiscoveryRoute,
+            v0JobStatusRoute,
+            v0AgentClusterRoute,
+            v1JobClusterRoute,
+            v1JobsRoute,
+            v1AdminMasterRoute,
+            v1AgentClustersRoute,
+            v1JobDiscoveryStreamRoute,
+            v1LastSubmittedJobIdStreamRoute,
+            v1JobStatusStreamRoute,
+            resourceClusters);
     }
 
     private void startAPIServer() {

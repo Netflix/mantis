@@ -83,6 +83,7 @@ import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
+import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import java.time.Duration;
@@ -244,6 +245,7 @@ public class MantisMasterAPI extends AllDirectives {
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
+        final ResourceClusters resourceClusters = mock(ResourceClusters.class);
 
         LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
         LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(masterDescription);
@@ -265,8 +267,8 @@ public class MantisMasterAPI extends AllDirectives {
                 v1AgentClustersRoute,
                 v1JobDiscoveryStreamRoute,
                 v1LastSubmittedJobIdStreamRoute,
-                v1JobStatusStreamRoute
-                );
+                v1JobStatusStreamRoute,
+                resourceClusters);
         final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                       .flow(system, materializer);
         final CompletionStage<ServerBinding> binding = http.bindAndHandle(

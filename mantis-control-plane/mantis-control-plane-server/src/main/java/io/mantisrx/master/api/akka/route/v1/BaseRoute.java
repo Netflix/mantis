@@ -39,6 +39,7 @@ import akka.japi.JavaPartialFunction;
 import akka.japi.pf.PFBuilder;
 import akka.pattern.AskTimeoutException;
 import com.netflix.spectator.api.BasicTag;
+import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -53,6 +54,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -109,7 +111,7 @@ abstract class BaseRoute extends AllDirectives {
 
     protected abstract Route constructRoutes();
 
-    protected Route createRoute(Function<Route, Route> routeFilter) {
+    public Route createRoute(Function<Route, Route> routeFilter) {
 
         final ExceptionHandler jsonExceptionHandler = ExceptionHandler
                 .newBuilder()
@@ -315,5 +317,12 @@ abstract class BaseRoute extends AllDirectives {
         } else {
             return Boolean.valueOf(val);
         }
+    }
+
+    protected  <T> Route withFuture(CompletableFuture<T> tFuture) {
+        return onComplete(tFuture,
+            t -> t.fold(
+                throwable -> complete(StatusCodes.INTERNAL_SERVER_ERROR, throwable, Jackson.marshaller()),
+                r -> complete(StatusCodes.OK, r, Jackson.marshaller())));
     }
 }
