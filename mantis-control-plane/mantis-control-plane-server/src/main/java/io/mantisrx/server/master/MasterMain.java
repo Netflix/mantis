@@ -211,13 +211,13 @@ public class MasterMain implements Service {
             if (this.config.isLocalMode()) {
                 leadershipManager.becomeLeader();
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                        config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             } else {
                 curatorService = new CuratorService(this.config, leadershipManager.getDescription());
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                        config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             }
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {

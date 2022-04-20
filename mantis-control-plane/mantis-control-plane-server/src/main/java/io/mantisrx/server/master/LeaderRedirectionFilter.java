@@ -88,6 +88,25 @@ public class LeaderRedirectionFilter extends AllDirectives {
                 return redirect(redirectUri, StatusCodes.FOUND);
             });
         }
+    }
 
+    public Route rejectIfNotLeader(final Route leaderRoute) {
+        MasterDescription latestMaster = masterMonitor.getLatestMaster();
+        if (!leadershipManager.isLeader() && !isLocalHost(latestMaster)) {
+            return extractUri(uri -> {
+                logger.info("not leader, returning 500 for {}", uri);
+                return complete(StatusCodes.INTERNAL_SERVER_ERROR, "this node is not leader");
+            });
+        } else {
+            if (leadershipManager.isReady()) {
+                return leaderRoute;
+            } else {
+                return extractUri(uri -> {
+                    logger.info("leader is not ready, returning 503 for {}", uri);
+                    api503MasterNotReady.increment();
+                    return complete(StatusCodes.SERVICE_UNAVAILABLE, "Mantis master awaiting to be ready");
+                });
+            }
+        }
     }
 }
