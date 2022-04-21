@@ -36,9 +36,4 @@ public class TaskExecutorID {
   public static TaskExecutorID of(String resourceId) {
       return new TaskExecutorID(resourceId);
   }
-
-  @Override
-  public String toString() {
-      return resourceId;
-  }
 }
