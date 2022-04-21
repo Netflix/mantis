@@ -213,7 +213,7 @@ public class MasterMain implements Service {
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
                        resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             } else {
-                curatorService = new CuratorService(this.config, leadershipManager.getDescription());
+                curatorService = new CuratorService(this.config);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,

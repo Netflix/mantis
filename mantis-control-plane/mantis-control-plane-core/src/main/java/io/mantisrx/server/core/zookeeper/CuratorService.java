@@ -22,7 +22,6 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
@@ -38,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * This {@link Service} implementation is responsible for managing the lifecycle of a {@link org.apache.curator.framework.CuratorFramework}
+ * This {@link Service} implementation is responsible for managing the lifecycle of a {@link io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework}
  * instance.
  */
 public class CuratorService extends BaseService {
@@ -48,12 +47,10 @@ public class CuratorService extends BaseService {
 
     private final CuratorFramework curator;
     private final ZookeeperMasterMonitor masterMonitor;
-    private final CoreConfiguration configs;
     private final Gauge isConnectedGauge;
 
-    public CuratorService(CoreConfiguration configs, MasterDescription initialMasterDescription) {
+    public CuratorService(CoreConfiguration configs) {
         super(false);
-        this.configs = configs;
         Metrics m = new Metrics.Builder()
                 .name(CuratorService.class.getCanonicalName())
                 .addGauge(isConnectedGaugeName)
@@ -70,8 +67,7 @@ public class CuratorService extends BaseService {
 
         masterMonitor = new ZookeeperMasterMonitor(
                 curator,
-                ZKPaths.makePath(configs.getZkRoot(), configs.getLeaderAnnouncementPath()),
-                initialMasterDescription);
+                ZKPaths.makePath(configs.getZkRoot(), configs.getLeaderAnnouncementPath()));
     }
 
     private void setupCuratorListener() {
@@ -93,10 +89,14 @@ public class CuratorService extends BaseService {
 
     @Override
     public void start() {
-        isConnectedGauge.set(0L);
-        setupCuratorListener();
-        curator.start();
-        masterMonitor.start();
+        try {
+            isConnectedGauge.set(0L);
+            setupCuratorListener();
+            curator.start();
+            masterMonitor.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

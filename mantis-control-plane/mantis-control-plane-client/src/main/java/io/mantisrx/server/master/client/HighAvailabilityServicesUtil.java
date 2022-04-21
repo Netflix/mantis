@@ -57,7 +57,7 @@ public class HighAvailabilityServicesUtil {
     private final AtomicInteger rmConnections = new AtomicInteger(0);
 
     public ZkHighAvailabilityServices(CoreConfiguration configuration) {
-      curatorService = new CuratorService(configuration, null);
+      curatorService = new CuratorService(configuration);
     }
 
     @Override
