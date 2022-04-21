@@ -56,7 +56,7 @@ public class TestGetMasterMonitor {
         final CountDownLatch latch = new CountDownLatch(5);
         StaticPropertiesConfigurationFactory configurationFactory = new StaticPropertiesConfigurationFactory(properties);
         CoreConfiguration config = configurationFactory.getConfig();
-        final CuratorService curatorService = new CuratorService(config, null);
+        final CuratorService curatorService = new CuratorService(config);
         MasterMonitor masterMonitor = curatorService.getMasterMonitor();
         masterMonitor.getMasterObservable()
                 .filter(new Func1<MasterDescription, Boolean>() {

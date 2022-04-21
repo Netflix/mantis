@@ -16,13 +16,14 @@
 
 package io.mantisrx.server.core.master;
 
-import io.mantisrx.server.core.json.DefaultObjectMapper;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
 import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,16 +43,17 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
     private final BehaviorSubject<MasterDescription> masterSubject;
     private final AtomicReference<MasterDescription> latestMaster = new AtomicReference<>();
     private final NodeCache nodeMonitor;
+    private final JsonSerializer jsonSerializer;
 
-    public ZookeeperMasterMonitor(CuratorFramework curator, String masterPath, MasterDescription initValue) {
+    public ZookeeperMasterMonitor(CuratorFramework curator, String masterPath) {
         this.curator = curator;
         this.masterPath = masterPath;
-        this.masterSubject = BehaviorSubject.create(initValue);
+        this.masterSubject = BehaviorSubject.create();
         this.nodeMonitor = new NodeCache(curator, masterPath);
-        this.latestMaster.set(initValue);
+        this.jsonSerializer = new JsonSerializer();
     }
 
-    public void start() {
+    public void start() throws Exception {
         nodeMonitor.getListenable().addListener(new NodeCacheListener() {
             @Override
             public void nodeChanged() throws Exception {
@@ -60,12 +62,21 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
         });
 
         try {
-            nodeMonitor.start();
+            nodeMonitor.start(true);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to start master node monitor: " + e.getMessage(), e);
         }
 
-        logger.info("The ZK master monitor is started");
+        byte[] initialValue = nodeMonitor.getCurrentData().getData();
+        onMasterNodeUpdated(initialValue);
+        logger.info("The ZK master monitor has started");
+    }
+
+    private void onMasterNodeUpdated(byte[] data) throws Exception {
+        MasterDescription description = jsonSerializer.fromJSON(Arrays.toString(data), MasterDescription.class);
+        logger.info("new master description = {}", description);
+        latestMaster.set(description);
+        masterSubject.onNext(description);
     }
 
     private void retrieveMaster() {
@@ -78,11 +89,7 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
                                     .inBackground(new BackgroundCallback() {
                                         @Override
                                         public void processResult(CuratorFramework client, CuratorEvent event) throws Exception {
-                                            MasterDescription description = DefaultObjectMapper.getInstance().readValue(event.getData(), MasterDescription.class);
-                                            logger.info("New master retrieved: " + description);
-                                            latestMaster.set(description);
-                                            masterSubject.onNext(description);
-
+                                            onMasterNodeUpdated(event.getData());
                                         }
                                     })
                                     .forPath(masterPath)
