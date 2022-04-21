@@ -16,6 +16,7 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
@@ -23,12 +24,16 @@ import lombok.Value;
  * ID of the task executor. Reason this is wrapped inside a type is to have strong typing when dealing
  * with different types of IDs within the system.
  */
-@RequiredArgsConstructor(staticName="of")
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Value
 public class TaskExecutorID {
   String resourceId;
 
   public static TaskExecutorID generate() {
     return new TaskExecutorID(UUID.randomUUID().toString());
+  }
+
+  public static TaskExecutorID of(String resourceId) {
+      return new TaskExecutorID(resourceId);
   }
 }

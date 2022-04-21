@@ -205,7 +205,7 @@ public class JobTestMigrationTests {
         }
 
         @Override
-        public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname) {
+        public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname, String hostID) {
             // TODO Auto-generated method stub
 
         }

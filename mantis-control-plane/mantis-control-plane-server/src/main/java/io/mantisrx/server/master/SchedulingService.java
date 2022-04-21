@@ -491,7 +491,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     }
 
     @Override
-    public void initializeRunningWorker(final ScheduleRequest request, String hostname) {
+    public void initializeRunningWorker(final ScheduleRequest request, String hostname, String hostID) {
         taskSchedulingService.initializeRunningTask(request, hostname);
     }
 

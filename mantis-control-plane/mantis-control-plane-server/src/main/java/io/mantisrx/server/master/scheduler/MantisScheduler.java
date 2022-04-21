@@ -75,7 +75,7 @@ public interface MantisScheduler {
      * @param scheduleRequest The scheduleRequest(worker) to mark as running
      * @param hostname        The name of the VM that the task is running on.
      */
-    void initializeRunningWorker(final ScheduleRequest scheduleRequest, final String hostname);
+    void initializeRunningWorker(final ScheduleRequest scheduleRequest, final String hostname, final String hostID);
 
     /**
      * Informs the scheduler that the offer has been revoked. Typically called by the Resource Manager

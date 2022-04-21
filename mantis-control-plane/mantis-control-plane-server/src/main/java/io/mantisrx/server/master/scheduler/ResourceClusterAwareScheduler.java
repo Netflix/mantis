@@ -63,10 +63,10 @@ public class ResourceClusterAwareScheduler implements MantisScheduler {
     }
 
     @Override
-    public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname) {
+    public void initializeRunningWorker(ScheduleRequest scheduleRequest, String hostname, String hostID) {
         log.info("initializeRunningWorker called for {} and {}", scheduleRequest, hostname);
         schedulerActor.tell(
-            new InitializeRunningWorkerRequestEvent(scheduleRequest, TaskExecutorID.of(hostname)),
+            new InitializeRunningWorkerRequestEvent(scheduleRequest, TaskExecutorID.of(hostID)),
             null);
     }
 
