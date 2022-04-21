@@ -121,16 +121,16 @@ public class WorkerPorts implements Serializable {
                 && isValidPort(sinkPort);
     }
 
+    @JsonIgnore
+    public int getNumberOfPorts() {
+        return ports.size();
+    }
+
     /**
      * A port with 0 is technically correct, but we disallow it because there would be an inconsistency between
      * what unused port the OS selects (some port number) and what this object's metadata holds (0).
      */
     private boolean isValidPort(int port) {
         return port > 0 && port <= 65535;
-    }
-
-    @JsonIgnore
-    public int getNumberOfPorts() {
-        return ports.size();
     }
 }
