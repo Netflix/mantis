@@ -55,8 +55,6 @@ ext.libraries = [
                 "org.apache.flink:flink-rpc-akka:${versions.flink}",
                 "org.apache.flink:flink-rpc-akka-loader:${versions.flink}",
         ],
-        hadoopCommon   : "org.apache.hadoop:hadoop-common:2.7.7",
-        hadoopS3       : "org.apache.hadoop:hadoop-aws:2.7.7",
         junit4         : [
                 "junit:junit:${versions.junit4}",
                 "junit:junit-dep:${versions.junit4}",
