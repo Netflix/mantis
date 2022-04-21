@@ -43,6 +43,8 @@ import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClus
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterStorageProvider;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import lombok.val;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -170,13 +172,17 @@ public class ResourceClustersHostManagerActorTests {
     }
 
     @Test
-    public void testProvisionSubmitError() {
+    public void testProvisionSubmitError() throws InterruptedException {
         TestKit probe = new TestKit(system);
+        CountDownLatch latch = new CountDownLatch(1);
+
         IResourceClusterProvider resProvider = mock(IResourceClusterProvider.class);
         IResourceClusterResponseHandler responseHandler = mock(IResourceClusterResponseHandler.class);
         when(resProvider.provisionClusterIfNotPresent(any())).thenReturn(
-                CompletableFuture.supplyAsync(() -> { throw new RuntimeException("test err msg"); }
-                ));
+                CompletableFuture.supplyAsync(() -> {
+                    latch.countDown();
+                    throw new RuntimeException("test err msg");
+                }));
 
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
@@ -198,9 +204,11 @@ public class ResourceClustersHostManagerActorTests {
         GetResourceClusterSpecRequest getReq =
                 GetResourceClusterSpecRequest.builder().id(request.getClusterId()).build();
         resourceClusterActor.tell(getReq, probe.getRef());
-        GetResourceClusterResponse getResp = probe.expectMsgClass(GetResourceClusterResponse .class);
+        GetResourceClusterResponse getResp = probe.expectMsgClass(GetResourceClusterResponse.class);
         assertEquals(request.getClusterSpec(), getResp.getClusterSpec());
+        assertEquals(ResponseCode.SUCCESS, getResp.responseCode);
 
+        latch.await(3, TimeUnit.SECONDS);
         verify(resProvider).provisionClusterIfNotPresent(request);
         verify(responseHandler).handleProvisionResponse(argThat(r ->
                 r.getError().getCause().getMessage()
