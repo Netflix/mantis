@@ -610,7 +610,7 @@ public class JobClusterManagerTest {
 
 
         // 1 running worker
-        verify(schedulerMock, timeout(100_1000).times(1)).initializeRunningWorker(any(), any());
+        verify(schedulerMock, timeout(100_1000).times(1)).initializeRunningWorker(any(), any(), any());
 
         // 2 worker schedule requests
         verify(schedulerMock, timeout(100_000).times(4)).scheduleWorker(any());

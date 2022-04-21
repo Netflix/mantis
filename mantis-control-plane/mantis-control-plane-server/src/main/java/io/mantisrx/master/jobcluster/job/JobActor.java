@@ -1439,7 +1439,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                     wm.getWorkerIndex(), wm.getWorkerNumber());
                         }
 
-                        scheduler.initializeRunningWorker(scheduleRequest, wm.getSlave());
+                        scheduler.initializeRunningWorker(scheduleRequest, wm.getSlave(), wm.getSlaveID());
                         LOGGER.debug("Initialized running worker {}", wm.getSlave());
                     } else if (wm.getState().equals(WorkerState.Accepted)) {
                         queueTask(wm);
