@@ -23,6 +23,7 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.testkit.JUnitRouteTest;
 import akka.http.javadsl.testkit.TestRoute;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -49,13 +50,14 @@ public class ResourceClusterReadRouteTest extends JUnitRouteTest {
             new WorkerPorts(1, 2, 3, 4, 5),
             new MachineDefinition(1, 1, 1, 1, 1));
         TaskExecutorStatus status =
-            new TaskExecutorStatus(registration, true, true, true, null, Instant.now());
+            new TaskExecutorStatus(registration, true, true, true, null, Instant.now().toEpochMilli());
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
         when(resourceCluster.getTaskExecutorState(TaskExecutorID.of("myExecutor")))
             .thenReturn(CompletableFuture.completedFuture(status));
         when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
 
         testRoute.run(HttpRequest.GET("/api/v1/resourceClusters/myCluster/taskExecutors/myExecutor/getTaskExecutorState"))
-            .assertStatusCode(200);
+            .assertStatusCode(200)
+            .assertEntityAs(Jackson.unmarshaller(TaskExecutorStatus.class), status);
     }
 }

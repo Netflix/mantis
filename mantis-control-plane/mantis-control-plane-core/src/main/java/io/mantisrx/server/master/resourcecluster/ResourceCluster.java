@@ -20,7 +20,6 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
@@ -91,11 +90,11 @@ public interface ResourceCluster extends ResourceClusterGateway {
     @Value
     class TaskExecutorStatus {
         TaskExecutorRegistration registration;
-        boolean isRegistered;
-        boolean isRunningTask;
-        boolean isAssignedTask;
+        boolean registered;
+        boolean runningTask;
+        boolean assignedTask;
         @Nullable
         WorkerId workerId;
-        Instant lastHeartbeat;
+        long lastHeartbeatInMs;
     }
 }
