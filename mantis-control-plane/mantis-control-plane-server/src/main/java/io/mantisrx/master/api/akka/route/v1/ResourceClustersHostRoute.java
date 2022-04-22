@@ -30,12 +30,14 @@ import akka.http.javadsl.server.RouteResult;
 import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.Endpoints;
+import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.HttpVerb;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import java.util.concurrent.CompletionStage;
@@ -44,19 +46,25 @@ import lombok.extern.slf4j.Slf4j;
 /***
  * ResourceClustersRoute
  *  Defines the following end points:
- *  api/v1/resourceClusters                               (GET)
- *  api/v1/resourceClusters/{}                             (GET, POST, PUT, DELETE)
+ *  api/v1/resourceClusters                               (GET, POST)
+ *  api/v1/resourceClusters/{}                            (GET, DELETE)
+ *  api/v1/resourceClusters/{}/actions/scaleSku           (POST)
+ *
+ *  TODO: 
+ *      - Support update cluster with version support.
+ *      - Full delete/un-provision cluster API.
+ *      - Integrate with {@link ResourceClustersActor) to disable/enable cluster.
  */
 @Slf4j
-public class ResourceClustersRoute extends BaseRoute {
+public class ResourceClustersHostRoute extends BaseRoute {
     private static final PathMatcher0 RESOURCE_CLUSTERS_API_PREFIX =
             segment("api").slash("v1").slash("resourceClusters");
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
 
-    public ResourceClustersRoute(final ResourceClusterRouteHandler resourceClusterRouteHandler,
-            final ActorSystem actorSystem) {
+    public ResourceClustersHostRoute(final ResourceClusterRouteHandler resourceClusterRouteHandler,
+                                     final ActorSystem actorSystem) {
         this.resourceClusterRouteHandler = resourceClusterRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
@@ -85,14 +93,11 @@ public class ResourceClustersRoute extends BaseRoute {
                                 (clusterName) -> pathEndOrSingleSlash(() -> concat(
 
                                         // GET
-                                        get(() -> getResourceClusterInstanceRoute(clusterName)))
+                                        get(() -> getResourceClusterInstanceRoute(clusterName)),
 
-                                        // PUT
-                                        // put(() -> putResourceClusterInstanceRoute(clusterName)))
-
-                                        // DELETE
-                                        // delete(() -> deleteResourceClusterInstanceRoute(clusterName)))
-                                )
+                                        // Delete
+                                        delete(() -> deleteResourceClusterInstanceRoute(clusterName))
+                                ))
                         ),
 
                         // api/v1/resourceClusters/{}/actions/scaleSku
@@ -105,6 +110,17 @@ public class ResourceClustersRoute extends BaseRoute {
                                 ))
                         )
                 ));
+    }
+
+    private Route deleteResourceClusterInstanceRoute(String clusterId) {
+        log.info("DELETE api/v1/resourceClusters/{}", clusterId);
+        return completeAsync(
+            this.resourceClusterRouteHandler.delete(clusterId),
+            resp -> completeOK(
+                resp,
+                Jackson.marshaller()),
+            Endpoints.RESOURCE_CLUSTERS,
+            HttpVerb.DELETE);
     }
 
     private Route scaleClusterSku(String clusterName) {
@@ -127,7 +143,7 @@ public class ResourceClustersRoute extends BaseRoute {
     }
 
     private Route getResourceClusterInstanceRoute(String clusterId) {
-        log.trace("GET /api/v1/resourceClusters/%s called", clusterId);
+        log.info("GET /api/v1/resourceClusters/{} called", clusterId);
         return parameterMap(param ->
                 alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                         uri -> completeAsync(
@@ -142,10 +158,9 @@ public class ResourceClustersRoute extends BaseRoute {
 
     private Route postResourceClustersRoute() {
         return entity(Jackson.unmarshaller(ProvisionResourceClusterRequest.class), resClusterSpec -> {
-            log.info("POST /api/v1/resourceClusters called {}", resClusterSpec);
+            log.info("POST /api/v1/resourceClusters called: {}", resClusterSpec);
             final CompletionStage<GetResourceClusterResponse> response =
-                    this.resourceClusterRouteHandler
-                            .create(resClusterSpec);
+                    this.resourceClusterRouteHandler.create(resClusterSpec);
 
             return completeAsync(
                     response,
@@ -164,7 +179,6 @@ public class ResourceClustersRoute extends BaseRoute {
         return parameterMap(param ->
                 alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                         uri -> {
-                            log.debug("GET all resource clusters");
                             return completeAsync(
                                     this.resourceClusterRouteHandler.get(ListResourceClusterRequest.builder().build()),
                                     resp -> completeOK(

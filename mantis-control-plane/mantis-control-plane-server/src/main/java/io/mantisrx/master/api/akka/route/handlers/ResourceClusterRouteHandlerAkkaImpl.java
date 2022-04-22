@@ -22,6 +22,8 @@ import akka.actor.ActorRef;
 import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
@@ -35,25 +37,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRouteHandler {
 
-    private final ActorRef resourceClustersManagerActor;
+    private final ActorRef resourceClustersHostManagerActor;
     private final Duration timeout;
 
-    public ResourceClusterRouteHandlerAkkaImpl(ActorRef resourceClustersManagerActor) {
-        this.resourceClustersManagerActor = resourceClustersManagerActor;
-        long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
+    public ResourceClusterRouteHandlerAkkaImpl(ActorRef resourceClustersHostManagerActor) {
+        this.resourceClustersHostManagerActor = resourceClustersHostManagerActor;
+        long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs())
+            .orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);
-        // Metrics m = new Metrics.Builder()
-        //         .id("JobClusterRouteHandler")
-        //         .addCounter("allJobClustersGET")
-        //         .build();
-        // Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        // allJobClustersGET = metrics.getCounter("allJobClustersGET");
     }
 
     @Override
     public CompletionStage<ListResourceClustersResponse> get(ListResourceClusterRequest request) {
         CompletionStage<ListResourceClustersResponse> response =
-                ask(this.resourceClustersManagerActor, request, timeout)
+                ask(this.resourceClustersHostManagerActor, request, timeout)
                         .thenApply(ListResourceClustersResponse.class::cast);
         return response;
     }
@@ -62,15 +59,25 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
     public CompletionStage<GetResourceClusterResponse> create(
             ProvisionResourceClusterRequest request) {
         CompletionStage<GetResourceClusterResponse> response =
-                ask(this.resourceClustersManagerActor, request, timeout)
+                ask(this.resourceClustersHostManagerActor, request, timeout)
                         .thenApply(GetResourceClusterResponse.class::cast);
+        return response;
+    }
+
+    @Override
+    public CompletionStage<DeleteResourceClusterResponse> delete(String clusterId) {
+        CompletionStage<DeleteResourceClusterResponse> response =
+            ask(this.resourceClustersHostManagerActor,
+                DeleteResourceClusterRequest.builder().clusterId(clusterId).build(),
+                timeout)
+                    .thenApply(DeleteResourceClusterResponse.class::cast);
         return response;
     }
 
     @Override
     public CompletionStage<GetResourceClusterResponse> get(GetResourceClusterSpecRequest request) {
         CompletionStage<GetResourceClusterResponse> response =
-                ask(this.resourceClustersManagerActor, request, timeout)
+                ask(this.resourceClustersHostManagerActor, request, timeout)
                         .thenApply(GetResourceClusterResponse.class::cast);
         return response;
     }
@@ -78,7 +85,7 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
     @Override
     public CompletionStage<ScaleResourceResponse> scale(ScaleResourceRequest request) {
         CompletionStage<ScaleResourceResponse> response =
-                ask(this.resourceClustersManagerActor, request, timeout)
+                ask(this.resourceClustersHostManagerActor, request, timeout)
                         .thenApply(ScaleResourceResponse.class::cast);
         return response;
     }

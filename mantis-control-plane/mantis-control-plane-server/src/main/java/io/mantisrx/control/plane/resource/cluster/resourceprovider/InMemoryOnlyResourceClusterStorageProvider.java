@@ -36,6 +36,12 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     }
 
     @Override
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+        this.clusters.remove(clusterId);
+        return getRegisteredResourceClustersWritable();
+    }
+
+    @Override
     public CompletionStage<RegisteredResourceClustersWritable> getRegisteredResourceClustersWritable() {
         RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder builder =
                 RegisteredResourceClustersWritable.builder();

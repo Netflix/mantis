@@ -16,6 +16,7 @@
 
 package io.mantisrx.control.plane.resource.cluster.proto;
 
+import io.mantisrx.master.jobcluster.proto.BaseRequest;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import java.util.List;
 import lombok.Builder;
@@ -25,7 +26,7 @@ import lombok.Value;
 public class ResourceClusterAPIProto {
 
     @Value
-    public static final class ListResourceClustersResponse extends BaseResponse {
+    public static class ListResourceClustersResponse extends BaseResponse {
 
         @Singular
         List<RegisteredResourceCluster> registeredResourceClusters;
@@ -49,7 +50,7 @@ public class ResourceClusterAPIProto {
     }
 
     @Value
-    public static final class GetResourceClusterResponse extends BaseResponse {
+    public static class GetResourceClusterResponse extends BaseResponse {
 
         MantisResourceClusterSpec clusterSpec;
 
@@ -62,5 +63,22 @@ public class ResourceClusterAPIProto {
             super(requestId, responseCode, message);
             this.clusterSpec = clusterSpec;
         }
+    }
+
+    @Value
+    public static class DeleteResourceClusterResponse extends BaseResponse {
+        @Builder
+        public DeleteResourceClusterResponse(
+            final long requestId,
+            final ResponseCode responseCode,
+            final String message) {
+            super(requestId, responseCode, message);
+        }
+    }
+
+    @Builder
+    @Value
+    public static class DeleteResourceClusterRequest {
+        String clusterId;
     }
 }

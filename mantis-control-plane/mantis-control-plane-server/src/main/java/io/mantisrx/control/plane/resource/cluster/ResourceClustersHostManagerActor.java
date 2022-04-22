@@ -23,6 +23,8 @@ import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
@@ -79,7 +81,30 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
                 .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
                 .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
+                .match(DeleteResourceClusterRequest.class, this::onDeleteResourceCluster)
                 .build();
+    }
+
+    private void onDeleteResourceCluster(DeleteResourceClusterRequest req) {
+        /**
+         * Proper cluster deletion requires handling various cleanups e.g.:
+         * * Migrate existing jobs.
+         * * Un-provision cluster resources (nodes, network, storage e.g.).
+         * * Update internal tracking state and persistent data.
+         * For now this API will only serve the persistence layer update.
+         */
+
+        pipe(this.resourceClusterStorageProvider.deregisterCluster(req.getClusterId())
+                .thenApply(clustersW ->
+                    DeleteResourceClusterResponse.builder()
+                        .responseCode(ResponseCode.SUCCESS)
+                        .build())
+                .exceptionally(err ->
+                    DeleteResourceClusterResponse.builder()
+                        .message(err.getMessage())
+                        .responseCode(ResponseCode.SERVER_ERROR).build()),
+            getContext().dispatcher())
+            .to(getSender());
     }
 
     private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {

@@ -57,7 +57,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 @Slf4j
-public class ResourceClustersRouteTest extends RouteTestBase {
+public class ResourceClustersHostRouteTest extends RouteTestBase {
     private static Thread t;
     private static final int SERVER_PORT = 8200;
     private static CompletionStage<ServerBinding> binding;
@@ -65,7 +65,7 @@ public class ResourceClustersRouteTest extends RouteTestBase {
     private static final UnitTestResourceProviderAdapter resourceProviderAdapter =
             new UnitTestResourceProviderAdapter();
 
-    ResourceClustersRouteTest() {
+    ResourceClustersHostRouteTest() {
         super("ResourceClustersRouteTest", SERVER_PORT);
     }
 
@@ -86,7 +86,7 @@ public class ResourceClustersRouteTest extends RouteTestBase {
                 final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
                         resourceClustersHostManagerActor);
 
-                final ResourceClustersRoute app = new ResourceClustersRoute(resourceClusterRouteHandler, system);
+                final ResourceClustersHostRoute app = new ResourceClustersHostRoute(resourceClusterRouteHandler, system);
                 log.info("starting test server on port {}", SERVER_PORT);
                 latch.countDown();
                 binding = http
@@ -174,6 +174,32 @@ public class ResourceClustersRouteTest extends RouteTestBase {
                     assertEquals("Prod", node.get("envType").asText());
                     assertEquals("11", node.get("desireSize").asText());
                 }));
+    }
+
+    @Test(dependsOnMethods = {"scaleClusterSpec"})
+    public void deregisterClusterSpec() throws InterruptedException {
+        testDelete(
+            getResourceClusterEndpoint(CLUSTER_ID),
+            StatusCodes.OK,
+            resp -> System.out.println("delete res: " + resp));
+    }
+
+    @Test(dependsOnMethods = {"deregisterClusterSpec"})
+    public void getClustersList3() throws InterruptedException {
+        testGet(
+            getResourceClusterEndpoint(),
+            StatusCodes.OK,
+            resp -> compareClusterListPayload(resp, node -> {
+                assertEquals(0, node.size());
+            }));
+    }
+
+    @Test(dependsOnMethods = {"deregisterClusterSpec"})
+    public void getClusterSpecErr() throws InterruptedException {
+        testGet(
+            getResourceClusterEndpoint("err_id"),
+            StatusCodes.NOT_FOUND,
+            resp -> System.out.println(resp));
     }
 
     final String getResourceClusterEndpoint() {

@@ -19,6 +19,7 @@ package io.mantisrx.master.api.akka.route.handlers;
 import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
@@ -29,6 +30,8 @@ public interface ResourceClusterRouteHandler {
     CompletionStage<ListResourceClustersResponse> get(final ListResourceClusterRequest request);
 
     CompletionStage<GetResourceClusterResponse> create(final ProvisionResourceClusterRequest request);
+
+    CompletionStage<DeleteResourceClusterResponse> delete(final String clusterId);
 
     CompletionStage<GetResourceClusterResponse> get(final GetResourceClusterSpecRequest request);
 

@@ -30,6 +30,8 @@ public interface ResourceClusterStorageProvider {
      */
     CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec);
 
+    CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId);
+
     CompletionStage<RegisteredResourceClustersWritable> getRegisteredResourceClustersWritable();
 
     CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id);

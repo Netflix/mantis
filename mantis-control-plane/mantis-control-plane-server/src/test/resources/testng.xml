@@ -77,7 +77,7 @@
 
     <test name="ResourceClusterRouteTest" >
         <classes>
-            <class name="io.mantisrx.master.api.akka.route.v1.ResourceClustersRouteTest" />
+            <class name="io.mantisrx.master.api.akka.route.v1.ResourceClustersHostRouteTest" />
         </classes>
     </test>
 </suite>
