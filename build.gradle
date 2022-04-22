@@ -66,7 +66,7 @@ ext.libraries = [
                 "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",
                 "org.junit.jupiter:junit-jupiter-params:${versions.junit5}",
         ],
-        mantisShaded   : "io.mantisrx:mantis-shaded:1.+",
+        mantisShaded   : "io.mantisrx:mantis-shaded:2.0.0-rc.1",
         mockitoAll     : "org.mockito:mockito-all:${versions.mockito}",
         mockitoCore    : "org.mockito:mockito-core:${versions.mockito}",
         mockitoCore3   : "org.mockito:mockito-core:${versions.mockito3}",
