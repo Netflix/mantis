@@ -22,12 +22,8 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JsonSerializer {
-    private static final Logger logger = LoggerFactory.getLogger(JsonSerializer.class);
-
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)

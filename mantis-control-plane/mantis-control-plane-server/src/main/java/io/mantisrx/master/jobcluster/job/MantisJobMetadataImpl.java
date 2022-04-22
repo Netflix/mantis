@@ -88,6 +88,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     public String getClusterName() {
         return this.jobDefinition.getName();
     }
+    @JsonIgnore
     @Override
     public Instant getSubmittedAtInstant() {
         return Instant.ofEpochMilli(submittedAt);
