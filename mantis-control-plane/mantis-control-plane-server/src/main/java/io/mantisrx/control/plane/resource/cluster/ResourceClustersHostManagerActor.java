@@ -29,9 +29,9 @@ import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;

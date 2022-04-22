@@ -27,7 +27,6 @@ import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable;
-import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable.ClusterRegistration;
 import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
 import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;

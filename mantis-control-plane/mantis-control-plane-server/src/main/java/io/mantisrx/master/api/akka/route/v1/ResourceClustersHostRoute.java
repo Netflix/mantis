@@ -30,7 +30,6 @@ import akka.http.javadsl.server.RouteResult;
 import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
@@ -50,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  *  api/v1/resourceClusters/{}                            (GET, DELETE)
  *  api/v1/resourceClusters/{}/actions/scaleSku           (POST)
  *
- *  TODO: 
+ *  TODO:
  *      - Support update cluster with version support.
  *      - Full delete/un-provision cluster API.
  *      - Integrate with {@link ResourceClustersActor) to disable/enable cluster.

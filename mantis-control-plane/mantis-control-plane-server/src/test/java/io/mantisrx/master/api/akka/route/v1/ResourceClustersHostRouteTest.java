@@ -33,10 +33,10 @@ import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceCluster
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.NoopResourceClusterResponseHandler;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandlerAkkaImpl;

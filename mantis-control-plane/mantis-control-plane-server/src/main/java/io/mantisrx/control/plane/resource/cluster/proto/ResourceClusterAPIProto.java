@@ -16,7 +16,6 @@
 
 package io.mantisrx.control.plane.resource.cluster.proto;
 
-import io.mantisrx.master.jobcluster.proto.BaseRequest;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import java.util.List;
 import lombok.Builder;
