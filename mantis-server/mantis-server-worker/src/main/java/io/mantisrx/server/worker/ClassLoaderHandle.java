@@ -26,7 +26,7 @@ import org.apache.flink.util.UserCodeClassLoader;
 /**
  * Handle to retrieve a user code class loader for the associated job.
  */
-interface ClassLoaderHandle extends Closeable {
+public interface ClassLoaderHandle extends Closeable {
 
     /**
      * Gets or resolves the user code class loader for the associated job.
