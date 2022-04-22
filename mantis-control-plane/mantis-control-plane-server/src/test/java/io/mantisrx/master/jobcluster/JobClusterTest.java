@@ -135,6 +135,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1436,6 +1437,10 @@ public class JobClusterTest {
     }
 
 
+    /**
+     * {@see <a href="https://github.com/Netflix/mantis/issues/195">Github issue</a> for more context}
+     */
+    @Ignore
     @Test
     public void testCronTriggersSLAToKillOld() {
         TestKit probe = new TestKit(system);
