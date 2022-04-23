@@ -198,8 +198,9 @@ public class MasterMain implements Service {
                     ConfigurationProvider.getConfig().getActiveSlaveAttributeName());
 
             // start serving metrics
-            if (config.getMasterMetricsPort() > 0)
+            if (config.getMasterMetricsPort() > 0) {
                 new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap()).start();
+            }
             new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
                     new HashMap<>()).start();
 
