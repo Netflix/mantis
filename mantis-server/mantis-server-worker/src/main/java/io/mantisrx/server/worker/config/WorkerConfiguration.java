@@ -114,7 +114,4 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Config("mantis.taskexecutor.blob-store.local-cache")
     @DefaultNull
     File getLocalStorageDir();
-
-    @Config("mantis.taskexecutor.blob-store.runtime-storage-dir")
-    URI getRuntimeArtifactDir();
 }
