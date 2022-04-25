@@ -17,13 +17,13 @@
 package io.mantisrx.server.core.master;
 
 import io.mantisrx.common.JsonSerializer;
+import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
 import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +73,8 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
     }
 
     private void onMasterNodeUpdated(byte[] data) throws Exception {
-        MasterDescription description = jsonSerializer.fromJSON(Arrays.toString(data), MasterDescription.class);
+        logger.info("value was {}", new String(data));
+        MasterDescription description = DefaultObjectMapper.getInstance().readValue(data, MasterDescription.class);
         logger.info("new master description = {}", description);
         latestMaster.set(description);
         masterSubject.onNext(description);
