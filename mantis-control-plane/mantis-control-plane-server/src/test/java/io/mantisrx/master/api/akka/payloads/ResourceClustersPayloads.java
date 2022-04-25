@@ -16,11 +16,6 @@
 
 package io.mantisrx.master.api.akka.payloads;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 public class ResourceClustersPayloads {
     public static final String CLUSTER_ID = "mantisResourceClusterUT1";
