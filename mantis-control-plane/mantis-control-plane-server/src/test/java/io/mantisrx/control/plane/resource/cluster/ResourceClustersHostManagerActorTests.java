@@ -38,9 +38,9 @@ import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceCluster
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterResponseHandler;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterStorageProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterResponseHandler;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -73,8 +73,8 @@ public class ResourceClustersHostManagerActorTests {
     @Test
     public void testProvisionAndGetResourceCluster() {
         TestKit probe = new TestKit(system);
-        IResourceClusterProvider resProvider = mock(IResourceClusterProvider.class);
-        IResourceClusterResponseHandler responseHandler = mock(IResourceClusterResponseHandler.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
         ResourceClusterProvisionSubmissionResponse provisionResponse =
                 ResourceClusterProvisionSubmissionResponse.builder().response("123").build();
         when(resProvider.provisionClusterIfNotPresent(any())).thenReturn(CompletableFuture.completedFuture(
@@ -138,9 +138,9 @@ public class ResourceClustersHostManagerActorTests {
     @Test
     public void testProvisionPersisError() {
         TestKit probe = new TestKit(system);
-        IResourceClusterStorageProvider resStorageProvider = mock(IResourceClusterStorageProvider.class);
-        IResourceClusterProvider resProvider = mock(IResourceClusterProvider.class);
-        IResourceClusterResponseHandler responseHandler = mock(IResourceClusterResponseHandler.class);
+        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
 
         ResourceClusterProvisionSubmissionResponse provisionResponse =
                 ResourceClusterProvisionSubmissionResponse.builder().response("123").build();
@@ -176,8 +176,8 @@ public class ResourceClustersHostManagerActorTests {
         TestKit probe = new TestKit(system);
         CountDownLatch latch = new CountDownLatch(1);
 
-        IResourceClusterProvider resProvider = mock(IResourceClusterProvider.class);
-        IResourceClusterResponseHandler responseHandler = mock(IResourceClusterResponseHandler.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
         when(resProvider.provisionClusterIfNotPresent(any())).thenReturn(
                 CompletableFuture.supplyAsync(() -> {
                     latch.countDown();

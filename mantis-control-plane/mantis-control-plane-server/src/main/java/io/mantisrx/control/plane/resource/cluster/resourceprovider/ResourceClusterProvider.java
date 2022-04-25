@@ -26,7 +26,7 @@ import java.util.concurrent.CompletionStage;
  * This interface provides the API to connect resource cluster management actor to actual
  * implementations of different resource cluster clients e.g. k8s.
  */
-public interface IResourceClusterProvider {
+public interface ResourceClusterProvider {
     /**
     * Provision a new resource cluster using the given spec. This operation should be idempotent.
     * The returned CompletionStage instance is to indicate whether the provision has been
@@ -44,5 +44,5 @@ public interface IResourceClusterProvider {
     */
     CompletionStage<ScaleResourceResponse> scaleResource(ScaleResourceRequest scaleRequest);
 
-    IResourceClusterResponseHandler getResponseHandler();
+    ResourceClusterResponseHandler getResponseHandler();
 }

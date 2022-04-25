@@ -202,6 +202,12 @@ public class SimpleFileResourceStorageProviderTests {
         ResourceClusterSpecWritable specResp2 = clusterSpecFut2.toCompletableFuture().get();
 
         assertEquals(specWritable2, specResp2);
+
+        CompletionStage<RegisteredResourceClustersWritable> deregisterFut = prov.deregisterCluster(clusterId2);
+        RegisteredResourceClustersWritable resClusters = deregisterFut.toCompletableFuture().get();
+
+        assertEquals(1, resClusters.getClusters().size());
+        assertTrue(resClusters.getClusters().containsKey(clusterId));
     }
 
     private static void deleteFiles() throws IOException {

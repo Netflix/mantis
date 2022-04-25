@@ -20,7 +20,6 @@ import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterSpe
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
 
 /**
@@ -29,13 +28,10 @@ import lombok.Value;
 @Value
 @Builder
 public class ResourceClusterSpecWritable {
-    @NonNull
     String version;
 
-    @NonNull
     String id;
 
-    @NonNull
     MantisResourceClusterSpec clusterSpec;
 
     /** [Note] The @JsonCreator + @JasonProperty is needed when using this class with mixed shaded/non-shaded Jackson.

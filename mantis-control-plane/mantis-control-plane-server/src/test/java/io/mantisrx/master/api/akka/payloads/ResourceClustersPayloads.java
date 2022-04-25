@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.resourceprovider;
+package io.mantisrx.master.api.akka.payloads;
 
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 
-/**
-* Callback handler for {@link IResouceClusterProvider} responses.
-*/
-public interface IResourceClusterResponseHandler {
-    void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp);
+public class ResourceClustersPayloads {
+    public static final String CLUSTER_ID = "mantisResourceClusterUT1";
+
+    public static final String RESOURCE_CLUSTER_CREATE =
+        PayloadUtils.getStringFromResource("testpayloads/ResourceClusterCreate.json");
+
+    public static final String RESOURCE_CLUSTER_SKU_SCALE = "{\"clusterId\":\"mantisResourceClusterUT1\","
+            + "\"skuId\":\"small\",\"region\":\"us-east-1\",\"envType\":\"Prod\",\"desireSize\":11}\n";
 }

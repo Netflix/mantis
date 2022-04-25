@@ -61,6 +61,8 @@ public class HttpRequestMetrics {
         public static final String JOB_DISCOVERY_STREAM = "api.v1.jobDiscoveryStream.instance";
         public static final String LAST_SUBMITTED_JOB_ID_STREAM = "api.v1.lastSubmittedJobIdStream.instance";
 
+        public static final String RESOURCE_CLUSTERS = "api.v1.resourceClusters";
+
         private static String[] endpoints = new String[]{
                 JOB_CLUSTERS,
                 JOB_CLUSTER_INSTANCE,
@@ -88,7 +90,8 @@ public class HttpRequestMetrics {
                 AGENT_CLUSTERS_AUTO_SCALE_POLICY,
                 JOB_STATUS_STREAM,
                 JOB_DISCOVERY_STREAM,
-                LAST_SUBMITTED_JOB_ID_STREAM
+                LAST_SUBMITTED_JOB_ID_STREAM,
+                RESOURCE_CLUSTERS
         };
 
         private static Set<String> endpointSet = Sets.newHashSet(endpoints);

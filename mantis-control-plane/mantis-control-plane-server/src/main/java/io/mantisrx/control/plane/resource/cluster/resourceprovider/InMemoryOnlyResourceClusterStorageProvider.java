@@ -26,13 +26,19 @@ import java.util.concurrent.CompletionStage;
 /**
  * [Test only] Store resource storage data in memroy only for testing.
  */
-public class InMemoryOnlyResourceClusterStorageProvider implements IResourceClusterStorageProvider {
+public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
     Map<String, ResourceClusterSpecWritable> clusters = new HashMap<>();
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {
         this.clusters.put(spec.getId(), spec);
         return CompletableFuture.completedFuture(spec);
+    }
+
+    @Override
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+        this.clusters.remove(clusterId);
+        return getRegisteredResourceClustersWritable();
     }
 
     @Override

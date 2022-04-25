@@ -23,13 +23,15 @@ import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
 import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
+import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.IResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
@@ -47,7 +49,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
     @VisibleForTesting
     static Props props(
-            final IResourceClusterProvider resourceClusterProvider) {
+            final ResourceClusterProvider resourceClusterProvider) {
         return Props.create(
                 ResourceClustersHostManagerActor.class,
                 resourceClusterProvider,
@@ -55,18 +57,18 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     }
 
     public static Props props(
-            final IResourceClusterProvider resourceClusterProvider,
-            final IResourceClusterStorageProvider resourceStorageProvider) {
+            final ResourceClusterProvider resourceClusterProvider,
+            final ResourceClusterStorageProvider resourceStorageProvider) {
         // TODO(andyz): investigate atlas metered-mailbox.
         return Props.create(ResourceClustersHostManagerActor.class, resourceClusterProvider, resourceStorageProvider);
     }
 
-    private final IResourceClusterProvider resourceClusterProvider;
-    private final IResourceClusterStorageProvider resourceClusterStorageProvider;
+    private final ResourceClusterProvider resourceClusterProvider;
+    private final ResourceClusterStorageProvider resourceClusterStorageProvider;
 
     public ResourceClustersHostManagerActor(
-            final IResourceClusterProvider resourceClusterProvider,
-            final IResourceClusterStorageProvider resourceStorageProvider) {
+            final ResourceClusterProvider resourceClusterProvider,
+            final ResourceClusterStorageProvider resourceStorageProvider) {
         this.resourceClusterProvider = resourceClusterProvider;
         this.resourceClusterStorageProvider = resourceStorageProvider;
     }
@@ -79,7 +81,30 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
                 .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
                 .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
+                .match(DeleteResourceClusterRequest.class, this::onDeleteResourceCluster)
                 .build();
+    }
+
+    private void onDeleteResourceCluster(DeleteResourceClusterRequest req) {
+        /**
+         * Proper cluster deletion requires handling various cleanups e.g.:
+         * * Migrate existing jobs.
+         * * Un-provision cluster resources (nodes, network, storage e.g.).
+         * * Update internal tracking state and persistent data.
+         * For now this API will only serve the persistence layer update.
+         */
+
+        pipe(this.resourceClusterStorageProvider.deregisterCluster(req.getClusterId())
+                .thenApply(clustersW ->
+                    DeleteResourceClusterResponse.builder()
+                        .responseCode(ResponseCode.SUCCESS)
+                        .build())
+                .exceptionally(err ->
+                    DeleteResourceClusterResponse.builder()
+                        .message(err.getMessage())
+                        .responseCode(ResponseCode.SERVER_ERROR).build()),
+            getContext().dispatcher())
+            .to(getSender());
     }
 
     private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {

@@ -18,21 +18,16 @@ package io.mantisrx.control.plane.resource.cluster.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
 
 @Value
 public class ScaleResourceResponse extends BaseResponse {
-    @NonNull
     String clusterId;
 
-    @NonNull
     String skuId;
 
-    @NonNull
     String region;
 
-    @NonNull
     MantisResourceClusterEnvType envType;
 
     int desireSize;

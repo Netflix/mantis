@@ -27,6 +27,7 @@ import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
 import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
@@ -36,14 +37,15 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * A simple file-based implementation for {@link IResourceClusterStorageProvider}. Not meant for production usage.
+ * A simple file-based implementation for {@link ResourceClusterStorageProvider}. Not meant for production usage.
  */
 @Slf4j
-public class SimpleFileResourceClusterStorageProvider implements IResourceClusterStorageProvider {
+public class SimpleFileResourceClusterStorageProvider implements ResourceClusterStorageProvider {
     public final static String SPOOL_DIR = "/tmp/MantisSpool";
 
     private final static String CLUSTER_LIST_FILE_NAME = "mantisResourceClusterRegistrations";
@@ -82,6 +84,28 @@ public class SimpleFileResourceClusterStorageProvider implements IResourceCluste
                 .mapAsync(1, rc -> getResourceClusterSpecWritable(rc.getId()))
                 .runWith(Sink.last(), system);
         log.info("Return future on registerAndUpdateClusterSpec: {}", clusterSpecWritable.getId());
+        return fut;
+    }
+
+    @Override
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+        log.info("Starting deregisterCluster: {}", clusterId);
+        CompletionStage<RegisteredResourceClustersWritable> fut =
+            Source
+                .single(clusterId)
+                .mapAsync(1, clusterSpecW -> getRegisteredResourceClustersWritable().thenApplyAsync(rc -> {
+                        RegisteredResourceClustersWritableBuilder rcBuilder = RegisteredResourceClustersWritable.builder();
+
+                        rc.getClusters().entrySet().stream()
+                        .filter(kv -> !Objects.equals(clusterId, kv.getKey()))
+                        .forEach(kv -> rcBuilder.cluster(kv.getKey(), kv.getValue()));
+                        return rcBuilder.build();
+                    })
+                )
+                .mapAsync(1, rc -> updateRegisteredClusters(rc))
+                .mapAsync(1, notUsed -> getRegisteredResourceClustersWritable())
+                .runWith(Sink.last(), system);
+        log.info("Return future on deregisterCluster: {}", clusterId);
         return fut;
     }
 

@@ -143,6 +143,7 @@ public class TestHelpers {
         props.setProperty("mesos.worker.timeoutSecondsToReportStart", "5");
         props.setProperty("mesos.lease.offer.expiry.secs", "1");
         props.setProperty("mantis.master.stage.assignment.refresh.interval.ms","-1");
+        props.setProperty("mantis.master.api.cache.ttl.milliseconds","0");
 
         ConfigurationProvider.initialize(new StaticPropertiesConfigurationFactory(props));
     }
