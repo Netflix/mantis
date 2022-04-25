@@ -16,17 +16,17 @@
 
 package io.mantisrx.master.api.akka.payloads;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 public class ResourceClustersPayloads {
     public static final String CLUSTER_ID = "mantisResourceClusterUT1";
 
-    public static final String RESOURCE_CLUSTER_CREATE = "{\"clusterId\":\"mantisResourceClusterUT1\",\"clusterSpec\":"
-            + "{\"name\":\"mantisResourceClusterUT1\",\"id\":\"mantisResourceClusterUT1\",\"ownerName\":"
-            + "\"mantisrx@netflix.com\",\"ownerEmail\":\"mantisrx@netflix.com\",\"envType\":\"Prod\","
-            + "\"skuSpecs\":[{\"skuId\":\"small\",\"capacity\":{\"skuId\":\"small\",\"minSize\":1,"
-            + "\"maxSize\":3,\"desireSize\":2},\"imageId\":\"dev/mantistaskexecutor:main.test\","
-            + "\"cpuCoreCount\":2,\"memorySizeInBytes\":16384,\"networkMbps\":700,\"diskSizeInBytes\":"
-            + "81920,\"skuMetadataFields\":{\"skuRegionNameKey\":\"us-east-1\",\"skuSecurityGroupListKey\":"
-            + "\"sg-1, sg-2, sg-3, sg-4\"}}],\"clusterMetadataFields\":{}}}";
+    public static final String RESOURCE_CLUSTER_CREATE =
+        PayloadUtils.getStringFromResource("testpayloads/ResourceClusterCreate.json");
 
     public static final String RESOURCE_CLUSTER_SKU_SCALE = "{\"clusterId\":\"mantisResourceClusterUT1\","
             + "\"skuId\":\"small\",\"region\":\"us-east-1\",\"envType\":\"Prod\",\"desireSize\":11}\n";
