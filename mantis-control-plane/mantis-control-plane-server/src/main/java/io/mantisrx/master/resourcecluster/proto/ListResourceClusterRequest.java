@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.proto;
+package io.mantisrx.master.resourcecluster.proto;
 
 import lombok.Builder;
 import lombok.Value;
 
-/**
- * Response contract for {@IResourceClusterProvider} provision request.
- */
 @Builder
 @Value
-public class ResourceClusterProvisionSubmissionResponse {
-    String response;
-
-    Throwable error;
+public class ListResourceClusterRequest {
 }

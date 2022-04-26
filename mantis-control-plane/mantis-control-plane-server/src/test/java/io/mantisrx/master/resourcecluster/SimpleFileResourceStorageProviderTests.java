@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster;
+package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,11 +22,11 @@ import static org.junit.Assert.assertTrue;
 import akka.actor.ActorSystem;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterEnvType;
-import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterSpec;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.SimpleFileResourceClusterStorageProvider;
-import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable;
-import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
+import io.mantisrx.master.resourcecluster.resourceprovider.SimpleFileResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

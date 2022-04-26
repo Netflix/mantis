@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.proto;
+package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import lombok.Builder;

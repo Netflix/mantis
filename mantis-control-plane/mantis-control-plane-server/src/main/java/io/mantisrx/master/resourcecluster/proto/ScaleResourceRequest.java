@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.proto;
+package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.shaded.com.google.common.base.Joiner;
 import lombok.Builder;
 import lombok.Value;
 
-/**
- * Contract between API route and {@link ResourceClustersManagerActor}.
- */
 @Builder
 @Value
-public class ProvisionResourceClusterRequest {
+public class ScaleResourceRequest {
     String clusterId;
 
-    MantisResourceClusterSpec clusterSpec;
+    String skuId;
+
+    String region;
+
+    MantisResourceClusterEnvType envType;
+
+    int desireSize;
+
+    public String getScaleRequestId() {
+        return Joiner.on('-').join(this.clusterId, this.region, this.envType.name(), this.skuId, this.desireSize);
+    }
+
 }

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.resourceprovider;
+package io.mantisrx.master.resourcecluster.proto;
 
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
+import lombok.Builder;
+import lombok.Value;
 
-/**
-* Callback handler for {@link ResourceClusterProvider} responses.
-*/
-public interface ResourceClusterResponseHandler {
-    void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp);
+@Builder
+@Value
+public class GetResourceClusterSpecRequest {
+    String id;
 }

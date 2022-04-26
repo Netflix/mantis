@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.resourceprovider;
+package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable;
-import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

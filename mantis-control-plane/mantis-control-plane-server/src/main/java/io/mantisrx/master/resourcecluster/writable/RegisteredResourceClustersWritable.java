@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.writable;
+package io.mantisrx.master.resourcecluster.writable;
 
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
