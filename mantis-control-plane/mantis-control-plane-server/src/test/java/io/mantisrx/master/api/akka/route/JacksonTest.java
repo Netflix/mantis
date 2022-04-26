@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.api.akka.route;
 
+import io.mantisrx.common.Ack;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
@@ -107,5 +108,10 @@ public class JacksonTest {
         mwm.setCluster(Optional.ofNullable("test"));
 
         System.out.println(objectMapper.writer(Jackson.DEFAULT_FILTER_PROVIDER).writeValueAsString(mwm));
+    }
+
+    @Test
+    public void testAckSerialization() throws Exception {
+        String s = Jackson.toJson(Ack.getInstance());
     }
 }
