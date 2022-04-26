@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.resourceprovider;
+package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
+import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import java.util.concurrent.CompletionStage;
 
 /**

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.proto;
+package io.mantisrx.master.resourcecluster.proto;
 
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;

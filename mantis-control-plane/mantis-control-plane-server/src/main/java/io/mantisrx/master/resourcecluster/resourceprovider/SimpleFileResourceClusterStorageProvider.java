@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.resourceprovider;
+package io.mantisrx.master.resourcecluster.resourceprovider;
 
 import akka.NotUsed;
 import akka.actor.ActorSystem;
@@ -26,9 +26,9 @@ import akka.stream.javadsl.JsonFraming;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable;
-import io.mantisrx.control.plane.resource.cluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
-import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import java.io.File;

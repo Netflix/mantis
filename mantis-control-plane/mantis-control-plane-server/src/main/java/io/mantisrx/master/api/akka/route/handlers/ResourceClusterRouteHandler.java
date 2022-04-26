@@ -16,14 +16,14 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
+import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
+import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
+import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import java.util.concurrent.CompletionStage;
 
 public interface ResourceClusterRouteHandler {

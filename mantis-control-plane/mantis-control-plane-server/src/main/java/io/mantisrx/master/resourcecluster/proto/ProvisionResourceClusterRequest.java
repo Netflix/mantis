@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.proto;
+package io.mantisrx.master.resourcecluster.proto;
 
 import lombok.Builder;
 import lombok.Value;
 
+/**
+ * Contract between API route and {@link ResourceClustersManagerActor}.
+ */
 @Builder
 @Value
-public class GetResourceClusterSpecRequest {
-    String id;
+public class ProvisionResourceClusterRequest {
+    String clusterId;
+
+    MantisResourceClusterSpec clusterSpec;
 }

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.proto;
+package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import lombok.Builder;
-import lombok.Value;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import lombok.extern.slf4j.Slf4j;
 
-@Builder
-@Value
-public class ListResourceClusterRequest {
+@Slf4j
+public class NoopResourceClusterResponseHandler implements ResourceClusterResponseHandler {
+    @Override
+    public void handleProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
+        log.info(resp.toString());
+    }
 }

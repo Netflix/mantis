@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster.writable;
+package io.mantisrx.master.resourcecluster.writable;
 
-import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterSpec;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;

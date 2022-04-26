@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.control.plane.resource.cluster;
+package io.mantisrx.master.resourcecluster;
 
 import static akka.pattern.Patterns.pipe;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ScaleResourceRequest;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.control.plane.resource.cluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
+import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
+import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;

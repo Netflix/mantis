@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.control.plane.resource.cluster;
+package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
@@ -30,17 +30,17 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.mantisrx.control.plane.resource.cluster.proto.GetResourceClusterSpecRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ListResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterEnvType;
-import io.mantisrx.control.plane.resource.cluster.proto.MantisResourceClusterSpec;
-import io.mantisrx.control.plane.resource.cluster.proto.ProvisionResourceClusterRequest;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
-import io.mantisrx.control.plane.resource.cluster.proto.ResourceClusterProvisionSubmissionResponse;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterProvider;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterResponseHandler;
-import io.mantisrx.control.plane.resource.cluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
+import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
+import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
