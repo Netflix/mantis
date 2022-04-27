@@ -16,10 +16,9 @@
 
 package io.mantisrx.server.worker.mesos;
 
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.worker.WrappedExecuteStageRequest;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -43,11 +42,10 @@ public class MesosExecutorCallbackHandler implements Executor {
 
     private static final Logger logger = LoggerFactory.getLogger(MesosExecutorCallbackHandler.class);
     private Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
-    private ObjectMapper mapper = new ObjectMapper();
+    private final JsonSerializer serializer = new JsonSerializer();
 
     public MesosExecutorCallbackHandler(Observer<WrappedExecuteStageRequest> executeStageRequestObserver) {
         this.executeStageRequestObserver = executeStageRequestObserver;
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override
@@ -92,9 +90,10 @@ public class MesosExecutorCallbackHandler implements Executor {
     private WrappedExecuteStageRequest createExecuteStageRequest(TaskInfo task) {
         // TODO
         try {
+            byte[] jsonBytes = task.getData().toByteArray();
             return new WrappedExecuteStageRequest(
-                    PublishSubject.<Boolean>create(),
-                    mapper.readValue(task.getData().toByteArray(), ExecuteStageRequest.class));
+                    PublishSubject.create(),
+                    serializer.fromJson(jsonBytes, ExecuteStageRequest.class));
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

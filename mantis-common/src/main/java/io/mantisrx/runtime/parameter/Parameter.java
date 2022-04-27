@@ -20,12 +20,14 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import lombok.EqualsAndHashCode;
 
 
+@EqualsAndHashCode
 public class Parameter implements Serializable {
 
-    private String name;
-    private String value;
+    private final String name;
+    private final String value;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

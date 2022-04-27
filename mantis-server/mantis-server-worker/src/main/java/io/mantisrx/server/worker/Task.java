@@ -115,13 +115,7 @@ public class Task extends AbstractIdleService {
     }
 
     private Optional<String> getJobProviderClass() {
-        io.mantisrx.shaded.com.google.common.base.Optional<String> jobProviderClass =
-            executeStageRequest.getNameOfJobProviderClass();
-        if (jobProviderClass.isPresent()) {
-            return Optional.of(executeStageRequest.getNameOfJobProviderClass().get());
-        } else {
-            return Optional.empty();
-        }
+        return executeStageRequest.getNameOfJobProviderClass();
     }
 
     public Observable<Status> getStatus() {
