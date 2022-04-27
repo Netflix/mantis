@@ -24,7 +24,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.google.common.base.Optional;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.LinkedList;
