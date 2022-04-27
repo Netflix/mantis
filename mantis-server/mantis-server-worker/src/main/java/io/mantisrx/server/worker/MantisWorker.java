@@ -66,7 +66,7 @@ public class MantisWorker extends BaseService {
     //    }
     private List<Service> mantisServices = new LinkedList<Service>();
 
-    public MantisWorker(ConfigurationFactory configFactory) {
+    public MantisWorker(ConfigurationFactory configFactory, io.mantisrx.server.master.client.config.ConfigurationFactory coreConfigFactory) {
         // for rxjava
         System.setProperty("rx.ring-buffer.size", "1024");
 
@@ -193,7 +193,7 @@ public class MantisWorker extends BaseService {
             io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory coreConfigFactory =
                     new io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory(loadProperties(propFile));
 
-            MantisWorker worker = new MantisWorker(workerConfigFactory);
+            MantisWorker worker = new MantisWorker(workerConfigFactory, coreConfigFactory);
             worker.start();
         } catch (Exception e) {
             // unexpected to get runtime exception, will exit
