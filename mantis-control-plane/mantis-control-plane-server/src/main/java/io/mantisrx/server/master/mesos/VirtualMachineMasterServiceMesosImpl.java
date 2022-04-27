@@ -18,6 +18,7 @@ package io.mantisrx.server.master.mesos;
 
 import com.google.protobuf.ByteString;
 import com.netflix.fenzo.VirtualMachineLease;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.BaseService;
@@ -31,9 +32,7 @@ import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -69,7 +68,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     private volatile int workerJvmMemoryScaleBackPct;
     private MasterConfiguration masterConfig;
     private ExecutorService executor;
-    private ObjectMapper mapper = new ObjectMapper();
+    private final JsonSerializer jsonSerializer = new JsonSerializer();
 
     public VirtualMachineMasterServiceMesosImpl(
             final MasterConfiguration masterConfig,
@@ -88,7 +87,6 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
             }
         });
         workerJvmMemoryScaleBackPct = Math.min(99, ConfigurationProvider.getConfig().getWorkerJvmMemoryScaleBackPercentage());
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     // NOTE: All leases are for the same agent.
@@ -205,7 +203,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                                     launchTaskRequest, machineDefinition.getMemoryMB(), machineDefinition.getCpuCores()))
                     .setData(
                             ByteString.copyFrom(
-                                    mapper.writeValueAsBytes(
+                                    jsonSerializer.toJsonBytes(
                                             executeStageRequest)));
 
             if (!ports.isEmpty()) {
@@ -226,7 +224,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
             }
 
             taskInfo = taskInfoBuilder.build();
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             throw new LaunchTaskException("Failed to build a TaskInfo instance: " + e.getMessage(), e);
         }
         List<TaskInfo> tasks = new ArrayList<>(1);

@@ -91,6 +91,7 @@ public class MesosExecutorCallbackHandler implements Executor {
         // TODO
         try {
             byte[] jsonBytes = task.getData().toByteArray();
+            logger.info("Received request {}", new String(jsonBytes));
             return new WrappedExecuteStageRequest(
                     PublishSubject.create(),
                     serializer.fromJson(jsonBytes, ExecuteStageRequest.class));
