@@ -50,4 +50,8 @@ public class JsonSerializer {
     public String toJson(Object object) throws IOException {
         return defaultObjectMapper.writeValueAsString(object);
     }
+
+    public byte[] toJsonBytes(Object object) throws IOException {
+        return defaultObjectMapper.writeValueAsBytes(object);
+    }
 }

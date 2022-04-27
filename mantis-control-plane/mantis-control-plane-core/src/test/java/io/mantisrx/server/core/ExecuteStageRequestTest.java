@@ -34,13 +34,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ExecuteStageRequestTest {
-    private ExecuteStageRequest example;
+    private ExecuteStageRequest example1;
+    private ExecuteStageRequest example2;
 
     private final JsonSerializer serializer = new JsonSerializer();
 
     @Before
     public void setup() throws Exception {
-        example = new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
+        example1 = new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
             new URL("http://datamesh/whatever"),
             1, 1,
             ImmutableList.of(1, 2, 3, 4, 5), 100L, 1,
@@ -53,17 +54,30 @@ public class ExecuteStageRequestTest {
             1L,
             new WorkerPorts(2, 3, 4, 5, 6),
             java.util.Optional.of("className"));
+        example2 = new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
+            new URL("http://datamesh/whatever"),
+            1, 1,
+            ImmutableList.of(1, 2, 3, 4, 5), 100L, 1,
+            ImmutableList.of(new Parameter("name", "value")),
+            new SchedulingInfo.Builder().numberOfStages(1)
+                .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
+                    Lists.newArrayList(), Lists.newArrayList()).build(),
+            MantisJobDurationType.Perpetual,
+            1000L,
+            1L,
+            new WorkerPorts(2, 3, 4, 5, 6),
+            java.util.Optional.empty());
     }
 
     @Test
     public void testSerialization() throws Exception {
-        byte[] serializedBytes = SerializationUtils.serialize(example);
+        byte[] serializedBytes = SerializationUtils.serialize(example1);
         assertTrue(serializedBytes.length > 0);
     }
 
     @Test
     public void testIfExecuteStageRequestIsSerializableAndDeserializableFromJackson() throws Exception {
-        String json = serializer.toJson(example);
+        String json = serializer.toJson(example1);
         assertEquals(StringUtils.deleteWhitespace("{\n" +
             "    \"jobName\": \"jobName\",\n" +
             "    \"workerIndex\": 0,\n" +
@@ -127,9 +141,9 @@ public class ExecuteStageRequestTest {
             "        ],\n" +
             "        \"sinkPort\": 6\n" +
             "    },\n" +
+            "    \"nameOfJobProviderClass\": \"className\",\n" +
             "    \"hasJobMaster\": false,\n" +
             "    \"jobId\": \"jobId-0\",\n" +
-            "    \"nameOfJobProviderClass\": \"className\",\n" +
             "    \"workerId\":\n" +
             "    {\n" +
             "        \"jobCluster\": \"jobId\",\n" +
@@ -139,6 +153,87 @@ public class ExecuteStageRequestTest {
             "    }\n" +
             "}"), json);
         ExecuteStageRequest deserialized = serializer.fromJSON(json, ExecuteStageRequest.class);
-        assertEquals(example, deserialized);
+        assertEquals(example1, deserialized);
+    }
+
+    @Test
+    public void testIfExecuteStageRequestIsSerializableAndDeserializableFromJacksonWhenJobProviderClassIsEmpty() throws Exception {
+        String json = serializer.toJson(example2);
+        assertEquals(StringUtils.deleteWhitespace("{\n" +
+            "    \"jobName\": \"jobName\",\n" +
+            "    \"workerIndex\": 0,\n" +
+            "    \"workerNumber\": 1,\n" +
+            "    \"jobJarUrl\": \"http://datamesh/whatever\",\n" +
+            "    \"stage\": 1,\n" +
+            "    \"totalNumStages\": 1,\n" +
+            "    \"ports\":\n" +
+            "    [\n" +
+            "        1,\n" +
+            "        2,\n" +
+            "        3,\n" +
+            "        4,\n" +
+            "        5\n" +
+            "    ],\n" +
+            "    \"timeoutToReportStart\": 100,\n" +
+            "    \"metricsPort\": 1,\n" +
+            "    \"parameters\":\n" +
+            "    [\n" +
+            "        {\n" +
+            "            \"name\": \"name\",\n" +
+            "            \"value\": \"value\"\n" +
+            "        }\n" +
+            "    ],\n" +
+            "    \"schedulingInfo\":\n" +
+            "    {\n" +
+            "        \"stages\":\n" +
+            "        {\n" +
+            "            \"1\":\n" +
+            "            {\n" +
+            "                \"numberOfInstances\": 1,\n" +
+            "                \"machineDefinition\":\n" +
+            "                {\n" +
+            "                    \"cpuCores\": 1.0,\n" +
+            "                    \"memoryMB\": 10.0,\n" +
+            "                    \"networkMbps\": 10.0,\n" +
+            "                    \"diskMB\": 10.0,\n" +
+            "                    \"numPorts\": 2\n" +
+            "                },\n" +
+            "                \"hardConstraints\":\n" +
+            "                [],\n" +
+            "                \"softConstraints\":\n" +
+            "                [],\n" +
+            "                \"scalingPolicy\": null,\n" +
+            "                \"scalable\": false\n" +
+            "            }\n" +
+            "        }\n" +
+            "    },\n" +
+            "    \"durationType\": \"Perpetual\",\n" +
+            "    \"subscriptionTimeoutSecs\": 1000,\n" +
+            "    \"minRuntimeSecs\": 1,\n" +
+            "    \"workerPorts\":\n" +
+            "    {\n" +
+            "        \"metricsPort\": 2,\n" +
+            "        \"debugPort\": 3,\n" +
+            "        \"consolePort\": 4,\n" +
+            "        \"customPort\": 5,\n" +
+            "        \"ports\":\n" +
+            "        [\n" +
+            "            6\n" +
+            "        ],\n" +
+            "        \"sinkPort\": 6\n" +
+            "    },\n" +
+            "    \"nameOfJobProviderClass\": null,\n" +
+            "    \"hasJobMaster\": false,\n" +
+            "    \"jobId\": \"jobId-0\",\n" +
+            "    \"workerId\":\n" +
+            "    {\n" +
+            "        \"jobCluster\": \"jobId\",\n" +
+            "        \"jobId\": \"jobId-0\",\n" +
+            "        \"workerIndex\": 0,\n" +
+            "        \"workerNum\": 1\n" +
+            "    }\n" +
+            "}"), json);
+        ExecuteStageRequest deserialized = serializer.fromJSON(json, ExecuteStageRequest.class);
+        assertEquals(example2, deserialized);
     }
 }

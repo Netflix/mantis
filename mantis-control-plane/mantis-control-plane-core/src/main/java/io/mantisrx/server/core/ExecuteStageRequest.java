@@ -87,7 +87,7 @@ public class ExecuteStageRequest implements Serializable {
                                @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
                                @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
                                @JsonProperty("workerPorts") WorkerPorts workerPorts,
-                               @JsonProperty("jobProviderClass") java.util.Optional<String> nameOfJobProviderClass) {
+                               @JsonProperty("nameOfJobProviderClass") java.util.Optional<String> nameOfJobProviderClass) {
         this.jobName = jobName;
         this.jobId = jobId;
         this.workerIndex = workerIndex;
