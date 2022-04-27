@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.worker;
 
+import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
@@ -51,6 +52,7 @@ public class Task extends AbstractIdleService {
 
     private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
+    // hostname from which the task is run from
     private final Optional<String> hostname;
 
     private final ExecuteStageRequest executeStageRequest;
@@ -70,6 +72,8 @@ public class Task extends AbstractIdleService {
         this.hostname = hostname;
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
     }
+
+    private final Optional<Job> mantisJob;
 
     @Override
     public void startUp() throws Exception {
@@ -101,7 +105,7 @@ public class Task extends AbstractIdleService {
                 workerMetricsClient,
                 sinkSubscriptionStateHandlerFactory,
                 hostname),
-            getJobProviderClass(), classLoaderHandle, null));
+            getJobProviderClass(), classLoaderHandle, mantisJob.orElse(null)));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {

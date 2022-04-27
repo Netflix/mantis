@@ -19,10 +19,9 @@ package io.mantisrx.server.worker;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
+import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.WorkerTopologyInfo;
-import io.mantisrx.server.core.WorkerTopologyInfo.Data;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
@@ -67,6 +66,7 @@ public class MantisWorker extends BaseService {
     private List<Service> mantisServices = new LinkedList<Service>();
 
     public MantisWorker(ConfigurationFactory configFactory, io.mantisrx.server.master.client.config.ConfigurationFactory coreConfigFactory) {
+    public MantisWorker(ConfigurationFactory configFactory, Optional<Job> jobToRun) {
         // for rxjava
         System.setProperty("rx.ring-buffer.size", "1024");
 
@@ -108,7 +108,6 @@ public class MantisWorker extends BaseService {
 
         // services
         // metrics
-        Data data = WorkerTopologyInfo.Reader.getData();
         TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
@@ -134,7 +133,8 @@ public class MantisWorker extends BaseService {
                                             .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                                                     gateway,
                                                     Clock.systemDefaultZone()),
-                                Optional.empty());
+                                Optional.empty(),
+                                jobToRun);
                             taskStatusUpdateSubscription =
                                     task
                                             .getStatus()
@@ -236,7 +236,9 @@ public class MantisWorker extends BaseService {
                 throw e;
             }
         }
+    }
 
+    public void awaitTerminated() {
         try {
             blockUntilShutdown.await();
         } catch (InterruptedException e) {
