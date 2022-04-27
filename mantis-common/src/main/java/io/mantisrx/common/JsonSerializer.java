@@ -39,6 +39,10 @@ public class JsonSerializer {
         return defaultObjectMapper.readerFor(expectedType).readValue(json);
     }
 
+    public <T> T fromJson(byte[] json, Class<T> expectedType) throws IOException {
+        return defaultObjectMapper.readValue(json, expectedType);
+    }
+
     public <T> T fromJSON(String json, TypeReference<T> expectedType) throws IOException {
         return defaultObjectMapper.readerFor(expectedType).readValue(json);
     }

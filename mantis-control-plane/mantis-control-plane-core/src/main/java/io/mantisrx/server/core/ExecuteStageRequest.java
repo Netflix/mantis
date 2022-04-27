@@ -24,17 +24,21 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.google.common.base.Optional;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import javax.annotation.Nullable;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * ExecuteStageRequest represents the data structure that defines the StageTask workload a given worker needs to run.
  * The data structure is sent over the wire using java serialization when the server requests a given task executor to
  * perform a certain stage task.
  */
+@EqualsAndHashCode
+@ToString
 public class ExecuteStageRequest implements Serializable {
 
     // indicates whether this is stage 0 or not. stage 0 runs the autoscaler for the mantis job.
@@ -44,25 +48,26 @@ public class ExecuteStageRequest implements Serializable {
     private final long subscriptionTimeoutSecs;
     private final long minRuntimeSecs;
     private final WorkerPorts workerPorts;
-    private String jobName;
+    private final String jobName;
     // jobId represents the instance of the job.
-    private String jobId;
+    private final String jobId;
     // index of the worker in that stage
-    private int workerIndex;
+    private final int workerIndex;
     // rolling counter of workers for that stage
-    private int workerNumber;
-    private URL jobJarUrl;
+    private final int workerNumber;
+    private final URL jobJarUrl;
     // index of the stage
-    private int stage;
-    private int totalNumStages;
-    private int metricsPort;
-    private List<Integer> ports = new LinkedList<Integer>();
-    private long timeoutToReportStart;
+    private final int stage;
+    private final int totalNumStages;
+    private final int metricsPort;
+    private final List<Integer> ports = new LinkedList<Integer>();
+    private final long timeoutToReportStart;
     private List<Parameter> parameters = new LinkedList<Parameter>();
-    private SchedulingInfo schedulingInfo;
-    private MantisJobDurationType durationType;
+    private final SchedulingInfo schedulingInfo;
+    private final MantisJobDurationType durationType;
     // class name that provides the job provider.
-    private Optional<String> nameOfJobProviderClass;
+    @Nullable
+    private final String nameOfJobProviderClass;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -82,7 +87,7 @@ public class ExecuteStageRequest implements Serializable {
                                @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
                                @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
                                @JsonProperty("workerPorts") WorkerPorts workerPorts,
-                               @JsonProperty("jobProviderClass") Optional<String> nameOfJobProviderClass) {
+                               @JsonProperty("jobProviderClass") java.util.Optional<String> nameOfJobProviderClass) {
         this.jobName = jobName;
         this.jobId = jobId;
         this.workerIndex = workerIndex;
@@ -90,7 +95,7 @@ public class ExecuteStageRequest implements Serializable {
         this.jobJarUrl = jobJarUrl;
         this.stage = stage;
         this.totalNumStages = totalNumStages;
-        this.nameOfJobProviderClass = nameOfJobProviderClass;
+        this.nameOfJobProviderClass = nameOfJobProviderClass.orElse(null);
         this.ports.addAll(ports);
         this.metricsPort = metricsPort;
         this.timeoutToReportStart = timeoutToReportStart;
@@ -175,31 +180,8 @@ public class ExecuteStageRequest implements Serializable {
         return minRuntimeSecs;
     }
 
-    public Optional<String> getNameOfJobProviderClass() {
-        return nameOfJobProviderClass;
-    }
-
-    @Override
-    public String toString() {
-        return "ExecuteStageRequest{" +
-                "jobName='" + jobName + '\'' +
-                ", jobId='" + jobId + '\'' +
-                ", workerIndex=" + workerIndex +
-                ", workerNumber=" + workerNumber +
-                ", jobJarUrl=" + jobJarUrl +
-                ", stage=" + stage +
-                ", totalNumStages=" + totalNumStages +
-                ", metricsPort=" + metricsPort +
-                ", ports=" + ports +
-                ", timeoutToReportStart=" + timeoutToReportStart +
-                ", parameters=" + parameters +
-                ", schedulingInfo=" + schedulingInfo +
-                ", durationType=" + durationType +
-                ", hasJobMaster=" + hasJobMaster +
-                ", subscriptionTimeoutSecs=" + subscriptionTimeoutSecs +
-                ", minRuntimeSecs=" + minRuntimeSecs +
-                ", workerPorts=" + workerPorts +
-                '}';
+    public java.util.Optional<String> getNameOfJobProviderClass() {
+        return java.util.Optional.ofNullable(nameOfJobProviderClass);
     }
 
     public WorkerId getWorkerId() {
