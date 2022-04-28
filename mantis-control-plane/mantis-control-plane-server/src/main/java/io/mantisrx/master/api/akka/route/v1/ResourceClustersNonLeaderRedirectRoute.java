@@ -46,23 +46,26 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.annotation.VisibleForTesting;
 
 /**
  * Resource Cluster Route
  * Defines the following end points:
+ * /api/v1/resourceClusters                                           (GET, POST)
  * /api/v1/resourceClusters/list                                      (GET)
+ * <p>
+ * /api/v1/resourceClusters/{}                                        (GET, DELETE)
+ * <p>
  * <p>
  * /api/v1/resourceClusters/{}/getResourceOverview                    (GET)
  * /api/v1/resourceClusters/{}/getRegisteredTaskExecutors             (GET)
  * /api/v1/resourceClusters/{}/getBusyTaskExecutors                   (GET)
  * /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
  * /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
+ * /api/v1/resourceClusters/{}/scaleSku                               (POST)
  * <p>
  * /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
  */
 @Slf4j
-//@RequiredArgsConstructor
 public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private static final PathMatcher0 RESOURCECLUSTERS_API_PREFIX =
@@ -72,12 +75,6 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
-
-    // TODO(andyz) integrate w/ masterMain
-    @VisibleForTesting
-    public ResourceClustersNonLeaderRedirectRoute(ResourceClusters gateway) {
-        this(gateway,null, null);
-    }
 
     public ResourceClustersNonLeaderRedirectRoute(
         final ResourceClusters gateway,
@@ -124,9 +121,9 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         delete(() -> deleteResourceClusterInstanceRoute(clusterName))
                     ))
                 ),
-                // /{}/actions/scaleSku
+                // /{}/scaleSku
                 path(
-                    PathMatchers.segment().slash("actions").slash("scaleSku"),
+                    PathMatchers.segment().slash("scaleSku"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
 
                         // POST

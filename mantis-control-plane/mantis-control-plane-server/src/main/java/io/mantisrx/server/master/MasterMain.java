@@ -45,6 +45,9 @@ import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
 import io.mantisrx.master.events.WorkerRegistryV2;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
+import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProviderAdapter;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
@@ -167,6 +170,11 @@ public class MasterMain implements Service {
             final ResourceClusters resourceClusters =
                 ResourceClustersAkkaImpl.load(getConfig(), rpcService, system, mantisJobStore);
 
+            final ActorRef resourceClustersHostActor = system.actorOf(ResourceClustersHostManagerActor.props(
+                    new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
+                    new ResourceClusterStorageProviderAdapter(this.config.getResourceClusterStorageProvider(), system)),
+                "ResourceClusterHostActor");
+
             // end of new stuff
 
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
@@ -212,13 +220,13 @@ public class MasterMain implements Service {
             if (this.config.isLocalMode()) {
                 leadershipManager.becomeLeader();
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             } else {
                 curatorService = new CuratorService(this.config);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             }
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {

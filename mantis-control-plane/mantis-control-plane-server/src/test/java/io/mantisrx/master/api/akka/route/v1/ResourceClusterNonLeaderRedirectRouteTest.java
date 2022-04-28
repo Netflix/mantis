@@ -48,8 +48,11 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProviderAdapter;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
@@ -73,16 +76,29 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private final ActorSystem system =
         ActorSystem.create(ResourceClusterNonLeaderRedirectRouteTest.class.getSimpleName());
 
-    private final ActorRef resourceClustersHostManagerActor = system.actorOf(
+    private final ActorRef resourceClustersHostManagerActorWithNoopAdapter = system.actorOf(
+        ResourceClustersHostManagerActor.props(
+            new ResourceClusterProviderAdapter(ConfigurationProvider.getConfig().getResourceClusterProvider(), system),
+            new ResourceClusterStorageProviderAdapter(ConfigurationProvider.getConfig().getResourceClusterStorageProvider(), system)),
+        "jobClustersManagerNoop");
+
+    private final ActorRef resourceClustersHostManagerActorWithTestAdapter = system.actorOf(
         ResourceClustersHostManagerActor.props(
             resourceProviderAdapter, new InMemoryOnlyResourceClusterStorageProvider()),
-        "jobClustersManager");
+        "jobClustersManagerTest");
 
-    private final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
-        resourceClustersHostManagerActor);
+    private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithNoopAdapter =
+        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithNoopAdapter);
+
+    private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithTestAdapter =
+        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithTestAdapter);
+
+    private final TestRoute testRouteWithNoopAdapter =
+        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithNoopAdapter, system)
+            .createRoute(route -> route));
 
     private final TestRoute testRoute =
-        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandler, system)
+        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithTestAdapter, system)
             .createRoute(route -> route));
 
     @BeforeClass
@@ -106,9 +122,29 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .thenReturn(CompletableFuture.completedFuture(status));
         when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
 
-        testRoute.run(HttpRequest.GET("/api/v1/resourceClusters/myCluster/taskExecutors/myExecutor/getTaskExecutorState"))
+        testRouteWithNoopAdapter.run(HttpRequest.GET("/api/v1/resourceClusters/myCluster/taskExecutors/myExecutor/getTaskExecutorState"))
             .assertStatusCode(200)
             .assertEntityAs(Jackson.unmarshaller(TaskExecutorStatus.class), status);
+    }
+
+    @Test
+    public void testResourceClusterHostRoutesNoopAdapter() throws IOException {
+        // test get empty clusters (nothing has been registered).
+        testRouteWithNoopAdapter.run(HttpRequest.GET(getResourceClusterEndpoint()))
+            .assertStatusCode(StatusCodes.OK)
+            .assertEntityAs(Jackson.unmarshaller(ListResourceClustersResponse.class),
+                ListResourceClustersResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .registeredResourceClusters(Collections.emptyList())
+                    .build());
+
+        // should return error due to NoopResourceClusterProvider.
+        testRouteWithNoopAdapter.run(
+                HttpRequest.POST(getResourceClusterEndpoint(CLUSTER_ID) + "/scaleSku")
+                    .withEntity(HttpEntities.create(
+                        ContentTypes.APPLICATION_JSON,
+                        ResourceClustersPayloads.RESOURCE_CLUSTER_SKU_SCALE)))
+            .assertStatusCode(StatusCodes.INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -142,6 +178,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertStatusCode(StatusCodes.OK)
             .assertEntityAs(Jackson.unmarshaller(ListResourceClustersResponse.class),
                 ListResourceClustersResponse.builder()
+                    // TODO this responseCode field is currently not covered due to lombok issue at {@link ListResourceClustersResponse}.
                     .responseCode(ResponseCode.SUCCESS)
                     .registeredResourceClusters(
                         Arrays.asList(RegisteredResourceCluster.builder()
@@ -159,7 +196,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
         // test scale cluster sku
         testRoute.run(
-                HttpRequest.POST(getResourceClusterEndpoint(CLUSTER_ID) + "/actions/scaleSku")
+                HttpRequest.POST(getResourceClusterEndpoint(CLUSTER_ID) + "/scaleSku")
                     .withEntity(HttpEntities.create(
                         ContentTypes.APPLICATION_JSON,
                         ResourceClustersPayloads.RESOURCE_CLUSTER_SKU_SCALE)))
@@ -202,7 +239,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             clusterId);
     }
 
-    private static class UnitTestResourceProviderAdapter implements ResourceClusterProvider {
+    public static class UnitTestResourceProviderAdapter implements ResourceClusterProvider {
 
         private ResourceClusterProvider injectedProvider;
 

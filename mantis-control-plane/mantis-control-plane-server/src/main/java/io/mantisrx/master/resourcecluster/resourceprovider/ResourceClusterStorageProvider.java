@@ -22,6 +22,7 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Interface for persisting resource cluster related data.
+ * See {@link ResourceClusterStorageProviderAdapter} to see the binding/constructor requirements.
  */
 public interface ResourceClusterStorageProvider {
     /**

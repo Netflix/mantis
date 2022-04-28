@@ -47,6 +47,12 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.storageProvider")
     MantisStorageProvider getStorageProvider();
 
+    @Config("mantis.master.resourceClusterStorageProvider")
+    String getResourceClusterStorageProvider();
+
+    @Config("mantis.master.resourceClusterProvider")
+    String getResourceClusterProvider();
+
     @Config("mantis.master.host")
     @DefaultNull
     String getMasterHost();

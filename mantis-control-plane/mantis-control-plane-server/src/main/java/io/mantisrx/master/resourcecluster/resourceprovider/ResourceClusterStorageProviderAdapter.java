@@ -19,54 +19,45 @@ package io.mantisrx.master.resourcecluster.resourceprovider;
 import akka.actor.ActorSystem;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * [Test only] Store resource storage data in memroy only for testing.
+ * Adapter to bind the implementation of {@link ResourceClusterStorageProvider} using class name specified in
+ * {@link io.mantisrx.server.master.config.MasterConfiguration}.
+ * <p>
+ *     This adapter requires the implementation of {@link ResourceClusterStorageProvider} to have a ctor with
+ *     {@link akka.actor.ActorSystem} param.
+ * </p>
  */
-public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
-    Map<String, ResourceClusterSpecWritable> clusters = new HashMap<>();
+public class ResourceClusterStorageProviderAdapter implements ResourceClusterStorageProvider {
+    private final ResourceClusterStorageProvider providerImpl;
 
-    public InMemoryOnlyResourceClusterStorageProvider() {
-    }
-
-    /**
-     * Testing usage (integration between {@link ResourceClusterStorageProvider} and config).
-     * @param system
-     */
-    public InMemoryOnlyResourceClusterStorageProvider(ActorSystem system) {
+    public ResourceClusterStorageProviderAdapter(String providerClassStr, ActorSystem system) {
+        try {
+            this.providerImpl = (ResourceClusterStorageProvider) Class.forName(providerClassStr)
+                .getConstructor(ActorSystem.class).newInstance(system);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create ResourceClusterStorageProvider from " + providerClassStr,  e);
+        }
     }
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {
-        this.clusters.put(spec.getId(), spec);
-        return CompletableFuture.completedFuture(spec);
+        return this.providerImpl.registerAndUpdateClusterSpec(spec);
     }
 
     @Override
     public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
-        this.clusters.remove(clusterId);
-        return getRegisteredResourceClustersWritable();
+        return this.providerImpl.deregisterCluster(clusterId);
     }
 
     @Override
     public CompletionStage<RegisteredResourceClustersWritable> getRegisteredResourceClustersWritable() {
-        RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder builder =
-                RegisteredResourceClustersWritable.builder();
-
-        this.clusters.entrySet().stream().forEach(kv -> {
-            builder.cluster(kv.getKey(), RegisteredResourceClustersWritable.ClusterRegistration.builder()
-                    .clusterId(kv.getKey()).version(kv.getValue().getVersion()).build());
-        });
-
-        return CompletableFuture.completedFuture(builder.build());
+        return this.providerImpl.getRegisteredResourceClustersWritable();
     }
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id) {
-        return CompletableFuture.completedFuture(this.clusters.getOrDefault(id, null));
+        return this.providerImpl.getResourceClusterSpecWritable(id);
     }
 }

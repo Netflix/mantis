@@ -25,6 +25,12 @@ import java.util.concurrent.CompletionStage;
 /**
  * This interface provides the API to connect resource cluster management actor to actual
  * implementations of different resource cluster clients e.g. k8s.
+ *
+ * <p>
+ *     To implement and integrate this interface, the {@link ResourceClusterProviderAdapter} is used to wire actual
+ *     implementation to the main entrypoint and currently this adapter requires an {@link akka.actor.ActorSystem} to be
+ *     passed into the constructor.
+ * </p>
  */
 public interface ResourceClusterProvider {
     /**
