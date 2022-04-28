@@ -18,12 +18,13 @@ package io.mantisrx.server.core.master;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
 import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import rx.subjects.BehaviorSubject;
 /**
  * A monitor that monitors the status of Mantis masters.
  */
-public class ZookeeperMasterMonitor implements MasterMonitor {
+public class ZookeeperMasterMonitor extends AbstractIdleService implements MasterMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(ZookeeperMasterMonitor.class);
 
@@ -53,7 +54,8 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
         this.jsonSerializer = new JsonSerializer();
     }
 
-    public void start() throws Exception {
+    @Override
+    public void startUp() throws Exception {
         nodeMonitor.getListenable().addListener(new NodeCacheListener() {
             @Override
             public void nodeChanged() throws Exception {
@@ -61,11 +63,7 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
             }
         });
 
-        try {
-            nodeMonitor.start(true);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to start master node monitor: " + e.getMessage(), e);
-        }
+        nodeMonitor.start(true);
 
         byte[] initialValue = nodeMonitor.getCurrentData().getData();
         onMasterNodeUpdated(initialValue);
@@ -83,19 +81,19 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
     private void retrieveMaster() {
         try {
             curator
-                    .sync()  // sync with ZK before reading
-                    .inBackground(
-                            curator
-                                    .getData()
-                                    .inBackground(new BackgroundCallback() {
-                                        @Override
-                                        public void processResult(CuratorFramework client, CuratorEvent event) throws Exception {
-                                            onMasterNodeUpdated(event.getData());
-                                        }
-                                    })
-                                    .forPath(masterPath)
-                    )
-                    .forPath(masterPath);
+                .sync()  // sync with ZK before reading
+                .inBackground(
+                    curator
+                        .getData()
+                        .inBackground(new BackgroundCallback() {
+                            @Override
+                            public void processResult(CuratorFramework client, CuratorEvent event) throws Exception {
+                                onMasterNodeUpdated(event.getData());
+                            }
+                        })
+                        .forPath(masterPath)
+                )
+                .forPath(masterPath);
 
         } catch (Exception e) {
             logger.error("Failed to retrieve updated master information: " + e.getMessage(), e);
@@ -110,15 +108,13 @@ public class ZookeeperMasterMonitor implements MasterMonitor {
 
     @Override
     public MasterDescription getLatestMaster() {
+        Preconditions.checkState(isRunning(), "ZookeeperMasterMonitor is currently not running but instead is at state %s", state());
         return latestMaster.get();
     }
 
-    public void shutdown() {
-        try {
-            nodeMonitor.close();
-            logger.info("ZK master monitor is shut down");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to close the ZK node monitor: " + e.getMessage(), e);
-        }
+    @Override
+    public void shutDown() throws Exception {
+        nodeMonitor.close();
+        logger.info("ZK master monitor is shut down");
     }
 }

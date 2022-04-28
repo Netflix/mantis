@@ -73,6 +73,27 @@ public class MantisWorker extends BaseService {
         WorkerConfiguration config = configFactory.getConfig();
         final HighAvailabilityServices highAvailabilityServices =
                 HighAvailabilityServicesUtil.createHAServices(config);
+        mantisServices.add(new Service() {
+            @Override
+            public void start() {
+                highAvailabilityServices.startAsync().awaitRunning();
+            }
+
+            @Override
+            public void shutdown() {
+                highAvailabilityServices.stopAsync().awaitTerminated();
+            }
+
+            @Override
+            public void enterActiveMode() {
+
+            }
+
+            @Override
+            public String toString() {
+                return "HighAvailabilityServices Service";
+            }
+        });
         final MantisMasterGateway gateway =
                 highAvailabilityServices.getMasterClientApi();
         // shutdown hook
