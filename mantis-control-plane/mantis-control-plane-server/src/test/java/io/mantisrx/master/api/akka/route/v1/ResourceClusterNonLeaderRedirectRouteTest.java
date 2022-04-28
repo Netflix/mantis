@@ -17,9 +17,6 @@
 package io.mantisrx.master.api.akka.route.v1;
 
 import static io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads.CLUSTER_ID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,17 +56,12 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorSta
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
