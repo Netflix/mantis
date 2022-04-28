@@ -64,6 +64,7 @@ import org.apache.flink.runtime.rpc.RpcServiceUtils;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
+import rx.subjects.PublishSubject;
 
 /**
  * TaskExecutor implements the task executor gateway which provides capabilities to
@@ -409,8 +410,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }
         }
 
+        // todo(sundaram): rethink on how this needs to be handled better.
+        // The publishsubject is today used to communicate the failure to start the request in a timely fashion.
+        // Seems very convoluted.
+        WrappedExecuteStageRequest wrappedRequest =
+            new WrappedExecuteStageRequest(PublishSubject.create(), request);
+
         Task task = new Task(
-            request,
+            wrappedRequest,
             workerConfiguration,
             masterMonitor,
             classLoaderHandle,

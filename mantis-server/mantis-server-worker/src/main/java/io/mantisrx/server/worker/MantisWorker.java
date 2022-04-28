@@ -125,7 +125,7 @@ public class MantisWorker extends BaseService {
                         .first()
                         .subscribe(wrappedRequest -> {
                             task = new Task(
-                                    wrappedRequest.getRequest(),
+                                    wrappedRequest,
                                     config,
                                     gateway,
                                     ClassLoaderHandle.fixed(getClass().getClassLoader()),
