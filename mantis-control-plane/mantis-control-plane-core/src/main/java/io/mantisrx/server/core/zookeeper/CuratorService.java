@@ -93,7 +93,7 @@ public class CuratorService extends BaseService {
             isConnectedGauge.set(0L);
             setupCuratorListener();
             curator.start();
-            masterMonitor.start();
+            masterMonitor.startAsync().awaitRunning();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +102,7 @@ public class CuratorService extends BaseService {
     @Override
     public void shutdown() {
         try {
-            masterMonitor.shutdown();
+            masterMonitor.stopAsync().awaitTerminated();
             curator.close();
         } catch (Exception e) {
             // A shutdown failure should not affect the subsequent shutdowns, so
