@@ -21,6 +21,7 @@ import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
@@ -28,17 +29,15 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Slf4j
-@RequiredArgsConstructor
 public class Task extends AbstractIdleService {
 
-    private final ExecuteStageRequest executeStageRequest;
+    private final WrappedExecuteStageRequest wrappedExecuteStageRequest;
 
     private final WorkerConfiguration config;
 
@@ -54,13 +53,32 @@ public class Task extends AbstractIdleService {
 
     private final Optional<String> hostname;
 
+    private final ExecuteStageRequest executeStageRequest;
+
+    public Task(
+        WrappedExecuteStageRequest wrappedExecuteStageRequest,
+        WorkerConfiguration config,
+        MantisMasterGateway masterMonitor,
+        ClassLoaderHandle classLoaderHandle,
+        Factory sinkSubscriptionStateHandlerFactory,
+        Optional<String> hostname) {
+        this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
+        this.config = config;
+        this.masterMonitor = masterMonitor;
+        this.classLoaderHandle = classLoaderHandle;
+        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+        this.hostname = hostname;
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+    }
+
     @Override
-    public void startUp() {
+    public void startUp() throws Exception {
         try {
             log.info("Starting current task {}", this);
             doRun();
         } catch (Exception e) {
             log.error("Failed executing the task {}", executeStageRequest, e);
+            throw e;
         }
     }
 
@@ -97,7 +115,7 @@ public class Task extends AbstractIdleService {
         }
 
         // now that all the services have been started, let's submit the request
-        executeStageSubject.onNext(new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest));
+        executeStageSubject.onNext(wrappedExecuteStageRequest);
     }
 
     @Override
