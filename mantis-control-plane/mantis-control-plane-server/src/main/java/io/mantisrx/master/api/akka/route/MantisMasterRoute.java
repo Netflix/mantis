@@ -31,8 +31,8 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
-import io.mantisrx.master.api.akka.route.v1.ResourceClustersReadRoute;
-import io.mantisrx.master.api.akka.route.v1.ResourceClustersWriteRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersNonLeaderRedirectRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersRejectNonLeaderRoute;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 
@@ -55,8 +55,8 @@ public class MantisMasterRoute extends AllDirectives {
     private final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute;
     private final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute;
     private final JobStatusStreamRoute v1JobStatusStreamRoute;
-    private final ResourceClustersReadRoute resourceClustersReadRoute;
-    private final ResourceClustersWriteRoute resourceClustersWriteRoute;
+    private final ResourceClustersNonLeaderRedirectRoute resourceClustersNonLeaderRedirectRoute;
+    private final ResourceClustersRejectNonLeaderRoute resourceClustersRejectNonLeaderRoute;
 
     public MantisMasterRoute(
         final LeaderRedirectionFilter leaderRedirectionFilter,
@@ -89,8 +89,8 @@ public class MantisMasterRoute extends AllDirectives {
         this.v1JobDiscoveryStreamRoute = v1JobDiscoveryStreamRoute;
         this.v1LastSubmittedJobIdStreamRoute = v1LastSubmittedJobIdStreamRoute;
         this.v1JobStatusStreamRoute = v1JobStatusStreamRoute;
-        this.resourceClustersReadRoute = new ResourceClustersReadRoute(resourceClusters);
-        this.resourceClustersWriteRoute = new ResourceClustersWriteRoute(resourceClusters);
+        this.resourceClustersNonLeaderRedirectRoute = new ResourceClustersNonLeaderRedirectRoute(resourceClusters);
+        this.resourceClustersRejectNonLeaderRoute = new ResourceClustersRejectNonLeaderRoute(resourceClusters);
     }
 
     public Route createRoute() {
@@ -108,8 +108,8 @@ public class MantisMasterRoute extends AllDirectives {
                 v1JobDiscoveryStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1LastSubmittedJobIdStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1JobStatusStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
-                resourceClustersReadRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
-                resourceClustersWriteRoute.createRoute(leaderRedirectionFilter::rejectIfNotLeader)
+                resourceClustersNonLeaderRedirectRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
+                resourceClustersRejectNonLeaderRoute.createRoute(leaderRedirectionFilter::rejectIfNotLeader)
         );
     }
 }

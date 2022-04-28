@@ -74,10 +74,4 @@
             <class name="io.mantisrx.master.api.akka.route.pagination.ListObjectTests" />
         </classes>
     </test>
-
-    <test name="ResourceClusterRouteTest" >
-        <classes>
-            <class name="io.mantisrx.master.api.akka.route.v1.ResourceClustersHostRouteTest" />
-        </classes>
-    </test>
 </suite>
