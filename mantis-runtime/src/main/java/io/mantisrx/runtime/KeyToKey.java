@@ -23,7 +23,15 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K1, R> {
+/**
+ * Use to perform another shuffle on the data with a different key
+ * It transforms an item of type <K1, T> to <K2,R>
+ * @param <K1> Input key type
+ * @param <T> Input value type
+ * @param <K2> Output key type
+ * @param <R> Output value type
+ */
+public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
     private KeyComputation<K1, T, K2, R> computation;
     private long keyExpireTimeSeconds;
@@ -70,7 +78,7 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K1, R> {
     public static class Config<K1, T, K2, R> {
 
         private io.mantisrx.common.codec.Codec<R> codec;
-        private io.mantisrx.common.codec.Codec<K1> keyCodec;
+        private io.mantisrx.common.codec.Codec<K2> keyCodec;
         private String description;
         private long keyExpireTimeSeconds = 3600 * 1; // 1 hour default
         // input type for keyToKey is serial
@@ -106,7 +114,7 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K1, R> {
             return this;
         }
 
-        public Config<K1, T, K2, R> keyCodec(io.mantisrx.common.codec.Codec<K1> keyCodec) {
+        public Config<K1, T, K2, R> keyCodec(io.mantisrx.common.codec.Codec<K2> keyCodec) {
             this.keyCodec = keyCodec;
             return this;
         }
