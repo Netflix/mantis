@@ -19,10 +19,9 @@ package io.mantisrx.server.worker;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
+import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.WorkerTopologyInfo;
-import io.mantisrx.server.core.WorkerTopologyInfo.Data;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
@@ -67,12 +66,16 @@ public class MantisWorker extends BaseService {
     private List<Service> mantisServices = new LinkedList<Service>();
 
     public MantisWorker(ConfigurationFactory configFactory, io.mantisrx.server.master.client.config.ConfigurationFactory coreConfigFactory) {
+        this(configFactory, Optional.empty());
+    }
+
+    public MantisWorker(ConfigurationFactory configFactory, Optional<Job> jobToRun) {
         // for rxjava
         System.setProperty("rx.ring-buffer.size", "1024");
 
         WorkerConfiguration config = configFactory.getConfig();
         final HighAvailabilityServices highAvailabilityServices =
-                HighAvailabilityServicesUtil.createHAServices(config);
+            HighAvailabilityServicesUtil.createHAServices(config);
         mantisServices.add(new Service() {
             @Override
             public void start() {
@@ -95,7 +98,7 @@ public class MantisWorker extends BaseService {
             }
         });
         final MantisMasterGateway gateway =
-                highAvailabilityServices.getMasterClientApi();
+            highAvailabilityServices.getMasterClientApi();
         // shutdown hook
         Thread t = new Thread() {
             @Override
@@ -108,7 +111,6 @@ public class MantisWorker extends BaseService {
 
         // services
         // metrics
-        Data data = WorkerTopologyInfo.Reader.getData();
         TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
@@ -121,26 +123,27 @@ public class MantisWorker extends BaseService {
             @Override
             public void start() {
                 executeStageSubject
-                        .asObservable()
-                        .first()
-                        .subscribe(wrappedRequest -> {
-                            task = new Task(
-                                    wrappedRequest,
-                                    config,
+                    .asObservable()
+                    .first()
+                    .subscribe(wrappedRequest -> {
+                        task = new Task(
+                            wrappedRequest,
+                            config,
+                            gateway,
+                            ClassLoaderHandle.fixed(getClass().getClassLoader()),
+                            SinkSubscriptionStateHandler
+                                .Factory
+                                .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                                     gateway,
-                                    ClassLoaderHandle.fixed(getClass().getClassLoader()),
-                                    SinkSubscriptionStateHandler
-                                            .Factory
-                                            .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                                    gateway,
-                                                    Clock.systemDefaultZone()),
-                                Optional.empty());
-                            taskStatusUpdateSubscription =
-                                    task
-                                            .getStatus()
-                                            .subscribe(statusUpdateHandler::onStatusUpdate);
-                            task.startAsync();
-                        });
+                                    Clock.systemDefaultZone()),
+                            Optional.empty(),
+                            jobToRun);
+                        taskStatusUpdateSubscription =
+                            task
+                                .getStatus()
+                                .subscribe(statusUpdateHandler::onStatusUpdate);
+                        task.startAsync();
+                    });
             }
 
             @Override
@@ -182,9 +185,7 @@ public class MantisWorker extends BaseService {
      * and then in the class path.
      *
      * @param resourceName the name of the resource. It can either be a file name, or a path.
-     *
      * @return An {@link java.io.InputStream} instance that represents the found resource. Null otherwise.
-     *
      * @throws java.io.FileNotFoundException
      */
     private static InputStream findResourceAsStream(String resourceName) throws FileNotFoundException {
@@ -212,7 +213,7 @@ public class MantisWorker extends BaseService {
         try {
             StaticPropertiesConfigurationFactory workerConfigFactory = new StaticPropertiesConfigurationFactory(loadProperties(propFile));
             io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory coreConfigFactory =
-                    new io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory(loadProperties(propFile));
+                new io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory(loadProperties(propFile));
 
             MantisWorker worker = new MantisWorker(workerConfigFactory, coreConfigFactory);
             worker.start();
@@ -236,7 +237,9 @@ public class MantisWorker extends BaseService {
                 throw e;
             }
         }
+    }
 
+    public void awaitTerminated() {
         try {
             blockUntilShutdown.await();
         } catch (InterruptedException e) {
@@ -273,5 +276,6 @@ public class MantisWorker extends BaseService {
     }
 
     @Override
-    public void enterActiveMode() {}
+    public void enterActiveMode() {
+    }
 }

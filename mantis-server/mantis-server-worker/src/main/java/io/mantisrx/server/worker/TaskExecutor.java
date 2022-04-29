@@ -422,7 +422,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             masterMonitor,
             classLoaderHandle,
             subscriptionStateHandlerFactory,
-            Optional.of(getHostname()));
+            Optional.of(getHostname()),
+            Optional.empty());
 
         setCurrentTask(task);
 
