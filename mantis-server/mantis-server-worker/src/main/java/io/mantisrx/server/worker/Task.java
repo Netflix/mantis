@@ -55,6 +55,8 @@ public class Task extends AbstractIdleService {
     // hostname from which the task is run from
     private final Optional<String> hostname;
 
+    private final Optional<Job> mantisJob;
+
     private final ExecuteStageRequest executeStageRequest;
 
     public Task(
@@ -63,7 +65,8 @@ public class Task extends AbstractIdleService {
         MantisMasterGateway masterMonitor,
         ClassLoaderHandle classLoaderHandle,
         Factory sinkSubscriptionStateHandlerFactory,
-        Optional<String> hostname) {
+        Optional<String> hostname,
+        Optional<Job> mantisJob) {
         this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
         this.config = config;
         this.masterMonitor = masterMonitor;
@@ -71,9 +74,8 @@ public class Task extends AbstractIdleService {
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
         this.hostname = hostname;
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+        this.mantisJob = mantisJob;
     }
-
-    private final Optional<Job> mantisJob;
 
     @Override
     public void startUp() throws Exception {
@@ -105,7 +107,9 @@ public class Task extends AbstractIdleService {
                 workerMetricsClient,
                 sinkSubscriptionStateHandlerFactory,
                 hostname),
-            getJobProviderClass(), classLoaderHandle, mantisJob.orElse(null)));
+            classLoaderHandle,
+            getJobProviderClass(),
+            mantisJob));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {

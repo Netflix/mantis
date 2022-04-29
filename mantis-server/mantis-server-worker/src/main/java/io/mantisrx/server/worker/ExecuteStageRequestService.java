@@ -26,7 +26,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import javax.annotation.Nullable;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +44,7 @@ public class ExecuteStageRequestService extends BaseService {
     private final Optional<String> jobProviderClass;
 
     private final ClassLoaderHandle classLoaderHandle;
-    @Nullable
-    private final Job mantisJob;
+    private final Optional<Job> mantisJob;
 
     /**
      * This class loader should be set as the context class loader for threads that may dynamically
@@ -59,9 +57,9 @@ public class ExecuteStageRequestService extends BaseService {
         Observable<WrappedExecuteStageRequest> executeStageRequestObservable,
         Observer<Observable<Status>> tasksStatusObserver,
         WorkerExecutionOperations executionOperations,
-        Optional<String> jobProviderClass,
         ClassLoaderHandle classLoaderHandle,
-        @Nullable Job mantisJob) {
+        Optional<String> jobProviderClass,
+        Optional<Job> mantisJob) {
         this.executeStageRequestObservable = executeStageRequestObservable;
         this.tasksStatusObserver = tasksStatusObserver;
         this.executionOperations = executionOperations;
@@ -95,7 +93,7 @@ public class ExecuteStageRequestService extends BaseService {
                         Job mantisJob = null;
                         ClassLoader cl = null;
                         try {
-                            if (ExecuteStageRequestService.this.mantisJob == null) {
+                            if (!ExecuteStageRequestService.this.mantisJob.isPresent()) {
                                 // first of all, get a user-code classloader
                                 // this may involve downloading the job's JAR files and/or classes
                                 logger.info("Loading JAR files for task {}.", this);
@@ -118,7 +116,7 @@ public class ExecuteStageRequestService extends BaseService {
                                     mantisJob = mantisJobProvider.getJobInstance();
                                 }
                             } else {
-                                mantisJob = ExecuteStageRequestService.this.mantisJob;
+                                mantisJob = ExecuteStageRequestService.this.mantisJob.get();
                             }
                         } catch (Throwable e) {
                             logger.error("Failed to load job class", e);
