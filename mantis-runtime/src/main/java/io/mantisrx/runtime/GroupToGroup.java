@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class GroupToGroup<K1, T, K2, R> extends StageConfig<T, R> {
+public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K1, R> {
 
     private GroupComputation<K1, T, K2, R> computation;
     private long keyExpireTimeSeconds;
@@ -43,14 +43,14 @@ public class GroupToGroup<K1, T, K2, R> extends StageConfig<T, R> {
             public byte[] encode(T value) {
                 return inputCodec.encode(value);
             }
-        }, config.codec, config.inputStrategy, config.parameters);
+        }, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
 
     GroupToGroup(GroupComputation<K1, T, K2, R> computation,
                  Config<K1, T, K2, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -66,6 +66,7 @@ public class GroupToGroup<K1, T, K2, R> extends StageConfig<T, R> {
     public static class Config<K1, T, K2, R> {
 
         private io.mantisrx.common.codec.Codec<R> codec;
+        private io.mantisrx.common.codec.Codec<K1> keyCodec;
         private String description;
         private long keyExpireTimeSeconds = 3600 * 1; // 1 hour default
         // input type for keyToKey is serial
@@ -98,6 +99,11 @@ public class GroupToGroup<K1, T, K2, R> extends StageConfig<T, R> {
 
         public Config<K1, T, K2, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
             this.codec = codec;
+            return this;
+        }
+
+        public Config<K1, T, K2, R> keyCodec(io.mantisrx.common.codec.Codec<K1> keyCodec) {
+            this.keyCodec = keyCodec;
             return this;
         }
 

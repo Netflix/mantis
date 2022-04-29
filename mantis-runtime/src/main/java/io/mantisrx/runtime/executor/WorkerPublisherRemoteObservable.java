@@ -16,23 +16,11 @@
 
 package io.mantisrx.runtime.executor;
 
-import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.properties.MantisPropertiesService;
-import io.mantisrx.runtime.GroupToGroup;
-import io.mantisrx.runtime.GroupToScalar;
-import io.mantisrx.runtime.KeyToKey;
-import io.mantisrx.runtime.KeyToScalar;
-import io.mantisrx.runtime.ScalarToGroup;
-import io.mantisrx.runtime.ScalarToKey;
-import io.mantisrx.runtime.ScalarToScalar;
-import io.mantisrx.runtime.StageConfig;
+import io.mantisrx.runtime.*;
 import io.mantisrx.server.core.ServiceRegistry;
-import io.reactivex.mantis.network.push.KeyValuePair;
-import io.reactivex.mantis.network.push.LegacyTcpPushServer;
-import io.reactivex.mantis.network.push.PushServers;
-import io.reactivex.mantis.network.push.Routers;
-import io.reactivex.mantis.network.push.ServerConfig;
+import io.reactivex.mantis.network.push.*;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ServeNestedObservable;
@@ -72,98 +60,8 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
         RemoteRxServer.Builder serverBuilder = new RemoteRxServer.Builder();
 
-        if (stage instanceof KeyToKey || stage instanceof ScalarToKey || stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
-
-            if (runNewW2WserverGroups(jobName)) {
-                logger.info("Modern server setup for name: " + name + " type: Keyedstage");
-
-                long expiryTimeInSecs = Long.MAX_VALUE;
-                if (stage instanceof KeyToKey) {
-                    expiryTimeInSecs = ((KeyToKey) stage).getKeyExpireTimeSeconds();
-                } else if (stage instanceof ScalarToKey) {
-                    expiryTimeInSecs = ((ScalarToKey) stage).getKeyExpireTimeSeconds();
-                }
-
-                Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
-
-                Func1<String, byte[]> keyEncoder = t1 -> Codecs.string().encode(t1);
-
-
-                ServerConfig<KeyValuePair<String, T>> config = new ServerConfig.Builder<KeyValuePair<String, T>>()
-                        .name(name)
-                        .port(serverPort)
-                        .metricsRegistry(MetricsRegistry.getInstance())
-                        .numQueueConsumers(numConsumerThreads())
-                        .maxChunkSize(maxChunkSize())
-                        .maxChunkTimeMSec(maxChunkTimeMSec())
-                        .bufferCapacity(bufferCapacity())
-                        .useSpscQueue(useSpsc())
-                        .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
-                        .build();
-
-                if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
-
-                    final LegacyTcpPushServer<KeyValuePair<String, T>> modernServer =
-                            PushServers.infiniteStreamLegacyTcpNestedMantisGroup(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                                    io.reactivex.mantis.network.push.HashFunctions.ketama());
-
-                    modernServer.start();
-
-                    // support legacy server interface
-                    this.server = new RemoteRxServer() {
-
-                        @Override
-                        public void start() {
-                        }
-
-                        @Override
-                        public void startAndWait() {
-                        }
-
-                        @Override
-                        public void shutdown() {
-                            modernServer.shutdown();
-                        }
-
-                        @Override
-                        public void blockUntilServerShutdown() {
-                            modernServer.blockUntilShutdown();
-                        }
-                    };
-
-                } else { // ScalarToKey or KeyTKey
-
-
-                    final LegacyTcpPushServer<KeyValuePair<String, T>> modernServer =
-                            PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                                    io.reactivex.mantis.network.push.HashFunctions.ketama());
-
-                    modernServer.start();
-
-                    // support legacy server interface
-                    this.server = new RemoteRxServer() {
-
-                        @Override
-                        public void start() {
-                        }
-
-                        @Override
-                        public void startAndWait() {
-                        }
-
-                        @Override
-                        public void shutdown() {
-                            modernServer.shutdown();
-                        }
-
-                        @Override
-                        public void blockUntilServerShutdown() {
-                            modernServer.blockUntilShutdown();
-                        }
-                    };
-                }
-
-            }
+        if (stage instanceof KeyValueStageConfig) {
+            startKeyValueStage((KeyValueStageConfig<?, ?, T>) stage, toServe);
         } else if (stage instanceof ScalarToScalar || stage instanceof KeyToScalar || stage instanceof GroupToScalar) {
 
             if (runNewW2Wserver(jobName)) {
@@ -222,6 +120,99 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             }
         } else {
             throw new RuntimeException("Unsupported stage type: " + stage);
+        }
+    }
+
+    private <K> void startKeyValueStage(KeyValueStageConfig<?, K, T> stage, Observable<Observable<T>> toServe) {
+
+        if (runNewW2WserverGroups(jobName)) {
+            logger.info("Modern server setup for name: " + name + " type: Keyedstage");
+
+            long expiryTimeInSecs = Long.MAX_VALUE;
+            if (stage instanceof KeyToKey) {
+                expiryTimeInSecs = ((KeyToKey) stage).getKeyExpireTimeSeconds();
+            } else if (stage instanceof ScalarToKey) {
+                expiryTimeInSecs = ((ScalarToKey) stage).getKeyExpireTimeSeconds();
+            }
+
+            Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
+
+            Func1<K, byte[]> keyEncoder = t1 -> stage.getOutputKeyCodec().encode(t1);
+
+
+            ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
+                .name(name)
+                .port(serverPort)
+                .metricsRegistry(MetricsRegistry.getInstance())
+                .numQueueConsumers(numConsumerThreads())
+                .maxChunkSize(maxChunkSize())
+                .maxChunkTimeMSec(maxChunkTimeMSec())
+                .bufferCapacity(bufferCapacity())
+                .useSpscQueue(useSpsc())
+                .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+                .build();
+
+            if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
+
+                final LegacyTcpPushServer<KeyValuePair<K, T>> modernServer =
+                    PushServers.infiniteStreamLegacyTcpNestedMantisGroup(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+                        io.reactivex.mantis.network.push.HashFunctions.ketama());
+
+                modernServer.start();
+
+                // support legacy server interface
+                this.server = new RemoteRxServer() {
+
+                    @Override
+                    public void start() {
+                    }
+
+                    @Override
+                    public void startAndWait() {
+                    }
+
+                    @Override
+                    public void shutdown() {
+                        modernServer.shutdown();
+                    }
+
+                    @Override
+                    public void blockUntilServerShutdown() {
+                        modernServer.blockUntilShutdown();
+                    }
+                };
+
+            } else { // ScalarToKey or KeyTKey
+
+
+                final LegacyTcpPushServer<KeyValuePair<String, T>> modernServer =
+                    PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+                        io.reactivex.mantis.network.push.HashFunctions.ketama());
+
+                modernServer.start();
+
+                // support legacy server interface
+                this.server = new RemoteRxServer() {
+
+                    @Override
+                    public void start() {
+                    }
+
+                    @Override
+                    public void startAndWait() {
+                    }
+
+                    @Override
+                    public void shutdown() {
+                        modernServer.shutdown();
+                    }
+
+                    @Override
+                    public void blockUntilServerShutdown() {
+                        modernServer.blockUntilShutdown();
+                    }
+                };
+            }
         }
     }
 
