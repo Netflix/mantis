@@ -80,26 +80,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 modernServer.start();
 
                 // support legacy server interface
-                this.server = new RemoteRxServer() {
-
-                    @Override
-                    public void start() {
-                    }
-
-                    @Override
-                    public void startAndWait() {
-                    }
-
-                    @Override
-                    public void shutdown() {
-                        modernServer.shutdown();
-                    }
-
-                    @Override
-                    public void blockUntilServerShutdown() {
-                        modernServer.blockUntilShutdown();
-                    }
-                };
+                this.server = new LegacyRxServer<>(modernServer);
 
             } else {
                 logger.info("Legacy server setup for name: " + name + " type: Scalarstage");
@@ -152,67 +133,20 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
                 .build();
 
+            final LegacyTcpPushServer<KeyValuePair<K, T>> modernServer;
             if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
-
-                final LegacyTcpPushServer<KeyValuePair<K, T>> modernServer =
-                    PushServers.infiniteStreamLegacyTcpNestedMantisGroup(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                        io.reactivex.mantis.network.push.HashFunctions.ketama());
-
-                modernServer.start();
-
-                // support legacy server interface
-                this.server = new RemoteRxServer() {
-
-                    @Override
-                    public void start() {
-                    }
-
-                    @Override
-                    public void startAndWait() {
-                    }
-
-                    @Override
-                    public void shutdown() {
-                        modernServer.shutdown();
-                    }
-
-                    @Override
-                    public void blockUntilServerShutdown() {
-                        modernServer.blockUntilShutdown();
-                    }
-                };
-
+                modernServer = PushServers.infiniteStreamLegacyTcpNestedMantisGroup(
+                    config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+                    io.reactivex.mantis.network.push.HashFunctions.ketama());
             } else { // ScalarToKey or KeyTKey
-
-
-                final LegacyTcpPushServer<KeyValuePair<String, T>> modernServer =
-                    PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                        io.reactivex.mantis.network.push.HashFunctions.ketama());
-
-                modernServer.start();
-
-                // support legacy server interface
-                this.server = new RemoteRxServer() {
-
-                    @Override
-                    public void start() {
-                    }
-
-                    @Override
-                    public void startAndWait() {
-                    }
-
-                    @Override
-                    public void shutdown() {
-                        modernServer.shutdown();
-                    }
-
-                    @Override
-                    public void blockUntilServerShutdown() {
-                        modernServer.blockUntilShutdown();
-                    }
-                };
+                modernServer = PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
+                    config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+                    io.reactivex.mantis.network.push.HashFunctions.ketama());
             }
+
+            modernServer.start();
+            // support legacy server interface
+            this.server = new LegacyRxServer<>(modernServer);
         }
     }
 
@@ -267,5 +201,31 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     @Override
     public RxMetrics getMetrics() {
         return server.getMetrics();
+    }
+
+    private static class LegacyRxServer<T> extends RemoteRxServer {
+        private final LegacyTcpPushServer<T> modernServer;
+
+        public LegacyRxServer(LegacyTcpPushServer<T> modernServer) {
+            this.modernServer = modernServer;
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void startAndWait() {
+        }
+
+        @Override
+        public void shutdown() {
+            modernServer.shutdown();
+        }
+
+        @Override
+        public void blockUntilServerShutdown() {
+            modernServer.blockUntilShutdown();
+        }
     }
 }
