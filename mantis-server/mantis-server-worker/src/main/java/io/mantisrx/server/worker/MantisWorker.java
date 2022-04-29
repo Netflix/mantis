@@ -22,8 +22,6 @@ import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.json.DefaultObjectMapper;
-import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -226,6 +224,18 @@ public class MantisWorker extends BaseService {
 
     @Override
     public void start() {
+        startUp();
+        awaitTerminated();
+    }
+
+    /**
+     * The difference between this method and MantisWorker::start is that this doesn't wait for the service to be shut down
+     * while start gets blocked on the service to be shutdown.
+     *
+     * The reason it is this way is because of existing usages which depend upon this behavior. In the future, once
+     * mantis migrates off the old architecture, this can be removed.
+     */
+    public void startUp() {
         logger.info("Starting Mantis Worker");
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         for (Service service : mantisServices) {
@@ -254,25 +264,6 @@ public class MantisWorker extends BaseService {
             service.shutdown();
         }
         blockUntilShutdown.countDown();
-    }
-
-    public MasterDescription getInitialMasterDescription() {
-        String prop = System.getProperty("MASTER_DESCRIPTION");
-        try {
-            logger.info("The initial master description: " + prop);
-            return DefaultObjectMapper.getInstance().readValue(prop, MasterDescription.class);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(String.format("Can't convert master description %s to an object: %s", prop, e.getMessage()), e);
-        }
-    }
-
-    public Optional<String> getJobProviderClass() {
-        String jobProviderClass = System.getProperty("JOB_PROVIDER_CLASS");
-        logger.info("JOB_PROVIDER_CLASS: " + jobProviderClass);
-        if (jobProviderClass == null || jobProviderClass.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(jobProviderClass);
     }
 
     @Override
