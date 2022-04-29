@@ -16,26 +16,13 @@
 
 package io.mantisrx.runtime.executor;
 
-import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
-
 import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.rx.MonitorOperator;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.GroupToGroup;
-import io.mantisrx.runtime.GroupToScalar;
-import io.mantisrx.runtime.Groups;
-import io.mantisrx.runtime.KeyToKey;
-import io.mantisrx.runtime.KeyToScalar;
-import io.mantisrx.runtime.ScalarToGroup;
-import io.mantisrx.runtime.ScalarToKey;
-import io.mantisrx.runtime.ScalarToScalar;
-import io.mantisrx.runtime.SinkHolder;
-import io.mantisrx.runtime.SourceHolder;
-import io.mantisrx.runtime.StageConfig;
+import io.mantisrx.runtime.*;
 import io.mantisrx.runtime.computation.Computation;
 import io.mantisrx.runtime.markers.MantisMarker;
 import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
@@ -43,9 +30,6 @@ import io.mantisrx.runtime.source.Index;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -56,6 +40,12 @@ import rx.functions.Func2;
 import rx.internal.util.RxThreadFactory;
 import rx.observables.GroupedObservable;
 import rx.schedulers.Schedulers;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
 
 public class StageExecutors {
@@ -428,12 +418,12 @@ public class StageExecutors {
 
     // NJ
     private static <K, T, R> Observable<Observable<R>> setupKeyToScalarStage(KeyToScalar<K, T, R> stage,
-                                                                             Observable<Observable<MantisGroup<String, T>>> source, Context context) {
+                                                                             Observable<Observable<MantisGroup<K, T>>> source, Context context) {
         StageConfig.INPUT_STRATEGY inputType = stage.getInputStrategy();
         logger.info("Setting up KeyToScalar stage with input type: " + inputType);
         // need to 'shuffle' groups across observables into
         // single observable<GroupedObservable>
-        Observable<GroupedObservable<String, T>> shuffled = Groups.flattenMantisGroupsToGroupedObservables(source);
+        Observable<GroupedObservable<K, T>> shuffled = Groups.flattenMantisGroupsToGroupedObservables(source);
         return executeGroupsInParallel(shuffled, stage.getComputation(), context,
                 stage.getKeyExpireTimeSeconds());
     }
@@ -492,27 +482,27 @@ public class StageExecutors {
             toSink = setupScalarToGroupStage(scalarStage, source, context);
         } else if (stage instanceof KeyToKey) {
             KeyToKey keyToKey = (KeyToKey) stage;
-            Observable<Observable<GroupedObservable<String, T>>> source =
+            Observable<Observable<GroupedObservable<K, T>>> source =
                     consumer.start(keyToKey);
             toSink = setupKeyToKeyStage(keyToKey, source, context);
 
         } else if (stage instanceof GroupToGroup) {
             GroupToGroup groupToGroup = (GroupToGroup) stage;
-            Observable<Observable<MantisGroup<String, T>>> source =
+            Observable<Observable<MantisGroup<K, T>>> source =
                     consumer.start(groupToGroup);
             toSink = setupGroupToGroupStage(groupToGroup, source, context);
 
         } else if (stage instanceof KeyToScalar) {
 
             KeyToScalar scalarToKey = (KeyToScalar) stage;
-            Observable<Observable<MantisGroup<String, T>>> source =
+            Observable<Observable<MantisGroup<K, T>>> source =
                     consumer.start(scalarToKey);
             toSink = setupKeyToScalarStage(scalarToKey, source, context);
 
         } else if (stage instanceof GroupToScalar) {
 
             GroupToScalar groupToScalar = (GroupToScalar) stage;
-            Observable<Observable<MantisGroup<String, T>>> source =
+            Observable<Observable<MantisGroup<K, T>>> source =
                     consumer.start(groupToScalar);
 
             toSink = setupGroupToScalarStage(groupToScalar, source, context);
