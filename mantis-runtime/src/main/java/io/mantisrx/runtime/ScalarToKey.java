@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class ScalarToKey<T, K, R> extends StageConfig<T, R> {
+public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
     private ToKeyComputation<T, K, R> computation;
     private long keyExpireTimeSeconds;
@@ -48,7 +48,7 @@ public class ScalarToKey<T, K, R> extends StageConfig<T, R> {
             public byte[] encode(T value) {
                 return inputCodec.encode(value);
             }
-        }, config.codec, config.inputStrategy, config.parameters);
+        }, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -56,7 +56,7 @@ public class ScalarToKey<T, K, R> extends StageConfig<T, R> {
 
     ScalarToKey(ToKeyComputation<T, K, R> computation,
                 Config<T, K, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -74,6 +74,7 @@ public class ScalarToKey<T, K, R> extends StageConfig<T, R> {
     public static class Config<T, K, R> {
 
         private io.mantisrx.common.codec.Codec<R> codec;
+        private io.mantisrx.common.codec.Codec<K> keyCodec;
         private String description;
         // default input type is concurrent for 'grouping' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.CONCURRENT;
@@ -104,6 +105,11 @@ public class ScalarToKey<T, K, R> extends StageConfig<T, R> {
 
         public Config<T, K, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
             this.codec = codec;
+            return this;
+        }
+
+        public Config<T, K, R> keyCodec(io.mantisrx.common.codec.Codec<K> keyCodec) {
+            this.keyCodec = keyCodec;
             return this;
         }
 

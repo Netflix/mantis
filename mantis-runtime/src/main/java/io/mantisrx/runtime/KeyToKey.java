@@ -23,7 +23,15 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class KeyToKey<K1, T, K2, R> extends StageConfig<T, R> {
+/**
+ * Use to perform another shuffle on the data with a different key
+ * It transforms an item of type <K1, T> to <K2,R>
+ * @param <K1> Input key type
+ * @param <T> Input value type
+ * @param <K2> Output key type
+ * @param <R> Output value type
+ */
+public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
     private KeyComputation<K1, T, K2, R> computation;
     private long keyExpireTimeSeconds;
@@ -44,7 +52,7 @@ public class KeyToKey<K1, T, K2, R> extends StageConfig<T, R> {
             public byte[] encode(T value) {
                 return inputCodec.encode(value);
             }
-        }, config.codec, config.inputStrategy, config.parameters);
+        }, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -52,7 +60,7 @@ public class KeyToKey<K1, T, K2, R> extends StageConfig<T, R> {
 
     KeyToKey(KeyComputation<K1, T, K2, R> computation,
              Config<K1, T, K2, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
@@ -70,6 +78,7 @@ public class KeyToKey<K1, T, K2, R> extends StageConfig<T, R> {
     public static class Config<K1, T, K2, R> {
 
         private io.mantisrx.common.codec.Codec<R> codec;
+        private io.mantisrx.common.codec.Codec<K2> keyCodec;
         private String description;
         private long keyExpireTimeSeconds = 3600 * 1; // 1 hour default
         // input type for keyToKey is serial
@@ -102,6 +111,11 @@ public class KeyToKey<K1, T, K2, R> extends StageConfig<T, R> {
 
         public Config<K1, T, K2, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
             this.codec = codec;
+            return this;
+        }
+
+        public Config<K1, T, K2, R> keyCodec(io.mantisrx.common.codec.Codec<K2> keyCodec) {
+            this.keyCodec = keyCodec;
             return this;
         }
 
