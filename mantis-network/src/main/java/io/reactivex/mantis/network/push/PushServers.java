@@ -40,7 +40,7 @@ public class PushServers {
         Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<T> trigger = ObservableTrigger.oo(serverName, o, onComplete, onError);
-        return new LegacyTcpPushServer<T>(trigger, config, serverSignals);
+        return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
     public static <K, V> LegacyTcpPushServer<KeyValuePair<K, V>> infiniteStreamLegacyTcpNestedGroupedObservable(ServerConfig<KeyValuePair<K, V>> config,
@@ -85,9 +85,9 @@ public class PushServers {
 
         PushTrigger<T> trigger = ObservableTrigger.o(serverName, o, onComplete, onError);
 
-        return new PushServerSse<T, S>(trigger, config, serverSignals,
-                requestPreprocessor, requestPostprocessor,
-                subscribeProcessor, state, supportLegacyMetrics);
+        return new PushServerSse<>(trigger, config, serverSignals,
+            requestPreprocessor, requestPostprocessor,
+            subscribeProcessor, state, supportLegacyMetrics);
     }
 
     public static <T> PushServerSse<T, Void> infiniteStreamSse(ServerConfig<T> config, Observable<T> o) {
