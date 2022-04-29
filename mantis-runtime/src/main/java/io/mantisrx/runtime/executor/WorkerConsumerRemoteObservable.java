@@ -63,7 +63,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
                     new ConnectToGroupedObservable.Builder()
                             .name(name)
                             // need to include index offset here
-                            .keyDecoder(Codecs.string())
+                            .keyDecoder(stage.getKeyInputCodec())
                             .valueDecoder(stage.getInputCodec())
                             .subscribeAttempts(30); // max retry before failure
 
