@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import akka.actor.ActorSystem;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
@@ -28,14 +27,6 @@ import java.util.concurrent.CompletionStage;
  * Default Resource cluster provider implementation. This needs to be replaced by OSS implementation provider e.g. k8s.
  */
 public class NoopResourceClusterProvider implements ResourceClusterProvider {
-
-    /**
-     * Actor system is required on ctor to be built by the {@link ResourceClusterProviderAdapter}
-     * @param system
-     */
-    public NoopResourceClusterProvider(ActorSystem system) {
-    }
-
     @Override
     public CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionClusterIfNotPresent(ProvisionResourceClusterRequest clusterSpec) {
         return CompletableFuture.completedFuture(null);

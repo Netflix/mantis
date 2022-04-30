@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import akka.actor.ActorSystem;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import java.util.HashMap;
@@ -25,20 +24,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * [Test only] Store resource storage data in memroy only for testing.
+ * [Test only] Store resource storage data in memory only for testing.
  */
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
     Map<String, ResourceClusterSpecWritable> clusters = new HashMap<>();
-
-    public InMemoryOnlyResourceClusterStorageProvider() {
-    }
-
-    /**
-     * Testing usage (integration between {@link ResourceClusterStorageProvider} and config).
-     * @param system
-     */
-    public InMemoryOnlyResourceClusterStorageProvider(ActorSystem system) {
-    }
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {

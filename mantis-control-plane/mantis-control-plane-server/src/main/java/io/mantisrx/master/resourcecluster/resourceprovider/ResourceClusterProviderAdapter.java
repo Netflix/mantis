@@ -22,6 +22,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissi
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import java.util.concurrent.CompletionStage;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Adapter to bind the implementation of {@link ResourceClusterProvider} using class name specified in
@@ -31,16 +32,34 @@ import java.util.concurrent.CompletionStage;
  *     {@link akka.actor.ActorSystem} param.
  * </p>
  */
+@Slf4j
 public class ResourceClusterProviderAdapter implements ResourceClusterProvider {
     private final ResourceClusterProvider providerImpl;
 
     public ResourceClusterProviderAdapter(String providerClassStr, ActorSystem system) {
+        boolean fallBackToEmptyCtor = false;
+        ResourceClusterProvider provider = null;
         try {
-            this.providerImpl = (ResourceClusterProvider) Class.forName(providerClassStr)
+            provider = (ResourceClusterProvider) Class.forName(providerClassStr)
                 .getConstructor(ActorSystem.class).newInstance(system);
+        } catch (NoSuchMethodException ex) {
+            log.warn("Could not find ctor with actorSystem param: {}", providerClassStr);
+            fallBackToEmptyCtor = true;
         } catch (Exception e) {
             throw new RuntimeException("Failed to create ResourceClusterProvider from " + providerClassStr,  e);
         }
+
+        if (fallBackToEmptyCtor) {
+            try {
+                log.info("Building ResourceClusterProvider with empty ctor: {}", providerClassStr);
+                provider = (ResourceClusterProvider) Class.forName(providerClassStr)
+                    .getConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create ResourceClusterProvider from " + providerClassStr,  e);
+            }
+        }
+
+        this.providerImpl = provider;
     }
 
     @Override
