@@ -36,8 +36,8 @@ public class ScalarStages<T> extends Stages<T> {
 
     public <R> KeyedStages<R> stage(ToKeyComputation<T, String, R> computation,
                                     ScalarToKey.Config<T, String, R> config) {
-        return new KeyedStages<R>(this,
-                new ScalarToKey<T, String, R>(computation, config, inputCodec), config.getCodec());
+        return new KeyedStages<>(this,
+            new ScalarToKey<>(computation, config, inputCodec), config.getCodec());
     }
 
     /**
@@ -55,15 +55,15 @@ public class ScalarStages<T> extends Stages<T> {
 
     public <R> ScalarStages<R> stage(ScalarComputation<T, R> computation,
                                      ScalarToScalar.Config<T, R> config) {
-        return new ScalarStages<R>(this,
-                new ScalarToScalar<T, R>(computation, config, inputCodec), config.getCodec());
+        return new ScalarStages<>(this,
+            new ScalarToScalar<>(computation, config, inputCodec), config.getCodec());
     }
 
     public Config<T> sink(Sink<T> sink) {
-        return new Config<T>(this, new SinkHolder<T>(sink));
+        return new Config<>(this, new SinkHolder<>(sink));
     }
 
     public Config<T> sink(SelfDocumentingSink<T> sink) {
-        return new Config<T>(this, new SinkHolder<T>(sink));
+        return new Config<>(this, new SinkHolder<>(sink));
     }
 }

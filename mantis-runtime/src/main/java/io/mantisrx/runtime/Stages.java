@@ -30,7 +30,7 @@ public class Stages<T> {
 
     Stages(SourceHolder<?> source, StageConfig<?, ?> stage, Codec<T> inputCodec) {
         this.source = source;
-        this.stages = new LinkedList<StageConfig<?, ?>>();
+        this.stages = new LinkedList<>();
         this.stages.add(stage);
         this.inputCodec = inputCodec;
     }
