@@ -163,9 +163,7 @@ public class MantisWorker extends BaseService {
 
             @Override
             public String toString() {
-                return "TaskService{" +
-                    "task=" + task +
-                    '}';
+                return "TaskService";
             }
         });
         /* To run MantisWorker locally in IDE, use VirualMachineWorkerServiceLocalImpl instead
@@ -254,6 +252,7 @@ public class MantisWorker extends BaseService {
                 logger.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
                 throw e;
             }
+            logger.info("Started service: " + service);
         }
 
         logger.info("Started Mantis Worker successfully");
