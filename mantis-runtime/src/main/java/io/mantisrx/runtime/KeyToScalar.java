@@ -16,11 +16,12 @@
 
 package io.mantisrx.runtime;
 
+import io.mantisrx.common.codec.Codec;
 import io.mantisrx.runtime.computation.ToScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
-import io.reactivex.netty.codec.Codec;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
@@ -28,34 +29,19 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
     private ToScalarComputation<K, T, R> computation;
     private long keyExpireTimeSeconds;
 
-
     /**
-     * @deprecated As of release 0.603, use {@link #KeyToScalar(ToScalarComputation, Config, io.mantisrx.common.codec.Codec)} instead
+     * @deprecated As of release 0.603, use {@link #KeyToScalar(ToScalarComputation, Config, Codec)} instead
      */
     KeyToScalar(ToScalarComputation<K, T, R> computation,
-                Config<K, T, R> config, final Codec<T> inputCodec) {
-        super(config.description, new io.mantisrx.common.codec.Codec<T>() {
-            @Override
-            public T decode(byte[] bytes) {
-                return inputCodec.decode(bytes);
-            }
-
-            @Override
-            public byte[] encode(T value) {
-                return inputCodec.encode(value);
-            }
-        }, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
+                Config<K, T, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
 
     KeyToScalar(ToScalarComputation<K, T, R> computation,
-                Config<K, T, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
+                Config<K, T, R> config, Codec<T> inputCodec) {
         super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
     }
 
     public ToScalarComputation<K, T, R> getComputation() {
@@ -66,12 +52,11 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
         return keyExpireTimeSeconds;
     }
 
-
     public static class Config<K, T, R> {
 
-        private io.mantisrx.common.codec.Codec<R> codec;
+        private Codec<R> codec;
         private String description;
-        private long keyExpireTimeSeconds = 3600 * 1; // 1 hour default
+        private long keyExpireTimeSeconds = TimeUnit.HOURS.toSeconds(1); // 1 hour default
         // default input type is serial for
         // 'stateful group calculation' use case
         // do not allow config override
@@ -83,24 +68,14 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
          *
          * @return
          *
-         * @deprecated As of release 0.603, use {@link #codec(io.mantisrx.common.codec.Codec)} instead
+         * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
          */
-        public Config<K, T, R> codec(final Codec<R> codec) {
-            this.codec = new io.mantisrx.common.codec.Codec<R>() {
-                @Override
-                public R decode(byte[] bytes) {
-                    return codec.decode(bytes);
-                }
-
-                @Override
-                public byte[] encode(R value) {
-                    return codec.encode(value);
-                }
-            };
+        public Config<K, T, R> codec(final io.reactivex.netty.codec.Codec<R> codec) {
+            this.codec = NettyCodec.fromNetty(codec);
             return this;
         }
 
-        public Config<K, T, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
+        public Config<K, T, R> codec(Codec<R> codec) {
             this.codec = codec;
             return this;
         }
@@ -115,7 +90,7 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
             return this;
         }
 
-        public io.mantisrx.common.codec.Codec<R> getCodec() {
+        public Codec<R> getCodec() {
             return codec;
         }
 

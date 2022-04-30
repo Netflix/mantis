@@ -35,21 +35,21 @@ public class KeyedStages<T> extends Stages<T> {
 
     public <R> KeyedStages<R> stage(KeyComputation<String, T, String, R> computation,
                                     KeyToKey.Config<String, T, String, R> config) {
-        return new KeyedStages<R>(this, new KeyToKey<String, T, String, R>(computation, config, inputCodec), config.getCodec());
+        return new KeyedStages<R>(this, new KeyToKey<>(computation, config, inputCodec), config.getCodec());
     }
 
     public <R> KeyedStages<R> stage(GroupComputation<String, T, String, R> computation,
                                     GroupToGroup.Config<String, T, String, R> config) {
-        return new KeyedStages<R>(this, new GroupToGroup<String, T, String, R>(computation, config, inputCodec), config.getCodec());
+        return new KeyedStages<R>(this, new GroupToGroup<>(computation, config, inputCodec), config.getCodec());
     }
 
     public <R> ScalarStages<R> stage(ToScalarComputation<String, T, R> computation,
                                      KeyToScalar.Config<String, T, R> config) {
-        return new ScalarStages<R>(this, new KeyToScalar<String, T, R>(computation, config, inputCodec), config.getCodec());
+        return new ScalarStages<R>(this, new KeyToScalar<>(computation, config, inputCodec), config.getCodec());
     }
 
     public <R> ScalarStages<R> stage(GroupToScalarComputation<String, T, R> computation,
                                      GroupToScalar.Config<String, T, R> config) {
-        return new ScalarStages<R>(this, new GroupToScalar<String, T, R>(computation, config, inputCodec), config.getCodec());
+        return new ScalarStages<R>(this, new GroupToScalar<>(computation, config, inputCodec), config.getCodec());
     }
 }

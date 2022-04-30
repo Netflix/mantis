@@ -17,6 +17,8 @@
 package io.reactivex.mantis.network.push;
 
 import io.mantisrx.common.MantisGroup;
+import java.util.List;
+import java.util.Map;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -24,9 +26,6 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.observables.GroupedObservable;
 import rx.subjects.PublishSubject;
-
-import java.util.List;
-import java.util.Map;
 
 
 public class PushServers {

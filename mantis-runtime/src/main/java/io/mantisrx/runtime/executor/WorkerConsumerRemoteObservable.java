@@ -19,14 +19,7 @@ package io.mantisrx.runtime.executor;
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.runtime.GroupToGroup;
-import io.mantisrx.runtime.GroupToScalar;
-import io.mantisrx.runtime.KeyToKey;
-import io.mantisrx.runtime.KeyToScalar;
-import io.mantisrx.runtime.ScalarToGroup;
-import io.mantisrx.runtime.ScalarToKey;
-import io.mantisrx.runtime.ScalarToScalar;
-import io.mantisrx.runtime.StageConfig;
+import io.mantisrx.runtime.*;
 import io.reactivex.mantis.remote.observable.ConnectToGroupedObservable;
 import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
@@ -56,14 +49,15 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
     @SuppressWarnings( {"rawtypes", "unchecked"})
     @Override
     public Observable<Observable<T>> start(StageConfig<T, ?> stage) {
-        if (stage instanceof KeyToKey || stage instanceof KeyToScalar || stage instanceof GroupToScalar || stage instanceof GroupToGroup) {
+        if (stage instanceof KeyValueInputStageConfig) {
 
             logger.info("Remote connection to stage " + name + " is KeyedStage");
+            //todo(hmittal): fix keyencoder here!
             ConnectToGroupedObservable.Builder connectToBuilder =
                     new ConnectToGroupedObservable.Builder()
                             .name(name)
                             // need to include index offset here
-                            .keyDecoder(stage.getKeyInputCodec())
+                            .keyDecoder(Codecs.string())
                             .valueDecoder(stage.getInputCodec())
                             .subscribeAttempts(30); // max retry before failure
 

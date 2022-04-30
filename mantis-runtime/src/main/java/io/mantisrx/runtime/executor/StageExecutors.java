@@ -16,6 +16,8 @@
 
 package io.mantisrx.runtime.executor;
 
+import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
+
 import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.metrics.Counter;
@@ -30,22 +32,18 @@ import io.mantisrx.runtime.source.Index;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.internal.util.RxThreadFactory;
 import rx.observables.GroupedObservable;
 import rx.schedulers.Schedulers;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
 
 
 public class StageExecutors {
@@ -152,7 +150,7 @@ public class StageExecutors {
         return
                 go
                         .lift(new MonitorOperator<>("worker_stage_outer"))
-                        .map((Func1<GroupedObservable<K, T>, Observable<R>>) group -> c
+                        .map(group -> c
                                 .call(context, GroupedObservableUtils.createGroupedObservable(group.getKey(),
                                         group
                                                 // comment out as it induces NPE in merge supposedly fixed in rxJava 1.0
@@ -161,11 +159,11 @@ public class StageExecutors {
                                                     if (groupsExpiredCounter != null)
                                                         groupsExpiredCounter.increment();
                                                 })
-                                                .timeout(groupTakeUntil, TimeUnit.SECONDS, (Observable<? extends T>) Observable.empty())
+                                                .timeout(groupTakeUntil, TimeUnit.SECONDS, Observable.empty())
 
                                                 .subscribeOn(Schedulers.computation())
 
-                                                .lift(new MonitorOperator<T>("worker_stage_inner_input"))))
+                                                .lift(new MonitorOperator<>("worker_stage_inner_input"))))
                                 .lift(new MonitorOperator("worker_stage_inner_output")));
     }
 
@@ -181,7 +179,7 @@ public class StageExecutors {
         return
                 go
                         .lift(new MonitorOperator<>("worker_stage_outer"))
-                        .map((Func1<Observable<MantisGroup<K, T>>, Observable<R>>) group -> c
+                        .map(group -> c
                                 .call(context, group
                                         .lift(new MonitorOperator<>("worker_stage_inner_input")))
                                 .lift(new MonitorOperator("worker_stage_inner_output")));
@@ -229,7 +227,7 @@ public class StageExecutors {
                             .groupBy(e -> Math.abs(e.getKeyValue().hashCode()) % concurrency)
                             .flatMap(gbo -> c
                                     .call(context, gbo
-                                            .observeOn(mantisRxSingleThreadSchedulers[gbo.getKey().intValue()])
+                                            .observeOn(mantisRxSingleThreadSchedulers[gbo.getKey()])
                                             .lift(new MonitorOperator<MantisGroup<K, T>>("worker_stage_inner_input")))
                                     .lift(new MonitorOperator<R>("worker_stage_inner_output"))));
         }
@@ -385,31 +383,30 @@ public class StageExecutors {
         }
     }
 
-    private static <K1, T, K2, R> Observable<Observable<GroupedObservable<String, R>>> setupKeyToKeyStage(KeyToKey<K1, T, K2, R> stage,
-                                                                                                          Observable<Observable<GroupedObservable<String, T>>> source, Context context) {
+    private static <K1, T, K2, R> Observable<Observable<GroupedObservable<K2, R>>> setupKeyToKeyStage(KeyToKey<K1, T, K2, R> stage,
+                                                                                                          Observable<Observable<GroupedObservable<K1, T>>> source, Context context) {
         StageConfig.INPUT_STRATEGY inputType = stage.getInputStrategy();
         logger.info("Setting up KeyToKey stage with input type: " + inputType);
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
             throw new RuntimeException("Concurrency is not a supported input strategy for KeyComputation");
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
-            Observable<GroupedObservable<String, T>> shuffled = Groups.flatten(source);
+            Observable<GroupedObservable<K1, T>> shuffled = Groups.flatten(source);
             return executeGroupsInParallel(shuffled, stage.getComputation(), context, stage.getKeyExpireTimeSeconds());
         } else {
             throw new RuntimeException("Unsupported input type: " + inputType.name());
         }
     }
 
-    private static <K1, T, K2, R> Observable<Observable<MantisGroup<String, R>>> setupGroupToGroupStage(GroupToGroup<K1, T, K2, R> stage,
-                                                                                                        Observable<Observable<MantisGroup<String, T>>> source, Context context) {
+    private static <K1, T, K2, R> Observable<Observable<MantisGroup<K2, R>>> setupGroupToGroupStage(GroupToGroup<K1, T, K2, R> stage,
+                                                                                                        Observable<Observable<MantisGroup<K1, T>>> source, Context context) {
         StageConfig.INPUT_STRATEGY inputType = stage.getInputStrategy();
         logger.info("Setting up GroupToGroup stage with input type: " + inputType);
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
             throw new RuntimeException("Concurrency is not a supported input strategy for KeyComputation");
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
-            //Observable<MantisGroup<String,T>> shuffled = Groups.flatten(source);
-            Observable<Observable<MantisGroup<String, T>>> merged = Observable.just(Observable.merge(source));
+            Observable<Observable<MantisGroup<K1, T>>> merged = Observable.just(Observable.merge(source));
             return executeMantisGroups(merged, stage.getComputation(), context, stage.getKeyExpireTimeSeconds());
         } else {
             throw new RuntimeException("Unsupported input type: " + inputType.name());
@@ -482,31 +479,24 @@ public class StageExecutors {
             toSink = setupScalarToGroupStage(scalarStage, source, context);
         } else if (stage instanceof KeyToKey) {
             KeyToKey keyToKey = (KeyToKey) stage;
-            Observable<Observable<GroupedObservable<K, T>>> source =
+            Observable<Observable<GroupedObservable<Object, T>>> source =
                     consumer.start(keyToKey);
             toSink = setupKeyToKeyStage(keyToKey, source, context);
-
         } else if (stage instanceof GroupToGroup) {
             GroupToGroup groupToGroup = (GroupToGroup) stage;
-            Observable<Observable<MantisGroup<K, T>>> source =
+            Observable<Observable<MantisGroup<Object, T>>> source =
                     consumer.start(groupToGroup);
             toSink = setupGroupToGroupStage(groupToGroup, source, context);
-
         } else if (stage instanceof KeyToScalar) {
-
             KeyToScalar scalarToKey = (KeyToScalar) stage;
-            Observable<Observable<MantisGroup<K, T>>> source =
+            Observable<Observable<MantisGroup<Object, T>>> source =
                     consumer.start(scalarToKey);
             toSink = setupKeyToScalarStage(scalarToKey, source, context);
-
         } else if (stage instanceof GroupToScalar) {
-
             GroupToScalar groupToScalar = (GroupToScalar) stage;
-            Observable<Observable<MantisGroup<K, T>>> source =
+            Observable<Observable<MantisGroup<Object, T>>> source =
                     consumer.start(groupToScalar);
-
             toSink = setupGroupToScalarStage(groupToScalar, source, context);
-
         }
 
         publisher.start(stage, toSink);
