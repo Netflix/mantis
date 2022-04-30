@@ -49,7 +49,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
     @SuppressWarnings( {"rawtypes", "unchecked"})
     @Override
     public Observable<Observable<T>> start(StageConfig<T, ?> stage) {
-        if (stage instanceof KeyToKey || stage instanceof KeyToScalar || stage instanceof GroupToScalar || stage instanceof GroupToGroup) {
+        if (stage instanceof KeyValueInputStageConfig) {
 
             logger.info("Remote connection to stage " + name + " is KeyedStage");
             //todo(hmittal): fix keyencoder here!
