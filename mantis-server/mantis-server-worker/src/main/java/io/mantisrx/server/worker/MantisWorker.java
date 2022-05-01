@@ -126,7 +126,7 @@ public class MantisWorker extends BaseService {
             public void start() {
                 executeStageSubject
                         .asObservable()
-                        .single()
+                        .first()
                         .subscribe(wrappedRequest -> {
                             try {
                                 task = new Task();

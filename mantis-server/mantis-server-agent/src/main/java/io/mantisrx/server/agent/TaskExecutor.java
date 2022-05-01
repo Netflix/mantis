@@ -438,7 +438,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             return CompletableFuture.completedFuture(Ack.getInstance());
         } catch (Exception ex) {
             return CompletableFutures.exceptionallyCompletedFuture(
-                new TaskAlreadyRunningException(null));
+                new TaskNotFoundException(null));
         }
     }
 

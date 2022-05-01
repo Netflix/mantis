@@ -16,6 +16,14 @@
 package io.mantisrx.server.agent;
 
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.ImmutableList;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
@@ -68,8 +76,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
 import rx.Observable;
 import rx.Subscription;
 
@@ -107,13 +113,13 @@ public class TaskExecutorTest {
         workerConfiguration = Configurations.frmProperties(props, WorkerConfiguration.class);
         rpcService = new TestingRpcService();
 
-        masterMonitor = Mockito.mock(MantisMasterGateway.class);
+        masterMonitor = mock(MantisMasterGateway.class);
         classLoaderHandle = ClassLoaderHandle.fixed(getClass().getClassLoader());
         resourceManagerGateway = getHealthyGateway("gateway 1");
         resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
-        highAvailabilityServices = Mockito.mock(HighAvailabilityServices.class);
-        Mockito.when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterMonitor);
-        Mockito.when(highAvailabilityServices.connectWithResourceManager(Matchers.any())).thenReturn(resourceManagerGatewayCxn);
+        highAvailabilityServices = mock(HighAvailabilityServices.class);
+        when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterMonitor);
+        when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
     }
 
     private void start() throws Exception {
@@ -160,7 +166,7 @@ public class TaskExecutorTest {
                 .put(1, new WorkerAssignments(1, 1,
                     ImmutableMap.<Integer, WorkerHost>builder().put(0, host).build()))
                 .build();
-        Mockito.when(masterMonitor.schedulingChanges("jobId-0")).thenReturn(
+        when(masterMonitor.schedulingChanges("jobId-0")).thenReturn(
             Observable.just(new JobSchedulingInfo("jobId-0", stageAssignmentMap)));
 
         WorkerId workerId = new WorkerId("jobId-0", 0, 1);
@@ -208,7 +214,7 @@ public class TaskExecutorTest {
                 () -> doneSignal.countDown());
         Assert.assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
         subscription.unsubscribe();
-        Mockito.verify(resourceManagerGateway, Mockito.times(1)).notifyTaskExecutorStatusChange(
+        verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
                 TaskExecutorReport.occupied(workerId)));
 
@@ -217,29 +223,29 @@ public class TaskExecutorTest {
         cancelFuture.get();
 
         Thread.sleep(5000);
-        Mockito.verify(resourceManagerGateway, Mockito.times(1)).notifyTaskExecutorStatusChange(
+        verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
                 TaskExecutorReport.available()));
     }
 
     @Test
     public void testWhenSuccessiveHeartbeatsFail() throws Exception {
-        ResourceClusterGateway resourceManagerGateway = Mockito.mock(ResourceClusterGateway.class);
-        Mockito.when(resourceManagerGateway.registerTaskExecutor(Matchers.any())).thenReturn(
+        ResourceClusterGateway resourceManagerGateway = mock(ResourceClusterGateway.class);
+        when(resourceManagerGateway.registerTaskExecutor(any())).thenReturn(
             CompletableFuture.completedFuture(null));
-        Mockito.when(resourceManagerGateway.heartBeatFromTaskExecutor(Matchers.any()))
+        when(resourceManagerGateway.heartBeatFromTaskExecutor(any()))
             .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error1")))
             .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error2")))
             .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error3")))
             .thenReturn(CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error4")))
             .thenReturn(CompletableFuture.completedFuture(null));
-        Mockito.when(resourceManagerGateway.disconnectTaskExecutor(Matchers.any())).thenReturn(
+        when(resourceManagerGateway.disconnectTaskExecutor(any())).thenReturn(
             CompletableFuture.completedFuture(null));
         resourceManagerGatewayCxn.newLeaderIs(resourceManagerGateway);
 
         start();
         Thread.sleep(1000);
-        Mockito.verify(resourceManagerGateway, Mockito.times(2)).registerTaskExecutor(Matchers.any());
+        verify(resourceManagerGateway, times(2)).registerTaskExecutor(any());
         Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
@@ -258,12 +264,12 @@ public class TaskExecutorTest {
         Thread.sleep(1000);
 
         // check if the switch has been made
-        Mockito.verify(resourceManagerGateway, Mockito.times(1)).registerTaskExecutor(Matchers.any());
-        Mockito.verify(resourceManagerGateway, Mockito.times(1)).disconnectTaskExecutor(Matchers.any());
-        Mockito.verify(resourceManagerGateway, Mockito.atLeastOnce()).heartBeatFromTaskExecutor(Matchers.any());
+        verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
+        verify(resourceManagerGateway, times(1)).disconnectTaskExecutor(any());
+        verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
-        Mockito.verify(newResourceClusterGateway, Mockito.times(1)).registerTaskExecutor(Matchers.any());
-        Mockito.verify(newResourceClusterGateway, Mockito.atLeastOnce()).heartBeatFromTaskExecutor(Matchers.any());
+        verify(newResourceClusterGateway, times(1)).registerTaskExecutor(any());
+        verify(newResourceClusterGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
         Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
@@ -284,46 +290,46 @@ public class TaskExecutorTest {
         Thread.sleep(1000);
 
         // check if the switch has been made
-        Mockito.verify(resourceManagerGateway, Mockito.times(1)).registerTaskExecutor(Matchers.any());
-        Mockito.verify(resourceManagerGateway, Mockito.times(1)).disconnectTaskExecutor(Matchers.any());
-        Mockito.verify(resourceManagerGateway, Mockito.atLeastOnce()).heartBeatFromTaskExecutor(Matchers.any());
+        verify(resourceManagerGateway, times(1)).registerTaskExecutor(any());
+        verify(resourceManagerGateway, times(1)).disconnectTaskExecutor(any());
+        verify(resourceManagerGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
-        Mockito.verify(newResourceManagerGateway1, Mockito.atLeastOnce()).registerTaskExecutor(Matchers.any());
-        Mockito.verify(newResourceManagerGateway1, Mockito.atLeastOnce()).disconnectTaskExecutor(Matchers.any());
-        Mockito.verify(newResourceManagerGateway1, Mockito.never()).heartBeatFromTaskExecutor(Matchers.any());
+        verify(newResourceManagerGateway1, atLeastOnce()).registerTaskExecutor(any());
+        verify(newResourceManagerGateway1, atLeastOnce()).disconnectTaskExecutor(any());
+        verify(newResourceManagerGateway1, never()).heartBeatFromTaskExecutor(any());
 
         ResourceClusterGateway newResourceManagerGateway2 = getHealthyGateway("gateway 3");
         resourceManagerGatewayCxn.newLeaderIs(newResourceManagerGateway2);
         Thread.sleep(1000);
 
-        Mockito.verify(newResourceManagerGateway2, Mockito.times(1)).registerTaskExecutor(Matchers.any());
-        Mockito.verify(newResourceManagerGateway2, Mockito.never()).disconnectTaskExecutor(Matchers.any());
-        Mockito.verify(newResourceManagerGateway2, Mockito.atLeastOnce()).heartBeatFromTaskExecutor(Matchers.any());
+        verify(newResourceManagerGateway2, times(1)).registerTaskExecutor(any());
+        verify(newResourceManagerGateway2, never()).disconnectTaskExecutor(any());
+        verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
         Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     private static ResourceClusterGateway getHealthyGateway(String name) {
-        ResourceClusterGateway gateway = Mockito.mock(ResourceClusterGateway.class);
-        Mockito.when(gateway.registerTaskExecutor(Matchers.any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
-        Mockito.when(gateway.heartBeatFromTaskExecutor(Matchers.any())).thenReturn(
+        ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
+        when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(
             CompletableFuture.completedFuture(Ack.getInstance()));
-        Mockito.when(gateway.notifyTaskExecutorStatusChange(Matchers.any()))
+        when(gateway.notifyTaskExecutorStatusChange(any()))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
-        Mockito.when(gateway.disconnectTaskExecutor(Matchers.any()))
+        when(gateway.disconnectTaskExecutor(any()))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
-        Mockito.when(gateway.toString()).thenReturn(name);
+        when(gateway.toString()).thenReturn(name);
         return gateway;
     }
 
     private static ResourceClusterGateway getUnhealthyGateway(String name) {
-        ResourceClusterGateway gateway = Mockito.mock(ResourceClusterGateway.class);
-        Mockito.when(gateway.registerTaskExecutor(Matchers.any())).thenReturn(
+        ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
+        when(gateway.registerTaskExecutor(any())).thenReturn(
             CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
-        Mockito.when(gateway.disconnectTaskExecutor(Matchers.any())).thenReturn(
+        when(gateway.disconnectTaskExecutor(any())).thenReturn(
             CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));
-        Mockito.when(gateway.toString()).thenReturn(name);
+        when(gateway.toString()).thenReturn(name);
         return gateway;
     }
 

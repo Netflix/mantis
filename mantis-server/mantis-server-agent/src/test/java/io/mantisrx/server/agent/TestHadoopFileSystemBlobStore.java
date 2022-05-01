@@ -16,19 +16,22 @@
 
 package io.mantisrx.server.agent;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import java.io.File;
 import java.net.URI;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Test;
 import org.mockito.Matchers;
-import org.mockito.Mockito;
 
 public class TestHadoopFileSystemBlobStore {
 
   @Test
   public void test() throws Exception {
-    FileSystem fileSystem = Mockito.mock(FileSystem.class);
+    FileSystem fileSystem = mock(FileSystem.class);
 
     File localStoreDir = new File("/mnt/data/mantis-artifacts");
     HadoopFileSystemBlobStore blobStore =
@@ -40,7 +43,7 @@ public class TestHadoopFileSystemBlobStore {
         new URI(
             "/mnt/data/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
     blobStore.get(src);
-    Mockito.verify(fileSystem, Mockito.times(1)).copyToLocalFile(Matchers.eq(new Path(src)),
+    verify(fileSystem, times(1)).copyToLocalFile(Matchers.eq(new Path(src)),
         Matchers.eq(new Path(dst)));
   }
 }
