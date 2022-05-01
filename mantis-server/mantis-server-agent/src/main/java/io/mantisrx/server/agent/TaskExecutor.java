@@ -28,7 +28,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.ITask;
-import io.mantisrx.server.master.client.InstantiationUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
@@ -49,6 +48,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -424,7 +424,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         try {
             UserCodeClassLoader userCodeClassLoader = ClassLoaderHandle.createUserCodeClassloader(request, classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
-            final ITask task = InstantiationUtil.instantiate("io.mantisrx.server.worker.Task", ITask.class, cl);
+            ServiceLoader<ITask> loader = ServiceLoader.load(ITask.class, cl);
+            // There should only be 1 task implementation provided by mantis-server-worker.
+            ITask task = loader.iterator().next();
+
             task.setWrappedExecuteStageRequest(wrappedRequest);
             task.setWorkerConfiguration(workerConfiguration);
             task.setMantisMasterGateway(masterMonitor);
