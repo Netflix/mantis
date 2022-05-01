@@ -118,6 +118,7 @@ public class MantisWorker extends BaseService {
         mantisServices.add(new Service() {
             private Task task;
             private Subscription taskStatusUpdateSubscription;
+            private Subscription vmStatusSubscription;
 
             @Override
             public void start() {
@@ -141,6 +142,9 @@ public class MantisWorker extends BaseService {
                             task
                                 .getStatus()
                                 .subscribe(statusUpdateHandler::onStatusUpdate);
+
+                        vmStatusSubscription =
+                            task.getVMStatus().subscribe(vmTaskStatusSubject);
                         task.startAsync();
                     });
             }
@@ -152,6 +156,7 @@ public class MantisWorker extends BaseService {
                         task.stopAsync().awaitTerminated();
                     } finally {
                         taskStatusUpdateSubscription.unsubscribe();
+                        vmStatusSubscription.unsubscribe();
                     }
                 }
             }
