@@ -17,8 +17,8 @@
 package io.mantisrx.server.worker.mesos;
 
 import io.mantisrx.server.core.BaseService;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.worker.VirtualMachineWorkerService;
-import io.mantisrx.server.worker.WrappedExecuteStageRequest;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus.TYPE;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

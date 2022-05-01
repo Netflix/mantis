@@ -19,6 +19,7 @@ import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
 import io.mantisrx.server.master.client.ITask;
@@ -42,7 +43,7 @@ import rx.subjects.PublishSubject;
 @Slf4j
 public class Task extends AbstractIdleService implements ITask {
 
-    private ExecuteStageRequest executeStageRequest;
+    private WrappedExecuteStageRequest wrappedExecuteStageRequest;
 
     private WorkerConfiguration config;
 
@@ -57,33 +58,17 @@ public class Task extends AbstractIdleService implements ITask {
     private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
     // hostname from which the task is run from
-    private final Optional<String> hostname;
+    private Optional<String> hostname = Optional.empty();
 
-    private final Optional<Job> mantisJob;
+    private Optional<Job> mantisJob = Optional.empty();
 
-    private final ExecuteStageRequest executeStageRequest;
-
-    public Task(
-        WrappedExecuteStageRequest wrappedExecuteStageRequest,
-        WorkerConfiguration config,
-        MantisMasterGateway masterMonitor,
-        ClassLoaderHandle classLoaderHandle,
-        Factory sinkSubscriptionStateHandlerFactory,
-        Optional<String> hostname,
-        Optional<Job> mantisJob) {
-        this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
-        this.config = config;
-        this.masterMonitor = masterMonitor;
-        this.classLoaderHandle = classLoaderHandle;
-        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
-        this.hostname = hostname;
-        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
-        this.mantisJob = mantisJob;
-    }
+    private ExecuteStageRequest executeStageRequest;
 
     @Override
-    public void setExecuteStageRequest(ExecuteStageRequest request) {
-        this.executeStageRequest = request;
+    public void setWrappedExecuteStageRequest(WrappedExecuteStageRequest wrappedExecuteStageRequest) {
+        this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+
     }
 
     @Override
@@ -107,7 +92,16 @@ public class Task extends AbstractIdleService implements ITask {
     }
 
     @Override
-    public void startUp() {
+    public void setHostname(Optional<String> hostname) {
+        this.hostname = hostname;
+    }
+
+    public void setJob(Optional<Job> job) {
+        this.mantisJob = job;
+    }
+
+    @Override
+    public void startUp() throws Exception {
         try {
             log.info("Starting current task {}", this);
             doRun();
@@ -133,8 +127,11 @@ public class Task extends AbstractIdleService implements ITask {
                 vmTaskStatusSubject,
                 masterMonitor,
                 config,
-                workerMetricsClient, sinkSubscriptionStateHandlerFactory),
-            getJobProviderClass(), userCodeClassLoader, null));
+                workerMetricsClient,
+                sinkSubscriptionStateHandlerFactory,
+                hostname),
+            getJobProviderClass(),userCodeClassLoader,
+            mantisJob));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {

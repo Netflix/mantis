@@ -16,17 +16,18 @@
 
 package io.mantisrx.server.master.client;
 
-import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
+import java.util.Optional;
 import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 
 public interface ITask extends Service {
 
-    void setExecuteStageRequest(ExecuteStageRequest request);
+    void setWrappedExecuteStageRequest(WrappedExecuteStageRequest request);
 
     void setWorkerConfiguration(WorkerConfiguration config);
 
@@ -35,6 +36,8 @@ public interface ITask extends Service {
     void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader);
 
     void setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory);
+
+    void setHostname(Optional<String> hostname);
 
     Observable<Status> getStatus();
 

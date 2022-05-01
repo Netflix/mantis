@@ -23,6 +23,7 @@ import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
@@ -414,15 +415,22 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }
         }
 
+        // todo(sundaram): rethink on how this needs to be handled better.
+        // The publishsubject is today used to communicate the failure to start the request in a timely fashion.
+        // Seems very convoluted.
+        WrappedExecuteStageRequest wrappedRequest =
+            new WrappedExecuteStageRequest(PublishSubject.create(), request);
+
         try {
             UserCodeClassLoader userCodeClassLoader = ClassLoaderHandle.createUserCodeClassloader(request, classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             final ITask task = InstantiationUtil.instantiate("io.mantisrx.server.worker.Task", ITask.class, cl);
-            task.setExecuteStageRequest(request);
+            task.setWrappedExecuteStageRequest(wrappedRequest);
             task.setWorkerConfiguration(workerConfiguration);
             task.setMantisMasterGateway(masterMonitor);
             task.setUserCodeClassLoader(userCodeClassLoader);
             task.setSinkSubscriptionStateHandlerFactory(subscriptionStateHandlerFactory);
+            task.setHostname(Optional.of(getHostname()));
 
             setCurrentTask(task);
 

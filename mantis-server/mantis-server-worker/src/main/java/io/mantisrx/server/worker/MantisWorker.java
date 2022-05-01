@@ -22,10 +22,7 @@ import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.WorkerTopologyInfo;
-import io.mantisrx.server.core.WorkerTopologyInfo.Data;
-import io.mantisrx.server.core.json.DefaultObjectMapper;
-import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
@@ -133,7 +130,7 @@ public class MantisWorker extends BaseService {
                         .subscribe(wrappedRequest -> {
                             try {
                                 task = new Task();
-                                task.setExecuteStageRequest(wrappedRequest.getRequest());
+                                task.setWrappedExecuteStageRequest(wrappedRequest);
                                 task.setWorkerConfiguration(config);
                                 task.setMantisMasterGateway(gateway);
                                 task.setUserCodeClassLoader(ClassLoaderHandle.createUserCodeClassloader(
@@ -144,6 +141,7 @@ public class MantisWorker extends BaseService {
                                     .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                                         gateway,
                                         Clock.systemDefaultZone()));
+                                task.setJob(jobToRun);
 
                                 taskStatusUpdateSubscription =
                                     task
