@@ -122,6 +122,15 @@ public class MantisWorker extends BaseService {
 
             @Override
             public void start() {
+                final ClassLoader classLoader;
+                if (Thread.currentThread().getContextClassLoader() == null) {
+                    classLoader = ClassLoader.getSystemClassLoader();
+                    logger.info("Choosing system classloader {}", classLoader);
+                } else {
+                    classLoader = Thread.currentThread().getContextClassLoader();
+                    logger.info("Choosing current thread classloader {}", classLoader);
+                }
+
                 executeStageSubject
                     .asObservable()
                     .first()
@@ -130,7 +139,7 @@ public class MantisWorker extends BaseService {
                             wrappedRequest,
                             config,
                             gateway,
-                            ClassLoaderHandle.fixed(getClass().getClassLoader()),
+                            ClassLoaderHandle.fixed(classLoader),
                             SinkSubscriptionStateHandler
                                 .Factory
                                 .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
