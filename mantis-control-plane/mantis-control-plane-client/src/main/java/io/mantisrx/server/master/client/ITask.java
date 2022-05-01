@@ -32,8 +32,6 @@ public interface ITask extends Service {
 
     void setMantisMasterGateway(MantisMasterGateway masterMonitor);
 
-//    void setClassLoaderHandle(ClassLoaderHandle classLoaderHandle);
-
     void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader);
 
     void setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory);
