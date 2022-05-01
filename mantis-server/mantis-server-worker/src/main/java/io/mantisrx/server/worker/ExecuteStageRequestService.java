@@ -22,7 +22,6 @@ import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.ServiceLoader;
