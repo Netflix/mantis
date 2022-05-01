@@ -21,34 +21,38 @@ import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
+import io.mantisrx.server.master.client.ITask;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
+import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Slf4j
-public class Task extends AbstractIdleService {
+public class Task extends AbstractIdleService implements ITask {
 
-    private final WrappedExecuteStageRequest wrappedExecuteStageRequest;
+    private ExecuteStageRequest executeStageRequest;
 
-    private final WorkerConfiguration config;
+    private WorkerConfiguration config;
 
     private final List<Service> mantisServices = new ArrayList<>();
 
-    private final MantisMasterGateway masterMonitor;
+    private MantisMasterGateway masterMonitor;
 
-    private final ClassLoaderHandle classLoaderHandle;
+    private UserCodeClassLoader userCodeClassLoader;
 
-    private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
+    private SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
 
     private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
@@ -78,7 +82,32 @@ public class Task extends AbstractIdleService {
     }
 
     @Override
-    public void startUp() throws Exception {
+    public void setExecuteStageRequest(ExecuteStageRequest request) {
+        this.executeStageRequest = request;
+    }
+
+    @Override
+    public void setWorkerConfiguration(WorkerConfiguration config) {
+        this.config = config;
+    }
+
+    @Override
+    public void setMantisMasterGateway(MantisMasterGateway masterMonitor) {
+        this.masterMonitor = masterMonitor;
+    }
+
+    @Override
+    public void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader) {
+        this.userCodeClassLoader = userCodeClassLoader;
+    }
+
+    @Override
+    public void setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+    }
+
+    @Override
+    public void startUp() {
         try {
             log.info("Starting current task {}", this);
             doRun();
@@ -104,12 +133,8 @@ public class Task extends AbstractIdleService {
                 vmTaskStatusSubject,
                 masterMonitor,
                 config,
-                workerMetricsClient,
-                sinkSubscriptionStateHandlerFactory,
-                hostname),
-            classLoaderHandle,
-            getJobProviderClass(),
-            mantisJob));
+                workerMetricsClient, sinkSubscriptionStateHandlerFactory),
+            getJobProviderClass(), userCodeClassLoader, null));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {
@@ -138,6 +163,7 @@ public class Task extends AbstractIdleService {
                 throw e;
             }
         }
+        closeUserCodeClassLoader();
     }
 
     private Optional<String> getJobProviderClass() {
@@ -151,5 +177,17 @@ public class Task extends AbstractIdleService {
 
     public WorkerId getWorkerId() {
         return executeStageRequest.getWorkerId();
+    }
+
+    private void closeUserCodeClassLoader() {
+        if (userCodeClassLoader != null) {
+            if (userCodeClassLoader.asClassLoader() instanceof Closeable) {
+                try {
+                    ((Closeable) userCodeClassLoader.asClassLoader()).close();
+                } catch (IOException ex) {
+                    log.error("Failed to close user class loader successfully", ex);
+                }
+            }
+        }
     }
 }

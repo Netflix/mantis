@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.worker;
+package io.mantisrx.server.agent;
 
-import lombok.Value;
+import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.runtime.MachineDefinition;
 
-@Value
-public class Point {
-
-    private double x;
-    private double y;
+public class MachineDefinitionUtils {
+    public static MachineDefinition sys(WorkerPorts workerPorts) {
+        return new MachineDefinition(
+            Hardware.getNumberCPUCores(),
+            Hardware.getSizeOfPhysicalMemory(),
+            Hardware.getSizeOfDisk(),
+            workerPorts.getNumberOfPorts());
+    }
 }

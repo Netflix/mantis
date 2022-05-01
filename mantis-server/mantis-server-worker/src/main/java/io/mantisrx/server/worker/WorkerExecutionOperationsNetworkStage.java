@@ -50,9 +50,9 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
+import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
 import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
@@ -105,17 +105,20 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private SinkSubscriptionStateHandler subscriptionStateHandler;
     private Action0 onSinkSubscribe = null;
     private Action0 onSinkUnsubscribe = null;
-    private final List<Closeable> closeables = new ArrayList<>();
-    private final ScheduledExecutorService scheduledExecutorService;
-    private final Optional<String> hostname;
+
+    public WorkerExecutionOperationsNetworkStage(
+        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
+        MantisMasterGateway mantisMasterApi, WorkerConfiguration config,
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+        this(vmTaskStatusObserver, mantisMasterApi, config, null, sinkSubscriptionStateHandlerFactory);
+    }
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
-        Factory sinkSubscriptionStateHandlerFactory,
-        Optional<String> hostname) {
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;

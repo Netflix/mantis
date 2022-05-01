@@ -22,12 +22,19 @@ import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
+import io.mantisrx.server.core.WorkerTopologyInfo;
+import io.mantisrx.server.core.WorkerTopologyInfo.Data;
+import io.mantisrx.server.core.json.DefaultObjectMapper;
+import io.mantisrx.server.core.master.MasterDescription;
+import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
 import java.io.File;
@@ -121,27 +128,32 @@ public class MantisWorker extends BaseService {
             @Override
             public void start() {
                 executeStageSubject
-                    .asObservable()
-                    .first()
-                    .subscribe(wrappedRequest -> {
-                        task = new Task(
-                            wrappedRequest,
-                            config,
-                            gateway,
-                            ClassLoaderHandle.fixed(getClass().getClassLoader()),
-                            SinkSubscriptionStateHandler
-                                .Factory
-                                .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                    gateway,
-                                    Clock.systemDefaultZone()),
-                            Optional.empty(),
-                            jobToRun);
-                        taskStatusUpdateSubscription =
-                            task
-                                .getStatus()
-                                .subscribe(statusUpdateHandler::onStatusUpdate);
-                        task.startAsync();
-                    });
+                        .asObservable()
+                        .single()
+                        .subscribe(wrappedRequest -> {
+                            try {
+                                task = new Task();
+                                task.setExecuteStageRequest(wrappedRequest.getRequest());
+                                task.setWorkerConfiguration(config);
+                                task.setMantisMasterGateway(gateway);
+                                task.setUserCodeClassLoader(ClassLoaderHandle.createUserCodeClassloader(
+                                    wrappedRequest.getRequest(),
+                                    ClassLoaderHandle.fixed(getClass().getClassLoader())));
+                                task.setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler
+                                    .Factory
+                                    .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                                        gateway,
+                                        Clock.systemDefaultZone()));
+
+                                taskStatusUpdateSubscription =
+                                    task
+                                        .getStatus()
+                                        .subscribe(statusUpdateHandler::onStatusUpdate);
+                                task.startAsync();
+                            } catch (Exception ex) {
+                                throw new RuntimeException("worker failed to start", ex);
+                            }
+                        });
             }
 
             @Override
