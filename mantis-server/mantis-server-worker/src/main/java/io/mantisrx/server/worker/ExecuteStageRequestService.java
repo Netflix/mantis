@@ -207,7 +207,7 @@ public class ExecuteStageRequestService extends BaseService {
 
     private void closeUserCodeClassLoader() {
         if (userCodeClassLoader != null) {
-            if (userCodeClassLoader.asClassLoader() instanceof Closeable) {
+            if (userCodeClassLoader.asClassLoader() != null && userCodeClassLoader.asClassLoader() instanceof Closeable) {
                 try {
                     ((Closeable) userCodeClassLoader.asClassLoader()).close();
                 } catch (IOException ex) {
