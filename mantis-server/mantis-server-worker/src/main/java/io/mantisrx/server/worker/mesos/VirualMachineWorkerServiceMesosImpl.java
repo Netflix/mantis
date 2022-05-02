@@ -62,6 +62,7 @@ public class VirualMachineWorkerServiceMesosImpl extends BaseService implements 
         logger.info("Registering Mantis Worker with Mesos executor callbacks");
         mesosDriver = new MesosExecutorDriver(new MesosExecutorCallbackHandler(executeStageRequestObserver));
         // launch driver on background thread
+        logger.info("launch driver on background thread");
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -73,6 +74,7 @@ public class VirualMachineWorkerServiceMesosImpl extends BaseService implements 
             }
         });
         // subscribe to vm task updates on current thread
+        logger.info("subscribe to vm task updates on current thread");
         vmTaskStatusObservable.subscribe(new Action1<VirtualMachineTaskStatus>() {
             @Override
             public void call(VirtualMachineTaskStatus vmTaskStatus) {

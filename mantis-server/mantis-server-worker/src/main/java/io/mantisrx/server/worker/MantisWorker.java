@@ -118,12 +118,23 @@ public class MantisWorker extends BaseService {
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
         PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
         mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
+        // TODO(sundaram): inline services are hard to read. Would be good to refactor this.
         mantisServices.add(new Service() {
             private Task task;
             private Subscription taskStatusUpdateSubscription;
+            private Subscription vmStatusSubscription;
 
             @Override
             public void start() {
+                final ClassLoader classLoader;
+                if (Thread.currentThread().getContextClassLoader() == null) {
+                    classLoader = ClassLoader.getSystemClassLoader();
+                    logger.info("Choosing system classloader {}", classLoader);
+                } else {
+                    classLoader = Thread.currentThread().getContextClassLoader();
+                    logger.info("Choosing current thread classloader {}", classLoader);
+                }
+
                 executeStageSubject
                         .asObservable()
                         .first()
@@ -147,6 +158,9 @@ public class MantisWorker extends BaseService {
                                     task
                                         .getStatus()
                                         .subscribe(statusUpdateHandler::onStatusUpdate);
+
+                                vmStatusSubscription =
+                                    task.getVMStatus().subscribe(vmTaskStatusSubject);
                                 task.startAsync();
                             } catch (Exception ex) {
                                 throw new RuntimeException("worker failed to start", ex);
@@ -161,6 +175,7 @@ public class MantisWorker extends BaseService {
                         task.stopAsync().awaitTerminated();
                     } finally {
                         taskStatusUpdateSubscription.unsubscribe();
+                        vmStatusSubscription.unsubscribe();
                     }
                 }
             }
@@ -168,6 +183,11 @@ public class MantisWorker extends BaseService {
             @Override
             public void enterActiveMode() {
 
+            }
+
+            @Override
+            public String toString() {
+                return "TaskService";
             }
         });
         /* To run MantisWorker locally in IDE, use VirualMachineWorkerServiceLocalImpl instead
@@ -249,14 +269,17 @@ public class MantisWorker extends BaseService {
         logger.info("Starting Mantis Worker");
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         for (Service service : mantisServices) {
-            logger.info("Starting service: " + service.getClass().getName());
+            logger.info("Starting service: " + service);
             try {
                 service.start();
             } catch (Throwable e) {
                 logger.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
                 throw e;
             }
+            logger.info("Started service: " + service);
         }
+
+        logger.info("Started Mantis Worker successfully");
     }
 
     public void awaitTerminated() {

@@ -44,6 +44,7 @@ import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaIm
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
@@ -185,6 +186,7 @@ public class JobsRouteTest extends RouteTestBase {
                         localMasterMonitor,
                         leadershipMgr);
                 final MantisMasterRoute app = new MantisMasterRoute(
+                        system,
                         leaderRedirectionFilter,
                         v0MasterDescriptionRoute,
                         v0JobClusterRoute,
@@ -199,7 +201,8 @@ public class JobsRouteTest extends RouteTestBase {
                         v1JobDiscoveryStreamRoute,
                         v1LastSubmittedJobIdStreamRoute,
                         v1JobStatusStreamRoute,
-                        mock(ResourceClusters.class));
+                        mock(ResourceClusters.class),
+                        mock(ResourceClusterRouteHandler.class));
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                               .orElse(v1JobsRoute.createRoute(

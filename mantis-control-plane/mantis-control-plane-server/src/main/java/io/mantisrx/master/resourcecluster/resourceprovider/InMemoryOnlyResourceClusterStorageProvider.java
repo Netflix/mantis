@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * [Test only] Store resource storage data in memroy only for testing.
+ * [Test only] Store resource storage data in memory only for testing.
  */
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
     Map<String, ResourceClusterSpecWritable> clusters = new HashMap<>();

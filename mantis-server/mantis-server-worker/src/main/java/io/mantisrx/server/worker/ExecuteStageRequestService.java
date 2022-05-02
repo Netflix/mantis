@@ -88,7 +88,7 @@ public class ExecuteStageRequestService extends BaseService {
                         ExecuteStageRequest executeStageRequest =
                                 executeRequest.getExecuteRequest().getRequest();
 
-                        Job mantisJob = null;
+                        Job mantisJob;
                         ClassLoader cl = null;
                         try {
                             if (!ExecuteStageRequestService.this.mantisJob.isPresent()) {
