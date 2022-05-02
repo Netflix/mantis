@@ -24,11 +24,10 @@ import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
 import io.reactivex.mantis.remote.observable.reconciliator.Reconciliator;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-
-import java.io.IOException;
 
 public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
