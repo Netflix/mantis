@@ -141,17 +141,20 @@ public class MantisWorker extends BaseService {
                         .subscribe(wrappedRequest -> {
                             try {
                                 task = new Task();
-                                task.setWrappedExecuteStageRequest(wrappedRequest);
-                                task.setWorkerConfiguration(config);
-                                task.setMantisMasterGateway(gateway);
-                                task.setUserCodeClassLoader(ClassLoaderHandle.createUserCodeClassloader(
-                                    wrappedRequest.getRequest(),
-                                    ClassLoaderHandle.fixed(getClass().getClassLoader())));
-                                task.setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler
-                                    .Factory
-                                    .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                        gateway,
-                                        Clock.systemDefaultZone()));
+                                task.initialize(
+                                    wrappedRequest,
+                                    config,
+                                    gateway,
+                                    ClassLoaderHandle.createUserCodeClassloader(
+                                        wrappedRequest.getRequest(),
+                                        ClassLoaderHandle.fixed(getClass().getClassLoader())),
+                                    SinkSubscriptionStateHandler
+                                        .Factory
+                                        .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                                            gateway,
+                                            Clock.systemDefaultZone()),
+                                    Optional.empty()
+                                );
                                 task.setJob(jobToRun);
 
                                 taskStatusUpdateSubscription =
@@ -163,7 +166,8 @@ public class MantisWorker extends BaseService {
                                     task.getVMStatus().subscribe(vmTaskStatusSubject);
                                 task.startAsync();
                             } catch (Exception ex) {
-                                throw new RuntimeException("worker failed to start", ex);
+                                logger.error("Failed to start task, request: {}", wrappedRequest, ex);
+                                throw new RuntimeException("Failed to start task", ex);
                             }
                         });
             }

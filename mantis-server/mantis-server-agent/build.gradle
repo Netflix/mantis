@@ -16,7 +16,6 @@
 
 dependencies {
     implementation project(":mantis-control-plane:mantis-control-plane-client")
-    implementation project(":mantis-control-plane:mantis-control-plane-core")
     implementation project(":mantis-server:mantis-server-worker-client")
 
     implementation libraries.zip4j

@@ -67,34 +67,18 @@ public class Task extends AbstractIdleService implements ITask {
     private ExecuteStageRequest executeStageRequest;
 
     @Override
-    public void setWrappedExecuteStageRequest(WrappedExecuteStageRequest wrappedExecuteStageRequest) {
+    public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
+                           WorkerConfiguration config,
+                           MantisMasterGateway masterMonitor,
+                           UserCodeClassLoader userCodeClassLoader,
+                           SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
+                           Optional<String> hostname) {
         this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
-
-    }
-
-    @Override
-    public void setWorkerConfiguration(WorkerConfiguration config) {
         this.config = config;
-    }
-
-    @Override
-    public void setMantisMasterGateway(MantisMasterGateway masterMonitor) {
         this.masterMonitor = masterMonitor;
-    }
-
-    @Override
-    public void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader) {
         this.userCodeClassLoader = userCodeClassLoader;
-    }
-
-    @Override
-    public void setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
-    }
-
-    @Override
-    public void setHostname(Optional<String> hostname) {
         this.hostname = hostname;
     }
 

@@ -428,20 +428,23 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             // There should only be 1 task implementation provided by mantis-server-worker.
             ITask task = loader.iterator().next();
 
-            task.setWrappedExecuteStageRequest(wrappedRequest);
-            task.setWorkerConfiguration(workerConfiguration);
-            task.setMantisMasterGateway(masterMonitor);
-            task.setUserCodeClassLoader(userCodeClassLoader);
-            task.setSinkSubscriptionStateHandlerFactory(subscriptionStateHandlerFactory);
-            task.setHostname(Optional.of(getHostname()));
+            task.initialize(
+                wrappedRequest,
+                workerConfiguration,
+                masterMonitor,
+                userCodeClassLoader,
+                subscriptionStateHandlerFactory,
+                Optional.of(getHostname())
+            );
 
             setCurrentTask(task);
 
             scheduleRunAsync(this::startCurrentTask, 0, TimeUnit.MILLISECONDS);
             return CompletableFuture.completedFuture(Ack.getInstance());
         } catch (Exception ex) {
+            log.error("Failed to submit task, request: {}", request, ex);
             return CompletableFutures.exceptionallyCompletedFuture(
-                new TaskNotFoundException(null));
+                new TaskNotFoundException(null, ex));
         }
     }
 

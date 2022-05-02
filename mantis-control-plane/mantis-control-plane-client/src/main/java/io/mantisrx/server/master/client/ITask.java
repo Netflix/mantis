@@ -27,17 +27,12 @@ import rx.Observable;
 
 public interface ITask extends Service {
 
-    void setWrappedExecuteStageRequest(WrappedExecuteStageRequest request);
-
-    void setWorkerConfiguration(WorkerConfiguration config);
-
-    void setMantisMasterGateway(MantisMasterGateway masterMonitor);
-
-    void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader);
-
-    void setSinkSubscriptionStateHandlerFactory(SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory);
-
-    void setHostname(Optional<String> hostname);
+    void initialize(WrappedExecuteStageRequest request,
+                    WorkerConfiguration config,
+                    MantisMasterGateway masterMonitor,
+                    UserCodeClassLoader userCodeClassLoader,
+                    SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
+                    Optional<String> hostname);
 
     Observable<Status> getStatus();
 
