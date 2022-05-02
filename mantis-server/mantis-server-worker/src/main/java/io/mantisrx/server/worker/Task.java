@@ -52,6 +52,8 @@ public class Task extends AbstractIdleService {
 
     private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
+    private final PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
+
     // hostname from which the task is run from
     private final Optional<String> hostname;
 
@@ -91,7 +93,6 @@ public class Task extends AbstractIdleService {
     public void doRun() throws Exception {
         // shared state
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
-        PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
 
         mantisServices.add(MetricsFactory.newMetricsServer(config, executeStageRequest));
         mantisServices.add(MetricsFactory.newMetricsPublisher(config, executeStageRequest));
@@ -147,6 +148,10 @@ public class Task extends AbstractIdleService {
     public Observable<Status> getStatus() {
         return tasksStatusSubject
             .flatMap((Func1<Observable<Status>, Observable<Status>>) status -> status);
+    }
+
+    public Observable<VirtualMachineTaskStatus> getVMStatus() {
+        return vmTaskStatusSubject;
     }
 
     public WorkerId getWorkerId() {
