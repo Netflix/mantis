@@ -24,23 +24,26 @@ import java.util.List;
 
 public class Stages<T> {
 
-    Codec<T> inputCodec;
+    final Codec<?> keyCodec;
+    final Codec<T> inputCodec;
     private SourceHolder<?> source;
     private List<StageConfig<?, ?>> stages;
 
-    Stages(SourceHolder<?> source, StageConfig<?, ?> stage, Codec<T> inputCodec) {
+    Stages(SourceHolder<?> source, StageConfig<?, ?> stage, Codec<?> keyCodec, Codec<T> inputCodec) {
         this.source = source;
         this.stages = new LinkedList<>();
         this.stages.add(stage);
         this.inputCodec = inputCodec;
+        this.keyCodec = keyCodec;
     }
 
     Stages(SourceHolder<?> source, List<StageConfig<?, ?>> stages,
-           StageConfig<?, ?> stage, Codec<T> inputCodec) {
+           StageConfig<?, ?> stage, Codec<?> keyCodec, Codec<T> inputCodec) {
         this.source = source;
         this.stages = stages;
         this.stages.add(stage);
         this.inputCodec = inputCodec;
+        this.keyCodec = keyCodec;
     }
 
     public List<StageConfig<?, ?>> getStages() {

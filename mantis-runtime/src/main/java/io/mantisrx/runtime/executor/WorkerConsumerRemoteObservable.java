@@ -16,7 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.*;
@@ -25,10 +24,11 @@ import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
 import io.reactivex.mantis.remote.observable.reconciliator.Reconciliator;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+
+import java.io.IOException;
 
 public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
@@ -52,12 +52,11 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
         if (stage instanceof KeyValueInputStageConfig) {
 
             logger.info("Remote connection to stage " + name + " is KeyedStage");
-            //todo(hmittal): fix keyencoder here!
             ConnectToGroupedObservable.Builder connectToBuilder =
                     new ConnectToGroupedObservable.Builder()
                             .name(name)
                             // need to include index offset here
-                            .keyDecoder(Codecs.string())
+                            .keyDecoder(((KeyValueInputStageConfig<?, ?, ?>) stage).getInputKeyCodec())
                             .valueDecoder(stage.getInputCodec())
                             .subscribeAttempts(30); // max retry before failure
 

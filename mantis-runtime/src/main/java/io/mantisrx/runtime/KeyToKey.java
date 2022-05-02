@@ -17,6 +17,7 @@
 package io.mantisrx.runtime;
 
 import io.mantisrx.common.codec.Codec;
+import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.computation.KeyComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Collections;
@@ -48,9 +49,13 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 
     }
-
     KeyToKey(KeyComputation<K1, T, K2, R> computation,
              Config<K1, T, K2, R> config, Codec<T> inputCodec) {
+        this(computation, config, (Codec<K1>) Codecs.string(), inputCodec);
+    }
+
+    KeyToKey(KeyComputation<K1, T, K2, R> computation,
+             Config<K1, T, K2, R> config, Codec<K1> inputKeyCodec, Codec<T> inputCodec) {
         super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
@@ -108,6 +113,10 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         public Config<K1, T, K2, R> description(String description) {
             this.description = description;
             return this;
+        }
+
+        public Codec<K2> getKeyCodec() {
+            return keyCodec;
         }
 
         public Codec<R> getCodec() {

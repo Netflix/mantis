@@ -113,6 +113,10 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
             return this;
         }
 
+        public Codec<K> getKeyCodec() {
+            return keyCodec;
+        }
+
         public Codec<R> getCodec() {
             return codec;
         }

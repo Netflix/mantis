@@ -27,17 +27,17 @@ import io.mantisrx.runtime.sink.Sink;
 public class ScalarStages<T> extends Stages<T> {
 
     ScalarStages(SourceHolder<?> source, StageConfig<?, ?> stage, Codec<T> inputCodec) {
-        super(source, stage, inputCodec);
+        super(source, stage, null, inputCodec);
     }
 
     ScalarStages(Stages<?> self, StageConfig<?, ?> stage, Codec<T> inputCodec) {
-        super(self.getSource(), self.getStages(), stage, inputCodec);
+        super(self.getSource(), self.getStages(), stage, null, inputCodec);
     }
 
-    public <R> KeyedStages<R> stage(ToKeyComputation<T, String, R> computation,
-                                    ScalarToKey.Config<T, String, R> config) {
+    public <K, R> KeyedStages<K, R> stage(ToKeyComputation<T, K, R> computation,
+                                    ScalarToKey.Config<T, K, R> config) {
         return new KeyedStages<>(this,
-            new ScalarToKey<>(computation, config, inputCodec), config.getCodec());
+            new ScalarToKey<>(computation, config, inputCodec), config.getKeyCodec(), config.getCodec());
     }
 
     /**
@@ -48,9 +48,9 @@ public class ScalarStages<T> extends Stages<T> {
      *
      * @return
      */
-    public <R> KeyedStages<R> stage(ToGroupComputation<T, String, R> computation,
-                                    ScalarToGroup.Config<T, String, R> config) {
-        return new KeyedStages<>(this, new ScalarToGroup<>(computation, config, inputCodec), config.getCodec());
+    public <K, R> KeyedStages<K, R> stage(ToGroupComputation<T, K, R> computation,
+                                    ScalarToGroup.Config<T, K, R> config) {
+        return new KeyedStages<>(this, new ScalarToGroup<>(computation, config, inputCodec), config.getKeyCodec(), config.getCodec());
     }
 
     public <R> ScalarStages<R> stage(ScalarComputation<T, R> computation,

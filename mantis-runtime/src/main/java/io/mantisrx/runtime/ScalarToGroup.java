@@ -128,6 +128,10 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
             return codec;
         }
 
+        public Codec<K> getKeyCodec() {
+            return keyCodec;
+        }
+
         public String getDescription() {
             return description;
         }
