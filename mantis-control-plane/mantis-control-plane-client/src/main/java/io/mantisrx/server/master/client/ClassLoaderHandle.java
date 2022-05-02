@@ -67,8 +67,6 @@ public interface ClassLoaderHandle extends Closeable {
     }
 
     static UserCodeClassLoader createUserCodeClassloader(ExecuteStageRequest executeStageRequest, ClassLoaderHandle classLoaderHandle) throws Exception {
-        long startDownloadTime = System.currentTimeMillis();
-
         // triggers the download of all missing jar files from the job manager
         final UserCodeClassLoader userCodeClassLoader =
             classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), ImmutableList.of());
