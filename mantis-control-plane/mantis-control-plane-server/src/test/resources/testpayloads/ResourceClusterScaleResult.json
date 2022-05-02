@@ -1,0 +1,8 @@
+{
+    "clusterId": "mantisResourceClusterUT1",
+    "skuId": "small",
+    "region": "us-east-1",
+    "envType": "Prod",
+    "desireSize": 11,
+    "responseCode": "SUCCESS"
+}

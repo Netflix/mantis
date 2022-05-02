@@ -520,7 +520,7 @@ public class DataFormatAdapter {
         if(logger.isTraceEnabled()) { logger.trace("DataFormatAdapter:converting stage {}, skipadding workers {}", stageMeta, skipAddingWorkerMetaData); }
         Optional<JobId> jIdOp = JobId.fromId(stageMeta.getJobId());
         if(!jIdOp.isPresent()) {
-            new IllegalArgumentException("Invalid jobid " + stageMeta.getJobId());
+            throw new IllegalArgumentException("Invalid jobid " + stageMeta.getJobId());
         }
 
         IMantisStageMetadata newStageMeta = new MantisStageMetadataImpl.Builder()

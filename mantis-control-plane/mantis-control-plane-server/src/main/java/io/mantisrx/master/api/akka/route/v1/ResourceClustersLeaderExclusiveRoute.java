@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class ResourceClustersWriteRoute extends BaseRoute {
+public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
     private static final PathMatcher0 RESOURCECLUSTERS_API_PREFIX =
         segment("api").slash("v1").slash("resourceClusters");
 

@@ -125,6 +125,8 @@ public class TestHelpers {
         props.setProperty("mantis.master.schedInfoPort", "7076");
         props.setProperty("mantis.master.workqueuelength", "100");
         props.setProperty("mantis.master.storageProvider", "io.mantisrx.server.master.store.NoopStorageProvider");
+        props.setProperty("mantis.master.resourceClusterStorageProvider", "io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider");
+        props.setProperty("mantis.master.resourceClusterProvider", "io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterProvider");
         props.setProperty("mantis.master.api.status.path", "api/postjobstatus");
         props.setProperty("mantis.master.mesos.failover.timeout.ms", "1000.0");
         props.setProperty("mantis.worker.executor.name", "Mantis Worker Executor");

@@ -16,8 +16,10 @@
 
 package io.mantisrx.master.api.akka.route;
 
+import akka.actor.ActorSystem;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
+import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
@@ -31,8 +33,8 @@ import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
-import io.mantisrx.master.api.akka.route.v1.ResourceClustersReadRoute;
-import io.mantisrx.master.api.akka.route.v1.ResourceClustersWriteRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersLeaderExclusiveRoute;
+import io.mantisrx.master.api.akka.route.v1.ResourceClustersNonLeaderRedirectRoute;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 
@@ -55,10 +57,11 @@ public class MantisMasterRoute extends AllDirectives {
     private final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute;
     private final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute;
     private final JobStatusStreamRoute v1JobStatusStreamRoute;
-    private final ResourceClustersReadRoute resourceClustersReadRoute;
-    private final ResourceClustersWriteRoute resourceClustersWriteRoute;
+    private final ResourceClustersNonLeaderRedirectRoute resourceClustersNonLeaderRedirectRoute;
+    private final ResourceClustersLeaderExclusiveRoute resourceClustersLeaderExclusiveRoute;
 
     public MantisMasterRoute(
+        final ActorSystem actorSystem,
         final LeaderRedirectionFilter leaderRedirectionFilter,
         final MasterDescriptionRoute v0MasterDescriptionRoute,
         final JobClusterRoute v0JobClusterRoute,
@@ -73,7 +76,8 @@ public class MantisMasterRoute extends AllDirectives {
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute,
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute,
         final JobStatusStreamRoute v1JobStatusStreamRoute,
-        final ResourceClusters resourceClusters) {
+        final ResourceClusters resourceClusters,
+        final ResourceClusterRouteHandler resourceClusterRouteHandler) {
         this.leaderRedirectionFilter = leaderRedirectionFilter;
         this.v0MasterDescriptionRoute = v0MasterDescriptionRoute;
         this.v0JobClusterRoute = v0JobClusterRoute;
@@ -89,8 +93,9 @@ public class MantisMasterRoute extends AllDirectives {
         this.v1JobDiscoveryStreamRoute = v1JobDiscoveryStreamRoute;
         this.v1LastSubmittedJobIdStreamRoute = v1LastSubmittedJobIdStreamRoute;
         this.v1JobStatusStreamRoute = v1JobStatusStreamRoute;
-        this.resourceClustersReadRoute = new ResourceClustersReadRoute(resourceClusters);
-        this.resourceClustersWriteRoute = new ResourceClustersWriteRoute(resourceClusters);
+        this.resourceClustersNonLeaderRedirectRoute = new ResourceClustersNonLeaderRedirectRoute(
+            resourceClusters, resourceClusterRouteHandler, actorSystem);
+        this.resourceClustersLeaderExclusiveRoute = new ResourceClustersLeaderExclusiveRoute(resourceClusters);
     }
 
     public Route createRoute() {
@@ -108,8 +113,8 @@ public class MantisMasterRoute extends AllDirectives {
                 v1JobDiscoveryStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1LastSubmittedJobIdStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1JobStatusStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
-                resourceClustersReadRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
-                resourceClustersWriteRoute.createRoute(leaderRedirectionFilter::rejectIfNotLeader)
+                resourceClustersNonLeaderRedirectRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
+                resourceClustersLeaderExclusiveRoute.createRoute(leaderRedirectionFilter::rejectIfNotLeader)
         );
     }
 }

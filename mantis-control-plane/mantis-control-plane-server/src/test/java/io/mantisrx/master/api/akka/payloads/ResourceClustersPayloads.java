@@ -23,6 +23,9 @@ public class ResourceClustersPayloads {
     public static final String RESOURCE_CLUSTER_CREATE =
         PayloadUtils.getStringFromResource("testpayloads/ResourceClusterCreate.json");
 
+    public static final String RESOURCE_CLUSTER_SCALE_RESULT =
+        PayloadUtils.getStringFromResource("testpayloads/ResourceClusterScaleResult.json");
+
     public static final String RESOURCE_CLUSTER_SKU_SCALE = "{\"clusterId\":\"mantisResourceClusterUT1\","
             + "\"skuId\":\"small\",\"region\":\"us-east-1\",\"envType\":\"Prod\",\"desireSize\":11}\n";
 }

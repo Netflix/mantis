@@ -26,7 +26,7 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.settings.ServerSettings;
 import akka.http.javadsl.settings.WebSocketSettings;
-import akka.stream.ActorMaterializer;
+import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
@@ -38,6 +38,8 @@ import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
+import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
@@ -76,6 +78,8 @@ public class MasterApiAkkaService extends BaseService {
     private final MasterMonitor masterMonitor;
     private final MasterDescription masterDescription;
     private final ActorRef jobClustersManagerActor;
+
+    private final ActorRef resourceClustersHostManagerActor;
     private final ResourceClusters resourceClusters;
     private final ActorRef statusEventBrokerActor;
     private final int port;
@@ -85,7 +89,7 @@ public class MasterApiAkkaService extends BaseService {
     private final MantisMasterRoute mantisMasterRoute;
     private final ILeadershipManager leadershipManager;
     private final ActorSystem system;
-    private final ActorMaterializer materializer;
+    private final Materializer materializer;
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
 
@@ -94,6 +98,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final ActorRef jobClustersManagerActor,
                                 final ActorRef statusEventBrokerActor,
                                 final ResourceClusters resourceClusters,
+                                final ActorRef resourceClustersHostManagerActor,
                                 final int serverPort,
                                 final IMantisStorageProvider mantisStorageProvider,
                                 final MantisScheduler scheduler,
@@ -113,6 +118,7 @@ public class MasterApiAkkaService extends BaseService {
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
+        this.resourceClustersHostManagerActor = resourceClustersHostManagerActor;
         this.statusEventBrokerActor = statusEventBrokerActor;
         this.resourceClusters = resourceClusters;
         this.port = serverPort;
@@ -121,7 +127,7 @@ public class MasterApiAkkaService extends BaseService {
         this.lifecycleEventPublisher = lifecycleEventPublisher;
         this.leadershipManager = leadershipManager;
         this.system = ActorSystem.create("MasterApiActorSystem");
-        this.materializer = ActorMaterializer.create(system);
+        this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system, agentClusterOperations);
         this.executorService = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "MasterApiAkkaServiceThread");
@@ -165,7 +171,11 @@ public class MasterApiAkkaService extends BaseService {
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
 
         final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
-        return new MantisMasterRoute(leaderRedirectionFilter,
+        final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
+            resourceClustersHostManagerActor);
+        return new MantisMasterRoute(
+            actorSystem,
+            leaderRedirectionFilter,
             masterDescriptionRoute,
             v0JobClusterRoute,
             v0JobRoute,
@@ -179,7 +189,8 @@ public class MasterApiAkkaService extends BaseService {
             v1JobDiscoveryStreamRoute,
             v1LastSubmittedJobIdStreamRoute,
             v1JobStatusStreamRoute,
-            resourceClusters);
+            resourceClusters,
+            resourceClusterRouteHandler);
     }
 
     private void startAPIServer() {

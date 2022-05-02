@@ -48,6 +48,7 @@ import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
+import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
@@ -246,6 +247,7 @@ public class MantisMasterAPI extends AllDirectives {
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
         final ResourceClusters resourceClusters = mock(ResourceClusters.class);
+        final ResourceClusterRouteHandler resourceClusterRouteHandler = mock(ResourceClusterRouteHandler.class);
 
         LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
         LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(masterDescription);
@@ -254,6 +256,7 @@ public class MantisMasterAPI extends AllDirectives {
                 localMasterMonitor,
                 leadershipMgr);
         final MantisMasterRoute app = new MantisMasterRoute(
+                system,
                 leaderRedirectionFilter,
                 masterDescriptionRoute,
                 v0JobClusterRoute,
@@ -268,7 +271,8 @@ public class MantisMasterAPI extends AllDirectives {
                 v1JobDiscoveryStreamRoute,
                 v1LastSubmittedJobIdStreamRoute,
                 v1JobStatusStreamRoute,
-                resourceClusters);
+                resourceClusters,
+                resourceClusterRouteHandler);
         final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                       .flow(system, materializer);
         final CompletionStage<ServerBinding> binding = http.bindAndHandle(
