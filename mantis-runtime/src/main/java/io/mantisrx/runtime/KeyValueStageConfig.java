@@ -21,6 +21,13 @@ import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.List;
 
+/** An intermediate abstract class that holds the keyCodec for the output key
+ *  for mantis events
+ *
+ * @param <T> Input datatype
+ * @param <K> Output keytype
+ * @param <R> Output value datatype
+ */
 public abstract class KeyValueStageConfig<T, K, R> extends StageConfig<T, R> {
 
     private final Codec<K> keyCodec;

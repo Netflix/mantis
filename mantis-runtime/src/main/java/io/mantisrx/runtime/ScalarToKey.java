@@ -23,6 +23,13 @@ import java.util.Collections;
 import java.util.List;
 
 
+/** A deprecated class to shuffle mantis events based on a key.
+ *  Prefer using {@code ScalarToGroup} instead
+ *
+ * @param <T> Input datatype
+ * @param <K> Output keytype
+ * @param <R> Output value datatype
+ */
 public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
     private ToKeyComputation<T, K, R> computation;

@@ -20,6 +20,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.properties.MantisPropertiesService;
 import io.mantisrx.runtime.*;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.reactivex.mantis.network.push.*;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
@@ -106,48 +107,46 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
     private <K> void startKeyValueStage(KeyValueStageConfig<?, K, T> stage, Observable<Observable<T>> toServe) {
 
-        if (runNewW2WserverGroups(jobName)) {
-            logger.info("Modern server setup for name: " + name + " type: Keyedstage");
+        Preconditions.checkArgument(runNewW2WserverGroups(jobName),
+            String.format("Need to use new worker2worker server group for jobName %s", jobName));
+        logger.info("Modern server setup for name: {} type: Keyedstage", name);
 
-            long expiryTimeInSecs = Long.MAX_VALUE;
-            if (stage instanceof KeyToKey) {
-                expiryTimeInSecs = ((KeyToKey) stage).getKeyExpireTimeSeconds();
-            } else if (stage instanceof ScalarToKey) {
-                expiryTimeInSecs = ((ScalarToKey) stage).getKeyExpireTimeSeconds();
-            }
-
-            Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
-
-            Func1<K, byte[]> keyEncoder = t1 -> stage.getOutputKeyCodec().encode(t1);
-
-
-            ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
-                .name(name)
-                .port(serverPort)
-                .metricsRegistry(MetricsRegistry.getInstance())
-                .numQueueConsumers(numConsumerThreads())
-                .maxChunkSize(maxChunkSize())
-                .maxChunkTimeMSec(maxChunkTimeMSec())
-                .bufferCapacity(bufferCapacity())
-                .useSpscQueue(useSpsc())
-                .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
-                .build();
-
-            final LegacyTcpPushServer<KeyValuePair<K, T>> modernServer;
-            if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
-                modernServer = PushServers.infiniteStreamLegacyTcpNestedMantisGroup(
-                    config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                    io.reactivex.mantis.network.push.HashFunctions.ketama());
-            } else { // ScalarToKey or KeyTKey
-                modernServer = PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
-                    config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                    io.reactivex.mantis.network.push.HashFunctions.ketama());
-            }
-
-            modernServer.start();
-            // support legacy server interface
-            this.server = new LegacyRxServer<>(modernServer);
+        long expiryTimeInSecs = Long.MAX_VALUE;
+        if (stage instanceof KeyToKey) {
+            expiryTimeInSecs = ((KeyToKey) stage).getKeyExpireTimeSeconds();
+        } else if (stage instanceof ScalarToKey) {
+            expiryTimeInSecs = ((ScalarToKey) stage).getKeyExpireTimeSeconds();
         }
+
+        Func1<T, byte[]> valueEncoder = t1 -> stage.getOutputCodec().encode(t1);
+        Func1<K, byte[]> keyEncoder = t1 -> stage.getOutputKeyCodec().encode(t1);
+
+        ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
+            .name(name)
+            .port(serverPort)
+            .metricsRegistry(MetricsRegistry.getInstance())
+            .numQueueConsumers(numConsumerThreads())
+            .maxChunkSize(maxChunkSize())
+            .maxChunkTimeMSec(maxChunkTimeMSec())
+            .bufferCapacity(bufferCapacity())
+            .useSpscQueue(useSpsc())
+            .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+            .build();
+
+        final LegacyTcpPushServer<KeyValuePair<K, T>> modernServer;
+        if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
+            modernServer = PushServers.infiniteStreamLegacyTcpNestedMantisGroup(
+                config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+                HashFunctions.ketama());
+        } else { // ScalarToKey or KeyTKey
+            modernServer = PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
+                config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+                HashFunctions.ketama());
+        }
+
+        modernServer.start();
+        // support legacy server interface
+        this.server = new LegacyRxServer<>(modernServer);
     }
 
     private boolean useSpsc() {
