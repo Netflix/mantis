@@ -136,40 +136,40 @@ public class MantisWorker extends BaseService {
                 }
 
                 executeStageSubject
-                        .asObservable()
-                        .first()
-                        .subscribe(wrappedRequest -> {
-                            try {
-                                task = new Task();
-                                task.initialize(
-                                    wrappedRequest,
-                                    config,
-                                    gateway,
-                                    ClassLoaderHandle.createUserCodeClassloader(
-                                        wrappedRequest.getRequest(),
-                                        ClassLoaderHandle.fixed(getClass().getClassLoader())),
-                                    SinkSubscriptionStateHandler
-                                        .Factory
-                                        .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                            gateway,
-                                            Clock.systemDefaultZone()),
-                                    Optional.empty()
-                                );
-                                task.setJob(jobToRun);
+                    .asObservable()
+                    .first()
+                    .subscribe(wrappedRequest -> {
+                        try {
+                            task = new Task();
+                            task.initialize(
+                                wrappedRequest,
+                                config,
+                                gateway,
+                                ClassLoaderHandle.createUserCodeClassloader(
+                                    wrappedRequest.getRequest(),
+                                    ClassLoaderHandle.fixed(getClass().getClassLoader())),
+                                SinkSubscriptionStateHandler
+                                    .Factory
+                                    .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                                        gateway,
+                                        Clock.systemDefaultZone()),
+                                Optional.empty()
+                            );
+                            task.setJob(jobToRun);
 
-                                taskStatusUpdateSubscription =
-                                    task
-                                        .getStatus()
-                                        .subscribe(statusUpdateHandler::onStatusUpdate);
+                            taskStatusUpdateSubscription =
+                                task
+                                    .getStatus()
+                                    .subscribe(statusUpdateHandler::onStatusUpdate);
 
-                                vmStatusSubscription =
-                                    task.getVMStatus().subscribe(vmTaskStatusSubject);
-                                task.startAsync();
-                            } catch (Exception ex) {
-                                logger.error("Failed to start task, request: {}", wrappedRequest, ex);
-                                throw new RuntimeException("Failed to start task", ex);
-                            }
-                        });
+                            vmStatusSubscription =
+                                task.getVMStatus().subscribe(vmTaskStatusSubject);
+                            task.startAsync();
+                        } catch (Exception ex) {
+                            logger.error("Failed to start task, request: {}", wrappedRequest, ex);
+                            throw new RuntimeException("Failed to start task", ex);
+                        }
+                    });
             }
 
             @Override

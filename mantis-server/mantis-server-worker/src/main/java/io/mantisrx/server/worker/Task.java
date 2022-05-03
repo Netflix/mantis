@@ -115,7 +115,8 @@ public class Task extends AbstractIdleService implements ITask {
                 workerMetricsClient,
                 sinkSubscriptionStateHandlerFactory,
                 hostname),
-            getJobProviderClass(),userCodeClassLoader,
+            getJobProviderClass(),
+            userCodeClassLoader,
             mantisJob));
 
         log.info("Starting Mantis Worker for task {}", this);
