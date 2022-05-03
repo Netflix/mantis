@@ -63,16 +63,6 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
     public static final String CLIENT_ID_TAG_NAME = "clientId";
     public static final String SOCK_ADDR_TAG_NAME = "sockAddr";
 
-    private static IFn require = Clojure.var("io.mantisrx.mql.shaded.clojure.core", "require");
-
-    static {
-        require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.core"));
-        require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.server"));
-    }
-
-    private static IFn mqlMakeQuery = Clojure.var("io.mantisrx.mql.jvm.interfaces.server", "make-query");
-    private static IFn mqlParses = Clojure.var("io.mantisrx.mql.jvm.interfaces.core", "parses?");
-
     private Func2<Map<String, List<String>>, S, Void> requestPreprocessor;
     private Func2<Map<String, List<String>>, S, Void> requestPostprocessor;
     private final Func2<Map<String, List<String>>, S, Void> subscribeProcessor;
@@ -234,6 +224,12 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                             }
 
                             if (queryParameters.containsKey(MantisSSEConstants.MQL)) {
+                                IFn require = Clojure.var("io.mantisrx.mql.shaded.clojure.core", "require");
+                                require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.core"));
+                                require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.server"));
+                                IFn mqlMakeQuery = Clojure.var("io.mantisrx.mql.jvm.interfaces.server", "make-query");
+                                IFn mqlParses = Clojure.var("io.mantisrx.mql.jvm.interfaces.core", "parses?");
+
                                 String query = queryParameters.get(MantisSSEConstants.MQL).get(0);
                                 if ((Boolean) mqlParses.invoke(query)) {
                                     Query q = (Query) mqlMakeQuery.invoke(groupId, query);
