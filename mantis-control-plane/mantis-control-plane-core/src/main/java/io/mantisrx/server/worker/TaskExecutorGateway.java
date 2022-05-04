@@ -57,10 +57,13 @@ public interface TaskExecutorGateway extends RpcGateway {
 
     @RequiredArgsConstructor
     class TaskAlreadyRunningException extends Exception {
+        private static final long serialVersionUID = 1L;
+
         private final WorkerId currentlyRunningWorkerTask;
     }
 
     class TaskNotFoundException extends Exception {
+        private static final long serialVersionUID = 1L;
 
         public TaskNotFoundException(WorkerId workerId) {
             super(String.format("Task %s not found", workerId.toString()));

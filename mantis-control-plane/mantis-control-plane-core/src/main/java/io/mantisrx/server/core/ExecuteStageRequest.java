@@ -41,6 +41,8 @@ import lombok.ToString;
 @ToString
 public class ExecuteStageRequest implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // indicates whether this is stage 0 or not. stage 0 runs the autoscaler for the mantis job.
     private final boolean hasJobMaster;
     // subscription threshold for when a sink should considered to be inactive so that ephemeral jobs producing the sink

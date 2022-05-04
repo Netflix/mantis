@@ -70,6 +70,7 @@ ext.libraries = [
         mockitoAll     : "org.mockito:mockito-all:${versions.mockito}",
         mockitoCore    : "org.mockito:mockito-core:${versions.mockito}",
         mockitoCore3   : "org.mockito:mockito-core:${versions.mockito3}",
+        mockneat       : "net.andreinc:mockneat:0.4.8",
         rxJava         : "io.reactivex:rxjava:1.3.8",
         rxNettyShaded  : "com.netflix:mantis-rxnetty:0.4.19.1",
         slf4jApi       : "org.slf4j:slf4j-api:${versions.slf4j}",
@@ -125,7 +126,6 @@ subprojects {
 
     repositories {
         mavenCentral()
-        jcenter()
         maven {
             url "https://netflixoss.jfrog.io/artifactory/maven-oss-candidates"
         }

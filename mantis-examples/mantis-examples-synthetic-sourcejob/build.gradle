@@ -30,7 +30,7 @@ dependencies {
 
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
 
-    implementation 'net.andreinc.mockneat:mockneat:0.3.7'
+    implementation libraries.mockneat
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
 

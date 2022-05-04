@@ -20,7 +20,6 @@ ext {
     jacksonVersion = '2.10.+'
     jctoolsVersion = '1.+'
     nettyVersion = '4.1.17.Final'
-    numerusVersion = '1.+'
     snappyVersion = '1.1.+'
     spectatorVersion = '0.92.+'
 }
@@ -29,7 +28,6 @@ dependencies {
     api "io.netty:netty-codec-http:$nettyVersion"
     api "io.netty:netty-buffer:$nettyVersion"
     api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
-    api "com.netflix.numerus:numerus:$numerusVersion"
     api "org.xerial.snappy:snappy-java:$snappyVersion"
     api "org.jctools:jctools-core:$jctoolsVersion"
     api "com.netflix.spectator:spectator-api:$spectatorVersion"

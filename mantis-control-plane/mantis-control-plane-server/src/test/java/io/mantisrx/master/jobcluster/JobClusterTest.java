@@ -1180,6 +1180,7 @@ public class JobClusterTest {
     }
 
 
+    @Ignore
     @Test
     public void testJobComplete() {
         TestKit probe = new TestKit(system);
