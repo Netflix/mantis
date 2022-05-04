@@ -24,4 +24,5 @@ import lombok.Value;
  */
 @Value(staticConstructor = "getInstance")
 public class Ack implements Serializable {
+    private static final long serialVersionUID = 1L;
 }
