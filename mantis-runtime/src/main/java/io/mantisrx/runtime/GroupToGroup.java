@@ -43,9 +43,7 @@ public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
      */
     GroupToGroup(GroupComputation<K1, T, K2, R> computation,
                  Config<K1, T, K2, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
-        super(config.description, NettyCodec.fromNetty(inputCodec), config.keyCodec, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
 
     GroupToGroup(GroupComputation<K1, T, K2, R> computation,
@@ -54,8 +52,8 @@ public class GroupToGroup<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
     }
 
     GroupToGroup(GroupComputation<K1, T, K2, R> computation,
-                 Config<K1, T, K2, R> config, Codec<K1> keyCodec, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+                 Config<K1, T, K2, R> config, Codec<K1> inputKeyCodec, Codec<T> inputCodec) {
+        super(config.description, inputKeyCodec, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }

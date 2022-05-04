@@ -27,11 +27,11 @@ import io.mantisrx.runtime.sink.Sink;
 public class ScalarStages<T> extends Stages<T> {
 
     ScalarStages(SourceHolder<?> source, StageConfig<?, ?> stage, Codec<T> inputCodec) {
-        super(source, stage, null, inputCodec);
+        super(source, stage, inputCodec);
     }
 
     ScalarStages(Stages<?> self, StageConfig<?, ?> stage, Codec<T> inputCodec) {
-        super(self.getSource(), self.getStages(), stage, null, inputCodec);
+        super(self.getSource(), self.getStages(), stage, inputCodec);
     }
 
     public <K, R> KeyedStages<K, R> stage(ToKeyComputation<T, K, R> computation,

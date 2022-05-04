@@ -49,15 +49,12 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
      */
     ScalarToGroup(ToGroupComputation<T, K, R> computation,
                   Config<T, K, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
-        super(config.description, NettyCodec.fromNetty(inputCodec), config.keyCodec, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
 
     ScalarToGroup(ToGroupComputation<T, K, R> computation,
                   Config<T, K, R> config, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
 

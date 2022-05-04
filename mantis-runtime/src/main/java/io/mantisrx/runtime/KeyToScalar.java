@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
-public class KeyToScalar<K, T, R> extends KeyValueInputStageConfig<K, T, R> {
+public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
 
     private ToScalarComputation<K, T, R> computation;
     private long keyExpireTimeSeconds;

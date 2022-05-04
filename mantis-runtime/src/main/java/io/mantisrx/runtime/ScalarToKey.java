@@ -38,18 +38,15 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
      */
     ScalarToKey(ToKeyComputation<T, K, R> computation,
                 Config<T, K, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
-        super(config.description, NettyCodec.fromNetty(inputCodec), config.keyCodec, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
 
     }
 
     ScalarToKey(ToKeyComputation<T, K, R> computation,
                 Config<T, K, R> config, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
     }
 
     public ToKeyComputation<T, K, R> getComputation() {
@@ -59,7 +56,6 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
     public long getKeyExpireTimeSeconds() {
         return keyExpireTimeSeconds;
     }
-
 
     public static class Config<T, K, R> {
 

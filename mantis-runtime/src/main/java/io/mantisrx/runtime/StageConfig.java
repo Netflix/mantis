@@ -17,6 +17,7 @@
 package io.mantisrx.runtime;
 
 import io.mantisrx.common.codec.Codec;
+import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,8 @@ public abstract class StageConfig<T, R> {
     // the behaviour of relying on the number of inner observables for concurrency in the system
     public static final int DEFAULT_STAGE_CONCURRENCY = -1;
     private String description;
+    // holds the codec for the key datatype if there is one in the stage
+    private Codec<?> inputKeyCodec;
     private Codec<T> inputCodec;
     private Codec<R> outputCodec;
     private INPUT_STRATEGY inputStrategy;
@@ -47,6 +50,11 @@ public abstract class StageConfig<T, R> {
         this(description, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
     }
 
+    public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
+                       Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
+        this(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params, DEFAULT_STAGE_CONCURRENCY);
+    }
+
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, int concurrency) {
         this(description, inputCodec, outputCodec, inputStrategy, Collections.emptyList(), concurrency);
@@ -55,7 +63,14 @@ public abstract class StageConfig<T, R> {
     public StageConfig(String description, Codec<T> inputCodec,
                        Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
                        int concurrency) {
+        this(description, null, inputCodec, outputCodec, inputStrategy, params, concurrency);
+    }
+
+    public <K> StageConfig(String description, Codec<K> inputKeyCodec, Codec<T> inputCodec,
+                       Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params,
+                       int concurrency) {
         this.description = description;
+        this.inputKeyCodec = inputKeyCodec;
         this.inputCodec = inputCodec;
         this.outputCodec = outputCodec;
         this.inputStrategy = inputStrategy;
@@ -65,6 +80,13 @@ public abstract class StageConfig<T, R> {
 
     public String getDescription() {
         return description;
+    }
+
+    public <K> Codec<K> getInputKeyCodec() {
+        if (inputKeyCodec == null) {
+            return (Codec<K>) Codecs.string();
+        }
+        return (Codec<K>) inputKeyCodec;
     }
 
     public Codec<T> getInputCodec() {

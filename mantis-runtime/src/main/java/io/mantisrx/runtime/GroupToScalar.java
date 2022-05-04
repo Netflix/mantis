@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author njoshi
  */
-public class GroupToScalar<K, T, R> extends KeyValueInputStageConfig<K, T, R> {
+public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
 
     private GroupToScalarComputation<K, T, R> computation;
     private long keyExpireTimeSeconds;

@@ -44,11 +44,9 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
      */
     KeyToKey(KeyComputation<K1, T, K2, R> computation,
              Config<K1, T, K2, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
-        super(config.description, NettyCodec.fromNetty(inputCodec), config.keyCodec, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
+
     KeyToKey(KeyComputation<K1, T, K2, R> computation,
              Config<K1, T, K2, R> config, Codec<T> inputCodec) {
         this(computation, config, (Codec<K1>) Codecs.string(), inputCodec);
@@ -56,10 +54,9 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
     KeyToKey(KeyComputation<K1, T, K2, R> computation,
              Config<K1, T, K2, R> config, Codec<K1> inputKeyCodec, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+        super(config.description, inputKeyCodec, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
     }
 
     public KeyComputation<K1, T, K2, R> getComputation() {
