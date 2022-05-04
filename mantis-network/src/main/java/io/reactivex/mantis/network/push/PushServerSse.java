@@ -24,8 +24,6 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.mql.jvm.core.Query;
 import io.mantisrx.mql.jvm.interfaces.MQLServer;
-import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
-import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
