@@ -23,6 +23,7 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.mql.jvm.core.Query;
+import io.mantisrx.mql.jvm.interfaces.MQLServer;
 import io.mantisrx.mql.shaded.clojure.java.api.Clojure;
 import io.mantisrx.mql.shaded.clojure.lang.IFn;
 import io.netty.buffer.ByteBuf;
@@ -224,15 +225,9 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
                             }
 
                             if (queryParameters.containsKey(MantisSSEConstants.MQL)) {
-                                IFn require = Clojure.var("io.mantisrx.mql.shaded.clojure.core", "require");
-                                require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.core"));
-                                require.invoke(Clojure.read("io.mantisrx.mql.jvm.interfaces.server"));
-                                IFn mqlMakeQuery = Clojure.var("io.mantisrx.mql.jvm.interfaces.server", "make-query");
-                                IFn mqlParses = Clojure.var("io.mantisrx.mql.jvm.interfaces.core", "parses?");
-
                                 String query = queryParameters.get(MantisSSEConstants.MQL).get(0);
-                                if ((Boolean) mqlParses.invoke(query)) {
-                                    Query q = (Query) mqlMakeQuery.invoke(groupId, query);
+                                if (MQLServer.parses(query)) {
+                                    Query q = MQLServer.parse(query);
                                     predicateFunction = (T datum) -> datum instanceof Map ? q.matches((Map) datum) : true;
                                 }
                             }
