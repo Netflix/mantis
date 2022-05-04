@@ -49,7 +49,7 @@ ext {
     guiceVersion = '4.2.2'
     spectatorVersion = '0.96.0'
     archaiusVersion = 'latest.release'
-    mockNeatVersion = '0.3.7'
+    mockNeatVersion = '0.4.8'
 }
 
 
@@ -62,7 +62,7 @@ dependencies {
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
-    implementation "net.andreinc.mockneat:mockneat:$mockNeatVersion"
+    implementation libraries.mockneat
 
     implementation libraries.slf4jLog4j12
 }
