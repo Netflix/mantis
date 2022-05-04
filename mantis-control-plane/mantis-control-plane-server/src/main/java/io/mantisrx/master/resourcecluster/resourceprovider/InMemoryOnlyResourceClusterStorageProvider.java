@@ -22,12 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * [Test only] Store resource storage data in memory only for testing.
  */
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
-    Map<String, ResourceClusterSpecWritable> clusters = new HashMap<>();
+    Map<String, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {
