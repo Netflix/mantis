@@ -62,9 +62,9 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         RemoteRxServer.Builder serverBuilder = new RemoteRxServer.Builder();
 
         if (stage instanceof KeyValueStageConfig) {
-            startKeyValueStage((KeyValueStageConfig<?, ?, T>) stage, toServe);
+            LegacyTcpPushServer modernServer = startKeyValueStage((KeyValueStageConfig<?, ?, T>) stage, toServe);
+            server = new LegacyRxServer<>(modernServer);
         } else if (stage instanceof ScalarToScalar || stage instanceof KeyToScalar || stage instanceof GroupToScalar) {
-
             if (runNewW2Wserver(jobName)) {
                 logger.info("Modern server setup for name: " + name + " type: Scalarstage");
 
@@ -78,11 +78,9 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                         .build();
                 final LegacyTcpPushServer<T> modernServer =
                         PushServers.infiniteStreamLegacyTcpNested(config, toServe);
-                modernServer.start();
 
                 // support legacy server interface
-                this.server = new LegacyRxServer<>(modernServer);
-
+                server = new LegacyRxServer<>(modernServer);
             } else {
                 logger.info("Legacy server setup for name: " + name + " type: Scalarstage");
                 RoundRobin slotting = new RoundRobin();
@@ -98,15 +96,14 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 server = serverBuilder
                         .port(serverPort)
                         .build();
-                server.start();
             }
         } else {
             throw new RuntimeException("Unsupported stage type: " + stage);
         }
+        server.start();
     }
 
-    private <K> void startKeyValueStage(KeyValueStageConfig<?, K, T> stage, Observable<Observable<T>> toServe) {
-
+    private <K> LegacyTcpPushServer<KeyValuePair<K, T>> startKeyValueStage(KeyValueStageConfig<?, K, T> stage, Observable<Observable<T>> toServe) {
         Preconditions.checkArgument(runNewW2WserverGroups(jobName),
             String.format("Need to use new worker2worker server group for jobName %s", jobName));
         logger.info("Modern server setup for name: {} type: Keyedstage", name);
@@ -133,20 +130,15 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
             .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
             .build();
 
-        final LegacyTcpPushServer<KeyValuePair<K, T>> modernServer;
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {
-            modernServer = PushServers.infiniteStreamLegacyTcpNestedMantisGroup(
-                config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
-                HashFunctions.ketama());
-        } else { // ScalarToKey or KeyTKey
-            modernServer = PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
+            return PushServers.infiniteStreamLegacyTcpNestedMantisGroup(
                 config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
                 HashFunctions.ketama());
         }
-
-        modernServer.start();
-        // support legacy server interface
-        this.server = new LegacyRxServer<>(modernServer);
+        // ScalarToKey or KeyTKey
+        return PushServers.infiniteStreamLegacyTcpNestedGroupedObservable(
+            config, (Observable) toServe, expiryTimeInSecs, keyEncoder,
+            HashFunctions.ketama());
     }
 
     private boolean useSpsc() {
@@ -211,6 +203,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
 
         @Override
         public void start() {
+            this.modernServer.start();
         }
 
         @Override
