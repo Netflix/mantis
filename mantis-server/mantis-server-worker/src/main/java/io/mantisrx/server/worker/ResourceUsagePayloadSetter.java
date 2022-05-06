@@ -22,7 +22,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.storage.StorageUnit;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.stats.MetricStringConstants;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.metrics.MetricsCollector;
 import io.mantisrx.server.worker.metrics.Usage;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;

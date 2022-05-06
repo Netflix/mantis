@@ -17,6 +17,8 @@
 package io.mantisrx.server.worker.config;
 
 
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
+
 /**
  * An implementation of this class should return an instance of io.mantisrx.server.master.config.MasterConfiguration.
  * We create this factory because it's possible that the logic of creating a io.mantisrx.server.master.config.MasterConfiguration

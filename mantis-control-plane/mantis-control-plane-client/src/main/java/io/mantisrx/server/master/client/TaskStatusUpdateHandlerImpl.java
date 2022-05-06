@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker;
+package io.mantisrx.server.master.client;
 
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.master.client.MantisMasterGateway;
 import java.net.SocketTimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.ExceptionUtils;
