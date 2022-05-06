@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker;
+package io.mantisrx.server.master.client;
 
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.master.client.MantisMasterGateway;
 
 /**
  * TaskStatusUpdateHandler is responsible for handling updates to task statuses as the task is being run.

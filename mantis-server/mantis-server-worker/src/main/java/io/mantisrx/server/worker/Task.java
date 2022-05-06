@@ -19,64 +19,71 @@ import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
+import io.mantisrx.server.master.client.ITask;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
+import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Slf4j
-public class Task extends AbstractIdleService {
+public class Task extends AbstractIdleService implements ITask {
 
-    private final WrappedExecuteStageRequest wrappedExecuteStageRequest;
+    private WrappedExecuteStageRequest wrappedExecuteStageRequest;
 
-    private final WorkerConfiguration config;
+    private WorkerConfiguration config;
 
     private final List<Service> mantisServices = new ArrayList<>();
 
-    private final MantisMasterGateway masterMonitor;
+    private MantisMasterGateway masterMonitor;
 
-    private final ClassLoaderHandle classLoaderHandle;
+    private UserCodeClassLoader userCodeClassLoader;
 
-    private final SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
+    private SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
 
     private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
 
     private final PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
 
     // hostname from which the task is run from
-    private final Optional<String> hostname;
+    private Optional<String> hostname = Optional.empty();
 
-    private final Optional<Job> mantisJob;
+    private Optional<Job> mantisJob = Optional.empty();
 
-    private final ExecuteStageRequest executeStageRequest;
+    private ExecuteStageRequest executeStageRequest;
 
-    public Task(
-        WrappedExecuteStageRequest wrappedExecuteStageRequest,
-        WorkerConfiguration config,
-        MantisMasterGateway masterMonitor,
-        ClassLoaderHandle classLoaderHandle,
-        Factory sinkSubscriptionStateHandlerFactory,
-        Optional<String> hostname,
-        Optional<Job> mantisJob) {
+    @Override
+    public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
+                           WorkerConfiguration config,
+                           MantisMasterGateway masterMonitor,
+                           UserCodeClassLoader userCodeClassLoader,
+                           SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
+                           Optional<String> hostname) {
         this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
         this.config = config;
         this.masterMonitor = masterMonitor;
-        this.classLoaderHandle = classLoaderHandle;
+        this.userCodeClassLoader = userCodeClassLoader;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
         this.hostname = hostname;
-        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
-        this.mantisJob = mantisJob;
+    }
+
+    public void setJob(Optional<Job> job) {
+        this.mantisJob = job;
     }
 
     @Override
@@ -108,8 +115,8 @@ public class Task extends AbstractIdleService {
                 workerMetricsClient,
                 sinkSubscriptionStateHandlerFactory,
                 hostname),
-            classLoaderHandle,
             getJobProviderClass(),
+            userCodeClassLoader,
             mantisJob));
 
         log.info("Starting Mantis Worker for task {}", this);
@@ -139,6 +146,7 @@ public class Task extends AbstractIdleService {
                 throw e;
             }
         }
+        closeUserCodeClassLoader();
     }
 
     private Optional<String> getJobProviderClass() {
@@ -156,5 +164,17 @@ public class Task extends AbstractIdleService {
 
     public WorkerId getWorkerId() {
         return executeStageRequest.getWorkerId();
+    }
+
+    private void closeUserCodeClassLoader() {
+        if (userCodeClassLoader != null) {
+            if (userCodeClassLoader.asClassLoader() instanceof Closeable) {
+                try {
+                    ((Closeable) userCodeClassLoader.asClassLoader()).close();
+                } catch (IOException ex) {
+                    log.error("Failed to close user class loader successfully", ex);
+                }
+            }
+        }
     }
 }

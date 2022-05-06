@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.worker;
+package io.mantisrx.server.agent;
 
-import static org.junit.Assert.assertTrue;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -44,14 +44,15 @@ import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
+import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
@@ -71,6 +72,7 @@ import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -182,7 +184,7 @@ public class TaskExecutorTest {
                 new WorkerPorts(2, 3, 4, 5, 6),
                 Optional.of(SineFunctionJobProvider.class.getName()))), Time.seconds(1));
         wait.get();
-        assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
+        Assert.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
         Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),
                 HttpRequestFactories.createGetFactory("/"))
             .withServerProvider(new HttpServerProvider() {
@@ -210,7 +212,7 @@ public class TaskExecutorTest {
             .takeUntil(point -> point.getX() > threshold)
             .subscribe(point -> log.info("point={}", point), error -> log.error("failed", error),
                 () -> doneSignal.countDown());
-        assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
         subscription.unsubscribe();
         verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
@@ -244,7 +246,7 @@ public class TaskExecutorTest {
         start();
         Thread.sleep(1000);
         verify(resourceManagerGateway, times(2)).registerTaskExecutor(any());
-        assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     @Test
@@ -270,7 +272,7 @@ public class TaskExecutorTest {
         verify(newResourceClusterGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
-        assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     @Test
@@ -305,7 +307,7 @@ public class TaskExecutorTest {
         verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
-        assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     private static ResourceClusterGateway getHealthyGateway(String name) {
@@ -368,7 +370,7 @@ public class TaskExecutorTest {
                                    WorkerConfiguration workerConfiguration,
                                    HighAvailabilityServices highAvailabilityServices,
                                    ClassLoaderHandle classLoaderHandle,
-                                   Factory subscriptionStateHandlerFactory,
+                                   SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
                                    Consumer<Status> consumer) {
             super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
                 subscriptionStateHandlerFactory);

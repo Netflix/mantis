@@ -50,9 +50,9 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
+import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
 import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
@@ -114,7 +114,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
-        Factory sinkSubscriptionStateHandlerFactory,
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
         Optional<String> hostname) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
@@ -123,13 +123,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
 
         String connectionsPerEndpointStr =
-                ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
+            ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
         if (connectionsPerEndpointStr != null && !connectionsPerEndpointStr.equals("2")) {
             connectionsPerEndpoint = Integer.parseInt(connectionsPerEndpointStr);
         }
 
         String locateSpectatorRegistry =
-                ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
+            ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
         lookupSpectatorRegistry = Boolean.valueOf(locateSpectatorRegistry);
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
         this.hostname = hostname;

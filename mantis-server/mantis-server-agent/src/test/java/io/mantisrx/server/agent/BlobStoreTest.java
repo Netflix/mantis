@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker;
+package io.mantisrx.server.agent;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -22,7 +22,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.mantisrx.server.worker.BlobStore.PrefixedBlobStore;
 import java.io.File;
 import java.net.URI;
 import org.junit.Test;
@@ -36,7 +35,7 @@ public class BlobStoreTest {
         when(blobStore.get(any())).thenReturn(file);
 
         final BlobStore prefixedBlobStpre =
-            new PrefixedBlobStore(new URI("s3://netflix.s3.genpop.prod/mantis/jobs/"), blobStore);
+            new BlobStore.PrefixedBlobStore(new URI("s3://netflix.s3.genpop.prod/mantis/jobs/"), blobStore);
         prefixedBlobStpre.get(new URI("http://sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
 
         final URI expectedUri =

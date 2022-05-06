@@ -18,7 +18,7 @@ package io.mantisrx.server.worker.mesos;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.worker.WrappedExecuteStageRequest;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

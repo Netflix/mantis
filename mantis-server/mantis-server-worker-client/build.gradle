@@ -15,7 +15,6 @@
  */
 
 dependencies {
-    api project(':mantis-runtime')
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-control-plane:mantis-control-plane-client")
 
