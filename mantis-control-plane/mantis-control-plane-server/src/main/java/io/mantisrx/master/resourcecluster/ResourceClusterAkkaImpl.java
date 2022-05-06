@@ -58,6 +58,11 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
+    public String getName() {
+        return clusterID.getResourceID();
+    }
+
+    @Override
     public CompletableFuture<Ack> initializeTaskExecutor(TaskExecutorID taskExecutorID, WorkerId workerId) {
         return Patterns.ask(
                 resourceClusterManagerActor,

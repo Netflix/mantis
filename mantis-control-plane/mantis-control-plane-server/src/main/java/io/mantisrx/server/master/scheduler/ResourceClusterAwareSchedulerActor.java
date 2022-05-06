@@ -21,6 +21,11 @@ import static akka.pattern.Patterns.pipe;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.netflix.spectator.api.Tag;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.Timer;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -28,9 +33,12 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Value;
@@ -45,6 +53,8 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     private final int maxScheduleRetries;
     private final int maxCancelRetries;
     private final Duration intervalBetweenRetries;
+    private final Timer schedulingLatency;
+    private final Counter schedulingFailures;
 
     public static Props props(
         int maxScheduleRetries,
@@ -52,9 +62,10 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         Duration intervalBetweenRetries,
         final ResourceCluster resourceCluster,
         final ExecuteStageRequestFactory executeStageRequestFactory,
-        final JobMessageRouter jobMessageRouter) {
+        final JobMessageRouter jobMessageRouter,
+        final MetricsRegistry metricsRegistry) {
         return Props.create(ResourceClusterAwareSchedulerActor.class, maxScheduleRetries, maxCancelRetries, intervalBetweenRetries, resourceCluster, executeStageRequestFactory,
-            jobMessageRouter);
+            jobMessageRouter, metricsRegistry);
     }
 
     public ResourceClusterAwareSchedulerActor(
@@ -63,13 +74,24 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         Duration intervalBetweenRetries,
         ResourceCluster resourceCluster,
         ExecuteStageRequestFactory executeStageRequestFactory,
-        JobMessageRouter jobMessageRouter) {
+        JobMessageRouter jobMessageRouter,
+        MetricsRegistry metricsRegistry) {
         this.resourceCluster = resourceCluster;
         this.executeStageRequestFactory = executeStageRequestFactory;
         this.jobMessageRouter = jobMessageRouter;
         this.maxScheduleRetries = maxScheduleRetries;
         this.intervalBetweenRetries = intervalBetweenRetries;
         this.maxCancelRetries = maxCancelRetries;
+        final String metricsGroup = "ResourceClusterAwareSchedulerActor";
+        final Metrics metrics =
+            new Metrics.Builder()
+                .id(metricsGroup, Tag.of("resourceCluster", resourceCluster.getName()))
+                .addTimer("schedulingLatency")
+                .addCounter("schedulingFailures")
+                .build();
+        metricsRegistry.registerAndGet(metrics);
+        this.schedulingLatency = metrics.getTimer("schedulingLatency");
+        this.schedulingFailures = metrics.getCounter("schedulingFailures");
     }
 
     @Override
@@ -89,17 +111,15 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
     private void onScheduleRequestEvent(ScheduleRequestEvent event) {
         if (event.isRetry()) {
-            log.info("Retrying Schedule Request {}, attempt {}", event.getScheduleRequest(),
+            log.info("Retrying Schedule Request {}, attempt {}", event.getRequest(),
                 event.getAttempt());
         }
 
         CompletableFuture<Object> assignedFuture =
             resourceCluster
-                .getTaskExecutorFor(event.scheduleRequest.getMachineDefinition(),
-                    event.scheduleRequest.getWorkerId())
-                .<Object>thenApply(
-                    taskExecutorID1 -> new AssignedScheduleRequestEvent(event.getScheduleRequest(),
-                        taskExecutorID1))
+                .getTaskExecutorFor(event.request.getMachineDefinition(),
+                    event.request.getWorkerId())
+                .<Object>thenApply(event::onAssignment)
                 .exceptionally(event::onFailure);
 
         pipe(assignedFuture, getContext().getDispatcher()).to(self());
@@ -121,12 +141,12 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
             CompletableFuture<Object> ackFuture =
                 gateway
-                    .submitTask(executeStageRequestFactory.of(event.getScheduleRequest(), info))
+                    .submitTask(executeStageRequestFactory.of(event.getScheduleRequestEvent().getRequest(), info))
                     .<Object>thenApply(
-                        dontCare -> new SubmittedScheduleRequestEvent(event.getScheduleRequest(),
+                        dontCare -> new SubmittedScheduleRequestEvent(event.getScheduleRequestEvent(),
                             event.getTaskExecutorID()))
                     .exceptionally(
-                        throwable -> new FailedToSubmitScheduleRequestEvent(event.getScheduleRequest(),
+                        throwable -> new FailedToSubmitScheduleRequestEvent(event.getScheduleRequestEvent(),
                             event.getTaskExecutorID(), throwable));
 
             pipe(ackFuture, getContext().getDispatcher()).to(self());
@@ -136,12 +156,13 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     }
 
     private void onFailedScheduleRequestEvent(FailedToScheduleRequestEvent event) {
+        schedulingFailures.increment();
         if (event.getAttempt() >= this.maxScheduleRetries) {
-            log.error("Failed to submit the request {} because of ", event.getScheduleRequest(), event.getThrowable());
+            log.error("Failed to submit the request {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
         } else {
-            log.error("Failed to submit the request {}; Retrying in {} because of ", event.getScheduleRequest(), event.getThrowable());
+            log.error("Failed to submit the request {}; Retrying in {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
             getTimers()
-                .startSingleTimer("Retry-Schedule-Request-For" + event.getScheduleRequest().getWorkerId(), event.onRetry(), intervalBetweenRetries);
+                .startSingleTimer("Retry-Schedule-Request-For" + event.getScheduleRequestEvent().getRequest().getWorkerId(), event.onRetry(), intervalBetweenRetries);
         }
     }
 
@@ -151,12 +172,15 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             .join();
         boolean success =
             jobMessageRouter.routeWorkerEvent(new WorkerLaunched(
-                event.getScheduleRequest().getWorkerId(),
-                event.getScheduleRequest().getStageNum(),
+                event.getEvent().getRequest().getWorkerId(),
+                event.getEvent().getRequest().getStageNum(),
                 info.getHostname(),
                 taskExecutorID.getResourceId(),
                 Optional.ofNullable(info.getClusterID().getResourceID()),
                 info.getWorkerPorts()));
+        final Duration latency =
+            Duration.between(event.getEvent().getEventTime(), Clock.systemDefaultZone().instant());
+        schedulingLatency.record(latency.toNanos(), TimeUnit.NANOSECONDS);
 
         if (!success) {
             log.error(
@@ -168,8 +192,8 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     private void onFailedToSubmitScheduleRequestEvent(FailedToSubmitScheduleRequestEvent event) {
         log.error("Failed to submit schedule request event {}", event, event.getThrowable());
         jobMessageRouter.routeWorkerEvent(new WorkerLaunchFailed(
-            event.scheduleRequest.getWorkerId(),
-            event.scheduleRequest.getStageNum(),
+            event.getScheduleRequestEvent().getRequest().getWorkerId(),
+            event.getScheduleRequestEvent().getRequest().getStageNum(),
             Throwables.getStackTraceAsString(event.throwable)));
     }
 
@@ -223,21 +247,26 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     @Value
     static class ScheduleRequestEvent {
 
-        ScheduleRequest scheduleRequest;
+        ScheduleRequest request;
         int attempt;
         @Nullable
         Throwable previousFailure;
+        Instant eventTime;
 
         boolean isRetry() {
             return attempt > 1;
         }
 
         static ScheduleRequestEvent of(ScheduleRequest request) {
-            return new ScheduleRequestEvent(request, 1, null);
+            return new ScheduleRequestEvent(request, 1, null, Clock.systemDefaultZone().instant());
         }
 
         FailedToScheduleRequestEvent onFailure(Throwable throwable) {
-            return new FailedToScheduleRequestEvent(this.scheduleRequest, this.attempt, throwable);
+            return new FailedToScheduleRequestEvent(this, this.attempt, throwable);
+        }
+
+        AssignedScheduleRequestEvent onAssignment(TaskExecutorID taskExecutorID) {
+            return new AssignedScheduleRequestEvent(this, taskExecutorID);
         }
     }
 
@@ -250,33 +279,37 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     @Value
     private static class FailedToScheduleRequestEvent {
 
-        ScheduleRequest scheduleRequest;
+        ScheduleRequestEvent scheduleRequestEvent;
         int attempt;
         Throwable throwable;
 
         private ScheduleRequestEvent onRetry() {
-            return new ScheduleRequestEvent(this.scheduleRequest, attempt + 1, this.throwable);
+            return new ScheduleRequestEvent(
+                scheduleRequestEvent.getRequest(),
+                attempt + 1,
+                this.throwable,
+                scheduleRequestEvent.getEventTime());
         }
     }
 
     @Value
     private static class AssignedScheduleRequestEvent {
 
-        ScheduleRequest scheduleRequest;
+        ScheduleRequestEvent scheduleRequestEvent;
         TaskExecutorID taskExecutorID;
     }
 
     @Value
     private static class SubmittedScheduleRequestEvent {
 
-        ScheduleRequest scheduleRequest;
+        ScheduleRequestEvent event;
         TaskExecutorID taskExecutorID;
     }
 
     @Value
     private static class FailedToSubmitScheduleRequestEvent {
 
-        ScheduleRequest scheduleRequest;
+        ScheduleRequestEvent scheduleRequestEvent;
         TaskExecutorID taskExecutorID;
         Throwable throwable;
     }
