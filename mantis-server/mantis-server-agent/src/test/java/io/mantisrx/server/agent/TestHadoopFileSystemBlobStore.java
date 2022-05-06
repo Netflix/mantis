@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker;
+package io.mantisrx.server.agent;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
