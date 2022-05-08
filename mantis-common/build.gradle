@@ -38,6 +38,7 @@ dependencies {
     api libraries.slf4jApi
     api libraries.slf4jLog4j12
     implementation libraries.commonsIo
+    implementation 'net.jcip:jcip-annotations:1.0'
 
     testImplementation libraries.commonsLang3
     testImplementation "org.hamcrest:hamcrest-core:1.3"

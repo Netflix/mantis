@@ -24,8 +24,13 @@ import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +48,6 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
 public class TaskExecutorStarter extends AbstractIdleService {
-
     private final TaskExecutor taskExecutor;
     private final HighAvailabilityServices highAvailabilityServices;
 
@@ -81,6 +85,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private final HighAvailabilityServices highAvailabilityServices;
         @Nullable
         private SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory;
+        private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
 
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
             this.workerConfiguration = workerConfiguration;
@@ -148,6 +153,11 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
+        public TaskExecutorStarterBuilder addListener(TaskExecutor.Listener listener, Executor executor) {
+            this.listeners.add(Tuple.of(listener, executor));
+            return this;
+        }
+
         private SinkSubscriptionStateHandler.Factory getSinkSubscriptionHandlerFactory() {
             if (this.sinkSubscriptionHandlerFactory == null) {
                 return SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
@@ -166,6 +176,10 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     highAvailabilityServices,
                     getClassLoaderHandle(),
                     getSinkSubscriptionHandlerFactory());
+
+            for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
+                taskExecutor.addListener(listener._1(), listener._2());
+            }
 
             return new TaskExecutorStarter(taskExecutor, highAvailabilityServices);
         }

@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.worker;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.atLeastOnce;
@@ -51,11 +52,13 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
+import io.mantisrx.server.worker.TaskExecutor.Listener;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +69,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.apache.flink.api.common.time.Time;
@@ -93,6 +98,7 @@ public class TaskExecutorTest {
     private ResourceClusterGateway resourceManagerGateway;
     private SimpleResourceLeaderConnection<ResourceClusterGateway> resourceManagerGatewayCxn;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private CollectingTaskLifecycleListener listener;
 
     @Before
     public void setUp() {
@@ -133,6 +139,7 @@ public class TaskExecutorTest {
             }
         };
 
+        listener = new CollectingTaskLifecycleListener();
         taskExecutor =
             new TestingTaskExecutor(
                 rpcService,
@@ -141,6 +148,7 @@ public class TaskExecutorTest {
                 classLoaderHandle,
                 executeStageRequest -> SinkSubscriptionStateHandler.noop(),
                 updateTaskExecutionStatusFunction);
+        taskExecutor.addListener(listener, MoreExecutors.directExecutor());
         taskExecutor.start();
         taskExecutor.awaitRunning().get(2, TimeUnit.SECONDS);
     }
@@ -224,6 +232,10 @@ public class TaskExecutorTest {
         verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
                 TaskExecutorReport.available()));
+        assertTrue(listener.isStartingCalled());
+        assertTrue(listener.isCancellingCalled());
+        assertTrue(listener.isCancelledCalled());
+        assertFalse(listener.isFailedCalled());
     }
 
     @Test
@@ -378,6 +390,34 @@ public class TaskExecutorTest {
         @Override
         protected void updateExecutionStatus(Status status) {
             consumer.accept(status);
+        }
+    }
+
+    @Getter
+    private static class CollectingTaskLifecycleListener implements Listener {
+        boolean startingCalled = false;
+        boolean failedCalled = false;
+        boolean cancellingCalled = false;
+        boolean cancelledCalled = false;
+
+        @Override
+        public void onTaskStarting(Task task) {
+            startingCalled = true;
+        }
+
+        @Override
+        public void onTaskFailed(Task task, Throwable throwable) {
+            failedCalled = true;
+        }
+
+        @Override
+        public void onTaskCancelling(Task task) {
+            cancellingCalled = true;
+        }
+
+        @Override
+        public void onTaskCancelled(Task task, @Nullable Throwable throwable) {
+            cancelledCalled = true;
         }
     }
 }
