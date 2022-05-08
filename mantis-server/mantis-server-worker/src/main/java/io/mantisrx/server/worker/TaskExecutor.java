@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.agent;
+package io.mantisrx.server.worker;
 
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
@@ -23,17 +23,11 @@ import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
-import io.mantisrx.server.master.client.ITask;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
-import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
-import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -42,13 +36,15 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
-import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
+import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service.Listener;
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -65,7 +61,6 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcEndpoint;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.runtime.rpc.RpcServiceUtils;
-import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
@@ -77,8 +72,8 @@ import rx.subjects.PublishSubject;
  * 2). cancel a stage task from the mantis master
  * 3). take a thread dump to see which threads are active
  */
-@Slf4j
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
+
     @Getter
     private final TaskExecutorID taskExecutorID;
     @Getter
@@ -100,7 +95,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // represents the current connection to the resource manager.
     private ResourceManagerGatewayCxn currentResourceManagerCxn;
     private TaskExecutorReport currentReport;
-    private ITask currentTask;
+    private Task currentTask;
     private Subscription currentTaskStatusSubscription;
     private int resourceManagerCxnIdx;
     private Throwable previousFailure;
@@ -110,7 +105,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
-        SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory) {
+        Factory subscriptionStateHandlerFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -248,10 +243,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
         Preconditions.checkArgument(this.currentResourceManagerCxn == null,
             "existing connection already set");
-        cxn.addListener(new Service.Listener() {
+        cxn.addListener(new Listener() {
             @Override
             public void failed(Service.State from, Throwable failure) {
-                if (from.ordinal() == Service.State.RUNNING.ordinal()) {
+                if (from.ordinal() == State.RUNNING.ordinal()) {
                     log.error("Connection with the resource manager failed; Retrying", failure);
                     clearResourceManagerCxn();
                     scheduleRunAsync(TaskExecutor.this::establishNewResourceManagerCxnAsync,
@@ -421,37 +416,25 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WrappedExecuteStageRequest wrappedRequest =
             new WrappedExecuteStageRequest(PublishSubject.create(), request);
 
-        try {
-            UserCodeClassLoader userCodeClassLoader = ClassLoaderHandle.createUserCodeClassloader(request, classLoaderHandle);
-            ClassLoader cl = userCodeClassLoader.asClassLoader();
-            ServiceLoader<ITask> loader = ServiceLoader.load(ITask.class, cl);
-            // There should only be 1 task implementation provided by mantis-server-worker.
-            ITask task = loader.iterator().next();
+        Task task = new Task(
+            wrappedRequest,
+            workerConfiguration,
+            masterMonitor,
+            classLoaderHandle,
+            subscriptionStateHandlerFactory,
+            Optional.of(getHostname()),
+            Optional.empty());
 
-            task.initialize(
-                wrappedRequest,
-                workerConfiguration,
-                masterMonitor,
-                userCodeClassLoader,
-                subscriptionStateHandlerFactory,
-                Optional.of(getHostname())
-            );
+        setCurrentTask(task);
 
-            setCurrentTask(task);
-
-            scheduleRunAsync(this::startCurrentTask, 0, TimeUnit.MILLISECONDS);
-            return CompletableFuture.completedFuture(Ack.getInstance());
-        } catch (Exception ex) {
-            log.error("Failed to submit task, request: {}", request, ex);
-            return CompletableFutures.exceptionallyCompletedFuture(
-                new TaskNotFoundException(null, ex));
-        }
+        scheduleRunAsync(this::startCurrentTask, 0, TimeUnit.MILLISECONDS);
+        return CompletableFuture.completedFuture(Ack.getInstance());
     }
 
     private void startCurrentTask() {
         validateRunsInMainThread();
 
-        if (currentTask.state().equals(Service.State.NEW)) {
+        if (currentTask.state().equals(State.NEW)) {
             CompletableFuture<Void> currentTaskSuccessfullyStartFuture =
                 Services.startAsync(currentTask, getMainThreadExecutor());
 
@@ -467,7 +450,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
-    private void setCurrentTask(@Nullable ITask task) {
+    private void setCurrentTask(@Nullable Task task) {
         validateRunsInMainThread();
 
         this.currentTask = task;
@@ -534,7 +517,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
         if (this.currentTask != null) {
             try {
-                if (this.currentTask.state().ordinal() <= Service.State.RUNNING.ordinal()) {
+                if (this.currentTask.state().ordinal() <= State.RUNNING.ordinal()) {
                     CompletableFuture<Void> stopTaskFuture =
                         Services.stopAsync(this.currentTask, getIOExecutor());
 
@@ -587,4 +570,5 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return runningTaskCompletionFuture
             .thenCombine(currentResourceManagerCxnCompletionFuture, (dontCare1, dontCare2) -> null);
     }
+
 }

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.worker;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import io.mantisrx.common.util.DelegateClock;
-import io.mantisrx.server.master.client.SubscriptionStateHandlerImpl.SubscriptionState;
+import io.mantisrx.server.worker.SubscriptionStateHandlerImpl.SubscriptionState;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

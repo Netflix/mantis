@@ -15,19 +15,8 @@
  */
 
 dependencies {
-    implementation project(":mantis-control-plane:mantis-control-plane-client")
-    implementation project(":mantis-server:mantis-server-worker-client")
-
-    implementation libraries.zip4j
-    implementation libraries.commonsIo
-    implementation libraries.hadoopCommon
-    implementation libraries.spotifyFutures
+    compile project(":mantis-control-plane:mantis-control-plane-core")
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
-
-    testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
-    testImplementation project(":mantis-server:mantis-server-worker")
-    testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }

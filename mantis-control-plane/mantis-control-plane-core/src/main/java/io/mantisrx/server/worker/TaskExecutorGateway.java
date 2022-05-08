@@ -19,6 +19,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import java.util.concurrent.CompletableFuture;
+import lombok.RequiredArgsConstructor;
 import org.apache.flink.runtime.rpc.RpcGateway;
 
 /**
@@ -54,30 +55,18 @@ public interface TaskExecutorGateway extends RpcGateway {
      */
     CompletableFuture<String> requestThreadDump();
 
+    @RequiredArgsConstructor
     class TaskAlreadyRunningException extends Exception {
         private static final long serialVersionUID = 1L;
 
         private final WorkerId currentlyRunningWorkerTask;
-
-        public TaskAlreadyRunningException(WorkerId workerId) {
-            this(workerId, null);
-        }
-
-        public TaskAlreadyRunningException(WorkerId workerId, Throwable cause) {
-            super(cause);
-            this.currentlyRunningWorkerTask = workerId;
-        }
     }
 
     class TaskNotFoundException extends Exception {
         private static final long serialVersionUID = 1L;
 
         public TaskNotFoundException(WorkerId workerId) {
-            this(workerId, null);
-        }
-
-        public TaskNotFoundException(WorkerId workerId, Throwable cause) {
-            super(String.format("Task %s not found", workerId.toString()), cause);
+            super(String.format("Task %s not found", workerId.toString()));
         }
     }
 }

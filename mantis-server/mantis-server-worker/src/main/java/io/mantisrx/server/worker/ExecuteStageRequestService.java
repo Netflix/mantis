@@ -21,7 +21,8 @@ import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -42,27 +43,28 @@ public class ExecuteStageRequestService extends BaseService {
     private final WorkerExecutionOperations executionOperations;
     private final Optional<String> jobProviderClass;
 
+    private final ClassLoaderHandle classLoaderHandle;
     private final Optional<Job> mantisJob;
 
     /**
      * This class loader should be set as the context class loader for threads that may dynamically
      * load user code.
      */
-    private final UserCodeClassLoader userCodeClassLoader;
+    private UserCodeClassLoader userCodeClassLoader;
     private Subscription subscription;
 
     public ExecuteStageRequestService(
         Observable<WrappedExecuteStageRequest> executeStageRequestObservable,
         Observer<Observable<Status>> tasksStatusObserver,
         WorkerExecutionOperations executionOperations,
+        ClassLoaderHandle classLoaderHandle,
         Optional<String> jobProviderClass,
-        UserCodeClassLoader userCodeClassLoader,
         Optional<Job> mantisJob) {
         this.executeStageRequestObservable = executeStageRequestObservable;
         this.tasksStatusObserver = tasksStatusObserver;
         this.executionOperations = executionOperations;
         this.jobProviderClass = jobProviderClass;
-        this.userCodeClassLoader = userCodeClassLoader;
+        this.classLoaderHandle = classLoaderHandle;
         this.mantisJob = mantisJob;
     }
 
@@ -96,6 +98,8 @@ public class ExecuteStageRequestService extends BaseService {
                                 // this may involve downloading the job's JAR files and/or classes
                                 logger.info("Loading JAR files for task {}.", this);
 
+                                userCodeClassLoader = createUserCodeClassloader(
+                                    executeStageRequest);
                                 cl = userCodeClassLoader.asClassLoader();
                                 if (jobProviderClass.isPresent()) {
                                     logger.info("loading job main class " + jobProviderClass.get());
@@ -133,11 +137,13 @@ public class ExecuteStageRequestService extends BaseService {
                         } catch (IOException e) {
                             logger.error("Failed to close stage cleanly", e);
                         }
+                        closeUserCodeClassLoader();
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         logger.error("Execute stage observable threw exception", e);
+                        closeUserCodeClassLoader();
                     }
 
                     @Override
@@ -173,8 +179,41 @@ public class ExecuteStageRequestService extends BaseService {
         } catch (IOException e) {
             logger.error("Failed to close cleanly", e);
         }
+
+        try {
+            classLoaderHandle.close();
+        } catch (IOException e) {
+            logger.error("Failed to close classLoader {}", classLoaderHandle, e);
+        }
     }
 
     @Override
     public void enterActiveMode() {}
+
+    private UserCodeClassLoader createUserCodeClassloader(ExecuteStageRequest executeStageRequest) throws Exception {
+        long startDownloadTime = System.currentTimeMillis();
+
+        // triggers the download of all missing jar files from the job manager
+        final UserCodeClassLoader userCodeClassLoader =
+             classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), ImmutableList.of());
+
+        logger.info(
+            "Getting user code class loader for task {} at library cache manager took {} milliseconds",
+            executeStageRequest,
+            System.currentTimeMillis() - startDownloadTime);
+
+        return userCodeClassLoader;
+    }
+
+    private void closeUserCodeClassLoader() {
+        if (userCodeClassLoader != null) {
+            if (userCodeClassLoader.asClassLoader() != null && userCodeClassLoader.asClassLoader() instanceof Closeable) {
+                try {
+                    ((Closeable) userCodeClassLoader.asClassLoader()).close();
+                } catch (IOException ex) {
+                    logger.error("Failed to close user class loader successfully", ex);
+                }
+            }
+        }
+    }
 }

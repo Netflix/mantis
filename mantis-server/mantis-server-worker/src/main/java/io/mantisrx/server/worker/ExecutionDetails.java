@@ -19,7 +19,6 @@ package io.mantisrx.server.worker;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import java.util.List;
 import rx.Observer;
 

@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.server.worker;
 
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
@@ -29,6 +27,7 @@ import org.apache.flink.util.UserCodeClassLoader;
  * Handle to retrieve a user code class loader for the associated job.
  */
 public interface ClassLoaderHandle extends Closeable {
+
     /**
      * Gets or resolves the user code class loader for the associated job.
      *
@@ -64,13 +63,5 @@ public interface ClassLoaderHandle extends Closeable {
             public void close() throws IOException {
             }
         };
-    }
-
-    static UserCodeClassLoader createUserCodeClassloader(ExecuteStageRequest executeStageRequest, ClassLoaderHandle classLoaderHandle) throws Exception {
-        // triggers the download of all missing jar files from the job manager
-        final UserCodeClassLoader userCodeClassLoader =
-            classLoaderHandle.getOrResolveClassLoader(ImmutableList.of(executeStageRequest.getJobJarUrl().toURI()), ImmutableList.of());
-
-        return userCodeClassLoader;
     }
 }

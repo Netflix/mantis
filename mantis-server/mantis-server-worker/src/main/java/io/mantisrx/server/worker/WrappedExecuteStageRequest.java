@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.core;
+package io.mantisrx.server.worker;
 
+import io.mantisrx.server.core.ExecuteStageRequest;
 import rx.subjects.PublishSubject;
 
 

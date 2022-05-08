@@ -17,7 +17,6 @@
 package io.mantisrx.server.worker.config;
 
 import io.mantisrx.server.core.MetricsCoercer;
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import java.util.Properties;
 import org.skife.config.ConfigurationObjectFactory;
 

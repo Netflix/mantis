@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent;
+package io.mantisrx.server.worker;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;

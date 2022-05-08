@@ -17,7 +17,6 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import rx.Observer;
 
 

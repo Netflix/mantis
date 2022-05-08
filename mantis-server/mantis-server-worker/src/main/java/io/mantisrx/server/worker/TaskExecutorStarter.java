@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent;
+package io.mantisrx.server.worker;
 
 import com.mantisrx.common.utils.Services;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
-import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
-import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
+import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;

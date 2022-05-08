@@ -27,7 +27,6 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.WorkerTopologyInfo;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus.TYPE;
 import java.net.MalformedURLException;
