@@ -553,6 +553,19 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
+    private CompletableFuture<Void> stopResourceManager() {
+        validateRunsInMainThread();
+
+        final CompletableFuture<Void> currentResourceManagerCxnCompletionFuture;
+        if (currentResourceManagerCxn != null) {
+            currentResourceManagerCxnCompletionFuture = Services.stopAsync(currentResourceManagerCxn,
+                getIOExecutor());
+        } else {
+            currentResourceManagerCxnCompletionFuture = CompletableFuture.completedFuture(null);
+        }
+        return currentResourceManagerCxnCompletionFuture;
+    }
+
     @Override
     public CompletableFuture<String> requestThreadDump() {
         return CompletableFuture.completedFuture(JvmUtils.createThreadDumpAsString());
@@ -571,16 +584,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
 
         final CompletableFuture<Void> runningTaskCompletionFuture = stopCurrentTask();
-        final CompletableFuture<Void> currentResourceManagerCxnCompletionFuture;
-        if (currentResourceManagerCxn != null) {
-            currentResourceManagerCxnCompletionFuture = Services.stopAsync(currentResourceManagerCxn,
-                getIOExecutor());
-        } else {
-            currentResourceManagerCxnCompletionFuture = CompletableFuture.completedFuture(null);
-        }
 
         return runningTaskCompletionFuture
-            .<Void, Void>thenCombine(currentResourceManagerCxnCompletionFuture, (dontCare1, dontCare2) -> null)
+            .handleAsync((dontCare, throwable) -> {
+                if (throwable != null) {
+                    log.error("Failed to stop the task successfully", throwable);
+                }
+                return stopResourceManager();
+            }, getMainThreadExecutor())
+            .thenCompose(Function.identity())
             .whenCompleteAsync((dontCare, throwable) -> {
                 try {
                     classLoaderHandle.close();
