@@ -631,7 +631,7 @@ public class DataFormatAdapterTest {
                 1,3, new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)), WorkerState.Started,
                 "slave","slaveId",startedAt.toEpochMilli(),startedAt.toEpochMilli(),
                 startedAt.toEpochMilli(),startedAt.toEpochMilli(),-1,JobCompletedReason.Normal,
-                0,0,of("cluster"));
+                0,0,of("cluster"), Optional.empty());
 
         ((MantisJobMetadataImpl) jobmeta).addJobStageIfAbsent(new MantisStageMetadataImpl.Builder()
                 .withNumStages(1)

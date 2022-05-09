@@ -260,6 +260,7 @@ public class DataFormatAdapter {
         writable.setStartedAt(workerMeta.getStartedAt());
 
         writable.setCluster(workerMeta.getCluster());
+        workerMeta.getResourceCluster().ifPresent(writable::setResourceCluster);
         writable.setSlave(workerMeta.getSlave());
         writable.setSlaveID(workerMeta.getSlaveID());
 
@@ -350,7 +351,7 @@ public class DataFormatAdapter {
             logger.warn("problem loading worker {} for Job ID {}", writeable.getWorkerId(), jobId, e);
         }
 
-        JobWorker converted = new JobWorker.Builder()
+        JobWorker.Builder builder = new JobWorker.Builder()
                 .withJobId(jobId)
 
                 .withAcceptedAt(writeable.getAcceptedAt())
@@ -375,8 +376,10 @@ public class DataFormatAdapter {
 
                 .withJobCompletedReason(writeable.getReason())
                 .withPreferredCluster(writeable.getCluster())
-                .withLifecycleEventsPublisher(eventPublisher)
-                .build();
+                .withLifecycleEventsPublisher(eventPublisher);
+
+        writeable.getResourceCluster().ifPresent(builder::withResourceCluster);
+        JobWorker converted = builder.build();
 
         if( logger.isDebugEnabled()) { logger.debug("DataFormatAdatper:converted worker {}", converted); }
         return converted;

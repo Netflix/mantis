@@ -17,22 +17,24 @@
 package io.mantisrx.server.master.scheduler;
 
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 
 
 public interface WorkerRegistry {
 
     /* Returns number of workers in LAUNCHED, START_INITIATED and STARTED state */
-    int getNumRunningWorkers();
+    int getNumRunningWorkers(@Nullable ClusterID clusterID);
 
 
     /* Returns the set of all workers in LAUNCHED, START_INITIATED and STARTED state */
-    Set<WorkerId> getAllRunningWorkers();
+    Set<WorkerId> getAllRunningWorkers(@Nullable ClusterID clusterID);
 
     /* Returns the map of all workers to SlaveId in LAUNCHED, START_INITIATED and STARTED state */
-    Map<WorkerId, String> getAllRunningWorkerSlaveIdMappings();
+    Map<WorkerId, String> getAllRunningWorkerSlaveIdMappings(@Nullable ClusterID clusterID);
 
     /**
      * @param workerId id to check
