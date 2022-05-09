@@ -51,6 +51,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.store.MantisJobMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
@@ -444,9 +445,136 @@ public class DataFormatAdapterTest {
     }
 
     @Test
+    public void mantisWorkerMetadataReadTest() throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+
+        final String oldWorkerMetadataWriteableStr = "{\n" +
+            "  \"workerIndex\": 0,\n" +
+            "  \"workerNumber\": 1,\n" +
+            "  \"jobId\": \"cname-1\",\n" +
+            "  \"stageNum\": 1,\n" +
+            "  \"numberOfPorts\": 3,\n" +
+            "  \"metricsPort\": 1,\n" +
+            "  \"consolePort\": 3,\n" +
+            "  \"debugPort\": 2,\n" +
+            "  \"customPort\": 5,\n" +
+            "  \"ports\": [4],\n" +
+            "  \"state\": \"Completed\",\n" +
+            "  \"slave\": \"slave1\",\n" +
+            "  \"slaveID\": \"slaveId1\",\n" +
+            "  \"cluster\": \"prefCluster\",\n" +
+            "  \"acceptedAt\": 999,\n" +
+            "  \"launchedAt\": 1000,\n" +
+            "  \"startingAt\": 1234,\n" +
+            "  \"startedAt\": 1001,\n" +
+            "  \"completedAt\": 2000,\n" +
+            "  \"reason\": \"Normal\",\n" +
+            "  \"resubmitOf\": 42,\n" +
+            "  \"totalResubmitCount\": 1,\n" +
+            "  \"resourceCluster\": {\"resourceID\": \"resourceCluster\"}\n" +
+            "}";
+
+        MantisWorkerMetadataWritable metadataWritable = mapper.readValue(oldWorkerMetadataWriteableStr, MantisWorkerMetadataWritable.class);
+
+        Optional<String> prefCluster = of("prefCluster");
+        ClusterID resourceCluster = ClusterID.of("resourceCluster");
+        int metricsPort = 1;
+        int debugPort = 2;
+        int consolePort = 3;
+        int customPort = 5;
+        int ssePort = 4;
+        List<Integer> ports = Lists.newArrayList();
+
+        ports.add(metricsPort);
+        ports.add(debugPort);
+        ports.add(consolePort);
+        ports.add(customPort);
+        ports.add(ssePort);
+
+        WorkerPorts workerPorts = new WorkerPorts(ports);
+        int workerNum = 1;
+        int workerIndex = 0;
+        long startingAt = 1234l;
+        int stageNum = 1;
+        String slaveid = "slaveId1";
+        String slave = "slave1";
+        int resubmitCnt = 1;
+        int portNums = ports.size();
+        long launchedAt = 1000l;
+        JobId jobId = new JobId("cname", 1);
+        long acceptedAt = 999l;
+        long completedAt = 2000l;
+        long startedAt = 1001l;
+        int resubOf = 42;
+        JobWorker worker = new JobWorker.Builder()
+            .withPreferredCluster(prefCluster)
+            .withResourceCluster(resourceCluster)
+            .withJobCompletedReason(JobCompletedReason.Normal)
+            .withWorkerPorts(workerPorts)
+            .withWorkerNumber(workerNum)
+            .withWorkerIndex(workerIndex)
+            .withState(WorkerState.Completed)
+            .withStartingAt(startingAt)
+            .withStartedAt(startedAt)
+            .withCompletedAt(completedAt)
+            .withStageNum(stageNum)
+            .withSlaveID(slaveid)
+            .withSlave(slave)
+            .withResubmitCount(resubmitCnt)
+            .withResubmitOf(resubOf)
+            .withNumberOfPorts(portNums)
+
+            .withLaunchedAt(launchedAt)
+            .withJobId(jobId)
+
+            .withAcceptedAt(acceptedAt)
+            .withLifecycleEventsPublisher(eventPublisher)
+            .build();
+        IMantisWorkerMetadata expectedWorkerMeta = worker.getMetadata();
+
+        assertEquals(prefCluster,metadataWritable.getCluster());
+        assertEquals(resourceCluster,metadataWritable.getResourceCluster().get());
+        assertEquals(workerIndex, metadataWritable.getWorkerIndex());
+        assertEquals(workerNum, metadataWritable.getWorkerNumber());
+        assertEquals(jobId.getId(),metadataWritable.getJobId());
+
+        assertEquals(acceptedAt,metadataWritable.getAcceptedAt());
+        assertEquals(startingAt,metadataWritable.getStartingAt());
+        assertEquals(startedAt, metadataWritable.getStartedAt());
+        assertEquals(launchedAt, metadataWritable.getLaunchedAt());
+        assertEquals(completedAt, metadataWritable.getCompletedAt());
+
+        assertEquals(stageNum, metadataWritable.getStageNum());
+        assertEquals(slave, metadataWritable.getSlave());
+        assertEquals(slaveid, metadataWritable.getSlaveID());
+
+        assertEquals(metricsPort, metadataWritable.getMetricsPort());
+        assertEquals(consolePort, metadataWritable.getConsolePort());
+        assertEquals(debugPort, metadataWritable.getDebugPort());
+        assertEquals(5, metadataWritable.getCustomPort());
+
+        assertEquals(MantisJobState.Completed, metadataWritable.getState());
+
+        assertEquals(resubmitCnt, metadataWritable.getTotalResubmitCount());
+        assertEquals(resubOf, metadataWritable.getResubmitOf());
+
+        assertEquals(3, metadataWritable.getNumberOfPorts());
+        assertEquals(1, metadataWritable.getPorts().size());
+        assertEquals(ssePort, (long)metadataWritable.getPorts().get(0));
+        assertEquals(JobCompletedReason.Normal, metadataWritable.getReason());
+
+        JobWorker convertedMetadata = DataFormatAdapter.convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(metadataWritable, eventPublisher);
+
+        assertEquals(expectedWorkerMeta, convertedMetadata.getMetadata());
+
+    }
+
+    @Test
     public void mantisWorkerMetadataToMetadataWritebleTest() {
 
         Optional<String> prefCluster = of("prefCluster");
+        ClusterID resourceCluster = ClusterID.of("resourceCluster");
         int metricsPort = 1;
         int debugPort = 2;
         int consolePort = 3;
@@ -477,6 +605,7 @@ public class DataFormatAdapterTest {
         int resubOf = 42;
         JobWorker worker = new JobWorker.Builder()
             .withPreferredCluster(prefCluster)
+            .withResourceCluster(resourceCluster)
             .withJobCompletedReason(JobCompletedReason.Normal)
             .withWorkerPorts(workerPorts)
             .withWorkerNumber(workerNum)
@@ -502,6 +631,7 @@ public class DataFormatAdapterTest {
         MantisWorkerMetadataWritable metadataWritable = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(workerMeta);
 
         assertEquals(prefCluster,metadataWritable.getCluster());
+        assertEquals(resourceCluster, metadataWritable.getResourceCluster().get());
         assertEquals(workerIndex, metadataWritable.getWorkerIndex());
         assertEquals(workerNum, metadataWritable.getWorkerNumber());
         assertEquals(jobId.getId(),metadataWritable.getJobId());

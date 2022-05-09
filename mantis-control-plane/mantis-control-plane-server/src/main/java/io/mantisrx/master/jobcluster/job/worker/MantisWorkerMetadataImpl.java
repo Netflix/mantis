@@ -383,7 +383,8 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
                 && Objects.equals(slave, that.slave)
                 && Objects.equals(slaveID, that.slaveID)
                 && reason == that.reason
-                && Objects.equals(preferredCluster, that.preferredCluster);
+                && Objects.equals(preferredCluster, that.preferredCluster)
+                && Objects.equals(resourceCluster, that.resourceCluster);
     }
 
     @Override
