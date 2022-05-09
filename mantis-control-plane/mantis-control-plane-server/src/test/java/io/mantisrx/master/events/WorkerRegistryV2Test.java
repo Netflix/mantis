@@ -92,7 +92,7 @@ public class WorkerRegistryV2Test {
         WorkerRegistryV2 workerRegistryV2 = new WorkerRegistryV2();
         initRegistryWithWorkers(workerRegistryV2,"testGetRunningCount-1", 5);
 
-        assertEquals(5, workerRegistryV2.getNumRunningWorkers());
+        assertEquals(5, workerRegistryV2.getNumRunningWorkers(null));
 
     }
 
@@ -112,7 +112,7 @@ public class WorkerRegistryV2Test {
         WorkerRegistryV2 workerRegistryV2 = new WorkerRegistryV2();
         initRegistryWithWorkers(workerRegistryV2,"testGetAllRunningWorkers-1", 5);
 
-        Set<WorkerId> allRunningWorkers = workerRegistryV2.getAllRunningWorkers();
+        Set<WorkerId> allRunningWorkers = workerRegistryV2.getAllRunningWorkers(null);
 
         assertEquals(5, allRunningWorkers.size());
     }
@@ -122,7 +122,7 @@ public class WorkerRegistryV2Test {
         WorkerRegistryV2 workerRegistryV2 = new WorkerRegistryV2();
         initRegistryWithWorkers(workerRegistryV2,"testGetSlaveIdMappings-1", 5);
 
-        Map<WorkerId, String> workerIdToSlaveIdMap = workerRegistryV2.getAllRunningWorkerSlaveIdMappings();
+        Map<WorkerId, String> workerIdToSlaveIdMap = workerRegistryV2.getAllRunningWorkerSlaveIdMappings(null);
         assertEquals(5, workerIdToSlaveIdMap.size());
 
         for(int i=0; i<5; i++) {
@@ -153,12 +153,12 @@ public class WorkerRegistryV2Test {
         JobId jobId = new JobId("testJobCompleteCleanup", 1);
         initRegistryWithWorkers(workerRegistryV2, "testJobCompleteCleanup-1", 5);
 
-        assertEquals(5, workerRegistryV2.getNumRunningWorkers());
+        assertEquals(5, workerRegistryV2.getNumRunningWorkers(null));
 
         workerRegistryV2.process(new LifecycleEventsProto.JobStatusEvent(INFO, "job shutdown",
                 jobId, JobState.Failed));
 
-        assertEquals(0, workerRegistryV2.getNumRunningWorkers());
+        assertEquals(0, workerRegistryV2.getNumRunningWorkers(null));
 
     }
 
@@ -184,7 +184,7 @@ public class WorkerRegistryV2Test {
 
         ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, eventPublisher);
 
-        assertEquals(2, workerRegistryV2.getNumRunningWorkers());
+        assertEquals(2, workerRegistryV2.getNumRunningWorkers(null));
 
 
 
@@ -205,7 +205,7 @@ public class WorkerRegistryV2Test {
         int cnt = 0;
         for(int i=0; i<50; i++) {
             cnt++;
-            if(workerRegistryV2.getNumRunningWorkers() == 3) {
+            if(workerRegistryV2.getNumRunningWorkers(null) == 3) {
                 break;
             }
         }
@@ -239,7 +239,7 @@ public class WorkerRegistryV2Test {
         ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, eventPublisher);
 
 
-        assertEquals(3, workerRegistryV2.getNumRunningWorkers());
+        assertEquals(3, workerRegistryV2.getNumRunningWorkers(null));
 
 
         // send scale down request
@@ -258,7 +258,7 @@ public class WorkerRegistryV2Test {
         int cnt = 0;
         for(int i=0; i<50; i++) {
             cnt++;
-            if(workerRegistryV2.getNumRunningWorkers() == 2) {
+            if(workerRegistryV2.getNumRunningWorkers(null) == 2) {
                 break;
             }
         }
@@ -294,7 +294,7 @@ public class WorkerRegistryV2Test {
         try {
             ActorRef jobActor = JobTestHelper.submitSingleStageScalableJob(system,probe, clusterName, sInfo, schedulerMock, jobStoreMock, eventPublisher);
 
-            assertEquals(2, workerRegistryV2.getNumRunningWorkers());
+            assertEquals(2, workerRegistryV2.getNumRunningWorkers(null));
 
 
             jobActor.tell(new JobClusterProto.KillJobRequest(
@@ -305,7 +305,7 @@ public class WorkerRegistryV2Test {
             int cnt = 0;
             for(int i=0; i<100; i++) {
                 cnt++;
-                if(workerRegistryV2.getNumRunningWorkers() == 0) {
+                if(workerRegistryV2.getNumRunningWorkers(null) == 0) {
                     break;
                 }
             }
@@ -335,8 +335,8 @@ public class WorkerRegistryV2Test {
         try {
             Future<Integer> maxCountSeen = fixedThreadPoolExecutor.submit(reader);
             fixedThreadPoolExecutor.invokeAll(writerList);
-            int expectedCount = workerRegistryV2.getNumRunningWorkers();
-            System.out.println("Actual no of workers " + workerRegistryV2.getNumRunningWorkers());
+            int expectedCount = workerRegistryV2.getNumRunningWorkers(null);
+            System.out.println("Actual no of workers " + workerRegistryV2.getNumRunningWorkers(null));
             int maxSeenCount = maxCountSeen.get();
             System.out.println("Max Count seen " + maxCountSeen.get());
             assertEquals(expectedCount, maxSeenCount);
@@ -491,7 +491,7 @@ public class WorkerRegistryV2Test {
             int max = 0;
             latch.countDown();
             for(int i=0; i<100; i++) {
-                int cnt = registry.getNumRunningWorkers();
+                int cnt = registry.getNumRunningWorkers(null);
                 System.out.println("Total Cnt " + cnt);
                 if(cnt > max) {
                     max = cnt;

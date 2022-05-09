@@ -156,6 +156,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                 info.getHostname(),
                 taskExecutorID.getResourceId(),
                 Optional.ofNullable(info.getClusterID().getResourceID()),
+                Optional.of(info.getClusterID()),
                 info.getWorkerPorts()));
 
         if (!success) {

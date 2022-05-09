@@ -20,6 +20,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonSubTypes;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -119,6 +120,8 @@ public interface IMantisWorkerMetadata {
      * @return
      */
     Optional<String> getCluster();
+
+    Optional<ClusterID> getResourceCluster();
 
     /**
      * Get number of ports for this worker, including the metrics port.
