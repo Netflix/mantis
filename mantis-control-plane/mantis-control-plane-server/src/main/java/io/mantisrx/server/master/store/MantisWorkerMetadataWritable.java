@@ -19,7 +19,6 @@ package io.mantisrx.server.master.store;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -50,7 +49,6 @@ public class MantisWorkerMetadataWritable implements MantisWorkerMetadata {
     private String slave;
     private String slaveID;
     private Optional<String> cluster = Optional.empty();
-    private Optional<ClusterID> resourceCluster = Optional.empty();
     private long acceptedAt = 0;
     private long launchedAt = 0;
     private long startingAt = 0;
@@ -273,15 +271,6 @@ public class MantisWorkerMetadataWritable implements MantisWorkerMetadata {
 
     public void setCluster(final Optional<String> cluster) {
         this.cluster = cluster;
-    }
-
-    @Override
-    public Optional<ClusterID> getResourceCluster() {
-        return resourceCluster;
-    }
-
-    public void setResourceCluster(ClusterID resourceCluster) {
-        this.resourceCluster = Optional.of(resourceCluster);
     }
 
     @Override

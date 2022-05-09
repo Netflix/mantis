@@ -18,7 +18,6 @@ package io.mantisrx.server.master.scheduler;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -30,7 +29,6 @@ public class WorkerLaunched implements WorkerEvent {
     private final String hostname;
     private final String vmId;
     private final Optional<String> clusterName;
-    private final Optional<ClusterID> resourceCluster;
     private final WorkerPorts ports;
     private final long eventTimeMs = System.currentTimeMillis();
 
@@ -39,14 +37,12 @@ public class WorkerLaunched implements WorkerEvent {
                           final String hostname,
                           final String vmId,
                           final Optional<String> clusterName,
-                          final Optional<ClusterID> resourceCluster,
                           final WorkerPorts ports) {
         this.workerId = workerId;
         this.stageNum = stageNum;
         this.hostname = hostname;
         this.vmId = vmId;
         this.clusterName = clusterName;
-        this.resourceCluster = resourceCluster;
         this.ports = ports;
     }
 
@@ -70,10 +66,6 @@ public class WorkerLaunched implements WorkerEvent {
     public Optional<String> getClusterName() {
 
         return clusterName;
-    }
-
-    public Optional<ClusterID> getResourceCluster() {
-        return resourceCluster;
     }
 
     public WorkerPorts getPorts() {

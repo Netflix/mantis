@@ -21,7 +21,6 @@ import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
@@ -77,8 +76,6 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
 
     private volatile Optional<String> preferredCluster;
 
-    private volatile Optional<ClusterID> resourceCluster;
-
     /**
      * Creates an instance of this class.
      * @param workerIndex
@@ -119,8 +116,8 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
             @JsonProperty("reason") JobCompletedReason reason,
             @JsonProperty("resubmitOf") int resubmitOf,
             @JsonProperty("totalResubmitCount") int totalResubmitCount,
-            @JsonProperty("preferredCluster") Optional<String> preferredCluster,
-            @JsonProperty("resourceCluster") Optional<ClusterID> resourceCluster
+            @JsonProperty("preferredCluster") Optional<String> preferredCluster
+
             ) {
         this.workerIndex = workerIndex;
         this.workerNumber = workerNumber;
@@ -146,7 +143,6 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
         this.resubmitOf = resubmitOf;
         this.totalResubmitCount = totalResubmitCount;
         this.preferredCluster = preferredCluster;
-        this.resourceCluster = resourceCluster;
 
 
         this.totalResubmitCount = totalResubmitCount;
@@ -304,10 +300,6 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
         this.preferredCluster = cluster;
     }
 
-    void setResourceCluster(ClusterID resourceCluster) {
-        this.resourceCluster = Optional.of(resourceCluster);
-    }
-
 
     public String getSlaveID() {
         return slaveID;
@@ -418,17 +410,11 @@ public class MantisWorkerMetadataImpl implements IMantisWorkerMetadata {
                 + ", lastHeartbeatAt=" + lastHeartbeatAt
                 + ", subscribed=" + subscribed
                 + ", preferredCluster=" + preferredCluster
-                + ", resourceCluster=" + resourceCluster
                 + '}';
     }
 
     @Override
     public Optional<String> getCluster() {
         return this.preferredCluster;
-    }
-
-    @Override
-    public Optional<ClusterID> getResourceCluster() {
-        return this.resourceCluster;
     }
 }

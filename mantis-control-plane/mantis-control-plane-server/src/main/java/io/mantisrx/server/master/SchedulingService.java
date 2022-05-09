@@ -375,7 +375,6 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                         leases.get(0).hostname(),
                         leases.get(0).getVMID(),
                         getAttribute(leases.get(0), slaveClusterAttributeName),
-                        Optional.empty(),
                         workerPorts));
 
                 if (success) {
@@ -599,14 +598,14 @@ public class SchedulingService extends BaseService implements MantisScheduler {
             taskSchedulingService.requestAllTasks(taskStateCollectionMap -> taskStateCollectionMap.forEach((state, tasks) -> {
                 final int fenzoTaskSetSize = tasks.size();
                 if (state == TaskQueue.TaskState.LAUNCHED) {
-                    final int numRunningWorkers = workerRegistry.getNumRunningWorkers(null);
+                    final int numRunningWorkers = workerRegistry.getNumRunningWorkers();
                     fenzoLaunchedTasks.set(fenzoTaskSetSize);
                     jobMgrRunningWorkers.set(numRunningWorkers);
 
                     if (numRunningWorkers != fenzoTaskSetSize) {
                         logger.error("{} running workers as per Job Manager, {} tasks launched as per Fenzo", numRunningWorkers, fenzoTaskSetSize);
                         if (logger.isDebugEnabled()) {
-                            final Set<String> jobMgrWorkers = workerRegistry.getAllRunningWorkers(null)
+                            final Set<String> jobMgrWorkers = workerRegistry.getAllRunningWorkers()
                                     .stream()
                                     .map(w -> w.getId())
                                     .collect(Collectors.toSet());

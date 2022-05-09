@@ -228,7 +228,7 @@ public class JobTestHelper {
     }
 
     public static void sendWorkerLaunchedEvent(final TestKit probe, final ActorRef jobActor, WorkerId workerId2, int stageNo) {
-        WorkerEvent launchedEvent2 = new WorkerLaunched(workerId2, stageNo, "host1", "vm1", Optional.empty(), Optional.empty(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+        WorkerEvent launchedEvent2 = new WorkerLaunched(workerId2, stageNo, "host1", "vm1", Optional.empty(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
         jobActor.tell(launchedEvent2, probe.getRef());
     }
 

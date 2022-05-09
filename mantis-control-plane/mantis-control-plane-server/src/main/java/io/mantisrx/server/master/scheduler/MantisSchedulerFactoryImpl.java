@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.scheduler;
 
+import static io.mantisrx.master.jobcluster.LabelManager.SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -44,7 +45,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
 
   @Override
   public MantisScheduler forJob(JobDefinition jobDefinition) {
-    Optional<ClusterID> clusterIDOptional = jobDefinition.getResourceCluster();
+    Optional<ClusterID> clusterIDOptional = getResourceClusterFor(jobDefinition);
 
     if (clusterIDOptional.isPresent()) {
       ActorRef resourceClusterAwareSchedulerActor =
@@ -68,5 +69,14 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     } else {
       return mesosSchedulingService;
     }
+  }
+
+  private Optional<ClusterID> getResourceClusterFor(JobDefinition jobDefinition) {
+    return jobDefinition
+        .getLabels()
+        .stream()
+        .filter(label -> label.getName().equals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label))
+        .findFirst()
+        .map(l -> ClusterID.of(l.getValue()));
   }
 }

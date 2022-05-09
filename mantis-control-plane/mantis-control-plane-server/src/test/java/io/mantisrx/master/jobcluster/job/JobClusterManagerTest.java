@@ -431,7 +431,6 @@ public class JobClusterManagerTest {
                         "host1",
                         "vm1",
                         empty(),
-                        Optional.empty(),
                         new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
                 jobClusterManagerActor.tell(launchedEvent, probe.getRef());
@@ -668,7 +667,6 @@ public class JobClusterManagerTest {
                 "host1",
                 "vm1",
                 empty(),
-                Optional.empty(),
                 new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
         jobClusterManagerActor.tell(launchedEvent, probe.getRef());
@@ -739,7 +737,6 @@ public class JobClusterManagerTest {
                 "host1",
                 "vm1",
                 empty(),
-                Optional.empty(),
                 new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
         jobClusterManagerActor.tell(launchedEvent, probe.getRef());
         // Get Cluster Config

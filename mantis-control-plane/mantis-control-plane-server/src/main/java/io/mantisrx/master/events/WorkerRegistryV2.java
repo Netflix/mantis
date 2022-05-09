@@ -24,13 +24,11 @@ import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,11 +64,10 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
      * @return
      */
     @Override
-    public int getNumRunningWorkers(@Nullable ClusterID resourceCluster) {
+    public int getNumRunningWorkers() {
         if(logger.isDebugEnabled()) { logger.debug("In getNumRunningWorkers"); }
         int cnt = jobToWorkerInfoMap.values().stream()
                     .map(workerList -> workerList.stream()
-                            .filter(wm -> Optional.ofNullable(resourceCluster).equals(wm.getResourceCluster()))
                             .filter(wm -> WorkerState.isRunningState(wm.getState()))
                             .collect(Collectors.toList())
                             .size()
@@ -86,11 +83,10 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
      */
 
     @Override
-    public Set<WorkerId> getAllRunningWorkers(@Nullable ClusterID resourceCluster) {
+    public Set<WorkerId> getAllRunningWorkers() {
 
         return jobToWorkerInfoMap.values().stream()
             .flatMap(workerList -> workerList.stream()
-                    .filter(wm -> Optional.ofNullable(resourceCluster).equals(wm.getResourceCluster()))
                     .filter(wm -> WorkerState.isRunningState(wm.getState()))
                     .map(workerMeta -> workerMeta.getWorkerId()))
             .collect(Collectors.toSet());
@@ -102,17 +98,14 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
      * @return
      */
     @Override
-    public Map<WorkerId, String> getAllRunningWorkerSlaveIdMappings(@Nullable ClusterID resourceCluster) {
-        return
-            jobToWorkerInfoMap.values().stream()
-                .flatMap(workerList ->
-                    workerList.stream()
-                        .filter(wm -> Optional.ofNullable(resourceCluster).equals(wm.getResourceCluster()))
-                        .filter(wm -> WorkerState.isRunningState(wm.getState())))
+    public Map<WorkerId, String> getAllRunningWorkerSlaveIdMappings() {
+        return jobToWorkerInfoMap.values().stream()
+                .flatMap(workerList -> workerList.stream()
+                .filter(wm -> WorkerState.isRunningState(wm.getState())))
                 .collect(toMap(
-                    IMantisWorkerMetadata::getWorkerId,
-                    IMantisWorkerMetadata::getSlaveID,
-                    (s1, s2) -> (s1 != null) ? s1 : s2));
+                        IMantisWorkerMetadata::getWorkerId,
+                        IMantisWorkerMetadata::getSlaveID,
+                        (s1, s2) -> (s1 != null) ? s1 : s2));
     }
 
     /**

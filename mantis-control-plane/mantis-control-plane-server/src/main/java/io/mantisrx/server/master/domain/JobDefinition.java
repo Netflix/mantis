@@ -16,8 +16,6 @@
 
 package io.mantisrx.server.master.domain;
 
-import static io.mantisrx.master.jobcluster.LabelManager.SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL;
-
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
@@ -27,7 +25,6 @@ import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -215,14 +212,6 @@ public class JobDefinition {
 
     public int getNumberOfStages() {
         return this.withNumberOfStages;
-    }
-
-    public Optional<ClusterID> getResourceCluster() {
-        return getLabels()
-            .stream()
-            .filter(label -> label.getName().equals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label))
-            .findFirst()
-            .map(l -> ClusterID.of(l.getValue()));
     }
 
 

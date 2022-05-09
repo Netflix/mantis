@@ -177,7 +177,6 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                 info.getHostname(),
                 taskExecutorID.getResourceId(),
                 Optional.ofNullable(info.getClusterID().getResourceID()),
-                Optional.of(info.getClusterID()),
                 info.getWorkerPorts()));
         final Duration latency =
             Duration.between(event.getEvent().getEventTime(), Clock.systemDefaultZone().instant());

@@ -50,7 +50,7 @@ public class FakeMantisScheduler implements MantisScheduler {
             scheduleRequest.getStageNum(),
             "host1",
             "vm1",
-            scheduleRequest.getPreferredCluster(), Optional.empty(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+            scheduleRequest.getPreferredCluster(), new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
         jobClusterManagerActor.tell(workerLaunched, ActorRef.noSender());
 

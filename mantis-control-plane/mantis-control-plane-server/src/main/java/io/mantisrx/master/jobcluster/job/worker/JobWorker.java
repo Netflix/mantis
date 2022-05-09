@@ -37,9 +37,9 @@ import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.domain.WorkerRequest;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunchFailed;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
@@ -138,10 +138,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
 
     private void setCluster(Optional<String> cluster) {
         mutableMetadata().setCluster(cluster);
-    }
-
-    private void setResourceCluster(ClusterID clusterID) {
-        mutableMetadata().setResourceCluster(clusterID);
     }
 
     /**
@@ -262,7 +258,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         addPorts(workerEvent.getPorts());
         setSlaveID(workerEvent.getVmId());
         setCluster(workerEvent.getClusterName());
-        workerEvent.getResourceCluster().ifPresent(this::setResourceCluster);
         setState(WorkerState.Launched, workerEvent.getEventTimeMs(), JobCompletedReason.Normal);
 
         if (LOGGER.isDebugEnabled()) {
@@ -440,7 +435,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         private int resubmitOf = 0;
         private int totalResubmitCount = 0;
         private Optional<String> preferredCluster = Optional.empty();
-        private Optional<ClusterID> resourceCluster = Optional.empty();
         private IMantisWorkerMetadata metadata;
         private LifecycleEventPublisher eventPublisher;
 
@@ -622,6 +616,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             return this;
         }
 
+
         /**
          * (Optional) The preferred cluster where this worker should be scheduled.
          * @param preferredCluster
@@ -629,11 +624,6 @@ public class JobWorker implements IMantisWorkerEventProcessor {
          */
         public JobWorker.Builder withPreferredCluster(Optional<String> preferredCluster) {
             this.preferredCluster = preferredCluster;
-            return this;
-        }
-
-        public JobWorker.Builder withResourceCluster(ClusterID resourceCluster) {
-            this.resourceCluster = Optional.of(resourceCluster);
             return this;
         }
 
@@ -684,7 +674,23 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             resubmitOf = cloneFrom.getResubmitOf();
             totalResubmitCount = cloneFrom.getTotalResubmitCount();
             preferredCluster = cloneFrom.getPreferredClusterOptional();
-            resourceCluster = cloneFrom.getResourceCluster();
+
+            return this;
+        }
+
+        /**
+         * Helper builder that clones from given {@link WorkerRequest}.
+         * @param workerRequest
+         * @return
+         */
+        public JobWorker.Builder from(WorkerRequest workerRequest) {
+            this.workerIndex = workerRequest.getWorkerIndex();
+            this.workerNumber = workerRequest.getWorkerNumber();
+            this.jobId =  workerRequest.getJobId();
+            this.stageNum = workerRequest.getWorkerStage();
+            this.numberOfPorts =  workerRequest.getNumPortsPerInstance();
+
+            this.preferredCluster = workerRequest.getPreferredCluster();
 
             return this;
         }
@@ -743,8 +749,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
                 reason,
                 resubmitOf,
                 totalResubmitCount,
-                preferredCluster,
-                resourceCluster
+                preferredCluster
             );
             return new JobWorker(this.metadata, this.eventPublisher);
         }
