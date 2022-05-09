@@ -19,6 +19,7 @@ package io.mantisrx.server.master.store;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +50,8 @@ public interface MantisWorkerMetadata {
 
     // cluster on which the worker was launched
     Optional<String> getCluster();
+
+    Optional<ClusterID> getResourceCluster();
 
     /**
      * Get number of ports for this worker, including the metrics port

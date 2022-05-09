@@ -114,6 +114,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.rules.Timeout;
 import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
@@ -133,6 +134,9 @@ public class JobClusterManagerTest {
 
     @Rule
     public TemporaryFolder rootDir = new TemporaryFolder();
+
+    @Rule
+    public Timeout globalTimeout = new Timeout(2000);
 
     @BeforeClass
     public static void setup() {
@@ -431,6 +435,7 @@ public class JobClusterManagerTest {
                         "host1",
                         "vm1",
                         empty(),
+                        Optional.empty(),
                         new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
                 jobClusterManagerActor.tell(launchedEvent, probe.getRef());
@@ -667,6 +672,7 @@ public class JobClusterManagerTest {
                 "host1",
                 "vm1",
                 empty(),
+                Optional.empty(),
                 new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
         jobClusterManagerActor.tell(launchedEvent, probe.getRef());
@@ -737,6 +743,7 @@ public class JobClusterManagerTest {
                 "host1",
                 "vm1",
                 empty(),
+                Optional.empty(),
                 new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
         jobClusterManagerActor.tell(launchedEvent, probe.getRef());
         // Get Cluster Config

@@ -278,7 +278,7 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
 
     private void reconcileTasksKnownToUs(SchedulerDriver driver) {
         final List<TaskStatus> tasksToInitialize = new ArrayList<>();
-        for (Map.Entry<WorkerId, String> workerIdSlaveId : workerRegistry.getAllRunningWorkerSlaveIdMappings().entrySet()) {
+        for (Map.Entry<WorkerId, String> workerIdSlaveId : workerRegistry.getAllRunningWorkerSlaveIdMappings(null).entrySet()) {
             final WorkerId workerId = workerIdSlaveId.getKey();
             final String slaveId = workerIdSlaveId.getValue();
             if (logger.isDebugEnabled()) {
