@@ -260,7 +260,7 @@ public class DataFormatAdapter {
         writable.setStartedAt(workerMeta.getStartedAt());
 
         writable.setCluster(workerMeta.getCluster());
-        workerMeta.getResourceCluster().ifPresent(writable::setResourceCluster);
+        writable.setResourceCluster(workerMeta.getResourceCluster());
         writable.setSlave(workerMeta.getSlave());
         writable.setSlaveID(workerMeta.getSlaveID());
 

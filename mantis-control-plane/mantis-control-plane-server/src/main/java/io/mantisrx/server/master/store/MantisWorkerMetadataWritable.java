@@ -280,8 +280,8 @@ public class MantisWorkerMetadataWritable implements MantisWorkerMetadata {
         return resourceCluster;
     }
 
-    public void setResourceCluster(ClusterID resourceCluster) {
-        this.resourceCluster = Optional.of(resourceCluster);
+    public void setResourceCluster(Optional<ClusterID> resourceCluster) {
+        this.resourceCluster = resourceCluster;
     }
 
     @Override
