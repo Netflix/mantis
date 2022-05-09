@@ -663,5 +663,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
         Closeables.combine(closeables).close();
         scheduledExecutorService.shutdownNow();
+        logger.info("Shutdown completed");
     }
 }
