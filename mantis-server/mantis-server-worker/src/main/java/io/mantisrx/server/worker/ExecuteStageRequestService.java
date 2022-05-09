@@ -175,15 +175,10 @@ public class ExecuteStageRequestService extends BaseService {
     public void shutdown() {
         subscription.unsubscribe();
         try {
+            logger.info("Shutting down execution operations");
             executionOperations.shutdownStage();
         } catch (IOException e) {
             logger.error("Failed to close cleanly", e);
-        }
-
-        try {
-            classLoaderHandle.close();
-        } catch (IOException e) {
-            logger.error("Failed to close classLoader {}", classLoaderHandle, e);
         }
     }
 

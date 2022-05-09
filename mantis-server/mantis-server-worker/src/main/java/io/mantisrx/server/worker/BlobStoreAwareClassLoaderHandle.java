@@ -111,6 +111,7 @@ public class BlobStoreAwareClassLoaderHandle implements ClassLoaderHandle {
                 Closeables.combine(openedHandles.keySet()).close();
             } finally {
                 openedHandles.clear();
+                blobStore.close();
             }
         }
     }

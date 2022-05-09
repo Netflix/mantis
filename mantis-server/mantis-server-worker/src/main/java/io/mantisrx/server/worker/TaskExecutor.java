@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.worker;
 
+import com.mantisrx.common.utils.ListenerCallQueue;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
@@ -41,12 +42,12 @@ import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
-import io.mantisrx.shaded.com.google.common.util.concurrent.Service.Listener;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +86,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final TaskExecutorRegistration taskExecutorRegistration;
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
-    private final String hostName;
+    private final ListenerCallQueue<Listener> listeners = new ListenerCallQueue<>();
 
     // the reason the MantisMasterGateway field is not final is because we expect the HighAvailabilityServices
     // to be started before we can get the MantisMasterGateway
@@ -127,7 +128,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             Hardware.getSizeOfPhysicalMemory(),
             Hardware.getSizeOfDisk(),
             workerPorts.getNumberOfPorts());
-        this.hostName = workerConfiguration.getExternalAddress();
+        String hostName = workerConfiguration.getExternalAddress();
         this.taskExecutorRegistration =
             new TaskExecutorRegistration(
                 taskExecutorID, clusterID, getAddress(), hostName, workerPorts, machineDefinition);
@@ -243,7 +244,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
         Preconditions.checkArgument(this.currentResourceManagerCxn == null,
             "existing connection already set");
-        cxn.addListener(new Listener() {
+        cxn.addListener(new Service.Listener() {
             @Override
             public void failed(Service.State from, Throwable failure) {
                 if (from.ordinal() == State.RUNNING.ordinal()) {
@@ -435,18 +436,24 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         validateRunsInMainThread();
 
         if (currentTask.state().equals(State.NEW)) {
+            listeners.enqueue(getTaskStartingEvent(currentTask));
+            getIOExecutor().execute(listeners::dispatch);
+
             CompletableFuture<Void> currentTaskSuccessfullyStartFuture =
-                Services.startAsync(currentTask, getMainThreadExecutor());
+                Services.startAsync(currentTask, getIOExecutor());
 
             currentTaskSuccessfullyStartFuture
                 .whenCompleteAsync((dontCare, throwable) -> {
                     if (throwable != null) {
                         // okay failed to start task successfully
                         // lets stop it
+                        Task task = currentTask;
                         setCurrentTask(null);
                         setPreviousFailure(throwable);
+                        listeners.enqueue(getTaskFailedEvent(task, throwable));
+                        getIOExecutor().execute(listeners::dispatch);
                     }
-                });
+                }, getMainThreadExecutor());
         }
     }
 
@@ -513,26 +520,50 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
-    private void stopCurrentTask() {
+    private CompletableFuture<Void> stopCurrentTask() {
         validateRunsInMainThread();
         if (this.currentTask != null) {
             try {
                 if (this.currentTask.state().ordinal() <= State.RUNNING.ordinal()) {
+                    listeners.enqueue(getTaskCancellingEvent(currentTask));
                     CompletableFuture<Void> stopTaskFuture =
                         Services.stopAsync(this.currentTask, getIOExecutor());
 
-                    stopTaskFuture
+                    return stopTaskFuture
                         .whenCompleteAsync((dontCare, throwable) -> {
+                            Task t = this.currentTask;
                             setCurrentTask(null);
                             if (throwable != null) {
                                 setPreviousFailure(throwable);
                             }
+                            listeners.enqueue(getTaskCancelledEvent(t, throwable));
+                            getIOExecutor().execute(listeners::dispatch);
                         }, getMainThreadExecutor());
+                } else {
+                    return CompletableFuture.completedFuture(null);
                 }
             } catch (Exception e) {
                 log.error("stopping current task failed", e);
+                return CompletableFutures.exceptionallyCompletedFuture(e);
+            } finally {
+                getIOExecutor().execute(listeners::dispatch);
             }
+        } else {
+            return CompletableFuture.completedFuture(null);
         }
+    }
+
+    private CompletableFuture<Void> stopResourceManager() {
+        validateRunsInMainThread();
+
+        final CompletableFuture<Void> currentResourceManagerCxnCompletionFuture;
+        if (currentResourceManagerCxn != null) {
+            currentResourceManagerCxnCompletionFuture = Services.stopAsync(currentResourceManagerCxn,
+                getIOExecutor());
+        } else {
+            currentResourceManagerCxnCompletionFuture = CompletableFuture.completedFuture(null);
+        }
+        return currentResourceManagerCxnCompletionFuture;
     }
 
     @Override
@@ -552,23 +583,123 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     protected CompletableFuture<Void> onStop() {
         validateRunsInMainThread();
 
-        final CompletableFuture<Void> runningTaskCompletionFuture;
-        if (currentTask != null) {
-            runningTaskCompletionFuture = Services.stopAsync(currentTask, getIOExecutor());
-        } else {
-            runningTaskCompletionFuture = CompletableFuture.completedFuture(null);
-        }
-
-        final CompletableFuture<Void> currentResourceManagerCxnCompletionFuture;
-        if (currentResourceManagerCxn != null) {
-            currentResourceManagerCxnCompletionFuture = Services.stopAsync(currentResourceManagerCxn,
-                getIOExecutor());
-        } else {
-            currentResourceManagerCxnCompletionFuture = CompletableFuture.completedFuture(null);
-        }
+        final CompletableFuture<Void> runningTaskCompletionFuture = stopCurrentTask();
 
         return runningTaskCompletionFuture
-            .thenCombine(currentResourceManagerCxnCompletionFuture, (dontCare1, dontCare2) -> null);
+            .handleAsync((dontCare, throwable) -> {
+                if (throwable != null) {
+                    log.error("Failed to stop the task successfully", throwable);
+                }
+                return stopResourceManager();
+            }, getMainThreadExecutor())
+            .thenCompose(Function.identity())
+            .whenCompleteAsync((dontCare, throwable) -> {
+                try {
+                    classLoaderHandle.close();
+                } catch (Exception e) {
+                    log.error("Failed to close classloader handle correctly", e);
+                }
+            }, getIOExecutor());
     }
 
+    public final void addListener(Listener listener, Executor executor) {
+        synchronized (listeners) {
+            listeners.addListener(listener, executor);
+        }
+    }
+
+    /**
+     * Listener interface that allows one to listen on various events happening in the TaskExecutor.
+     *
+     * Some of these events include:
+     *   -> when a task has started to be executed by the TaskExecutor
+     *   -> when a task has failed to be started
+     *   -> when a task is currently being cancelled
+     *   -> when a cancellation is complete
+     */
+    public interface Listener {
+        void onTaskStarting(Task task);
+
+        void onTaskFailed(Task task, Throwable throwable);
+
+        void onTaskCancelling(Task task);
+
+        void onTaskCancelled(Task task, @Nullable Throwable throwable);
+
+        static Listener noop() {
+            return new Listener() {
+                @Override
+                public void onTaskStarting(Task task) {
+                }
+
+                @Override
+                public void onTaskFailed(Task task, Throwable throwable) {
+                }
+
+                @Override
+                public void onTaskCancelling(Task task) {
+                }
+
+                @Override
+                public void onTaskCancelled(Task task, @Nullable Throwable throwable) {
+                }
+            };
+        }
+    }
+
+    private static ListenerCallQueue.Event<Listener> getTaskStartingEvent(Task task) {
+        return new ListenerCallQueue.Event<Listener>() {
+            @Override
+            public void call(Listener listener) {
+                listener.onTaskStarting(task);
+            }
+
+            @Override
+            public String toString() {
+                return "starting()";
+            }
+        };
+    }
+
+    private static ListenerCallQueue.Event<Listener> getTaskCancellingEvent(Task task) {
+        return new ListenerCallQueue.Event<Listener>() {
+            @Override
+            public void call(Listener listener) {
+                listener.onTaskCancelling(task);
+            }
+
+            @Override
+            public String toString() {
+                return "cancelling()";
+            }
+        };
+    }
+
+    private static ListenerCallQueue.Event<Listener> getTaskFailedEvent(Task task, Throwable throwable) {
+        return new ListenerCallQueue.Event<Listener>() {
+            @Override
+            public void call(Listener listener) {
+                listener.onTaskFailed(task, throwable);
+            }
+
+            @Override
+            public String toString() {
+                return "failed()";
+            }
+        };
+    }
+
+    private static ListenerCallQueue.Event<Listener> getTaskCancelledEvent(Task task, @Nullable Throwable throwable) {
+        return new ListenerCallQueue.Event<Listener>() {
+            @Override
+            public void call(Listener listener) {
+                listener.onTaskCancelled(task, throwable);
+            }
+
+            @Override
+            public String toString() {
+                return "cancelled()";
+            }
+        };
+    }
 }

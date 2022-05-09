@@ -22,6 +22,7 @@ import java.net.URI;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -91,11 +92,11 @@ public interface BlobStore extends Closeable {
                 try (ZipFile z = zipFile) {
                     String destDirStr = getUnzippedDestDir(z);
                     File destDir = new File(destDirStr);
-                    if (!destDir.exists()) {
-                        z.extractAll(destDirStr);
-                    } else {
-                        throw new IOException(String.format("destDir %s exists when it was expected to be empty", destDir));
+                    if (destDir.exists()) {
+                        FileUtils.deleteDirectory(destDir);
                     }
+
+                    z.extractAll(destDirStr);
                     return destDir;
                 }
             }

@@ -36,6 +36,11 @@ import lombok.Value;
  */
 public interface ResourceCluster extends ResourceClusterGateway {
     /**
+     * Get the name of the resource cluster
+     * @return name of the resource cluster
+     */
+    String getName();
+    /**
      * API that gets invoked when the resource cluster migrates from one machine to another and needs to be initialized.
      *
      * @param taskExecutorID taskExecutorID that was originally running the worker

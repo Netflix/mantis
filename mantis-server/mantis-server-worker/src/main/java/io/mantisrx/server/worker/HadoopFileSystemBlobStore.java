@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,28 +32,29 @@ import org.apache.hadoop.fs.Path;
 @RequiredArgsConstructor
 public class HadoopFileSystemBlobStore implements BlobStore {
 
-  //  The file system in which blobs are stored. */
-  private final FileSystem fileSystem;
+    //  The file system in which blobs are stored. */
+    private final FileSystem fileSystem;
 
-  private final File localStoreDir;
+    private final File localStoreDir;
 
-  @Override
-  public File get(URI blobUrl) throws IOException {
-    final Path src = new Path(blobUrl);
-    final Path dest = new Path(getStorageLocation(blobUrl));
-    if (!fileSystem.exists(dest)) {
-      fileSystem.copyToLocalFile(src, dest);
+    @Override
+    public File get(URI blobUrl) throws IOException {
+        final Path src = new Path(blobUrl);
+        final Path dest = new Path(getStorageLocation(blobUrl));
+        if (!fileSystem.exists(dest)) {
+            fileSystem.copyToLocalFile(src, dest);
+        }
+
+        return new File(dest.toUri().getPath());
     }
 
-    return new File(dest.toUri().getPath());
-  }
+    @Override
+    public void close() throws IOException {
+        FileUtils.deleteDirectory(localStoreDir);
+        fileSystem.close();
+    }
 
-  @Override
-  public void close() throws IOException {
-    fileSystem.close();
-  }
-
-  private String getStorageLocation(URI blobUri) {
-    return String.format("%s/%s", localStoreDir, FilenameUtils.getName(blobUri.getPath()));
-  }
+    private String getStorageLocation(URI blobUri) {
+        return String.format("%s/%s", localStoreDir, FilenameUtils.getName(blobUri.getPath()));
+    }
 }

@@ -650,10 +650,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     @Override
     public void shutdownStage() throws IOException  {
-        logger.debug("Shutdown initiated");
+        logger.info("Shutdown initiated");
         if (subscriptionStateHandler != null) {
             try {
-                subscriptionStateHandler.stopAsync().awaitTerminated();
+                subscriptionStateHandler.stopAsync().awaitTerminated(30, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                logger.error("Failed to stop subscription state handler successfully", e);
             } finally {
                 subscriptionStateHandler = null;
             }
@@ -661,5 +663,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
         Closeables.combine(closeables).close();
         scheduledExecutorService.shutdownNow();
+        logger.info("Shutdown completed");
     }
 }
