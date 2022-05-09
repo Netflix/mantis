@@ -29,6 +29,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.jcip.annotations.GuardedBy;
 
+/**
+ * Copy pasted from
+ * https://github.com/google/guava/blob/master/guava/src/com/google/common/util/concurrent/ListenerCallQueue.java
+ * @param <L> type of the listener
+ */
 public final class ListenerCallQueue<L> {
     // TODO(cpovirk): consider using the logger associated with listener.getClass().
     private static final Logger logger = Logger.getLogger(ListenerCallQueue.class.getName());

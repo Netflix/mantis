@@ -608,6 +608,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
+    /**
+     * Listener interface that allows one to listen on various events happening in the TaskExecutor.
+     *
+     * Some of these events include:
+     *   -> when a task has started to be executed by the TaskExecutor
+     *   -> when a task has failed to be started
+     *   -> when a task is currently being cancelled
+     *   -> when a cancellation is complete
+     */
     public interface Listener {
         void onTaskStarting(Task task);
 
