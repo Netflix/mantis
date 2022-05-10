@@ -617,9 +617,9 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                                     .collect(Collectors.toSet());
 
                             final Sets.SetView<String> extraJobMgrWorkers = Sets.difference(jobMgrWorkers, fenzoWorkers);
-                            logger.debug("Job Manager workers not in Fenzo {}", extraJobMgrWorkers);
+                            logger.info("Job Manager workers not in Fenzo {}", extraJobMgrWorkers);
                             final Sets.SetView<String> extraFenzoWorkers = Sets.difference(fenzoWorkers, jobMgrWorkers);
-                            logger.debug("Fenzo workers not in JobManagers {}", extraFenzoWorkers);
+                            logger.info("Fenzo workers not in JobManagers {}", extraFenzoWorkers);
                         }
                     }
 
