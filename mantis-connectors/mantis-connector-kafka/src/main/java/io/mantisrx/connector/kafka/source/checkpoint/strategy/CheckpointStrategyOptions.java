@@ -24,11 +24,6 @@ public final class CheckpointStrategyOptions {
     public static final String OFFSETS_ONLY_DEFAULT = "offsetsOnlyDefaultKafka";
 
     /**
-     * Sample strategy for storing Offsets outside Kafka to a File based storage, this is only used for Unit testing.
-     */
-    public static final String FILE_BASED_OFFSET_CHECKPOINTING = "fileBasedOffsetCheckpointing";
-
-    /**
      * Default CheckpointStrategy to disable committing offsets, note this would disable atleast once semantics as
      * offsets are no longer committed to resume from after a worker/process failure.
      */
@@ -38,6 +33,6 @@ public final class CheckpointStrategyOptions {
     }
 
     public static String values() {
-        return OFFSETS_ONLY_DEFAULT + ", " + FILE_BASED_OFFSET_CHECKPOINTING + ", " + NONE;
+        return OFFSETS_ONLY_DEFAULT + ", " + NONE;
     }
 }
