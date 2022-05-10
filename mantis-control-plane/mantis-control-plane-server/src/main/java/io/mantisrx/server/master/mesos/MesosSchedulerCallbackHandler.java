@@ -359,11 +359,8 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
                 logger.warn("Unexpected Mesos task state " + arg1.getState());
                 return;
             }
-            logger.info("I was going to send {} to job worker", new WorkerResourceStatus(workerId, mesg, state));
-//            TODO(sundaram): Right now, this reconciliation acts upon all tasks - not just mesos launched tasks.
-//            Thus, it could end up killing tasks that are launched on other resource managers.
-//            Till it is fixed, this needs to be commented out.
-//            jobMessageRouter.routeWorkerEvent(new WorkerResourceStatus(workerId, mesg, state));
+
+            jobMessageRouter.routeWorkerEvent(new WorkerResourceStatus(workerId, mesg, state));
         } else {
             logger.error("Failed to parse workerId from Mesos task update {}", arg1.getTaskId().getValue());
         }
