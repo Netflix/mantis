@@ -43,7 +43,6 @@ import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.server.master.MantisJobMgr;
 import io.mantisrx.server.master.MantisJobOperations;
 import io.mantisrx.server.master.MantisJobStatus;
 import io.mantisrx.server.master.http.api.JobClusterInfo;
@@ -62,7 +61,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -828,18 +826,6 @@ class NoOpMantisJobOperations implements MantisJobOperations {
 
     @Override
     public MantisJobStatus status(String jobId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Collection<MantisJobMgr> getAllJobMgrs() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Optional<MantisJobMgr> getJobMgr(String jobId) {
         // TODO Auto-generated method stub
         return null;
     }
