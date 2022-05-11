@@ -46,13 +46,6 @@ public final class CheckpointStrategyFactory {
                 final KafkaOffsetCheckpointStrategy cs = new KafkaOffsetCheckpointStrategy(consumer, metrics);
                 cs.init(context);
                 return cs;
-
-            case CheckpointStrategyOptions.FILE_BASED_OFFSET_CHECKPOINTING:
-                final FileBasedOffsetCheckpointStrategy fcs = new FileBasedOffsetCheckpointStrategy();
-                LOGGER.info("initializing file checkpoint strategy");
-                fcs.init(context);
-                return fcs;
-
             case CheckpointStrategyOptions.NONE:
             default:
                 return new NoopCheckpointStrategy();

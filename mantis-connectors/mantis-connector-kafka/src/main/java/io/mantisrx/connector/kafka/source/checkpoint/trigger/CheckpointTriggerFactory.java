@@ -32,7 +32,6 @@ public final class CheckpointTriggerFactory {
     public static CheckpointTrigger getNewInstance(final MantisKafkaSourceConfig kafkaSourceConfig) {
         switch (kafkaSourceConfig.getCheckpointStrategy()) {
             case CheckpointStrategyOptions.OFFSETS_ONLY_DEFAULT:
-            case CheckpointStrategyOptions.FILE_BASED_OFFSET_CHECKPOINTING:
                 return new CountingCheckpointTrigger(kafkaSourceConfig.getMaxBytesInProcessing(), kafkaSourceConfig.getCheckpointIntervalMs());
 
             case CheckpointStrategyOptions.NONE:
