@@ -16,38 +16,21 @@
 
 package io.mantisrx.server.worker;
 
-import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
-
 import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.network.Endpoint;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.MantisJobDurationType;
-import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.runtime.StageConfig;
-import io.mantisrx.runtime.WorkerInfo;
-import io.mantisrx.runtime.WorkerMap;
+import io.mantisrx.runtime.*;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.runtime.executor.PortSelector;
-import io.mantisrx.runtime.executor.StageExecutors;
-import io.mantisrx.runtime.executor.WorkerConsumer;
-import io.mantisrx.runtime.executor.WorkerConsumerRemoteObservable;
-import io.mantisrx.runtime.executor.WorkerPublisherRemoteObservable;
+import io.mantisrx.runtime.executor.*;
 import io.mantisrx.runtime.lifecycle.Lifecycle;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.Parameters;
-import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.core.ServiceRegistry;
-import io.mantisrx.server.core.Status;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.Status.TYPE;
-import io.mantisrx.server.core.StatusPayloads;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
@@ -62,24 +45,6 @@ import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -88,6 +53,16 @@ import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
 
 // stage that actually calls custom stage method
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {

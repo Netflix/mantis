@@ -446,7 +446,7 @@ public class StageExecutors {
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static <T, R> Closeable executeIntermediate(WorkerConsumer consumer,
+    public static <K, T, R> Closeable executeIntermediate(WorkerConsumer consumer,
                                                   final StageConfig<T, R> stage, WorkerPublisher publisher, final Context context) {
         if (consumer == null) {
             throw new IllegalArgumentException("consumer cannot be null");
@@ -479,22 +479,22 @@ public class StageExecutors {
             toSink = setupScalarToGroupStage(scalarStage, source, context);
         } else if (stage instanceof KeyToKey) {
             KeyToKey keyToKey = (KeyToKey) stage;
-            Observable<Observable<GroupedObservable<Object, T>>> source =
+            Observable<Observable<GroupedObservable<K, T>>> source =
                     consumer.start(keyToKey);
             toSink = setupKeyToKeyStage(keyToKey, source, context);
         } else if (stage instanceof GroupToGroup) {
             GroupToGroup groupToGroup = (GroupToGroup) stage;
-            Observable<Observable<MantisGroup<Object, T>>> source =
+            Observable<Observable<MantisGroup<K, T>>> source =
                     consumer.start(groupToGroup);
             toSink = setupGroupToGroupStage(groupToGroup, source, context);
         } else if (stage instanceof KeyToScalar) {
             KeyToScalar scalarToKey = (KeyToScalar) stage;
-            Observable<Observable<MantisGroup<Object, T>>> source =
+            Observable<Observable<MantisGroup<K, T>>> source =
                     consumer.start(scalarToKey);
             toSink = setupKeyToScalarStage(scalarToKey, source, context);
         } else if (stage instanceof GroupToScalar) {
             GroupToScalar groupToScalar = (GroupToScalar) stage;
-            Observable<Observable<MantisGroup<Object, T>>> source =
+            Observable<Observable<MantisGroup<K, T>>> source =
                     consumer.start(groupToScalar);
             toSink = setupGroupToScalarStage(groupToScalar, source, context);
         }
