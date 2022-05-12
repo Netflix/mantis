@@ -23,7 +23,6 @@ import io.mantisrx.server.master.store.NamedJob;
 
 public class JobRequest {
 
-    private final MantisJobMgr jobMgr = null;
     private String jobId;
     private MantisJobDefinition jobDefinition;
 
@@ -34,7 +33,6 @@ public class JobRequest {
                       final VirtualMachineMasterService vmService) {
         this.jobId = jobId;
         this.jobDefinition = jobDefinition;
-        // this.jobMgr = new MantisJobMgr(jobId, jobDefinition, namedJob, scheduler, vmService);
     }
 
     public String getJobId() {
@@ -45,7 +43,4 @@ public class JobRequest {
         return jobDefinition;
     }
 
-    public MantisJobMgr getJobMgr() {
-        return jobMgr;
-    }
 }

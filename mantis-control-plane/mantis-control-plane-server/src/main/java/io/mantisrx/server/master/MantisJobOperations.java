@@ -26,7 +26,6 @@ import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.server.master.store.NamedJobDeleteException;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import rx.Observable;
@@ -78,10 +77,6 @@ public interface MantisJobOperations {
     Observable<MantisJobStatus> jobs();
 
     MantisJobStatus status(String jobId);
-
-    Collection<MantisJobMgr> getAllJobMgrs();
-
-    Optional<MantisJobMgr> getJobMgr(String jobId);
 
     Action1<String> getSlaveDisabler();
 
