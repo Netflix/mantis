@@ -16,27 +16,20 @@
 
 package io.mantisrx.publish.internal.discovery.mantisapi;
 
-import com.netflix.archaius.DefaultPropertyFactory;
-import com.netflix.archaius.api.PropertyRepository;
-import com.netflix.archaius.config.DefaultSettableConfig;
 import com.netflix.mantis.discovery.proto.AppJobClustersMap;
 import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
 import com.netflix.mantis.discovery.proto.MantisWorker;
 import com.netflix.mantis.discovery.proto.StageWorkers;
-import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.ipc.http.HttpClient;
 import com.netflix.spectator.ipc.http.HttpResponse;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.publish.config.MrePublishConfiguration;
-import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.proto.JobSchedulingInfo;
 import io.mantisrx.publish.internal.discovery.proto.MantisJobState;
 import io.mantisrx.publish.internal.discovery.proto.WorkerAssignments;
 import io.mantisrx.publish.internal.discovery.proto.WorkerHost;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
 import io.mantisrx.publish.internal.exceptions.RetryableException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -46,9 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,27 +47,16 @@ public class DefaultMantisApiClient implements MantisApiClient {
     private static final int CONNECT_TIMEOUT_MS = 1_000;
     private static final int READ_TIMEOUT_MS = 1_000;
     private static final Logger logger = LoggerFactory.getLogger(DefaultMantisApiClient.class);
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static final String JOB_CLUSTER_MAPPING_URL_FORMAT = "http://%s:%d/api/v1/mantis/publish/streamJobClusterMap";
     private static final String JOB_DISCOVERY_URL_FORMAT = "http://%s:%d/jobClusters/discoveryInfo/%s";
     private static final String JOB_DISCOVERY_STREAM_URL_FORMAT = "http://%s:%d/assignmentresults/%s";
+    private final JsonSerializer serializer = new JsonSerializer();
     private final MrePublishConfiguration mrePublishConfiguration;
     private final HttpClient httpClient;
 
     public DefaultMantisApiClient(MrePublishConfiguration mrePublishConfiguration, HttpClient client) {
         this.mrePublishConfiguration = mrePublishConfiguration;
         this.httpClient = client;
-    }
-
-    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        DefaultRegistry registry = new DefaultRegistry();
-        PropertyRepository props = DefaultPropertyFactory.from(new DefaultSettableConfig());
-        DefaultMantisApiClient defaultMantisApiClient = new DefaultMantisApiClient(new SampleArchaiusMrePublishConfiguration(props), HttpClient.create(registry));
-        CompletableFuture<JobDiscoveryInfo> jobDiscoveryInfoCompletableFuture = defaultMantisApiClient.jobDiscoveryInfo("MREPushSourceJob");
-        JobDiscoveryInfo jobDiscoveryInfo = jobDiscoveryInfoCompletableFuture.get(1, TimeUnit.SECONDS);
-
-        CompletableFuture<AppJobClustersMap> jobClusterMapping = defaultMantisApiClient.getJobClusterMapping(Optional.of("testApp"));
-        AppJobClustersMap appJobClustersMap = jobClusterMapping.get(1, TimeUnit.SECONDS);
     }
 
     @Override
@@ -95,7 +74,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
                         .send();
                 int status = response.status();
                 if (status >= 200 && status < 300) {
-                    AppJobClustersMap appJobClustersMap = mapper.readValue(response.entityAsString(), AppJobClustersMap.class);
+                    AppJobClustersMap appJobClustersMap = serializer.fromJSON(response.entityAsString(), AppJobClustersMap.class);
                     logger.debug(appJobClustersMap.toString());
                     return appJobClustersMap;
                 } else if (status >= 300 && status < 500) {
@@ -125,7 +104,7 @@ public class DefaultMantisApiClient implements MantisApiClient {
                         .send();
                 int status = response.status();
                 if (status >= 200 && status < 300) {
-                    JobSchedulingInfo jobSchedulingInfo = mapper.readValue(response.entityAsString(), JobSchedulingInfo.class);
+                    JobSchedulingInfo jobSchedulingInfo = serializer.fromJSON(response.entityAsString(), JobSchedulingInfo.class);
                     JobDiscoveryInfo jobDiscoveryInfo = convertJobSchedInfo(jobSchedulingInfo, jobClusterName);
                     logger.debug(jobDiscoveryInfo.toString());
                     return jobDiscoveryInfo;

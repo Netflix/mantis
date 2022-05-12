@@ -1,0 +1,34 @@
+{
+    "jobId": "TestJob",
+    "workerAssignments": {
+        "1": {
+            "stage": 1,
+            "numWorkers": 16,
+            "hosts": {
+                "41": {
+                    "host": "111.11.111.41",
+                    "workerIndex": 0,
+                    "port": [
+                        7159
+                    ],
+                    "state": "Started",
+                    "workerNumber": 41,
+                    "metricsPort": 7155,
+                    "customPort": 7158
+                },
+                "42": {
+                    "host": "111.11.11.42",
+                    "workerIndex": 1,
+                    "port": [
+                        7159
+                    ],
+                    "state": "Started",
+                    "workerNumber": 42,
+                    "metricsPort": 7155,
+                    "customPort": 7158
+                }
+            },
+            "activeWorkers": 0
+        }
+    }
+}
