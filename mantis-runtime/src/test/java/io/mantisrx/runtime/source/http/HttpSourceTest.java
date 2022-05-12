@@ -16,24 +16,9 @@
 
 package io.mantisrx.runtime.source.http;
 
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.CONNECTION_ATTEMPTED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.CONNECTION_ESTABLISHED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.CONNECTION_UNSUBSCRIBED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SERVER_FOUND;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SOURCE_COMPLETED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ENDED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ESTABLISHED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import io.mantisrx.common.codec.Codecs;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJob;
-import io.mantisrx.runtime.MantisJobProvider;
+import io.mantisrx.runtime.*;
 import io.mantisrx.runtime.Metadata.Builder;
-import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.sink.ServerSentEventsSink;
@@ -43,6 +28,19 @@ import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
 import io.netty.buffer.ByteBuf;
+import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
+import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.junit.*;
+import rx.Observable;
+import rx.Subscription;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Func1;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -52,23 +50,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
-import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
+
+import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.*;
+import static org.junit.Assert.*;
 
 
 public class HttpSourceTest {

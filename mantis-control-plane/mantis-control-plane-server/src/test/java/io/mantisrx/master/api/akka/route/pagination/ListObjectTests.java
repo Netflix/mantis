@@ -16,16 +16,13 @@
 
 package io.mantisrx.master.api.akka.route.pagination;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import scala.Tuple1;
-
-import static org.junit.Assert.assertTrue;
 
 public class ListObjectTests {
 

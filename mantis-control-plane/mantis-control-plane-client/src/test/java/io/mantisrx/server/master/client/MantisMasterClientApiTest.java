@@ -21,10 +21,20 @@ package io.mantisrx.server.master.client;
 //import io.mantisrx.master.core.proto.JobDefinition;
 //import io.mantisrx.master.core.proto.MachineDefinition;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
@@ -42,17 +52,6 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 
 public class MantisMasterClientApiTest {
