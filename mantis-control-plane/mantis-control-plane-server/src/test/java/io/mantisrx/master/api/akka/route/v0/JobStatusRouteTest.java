@@ -24,37 +24,25 @@ import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
-import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.ws.Message;
-import akka.http.javadsl.model.ws.WebSocketRequest;
-import akka.http.javadsl.settings.ClientConnectionSettings;
-import akka.http.javadsl.settings.WebSocketSettings;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
 import io.mantisrx.master.events.*;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
-import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
-import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,43 +110,5 @@ public class JobStatusRouteTest {
             .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
             .thenAccept(unbound -> system.terminate()); // and shutdown when done
         t.interrupt();
-    }
-
-//    @Test
-//    @Ignore
-    public void testJobStatus() throws InterruptedException {
-
-        Flow<Message, Message, NotUsed> clientFlow = Flow.fromSinkAndSource(Sink.foreach(x -> System.out.println("client got " + x.asTextMessage().getStrictText())),
-            Source.empty());
-        ClientConnectionSettings defaultSettings = ClientConnectionSettings.create(system);
-        AtomicInteger pingCounter = new AtomicInteger();
-
-        WebSocketSettings customWebsocketSettings = defaultSettings.getWebsocketSettings()
-            .withPeriodicKeepAliveData(() ->
-                ByteString.fromString(String.format("debug-%d", pingCounter.incrementAndGet()))
-            );
-
-        ClientConnectionSettings customSettings =
-            defaultSettings.withWebsocketSettings(customWebsocketSettings);
-        http.singleWebSocketRequest(
-            WebSocketRequest.create("ws://127.0.0.1:8207/job/status/sine-function-1"),
-            clientFlow,
-            ConnectionContext.noEncryption(),
-            Optional.empty(),
-            customSettings,
-            system.log(),
-            materializer
-        );
-
-        while (pingCounter.get() != 2) {
-            statusEventBrokerActor.tell(new LifecycleEventsProto.WorkerStatusEvent(
-                    LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
-                    "test message",
-                    1,
-                    WorkerId.fromId("sine-function-1-worker-0-2").get(),
-                    WorkerState.Started),
-                ActorRef.noSender());
-            Thread.sleep(2000);
-        }
     }
 }

@@ -16,24 +16,12 @@
 
 package io.mantisrx.runtime.source.http;
 
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.CONNECTION_ATTEMPTED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.CONNECTION_ESTABLISHED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.CONNECTION_UNSUBSCRIBED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SERVER_FOUND;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SOURCE_COMPLETED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ENDED;
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ESTABLISHED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.*;
+import static org.junit.Assert.*;
 
 import io.mantisrx.common.codec.Codecs;
-import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJob;
-import io.mantisrx.runtime.MantisJobProvider;
+import io.mantisrx.runtime.*;
 import io.mantisrx.runtime.Metadata.Builder;
-import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.sink.ServerSentEventsSink;
@@ -58,12 +46,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;
@@ -391,7 +374,8 @@ public class HttpSourceTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Ignore(value = "This is meant to be run as an integration test. " +
+        "Also has test exclusion set for this package")
     public void testWithJobExecutionWillWorkForResubscription() throws Exception {
         final HttpSource<ServerSentEvent, ServerSentEvent> source = HttpSources
                 .source(
@@ -414,7 +398,8 @@ public class HttpSourceTest {
     }
 
     @Test
-    @Ignore
+    @Ignore(value = "This is meant to be run as an integration test. " +
+        "Also has test exclusion set for this package")
     public void testDummySource() throws Exception {
         Source<String> dummySource = new Source<String>() {
             @Override
