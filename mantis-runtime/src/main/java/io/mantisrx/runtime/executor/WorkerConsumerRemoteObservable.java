@@ -16,7 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.*;
@@ -50,14 +49,12 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
     @Override
     public Observable<Observable<T>> start(StageConfig<T, ?> stage) {
         if (stage instanceof KeyToKey || stage instanceof KeyToScalar || stage instanceof GroupToScalar || stage instanceof GroupToGroup) {
-
             logger.info("Remote connection to stage " + name + " is KeyedStage");
-            //todo(hmittal): fix keyencoder here!
             ConnectToGroupedObservable.Builder connectToBuilder =
                     new ConnectToGroupedObservable.Builder()
                             .name(name)
                             // need to include index offset here
-                            .keyDecoder(Codecs.string())
+                            .keyDecoder(stage.getInputKeyCodec())
                             .valueDecoder(stage.getInputCodec())
                             .subscribeAttempts(30); // max retry before failure
 

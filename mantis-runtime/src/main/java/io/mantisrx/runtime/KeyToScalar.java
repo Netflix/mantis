@@ -17,6 +17,7 @@
 package io.mantisrx.runtime;
 
 import io.mantisrx.common.codec.Codec;
+import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.computation.ToScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Collections;
@@ -38,8 +39,13 @@ public class KeyToScalar<K, T, R> extends StageConfig<T, R> {
     }
 
     KeyToScalar(ToScalarComputation<K, T, R> computation,
-                Config<K, T, R> config, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
+                Config<K, T, R> config, final Codec<T> inputCodec) {
+        this(computation, config, (Codec<K>) Codecs.string(), inputCodec);
+    }
+
+    KeyToScalar(ToScalarComputation<K, T, R> computation,
+                Config<K, T, R> config, Codec<K> inputKeyCodec, Codec<T> inputCodec) {
+        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }

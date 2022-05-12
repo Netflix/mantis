@@ -17,6 +17,7 @@
 package io.mantisrx.runtime;
 
 import io.mantisrx.common.codec.Codec;
+import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.computation.GroupToScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.util.Collections;
@@ -50,7 +51,12 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
 
     GroupToScalar(GroupToScalarComputation<K, T, R> computation,
                   Config<K, T, R> config, Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
+        this(computation, config, (Codec<K>) Codecs.string(), inputCodec);
+    }
+
+    GroupToScalar(GroupToScalarComputation<K, T, R> computation,
+                  Config<K, T, R> config, Codec<K> inputKeyCodec, Codec<T> inputCodec) {
+        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
