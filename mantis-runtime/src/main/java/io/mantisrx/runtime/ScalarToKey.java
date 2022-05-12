@@ -16,9 +16,9 @@
 
 package io.mantisrx.runtime;
 
+import io.mantisrx.common.codec.Codec;
 import io.mantisrx.runtime.computation.ToKeyComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
-import io.reactivex.netty.codec.Codec;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,32 +41,19 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
      * @param config
      * @param inputCodec
      *
-     * @deprecated As of release 0.603, use {@link #ScalarToKey(ToKeyComputation, Config, io.mantisrx.common.codec.Codec)} (ToGroupComputation, Config, io.mantisrx.common.codec.Codec)} instead
+     * @deprecated As of release 0.603, use {@link #ScalarToKey(ToKeyComputation, Config, Codec)} (ToGroupComputation, Config, Codec)} instead
      */
     ScalarToKey(ToKeyComputation<T, K, R> computation,
-                Config<T, K, R> config, final Codec<T> inputCodec) {
-        super(config.description, new io.mantisrx.common.codec.Codec<T>() {
-            @Override
-            public T decode(byte[] bytes) {
-                return inputCodec.decode(bytes);
-            }
-
-            @Override
-            public byte[] encode(T value) {
-                return inputCodec.encode(value);
-            }
-        }, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
+                Config<T, K, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
 
     }
 
     ScalarToKey(ToKeyComputation<T, K, R> computation,
-                Config<T, K, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
+                Config<T, K, R> config, Codec<T> inputCodec) {
+        super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
-
     }
 
     public ToKeyComputation<T, K, R> getComputation() {
@@ -77,11 +64,10 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
         return keyExpireTimeSeconds;
     }
 
-
     public static class Config<T, K, R> {
 
-        private io.mantisrx.common.codec.Codec<R> codec;
-        private io.mantisrx.common.codec.Codec<K> keyCodec;
+        private Codec<R> codec;
+        private Codec<K> keyCodec;
         private String description;
         // default input type is concurrent for 'grouping' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.CONCURRENT;
@@ -93,29 +79,19 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
          *
          * @return
          *
-         * @deprecated As of release 0.603, use {@link #codec(io.mantisrx.common.codec.Codec)} instead
+         * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
          */
-        public Config<T, K, R> codec(final Codec<R> codec) {
-            this.codec = new io.mantisrx.common.codec.Codec<R>() {
-                @Override
-                public R decode(byte[] bytes) {
-                    return codec.decode(bytes);
-                }
-
-                @Override
-                public byte[] encode(R value) {
-                    return codec.encode(value);
-                }
-            };
+        public Config<T, K, R> codec(final io.reactivex.netty.codec.Codec<R> codec) {
+            this.codec = NettyCodec.fromNetty(codec);
             return this;
         }
 
-        public Config<T, K, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
+        public Config<T, K, R> codec(Codec<R> codec) {
             this.codec = codec;
             return this;
         }
 
-        public Config<T, K, R> keyCodec(io.mantisrx.common.codec.Codec<K> keyCodec) {
+        public Config<T, K, R> keyCodec(Codec<K> keyCodec) {
             this.keyCodec = keyCodec;
             return this;
         }
@@ -140,7 +116,11 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
             return this;
         }
 
-        public io.mantisrx.common.codec.Codec<R> getCodec() {
+        public Codec<K> getKeyCodec() {
+            return keyCodec;
+        }
+
+        public Codec<R> getCodec() {
             return codec;
         }
 

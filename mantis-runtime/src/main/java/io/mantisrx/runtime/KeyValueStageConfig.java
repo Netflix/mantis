@@ -32,9 +32,9 @@ public abstract class KeyValueStageConfig<T, K, R> extends StageConfig<T, R> {
 
     private final Codec<K> keyCodec;
 
-    public KeyValueStageConfig(String description, Codec<T> inputCodec, Codec<K> keyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
-        super(description, inputCodec, outputCodec, inputStrategy, params);
-        this.keyCodec = keyCodec;
+    public KeyValueStageConfig(String description, Codec<?> inputKeyCodec, Codec<T> inputCodec, Codec<K> outputKeyCodec, Codec<R> outputCodec, INPUT_STRATEGY inputStrategy, List<ParameterDefinition<?>> params) {
+        super(description, inputKeyCodec, inputCodec, outputCodec, inputStrategy, params);
+        this.keyCodec = outputKeyCodec;
     }
 
     public Codec<K> getOutputKeyCodec() {
