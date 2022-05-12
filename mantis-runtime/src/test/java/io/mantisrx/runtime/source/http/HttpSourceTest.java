@@ -417,7 +417,6 @@ public class HttpSourceTest {
     @Test
     @Ignore(value = "This is meant to be run as an integration test. " +
         "Also has test exclusion set for this package")
-    @Ignore(value = "This is probably meant to be run as an integration test.")
     public void testDummySource() throws Exception {
         Source<String> dummySource = new Source<String>() {
             @Override
