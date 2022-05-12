@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.worker;
 
+import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
+
 import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
 import io.mantisrx.common.WorkerPorts;
@@ -45,6 +47,13 @@ import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -53,16 +62,6 @@ import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
 
 // stage that actually calls custom stage method
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {
