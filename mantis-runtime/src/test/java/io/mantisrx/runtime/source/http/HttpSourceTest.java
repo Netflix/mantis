@@ -16,6 +16,9 @@
 
 package io.mantisrx.runtime.source.http;
 
+import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.*;
+import static org.junit.Assert.*;
+
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.*;
 import io.mantisrx.runtime.Metadata.Builder;
@@ -28,6 +31,15 @@ import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
 import org.apache.log4j.ConsoleAppender;
@@ -40,19 +52,6 @@ import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.*;
-import static org.junit.Assert.*;
 
 
 public class HttpSourceTest {
