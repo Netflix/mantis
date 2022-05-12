@@ -27,6 +27,4 @@ dependencies {
 
     testCompile 'junit:junit'
     testCompile "org.mockito:mockito-all:1.9.5"
-    // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69
-    testCompile 'info.batey.kafka:kafka-unit:1.0'
 }

@@ -21,20 +21,10 @@ package io.mantisrx.server.master.client;
 //import io.mantisrx.master.core.proto.JobDefinition;
 //import io.mantisrx.master.core.proto.MachineDefinition;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
@@ -52,6 +42,17 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class MantisMasterClientApiTest {
@@ -83,75 +84,6 @@ public class MantisMasterClientApiTest {
                 .build();
         return server;
     }
-
-    //    @Test
-    //    @Ignore
-    //    public void testNamedJobCreate() throws InterruptedException {
-    //
-    //        MasterMonitor mockMasterMonitor = mock(MasterMonitor.class);
-    //        final BehaviorSubject<MasterDescription> mdSubject = BehaviorSubject.create();
-    //        when(mockMasterMonitor.getMasterObservable()).thenReturn(mdSubject);
-    //
-    //        MantisMasterClientApi mantisMasterClientApi = new MantisMasterClientApi(mockMasterMonitor);
-    //
-    //        final int serverPort = 8182;
-    //        final String jobName = "TestCreateJobCluster";
-    //        mdSubject.onNext(new MasterDescription("localhost", "127.0.0.1", serverPort, 7090, 7091, "status", 8900, System.currentTimeMillis()));
-    //
-    //        JobDefinition jobDefinition = JobDefinition.newBuilder()
-    //            .setName(jobName)
-    //            .setVersion("0.0.1")
-    //            .setUrl("http://www.example.com")
-    //            .setJobSla(io.mantisrx.master.core.proto.JobSla.newBuilder()
-    //                .setUserProvidedType("")
-    //                .setDurationType(io.mantisrx.master.core.proto.JobSla.MantisJobDurationType.Transient)
-    //                .setSlaType(io.mantisrx.master.core.proto.JobSla.StreamSLAType.Lossy)
-    //                .setMinRuntimeSecs(0)
-    //                .setRuntimeLimitSecs(0))
-    //            .setSchedulingInfo(io.mantisrx.master.core.proto.SchedulingInfo.newBuilder()
-    //                .putStages(1, io.mantisrx.master.core.proto.SchedulingInfo.StageSchedulingInfo.newBuilder()
-    //                    .setNumberOfInstances(1)
-    //                    .setMachineDefinition(MachineDefinition.newBuilder()
-    //                        .setCpuCores(2)
-    //                        .setDiskMB(1024)
-    //                        .setMemoryMB(2048)
-    //                        .setNetworkMbps(64)
-    //                        .setNumPorts(1)
-    //                        .build())
-    //                    .build())
-    //                .build())
-    //            .build();
-    //        io.mantisrx.master.core.proto.JobOwner owner = io.mantisrx.master.core.proto.JobOwner.newBuilder()
-    //            .setName("Test")
-    //            .setContactEmail("test@netflix.com")
-    //            .setDescription("")
-    //            .setRepo("http://www.example.com")
-    //            .build();
-    //        CreateJobClusterRequest req = CreateJobClusterRequest.newBuilder()
-    //            .setJobDefinition(jobDefinition)
-    //            .setOwner(owner)
-    //            .build();
-    //
-    //        Observable<Void> testCluster = mantisMasterClientApi.createNamedJob(req);
-    //        final CountDownLatch latch = new CountDownLatch(1);
-    //
-    //        testCluster.subscribe((x) -> {
-    //            latch.countDown();
-    //            System.out.println("job cluster create response complete");
-    //        });
-    //
-    //        latch.await();
-    //
-    //        Observable<JobSubmitResponse> jobSubmitResponseObs = mantisMasterClientApi.submitJob(jobDefinition);
-    //        final CountDownLatch latch2 = new CountDownLatch(1);
-    //
-    //        jobSubmitResponseObs.subscribe((x) -> {
-    //            latch2.countDown();
-    //            System.out.println("job submit complete");
-    //        });
-    //
-    //        latch2.await();
-    //    }
 
     @Test
     public void testScaleStageRequestRetries() throws InterruptedException {

@@ -123,42 +123,4 @@ public class JobStatusRouteTest {
             .thenAccept(unbound -> system.terminate()); // and shutdown when done
         t.interrupt();
     }
-
-//    @Test
-//    @Ignore
-    public void testJobStatus() throws InterruptedException {
-
-        Flow<Message, Message, NotUsed> clientFlow = Flow.fromSinkAndSource(Sink.foreach(x -> System.out.println("client got " + x.asTextMessage().getStrictText())),
-            Source.empty());
-        ClientConnectionSettings defaultSettings = ClientConnectionSettings.create(system);
-        AtomicInteger pingCounter = new AtomicInteger();
-
-        WebSocketSettings customWebsocketSettings = defaultSettings.getWebsocketSettings()
-            .withPeriodicKeepAliveData(() ->
-                ByteString.fromString(String.format("debug-%d", pingCounter.incrementAndGet()))
-            );
-
-        ClientConnectionSettings customSettings =
-            defaultSettings.withWebsocketSettings(customWebsocketSettings);
-        http.singleWebSocketRequest(
-            WebSocketRequest.create("ws://127.0.0.1:8207/job/status/sine-function-1"),
-            clientFlow,
-            ConnectionContext.noEncryption(),
-            Optional.empty(),
-            customSettings,
-            system.log(),
-            materializer
-        );
-
-        while (pingCounter.get() != 2) {
-            statusEventBrokerActor.tell(new LifecycleEventsProto.WorkerStatusEvent(
-                    LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
-                    "test message",
-                    1,
-                    WorkerId.fromId("sine-function-1-worker-0-2").get(),
-                    WorkerState.Started),
-                ActorRef.noSender());
-            Thread.sleep(2000);
-        }
-    }
 }

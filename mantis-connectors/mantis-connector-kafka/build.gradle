@@ -38,6 +38,4 @@ dependencies {
     testImplementation libraries.mockitoAll
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
     testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
-    // update kafka-unit version for kafka 2.2.+ once this PR is released https://github.com/chbatey/kafka-unit/pull/69
-    testImplementation 'info.batey.kafka:kafka-unit:1.0'
 }

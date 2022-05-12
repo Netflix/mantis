@@ -391,7 +391,8 @@ public class HttpSourceTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Ignore(value = "This is meant to be run as an integration test. " +
+        "Also has test exclusion set for this package")
     public void testWithJobExecutionWillWorkForResubscription() throws Exception {
         final HttpSource<ServerSentEvent, ServerSentEvent> source = HttpSources
                 .source(
@@ -414,7 +415,9 @@ public class HttpSourceTest {
     }
 
     @Test
-    @Ignore
+    @Ignore(value = "This is meant to be run as an integration test. " +
+        "Also has test exclusion set for this package")
+    @Ignore(value = "This is probably meant to be run as an integration test.")
     public void testDummySource() throws Exception {
         Source<String> dummySource = new Source<String>() {
             @Override
