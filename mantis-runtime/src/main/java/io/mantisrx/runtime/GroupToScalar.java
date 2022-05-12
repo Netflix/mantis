@@ -16,11 +16,13 @@
 
 package io.mantisrx.runtime;
 
+import io.mantisrx.common.codec.Codec;
+import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.computation.GroupToScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
-import io.reactivex.netty.codec.Codec;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -40,28 +42,21 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
     private long keyExpireTimeSeconds;
 
     /**
-     * @deprecated As of release 0.603, use {@link #GroupToScalar(GroupToScalarComputation, Config, io.mantisrx.common.codec.Codec)} instead
+     * @deprecated As of release 0.603, use {@link #GroupToScalar(GroupToScalarComputation, Config, Codec)} instead
      */
     GroupToScalar(GroupToScalarComputation<K, T, R> computation,
-                  Config<K, T, R> config, final Codec<T> inputCodec) {
-        super(config.description, new io.mantisrx.common.codec.Codec<T>() {
-            @Override
-            public T decode(byte[] bytes) {
-                return inputCodec.decode(bytes);
-            }
-
-            @Override
-            public byte[] encode(T value) {
-                return inputCodec.encode(value);
-            }
-        }, config.codec, config.inputStrategy, config.parameters);
-        this.computation = computation;
-        this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
+                  Config<K, T, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
+        this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
 
     GroupToScalar(GroupToScalarComputation<K, T, R> computation,
-                  Config<K, T, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
-        super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters);
+                  Config<K, T, R> config, Codec<T> inputCodec) {
+        this(computation, config, (Codec<K>) Codecs.string(), inputCodec);
+    }
+
+    GroupToScalar(GroupToScalarComputation<K, T, R> computation,
+                  Config<K, T, R> config, Codec<K> inputKeyCodec, Codec<T> inputCodec) {
+        super(config.description, inputKeyCodec, inputCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;
         this.keyExpireTimeSeconds = config.keyExpireTimeSeconds;
     }
@@ -76,9 +71,9 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
 
     public static class Config<K, T, R> {
 
-        private io.mantisrx.common.codec.Codec<R> codec;
+        private Codec<R> codec;
         private String description;
-        private long keyExpireTimeSeconds = 3600 * 1; // 1 hour default
+        private long keyExpireTimeSeconds = TimeUnit.HOURS.toSeconds(1); // 1 hour default
         // default input type is serial for
         // 'stateful group calculation' use case
         // do not allow config override
@@ -92,22 +87,12 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
          *
          * @deprecated As of release 0.603, use {@link #codec(io.mantisrx.common.codec.Codec)} instead
          */
-        public Config<K, T, R> codec(final Codec<R> codec) {
-            this.codec = new io.mantisrx.common.codec.Codec<R>() {
-                @Override
-                public R decode(byte[] bytes) {
-                    return codec.decode(bytes);
-                }
-
-                @Override
-                public byte[] encode(R value) {
-                    return codec.encode(value);
-                }
-            };
+        public Config<K, T, R> codec(final io.reactivex.netty.codec.Codec<R> codec) {
+            this.codec = NettyCodec.fromNetty(codec);
             return this;
         }
 
-        public Config<K, T, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
+        public Config<K, T, R> codec(Codec<R> codec) {
             this.codec = codec;
             return this;
         }
@@ -134,7 +119,7 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
             return this;
         }
 
-        public io.mantisrx.common.codec.Codec<R> getCodec() {
+        public Codec<R> getCodec() {
             return codec;
         }
 

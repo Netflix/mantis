@@ -35,23 +35,11 @@ public class PushServers {
     public static <T> LegacyTcpPushServer<T> infiniteStreamLegacyTcpNested(ServerConfig<T> config, Observable<Observable<T>> o) {
         final PublishSubject<String> serverSignals = PublishSubject.create();
         final String serverName = config.getName();
-        Action0 onComplete = new Action0() {
-            @Override
-            public void call() {
-                serverSignals.onNext("ILLEGAL_STATE_COMPLETED");
-                throw new IllegalStateException("OnComplete signal received, Server: " + serverName + " is pushing an infinite stream, should not complete");
-            }
-        };
-
-        Action1<Throwable> onError = new Action1<Throwable>() {
-            @Override
-            public void call(Throwable t) {
-                serverSignals.onError(t);
-            }
-        };
+        Action0 onComplete = new ErrorOnComplete(serverSignals, serverName);
+        Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<T> trigger = ObservableTrigger.oo(serverName, o, onComplete, onError);
-        return new LegacyTcpPushServer<T>(trigger, config, serverSignals);
+        return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
     public static <K, V> LegacyTcpPushServer<KeyValuePair<K, V>> infiniteStreamLegacyTcpNestedGroupedObservable(ServerConfig<KeyValuePair<K, V>> config,
@@ -60,24 +48,12 @@ public class PushServers {
                                                                                                                 HashFunction hashFunction) {
         final PublishSubject<String> serverSignals = PublishSubject.create();
         final String serverName = config.getName();
-        Action0 onComplete = new Action0() {
-            @Override
-            public void call() {
-                serverSignals.onNext("ILLEGAL_STATE_COMPLETED");
-                throw new IllegalStateException("OnComplete signal received, Server: " + serverName + " is pushing an infinite stream, should not complete");
-            }
-        };
-
-        Action1<Throwable> onError = new Action1<Throwable>() {
-            @Override
-            public void call(Throwable t) {
-                serverSignals.onError(t);
-            }
-        };
+        Action0 onComplete = new ErrorOnComplete(serverSignals, serverName);
+        Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<KeyValuePair<K, V>> trigger = ObservableTrigger.oogo(serverName, go, onComplete, onError, groupExpirySeconds,
                 keyEncoder, hashFunction);
-        return new LegacyTcpPushServer<KeyValuePair<K, V>>(trigger, config, serverSignals);
+        return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
     // NJ
@@ -87,24 +63,12 @@ public class PushServers {
                                                                                                           HashFunction hashFunction) {
         final PublishSubject<String> serverSignals = PublishSubject.create();
         final String serverName = config.getName();
-        Action0 onComplete = new Action0() {
-            @Override
-            public void call() {
-                serverSignals.onNext("ILLEGAL_STATE_COMPLETED");
-                throw new IllegalStateException("OnComplete signal received, Server: " + serverName + " is pushing an infinite stream, should not complete");
-            }
-        };
-
-        Action1<Throwable> onError = new Action1<Throwable>() {
-            @Override
-            public void call(Throwable t) {
-                serverSignals.onError(t);
-            }
-        };
+        Action0 onComplete = new ErrorOnComplete(serverSignals, serverName);
+        Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<KeyValuePair<K, V>> trigger = ObservableTrigger.oomgo(serverName, go, onComplete, onError, groupExpirySeconds,
                 keyEncoder, hashFunction);
-        return new LegacyTcpPushServer<KeyValuePair<K, V>>(trigger, config, serverSignals);
+        return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
     public static <T, S> PushServerSse<T, S> infiniteStreamSse(ServerConfig<T> config, Observable<T> o,
@@ -115,30 +79,34 @@ public class PushServers {
 
         final String serverName = config.getName();
         final PublishSubject<String> serverSignals = PublishSubject.create();
-        Action0 onComplete = new Action0() {
-            @Override
-            public void call() {
-                serverSignals.onNext("ILLEGAL_STATE_COMPLETED");
-                throw new IllegalStateException("OnComplete signal received, Server: " + serverName + " is pushing an infinite stream, should not complete");
-            }
-        };
-
-        Action1<Throwable> onError = new Action1<Throwable>() {
-            @Override
-            public void call(Throwable t) {
-                serverSignals.onError(t);
-            }
-        };
+        Action0 onComplete = new ErrorOnComplete(serverSignals, serverName);
+        Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<T> trigger = ObservableTrigger.o(serverName, o, onComplete, onError);
 
-        return new PushServerSse<T, S>(trigger, config, serverSignals,
-                requestPreprocessor, requestPostprocessor,
-                subscribeProcessor, state, supportLegacyMetrics);
+        return new PushServerSse<>(trigger, config, serverSignals,
+            requestPreprocessor, requestPostprocessor,
+            subscribeProcessor, state, supportLegacyMetrics);
     }
 
     public static <T> PushServerSse<T, Void> infiniteStreamSse(ServerConfig<T> config, Observable<T> o) {
         return
                 infiniteStreamSse(config, o, null, null, null, null, false);
+    }
+
+    private static class ErrorOnComplete implements Action0 {
+        private final PublishSubject<String> serverSignals;
+        private final String serverName;
+
+        public ErrorOnComplete(PublishSubject<String> serverSignals, String serverName) {
+            this.serverSignals = serverSignals;
+            this.serverName = serverName;
+        }
+
+        @Override
+        public void call() {
+            serverSignals.onNext("ILLEGAL_STATE_COMPLETED");
+            throw new IllegalStateException("OnComplete signal received, Server: " + serverName + " is pushing an infinite stream, should not complete");
+        }
     }
 }
