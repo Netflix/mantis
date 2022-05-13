@@ -21,6 +21,7 @@ import static org.asynchttpclient.Dsl.post;
 
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.JobSla;
@@ -38,11 +39,7 @@ import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
@@ -52,7 +49,6 @@ import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import io.reactivex.mantis.remote.observable.reconciliator.Reconciliator;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -88,7 +84,6 @@ import rx.functions.Func2;
 public class MantisMasterClientApi implements MantisMasterGateway {
 
     static final String ConnectTimeoutSecsPropertyName = "MantisClientConnectTimeoutSecs";
-    private static final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(MantisMasterClientApi.class);
     private static final String JOB_METADATA_FIELD = "jobMetadata";
     private static final String STAGE_MEDATA_LIST_FIELD = "stageMetadataList";
@@ -112,12 +107,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
     // The following timeout should be what's in master configuration's mantis.scheduling.info.observable.heartbeat.interval.secs
     private static final long MASTER_SCHED_INFO_HEARTBEAT_INTERVAL_SECS = 120;
 
-    static {
-        objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.registerModule(new Jdk8Module());
-    }
-
+    private final JsonSerializer serializer = new JsonSerializer();
     final String DEFAULT_RESPONSE = "NO_RESPONSE_FROM_MASTER";
     private final long GET_TIMEOUT_SECS = 30;
     private final Observable<Endpoint> masterEndpoint;
@@ -301,7 +291,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
             String jobDef = getJobDefinitionString(name, null, version, parameters, jobSla,
                     subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels, null);
             return submitJob(jobDef);
-        } catch (MalformedURLException | JsonProcessingException e) {
+        } catch (IOException e) {
             return Observable.error(e);
         }
     }
@@ -319,7 +309,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
             String jobDef = getJobDefinitionString(name, null, version, parameters, jobSla,
                     subscriptionTimeoutSecs, schedulingInfo, readyForJobMaster, migrationConfig, labels, deploymentStrategy);
             return submitJob(jobDef);
-        } catch (MalformedURLException | JsonProcessingException e) {
+        } catch (IOException e) {
             return Observable.error(e);
         }
     }
@@ -354,12 +344,12 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                           JobSla jobSla, long subscriptionTimeoutSecs, SchedulingInfo schedulingInfo,
                                           boolean readyForJobMaster, final WorkerMigrationConfig migrationConfig,
                                           final List<Label> labels, final DeploymentStrategy deploymentStrategy)
-            throws JsonProcessingException, MalformedURLException {
+            throws IOException {
         MantisJobDefinition jobDefinition = new MantisJobDefinition(name, System.getProperty("user.name"),
                 jobUrl == null ? null : new URL(jobUrl),
                 version, parameters, jobSla, subscriptionTimeoutSecs, schedulingInfo, 0, 0,
                 null, null, readyForJobMaster, migrationConfig, labels, deploymentStrategy);
-        return objectMapper.writeValueAsString(jobDefinition);
+        return serializer.toJson(jobDefinition);
     }
 
     public Observable<Void> killJob(final String jobId) {
@@ -383,7 +373,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                     content.put("user", user);
                     content.put("reason", reason);
                     try {
-                        return getPostResponse(toUri(md, API_JOB_KILL), objectMapper.writeValueAsString(content))
+                        return getPostResponse(toUri(md, API_JOB_KILL), serializer.toJson(content))
                                 .onErrorResumeNext(throwable -> {
                                     logger.warn("Can't connect to master: {}", throwable.getMessage(), throwable);
                                     return Observable.empty();
@@ -392,7 +382,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                     logger.info(s);
                                     return null;
                                 });
-                    } catch (JsonProcessingException e) {
+                    } catch (IOException e) {
                         return Observable.error(e);
                     }
                 });
@@ -415,12 +405,12 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 .flatMap((Func1<MasterDescription, Observable<Boolean>>) md -> {
                     final StageScaleRequest stageScaleRequest = new StageScaleRequest(jobId, stageNum, numWorkers, reason);
                     try {
-                        return submitPostRequest(toUri(md, API_JOB_STAGE_SCALE), objectMapper.writeValueAsString(stageScaleRequest))
+                        return submitPostRequest(toUri(md, API_JOB_STAGE_SCALE), serializer.toJson(stageScaleRequest))
                                 .map(s -> {
                                     logger.info("POST to scale stage returned status: {}", s);
                                     return s.codeClass().equals(HttpStatusClass.SUCCESS);
                                 });
-                    } catch (JsonProcessingException e) {
+                    } catch (IOException e) {
                         logger.error("failed to serialize stage scale request {} to json", stageScaleRequest);
                         return Observable.error(e);
                     }
@@ -446,12 +436,12 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                     logger.info("sending request to resubmit worker {} for jobId {}", workerNum, jobId);
                     try {
                         return submitPostRequest(toUri(md, API_JOB_RESUBMIT_WORKER),
-                                objectMapper.writeValueAsString(resubmitJobWorkerRequest))
+                                serializer.toJson(resubmitJobWorkerRequest))
                                 .map(s -> {
                                     logger.info("POST to resubmit worker {} returned status: {}", workerNum, s);
                                     return s.codeClass().equals(HttpStatusClass.SUCCESS);
                                 });
-                    } catch (JsonProcessingException e) {
+                    } catch (IOException e) {
                         logger.error("failed to serialize resubmit job worker request {} to json", resubmitJobWorkerRequest);
                         return Observable.error(e);
                     }
@@ -605,7 +595,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
     private boolean payloadIsError(String payload) {
         try {
             Map<String, String> decoded =
-                    objectMapper.readValue(payload, new TypeReference<Map<String, String>>() {});
+                    serializer.fromJSON(payload, new TypeReference<Map<String, String>>() {});
             return decoded.get("error") != null;
         } catch(Exception ex) {
             // No op
@@ -713,7 +703,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                             return response.getContent()
                                     .map(event -> {
                                         try {
-                                            return objectMapper.readValue(event.contentAsString(),
+                                            return serializer.fromJSON(event.contentAsString(),
                                                     JobSchedulingInfo.class);
                                         } catch (IOException e) {
                                             throw new RuntimeException("Invalid schedInfo json: " + e.getMessage(), e);
@@ -748,7 +738,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                             return response.getContent()
                                     .map(event -> {
                                         try {
-                                            return objectMapper.readValue(event.contentAsString(), NamedJobInfo.class);
+                                            return serializer.fromJSON(event.contentAsString(), NamedJobInfo.class);
                                         } catch (IOException e) {
                                             throw new RuntimeException("Invalid namedJobInfo json: " + e.getMessage(), e);
                                         }
@@ -809,7 +799,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
     public CompletableFuture<Ack> updateStatus(Status status) {
 
         try {
-          final String statusUpdate = objectMapper.writeValueAsString(
+          final String statusUpdate = serializer.toJson(
               new PostJobStatusRequest(status.getJobId(), status));
           final RequestBuilder requestBuilder =
               post(masterMonitor.getLatestMaster().getFullApiStatusUri())
