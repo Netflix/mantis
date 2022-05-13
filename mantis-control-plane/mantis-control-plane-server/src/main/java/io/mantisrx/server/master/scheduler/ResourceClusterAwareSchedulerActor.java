@@ -32,6 +32,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import java.time.Clock;
 import java.time.Duration;
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.util.ExceptionUtils;
 
 @Slf4j
 class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
@@ -209,7 +211,16 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                 gateway
                     .cancelTask(event.getWorkerId())
                     .<Object>thenApply(dontCare -> Noop.getInstance())
-                    .exceptionally(event::onFailure);
+                    .exceptionally(exception -> {
+                        Throwable actual =
+                            ExceptionUtils.stripCompletionException(ExceptionUtils.stripExecutionException(exception));
+                        // no need to retry if the TaskExecutor does not know about the task anymore.
+                        if (actual instanceof TaskNotFoundException) {
+                            return Noop.getInstance();
+                        } else {
+                            return event.onFailure(actual);
+                        }
+                    });
 
             pipe(cancelFuture, context().dispatcher()).to(self());
         } else {
