@@ -19,6 +19,7 @@ package io.mantisrx.runtime;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 
 public class MachineDefinition implements Serializable {
@@ -45,6 +46,7 @@ public class MachineDefinition implements Serializable {
         this.numPorts = Math.max(minPorts, numPorts);
     }
 
+    @VisibleForTesting
     public MachineDefinition(double cpuCores, double memoryMB, double diskMB, int numPorts) {
         this.cpuCores = cpuCores;
         this.memoryMB = memoryMB;

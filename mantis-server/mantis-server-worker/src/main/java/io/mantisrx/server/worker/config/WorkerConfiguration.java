@@ -114,4 +114,8 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Config("mantis.taskexecutor.blob-store.local-cache")
     @DefaultNull
     File getLocalStorageDir();
+
+    @Config("mantis.taskexecutor.hardware.network-bandwidth-in-mb")
+    @Default(value = "128.0")
+    double getNetworkBandwidthInMB();
 }
