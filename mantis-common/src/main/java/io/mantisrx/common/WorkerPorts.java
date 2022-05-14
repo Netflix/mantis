@@ -22,6 +22,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -100,6 +101,16 @@ public class WorkerPorts implements Serializable {
 
     public List<Integer> getPorts() {
         return ports;
+    }
+
+    @JsonIgnore
+    public List<Integer> getAllPorts() {
+        final List<Integer> allPorts = new ArrayList<>(ports);
+        allPorts.add(metricsPort);
+        allPorts.add(debugPort);
+        allPorts.add(consolePort);
+        allPorts.add(customPort);
+        return allPorts;
     }
 
     /**
