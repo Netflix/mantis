@@ -140,7 +140,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
         MachineDefinition machineDefinition = scheduleRequest.getMachineDefinition();
 
         // grab ports within range
-        List<Integer> ports = launchTaskRequest.getPorts().getPorts();
+        List<Integer> ports = launchTaskRequest.getPorts().getAllPorts();
 
         TaskInfo taskInfo = null;
         try {
