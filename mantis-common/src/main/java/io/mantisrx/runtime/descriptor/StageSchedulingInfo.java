@@ -31,6 +31,8 @@ import lombok.Singular;
 @Builder(toBuilder = true)
 public class StageSchedulingInfo implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+    
     private final int numberOfInstances;
     private final MachineDefinition machineDefinition;
     @Singular(ignoreNullCollections = true) private final List<JobConstraints> hardConstraints;

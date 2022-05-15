@@ -34,6 +34,7 @@ import lombok.ToString;
 @ToString
 public class SchedulingInfo implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private Map<Integer, StageSchedulingInfo> stages = new HashMap<>();
 
     @JsonCreator
