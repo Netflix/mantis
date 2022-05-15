@@ -38,8 +38,6 @@ import lombok.ToString;
 @ToString
 public class WorkerPorts implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     private final int metricsPort;
     private final int debugPort;
     private final int consolePort;
