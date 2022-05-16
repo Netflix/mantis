@@ -24,8 +24,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.mantisrx.common.utils.Services;
+import com.netflix.spectator.api.DefaultRegistry;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -55,6 +58,7 @@ public class ResourceManagerGatewayCxnTest {
 
     @Before
     public void setup() {
+        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
         WorkerPorts workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
         TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutor");
         ClusterID clusterID = ClusterID.of("cluster");
@@ -70,7 +74,7 @@ public class ResourceManagerGatewayCxnTest {
         report = TaskExecutorReport.available();
         heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
         cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
-            Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3);
+            Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3, MetricsRegistry);
     }
 
 

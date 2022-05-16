@@ -383,7 +383,7 @@ public class TaskExecutorTest {
                                    Factory subscriptionStateHandlerFactory,
                                    Consumer<Status> consumer) {
             super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
-                subscriptionStateHandlerFactory);
+                subscriptionStateHandlerFactory, metricsRegistry);
             this.consumer = consumer;
         }
 

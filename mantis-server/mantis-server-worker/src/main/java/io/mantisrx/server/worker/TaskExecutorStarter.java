@@ -17,6 +17,7 @@
 package io.mantisrx.server.worker;
 
 import com.mantisrx.common.utils.Services;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
@@ -175,7 +176,8 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     workerConfiguration,
                     highAvailabilityServices,
                     getClassLoaderHandle(),
-                    getSinkSubscriptionHandlerFactory());
+                    getSinkSubscriptionHandlerFactory(),
+                    MetricsRegistry.getInstance());
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
                 taskExecutor.addListener(listener._1(), listener._2());

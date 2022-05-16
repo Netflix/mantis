@@ -17,9 +17,14 @@ package io.mantisrx.server.worker;
 
 import com.mantisrx.common.utils.ListenerCallQueue;
 import com.mantisrx.common.utils.Services;
+import com.netflix.spectator.api.Tag;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Gauge;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.ExecuteStageRequest;
@@ -44,6 +49,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -87,6 +93,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
     private final ListenerCallQueue<Listener> listeners = new ListenerCallQueue<>();
+    private final MetricsRegistry metricsRegistry;
 
     // the reason the MantisMasterGateway field is not final is because we expect the HighAvailabilityServices
     // to be started before we can get the MantisMasterGateway
@@ -106,7 +113,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
-        Factory subscriptionStateHandlerFactory) {
+        Factory subscriptionStateHandlerFactory, MetricsRegistry metricsRegistry) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -119,6 +126,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.highAvailabilityServices = highAvailabilityServices;
         this.classLoaderHandle = classLoaderHandle;
         this.subscriptionStateHandlerFactory = subscriptionStateHandlerFactory;
+        this.metricsRegistry = metricsRegistry;
         WorkerPorts workerPorts = new WorkerPorts(workerConfiguration.getMetricsPort(),
             workerConfiguration.getDebugPort(), workerConfiguration.getConsolePort(),
             workerConfiguration.getCustomPort(),
@@ -275,7 +283,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             workerConfiguration.getHeartbeatInterval(),
             workerConfiguration.getHeartbeatTimeout(),
             this::getCurrentReport,
-            workerConfiguration.getTolerableConsecutiveHeartbeatFailures());
+            workerConfiguration.getTolerableConsecutiveHeartbeatFailures(),
+            metricsRegistry);
     }
 
     private ExecutorService getIOExecutor() {
@@ -305,8 +314,47 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         private final Time timeout = Time.of(1000, TimeUnit.MILLISECONDS);
         private final Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier;
         private final int tolerableConsecutiveHeartbeatFailures;
+        private final Counter newRegistrationsTracker;
+        private final Counter numSucceededRegistrations;
+        private final Counter numFailedRegistrations;
+        private final Gauge lastHeartbeatTracker;
+        private final Gauge numFailedHeartbeatsTracker;
 
         private int numFailedHeartbeats = 0;
+
+        public ResourceManagerGatewayCxn(
+            int idx,
+            TaskExecutorRegistration taskExecutorRegistration,
+            ResourceClusterGateway gateway,
+            Time heartBeatInterval,
+            Time heartBeatTimeout,
+            Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier,
+            int tolerableConsecutiveHeartbeatFailures,
+            MetricsRegistry metricsRegistry) {
+            this.idx = idx;
+            this.taskExecutorRegistration = taskExecutorRegistration;
+            this.gateway = gateway;
+            this.heartBeatInterval = heartBeatInterval;
+            this.heartBeatTimeout = heartBeatTimeout;
+            this.currentReportSupplier = currentReportSupplier;
+            this.tolerableConsecutiveHeartbeatFailures = tolerableConsecutiveHeartbeatFailures;
+            Metrics metrics =
+                new Metrics.Builder()
+                    .id("ResourceManagerGatewayCxn", Tag.of("idx", String.valueOf(idx)))
+                    .addCounter("numRegistrations")
+                    .addCounter("numSuccessfulRegistrations")
+                    .addCounter("numFailedRegistrations")
+                    .addGauge("lastSuccessfulHeartbeat")
+                    .addGauge("numFailedHeartbeats")
+                    .build();
+            metricsRegistry.registerAndGet(metrics);
+
+            this.newRegistrationsTracker = metrics.getCounter("numRegistrations");
+            this.numSucceededRegistrations = metrics.getCounter("numSuccessfulRegistrations");
+            this.numFailedRegistrations = metrics.getCounter("numFailedRegistrations");
+            this.lastHeartbeatTracker = metrics.getGauge("lastSuccessfulHeartbeat");
+            this.numFailedHeartbeatsTracker = metrics.getGauge("numFailedHeartbeats");
+        }
 
         @Override
         protected String serviceName() {
@@ -325,14 +373,17 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         public void startUp() throws Exception {
             log.info("Trying to register with resource manager {}", gateway);
             try {
+                newRegistrationsTracker.increment();
                 gateway
                     .registerTaskExecutor(taskExecutorRegistration)
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                numSucceededRegistrations.increment();
             } catch (Exception e) {
                 // the registration may or may not have succeeded. Since we don't know let's just
                 // do the disconnection just to be safe.
                 log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
                     e);
+                numFailedRegistrations.increment();
                 try {
                     gateway.disconnectTaskExecutor(
                             new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
@@ -350,17 +401,19 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             try {
                 currentReportSupplier.apply(timeout)
                     .thenComposeAsync(report -> {
-                        log.info("Sending heartbeat to resource manager {} with report {}", gateway, report);
                         return gateway.heartBeatFromTaskExecutor(
                             new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(),
                                 taskExecutorRegistration.getClusterID(), report));
                     })
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 
+                log.debug("Heartbeat to resource manager {} successful", gateway);
+                lastHeartbeatTracker.set(Instant.now().toEpochMilli());
                 // the heartbeat was successful, let's reset the counter.
                 numFailedHeartbeats = 0;
             } catch (Exception e) {
                 log.error("Failed to send heartbeat to gateway {}", gateway, e);
+                numFailedHeartbeatsTracker.increment();
                 // increase the number of failed heartbeats by 1
                 numFailedHeartbeats += 1;
                 if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
@@ -369,6 +422,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
                         gateway, numFailedHeartbeats, tolerableConsecutiveHeartbeatFailures);
                 }
+            } finally {
+                numFailedHeartbeatsTracker.set(numFailedHeartbeats);
             }
         }
 
