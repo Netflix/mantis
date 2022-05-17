@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import static java.util.Optional.of;
+
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
@@ -34,15 +36,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static java.util.Optional.of;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
