@@ -40,12 +40,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.scheduler.WorkerEvent;
-import io.mantisrx.server.master.scheduler.WorkerLaunchFailed;
-import io.mantisrx.server.master.scheduler.WorkerLaunched;
-import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
-import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
+import io.mantisrx.server.master.scheduler.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -698,31 +693,31 @@ public class JobWorker implements IMantisWorkerEventProcessor {
 
             if (workerIndex <= INVALID_VALUE) {
                 IllegalArgumentException ex = new IllegalArgumentException(
-                        String.format("Invalid workerIndex {} specified", workerIndex));
+                        String.format("Invalid workerIndex %d specified", workerIndex));
                 LOGGER.error("Invalid worker index specified {}", workerIndex, ex);
                 throw ex;
             }
             if (workerNumber <= INVALID_VALUE) {
                 LOGGER.error("Invalid worker number specified {}", workerNumber);
-                throw new IllegalArgumentException(String.format("Invalid workerNumber {} specified", workerNumber));
+                throw new IllegalArgumentException(String.format("Invalid workerNumber %d specified", workerNumber));
             }
             if (stageNum <= INVALID_VALUE) {
                 LOGGER.error("Invalid stage num specified {}", stageNum);
-                throw new IllegalArgumentException(String.format("Invalid stageNum {} specified", stageNum));
+                throw new IllegalArgumentException(String.format("Invalid stageNum %d specified", stageNum));
             }
             if (numberOfPorts <= INVALID_VALUE) {
                 LOGGER.error("Invalid num ports specified {}", numberOfPorts);
-                throw new IllegalArgumentException(String.format("Invalid no of Ports {} specified", numberOfPorts));
+                throw new IllegalArgumentException(String.format("Invalid no of Ports %d specified", numberOfPorts));
             }
             if (totalResubmitCount < 0) {
                 LOGGER.error("Invalid resubmit count specified {}", totalResubmitCount);
                 throw new IllegalArgumentException(
-                        String.format("Invalid resubmit Count {} specified", totalResubmitCount));
+                        String.format("Invalid resubmit Count %d specified", totalResubmitCount));
             }
 
             if (eventPublisher == null) {
                 IllegalArgumentException ex = new IllegalArgumentException(
-                        String.format("lifecycle event publisher cannot be null"));
+                    "lifecycle event publisher cannot be null");
                 LOGGER.error("lifecycle event publisher is null", ex);
                 throw ex;
             }

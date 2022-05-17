@@ -205,7 +205,7 @@ public class MantisJobStore {
                 if (stageMetadata.isPresent()) {
                     storageProvider.storeMantisStage(stageMetadata.get());
                 } else {
-                    throw new RuntimeException(String.format("No such stage {}", workerRequest.getStageNum()));
+                    throw new RuntimeException(String.format("No such stage %d", workerRequest.getStageNum()));
                 }
                 savedStageList.add(workerRequest.getStageNum());
             }
