@@ -37,15 +37,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
@@ -299,11 +291,11 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
             Objects.requireNonNull(jobId, "JobId cannot be null");
             //Objects.requireNonNull(scalingPolicy, "Scaling policy cannot be null");
             if (stageNum <= -1) {
-                throw new IllegalArgumentException(String.format("Invalid stage number {} ", stageNum));
+                throw new IllegalArgumentException(String.format("Invalid stage number %d", stageNum));
             }
 
             if (numStages <= 0) {
-                throw new IllegalArgumentException(String.format("Invalid no of stages {} ", numStages));
+                throw new IllegalArgumentException(String.format("Invalid no of stages %d", numStages));
             }
 
 
@@ -480,13 +472,13 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
         // if old worker is null, ensure no other worker is associated with this index
         if (!workerByIndexMetadataSet.containsKey(index)) {
             // This index is associated with some worker but given oldWorker is null abort.
-            String errMsg = String.format("Index %s does not exist in workerByIndexMetadataSet %s for job %s", index,
+            String errMsg = String.format("Index %d does not exist in workerByIndexMetadataSet %s for job %s", index,
                     workerByIndexMetadataSet, this.jobId);
             throw new IllegalArgumentException(errMsg);
         } else {
             if (oldWorkerMetadata.getWorkerIndex() != index) {
-                String errMsg = String.format("While replacing worker in Job %s , Old worker Index %s does not match "
-                        + "the new worker index %s", this.jobId, oldWorkerMetadata.getWorkerIndex(), index);
+                String errMsg = String.format("While replacing worker in Job %s, Old worker index %d does not match new %d",
+                        this.jobId, oldWorkerMetadata.getWorkerIndex(), index);
                 LOGGER.error(errMsg);
                 throw new IllegalArgumentException(errMsg);
             }
@@ -496,10 +488,9 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
             JobWorker worker = workerByIndexMetadataSet.get(index);
             if (worker.getMetadata().getWorkerNumber() != oldWorkerMetadata.getWorkerNumber()) {
 
-                String errMsg = ("Did not replace worker " + oldWorkerMetadata.getWorkerNumber() + " with "
-                        + newWorkerMetadata.getWorkerNumber() + " for index " + newWorkerMetadata.getWorkerIndex()
-                        + " of job " + jobId + ", different worker " + worker.getMetadata().getWorkerNumber()
-                        + " exists already");
+                String errMsg = String.format("Did not replace worker %d with %d for index %d of job %s, different worker %d exists already",
+                    oldWorkerMetadata.getWorkerNumber(), newWorkerMetadata.getWorkerNumber(), newWorkerMetadata.getWorkerIndex(),
+                    jobId, worker.getMetadata().getWorkerNumber());
                 throw new IllegalArgumentException(errMsg);
             } else {
                 // mark old worker as terminated
@@ -521,10 +512,8 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
                 } catch (Exception e) {
                     LOGGER.error("Exception archiving worker", e);
                 }
-                LOGGER.info("Replaced worker " + oldWorkerMetadata.getWorkerNumber() + " with "
-                        + newWorkerMetadata.getWorkerNumber()
-                        + " for index " + newWorkerMetadata.getWorkerIndex() + " of job " + jobId);
-
+                LOGGER.info("Replaced worker {} with {} for index {} of job {}", oldWorkerMetadata.getWorkerNumber(),
+                    newWorkerMetadata.getWorkerNumber(), newWorkerMetadata.getWorkerIndex(), jobId);
             }
 
         }

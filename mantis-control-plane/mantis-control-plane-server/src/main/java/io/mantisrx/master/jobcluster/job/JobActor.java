@@ -17,22 +17,12 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
-import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.ERROR;
-import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.INFO;
-import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.WARN;
+import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent.StatusEventType.*;
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
-import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
+import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.*;
+import static java.util.Optional.*;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
-import akka.actor.Props;
-import akka.actor.SupervisorStrategy;
+import akka.actor.*;
 import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.spectator.api.BasicTag;
@@ -45,46 +35,19 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
-import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
-import io.mantisrx.master.jobcluster.job.worker.JobWorker;
-import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
-import io.mantisrx.master.jobcluster.job.worker.WorkerState;
-import io.mantisrx.master.jobcluster.job.worker.WorkerStatus;
-import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
+import io.mantisrx.master.jobcluster.job.worker.*;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDefinitionUpdatedFromJobActorRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInfoResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLatestJobDiscoveryInfoResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListWorkersResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerResponse;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
-import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.master.jobcluster.proto.JobProto.InitJob;
 import io.mantisrx.master.jobcluster.proto.JobProto.JobInitialized;
-import io.mantisrx.runtime.JobConstraints;
-import io.mantisrx.runtime.JobSla;
-import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.runtime.MantisJobDurationType;
-import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.runtime.MigrationStrategy;
-import io.mantisrx.runtime.WorkerMigrationConfig;
+import io.mantisrx.runtime.*;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.core.JobSchedulingInfo;
+import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WorkerAssignments;
-import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ConstraintsEvaluators;
@@ -99,11 +62,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
-import io.mantisrx.server.master.scheduler.ScheduleRequest;
-import io.mantisrx.server.master.scheduler.WorkerEvent;
-import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
+import io.mantisrx.server.master.scheduler.*;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -112,16 +71,7 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -961,7 +911,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     this.jobId);
             numScaleStage.increment();
             sender.tell(new ScaleStageResponse(scaleStage.requestId, SUCCESS,
-                    String.format("Scaled stage %s to %s workers", scaleStage.getStageNum(), actualScaleup),
+                    String.format("Scaled stage %d to %d workers", scaleStage.getStageNum(), actualScaleup),
                     actualScaleup), getSelf());
         } catch (Exception e) {
             String msg = String.format("Stage %d scale failed due to %s", scaleStage.getStageNum(), e.getMessage());
@@ -1627,7 +1577,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 LOGGER.debug("Got stageMeta {}", stageMetadataOp);
 
                 if (!stageMetadataOp.isPresent()) {
-                    throw new RuntimeException(String.format("No such stage %s", workerRequest.getStageNum()));
+                    throw new RuntimeException(String.format("No such stage %d", workerRequest.getStageNum()));
                 }
                 IMantisStageMetadata stageMetadata = stageMetadataOp.get();
 
@@ -2216,12 +2166,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     JobWorker worker = stageMeta.get().getWorkerByWorkerNumber(workerNum);
                     resubmitWorker(worker);
                 } else {
-                    throw new Exception(String.format("Invalid stage {} in resubmit Worker request {}", stageNum,
+                    throw new Exception(String.format("Invalid stage %d in resubmit Worker request %d", stageNum,
                             workerNum));
                 }
             } else {
                 LOGGER.warn("No such Worker number {} in Job with ID {}", workerNum, jobId);
-                throw new Exception(String.format("No such worker number {} in resubmit Worker request", workerNum));
+                throw new Exception(String.format("No such worker number %d in resubmit Worker request", workerNum));
             }
         }
 
@@ -2256,14 +2206,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 Integer stageNo = workerToStageMap.get(oldWorkerMetadata.getWorkerId().getWorkerNum());
                 if (stageNo == null) {
-                    String errMsg = String.format("Stage {} not found in Job {} while resubmiting worker {}",
+                    String errMsg = String.format("Stage %d not found in Job %s while resubmiting worker %s",
                             stageNo, jobId, oldWorker);
                     LOGGER.warn(errMsg);
                     throw new Exception(errMsg);
                 }
                 Optional<IMantisStageMetadata> stageMetaOp = mantisJobMetaData.getStageMetadata(stageNo);
                 if (!stageMetaOp.isPresent()) {
-                    String errMsg = String.format("Stage {} not found in Job {} while resubmiting worker {}",
+                    String errMsg = String.format("Stage %d not found in Job %s while resubmiting worker %s",
                             stageNo, jobId, oldWorker);
                     LOGGER.warn(errMsg);
                     throw new Exception(errMsg);
@@ -2330,15 +2280,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 try {
                     stageMetaData.unsafeSetNumWorkers(newNumWorkerCount, jobStore);
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
-                            "Setting #workers to " + newNumWorkerCount + " for stage "
-                                    + stageMetaData.getStageNum() + ", reason=" + reason, getJobId(), getJobState()));
+                            String.format("Setting #workers to %d for stage %d, reason=%s", newNumWorkerCount,
+                                    stageMetaData.getStageNum(), reason), getJobId(), getJobState()));
                 } catch (Exception e) {
-                    String error = String.format("Exception updating stage {} worker count for Job {} due to {}",
+                    String error = String.format("Exception updating stage %d worker count for Job %s due to %s",
                             stageMetaData.getStageNum(), jobId, e.getMessage());
                     LOGGER.warn(error);
                     eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(WARN,
-                            "Scaling stage failed for stage " + stageMetaData.getStageNum() + " reason: "
-                                    + e.getMessage(),
+                            String.format("Scaling stage failed for stage %d reason: %s", stageMetaData.getStageNum(), e.getMessage()),
                             getJobId(), getJobState()));
                     throw new RuntimeException(error);
                 }
