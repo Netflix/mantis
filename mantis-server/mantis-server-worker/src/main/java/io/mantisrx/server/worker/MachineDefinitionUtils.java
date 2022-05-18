@@ -19,10 +19,11 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 
 public class MachineDefinitionUtils {
-    public static MachineDefinition sys(WorkerPorts workerPorts) {
+    public static MachineDefinition sys(WorkerPorts workerPorts, double networkBandwidthInMB) {
         return new MachineDefinition(
             Hardware.getNumberCPUCores(),
             Hardware.getSizeOfPhysicalMemory(),
+            networkBandwidthInMB,
             Hardware.getSizeOfDisk(),
             workerPorts.getNumberOfPorts());
     }
