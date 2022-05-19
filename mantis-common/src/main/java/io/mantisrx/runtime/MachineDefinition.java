@@ -24,6 +24,8 @@ import java.io.Serializable;
 
 public class MachineDefinition implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static final double defaultMbps = 128.0;
     private static final int minPorts = 1;
     private final double cpuCores;

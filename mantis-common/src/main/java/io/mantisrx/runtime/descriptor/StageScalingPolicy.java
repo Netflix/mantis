@@ -21,13 +21,15 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 
-public class StageScalingPolicy {
+public class StageScalingPolicy implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private final int stage;
     private final int min;
     private final int max;
@@ -183,8 +185,9 @@ public class StageScalingPolicy {
         SourceJobDrop
     }
 
-    public static class RollingCount {
+    public static class RollingCount implements Serializable {
 
+        private static final long serialVersionUID = 1L;
         private final int count;
         private final int of;
 
@@ -211,8 +214,9 @@ public class StageScalingPolicy {
         }
     }
 
-    public static class Strategy {
+    public static class Strategy implements Serializable {
 
+        private static final long serialVersionUID = 1L;
         private final ScalingReason reason;
         private final double scaleDownBelowPct;
         private final double scaleUpAbovePct;

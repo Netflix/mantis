@@ -26,6 +26,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class Parameter implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final String name;
     private final String value;
 
