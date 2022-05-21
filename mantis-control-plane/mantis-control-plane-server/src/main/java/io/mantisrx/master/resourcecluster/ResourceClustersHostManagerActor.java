@@ -164,6 +164,17 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
          */
         log.info("Entering onProvisionResourceClusterRequest: " + req);
 
+        // For now only full spec is supported during provision stage.
+        if (req.getClusterSpec() == null) {
+            pipe(
+                CompletableFuture.completedFuture(GetResourceClusterResponse.builder()
+                    .responseCode(ResponseCode.CLIENT_ERROR)
+                    .message("No cluster spec found in provision request.")
+                    .build()),
+                getContext().dispatcher())
+                .to(getSender());
+        }
+
         ResourceClusterSpecWritable specWritable = ResourceClusterSpecWritable.builder()
                 .clusterSpec(req.getClusterSpec())
                 .version("")

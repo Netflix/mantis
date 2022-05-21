@@ -231,7 +231,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     }
 
     private Route getRegisteredResourceClustersRoute() {
-        log.trace("GET /api/v1/resourceClusters called");
+        log.info("GET /api/v1/resourceClusters called");
         return parameterMap(param ->
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> {
