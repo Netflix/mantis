@@ -19,7 +19,6 @@ package io.mantisrx.master.resourcecluster.writable;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Singular;
