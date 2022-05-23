@@ -36,8 +36,10 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -54,25 +56,20 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private final Duration scalerPullThreshold;
 
-    private final Duration scalerTimerTimeout;
-
     private final ActorRef resourceClusterActor;
     private final ActorRef resourceClusterHostActor;
     private final ResourceClusterStorageProvider storageProvider;
 
-    private Map<String, ResourceClusterScaleSpec> skuToRuleMap;
+    private final ConcurrentMap<String, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
+    private final AtomicReference<MachineDefinitionToSkuMapper> skuMapperRef = new AtomicReference<>(
+        new MachineDefinitionToSkuMapper(null));
 
     private final Clock clock;
-    private Instant lastPullActivity;
-    private Instant lastActionActivity;
-
-    // TODO: scaler ruleSet; coolDown tracker;
 
     public static Props props(
         ClusterID clusterId,
         Clock clock,
         Duration scalerPullThreshold,
-        Duration scalerTimerTimeout,
         ResourceClusterStorageProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
@@ -81,7 +78,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             clusterId,
             clock,
             scalerPullThreshold,
-            scalerTimerTimeout,
             storageProvider,
             resourceClusterHostActor,
             resourceClusterActor);
@@ -91,7 +87,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterId,
         Clock clock,
         Duration scalerPullThreshold,
-        Duration scalerTimerTimeout,
         ResourceClusterStorageProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
@@ -101,9 +96,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.storageProvider = storageProvider;
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
-        this.scalerTimerTimeout = scalerTimerTimeout;
 
-        // TODO load ruleset from storage provider.
         init();
     }
 
@@ -120,12 +113,19 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private void init() {
         this.storageProvider.getResourceClusterScaleRules(this.clusterId.toString())
-                .thenAccept(rules -> {
-                    this.skuToRuleMap = rules
-                        .getScaleRules()
-                        .stream()
-                        .collect(Collectors.toMap(ResourceClusterScaleSpec::getSkuId, Function.identity()));
-                });
+                .thenAccept(rules ->
+                     rules
+                        .getScaleRules().values()
+                        .forEach(rule -> {
+                            log.info("Adding scaleRule: {}", rule);
+                            this.skuToRuleMap.put(
+                                rule.getSkuId(),
+                                new ClusterAvailabilityRule(rule, this.clock));
+                        }));
+
+        this.storageProvider.getResourceClusterSpecWritable(this.clusterId.toString())
+            .thenAccept(specWritable ->
+                this.skuMapperRef.set(new MachineDefinitionToSkuMapper(specWritable.getClusterSpec())));
 
         getTimers().startTimerWithFixedDelay(
             "ClusterScaler-" + this.clusterId,
@@ -137,6 +137,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         log.info("Getting cluster usage: {}", usageResponse);
 
         // TODO Check last activity time and skip if within coolDown
+        // Persistence notes
+        // mapping: clusterId -> skuId -> (ASG level) -> scale rule;
+        // work: add resource persistence in kvdal provider + file provider;
+        // data format: "resclusterprefix-" + clusterId: List of rules
+
         // get usage by mDef
         // for each mdef: locate rule for the mdef, apply rule if under coolDown.
         // update coolDown timer.
@@ -145,7 +150,21 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         // 2 rule apply to usage.
         // 3 translate between decision to scale request. (inline for now)
 
-        getSender().tell(Ack.class, self());
+        usageResponse.getUsages().forEach(usage -> {
+            Optional<String> skuIdO = this.skuMapperRef.get().map(usage.getDef());
+            if (skuIdO.isPresent() && this.skuToRuleMap.containsKey(skuIdO.get())) {
+                Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuIdO.get()).apply(usage);
+                if (decisionO.isPresent()) {
+                    log.info("Informing scale decision: {}", decisionO.get());
+                    this.resourceClusterHostActor.tell(translateScaleDecision(decisionO.get()), self());
+                }
+            }
+            else {
+                log.info("No rule is available for {}", usage.getDef());
+            }
+        });
+
+        getSender().tell(Ack.getInstance(), self());
     }
 
     private void onTriggerClusterUsageRequest(TriggerClusterUsageRequest req) {
@@ -164,24 +183,21 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Value
     @Builder
     static class TriggerClusterUsageRequest {
-        // TODO: cluster id might not be needed if connecting to each resCluster actor directly.
         ClusterID clusterID;
     }
 
-
-
-    // mapping: clusterId -> skuId -> (ASG level) -> scale rule;
-    // work: add resource persistence in kvdal provider + file provider;
-    // data format: "resclusterprefix-" + clusterId: List of rules
-
     static class MachineDefinitionToSkuMapper {
-        Map<MachineDefinition, String> mDefToSkuMap;
+        private final Map<MachineDefinition, String> mDefToSkuMap = new HashMap<>();
 
         public MachineDefinitionToSkuMapper(MantisResourceClusterSpec clusterSpec) {
-            this.mDefToSkuMap = new HashMap<>();
+            if (clusterSpec == null) {
+                return;
+            }
 
             clusterSpec.getSkuSpecs().forEach(skuSpec -> {
-                this.mDefToSkuMap.put(skuToMachineDefinition(skuSpec), skuSpec.getSkuId());
+                MachineDefinition mdef = skuToMachineDefinition(skuSpec);
+                this.mDefToSkuMap.put(mdef, skuSpec.getSkuId());
+                log.info("MachineDefinition mapper: {}, {}", mdef, skuSpec.getSkuId());
             });
         }
 
@@ -207,71 +223,58 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         }
     }
 
-    enum ScaleAction {
-        NoAction,
-        ScaleUp,
-        ScaleDown
-    }
-
     static class ClusterAvailabilityRule {
-        private final ActorRef actuatorRef;
         private final ResourceClusterScaleSpec scaleSpec;
         private final Clock clock;
         private Instant lastActionInstant;
 
-        public ClusterAvailabilityRule(ActorRef actuatorRef, ResourceClusterScaleSpec scaleSpec, Clock clock) {
-            this.actuatorRef = actuatorRef;
+        public ClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, Clock clock) {
             this.scaleSpec = scaleSpec;
             this.clock = clock;
 
             this.lastActionInstant = Instant.MIN;
         }
         public Optional<ScaleDecision> apply(GetClusterUsageResponse.UsageByMachineDefinition usage) {
-            // assume matched with mDef already.
-            ScaleAction action = ScaleAction.NoAction;
-
             // Cool down check
             if (this.lastActionInstant.plusSeconds(this.scaleSpec.getCoolDownSecs()).compareTo(clock.instant()) > 0) {
                 log.debug("Action under coolDown, skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+                return Optional.empty();
             }
 
+            this.lastActionInstant = clock.instant();
+
+            Optional<ScaleDecision> decision = Optional.empty();
             if (usage.getIdleCount() > scaleSpec.getMaxIdleToKeep()) {
                 // too many idle agents, scale down.
-                action = ScaleAction.ScaleDown;
+                int step = usage.getIdleCount() - scaleSpec.getMaxIdleToKeep();
+                int newSize = Math.max(
+                    usage.getTotalCount() - step, this.scaleSpec.getMinSize());
+                decision = Optional.of(
+                    ScaleDecision.builder()
+                        .clusterId(this.scaleSpec.getClusterId())
+                        .skuId(this.scaleSpec.getSkuId())
+                        .desireSize(newSize)
+                        .maxSize(newSize)
+                        .minSize(newSize)
+                        .build());
             }
             else if (usage.getIdleCount() < scaleSpec.getMinIdleToKeep()) {
                 // scale up
-                action = ScaleAction.ScaleUp;
-            }
-
-            Optional<ScaleDecision> decision = Optional.empty();
-            switch (action) {
-                case ScaleDown:
-                    int newSize = Math.min(
-                        usage.getTotalCount() - this.scaleSpec.getStepSize(), this.scaleSpec.getMinSize());
-                    decision = Optional.of(ScaleDecision.builder()
-                        .desireSize(usage.getTotalCount() - this.scaleSpec.getStepSize())
+                int step = scaleSpec.getMinIdleToKeep() - usage.getIdleCount();
+                int newSize = Math.min(
+                    usage.getTotalCount() + step, this.scaleSpec.getMaxSize());
+                decision = Optional.of(
+                    ScaleDecision.builder()
+                        .clusterId(this.scaleSpec.getClusterId())
+                        .skuId(this.scaleSpec.getSkuId())
+                        .desireSize(newSize)
                         .maxSize(newSize)
                         .minSize(newSize)
                         .build());
-                    break;
-
-                case ScaleUp:
-                    newSize = Math.max(
-                        usage.getTotalCount() + this.scaleSpec.getStepSize(), this.scaleSpec.getMaxSize());
-                    decision = Optional.of(ScaleDecision.builder()
-                        .desireSize(usage.getTotalCount() - this.scaleSpec.getStepSize())
-                        .maxSize(newSize)
-                        .minSize(newSize)
-                        .build());
-                    break;
-
-                case NoAction:
-                    break;
             }
 
             log.info("Scale Decision for {}-{}: {}",
-                this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision.get());
+                this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision);
             return decision;
         }
     }

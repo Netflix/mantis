@@ -24,8 +24,10 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.resourceprovider.SimpleFileResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +54,68 @@ public class SimpleFileResourceStorageProviderTests {
                 "}\n");
         system = ActorSystem.create("FileResourceStorageProviderTests", config.withFallback(ConfigFactory.load()));
         deleteFiles();
+    }
+
+    @Test
+    public void testResourceClusterRules() throws ExecutionException, InterruptedException, IOException {
+        final String clusterId = "mantisRCMTest2";
+        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system);
+
+        ResourceClusterScaleSpec rule1 = ResourceClusterScaleSpec.builder()
+            .clusterId(clusterId)
+            .skuId("small")
+            .coolDownSecs(5)
+            .maxIdleToKeep(10)
+            .minIdleToKeep(5)
+            .minSize(1)
+            .maxSize(25)
+            .build();
+        CompletionStage<ResourceClusterScaleRulesWritable> updateFut = prov.registerResourceClusterScaleRule(rule1);
+        System.out.println("res: " + updateFut.toCompletableFuture().get());
+
+        CompletionStage<ResourceClusterScaleRulesWritable> rulesFut = prov.getResourceClusterScaleRules(clusterId);
+        ResourceClusterScaleRulesWritable rules = rulesFut.toCompletableFuture().get();
+        assertEquals(1, rules.getScaleRules().size());
+        assertEquals(clusterId, rules.getClusterId());
+        assertEquals(rule1, rules.getScaleRules().get("small"));
+
+        ResourceClusterScaleSpec rule2 = ResourceClusterScaleSpec.builder()
+            .clusterId(clusterId)
+            .skuId("large")
+            .coolDownSecs(9)
+            .maxIdleToKeep(99)
+            .minIdleToKeep(5)
+            .minSize(1)
+            .maxSize(25)
+            .build();
+        CompletionStage<ResourceClusterScaleRulesWritable> updateFut2 = prov.registerResourceClusterScaleRule(rule2);
+        updateFut2.toCompletableFuture().get();
+
+        CompletionStage<ResourceClusterScaleRulesWritable> rulesFut2 = prov.getResourceClusterScaleRules(clusterId);
+        rules = rulesFut2.toCompletableFuture().get();
+        assertEquals(2, rules.getScaleRules().size());
+        assertEquals(clusterId, rules.getClusterId());
+        assertEquals(rule1, rules.getScaleRules().get("small"));
+        assertEquals(rule2, rules.getScaleRules().get("large"));
+
+        ResourceClusterScaleSpec rule3 = ResourceClusterScaleSpec.builder()
+            .clusterId(clusterId)
+            .skuId("small")
+            .coolDownSecs(999)
+            .maxIdleToKeep(123)
+            .minIdleToKeep(2)
+            .minSize(1)
+            .maxSize(25)
+            .build();
+        CompletionStage<ResourceClusterScaleRulesWritable> updateFut3 = prov.registerResourceClusterScaleRule(rule3);
+        updateFut3.toCompletableFuture().get();
+
+        CompletionStage<ResourceClusterScaleRulesWritable> rulesFut3 = prov.getResourceClusterScaleRules(clusterId);
+        rules = rulesFut3.toCompletableFuture().get();
+        assertEquals(2, rules.getScaleRules().size());
+        assertEquals(clusterId, rules.getClusterId());
+        assertEquals(rule3, rules.getScaleRules().get("small"));
+        assertEquals(rule2, rules.getScaleRules().get("large"));
     }
 
     @Test

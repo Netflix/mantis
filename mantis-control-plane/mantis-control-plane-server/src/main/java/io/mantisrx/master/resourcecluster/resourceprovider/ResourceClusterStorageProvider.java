@@ -16,7 +16,9 @@
 
 package io.mantisrx.master.resourcecluster.resourceprovider;
 
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import java.util.concurrent.CompletionStage;
 
@@ -36,4 +38,12 @@ public interface ResourceClusterStorageProvider {
     CompletionStage<RegisteredResourceClustersWritable> getRegisteredResourceClustersWritable();
 
     CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id);
+
+    CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId);
+
+    CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(
+        ResourceClusterScaleRulesWritable ruleSpec);
+
+    CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(
+        ResourceClusterScaleSpec rule);
 }
