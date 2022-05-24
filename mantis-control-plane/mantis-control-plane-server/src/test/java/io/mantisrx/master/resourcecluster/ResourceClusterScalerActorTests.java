@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import static io.mantisrx.master.resourcecluster.ResourceClusterActorTest.actorSystem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +47,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -105,7 +108,7 @@ public class ResourceClusterScalerActorTests {
                         .minSize(11)
                         .maxSize(15)
                         .build())
-                    .scaleRule(skuSmall, ResourceClusterScaleSpec.builder()
+                    .scaleRule(skuLarge, ResourceClusterScaleSpec.builder()
                         .clusterId(CLUSTER_ID.getResourceID())
                         .skuId(skuLarge)
                         .coolDownSecs(10)
@@ -148,25 +151,26 @@ public class ResourceClusterScalerActorTests {
 
         assertNotNull(clusterActorProbe.expectMsgClass(Ack.class));
 
-        ScaleResourceRequest decision1 = hostActorProbe.expectMsgClass(ScaleResourceRequest.class);
+        Set<ScaleResourceRequest> decisions = new HashSet<>();
+        decisions.add(hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
+        decisions.add(hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
+
         int newSize = 11;
-        assertEquals(
+        assertTrue(decisions.contains(
             ScaleResourceRequest.builder()
                 .clusterId(CLUSTER_ID.getResourceID())
                 .skuId(skuSmall)
                 .desireSize(newSize)
-                .build(),
-            decision1);
+                .build()));
 
-        ScaleResourceRequest decision2 = hostActorProbe.expectMsgClass(ScaleResourceRequest.class);
+
         newSize = 15;
-        assertEquals(
+        assertTrue(decisions.contains(
             ScaleResourceRequest.builder()
                 .clusterId(CLUSTER_ID.getResourceID())
                 .skuId(skuLarge)
                 .desireSize(newSize)
-                .build(),
-            decision2);
+                .build()));
 
         // Test trigger again
         GetClusterUsageRequest req2 = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);

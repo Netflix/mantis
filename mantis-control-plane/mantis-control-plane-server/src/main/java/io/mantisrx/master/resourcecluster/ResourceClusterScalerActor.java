@@ -159,7 +159,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
             }
             else {
-                log.info("No rule is available for {}", usage.getDef());
+                log.info("No sku rule is available for {}", usage.getDef());
             }
         });
 
@@ -196,7 +196,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             clusterSpec.getSkuSpecs().forEach(skuSpec -> {
                 MachineDefinition mdef = skuToMachineDefinition(skuSpec);
                 this.mDefToSkuMap.put(mdef, skuSpec.getSkuId());
-                log.info("MachineDefinition mapper: {}, {}", mdef, skuSpec.getSkuId());
+                log.info("Add MachineDefinition mapper: {}, {}", mdef, skuSpec.getSkuId());
             });
         }
 

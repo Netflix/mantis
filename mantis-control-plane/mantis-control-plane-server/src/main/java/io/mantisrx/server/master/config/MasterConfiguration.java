@@ -327,6 +327,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("300000") // 5 minutes
     int getHeartbeatIntervalInMs();
 
+    @Config("mantis.job.master.resource.cluster.scaler.interval.secs")
+    @Default("60")
+    int getScalerTriggerThresholdInSecs();
+
     @Config("mantis.agent.assignment.interval.ms")
     @Default("60000") // 1 minute
     int getAssignmentIntervalInMs();
