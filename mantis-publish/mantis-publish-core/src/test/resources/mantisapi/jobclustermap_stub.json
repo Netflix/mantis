@@ -1,0 +1,9 @@
+{
+    "version": "1",
+    "timestamp": 3,
+    "mappings": {
+        "testApp": {
+            "__default__": "SharedMrePublishEventSource"
+        }
+    }
+}
