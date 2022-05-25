@@ -35,6 +35,10 @@ import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -62,6 +66,10 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
  * /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
+ * <p>
+ * <p>
+ * /api/v1/resourceClusters/{}/scaleRule                              (POST)
+ * /api/v1/resourceClusters/{}/scaleRules                             (GET, POST)
  * <p>
  * /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
  */
@@ -154,6 +162,26 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                 path(
                     PathMatchers.segment().slash("getUnregisteredTaskExecutors"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getUnregisteredTaskExecutors()))))
+                ),
+                // /{}/scaleRule
+                path(
+                    PathMatchers.segment().slash("scaleRule"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+
+                        // POST
+                        post(() -> createSingleScaleRule(clusterName))
+                    ))
+                ),
+                // /{}/scaleRules
+                path(
+                    PathMatchers.segment().slash("scaleRules"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        // GET
+                        get(() -> getScaleRules(clusterName)),
+
+                        // POST
+                        post(() -> createAllScaleRules(clusterName))
+                    ))
                 ),
 
                 // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
@@ -258,7 +286,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private Route scaleClusterSku(String clusterName) {
         return entity(Jackson.unmarshaller(ScaleResourceRequest.class), skuScaleRequest -> {
-            log.info("POST api/v1/resourceClusters/{}/actions/scaleSku {}", skuScaleRequest);
+            log.info("POST api/v1/resourceClusters/{}/actions/scaleSku {}", clusterName, skuScaleRequest);
             final CompletionStage<ScaleResourceResponse> response =
                 this.resourceClusterRouteHandler.scale(skuScaleRequest);
 
@@ -272,5 +300,55 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                 HttpRequestMetrics.HttpVerb.POST
             );
         });
+    }
+
+    private Route createSingleScaleRule(String clusterName) {
+        return entity(Jackson.unmarshaller(CreateResourceClusterScaleRuleRequest.class), scaleRuleReq -> {
+            log.info("POST api/v1/resourceClusters/{}/scaleRule {}", clusterName, scaleRuleReq);
+            final CompletionStage<GetResourceClusterScaleRulesResponse> response =
+                this.resourceClusterRouteHandler.createSingleScaleRule(scaleRuleReq);
+
+            return completeAsync(
+                response,
+                resp -> complete(
+                    StatusCodes.ACCEPTED,
+                    resp,
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.POST
+            );
+        });
+    }
+
+    private Route createAllScaleRules(String clusterName) {
+        return entity(Jackson.unmarshaller(CreateAllResourceClusterScaleRulesRequest.class), scaleRuleReq -> {
+            log.info("POST api/v1/resourceClusters/{}/scaleRules {}", clusterName, scaleRuleReq);
+            final CompletionStage<GetResourceClusterScaleRulesResponse> response =
+                this.resourceClusterRouteHandler.createAllScaleRule(scaleRuleReq);
+
+            return completeAsync(
+                response,
+                resp -> complete(
+                    StatusCodes.ACCEPTED,
+                    resp,
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.POST
+            );
+        });
+    }
+
+    private Route getScaleRules(String clusterName) {
+        log.info("GET /api/v1/resourceClusters/{}/scaleRules called", clusterName);
+        return parameterMap(param ->
+            alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
+                uri -> completeAsync(
+                    this.resourceClusterRouteHandler.getClusterScaleRules(
+                        GetResourceClusterScaleRulesRequest.builder().clusterId(clusterName).build()),
+                    resp -> completeOK(
+                        resp,
+                        Jackson.marshaller()),
+                    Endpoints.RESOURCE_CLUSTERS,
+                    HttpVerb.GET))));
     }
 }

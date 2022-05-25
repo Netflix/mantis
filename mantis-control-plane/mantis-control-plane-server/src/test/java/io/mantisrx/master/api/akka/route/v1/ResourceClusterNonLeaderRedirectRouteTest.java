@@ -43,6 +43,8 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResou
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse.RegisteredResourceCluster;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
@@ -229,6 +231,65 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertStatusCode(StatusCodes.NOT_FOUND);
     }
 
+    @Test
+    public void testResourceClusterScaleRulesRoutes() throws IOException {
+        // test get empty cluster rule.
+        testRoute.run(HttpRequest.GET(getResourceClusterScaleRulesEndpoint(CLUSTER_ID)))
+            .assertStatusCode(StatusCodes.OK)
+            .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
+                GetResourceClusterScaleRulesResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .clusterId(CLUSTER_ID)
+                    .rules(Collections.emptyList())
+                    .build());
+
+        // test register new cluster rule.
+        CreateAllResourceClusterScaleRulesRequest createRuleReq1 = Jackson.fromJSON(
+            ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_CREATE,
+            CreateAllResourceClusterScaleRulesRequest.class);
+
+        testRoute.run(
+                HttpRequest.POST(getResourceClusterScaleRulesEndpoint(CLUSTER_ID))
+                    .withEntity(HttpEntities.create(
+                        ContentTypes.APPLICATION_JSON,
+                        ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_CREATE)))
+            .assertStatusCode(StatusCodes.ACCEPTED)
+            .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
+                GetResourceClusterScaleRulesResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .clusterId(CLUSTER_ID)
+                    .rules(createRuleReq1.getRules())
+                    .build());
+
+        // test get two cluster rules.
+        testRoute.run(HttpRequest.GET(getResourceClusterScaleRulesEndpoint(CLUSTER_ID)))
+            .assertStatusCode(StatusCodes.OK)
+            .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
+                GetResourceClusterScaleRulesResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .clusterId(CLUSTER_ID)
+                    .rules(createRuleReq1.getRules())
+                    .build());
+
+        testRoute.run(
+                HttpRequest.POST(getResourceClusterScaleRuleEndpoint(CLUSTER_ID))
+                    .withEntity(HttpEntities.create(
+                        ContentTypes.APPLICATION_JSON,
+                        ResourceClustersPayloads.RESOURCE_CLUSTER_SINGLE_SCALE_RULE_CREATE)))
+            .assertStatusCode(StatusCodes.ACCEPTED)
+            .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
+                Jackson.fromJSON(
+                    ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_RESULT,
+                    GetResourceClusterScaleRulesResponse.class));
+
+        testRoute.run(HttpRequest.GET(getResourceClusterScaleRulesEndpoint(CLUSTER_ID)))
+            .assertStatusCode(StatusCodes.OK)
+            .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
+                Jackson.fromJSON(
+                    ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_RESULT,
+                    GetResourceClusterScaleRulesResponse.class));
+    }
+
     final String getResourceClusterEndpoint() {
         return "/api/v1/resourceClusters";
     }
@@ -236,6 +297,18 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     final String getResourceClusterEndpoint(String clusterId) {
         return String.format(
             "/api/v1/resourceClusters/%s",
+            clusterId);
+    }
+
+    final String getResourceClusterScaleRulesEndpoint(String clusterId) {
+        return String.format(
+            "/api/v1/resourceClusters/%s/scaleRules",
+            clusterId);
+    }
+
+    final String getResourceClusterScaleRuleEndpoint(String clusterId) {
+        return String.format(
+            "/api/v1/resourceClusters/%s/scaleRule",
             clusterId);
     }
 

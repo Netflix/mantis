@@ -1,0 +1,13 @@
+{
+    "clusterId": "mantisResourceClusterUT1",
+    "rule":
+    {
+        "clusterId": "mantisResourceClusterUT1",
+        "skuId": "small",
+        "minIdleToKeep": 1,
+        "minSize": 1,
+        "maxIdleToKeep": 1,
+        "maxSize": 1,
+        "coolDownSecs": 90
+    }
+}

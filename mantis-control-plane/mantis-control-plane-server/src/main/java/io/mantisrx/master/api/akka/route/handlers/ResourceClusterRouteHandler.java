@@ -22,6 +22,10 @@ import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import java.util.concurrent.CompletionStage;
@@ -36,4 +40,13 @@ public interface ResourceClusterRouteHandler {
     CompletionStage<GetResourceClusterResponse> get(final GetResourceClusterSpecRequest request);
 
     CompletionStage<ScaleResourceResponse> scale(final ScaleResourceRequest request);
+
+    CompletionStage<GetResourceClusterScaleRulesResponse> createSingleScaleRule(
+        CreateResourceClusterScaleRuleRequest request);
+
+    CompletionStage<GetResourceClusterScaleRulesResponse> createAllScaleRule(
+        CreateAllResourceClusterScaleRulesRequest rule);
+        
+    CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(
+        GetResourceClusterScaleRulesRequest request);
 }

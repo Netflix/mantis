@@ -26,6 +26,15 @@ public class ResourceClustersPayloads {
     public static final String RESOURCE_CLUSTER_SCALE_RESULT =
         PayloadUtils.getStringFromResource("testpayloads/ResourceClusterScaleResult.json");
 
+    public static final String RESOURCE_CLUSTER_SCALE_RULES_CREATE =
+        PayloadUtils.getStringFromResource("testpayloads/ResourceClusterScaleRulesCreate.json");
+
+    public static final String RESOURCE_CLUSTER_SINGLE_SCALE_RULE_CREATE =
+        PayloadUtils.getStringFromResource("testpayloads/ResourceClusterScaleRuleCreate.json");
+
+    public static final String RESOURCE_CLUSTER_SCALE_RULES_RESULT =
+        PayloadUtils.getStringFromResource("testpayloads/ResourceClusterScaleRulesResult.json");
+
     public static final String RESOURCE_CLUSTER_SKU_SCALE = "{\"clusterId\":\"mantisResourceClusterUT1\","
             + "\"skuId\":\"small\",\"region\":\"us-east-1\",\"envType\":\"Prod\",\"desireSize\":11}\n";
 }

@@ -20,7 +20,7 @@ import lombok.Builder;
 import lombok.Value;
 
 /**
- * Contract between API route and {@link ResourceClustersManagerActor}.
+ * Contract between API route and {@link io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor}.
  */
 @Builder
 @Value

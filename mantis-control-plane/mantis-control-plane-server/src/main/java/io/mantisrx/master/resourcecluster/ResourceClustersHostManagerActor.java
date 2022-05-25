@@ -29,10 +29,18 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteRe
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
@@ -76,13 +84,101 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     @Override
     public Receive createReceive() {
         return ReceiveBuilder.create()
-                .match(ProvisionResourceClusterRequest.class, this::onProvisionResourceClusterRequest)
-                .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
-                .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
-                .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
-                .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
-                .match(DeleteResourceClusterRequest.class, this::onDeleteResourceCluster)
-                .build();
+            .match(ProvisionResourceClusterRequest.class, this::onProvisionResourceClusterRequest)
+            .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
+            .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
+            .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
+            .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
+            .match(DeleteResourceClusterRequest.class, this::onDeleteResourceCluster)
+
+            // Scale rule section
+            .match(CreateAllResourceClusterScaleRulesRequest.class, this::onCreateAllResourceClusterScaleRulesRequest)
+            .match(CreateResourceClusterScaleRuleRequest.class, this::onCreateResourceClusterScaleRuleRequest)
+            .match(GetResourceClusterScaleRulesRequest.class, this::onGetResourceClusterScaleRulesRequest)
+
+            .build();
+    }
+
+    private void onCreateResourceClusterScaleRuleRequest(CreateResourceClusterScaleRuleRequest req) {
+        ResourceClusterScaleSpec ruleSpec = ResourceClusterScaleSpec.builder()
+            .maxSize(req.getRule().getMaxSize())
+            .minSize(req.getRule().getMinSize())
+            .minIdleToKeep(req.getRule().getMinIdleToKeep())
+            .maxIdleToKeep(req.getRule().getMaxIdleToKeep())
+            .coolDownSecs(req.getRule().getCoolDownSecs())
+            .skuId(req.getRule().getSkuId())
+            .clusterId(req.getRule().getClusterId())
+            .build();
+
+        pipe(this.resourceClusterStorageProvider.registerResourceClusterScaleRule(ruleSpec)
+                .thenApply(this::toGetResourceClusterScaleRulesResponse)
+                .exceptionally(err -> {
+                    log.error("Error from registerResourceClusterScaleRule: {}, {}", err.getMessage(), req);
+                    return GetResourceClusterScaleRulesResponse.builder()
+                        .message(err.getMessage())
+                        .responseCode(ResponseCode.SERVER_ERROR).build();
+                }),
+            getContext().dispatcher())
+            .to(getSender());
+    }
+
+    private void onGetResourceClusterScaleRulesRequest(GetResourceClusterScaleRulesRequest req) {
+        pipe(this.resourceClusterStorageProvider.getResourceClusterScaleRules(req.getClusterId())
+                .thenApply(this::toGetResourceClusterScaleRulesResponse)
+                .exceptionally(err -> {
+                    log.error("Error from getResourceClusterScaleRules: {}, {}", err.getMessage(), req);
+                    return GetResourceClusterScaleRulesResponse.builder()
+                        .message(err.getMessage())
+                        .responseCode(ResponseCode.SERVER_ERROR).build();
+                }),
+            getContext().dispatcher())
+            .to(getSender());
+    }
+
+    private void onCreateAllResourceClusterScaleRulesRequest(CreateAllResourceClusterScaleRulesRequest req) {
+        ResourceClusterScaleRulesWritableBuilder rulesBuilder = ResourceClusterScaleRulesWritable.builder()
+            .clusterId(req.getClusterId());
+        req.getRules().forEach(r -> rulesBuilder.scaleRule(
+            r.getSkuId(),
+            ResourceClusterScaleSpec.builder()
+                .maxSize(r.getMaxSize())
+                .minSize(r.getMinSize())
+                .minIdleToKeep(r.getMinIdleToKeep())
+                .maxIdleToKeep(r.getMaxIdleToKeep())
+                .coolDownSecs(r.getCoolDownSecs())
+                .skuId(r.getSkuId())
+                .clusterId(r.getClusterId())
+                .build()));
+
+        pipe(this.resourceClusterStorageProvider.registerResourceClusterScaleRule(rulesBuilder.build())
+            .thenApply(this::toGetResourceClusterScaleRulesResponse)
+                .exceptionally(err -> {
+                    log.error("Error from registerResourceClusterScaleRule: {}, {}", err.getMessage(), req);
+                    return GetResourceClusterScaleRulesResponse.builder()
+                        .message(err.getMessage())
+                        .responseCode(ResponseCode.SERVER_ERROR).build();
+                }),
+            getContext().dispatcher())
+            .to(getSender());
+    }
+
+    private ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse toGetResourceClusterScaleRulesResponse(
+        ResourceClusterScaleRulesWritable rules) {
+        return GetResourceClusterScaleRulesResponse.builder()
+            .responseCode(ResponseCode.SUCCESS)
+            .clusterId(rules.getClusterId())
+            .rules(rules.getScaleRules().entrySet().stream().map(kv ->
+                ResourceClusterScaleRuleProto.ResourceClusterScaleRule.builder()
+                    .clusterId(kv.getValue().getClusterId())
+                    .coolDownSecs(kv.getValue().getCoolDownSecs())
+                    .maxIdleToKeep(kv.getValue().getMaxIdleToKeep())
+                    .minIdleToKeep(kv.getValue().getMinIdleToKeep())
+                    .maxSize(kv.getValue().getMaxSize())
+                    .minSize(kv.getValue().getMinSize())
+                    .skuId(kv.getValue().getSkuId())
+                    .build())
+                .collect(Collectors.toList()))
+            .build();
     }
 
     private void onDeleteResourceCluster(DeleteResourceClusterRequest req) {

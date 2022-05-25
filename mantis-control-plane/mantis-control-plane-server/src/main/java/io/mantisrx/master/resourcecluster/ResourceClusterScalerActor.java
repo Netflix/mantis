@@ -236,7 +236,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         public Optional<ScaleDecision> apply(GetClusterUsageResponse.UsageByMachineDefinition usage) {
             // Cool down check
             if (this.lastActionInstant.plusSeconds(this.scaleSpec.getCoolDownSecs()).compareTo(clock.instant()) > 0) {
-                log.debug("Action under coolDown, skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+                log.debug("Scale CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
                 return Optional.empty();
             }
 
