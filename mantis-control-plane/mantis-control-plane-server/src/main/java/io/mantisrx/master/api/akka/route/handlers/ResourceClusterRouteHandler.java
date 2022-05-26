@@ -46,7 +46,7 @@ public interface ResourceClusterRouteHandler {
 
     CompletionStage<GetResourceClusterScaleRulesResponse> createAllScaleRule(
         CreateAllResourceClusterScaleRulesRequest rule);
-        
+
     CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(
         GetResourceClusterScaleRulesRequest request);
 }
