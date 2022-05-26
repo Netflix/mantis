@@ -27,6 +27,8 @@ import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
 import io.mantisrx.runtime.MachineDefinition;
@@ -218,9 +220,21 @@ public class ResourceClusterActorTest {
         assertEquals(2, usage2.getIdleCount());
         assertEquals(2, usage2.getTotalCount());
 
+        // test get idle list
+        resourceClusterActor.tell(
+            GetClusterIdleInstancesRequest.builder()
+                .clusterID(CLUSTER_ID)
+                .maxInstanceCount(2)
+                .machineDefinition(MACHINE_DEFINITION_2)
+                .skuId("sku1")
+                .build(),
+            probe.getRef());
+        GetClusterIdleInstancesResponse idleInstancesResponse =
+            probe.expectMsgClass(GetClusterIdleInstancesResponse.class);
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_3, TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
+        assertEquals("sku1", idleInstancesResponse.getSkuId());
+
         assertEquals(TASK_EXECUTOR_ID_3, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2, WORKER_ID).get());
-        //assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
-        //assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
 
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
@@ -235,6 +249,20 @@ public class ResourceClusterActorTest {
         assertEquals(1, usage2.getIdleCount());
         assertEquals(2, usage2.getTotalCount());
 
+        // test get idle list
+        resourceClusterActor.tell(
+            GetClusterIdleInstancesRequest.builder()
+                .clusterID(CLUSTER_ID)
+                .maxInstanceCount(2)
+                .machineDefinition(MACHINE_DEFINITION_2)
+                .skuId("sku1")
+                .build(),
+            probe.getRef());
+        idleInstancesResponse =
+            probe.expectMsgClass(GetClusterIdleInstancesResponse.class);
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
+        assertEquals("sku1", idleInstancesResponse.getSkuId());
+
         assertEquals(TASK_EXECUTOR_ID_2, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2, WORKER_ID).get());
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
@@ -243,6 +271,20 @@ public class ResourceClusterActorTest {
             usageRes.getUsages().stream().filter(usage -> usage.getDef() == MACHINE_DEFINITION).findFirst().get();
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
+
+        // test get idle list
+        resourceClusterActor.tell(
+            GetClusterIdleInstancesRequest.builder()
+                .clusterID(CLUSTER_ID)
+                .maxInstanceCount(2)
+                .machineDefinition(MACHINE_DEFINITION)
+                .skuId("sku1")
+                .build(),
+            probe.getRef());
+        idleInstancesResponse =
+            probe.expectMsgClass(GetClusterIdleInstancesResponse.class);
+        assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), idleInstancesResponse.getInstanceIds());
+        assertEquals("sku1", idleInstancesResponse.getSkuId());
 
         usage2 =
             usageRes.getUsages().stream().filter(usage -> usage.getDef() == MACHINE_DEFINITION_2).findFirst().get();

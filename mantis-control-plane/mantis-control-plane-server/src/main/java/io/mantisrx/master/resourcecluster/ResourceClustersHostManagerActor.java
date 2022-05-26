@@ -85,7 +85,6 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     public Receive createReceive() {
         return ReceiveBuilder.create()
             .match(ProvisionResourceClusterRequest.class, this::onProvisionResourceClusterRequest)
-            .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
             .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
             .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
             .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
@@ -95,6 +94,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
             .match(CreateAllResourceClusterScaleRulesRequest.class, this::onCreateAllResourceClusterScaleRulesRequest)
             .match(CreateResourceClusterScaleRuleRequest.class, this::onCreateResourceClusterScaleRuleRequest)
             .match(GetResourceClusterScaleRulesRequest.class, this::onGetResourceClusterScaleRulesRequest)
+            .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
 
             .build();
     }
@@ -309,6 +309,9 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
     private void onScaleResourceClusterRequest(ScaleResourceRequest req) {
         log.info("Entering onScaleResourceClusterRequest: " + req);
+        // [Notes] for scaling-up the request can go straight into provider to increase desire size.
+        // FOr scaling-down the decision requires getting idle hosts first.
+
         pipe(this.resourceClusterProvider.scaleResource(req), getContext().dispatcher()).to(getSender());
     }
 }

@@ -32,6 +32,9 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRe
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ClusterAvailabilityRule;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.MachineDefinitionToSkuMapper;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleDecision;
+import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleType;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
@@ -43,6 +46,8 @@ import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWrit
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -149,11 +154,21 @@ public class ResourceClusterScalerActorTests {
                 .build(),
             clusterActorProbe.getRef());
 
+        assertEquals(
+            GetClusterIdleInstancesRequest.builder()
+                .skuId(skuLarge)
+                .machineDefinition(MACHINE_DEFINITION_L)
+                .clusterID(CLUSTER_ID)
+                .desireSize(15)
+                .maxInstanceCount(1)
+                .build(),
+            clusterActorProbe.expectMsgClass(GetClusterIdleInstancesRequest.class));
+
         assertNotNull(clusterActorProbe.expectMsgClass(Ack.class));
 
         Set<ScaleResourceRequest> decisions = new HashSet<>();
         decisions.add(hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
-        decisions.add(hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
+        //decisions.add(hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
 
         int newSize = 11;
         assertTrue(decisions.contains(
@@ -163,14 +178,26 @@ public class ResourceClusterScalerActorTests {
                 .desireSize(newSize)
                 .build()));
 
+        // Test callback from fetch idle list.
+        ImmutableList<TaskExecutorID> idleInstances = ImmutableList.of(TaskExecutorID.of("agent1"));
+        scalerActor.tell(
+            GetClusterIdleInstancesResponse.builder()
+                .clusterId(CLUSTER_ID.getResourceID())
+                .instanceIds(idleInstances)
+                .skuId(skuLarge)
+                .desireSize(15)
+                .build(),
+            clusterActorProbe.getRef());
 
         newSize = 15;
-        assertTrue(decisions.contains(
+        assertEquals(
             ScaleResourceRequest.builder()
                 .clusterId(CLUSTER_ID.getResourceID())
                 .skuId(skuLarge)
                 .desireSize(newSize)
-                .build()));
+                .idleInstances(idleInstances)
+                .build(),
+            hostActorProbe.expectMsgClass(ScaleResourceRequest.class));
 
         // Test trigger again
         GetClusterUsageRequest req2 = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);
@@ -206,6 +233,7 @@ public class ResourceClusterScalerActorTests {
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
+                    .type(ScaleType.ScaleUp)
                     .build()),
             decision);
 
@@ -244,7 +272,15 @@ public class ResourceClusterScalerActorTests {
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
+                    .type(ScaleType.ScaleUp)
                     .build()),
+            decision);
+
+        // Test empty
+        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(9).totalCount(11).build();
+        decision =  rule.apply(usage);
+        assertEquals(
+            Optional.empty(),
             decision);
 
         // Test scale up hits max
@@ -259,6 +295,7 @@ public class ResourceClusterScalerActorTests {
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
+                    .type(ScaleType.ScaleUp)
                     .build()),
             decision);
 
@@ -274,6 +311,7 @@ public class ResourceClusterScalerActorTests {
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
+                    .type(ScaleType.ScaleDown)
                     .build()),
             decision);
 
@@ -289,6 +327,7 @@ public class ResourceClusterScalerActorTests {
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
+                    .type(ScaleType.ScaleDown)
                     .build()),
             decision);
     }

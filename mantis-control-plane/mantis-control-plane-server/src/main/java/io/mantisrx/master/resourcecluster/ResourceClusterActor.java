@@ -23,6 +23,8 @@ import akka.actor.Status;
 import akka.japi.Pair;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.common.Ack;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
@@ -115,6 +117,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
                 .match(GetClusterUsageRequest.class, req -> sender().tell(getClusterUsage(req), self()))
+                .match(GetClusterIdleInstancesRequest.class,
+                    req -> sender().tell(onGetClusterIdleInstancesRequest(req), self()))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
@@ -171,6 +175,28 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         GetClusterUsageResponse res = resBuilder.build();
         log.info("Usage result: {}", res);
+        return res;
+    }
+
+    private GetClusterIdleInstancesResponse onGetClusterIdleInstancesRequest(GetClusterIdleInstancesRequest req) {
+        log.info("Computing idle instance list: {}", req);
+        if (!req.getClusterID().equals(this.clusterID)) {
+            throw new RuntimeException(String.format("Mismatch cluster ids %s, %s", req.getClusterID(), this.clusterID));
+        }
+
+        List<TaskExecutorID> instanceList = taskExecutorStateMap.entrySet().stream()
+            .filter(kv -> kv.getValue().getRegistration().getMachineDefinition().equals(req.getMachineDefinition()))
+            .filter(isAvailable)
+            .map(kv -> kv.getKey())
+            .limit(req.getMaxInstanceCount())
+            .collect(Collectors.toList());
+
+        GetClusterIdleInstancesResponse res = GetClusterIdleInstancesResponse.builder()
+            .instanceIds(instanceList)
+            .clusterId(this.clusterID.getResourceID())
+            .skuId(req.getSkuId())
+            .build();
+        log.info("Return idle instance list: {}", res);
         return res;
     }
 

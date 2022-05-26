@@ -22,6 +22,8 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec.SkuTypeSpec;
@@ -65,6 +67,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private final Clock clock;
 
+    // TODO: metrics + log for reaching scaling limit (max/min)
+
     public static Props props(
         ClusterID clusterId,
         Clock clock,
@@ -106,6 +110,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .create()
                 .match(TriggerClusterUsageRequest.class, this::onTriggerClusterUsageRequest)
                 .match(GetClusterUsageResponse.class, this::onGetClusterUsageResponse)
+                .match(GetClusterIdleInstancesResponse.class, this::onGetClusterIdleInstancesResponse)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
                 .build();
     }
@@ -151,11 +156,28 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
         usageResponse.getUsages().forEach(usage -> {
             Optional<String> skuIdO = this.skuMapperRef.get().map(usage.getDef());
+
             if (skuIdO.isPresent() && this.skuToRuleMap.containsKey(skuIdO.get())) {
                 Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuIdO.get()).apply(usage);
                 if (decisionO.isPresent()) {
                     log.info("Informing scale decision: {}", decisionO.get());
-                    this.resourceClusterHostActor.tell(translateScaleDecision(decisionO.get()), self());
+                    if (decisionO.get().getType().equals(ScaleType.ScaleDown)) {
+                        log.info("Scaling down, fetching idle instances.");
+                        this.resourceClusterActor.tell(
+                            GetClusterIdleInstancesRequest.builder()
+                                .clusterID(this.clusterId)
+                                .skuId(skuIdO.get())
+                                .machineDefinition(usage.getDef())
+                                .desireSize(decisionO.get().getDesireSize())
+                                .maxInstanceCount(
+                                    Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
+                                .build(),
+                            self());
+                    }
+                    else {
+                        log.info("Scaling up, informing host actor: {}", decisionO.get());
+                        this.resourceClusterHostActor.tell(translateScaleDecision(decisionO.get()), self());
+                    }
                 }
             }
             else {
@@ -164,6 +186,19 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         });
 
         getSender().tell(Ack.getInstance(), self());
+    }
+
+
+    private void onGetClusterIdleInstancesResponse(GetClusterIdleInstancesResponse response) {
+        log.info("On GetClusterIdleInstancesResponse, informing host actor: {}", response);
+        this.resourceClusterHostActor.tell(
+            ScaleResourceRequest.builder()
+                .clusterId(this.clusterId.getResourceID())
+                .skuId(response.getSkuId())
+                .desireSize(response.getDesireSize())
+                .idleInstances(response.getInstanceIds())
+                .build(),
+            self());
     }
 
     private void onTriggerClusterUsageRequest(TriggerClusterUsageRequest req) {
@@ -194,9 +229,9 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             }
 
             clusterSpec.getSkuSpecs().forEach(skuSpec -> {
-                MachineDefinition mdef = skuToMachineDefinition(skuSpec);
-                this.mDefToSkuMap.put(mdef, skuSpec.getSkuId());
-                log.info("Add MachineDefinition mapper: {}, {}", mdef, skuSpec.getSkuId());
+                MachineDefinition mDef = skuToMachineDefinition(skuSpec);
+                this.mDefToSkuMap.put(mDef, skuSpec.getSkuId());
+                log.info("Add MachineDefinition mapper: {}, {}", mDef, skuSpec.getSkuId());
             });
         }
 
@@ -255,6 +290,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .desireSize(newSize)
                         .maxSize(newSize)
                         .minSize(newSize)
+                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOp : ScaleType.ScaleDown)
                         .build());
             }
             else if (usage.getIdleCount() < scaleSpec.getMinIdleToKeep()) {
@@ -269,6 +305,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .desireSize(newSize)
                         .maxSize(newSize)
                         .minSize(newSize)
+                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOp : ScaleType.ScaleUp)
                         .build());
             }
 
@@ -276,6 +313,12 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision);
             return decision;
         }
+    }
+
+    enum ScaleType {
+        NoOp,
+        ScaleUp,
+        ScaleDown,
     }
 
     @Value
@@ -286,5 +329,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         int maxSize;
         int minSize;
         int desireSize;
+        ScaleType type;
     }
 }

@@ -16,31 +16,17 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
-import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
-import io.mantisrx.shaded.com.google.common.base.Joiner;
-import java.util.List;
+import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import lombok.Builder;
-import lombok.Singular;
 import lombok.Value;
 
-@Builder
 @Value
-public class ScaleResourceRequest {
-    String clusterId;
-
+@Builder
+public class GetClusterIdleInstancesRequest {
+    MachineDefinition machineDefinition;
+    ClusterID clusterID;
     String skuId;
-
-    String region;
-
-    MantisResourceClusterEnvType envType;
-
+    int maxInstanceCount;
     int desireSize;
-
-    @Singular
-    List<TaskExecutorID> idleInstances;
-
-    public String getScaleRequestId() {
-        return Joiner.on('-').join(this.clusterId, this.region, this.envType.name(), this.skuId, this.desireSize);
-    }
-
 }
