@@ -20,7 +20,12 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
@@ -67,7 +72,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private final Clock clock;
 
-    // TODO: metrics + log for reaching scaling limit (max/min)
+    private final Counter numScaleUp;
+    private final Counter numScaleDown;
+    private final Counter numReachScaleMaxLimit;
+    private final Counter numReachScaleMinLimit;
+    private final Counter numScaleRuleTrigger;
 
     public static Props props(
         ClusterID clusterId,
@@ -100,6 +109,26 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
 
+        MetricGroupId metricGroupId = new MetricGroupId(
+            "ResourceClusterScalerActor",
+            new BasicTag("resourceCluster", this.clusterId.getResourceID()));
+
+        Metrics m = new Metrics.Builder()
+            .id(metricGroupId)
+            .addCounter("numScaleDown")
+            .addCounter("numReachScaleMaxLimit")
+            .addCounter("numScaleUp")
+            .addCounter("numReachScaleMinLimit")
+            .addCounter("numScaleRuleTrigger")
+            .build();
+        m = MetricsRegistry.getInstance().registerAndGet(m);
+        this.numScaleDown = m.getCounter("numScaleDown");
+        this.numReachScaleMaxLimit = m.getCounter("numReachScaleMaxLimit");
+        this.numScaleUp = m.getCounter("numScaleUp");
+        this.numReachScaleMinLimit = m.getCounter("numReachScaleMinLimit");
+        this.numScaleRuleTrigger = m.getCounter("numScaleRuleTrigger");
+
+        // Init timer
         init();
     }
 
@@ -139,12 +168,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private void onGetClusterUsageResponse(GetClusterUsageResponse usageResponse) {
         log.info("Getting cluster usage: {}", usageResponse);
-
-        // TODO Check last activity time and skip if within coolDown
-        // Persistence notes
-        // mapping: clusterId -> skuId -> (ASG level) -> scale rule;
-        // work: add resource persistence in kvdal provider + file provider;
-        // data format: "resclusterprefix-" + clusterId: List of rules
+        this.numScaleRuleTrigger.increment();
 
         // get usage by mDef
         // for each mdef: locate rule for the mdef, apply rule if under coolDown.
@@ -161,22 +185,34 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuIdO.get()).apply(usage);
                 if (decisionO.isPresent()) {
                     log.info("Informing scale decision: {}", decisionO.get());
-                    if (decisionO.get().getType().equals(ScaleType.ScaleDown)) {
-                        log.info("Scaling down, fetching idle instances.");
-                        this.resourceClusterActor.tell(
-                            GetClusterIdleInstancesRequest.builder()
-                                .clusterID(this.clusterId)
-                                .skuId(skuIdO.get())
-                                .machineDefinition(usage.getDef())
-                                .desireSize(decisionO.get().getDesireSize())
-                                .maxInstanceCount(
-                                    Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
-                                .build(),
-                            self());
-                    }
-                    else {
-                        log.info("Scaling up, informing host actor: {}", decisionO.get());
-                        this.resourceClusterHostActor.tell(translateScaleDecision(decisionO.get()), self());
+                    switch (decisionO.get().getType()) {
+                        case ScaleDown:
+                            log.info("Scaling down, fetching idle instances.");
+                            this.numScaleDown.increment();
+                            this.resourceClusterActor.tell(
+                                GetClusterIdleInstancesRequest.builder()
+                                    .clusterID(this.clusterId)
+                                    .skuId(skuIdO.get())
+                                    .machineDefinition(usage.getDef())
+                                    .desireSize(decisionO.get().getDesireSize())
+                                    .maxInstanceCount(
+                                        Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
+                                    .build(),
+                                self());
+                            break;
+                        case ScaleUp:
+                            log.info("Scaling up, informing host actor: {}", decisionO.get());
+                            this.numScaleUp.increment();
+                            this.resourceClusterHostActor.tell(translateScaleDecision(decisionO.get()), self());
+                            break;
+                        case NoOpReachMax:
+                            this.numReachScaleMaxLimit.increment();
+                            break;
+                        case NoOpReachMin:
+                            this.numReachScaleMinLimit.increment();
+                            break;
+                        default:
+                            throw new RuntimeException("Invalid scale type: " + decisionO);
                     }
                 }
             }
@@ -290,7 +326,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .desireSize(newSize)
                         .maxSize(newSize)
                         .minSize(newSize)
-                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOp : ScaleType.ScaleDown)
+                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOpReachMin : ScaleType.ScaleDown)
                         .build());
             }
             else if (usage.getIdleCount() < scaleSpec.getMinIdleToKeep()) {
@@ -305,7 +341,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .desireSize(newSize)
                         .maxSize(newSize)
                         .minSize(newSize)
-                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOp : ScaleType.ScaleUp)
+                        .type(newSize == usage.getTotalCount() ? ScaleType.NoOpReachMax : ScaleType.ScaleUp)
                         .build());
             }
 
@@ -316,7 +352,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     }
 
     enum ScaleType {
-        NoOp,
+        NoOpReachMax,
+        NoOpReachMin,
         ScaleUp,
         ScaleDown,
     }
