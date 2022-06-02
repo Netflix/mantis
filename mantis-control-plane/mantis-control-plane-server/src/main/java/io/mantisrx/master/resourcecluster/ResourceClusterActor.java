@@ -20,8 +20,14 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
+import akka.japi.Pair;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.common.Ack;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
+import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -110,6 +116,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
+                .match(GetClusterUsageRequest.class, req -> sender().tell(getClusterUsage(req), self()))
+                .match(GetClusterIdleInstancesRequest.class,
+                    req -> sender().tell(onGetClusterIdleInstancesRequest(req), self()))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
@@ -137,6 +146,59 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAvailable =
         e -> e.getValue().isAvailable();
+
+    private GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req) {
+        log.info("Computing cluster usage: {}", this.clusterID);
+        Map<MachineDefinition, Pair<Integer, Integer>> usageByMachineDef = new HashMap<>();
+        taskExecutorStateMap.entrySet().stream()
+            .forEach(kv -> {
+                Pair<Integer, Integer> kvState = new Pair<>(
+                    kv.getValue().isAvailable() ? 1 : 0,
+                    kv.getValue().isRegistered() ? 1 : 0);
+                MachineDefinition mDef = kv.getValue().getRegistration().getMachineDefinition();
+                if (usageByMachineDef.containsKey(mDef)) {
+                    Pair<Integer, Integer> prevState = usageByMachineDef.get(mDef);
+                    usageByMachineDef.put(mDef,
+                        new Pair<>(kvState.first() + prevState.first(), kvState.second() + prevState.second()));
+                } else {
+                    usageByMachineDef.put(mDef, kvState);
+                }
+            });
+
+        GetClusterUsageResponseBuilder resBuilder = GetClusterUsageResponse.builder().clusterID(this.clusterID);
+        usageByMachineDef.entrySet().stream()
+            .forEach(kv -> resBuilder.usage(UsageByMachineDefinition.builder()
+                .def(kv.getKey())
+                .idleCount(kv.getValue().first())
+                .totalCount(kv.getValue().second())
+                .build()));
+
+        GetClusterUsageResponse res = resBuilder.build();
+        log.info("Usage result: {}", res);
+        return res;
+    }
+
+    private GetClusterIdleInstancesResponse onGetClusterIdleInstancesRequest(GetClusterIdleInstancesRequest req) {
+        log.info("Computing idle instance list: {}", req);
+        if (!req.getClusterID().equals(this.clusterID)) {
+            throw new RuntimeException(String.format("Mismatch cluster ids %s, %s", req.getClusterID(), this.clusterID));
+        }
+
+        List<TaskExecutorID> instanceList = taskExecutorStateMap.entrySet().stream()
+            .filter(kv -> kv.getValue().getRegistration().getMachineDefinition().equals(req.getMachineDefinition()))
+            .filter(isAvailable)
+            .map(kv -> kv.getKey())
+            .limit(req.getMaxInstanceCount())
+            .collect(Collectors.toList());
+
+        GetClusterIdleInstancesResponse res = GetClusterIdleInstancesResponse.builder()
+            .instanceIds(instanceList)
+            .clusterId(this.clusterID.getResourceID())
+            .skuId(req.getSkuId())
+            .build();
+        log.info("Return idle instance list: {}", res);
+        return res;
+    }
 
     private TaskExecutorsList getTaskExecutors(Predicate<Entry<TaskExecutorID, TaskExecutorState>> predicate) {
         return
@@ -458,6 +520,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class TaskExecutorsList {
         List<TaskExecutorID> taskExecutors;
+    }
+
+    @Value
+    static class GetClusterUsageRequest {
+        ClusterID clusterID;
     }
 
     @SuppressWarnings("UnusedReturnValue")

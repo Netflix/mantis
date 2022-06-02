@@ -161,6 +161,15 @@ public class MasterMain implements Service {
             // Beginning of new stuff
             Configuration configuration = loadConfiguration();
 
+            ResourceClusterStorageProviderAdapter resourceClusterStorageProvider =
+                new ResourceClusterStorageProviderAdapter(this.config.getResourceClusterStorageProvider(), system);
+
+            final ActorRef resourceClustersHostActor = system.actorOf(
+                ResourceClustersHostManagerActor.props(
+                    new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
+                    resourceClusterStorageProvider),
+                "ResourceClusterHostActor");
+
             final RpcSystem rpcSystem =
                 MantisAkkaRpcSystemLoader.getInstance();
             // the RPCService implementation will only be used for communicating with task executors but not for running a server itself.
@@ -168,12 +177,13 @@ public class MasterMain implements Service {
             final RpcService rpcService =
                 RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
             final ResourceClusters resourceClusters =
-                ResourceClustersAkkaImpl.load(getConfig(), rpcService, system, mantisJobStore);
-
-            final ActorRef resourceClustersHostActor = system.actorOf(ResourceClustersHostManagerActor.props(
-                    new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
-                    new ResourceClusterStorageProviderAdapter(this.config.getResourceClusterStorageProvider(), system)),
-                "ResourceClusterHostActor");
+                ResourceClustersAkkaImpl.load(
+                    getConfig(),
+                    rpcService,
+                    system,
+                    mantisJobStore,
+                    resourceClustersHostActor,
+                    resourceClusterStorageProvider);
 
             // end of new stuff
 

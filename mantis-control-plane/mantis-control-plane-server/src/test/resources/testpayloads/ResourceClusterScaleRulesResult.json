@@ -1,0 +1,24 @@
+{
+    "clusterId": "mantisResourceClusterUT1",
+    "responseCode": "SUCCESS",
+    "rules": [
+        {
+            "clusterId": "mantisResourceClusterUT1",
+            "skuId": "small",
+            "minIdleToKeep": 1,
+            "minSize": 1,
+            "maxIdleToKeep": 1,
+            "maxSize": 1,
+            "coolDownSecs": 90
+        },
+        {
+            "clusterId": "mantisResourceClusterUT1",
+            "skuId": "large",
+            "minIdleToKeep": 5,
+            "minSize": 2,
+            "maxIdleToKeep": 10,
+            "maxSize": 25,
+            "coolDownSecs": 30
+        }
+    ]
+}

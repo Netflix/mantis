@@ -31,6 +31,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewR
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -60,18 +61,38 @@ class ResourceClustersManagerActor extends AbstractActor {
 
     private final Map<ClusterID, ActorRef> resourceClusterActorMap;
 
-    public static Props props(MasterConfiguration masterConfiguration, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore) {
-        return Props.create(ResourceClustersManagerActor.class, masterConfiguration, clock, rpcService, mantisJobStore);
+    private final ActorRef resourceClusterHostActor;
+    private final ResourceClusterStorageProvider resourceStorageProvider;
+
+    public static Props props(
+        MasterConfiguration masterConfiguration,
+        Clock clock,
+        RpcService rpcService,
+        MantisJobStore mantisJobStore,
+        ActorRef resourceClusterHostActorRef,
+        ResourceClusterStorageProvider resourceStorageProvider) {
+        return Props.create(
+            ResourceClustersManagerActor.class,
+            masterConfiguration,
+            clock,
+            rpcService,
+            mantisJobStore,
+            resourceClusterHostActorRef,
+            resourceStorageProvider);
     }
 
     public ResourceClustersManagerActor(
         MasterConfiguration masterConfiguration, Clock clock,
         RpcService rpcService,
-        MantisJobStore mantisJobStore) {
+        MantisJobStore mantisJobStore,
+        ActorRef resourceClusterHostActorRef,
+        ResourceClusterStorageProvider resourceStorageProvider) {
         this.masterConfiguration = masterConfiguration;
         this.clock = clock;
         this.rpcService = rpcService;
         this.mantisJobStore = mantisJobStore;
+        this.resourceClusterHostActor = resourceClusterHostActorRef;
+        this.resourceStorageProvider = resourceStorageProvider;
 
         this.resourceClusterActorMap = new HashMap<>();
     }
@@ -124,15 +145,37 @@ class ResourceClustersManagerActor extends AbstractActor {
         return clusterActor;
     }
 
+    private ActorRef createResourceClusterScalerActorFor(ClusterID clusterID, ActorRef rcActor) {
+        log.info("Creating resource cluster scaler actor for {}", clusterID);
+        ActorRef clusterScalerActor =
+            getContext().actorOf(
+                ResourceClusterScalerActor.props(
+                    clusterID,
+                    clock,
+                    Duration.ofSeconds(masterConfiguration.getScalerTriggerThresholdInSecs()),
+                    this.resourceStorageProvider,
+                    this.resourceClusterHostActor,
+                    rcActor
+                ),
+                "ResourceClusterScalerActor-" + clusterID.getResourceID());
+        log.info("Created resource cluster scaler actor for {}", clusterID);
+        return clusterScalerActor;
+    }
+
     private ActorRef getRCActor(ClusterID clusterID) {
         if (resourceClusterActorMap.get(clusterID) != null) {
             return resourceClusterActorMap.get(clusterID);
         } else {
-            return resourceClusterActorMap.computeIfAbsent(clusterID, (dontCare) -> {
+            ActorRef rcActor = resourceClusterActorMap.computeIfAbsent(clusterID, (dontCare) -> {
                 ActorRef actorRef = createResourceClusterActorFor(clusterID);
                 getContext().watch(actorRef);
                 return actorRef;
             });
+
+            // Also create the companion scaler actor.
+            ActorRef scalerActorRef = createResourceClusterScalerActorFor(clusterID, rcActor);
+            getContext().watch(scalerActorRef);
+            return rcActor;
         }
     }
 

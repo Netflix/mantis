@@ -26,8 +26,10 @@ import akka.stream.javadsl.JsonFraming;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
@@ -178,11 +180,91 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                 .via(Flow.of(ResourceClusterSpecWritable.class)
                     .alsoTo(Sink.foreach(c -> log.info("Got cluster spec: {}", c))))
                 .runWith(Sink.last(), Materializer.createMaterializer(system))
-                .exceptionally(e -> { throw new RuntimeException("Failed to retrieve clsuter spec: " + clusterId, e); });
+                .exceptionally(e -> { throw new RuntimeException("Failed to retrieve cluster spec: " + clusterId, e); });
+    }
+
+    @Override
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+        final Flow<String, ResourceClusterScaleRulesWritable, NotUsed> jsonToScaleRules =
+            Flow.of(String.class).map(mapper.readerFor(ResourceClusterScaleRulesWritable.class)::readValue);
+
+        final Source<ResourceClusterScaleRulesWritable, ?> fromFile = FileIO
+            .fromPath(getClusterScaleRuleSpecFilePath(SPOOL_DIR, clusterId))
+            .via(JsonFraming.objectScanner(1024).map(bytes -> bytes.utf8String()))
+            .via(jsonToScaleRules)
+            .recover(NoSuchFileException.class, () ->
+                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId).build());;
+
+        return fromFile
+            .via(Flow.of(ResourceClusterScaleRulesWritable.class)
+                .alsoTo(Sink.foreach(c -> log.info("Got cluster scale rule spec: {}", c))))
+            .runWith(Sink.last(), Materializer.createMaterializer(system))
+            .exceptionally(e -> {
+                throw new RuntimeException("Failed to retrieve cluster scaleRule spec: " + clusterId, e);
+            });
+    }
+
+    @Override
+    public CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(
+        ResourceClusterScaleRulesWritable ruleSpec) {
+        log.info("Starting registerResourceClusterScaleRule with full spec: {}", ruleSpec);
+        CompletionStage<ResourceClusterScaleRulesWritable> fut =
+            Source
+                .single(ruleSpec)
+                .mapAsync(1, this::updateClusterScaleRules)
+                .mapAsync(1, rc -> getResourceClusterScaleRules(ruleSpec.getClusterId()))
+                .runWith(Sink.last(), system);
+        log.info("Return future on registerResourceClusterScaleRule with full spec: {}", ruleSpec.getClusterId());
+        return fut;
+    }
+
+    @Override
+    public CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(ResourceClusterScaleSpec rule) {
+        log.info("Starting registerResourceClusterScaleRule: {}", rule);
+        CompletionStage<ResourceClusterScaleRulesWritable> fut =
+            Source
+                .single(rule)
+                .mapAsync(1, ruleSpec -> getResourceClusterScaleRules(rule.getClusterId())
+                    .thenApplyAsync(rc -> {
+                        ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder rcBuilder =
+                            (rc == null) ?
+                            ResourceClusterScaleRulesWritable.builder().clusterId(rule.getClusterId()) :
+                            rc.toBuilder();
+
+                        return rcBuilder.scaleRule(rule.getSkuId(), rule).build();
+                    })
+                )
+                .mapAsync(1, rc -> updateClusterScaleRules(rc))
+                .mapAsync(1, rc -> getResourceClusterScaleRules(rule.getClusterId()))
+                .runWith(Sink.last(), system);
+        log.info("Return future on registerResourceClusterScaleRule: {}", rule.getClusterId());
+        return fut;
+    }
+
+    public CompletionStage<Boolean> updateClusterScaleRules(ResourceClusterScaleRulesWritable rules) throws IOException {
+        Path ruleFilePath = getClusterScaleRuleSpecFilePath(SPOOL_DIR, rules.getClusterId());
+        if (Files.notExists(ruleFilePath)) {
+            Files.createDirectories(Paths.get(SPOOL_DIR));
+            Files.createFile(ruleFilePath);
+        }
+
+        Sink<ByteString, CompletionStage<IOResult>> rulesFileSink = FileIO.toPath(
+            getClusterScaleRuleSpecFilePath(SPOOL_DIR, rules.getClusterId()));
+        Source<ResourceClusterScaleRulesWritable, NotUsed> textSource = Source.single(rules);
+        return textSource
+            .map(mapper::writeValueAsString)
+            .map(ByteString::fromString)
+            .runWith(rulesFileSink, system)
+            .exceptionally(e -> { throw new RuntimeException("failed to save cluster list. ", e); })
+            .thenApply(ioRes -> true); // IOResult result is always true.
     }
 
     private Path getClusterSpecFilePath(String dirName, String clusterId) {
         return Paths.get(dirName, "clusterspec-" + clusterId);
+    }
+
+    private Path getClusterScaleRuleSpecFilePath(String dirName, String clusterId) {
+        return Paths.get(dirName, "clusterscalerulespec-" + clusterId);
     }
 
     private Path getClusterListFilePath() {

@@ -26,6 +26,10 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteRe
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -88,5 +92,25 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
                 ask(this.resourceClustersHostManagerActor, request, timeout)
                         .thenApply(ScaleResourceResponse.class::cast);
         return response;
+    }
+
+    @Override
+    public CompletionStage<GetResourceClusterScaleRulesResponse> createSingleScaleRule(
+        CreateResourceClusterScaleRuleRequest request) {
+        return ask(this.resourceClustersHostManagerActor, request, timeout)
+            .thenApply(GetResourceClusterScaleRulesResponse.class::cast);
+    }
+
+    @Override
+    public CompletionStage<GetResourceClusterScaleRulesResponse> createAllScaleRule(
+        CreateAllResourceClusterScaleRulesRequest request) {
+        return ask(this.resourceClustersHostManagerActor, request, timeout)
+            .thenApply(GetResourceClusterScaleRulesResponse.class::cast);
+    }
+
+    @Override
+    public CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(GetResourceClusterScaleRulesRequest request) {
+        return ask(this.resourceClustersHostManagerActor, request, timeout)
+            .thenApply(GetResourceClusterScaleRulesResponse.class::cast);
     }
 }

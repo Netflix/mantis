@@ -16,16 +16,20 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import java.util.List;
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
-/**
- * Contract between API route and {@link io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor}.
- */
-@Builder
 @Value
-public class ProvisionResourceClusterRequest {
+@Builder
+public class GetClusterIdleInstancesResponse {
     String clusterId;
+    String skuId;
 
-    MantisResourceClusterSpec clusterSpec;
+    @Singular
+    List<TaskExecutorID> instanceIds;
+
+    int desireSize;
 }

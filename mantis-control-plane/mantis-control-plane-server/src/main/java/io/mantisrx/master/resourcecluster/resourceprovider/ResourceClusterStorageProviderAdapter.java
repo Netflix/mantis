@@ -17,7 +17,9 @@
 package io.mantisrx.master.resourcecluster.resourceprovider;
 
 import akka.actor.ActorSystem;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
@@ -79,4 +81,21 @@ public class ResourceClusterStorageProviderAdapter implements ResourceClusterSto
     public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id) {
         return this.providerImpl.getResourceClusterSpecWritable(id);
     }
+
+    @Override
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+        return this.providerImpl.getResourceClusterScaleRules(clusterId);
+    }
+
+    @Override
+    public CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(
+        ResourceClusterScaleRulesWritable ruleSpec) {
+        return this.providerImpl.registerResourceClusterScaleRule(ruleSpec);
+    }
+
+    @Override
+    public CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(ResourceClusterScaleSpec rule) {
+        return this.providerImpl.registerResourceClusterScaleRule(rule);
+    }
+
 }

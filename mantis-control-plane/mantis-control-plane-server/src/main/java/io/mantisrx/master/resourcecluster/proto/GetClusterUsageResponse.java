@@ -16,16 +16,26 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import java.util.List;
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
-/**
- * Contract between API route and {@link io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor}.
- */
-@Builder
 @Value
-public class ProvisionResourceClusterRequest {
-    String clusterId;
+@Builder
+public class GetClusterUsageResponse {
+    ClusterID clusterID;
 
-    MantisResourceClusterSpec clusterSpec;
+    @Singular
+    List<UsageByMachineDefinition> usages;
+
+    @Value
+    @Builder
+    public static class UsageByMachineDefinition {
+        MachineDefinition def;
+        int idleCount;
+        int totalCount;
+    }
 }

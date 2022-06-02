@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -76,11 +77,13 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
         MasterConfiguration masterConfiguration,
         RpcService rpcService,
         ActorSystem actorSystem,
-        MantisJobStore mantisJobStore) {
+        MantisJobStore mantisJobStore,
+        ActorRef resourceClusterHostActorRef,
+        ResourceClusterStorageProvider resourceStorageProvider) {
         final ActorRef resourceClusterManagerActor =
             actorSystem.actorOf(
                 ResourceClustersManagerActor.props(masterConfiguration, Clock.systemDefaultZone(),
-                    rpcService, mantisJobStore));
+                    rpcService, mantisJobStore, resourceClusterHostActorRef, resourceStorageProvider));
         final ResourceClusterTaskExecutorMapper globalMapper =
             ResourceClusterTaskExecutorMapper.inMemory();
 

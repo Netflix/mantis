@@ -16,8 +16,11 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.google.common.base.Joiner;
+import java.util.List;
 import lombok.Builder;
+import lombok.Singular;
 import lombok.Value;
 
 @Builder
@@ -32,6 +35,9 @@ public class ScaleResourceRequest {
     MantisResourceClusterEnvType envType;
 
     int desireSize;
+
+    @Singular
+    List<TaskExecutorID> idleInstances;
 
     public String getScaleRequestId() {
         return Joiner.on('-').join(this.clusterId, this.region, this.envType.name(), this.skuId, this.desireSize);

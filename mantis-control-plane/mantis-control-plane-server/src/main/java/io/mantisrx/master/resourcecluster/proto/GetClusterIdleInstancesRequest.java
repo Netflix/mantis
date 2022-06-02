@@ -16,16 +16,17 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import lombok.Builder;
 import lombok.Value;
 
-/**
- * Contract between API route and {@link io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor}.
- */
-@Builder
 @Value
-public class ProvisionResourceClusterRequest {
-    String clusterId;
-
-    MantisResourceClusterSpec clusterSpec;
+@Builder
+public class GetClusterIdleInstancesRequest {
+    MachineDefinition machineDefinition;
+    ClusterID clusterID;
+    String skuId;
+    int maxInstanceCount;
+    int desireSize;
 }
