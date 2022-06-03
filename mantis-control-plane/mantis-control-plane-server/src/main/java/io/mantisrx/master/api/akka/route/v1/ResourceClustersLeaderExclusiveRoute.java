@@ -104,7 +104,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
 
     private Route heartbeatFromTaskExecutor(ClusterID clusterID) {
         return entity(Jackson.unmarshaller(TaskExecutorHeartbeat.class), request -> {
-            log.info(
+            log.debug(
                 "POST /api/v1/resourceClusters/{}/actions/heartbeatFromTaskExecutor called {}",
                 clusterID.getResourceID(),
                 request);
