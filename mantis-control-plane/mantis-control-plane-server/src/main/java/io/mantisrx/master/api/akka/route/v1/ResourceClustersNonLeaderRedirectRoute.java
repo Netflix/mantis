@@ -41,6 +41,8 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -66,12 +68,20 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/getAvailableTaskExecutors              (GET)
  * /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
+ * /api/v1/resourceClusters/{}/upgrade                                (POST)
  * <p>
  * <p>
  * /api/v1/resourceClusters/{}/scaleRule                              (POST)
  * /api/v1/resourceClusters/{}/scaleRules                             (GET, POST)
  * <p>
  * /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
+ *
+ * [Notes]
+ * To upgrade cluster containers: each container running task executor is using docker image tag based image version.
+ * In regular case the upgrade is to refresh the container to re-deploy with latest digest associated with the image
+ * tag (e.g. latest).
+ * If multiple image digest versions need to be ran/hosted at the same time, it is recommended to create a separate
+ * sku id in addition to the existing sku(s).
  */
 @Slf4j
 public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
@@ -136,6 +146,15 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
                         // POST
                         post(() -> scaleClusterSku(clusterName))
+                    ))
+                ),
+                // /{}/upgrade
+                path(
+                    PathMatchers.segment().slash("upgrade"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+
+                        // POST
+                        post(() -> upgradeCluster(clusterName))
                     ))
                 ),
                 // /{}/getResourceOverview
@@ -286,9 +305,28 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private Route scaleClusterSku(String clusterName) {
         return entity(Jackson.unmarshaller(ScaleResourceRequest.class), skuScaleRequest -> {
-            log.info("POST api/v1/resourceClusters/{}/actions/scaleSku {}", clusterName, skuScaleRequest);
+            log.info("POST api/v1/resourceClusters/{}/scaleSku {}", clusterName, skuScaleRequest);
             final CompletionStage<ScaleResourceResponse> response =
                 this.resourceClusterRouteHandler.scale(skuScaleRequest);
+
+            return completeAsync(
+                response,
+                resp -> complete(
+                    StatusCodes.ACCEPTED,
+                    resp,
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.POST
+            );
+        });
+    }
+
+
+    private Route upgradeCluster(String clusterName) {
+        return entity(Jackson.unmarshaller(UpgradeClusterContainersRequest.class), upgradeRequest -> {
+            log.info("POST api/v1/resourceClusters/{}/upgrade {}", clusterName, upgradeRequest);
+            final CompletionStage<UpgradeClusterContainersResponse> response =
+                this.resourceClusterRouteHandler.upgrade(upgradeRequest);
 
             return completeAsync(
                 response,

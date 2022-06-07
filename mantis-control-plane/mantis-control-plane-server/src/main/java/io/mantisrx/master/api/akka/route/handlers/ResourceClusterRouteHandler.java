@@ -28,6 +28,8 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import java.util.concurrent.CompletionStage;
 
 public interface ResourceClusterRouteHandler {
@@ -40,6 +42,8 @@ public interface ResourceClusterRouteHandler {
     CompletionStage<GetResourceClusterResponse> get(final GetResourceClusterSpecRequest request);
 
     CompletionStage<ScaleResourceResponse> scale(final ScaleResourceRequest request);
+
+    CompletionStage<UpgradeClusterContainersResponse> upgrade(final UpgradeClusterContainersRequest request);
 
     CompletionStage<GetResourceClusterScaleRulesResponse> createSingleScaleRule(
         CreateResourceClusterScaleRuleRequest request);

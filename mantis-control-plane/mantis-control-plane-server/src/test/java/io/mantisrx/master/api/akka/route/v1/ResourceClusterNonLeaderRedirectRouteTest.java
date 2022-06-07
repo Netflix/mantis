@@ -36,6 +36,7 @@ import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
@@ -47,6 +48,8 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
@@ -290,6 +293,32 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     GetResourceClusterScaleRulesResponse.class));
     }
 
+    @Test
+    public void testResourceClusterUpgradeRoutes() throws IOException {
+        UpgradeClusterContainersRequest createRuleReq1 = UpgradeClusterContainersRequest.builder()
+            .clusterId(CLUSTER_ID)
+            .region("us-east-1")
+            .optionalBatchMaxSize(50)
+            .optionalSkuId("large")
+            .optionalEnvType(MantisResourceClusterEnvType.Prod)
+            .build();
+
+        testRoute.run(
+                HttpRequest.POST(getResourceClusterUpgradeEndpoint(CLUSTER_ID))
+                    .withEntity(HttpEntities.create(
+                        ContentTypes.APPLICATION_JSON,
+                        Jackson.toJson(createRuleReq1))))
+            .assertStatusCode(StatusCodes.ACCEPTED)
+            .assertEntityAs(Jackson.unmarshaller(UpgradeClusterContainersResponse.class),
+                UpgradeClusterContainersResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .clusterId(createRuleReq1.getClusterId())
+                    .region(createRuleReq1.getRegion())
+                    .optionalSkuId(createRuleReq1.getOptionalSkuId())
+                    .optionalEnvType(createRuleReq1.getOptionalEnvType())
+                    .build());
+    }
+
     final String getResourceClusterEndpoint() {
         return "/api/v1/resourceClusters";
     }
@@ -309,6 +338,12 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     final String getResourceClusterScaleRuleEndpoint(String clusterId) {
         return String.format(
             "/api/v1/resourceClusters/%s/scaleRule",
+            clusterId);
+    }
+
+    final String getResourceClusterUpgradeEndpoint(String clusterId) {
+        return String.format(
+            "/api/v1/resourceClusters/%s/upgrade",
             clusterId);
     }
 
@@ -349,6 +384,20 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     .clusterId(scaleRequest.getClusterId())
                     .envType(scaleRequest.getEnvType())
                     .desireSize(scaleRequest.getDesireSize())
+                    .responseCode(ResponseCode.SUCCESS)
+                    .build());
+        }
+
+        @Override
+        public CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(
+            UpgradeClusterContainersRequest request) {
+            return CompletableFuture.completedFuture(
+                UpgradeClusterContainersResponse.builder()
+                    .message("test scale resp")
+                    .region(request.getRegion())
+                    .optionalSkuId(request.getOptionalSkuId())
+                    .clusterId(request.getClusterId())
+                    .optionalEnvType(request.getOptionalEnvType())
                     .responseCode(ResponseCode.SUCCESS)
                     .build());
         }

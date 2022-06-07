@@ -32,6 +32,8 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
 import java.util.Optional;
@@ -91,6 +93,14 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
         CompletionStage<ScaleResourceResponse> response =
                 ask(this.resourceClustersHostManagerActor, request, timeout)
                         .thenApply(ScaleResourceResponse.class::cast);
+        return response;
+    }
+
+    @Override
+    public CompletionStage<UpgradeClusterContainersResponse> upgrade(UpgradeClusterContainersRequest request) {
+        CompletionStage<UpgradeClusterContainersResponse> response =
+            ask(this.resourceClustersHostManagerActor, request, timeout)
+                .thenApply(UpgradeClusterContainersResponse.class::cast);
         return response;
     }
 

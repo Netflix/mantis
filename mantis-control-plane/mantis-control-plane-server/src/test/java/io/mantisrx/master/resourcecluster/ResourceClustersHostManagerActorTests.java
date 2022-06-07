@@ -39,6 +39,8 @@ import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
@@ -214,6 +216,37 @@ public class ResourceClustersHostManagerActorTests {
                 r.getError().getCause().getMessage()
                 .equals("test err msg")));
 
+        probe.getSystem().stop(resourceClusterActor);
+    }
+
+    @Test
+    public void testUpgradeRequest() {
+        TestKit probe = new TestKit(system);
+        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
+
+        UpgradeClusterContainersResponse upgradeRes =
+            UpgradeClusterContainersResponse.builder().responseCode(ResponseCode.SUCCESS).build();
+        when(resProvider.upgradeContainerResource(any())).thenReturn(CompletableFuture.completedFuture(
+            upgradeRes
+        ));
+
+        when(resProvider.getResponseHandler()).thenReturn(responseHandler);
+
+        ActorRef resourceClusterActor = system.actorOf(
+            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+
+        UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
+            .clusterId("mantisTestResCluster1")
+            .build();
+
+        resourceClusterActor.tell(request, probe.getRef());
+        UpgradeClusterContainersResponse createResp = probe.expectMsgClass(UpgradeClusterContainersResponse.class);
+
+        assertEquals(ResponseCode.SUCCESS, createResp.responseCode);
+
+        verify(resProvider, times(1)).upgradeContainerResource(any());
         probe.getSystem().stop(resourceClusterActor);
     }
 

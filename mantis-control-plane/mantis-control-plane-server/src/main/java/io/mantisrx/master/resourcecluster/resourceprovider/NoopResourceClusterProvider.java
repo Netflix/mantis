@@ -20,6 +20,8 @@ import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -34,6 +36,11 @@ public class NoopResourceClusterProvider implements ResourceClusterProvider {
 
     @Override
     public CompletionStage<ScaleResourceResponse> scaleResource(ScaleResourceRequest scaleRequest) {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(UpgradeClusterContainersRequest request) {
         return CompletableFuture.completedFuture(null);
     }
 
