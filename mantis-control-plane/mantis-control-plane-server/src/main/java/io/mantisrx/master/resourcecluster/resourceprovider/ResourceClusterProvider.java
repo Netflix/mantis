@@ -20,6 +20,8 @@ import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -49,6 +51,15 @@ public interface ResourceClusterProvider {
     * every nodes.
     */
     CompletionStage<ScaleResourceResponse> scaleResource(ScaleResourceRequest scaleRequest);
+
+    /**
+     * To upgrade cluster containers: each container running task executor is using docker image tag based image version.
+     * In regular case the upgrade is to refresh the container to re-deploy with latest digest associated with the image
+     * tag (e.g. latest).
+     * If multiple image digest versions need to be ran/hosted at the same time, it is recommended to create a separate
+     * sku id in addition to the existing sku(s).
+     */
+    CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(UpgradeClusterContainersRequest request);
 
     ResourceClusterResponseHandler getResponseHandler();
 }

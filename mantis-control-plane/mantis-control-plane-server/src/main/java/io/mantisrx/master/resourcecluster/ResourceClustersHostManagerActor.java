@@ -36,6 +36,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
@@ -95,6 +96,9 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
             .match(CreateResourceClusterScaleRuleRequest.class, this::onCreateResourceClusterScaleRuleRequest)
             .match(GetResourceClusterScaleRulesRequest.class, this::onGetResourceClusterScaleRulesRequest)
             .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
+
+            // Upgrade section
+            .match(UpgradeClusterContainersRequest.class, this::onUpgradeClusterContainersRequest)
 
             .build();
     }
@@ -313,5 +317,14 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         // FOr scaling-down the decision requires getting idle hosts first.
 
         pipe(this.resourceClusterProvider.scaleResource(req), getContext().dispatcher()).to(getSender());
+    }
+
+    private void onUpgradeClusterContainersRequest(UpgradeClusterContainersRequest req) {
+        log.info("Entering onScaleResourceClusterRequest: " + req);
+        // [Notes] for scaling-up the request can go straight into provider to increase desire size.
+        // FOr scaling-down the decision requires getting idle hosts first.
+
+        pipe(this.resourceClusterProvider.upgradeContainerResource(req), getContext().dispatcher()).to(getSender());
+
     }
 }
