@@ -70,8 +70,8 @@ public final class ObservableTrigger {
                         logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
                         subscriptionActive.decrement();
                     })
-                    .subscribe((T data) -> queue.write(data)
-                        ,
+                    .subscribe(
+                        (T data) -> queue.write(data),
                         (Throwable e) -> {
                             logger.warn("Observable used to push data errored, on server with name: " + name, e);
                             if (doOnError != null) {
@@ -198,7 +198,8 @@ public final class ObservableTrigger {
                                     );
                         }
                     )
-                    .subscribe((List<KeyValuePair<K, V>> list) -> {
+                    .subscribe(
+                        (List<KeyValuePair<K, V>> list) -> {
                             for (KeyValuePair<K, V> data : list) {
                                 queue.write(data);
                             }
@@ -215,8 +216,8 @@ public final class ObservableTrigger {
                                 doOnComplete.call();
                             }
                         }
-
-                    ));
+                    )
+            );
             if (oldSub != null) {
                 logger.info("A new subscription is ACTIVE. " +
                     "Unsubscribe from previous subscription observable trigger with name: " + name);
@@ -266,23 +267,21 @@ public final class ObservableTrigger {
                     })
 
                     .subscribe(
-                        (KeyValuePair<K, V> data) -> {
-                            queue.write(data);
-                        },
+                        (KeyValuePair<K, V> data) -> queue.write(data),
                         (Throwable e) -> {
                             logger.warn("Observable used to push data errored, on server with name: " + name, e);
                             if (doOnError != null) {
                                 doOnError.call(e);
                             }
-                        }
-                        ,
+                        },
                         () -> {
                             logger.info("Observable used to push data completed, on server with name: " + name);
                             if (doOnComplete != null) {
                                 doOnComplete.call();
                             }
                         }
-                    ));
+                    )
+            );
             if (oldSub != null) {
                 logger.info("A new subscription is ACTIVE. " +
                     "Unsubscribe from previous subscription observable trigger with name: " + name);
