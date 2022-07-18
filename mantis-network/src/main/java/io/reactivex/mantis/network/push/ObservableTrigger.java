@@ -22,11 +22,13 @@ import io.mantisrx.common.metrics.Metrics;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -38,6 +40,8 @@ import rx.schedulers.Schedulers;
 public final class ObservableTrigger {
 
     private static final Logger logger = LoggerFactory.getLogger(ObservableTrigger.class);
+
+    private static Scheduler timeoutScheduler = Schedulers.from(Executors.newFixedThreadPool(5));
 
     private ObservableTrigger() {}
 
@@ -165,8 +169,6 @@ public final class ObservableTrigger {
         Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> {
             Subscription oldSub = subRef.getAndSet(
                 o
-                    // decouple from calling thread
-                    .observeOn(Schedulers.computation())
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
                         subscriptionActive.increment();
@@ -180,7 +182,7 @@ public final class ObservableTrigger {
                             final long keyBytesHashed = hashFunction.computeHash(keyBytes);
                             return
                                 group
-                                    .timeout(groupExpirySeconds, TimeUnit.SECONDS, Observable.empty())
+                                    .timeout(groupExpirySeconds, TimeUnit.SECONDS, Observable.empty(), timeoutScheduler)
                                     .lift(new DisableBackPressureOperator<V>())
                                     .buffer(250, TimeUnit.MILLISECONDS)
                                     .filter((List<V> t1) -> t1 != null && !t1.isEmpty())
@@ -261,7 +263,6 @@ public final class ObservableTrigger {
                         final long keyBytesHashed = hashFunction.computeHash(keyBytes);
                         return (new KeyValuePair<K, V>(keyBytesHashed, keyBytes, data.getValue()));
                     })
-
                     .subscribe(
                         (KeyValuePair<K, V> data) -> queue.write(data),
                         (Throwable e) -> {
