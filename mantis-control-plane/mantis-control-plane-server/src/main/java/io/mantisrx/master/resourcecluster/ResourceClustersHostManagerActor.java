@@ -130,7 +130,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         pipe(this.resourceClusterStorageProvider.getResourceClusterScaleRules(req.getClusterId())
                 .thenApply(this::toGetResourceClusterScaleRulesResponse)
                 .exceptionally(err -> {
-                    log.error("Error from getResourceClusterScaleRules: {}, {}", err.getMessage(), req);
+                    log.error("Error from getResourceClusterScaleRules: {}, {}", err, req);
                     return GetResourceClusterScaleRulesResponse.builder()
                         .message(err.getMessage())
                         .responseCode(ResponseCode.SERVER_ERROR).build();
@@ -157,7 +157,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         pipe(this.resourceClusterStorageProvider.registerResourceClusterScaleRule(rulesBuilder.build())
             .thenApply(this::toGetResourceClusterScaleRulesResponse)
                 .exceptionally(err -> {
-                    log.error("Error from registerResourceClusterScaleRule: {}, {}", err.getMessage(), req);
+                    log.error("Error from registerResourceClusterScaleRule: {}, {}", err, req);
                     return GetResourceClusterScaleRulesResponse.builder()
                         .message(err.getMessage())
                         .responseCode(ResponseCode.SERVER_ERROR).build();

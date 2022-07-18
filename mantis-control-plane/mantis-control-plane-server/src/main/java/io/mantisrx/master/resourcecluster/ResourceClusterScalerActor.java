@@ -37,12 +37,15 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -61,6 +64,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final ClusterID clusterId;
 
     private final Duration scalerPullThreshold;
+    private final Duration ruleSetRefreshThreshold;
 
     private final ActorRef resourceClusterActor;
     private final ActorRef resourceClusterHostActor;
@@ -82,6 +86,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterId,
         Clock clock,
         Duration scalerPullThreshold,
+        Duration ruleRefreshThreshold,
         ResourceClusterStorageProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
@@ -90,6 +95,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             clusterId,
             clock,
             scalerPullThreshold,
+            ruleRefreshThreshold,
             storageProvider,
             resourceClusterHostActor,
             resourceClusterActor);
@@ -99,6 +105,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterId,
         Clock clock,
         Duration scalerPullThreshold,
+        Duration ruleRefreshThreshold,
         ResourceClusterStorageProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
@@ -108,6 +115,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.storageProvider = storageProvider;
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
+        this.ruleSetRefreshThreshold = ruleRefreshThreshold;
 
         MetricGroupId metricGroupId = new MetricGroupId(
             "ResourceClusterScalerActor",
@@ -138,6 +146,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             ReceiveBuilder
                 .create()
                 .match(TriggerClusterUsageRequest.class, this::onTriggerClusterUsageRequest)
+                .match(TriggerClusterRuleRefreshRequest.class, this::onTriggerClusterRuleRefreshRequest)
+                .match(GetRuleSetRequest.class,
+                    req -> getSender().tell(
+                        GetRuleSetResponse.builder().rules(ImmutableMap.copyOf(this.skuToRuleMap)).build(), self()))
                 .match(GetClusterUsageResponse.class, this::onGetClusterUsageResponse)
                 .match(GetClusterIdleInstancesResponse.class, this::onGetClusterIdleInstancesResponse)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
@@ -145,16 +157,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     }
 
     private void init() {
-        this.storageProvider.getResourceClusterScaleRules(this.clusterId.toString())
-                .thenAccept(rules ->
-                     rules
-                        .getScaleRules().values()
-                        .forEach(rule -> {
-                            log.info("Adding scaleRule: {}", rule);
-                            this.skuToRuleMap.put(
-                                rule.getSkuId(),
-                                new ClusterAvailabilityRule(rule, this.clock));
-                        }));
+        this.fetchRuleSet();
 
         this.storageProvider.getResourceClusterSpecWritable(this.clusterId.toString())
             .thenAccept(specWritable ->
@@ -164,6 +167,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             "ClusterScaler-" + this.clusterId,
             new TriggerClusterUsageRequest(this.clusterId),
             scalerPullThreshold);
+
+        getTimers().startTimerWithFixedDelay(
+            "ClusterScalerRuleFetcher-" + this.clusterId,
+            new TriggerClusterRuleRefreshRequest(this.clusterId),
+            this.ruleSetRefreshThreshold);
     }
 
     private void onGetClusterUsageResponse(GetClusterUsageResponse usageResponse) {
@@ -242,6 +250,30 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.resourceClusterActor.tell(new GetClusterUsageRequest(this.clusterId), self());
     }
 
+    private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
+        log.info("Requesting cluster rule refresh");
+        this.fetchRuleSet();
+    }
+
+    private void fetchRuleSet() {
+        this.storageProvider.getResourceClusterScaleRules(this.clusterId.toString())
+            .thenAccept(rules -> {
+                Set<String> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
+                removedKeys.removeAll(rules.getScaleRules().keySet());
+                removedKeys.forEach(this.skuToRuleMap::remove);
+
+                rules
+                    .getScaleRules().values()
+                    .forEach(rule -> {
+                        log.info("Adding scaleRule: {}", rule);
+                        this.skuToRuleMap.put(
+                            rule.getSkuId(),
+                            new ClusterAvailabilityRule(rule, this.clock));
+                    });
+
+            });
+    }
+
     private ScaleResourceRequest translateScaleDecision(ScaleDecision decision) {
         return ScaleResourceRequest.builder()
             .clusterId(this.clusterId.getResourceID())
@@ -254,6 +286,25 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Builder
     static class TriggerClusterUsageRequest {
         ClusterID clusterID;
+    }
+
+    @Value
+    @Builder
+    static class TriggerClusterRuleRefreshRequest {
+        ClusterID clusterID;
+    }
+
+    @Value
+    @Builder
+    static class GetRuleSetRequest {
+        ClusterID clusterID;
+    }
+
+    @Value
+    @Builder
+    static class GetRuleSetResponse {
+        ClusterID clusterID;
+        ImmutableMap<String, ClusterAvailabilityRule> rules;
     }
 
     static class MachineDefinitionToSkuMapper {

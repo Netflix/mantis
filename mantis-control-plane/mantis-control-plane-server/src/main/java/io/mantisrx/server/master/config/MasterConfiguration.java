@@ -331,6 +331,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60")
     int getScalerTriggerThresholdInSecs();
 
+    @Config("mantis.job.master.resource.cluster.scaler.ruleset.refresh.secs")
+    @Default("180")
+    int getScalerRuleSetRefreshThresholdInSecs();
+
     @Config("mantis.agent.assignment.interval.ms")
     @Default("60000") // 1 minute
     int getAssignmentIntervalInMs();

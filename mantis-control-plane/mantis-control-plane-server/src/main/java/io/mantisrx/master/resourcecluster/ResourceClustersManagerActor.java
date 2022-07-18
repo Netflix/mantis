@@ -153,6 +153,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                     clusterID,
                     clock,
                     Duration.ofSeconds(masterConfiguration.getScalerTriggerThresholdInSecs()),
+                    Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
                     this.resourceStorageProvider,
                     this.resourceClusterHostActor,
                     rcActor

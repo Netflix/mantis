@@ -30,6 +30,8 @@ import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ClusterAvailabilityRule;
+import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.GetRuleSetRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.GetRuleSetResponse;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.MachineDefinitionToSkuMapper;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleDecision;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleType;
@@ -134,6 +136,7 @@ public class ResourceClusterScalerActorTests {
                 CLUSTER_ID,
                 Clock.systemDefaultZone(),
                 Duration.ofSeconds(1),
+                Duration.ofSeconds(2),
                 this.storageProvider,
                 hostActorProbe.getRef(),
                 clusterActorProbe.getRef());
@@ -202,6 +205,47 @@ public class ResourceClusterScalerActorTests {
         // Test trigger again
         GetClusterUsageRequest req2 = clusterActorProbe.expectMsgClass(GetClusterUsageRequest.class);
         assertEquals(CLUSTER_ID, req2.getClusterID());
+    }
+
+    @Test
+    public void testScalerRuleSetRefresh() throws InterruptedException {
+        final Props props =
+            ResourceClusterScalerActor.props(
+                CLUSTER_ID,
+                Clock.systemDefaultZone(),
+                Duration.ofSeconds(100),
+                Duration.ofSeconds(1),
+                this.storageProvider,
+                hostActorProbe.getRef(),
+                clusterActorProbe.getRef());
+
+        scalerActor = actorSystem.actorOf(props);
+        scalerActor.tell(GetRuleSetRequest.builder().build(), clusterActorProbe.getRef());
+        GetRuleSetResponse rules = clusterActorProbe.expectMsgClass(GetRuleSetResponse.class);
+        assertEquals(2, rules.getRules().size());
+
+        when(this.storageProvider.getResourceClusterScaleRules(ArgumentMatchers.anyString()))
+            .thenReturn(CompletableFuture.completedFuture(
+                ResourceClusterScaleRulesWritable.builder()
+                    .scaleRule(skuMedium, ResourceClusterScaleSpec.builder()
+                        .clusterId(CLUSTER_ID.getResourceID())
+                        .skuId(skuMedium)
+                        .coolDownSecs(10)
+                        .maxIdleToKeep(20)
+                        .minIdleToKeep(5)
+                        .minSize(11)
+                        .maxSize(15)
+                        .build())
+                    .build()
+            ));
+
+        Thread.sleep(1500);
+
+        scalerActor.tell(GetRuleSetRequest.builder().build(), clusterActorProbe.getRef());
+        rules = clusterActorProbe.expectMsgClass(GetRuleSetResponse.class);
+        assertEquals(1, rules.getRules().size());
+        assertTrue(rules.getRules().containsKey(skuMedium));
+
     }
 
     @Test
