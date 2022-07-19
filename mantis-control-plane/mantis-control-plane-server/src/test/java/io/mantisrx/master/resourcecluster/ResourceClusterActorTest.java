@@ -32,6 +32,7 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -62,11 +63,15 @@ public class ResourceClusterActorTest {
     private static final Duration assignmentTimeout = Duration.ofSeconds(1);
     private static final String HOST_NAME = "hostname";
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(1, 2, 3, 4, 5);
-    private static final MachineDefinition MACHINE_DEFINITION =
-        new MachineDefinition(2f, 2014, 128.0, 1024, 1);
+    private static final MachineDefinitionWrapper MACHINE_DEFINITION =
+        MachineDefinitionWrapper.builder().machineDefinition(
+            new MachineDefinition(2f, 2014, 128.0, 1024, 1))
+            .build();
 
-    private static final MachineDefinition MACHINE_DEFINITION_2 =
-        new MachineDefinition(4f, 4028, 128.0, 1024, 1);
+    private static final MachineDefinitionWrapper MACHINE_DEFINITION_2 =
+        MachineDefinitionWrapper.builder().machineDefinition(
+                new MachineDefinition(4f, 4028, 128.0, 1024, 1))
+            .build();
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION =
         new TaskExecutorRegistration(
             TASK_EXECUTOR_ID,
@@ -169,7 +174,9 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
-        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION.getMachineDefinition(), WORKER_ID).get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
     }
@@ -225,7 +232,7 @@ public class ResourceClusterActorTest {
             GetClusterIdleInstancesRequest.builder()
                 .clusterID(CLUSTER_ID)
                 .maxInstanceCount(2)
-                .machineDefinition(MACHINE_DEFINITION_2)
+                .machineDefinition(MACHINE_DEFINITION_2.getMachineDefinition())
                 .skuId("sku1")
                 .build(),
             probe.getRef());
@@ -234,7 +241,9 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_3, TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
         assertEquals("sku1", idleInstancesResponse.getSkuId());
 
-        assertEquals(TASK_EXECUTOR_ID_3, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2, WORKER_ID).get());
+        assertEquals(
+            TASK_EXECUTOR_ID_3,
+            resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2.getMachineDefinition(), WORKER_ID).get());
 
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
@@ -254,7 +263,7 @@ public class ResourceClusterActorTest {
             GetClusterIdleInstancesRequest.builder()
                 .clusterID(CLUSTER_ID)
                 .maxInstanceCount(2)
-                .machineDefinition(MACHINE_DEFINITION_2)
+                .machineDefinition(MACHINE_DEFINITION_2.getMachineDefinition())
                 .skuId("sku1")
                 .build(),
             probe.getRef());
@@ -263,7 +272,9 @@ public class ResourceClusterActorTest {
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
         assertEquals("sku1", idleInstancesResponse.getSkuId());
 
-        assertEquals(TASK_EXECUTOR_ID_2, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2, WORKER_ID).get());
+        assertEquals(
+            TASK_EXECUTOR_ID_2,
+            resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2.getMachineDefinition(), WORKER_ID).get());
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
         usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
@@ -277,7 +288,7 @@ public class ResourceClusterActorTest {
             GetClusterIdleInstancesRequest.builder()
                 .clusterID(CLUSTER_ID)
                 .maxInstanceCount(2)
-                .machineDefinition(MACHINE_DEFINITION)
+                .machineDefinition(MACHINE_DEFINITION.getMachineDefinition())
                 .skuId("sku1")
                 .build(),
             probe.getRef());
@@ -302,10 +313,14 @@ public class ResourceClusterActorTest {
                         TASK_EXECUTOR_ID,
                         CLUSTER_ID,
                         TaskExecutorReport.available())).get());
-        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION.getMachineDefinition(), WORKER_ID).get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
         Thread.sleep(2000);
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getAvailableTaskExecutors().get());
-        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION.getMachineDefinition(), WORKER_ID).get());
     }
 }

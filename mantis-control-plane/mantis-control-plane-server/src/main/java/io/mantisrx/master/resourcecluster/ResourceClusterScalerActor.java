@@ -30,25 +30,19 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRe
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec.SkuTypeSpec;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -71,8 +65,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final ResourceClusterStorageProvider storageProvider;
 
     private final ConcurrentMap<String, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
-    private final AtomicReference<MachineDefinitionToSkuMapper> skuMapperRef = new AtomicReference<>(
-        new MachineDefinitionToSkuMapper(null));
 
     private final Clock clock;
 
@@ -159,10 +151,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private void init() {
         this.fetchRuleSet();
 
-        this.storageProvider.getResourceClusterSpecWritable(this.clusterId.toString())
-            .thenAccept(specWritable ->
-                this.skuMapperRef.set(new MachineDefinitionToSkuMapper(specWritable.getClusterSpec())));
-
         getTimers().startTimerWithFixedDelay(
             "ClusterScaler-" + this.clusterId,
             new TriggerClusterUsageRequest(this.clusterId),
@@ -187,7 +175,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         // 3 translate between decision to scale request. (inline for now)
 
         usageResponse.getUsages().forEach(usage -> {
-            Optional<String> skuIdO = this.skuMapperRef.get().map(usage.getDef());
+            Optional<String> skuIdO = Optional.ofNullable(usage.getDef().getDefinitionId());
 
             if (skuIdO.isPresent() && this.skuToRuleMap.containsKey(skuIdO.get())) {
                 Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuIdO.get()).apply(usage);
@@ -201,7 +189,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                                 GetClusterIdleInstancesRequest.builder()
                                     .clusterID(this.clusterId)
                                     .skuId(skuIdO.get())
-                                    .machineDefinition(usage.getDef())
+                                    .machineDefinition(usage.getDef().getMachineDefinition())
                                     .desireSize(decisionO.get().getDesireSize())
                                     .maxInstanceCount(
                                         Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
@@ -225,7 +213,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
             }
             else {
-                log.info("No sku rule is available for {}", usage.getDef());
+                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getDef());
             }
         });
 
@@ -305,43 +293,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     static class GetRuleSetResponse {
         ClusterID clusterID;
         ImmutableMap<String, ClusterAvailabilityRule> rules;
-    }
-
-    static class MachineDefinitionToSkuMapper {
-        private final Map<MachineDefinition, String> mDefToSkuMap = new HashMap<>();
-
-        public MachineDefinitionToSkuMapper(MantisResourceClusterSpec clusterSpec) {
-            if (clusterSpec == null) {
-                return;
-            }
-
-            clusterSpec.getSkuSpecs().forEach(skuSpec -> {
-                MachineDefinition mDef = skuToMachineDefinition(skuSpec);
-                this.mDefToSkuMap.put(mDef, skuSpec.getSkuId());
-                log.info("Add MachineDefinition mapper: {}, {}", mDef, skuSpec.getSkuId());
-            });
-        }
-
-        /**
-         * Map given {@link MachineDefinition} to the cluster SKU id.
-         * @param mDef Given Machine definition.
-         * @return skuId as string. Empty Optional if not found.
-         */
-        public Optional<String> map(MachineDefinition mDef)
-        {
-            return Optional.ofNullable(this.mDefToSkuMap.getOrDefault(mDef, null));
-        }
-
-        private static MachineDefinition skuToMachineDefinition(SkuTypeSpec sku) {
-            //TODO validate rounding error from TaskExecutor registration.
-            return new MachineDefinition(
-                sku.getCpuCoreCount(),
-                sku.getMemorySizeInBytes(),
-                sku.getNetworkMbps(),
-                sku.getDiskSizeInBytes(),
-                5 // num of ports is currently a hardcoded value from {@link TaskExecutor}.
-            );
-        }
     }
 
     static class ClusterAvailabilityRule {

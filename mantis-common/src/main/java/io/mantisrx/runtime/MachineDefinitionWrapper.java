@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.resourcecluster.proto;
+package io.mantisrx.runtime;
 
-import io.mantisrx.runtime.MachineDefinitionWrapper;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
-import java.util.List;
 import lombok.Builder;
-import lombok.Singular;
 import lombok.Value;
 
+/**
+ * Wrapper class for {@link MachineDefinition} with definition id.
+ * This is used in resource cluster stack only.
+ */
 @Value
 @Builder
-public class GetClusterUsageResponse {
-    ClusterID clusterID;
+public class MachineDefinitionWrapper {
+    public static final String MachineDefinitionIdKey = "machinedefinitionid";
 
-    @Singular
-    List<UsageByMachineDefinition> usages;
-
-    @Value
-    @Builder
-    public static class UsageByMachineDefinition {
-        MachineDefinitionWrapper def;
-        int idleCount;
-        int totalCount;
-    }
+    String definitionId;
+    MachineDefinition machineDefinition;
 }

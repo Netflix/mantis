@@ -16,7 +16,7 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import lombok.Value;
 
 /**
@@ -39,5 +39,5 @@ public class TaskExecutorRegistration {
   WorkerPorts workerPorts;
 
   // machine information identifies the cpu/mem/disk/network resources of the task executor.
-  MachineDefinition machineDefinition;
+  MachineDefinitionWrapper machineDefinitionWrapper;
 }

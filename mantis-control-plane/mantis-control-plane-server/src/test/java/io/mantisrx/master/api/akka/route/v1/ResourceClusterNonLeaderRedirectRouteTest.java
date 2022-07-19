@@ -57,6 +57,7 @@ import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvid
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProviderAdapter;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -119,7 +120,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             "taskExecutorAddress",
             "hostName",
             new WorkerPorts(1, 2, 3, 4, 5),
-            new MachineDefinition(1, 1, 1, 1, 1));
+            MachineDefinitionWrapper.builder().machineDefinition(new MachineDefinition(1, 1, 1, 1, 1)).build());
         TaskExecutorStatus status =
             new TaskExecutorStatus(registration, true, true, true, null, Instant.now().toEpochMilli());
         ResourceCluster resourceCluster = mock(ResourceCluster.class);

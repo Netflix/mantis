@@ -29,6 +29,7 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -149,13 +150,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req) {
         log.info("Computing cluster usage: {}", this.clusterID);
-        Map<MachineDefinition, Pair<Integer, Integer>> usageByMachineDef = new HashMap<>();
+        Map<MachineDefinitionWrapper, Pair<Integer, Integer>> usageByMachineDef = new HashMap<>();
         taskExecutorStateMap.entrySet().stream()
             .forEach(kv -> {
                 Pair<Integer, Integer> kvState = new Pair<>(
                     kv.getValue().isAvailable() ? 1 : 0,
                     kv.getValue().isRegistered() ? 1 : 0);
-                MachineDefinition mDef = kv.getValue().getRegistration().getMachineDefinition();
+                MachineDefinitionWrapper mDef = kv.getValue().getRegistration().getMachineDefinitionWrapper();
                 if (usageByMachineDef.containsKey(mDef)) {
                     Pair<Integer, Integer> prevState = usageByMachineDef.get(mDef);
                     usageByMachineDef.put(mDef,
@@ -185,7 +186,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
 
         List<TaskExecutorID> instanceList = taskExecutorStateMap.entrySet().stream()
-            .filter(kv -> kv.getValue().getRegistration().getMachineDefinition().equals(req.getMachineDefinition()))
+            .filter(kv -> kv.getValue().getRegistration().getMachineDefinitionWrapper().getMachineDefinition().equals(req.getMachineDefinition()))
             .filter(isAvailable)
             .map(kv -> kv.getKey())
             .limit(req.getMaxInstanceCount())
@@ -331,7 +332,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .entrySet()
                 .stream()
                 .filter(entry -> (entry.getValue().isAvailable() &&
-                    entry.getValue().getRegistration().getMachineDefinition()
+                    entry.getValue().getRegistration().getMachineDefinitionWrapper().getMachineDefinition()
                         .canFit(request.getMachineDefinition())))
                 .findAny();
 

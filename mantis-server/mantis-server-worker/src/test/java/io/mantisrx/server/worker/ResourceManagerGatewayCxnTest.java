@@ -27,6 +27,7 @@ import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -65,7 +66,9 @@ public class ResourceManagerGatewayCxnTest {
             "localhost",
             "host",
             workerPorts,
-            new MachineDefinition(1, 1, 1, 1, 5));
+            MachineDefinitionWrapper.builder().machineDefinition(
+                new MachineDefinition(1, 1, 1, 1, 5))
+                .build());
         disconnection = new TaskExecutorDisconnection(taskExecutorID, clusterID);
         gateway = mock(ResourceClusterGateway.class);
         report = TaskExecutorReport.available();

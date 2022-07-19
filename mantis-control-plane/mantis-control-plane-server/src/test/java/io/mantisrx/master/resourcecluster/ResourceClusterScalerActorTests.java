@@ -32,21 +32,18 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRe
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ClusterAvailabilityRule;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.GetRuleSetRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.GetRuleSetResponse;
-import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.MachineDefinitionToSkuMapper;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleDecision;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleType;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
-import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -74,13 +71,16 @@ public class ResourceClusterScalerActorTests {
     private TestKit clusterActorProbe;
     private TestKit hostActorProbe;
 
-    private static final MachineDefinition MACHINE_DEFINITION_S =
-        new MachineDefinition(2, 2048, 700, 10240, 5);
-    private static final MachineDefinition MACHINE_DEFINITION_L =
-        new MachineDefinition(4, 16384, 1400, 81920, 5);
+    private static final MachineDefinitionWrapper MACHINE_DEFINITION_S =
+        MachineDefinitionWrapper.builder().definitionId(skuSmall).machineDefinition(
+            new MachineDefinition(2, 2048, 700, 10240, 5)).build();
+    private static final MachineDefinitionWrapper MACHINE_DEFINITION_L =
+        MachineDefinitionWrapper.builder().definitionId(skuLarge).machineDefinition(
+            new MachineDefinition(4, 16384, 1400, 81920, 5)).build();
 
-    private static final MachineDefinition MACHINE_DEFINITION_M =
-        new MachineDefinition(3, 4096, 700, 10240, 5);
+    private static final MachineDefinitionWrapper MACHINE_DEFINITION_M =
+        MachineDefinitionWrapper.builder().definitionId(skuMedium).machineDefinition(
+            new MachineDefinition(3, 4096, 700, 10240, 5)).build();
 
     @BeforeClass
     public static void setup() {
@@ -98,10 +98,6 @@ public class ResourceClusterScalerActorTests {
         clusterActorProbe = new TestKit(actorSystem);
         hostActorProbe = new TestKit(actorSystem);
         this.storageProvider = mock(ResourceClusterStorageProvider.class);
-
-        when(this.storageProvider.getResourceClusterSpecWritable(ArgumentMatchers.anyString()))
-            .thenReturn(CompletableFuture.completedFuture(
-                ResourceClusterSpecWritable.builder().clusterSpec(buildClusterSpec()).build()));
 
         when(this.storageProvider.getResourceClusterScaleRules(ArgumentMatchers.anyString()))
             .thenReturn(CompletableFuture.completedFuture(
@@ -160,7 +156,7 @@ public class ResourceClusterScalerActorTests {
         assertEquals(
             GetClusterIdleInstancesRequest.builder()
                 .skuId(skuLarge)
-                .machineDefinition(MACHINE_DEFINITION_L)
+                .machineDefinition(MACHINE_DEFINITION_L.getMachineDefinition())
                 .clusterID(CLUSTER_ID)
                 .desireSize(15)
                 .maxInstanceCount(1)
@@ -263,10 +259,14 @@ public class ResourceClusterScalerActorTests {
                 .build(),
             Clock.fixed(Clock.systemUTC().instant(), ZoneId.systemDefault()));
 
-        MachineDefinition mDef = new MachineDefinition(2, 2048, 700, 10240, 5);
+        MachineDefinitionWrapper mDef =
+            MachineDefinitionWrapper.builder().machineDefinition(
+                new MachineDefinition(2, 2048, 700, 10240, 5))
+                .build();
 
         // Test scale up
-        UsageByMachineDefinition usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        UsageByMachineDefinition usage = UsageByMachineDefinition.builder()
+            .def(mDef).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision = rule.apply(usage);
         int newSize = 11;
         assertEquals(
@@ -287,6 +287,60 @@ public class ResourceClusterScalerActorTests {
     }
 
     @Test
+    public void testRuleFinishCoolDown() throws InterruptedException {
+        String skuId = "small";
+        ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
+            ResourceClusterScaleSpec.builder()
+                .clusterId(CLUSTER_ID.getResourceID())
+                .skuId(skuId)
+                .coolDownSecs(2)
+                .maxIdleToKeep(10)
+                .minIdleToKeep(5)
+                .minSize(11)
+                .maxSize(15)
+                .build(),
+            Clock.systemUTC());
+
+        MachineDefinitionWrapper mDef =
+            MachineDefinitionWrapper.builder().machineDefinition(
+                    new MachineDefinition(2, 2048, 700, 10240, 5))
+                .build();
+
+        // Test scale up
+        UsageByMachineDefinition usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        Optional<ScaleDecision> decision = rule.apply(usage);
+        int newSize = 11;
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID.getResourceID())
+                    .skuId(skuId)
+                    .desireSize(newSize)
+                    .minSize(newSize)
+                    .maxSize(newSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            decision);
+
+        // test cool down
+        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        assertEquals(Optional.empty(), rule.apply(usage));
+
+        Thread.sleep(Duration.ofSeconds(3).toMillis());
+        assertEquals(
+            Optional.of(
+                ScaleDecision.builder()
+                    .clusterId(CLUSTER_ID.getResourceID())
+                    .skuId(skuId)
+                    .desireSize(newSize)
+                    .minSize(newSize)
+                    .maxSize(newSize)
+                    .type(ScaleType.ScaleUp)
+                    .build()),
+            rule.apply(usage));
+    }
+
+    @Test
     public void testRule() {
         // TestKit probe = new TestKit(actorSystem);
         String skuId = "small";
@@ -302,7 +356,10 @@ public class ResourceClusterScalerActorTests {
                 .build(),
             Clock.fixed(Instant.MIN, ZoneId.systemDefault()));
 
-        MachineDefinition mDef = new MachineDefinition(2, 2048, 700, 10240, 5);
+        MachineDefinitionWrapper mDef =
+            MachineDefinitionWrapper.builder().machineDefinition(
+                    new MachineDefinition(2, 2048, 700, 10240, 5))
+                .build();
 
         // Test scale up
         UsageByMachineDefinition usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
@@ -374,71 +431,5 @@ public class ResourceClusterScalerActorTests {
                     .type(ScaleType.ScaleDown)
                     .build()),
             decision);
-    }
-
-    @Test
-    public void testSkuMapper() {
-        MachineDefinitionToSkuMapper mapper = new MachineDefinitionToSkuMapper(buildClusterSpec());
-        assertEquals(Optional.of("small"),
-            mapper.map(new MachineDefinition(2, 2048, 700, 10240, 5)));
-        assertEquals(Optional.of("large"),
-            mapper.map(new MachineDefinition(4, 16384, 1400, 81920, 5)));
-        assertEquals(Optional.empty(),
-            mapper.map(new MachineDefinition(3, 2048, 700, 10240, 5)));
-    }
-
-    private MantisResourceClusterSpec buildClusterSpec() {
-        String id = CLUSTER_ID.getResourceID();
-        String user = "mantisrx@mantis.io";
-
-        return MantisResourceClusterSpec.builder()
-            .id(id)
-            .name(id)
-            .envType(MantisResourceClusterEnvType.Prod)
-            .ownerEmail(user)
-            .ownerName(user)
-            .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
-                .skuId(skuSmall)
-                .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
-                    .skuId(skuSmall)
-                    .desireSize(2)
-                    .maxSize(3)
-                    .minSize(1)
-                    .build())
-                .cpuCoreCount((int)Math.round(MACHINE_DEFINITION_S.getCpuCores()))
-                .memorySizeInBytes((int)Math.round(MACHINE_DEFINITION_S.getMemoryMB()))
-                .diskSizeInBytes((int)Math.round(MACHINE_DEFINITION_S.getDiskMB()))
-                .networkMbps((int)Math.round(MACHINE_DEFINITION_S.getNetworkMbps()))
-                .imageId("dev/mantistaskexecutor:main-latest")
-                .build())
-            .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
-                .skuId(skuLarge)
-                .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
-                    .skuId(skuLarge)
-                    .desireSize(9)
-                    .maxSize(15)
-                    .minSize(1)
-                    .build())
-                .cpuCoreCount((int)Math.round(MACHINE_DEFINITION_L.getCpuCores()))
-                .memorySizeInBytes((int)Math.round(MACHINE_DEFINITION_L.getMemoryMB()))
-                .diskSizeInBytes((int)Math.round(MACHINE_DEFINITION_L.getDiskMB()))
-                .networkMbps((int)Math.round(MACHINE_DEFINITION_L.getNetworkMbps()))
-                .imageId("dev/mantistaskexecutor:main-latest")
-                .build())
-            .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
-                .skuId(skuMedium)
-                .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
-                    .skuId(skuMedium)
-                    .desireSize(9)
-                    .maxSize(15)
-                    .minSize(1)
-                    .build())
-                .cpuCoreCount((int)Math.round(MACHINE_DEFINITION_M.getCpuCores()))
-                .memorySizeInBytes((int)Math.round(MACHINE_DEFINITION_M.getMemoryMB()))
-                .diskSizeInBytes((int)Math.round(MACHINE_DEFINITION_M.getDiskMB()))
-                .networkMbps((int)Math.round(MACHINE_DEFINITION_M.getNetworkMbps()))
-                .imageId("dev/mantistaskexecutor:main-latest")
-                .build())
-            .build();
     }
 }
