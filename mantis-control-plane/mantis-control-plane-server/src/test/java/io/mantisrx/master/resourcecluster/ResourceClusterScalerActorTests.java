@@ -156,7 +156,7 @@ public class ResourceClusterScalerActorTests {
         assertEquals(
             GetClusterIdleInstancesRequest.builder()
                 .skuId(skuLarge)
-                .machineDefinition(MACHINE_DEFINITION_L.getMachineDefinition())
+                .machineDefinitionWrapper(MACHINE_DEFINITION_L)
                 .clusterID(CLUSTER_ID)
                 .desireSize(15)
                 .maxInstanceCount(1)

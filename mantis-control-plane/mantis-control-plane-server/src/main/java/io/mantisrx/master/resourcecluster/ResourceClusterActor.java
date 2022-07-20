@@ -157,7 +157,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     kv.getValue().isAvailable() ? 1 : 0,
                     kv.getValue().isRegistered() ? 1 : 0);
                 MachineDefinitionWrapper mDef = kv.getValue().getRegistration().getMachineDefinitionWrapper();
-                if (usageByMachineDef.containsKey(mDef)) {
+                if (mDef == null) {
+                    log.debug("MachineDefinitionWrapper not supported: {}", this.clusterID);
+                }
+                else if (usageByMachineDef.containsKey(mDef)) {
                     Pair<Integer, Integer> prevState = usageByMachineDef.get(mDef);
                     usageByMachineDef.put(mDef,
                         new Pair<>(kvState.first() + prevState.first(), kvState.second() + prevState.second()));
@@ -186,7 +189,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
 
         List<TaskExecutorID> instanceList = taskExecutorStateMap.entrySet().stream()
-            .filter(kv -> kv.getValue().getRegistration().getMachineDefinitionWrapper().getMachineDefinition().equals(req.getMachineDefinition()))
+            .filter(kv -> kv.getValue().getRegistration().getMachineDefinitionWrapper() != null)
+            .filter(kv -> kv.getValue().getRegistration().getMachineDefinitionWrapper().getDefinitionId()
+                .equals(req.getMachineDefinitionWrapper().getDefinitionId()))
             .filter(isAvailable)
             .map(kv -> kv.getKey())
             .limit(req.getMaxInstanceCount())
@@ -331,9 +336,16 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             taskExecutorStateMap
                 .entrySet()
                 .stream()
-                .filter(entry -> (entry.getValue().isAvailable() &&
-                    entry.getValue().getRegistration().getMachineDefinitionWrapper().getMachineDefinition()
-                        .canFit(request.getMachineDefinition())))
+                .filter(entry -> (
+                    entry.getValue().isAvailable() &&
+                    (entry.getValue().getRegistration().getMachineDefinitionWrapper() != null
+                        && entry.getValue().getRegistration().getMachineDefinitionWrapper().getMachineDefinition()
+                        .canFit(request.getMachineDefinition()))
+                        || (entry.getValue().getRegistration().getMachineDefinition() != null
+                            && entry.getValue().getRegistration().getMachineDefinition()
+                                .canFit(request.getMachineDefinition()))
+                    )
+                )
                 .findAny();
 
         if (matchedExecutor.isPresent()) {

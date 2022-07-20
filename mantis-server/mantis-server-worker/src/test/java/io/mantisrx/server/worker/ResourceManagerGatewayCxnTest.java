@@ -60,15 +60,18 @@ public class ResourceManagerGatewayCxnTest {
         WorkerPorts workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
         TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutor");
         ClusterID clusterID = ClusterID.of("cluster");
-        registration = new TaskExecutorRegistration(
-            taskExecutorID,
-            clusterID,
-            "localhost",
-            "host",
-            workerPorts,
-            MachineDefinitionWrapper.builder().machineDefinition(
-                new MachineDefinition(1, 1, 1, 1, 5))
-                .build());
+        registration =
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(taskExecutorID)
+                .clusterID(clusterID)
+                .hostname("host")
+                .taskExecutorAddress("localhost")
+                .workerPorts(workerPorts)
+                .machineDefinitionWrapper(MachineDefinitionWrapper.builder().machineDefinition(
+                        new MachineDefinition(1, 1, 1, 1, 5))
+                    .build())
+                .build();
+
         disconnection = new TaskExecutorDisconnection(taskExecutorID, clusterID);
         gateway = mock(ResourceClusterGateway.class);
         report = TaskExecutorReport.available();

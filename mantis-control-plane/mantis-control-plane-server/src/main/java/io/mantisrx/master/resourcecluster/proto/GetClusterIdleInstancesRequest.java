@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
-import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import lombok.Builder;
 import lombok.Value;
@@ -24,7 +24,7 @@ import lombok.Value;
 @Value
 @Builder
 public class GetClusterIdleInstancesRequest {
-    MachineDefinition machineDefinition;
+    MachineDefinitionWrapper machineDefinitionWrapper;
     ClusterID clusterID;
     String skuId;
     int maxInstanceCount;

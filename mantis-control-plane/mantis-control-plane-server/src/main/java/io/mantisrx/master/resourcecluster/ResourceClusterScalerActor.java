@@ -175,6 +175,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         // 3 translate between decision to scale request. (inline for now)
 
         usageResponse.getUsages().forEach(usage -> {
+            if (usage.getDef() == null) {
+                log.debug("Legacy machine definition not supported: ", usage);
+                return;
+            }
+
             Optional<String> skuIdO = Optional.ofNullable(usage.getDef().getDefinitionId());
 
             if (skuIdO.isPresent() && this.skuToRuleMap.containsKey(skuIdO.get())) {
@@ -189,7 +194,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                                 GetClusterIdleInstancesRequest.builder()
                                     .clusterID(this.clusterId)
                                     .skuId(skuIdO.get())
-                                    .machineDefinition(usage.getDef().getMachineDefinition())
+                                    .machineDefinitionWrapper(usage.getDef())
                                     .desireSize(decisionO.get().getDesireSize())
                                     .maxInstanceCount(
                                         Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))

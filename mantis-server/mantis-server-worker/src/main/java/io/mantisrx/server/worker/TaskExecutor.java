@@ -128,9 +128,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         String hostName = workerConfiguration.getExternalAddress();
 
         this.taskExecutorRegistration =
-            new TaskExecutorRegistration(
-                taskExecutorID, clusterID, getAddress(), hostName, workerPorts,
-                MachineDefinitionUtils.wrap(machineDefinition));
+            TaskExecutorRegistration.builder()
+                .machineDefinitionWrapper(MachineDefinitionUtils.wrap(machineDefinition))
+                .taskExecutorID(taskExecutorID)
+                .clusterID(clusterID)
+                .hostname(hostName)
+                .taskExecutorAddress(getAddress())
+                .workerPorts(workerPorts)
+                .build();
         this.ioExecutor =
             Executors.newFixedThreadPool(
                 Hardware.getNumberCPUCores(),

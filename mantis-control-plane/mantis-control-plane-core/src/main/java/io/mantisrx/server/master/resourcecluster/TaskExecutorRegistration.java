@@ -16,7 +16,10 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MachineDefinitionWrapper;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Value;
 
 /**
@@ -24,6 +27,8 @@ import lombok.Value;
  * Different fields help identify the task executor in different dimensions.
  */
 @Value
+@Builder
+@AllArgsConstructor
 public class TaskExecutorRegistration {
   TaskExecutorID taskExecutorID;
 
@@ -39,5 +44,8 @@ public class TaskExecutorRegistration {
   WorkerPorts workerPorts;
 
   // machine information identifies the cpu/mem/disk/network resources of the task executor.
+  // machineDefinitionWrapper below should eventually replace legacyMachineDefinition once all TMs are updated to
+  // include the new runtime supporting legacyMachineDefinition.
+  MachineDefinition machineDefinition; // legacy machine definition.
   MachineDefinitionWrapper machineDefinitionWrapper;
 }

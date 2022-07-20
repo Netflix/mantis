@@ -75,7 +75,15 @@ public class TaskExecutorStateTest {
     public void testRegularLifecycle() {
         Instant currentTime;
         // Registration
-        assertTrue(state.onRegistration(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, TASK_EXECUTOR_ADDRESS, HOST_NAME, WORKER_PORTS, MACHINE_DEFINITION)));
+        assertTrue(state.onRegistration(
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(TASK_EXECUTOR_ID)
+                .clusterID(CLUSTER_ID)
+                .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                .hostname(HOST_NAME)
+                .workerPorts(WORKER_PORTS)
+                .machineDefinitionWrapper(MACHINE_DEFINITION)
+                .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
 
@@ -123,7 +131,14 @@ public class TaskExecutorStateTest {
     public void testInitializationLifecycle() {
         Instant currentTime;
         // Registration
-        assertTrue(state.onRegistration(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, TASK_EXECUTOR_ADDRESS, HOST_NAME, WORKER_PORTS, MACHINE_DEFINITION)));
+        assertTrue(state.onRegistration(TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinitionWrapper(MACHINE_DEFINITION)
+            .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
 

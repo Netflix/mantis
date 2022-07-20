@@ -64,40 +64,48 @@ public class ResourceClusterActorTest {
     private static final String HOST_NAME = "hostname";
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(1, 2, 3, 4, 5);
     private static final MachineDefinitionWrapper MACHINE_DEFINITION =
-        MachineDefinitionWrapper.builder().machineDefinition(
-            new MachineDefinition(2f, 2014, 128.0, 1024, 1))
+        MachineDefinitionWrapper.builder()
+            .definitionId("small")
+            .machineDefinition(
+                new MachineDefinition(2f, 2014, 128.0, 1024, 1))
             .build();
 
     private static final MachineDefinitionWrapper MACHINE_DEFINITION_2 =
-        MachineDefinitionWrapper.builder().machineDefinition(
+        MachineDefinitionWrapper.builder()
+            .definitionId("medium")
+            .machineDefinition(
                 new MachineDefinition(4f, 4028, 128.0, 1024, 1))
             .build();
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION =
-        new TaskExecutorRegistration(
-            TASK_EXECUTOR_ID,
-            CLUSTER_ID,
-            TASK_EXECUTOR_ADDRESS,
-            HOST_NAME,
-            WORKER_PORTS,
-            MACHINE_DEFINITION);
+        TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinitionWrapper(MACHINE_DEFINITION)
+            .build();
 
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION_2 =
-        new TaskExecutorRegistration(
-            TASK_EXECUTOR_ID_2,
-            CLUSTER_ID,
-            TASK_EXECUTOR_ADDRESS,
-            HOST_NAME,
-            WORKER_PORTS,
-            MACHINE_DEFINITION_2);
+        TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID_2)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinitionWrapper(MACHINE_DEFINITION_2)
+            .build();
 
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION_3 =
-        new TaskExecutorRegistration(
-            TASK_EXECUTOR_ID_3,
-            CLUSTER_ID,
-            TASK_EXECUTOR_ADDRESS,
-            HOST_NAME,
-            WORKER_PORTS,
-            MACHINE_DEFINITION_2);
+        TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID_3)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinitionWrapper(MACHINE_DEFINITION_2)
+            .build();
+
     private static final WorkerId WORKER_ID =
         WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
@@ -232,14 +240,14 @@ public class ResourceClusterActorTest {
             GetClusterIdleInstancesRequest.builder()
                 .clusterID(CLUSTER_ID)
                 .maxInstanceCount(2)
-                .machineDefinition(MACHINE_DEFINITION_2.getMachineDefinition())
-                .skuId("sku1")
+                .machineDefinitionWrapper(MACHINE_DEFINITION_2)
+                .skuId("medium")
                 .build(),
             probe.getRef());
         GetClusterIdleInstancesResponse idleInstancesResponse =
             probe.expectMsgClass(GetClusterIdleInstancesResponse.class);
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID_3, TASK_EXECUTOR_ID_2), idleInstancesResponse.getInstanceIds());
-        assertEquals("sku1", idleInstancesResponse.getSkuId());
+        assertEquals("medium", idleInstancesResponse.getSkuId());
 
         assertEquals(
             TASK_EXECUTOR_ID_3,
@@ -263,7 +271,7 @@ public class ResourceClusterActorTest {
             GetClusterIdleInstancesRequest.builder()
                 .clusterID(CLUSTER_ID)
                 .maxInstanceCount(2)
-                .machineDefinition(MACHINE_DEFINITION_2.getMachineDefinition())
+                .machineDefinitionWrapper(MACHINE_DEFINITION_2)
                 .skuId("sku1")
                 .build(),
             probe.getRef());
@@ -288,7 +296,7 @@ public class ResourceClusterActorTest {
             GetClusterIdleInstancesRequest.builder()
                 .clusterID(CLUSTER_ID)
                 .maxInstanceCount(2)
-                .machineDefinition(MACHINE_DEFINITION.getMachineDefinition())
+                .machineDefinitionWrapper(MACHINE_DEFINITION)
                 .skuId("sku1")
                 .build(),
             probe.getRef());
