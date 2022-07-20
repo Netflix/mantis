@@ -22,11 +22,13 @@ import io.mantisrx.common.metrics.Metrics;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -38,6 +40,8 @@ import rx.schedulers.Schedulers;
 public final class ObservableTrigger {
 
     private static final Logger logger = LoggerFactory.getLogger(ObservableTrigger.class);
+
+    private static Scheduler timeoutScheduler = Schedulers.from(Executors.newFixedThreadPool(5));
 
     private ObservableTrigger() {}
 
@@ -54,33 +58,40 @@ public final class ObservableTrigger {
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
-        Action1<MonitoredQueue<T>> doOnStart = queue -> subRef.set(
+        Action1<MonitoredQueue<T>> doOnStart = queue -> {
+            Subscription oldSub = subRef.getAndSet(
                 o
-                        .filter((T t1) -> t1 != null)
-                        .doOnSubscribe(() -> {
-                            logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(1);
-                        })
-                        .doOnUnsubscribe(() -> {
-                            logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(0);
-                        })
-                        .subscribe((T data) -> queue.write(data)
-                                ,
-                                (Throwable e) -> {
-                                    logger.warn("Observable used to push data errored, on server with name: " + name, e);
-                                    if (doOnError != null) {
-                                        doOnError.call(e);
-                                    }
-                                },
-                                () -> {
-                                    logger.info("Observable used to push data completed, on server with name: " + name);
-                                    if (doOnComplete != null) {
-                                        doOnComplete.call();
-                                    }
-                                }
-                        )
-        );
+                    .filter((T t1) -> t1 != null)
+                    .doOnSubscribe(() -> {
+                        logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
+                        subscriptionActive.increment();
+                    })
+                    .doOnUnsubscribe(() -> {
+                        logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
+                        subscriptionActive.decrement();
+                    })
+                    .subscribe(
+                        (T data) -> queue.write(data),
+                        (Throwable e) -> {
+                            logger.warn("Observable used to push data errored, on server with name: " + name, e);
+                            if (doOnError != null) {
+                                doOnError.call(e);
+                            }
+                        },
+                        () -> {
+                            logger.info("Observable used to push data completed, on server with name: " + name);
+                            if (doOnComplete != null) {
+                                doOnComplete.call();
+                            }
+                        }
+                    )
+            );
+            if (oldSub != null) {
+                logger.info("A new subscription is ACTIVE. " +
+                    "Unsubscribe from previous subscription observable trigger with name: " + name);
+                oldSub.unsubscribe();
+            }
+        };
 
         Action1<MonitoredQueue<T>> doOnStop = t1 -> {
             if (subRef.get() != null) {
@@ -109,26 +120,26 @@ public final class ObservableTrigger {
                         .filter((T t1) -> t1 != null)
                         .doOnSubscribe(() -> {
                             logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(1);
+                            subscriptionActive.increment();
                         })
                         .doOnUnsubscribe(() -> {
                             logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(0);
+                            subscriptionActive.decrement();
                         })
-                        .subscribe((T data) -> queue.write(data)
-                                ,
-                                (Throwable e) -> {
-                                    logger.warn("Observable used to push data errored, on server with name: " + name, e);
-                                    if (doOnError != null) {
-                                        doOnError.call(e);
-                                    }
-                                },
-                                () -> {
-                                    logger.info("Observable used to push data completed, on server with name: " + name);
-                                    if (doOnComplete != null) {
-                                        doOnComplete.call();
-                                    }
+                        .subscribe(
+                            (T data) -> queue.write(data),
+                            (Throwable e) -> {
+                                logger.warn("Observable used to push data errored, on server with name: " + name, e);
+                                if (doOnError != null) {
+                                    doOnError.call(e);
                                 }
+                            },
+                            () -> {
+                                logger.info("Observable used to push data completed, on server with name: " + name);
+                                if (doOnComplete != null) {
+                                    doOnComplete.call();
+                                }
+                            }
                         )
         );
 
@@ -155,60 +166,67 @@ public final class ObservableTrigger {
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
-        Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> subRef.set(
+        Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> {
+            Subscription oldSub = subRef.getAndSet(
                 o
-                        // decouple from calling thread
-                        .observeOn(Schedulers.computation())
-                        .doOnSubscribe(() -> {
-                            logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(1);
-                        })
-                        .doOnUnsubscribe(() -> {
-                            logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(0);
-                        })
-                        .flatMap((final GroupedObservable<K, V> group) -> {
-                                    final byte[] keyBytes = keyEncoder.call(group.getKey());
-                                    final long keyBytesHashed = hashFunction.computeHash(keyBytes);
-                                    return
-                                            group
-                                                    .timeout(groupExpirySeconds, TimeUnit.SECONDS, Observable.empty())
-                                                    .lift(new DisableBackPressureOperator<V>())
-                                                    .buffer(250, TimeUnit.MILLISECONDS)
-                                                    .filter((List<V> t1) -> t1 != null && !t1.isEmpty())
-                                                    .map((List<V> list) -> {
-                                                                List<KeyValuePair<K, V>> keyPairList = new ArrayList<>(list.size());
-                                                                for (V data : list) {
-                                                                    keyPairList.add(new KeyValuePair<>(keyBytesHashed, keyBytes, data));
-                                                                }
-                                                                return keyPairList;
-                                                            }
-                                                    );
-                                }
-                        )
-                        .subscribe((List<KeyValuePair<K, V>> list) -> {
-                                    for (KeyValuePair<K, V> data : list) {
-                                        queue.write(data);
-                                    }
-                                },
-                                (Throwable e) -> {
-                                    logger.warn("Observable used to push data errored, on server with name: " + name, e);
-                                    if (doOnError != null) {
-                                        doOnError.call(e);
-                                    }
-                                },
-                                () -> {
-                                    logger.info("Observable used to push data completed, on server with name: " + name);
-                                    if (doOnComplete != null) {
-                                        doOnComplete.call();
-                                    }
-                                }
-
-                        ));
+                    .doOnSubscribe(() -> {
+                        logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
+                        subscriptionActive.increment();
+                    })
+                    .doOnUnsubscribe(() -> {
+                        logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
+                        subscriptionActive.decrement();
+                    })
+                    .flatMap((final GroupedObservable<K, V> group) -> {
+                            final byte[] keyBytes = keyEncoder.call(group.getKey());
+                            final long keyBytesHashed = hashFunction.computeHash(keyBytes);
+                            return
+                                group
+                                    .timeout(groupExpirySeconds, TimeUnit.SECONDS, Observable.empty(), timeoutScheduler)
+                                    .lift(new DisableBackPressureOperator<V>())
+                                    .buffer(250, TimeUnit.MILLISECONDS)
+                                    .filter((List<V> t1) -> t1 != null && !t1.isEmpty())
+                                    .map((List<V> list) -> {
+                                            List<KeyValuePair<K, V>> keyPairList = new ArrayList<>(list.size());
+                                            for (V data : list) {
+                                                keyPairList.add(new KeyValuePair<>(keyBytesHashed, keyBytes, data));
+                                            }
+                                            return keyPairList;
+                                        }
+                                    );
+                        }
+                    )
+                    .subscribe(
+                        (List<KeyValuePair<K, V>> list) -> {
+                            for (KeyValuePair<K, V> data : list) {
+                                queue.write(data);
+                            }
+                        },
+                        (Throwable e) -> {
+                            logger.warn("Observable used to push data errored, on server with name: " + name, e);
+                            if (doOnError != null) {
+                                doOnError.call(e);
+                            }
+                        },
+                        () -> {
+                            logger.info("Observable used to push data completed, on server with name: " + name);
+                            if (doOnComplete != null) {
+                                doOnComplete.call();
+                            }
+                        }
+                    )
+            );
+            if (oldSub != null) {
+                logger.info("A new subscription is ACTIVE. " +
+                    "Unsubscribe from previous subscription observable trigger with name: " + name);
+                oldSub.unsubscribe();
+            }
+        };
 
         Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStop = t1 -> {
             if (subRef.get() != null) {
-                logger.warn("Connections from next stage has dropped to 0. Do not propagate unsubscribe");
+                logger.warn("Connections from next stage has dropped to 0. " +
+                    "Do not propagate unsubscribe until a new connection is made.");
                 //subRef.get().unsubscribe();
             }
         };
@@ -229,44 +247,49 @@ public final class ObservableTrigger {
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
-        Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> subRef.set(
+        Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> {
+            Subscription oldSub = subRef.getAndSet(
                 o
-                        .doOnSubscribe(() -> {
-                            logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(1);
-                        })
-                        .doOnUnsubscribe(() -> {
-                            logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
-                            subscriptionActive.set(0);
-                        })
-                        .map((MantisGroup<K, V> data) -> {
-                            final byte[] keyBytes = keyEncoder.call(data.getKeyValue());
-                            final long keyBytesHashed = hashFunction.computeHash(keyBytes);
-                            return (new KeyValuePair<K, V>(keyBytesHashed, keyBytes, data.getValue()));
-                        })
-
-                        .subscribe(
-                                (KeyValuePair<K, V> data) -> {
-                                    queue.write(data);
-                                },
-                                (Throwable e) -> {
-                                    logger.warn("Observable used to push data errored, on server with name: " + name, e);
-                                    if (doOnError != null) {
-                                        doOnError.call(e);
-                                    }
-                                }
-                                ,
-                                () -> {
-                                    logger.info("Observable used to push data completed, on server with name: " + name);
-                                    if (doOnComplete != null) {
-                                        doOnComplete.call();
-                                    }
-                                }
-                        ));
+                    .doOnSubscribe(() -> {
+                        logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
+                        subscriptionActive.increment();
+                    })
+                    .doOnUnsubscribe(() -> {
+                        logger.info("Subscription is INACTIVE for observable trigger with name: " + name);
+                        subscriptionActive.decrement();
+                    })
+                    .map((MantisGroup<K, V> data) -> {
+                        final byte[] keyBytes = keyEncoder.call(data.getKeyValue());
+                        final long keyBytesHashed = hashFunction.computeHash(keyBytes);
+                        return (new KeyValuePair<K, V>(keyBytesHashed, keyBytes, data.getValue()));
+                    })
+                    .subscribe(
+                        (KeyValuePair<K, V> data) -> queue.write(data),
+                        (Throwable e) -> {
+                            logger.warn("Observable used to push data errored, on server with name: " + name, e);
+                            if (doOnError != null) {
+                                doOnError.call(e);
+                            }
+                        },
+                        () -> {
+                            logger.info("Observable used to push data completed, on server with name: " + name);
+                            if (doOnComplete != null) {
+                                doOnComplete.call();
+                            }
+                        }
+                    )
+            );
+            if (oldSub != null) {
+                logger.info("A new subscription is ACTIVE. " +
+                    "Unsubscribe from previous subscription observable trigger with name: " + name);
+                oldSub.unsubscribe();
+            }
+        };
 
         Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStop = t1 -> {
             if (subRef.get() != null) {
-                logger.warn("Connections from next stage has dropped to 0. Do not propagate unsubscribe");
+                logger.warn("Connections from next stage has dropped to 0. " +
+                    "Do not propagate unsubscribe until a new connection is made.");
                 //	subRef.get().unsubscribe();
             }
         };
