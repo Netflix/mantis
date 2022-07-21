@@ -136,6 +136,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
                 .build();
+        log.info("Starting executor registration: {}", this.taskExecutorRegistration);
+
         this.ioExecutor =
             Executors.newFixedThreadPool(
                 Hardware.getNumberCPUCores(),

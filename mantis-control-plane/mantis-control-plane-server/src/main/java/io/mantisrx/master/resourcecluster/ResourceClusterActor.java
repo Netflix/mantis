@@ -156,11 +156,16 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 Pair<Integer, Integer> kvState = new Pair<>(
                     kv.getValue().isAvailable() ? 1 : 0,
                     kv.getValue().isRegistered() ? 1 : 0);
-                MachineDefinitionWrapper mDef = kv.getValue().getRegistration().getMachineDefinitionWrapper();
-                if (mDef == null) {
-                    log.debug("MachineDefinitionWrapper not supported: {}", this.clusterID);
+
+                if (kv.getValue() == null ||
+                    kv.getValue().getRegistration() == null ||
+                    kv.getValue().getRegistration().getMachineDefinitionWrapper() == null) {
+                    log.debug("MachineDefinitionWrapper is empty: {}", this.clusterID);
+                    return;
                 }
-                else if (usageByMachineDef.containsKey(mDef)) {
+
+                MachineDefinitionWrapper mDef = kv.getValue().getRegistration().getMachineDefinitionWrapper();
+                if (usageByMachineDef.containsKey(mDef)) {
                     Pair<Integer, Integer> prevState = usageByMachineDef.get(mDef);
                     usageByMachineDef.put(mDef,
                         new Pair<>(kvState.first() + prevState.first(), kvState.second() + prevState.second()));
