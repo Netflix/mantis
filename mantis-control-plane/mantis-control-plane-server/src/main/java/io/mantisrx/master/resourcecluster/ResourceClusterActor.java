@@ -153,16 +153,16 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Map<MachineDefinitionWrapper, Pair<Integer, Integer>> usageByMachineDef = new HashMap<>();
         taskExecutorStateMap.entrySet().stream()
             .forEach(kv -> {
-                Pair<Integer, Integer> kvState = new Pair<>(
-                    kv.getValue().isAvailable() ? 1 : 0,
-                    kv.getValue().isRegistered() ? 1 : 0);
-
                 if (kv.getValue() == null ||
                     kv.getValue().getRegistration() == null ||
                     kv.getValue().getRegistration().getMachineDefinitionWrapper() == null) {
-                    log.debug("MachineDefinitionWrapper is empty: {}", this.clusterID);
+                    log.info("MachineDefinitionWrapper is empty: {}, {}", this.clusterID, kv.getKey());
                     return;
                 }
+
+                Pair<Integer, Integer> kvState = new Pair<>(
+                    kv.getValue().isAvailable() ? 1 : 0,
+                    kv.getValue().isRegistered() ? 1 : 0);
 
                 MachineDefinitionWrapper mDef = kv.getValue().getRegistration().getMachineDefinitionWrapper();
                 if (usageByMachineDef.containsKey(mDef)) {
@@ -277,7 +277,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onTaskExecutorRegistration(TaskExecutorRegistration registration) {
         setupTaskExecutorStateIfNecessary(registration.getTaskExecutorID());
-        log.info("Request for registering {} with the resource cluster {}", registration.getTaskExecutorID(), this);
+        log.info("Request for registering on resource cluster {}: {}.", this, registration);
         try {
             final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
             final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);

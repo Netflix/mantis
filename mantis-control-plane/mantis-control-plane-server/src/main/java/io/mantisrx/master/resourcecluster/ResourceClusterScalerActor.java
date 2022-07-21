@@ -240,11 +240,15 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private void onTriggerClusterUsageRequest(TriggerClusterUsageRequest req) {
         log.trace("Requesting cluster usage: {}", this.clusterId);
+        if (this.skuToRuleMap.isEmpty()) {
+            log.info("{} scaler is disabled due to no rules", this.clusterId);
+            return;
+        }
         this.resourceClusterActor.tell(new GetClusterUsageRequest(this.clusterId), self());
     }
 
     private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
-        log.info("Requesting cluster rule refresh");
+        log.info("{}: Requesting cluster rule refresh", this.clusterId);
         this.fetchRuleSet();
     }
 
@@ -258,7 +262,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 rules
                     .getScaleRules().values()
                     .forEach(rule -> {
-                        log.info("Adding scaleRule: {}", rule);
+                        log.info("Cluster [{}]: Adding scaleRule: {}",this.clusterId, rule);
                         this.skuToRuleMap.put(
                             rule.getSkuId(),
                             new ClusterAvailabilityRule(rule, this.clock));
