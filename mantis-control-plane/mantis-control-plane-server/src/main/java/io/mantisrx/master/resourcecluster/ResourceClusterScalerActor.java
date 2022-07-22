@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import static akka.pattern.Patterns.pipe;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -41,6 +43,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import lombok.Builder;
@@ -144,6 +147,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         GetRuleSetResponse.builder().rules(ImmutableMap.copyOf(this.skuToRuleMap)).build(), self()))
                 .match(GetClusterUsageResponse.class, this::onGetClusterUsageResponse)
                 .match(GetClusterIdleInstancesResponse.class, this::onGetClusterIdleInstancesResponse)
+                .match(GetRuleSetResponse.class,
+                    s -> log.info("[{}] Refreshed rule size: {}", s.getClusterID(), s.getRules().size()))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
                 .build();
     }
@@ -253,22 +258,28 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     }
 
     private void fetchRuleSet() {
-        this.storageProvider.getResourceClusterScaleRules(this.clusterId.toString())
-            .thenAccept(rules -> {
-                Set<String> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
-                removedKeys.removeAll(rules.getScaleRules().keySet());
-                removedKeys.forEach(this.skuToRuleMap::remove);
+        CompletionStage<GetRuleSetResponse> fetchFut =
+            this.storageProvider.getResourceClusterScaleRules(this.clusterId.toString())
+                .thenApply(rules -> {
+                    Set<String> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
+                    removedKeys.removeAll(rules.getScaleRules().keySet());
+                    removedKeys.forEach(this.skuToRuleMap::remove);
 
-                rules
-                    .getScaleRules().values()
-                    .forEach(rule -> {
-                        log.info("Cluster [{}]: Adding scaleRule: {}",this.clusterId, rule);
-                        this.skuToRuleMap.put(
-                            rule.getSkuId(),
-                            new ClusterAvailabilityRule(rule, this.clock));
-                    });
+                    rules
+                        .getScaleRules().values()
+                        .forEach(rule -> {
+                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, rule);
+                            this.skuToRuleMap.put(
+                                rule.getSkuId(),
+                                new ClusterAvailabilityRule(rule, this.clock));
+                        });
+                    return GetRuleSetResponse.builder()
+                        .rules(ImmutableMap.copyOf(this.skuToRuleMap))
+                        .clusterID(this.clusterId)
+                        .build();
+                });
 
-            });
+        pipe(fetchFut, getContext().getDispatcher()).to(getSelf());
     }
 
     private ScaleResourceRequest translateScaleDecision(ScaleDecision decision) {
