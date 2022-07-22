@@ -99,7 +99,7 @@ public class ResourceClusterScalerActorTests {
         hostActorProbe = new TestKit(actorSystem);
         this.storageProvider = mock(ResourceClusterStorageProvider.class);
 
-        when(this.storageProvider.getResourceClusterScaleRules(ArgumentMatchers.anyString()))
+        when(this.storageProvider.getResourceClusterScaleRules(CLUSTER_ID.getResourceID()))
             .thenReturn(CompletableFuture.completedFuture(
                 ResourceClusterScaleRulesWritable.builder()
                     .scaleRule(skuSmall, ResourceClusterScaleSpec.builder()
