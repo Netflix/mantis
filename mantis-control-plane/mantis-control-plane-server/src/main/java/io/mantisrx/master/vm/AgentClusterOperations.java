@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.vm;
 
-import com.netflix.fenzo.VirtualMachineCurrentState;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,11 +28,8 @@ import java.util.Set;
 public interface AgentClusterOperations {
 
     void setActiveVMsAttributeValues(List<String> values) throws IOException;
-    List<String> getActiveVMsAttributeValues();
+    Set<String> getActiveVMsAttributeValues();
     boolean isActive(String name);
-
-    void setAgentInfos(List<VirtualMachineCurrentState> agentInfos);
-    List<AgentInfo> getAgentInfos();
 
     /**
      * Get all current jobs assigned to VMs. This produces a map with key as the value for VM attribute used to
