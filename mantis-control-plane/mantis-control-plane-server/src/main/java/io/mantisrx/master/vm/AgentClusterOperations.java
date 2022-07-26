@@ -29,7 +29,7 @@ import java.util.Set;
 public interface AgentClusterOperations {
 
     void setActiveVMsAttributeValues(List<String> values) throws IOException;
-    List<String> getActiveVMsAttributeValues();
+    Set<String> getActiveVMsAttributeValues();
     boolean isActive(String name);
 
     void setAgentInfos(List<VirtualMachineCurrentState> agentInfos);

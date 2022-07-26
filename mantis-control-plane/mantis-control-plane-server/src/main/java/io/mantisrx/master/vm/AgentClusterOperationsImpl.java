@@ -40,10 +40,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.mesos.Protos;
 import org.slf4j.Logger;
@@ -134,10 +137,10 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     }
 
     @Override
-    public List<String> getActiveVMsAttributeValues() {
+    public Set<String> getActiveVMsAttributeValues() {
         return activeVmAttributeValues==null?
             null :
-            activeVmAttributeValues.values;
+            new HashSet<>(activeVmAttributeValues.values);
     }
 
     private List<JobsOnVMStatus> getJobsOnVMStatus() {
@@ -173,30 +176,23 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
         listJobsOnVMsCount.increment();
         Map<String, List<JobsOnVMStatus>> result = new HashMap<>();
         final List<JobsOnVMStatus> statusList = getJobsOnVMStatus();
-        if (statusList != null && !statusList.isEmpty()) {
+        if (!statusList.isEmpty()) {
             for (JobsOnVMStatus status: statusList) {
-                List<JobsOnVMStatus> jobsOnVMStatuses = result.get(status.getAttributeValue());
-                if (jobsOnVMStatuses == null) {
-                    jobsOnVMStatuses = new ArrayList<>();
-                    result.put(status.getAttributeValue(), jobsOnVMStatuses);
-                }
+                List<JobsOnVMStatus> jobsOnVMStatuses = result.computeIfAbsent(status.getAttributeValue(), k -> new ArrayList<>());
                 jobsOnVMStatuses.add(status);
             }
         }
         return result;
     }
 
-    private boolean isIn(String name, List<String> activeVMs) {
-        for(String vm: activeVMs)
-            if(vm.equals(name))
-                return true;
-        return false;
+    private boolean isIn(String name, Set<String> activeVMs) {
+        return activeVMs.contains(name);
     }
 
     @Override
     public boolean isActive(String name) {
         return activeVmAttributeValues==null || activeVmAttributeValues.isEmpty() ||
-            isIn(name, activeVmAttributeValues.getValues());
+            isIn(name, getActiveVMsAttributeValues());
     }
 
     @Override
@@ -261,7 +257,7 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     List<String> manageActiveVMs(final List<VirtualMachineCurrentState> currentStates) {
         List<String> inactiveVMs = new ArrayList<>();
         if(currentStates!=null && !currentStates.isEmpty()) {
-            final List<String> values = getActiveVMsAttributeValues();
+            final Set<String> values = getActiveVMsAttributeValues();
             if(values==null || values.isEmpty())
                 return Collections.EMPTY_LIST; // treat no valid active VMs attribute value as all are active
             for(VirtualMachineCurrentState currentState: currentStates) {
