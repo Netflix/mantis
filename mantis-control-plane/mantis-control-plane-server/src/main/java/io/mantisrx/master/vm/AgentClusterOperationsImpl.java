@@ -23,6 +23,7 @@ import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.util.DateTimeExt;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.server.core.BaseService;
@@ -39,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,6 +71,7 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     private final MantisScheduler scheduler;
     private final LifecycleEventPublisher lifecycleEventPublisher;
     private volatile ActiveVmAttributeValues activeVmAttributeValues=null;
+    private final ConcurrentMap<String, List<VirtualMachineCurrentState>> vmStatesMap;
     private final AgentClustersAutoScaler agentClustersAutoScaler;
     private final String attrName;
     private final Counter listJobsOnVMsCount;
@@ -90,6 +91,7 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
         this.jobMessageRouter = jobMessageRouter;
         this.scheduler = scheduler;
         this.lifecycleEventPublisher = lifecycleEventPublisher;
+        this.vmStatesMap = new ConcurrentHashMap<>();
         this.agentClustersAutoScaler = AgentClustersAutoScaler.get();
         this.attrName = activeSlaveAttributeName;
         Metrics metrics = new Metrics.Builder()
@@ -132,10 +134,10 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     }
 
     @Override
-    public Set<String> getActiveVMsAttributeValues() {
+    public List<String> getActiveVMsAttributeValues() {
         return activeVmAttributeValues==null?
             null :
-            new HashSet<>(activeVmAttributeValues.values);
+            activeVmAttributeValues.values;
     }
 
     private List<JobsOnVMStatus> getJobsOnVMStatus() {
@@ -184,14 +186,51 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
         return result;
     }
 
-    private boolean isIn(String name, Set<String> activeVMs) {
-        return activeVMs.contains(name);
+    private boolean isIn(String name, List<String> activeVMs) {
+        for(String vm: activeVMs)
+            if(vm.equals(name))
+                return true;
+        return false;
     }
 
     @Override
     public boolean isActive(String name) {
         return activeVmAttributeValues==null || activeVmAttributeValues.isEmpty() ||
-            isIn(name, getActiveVMsAttributeValues());
+            isIn(name, activeVmAttributeValues.getValues());
+    }
+
+    @Override
+    public void setAgentInfos(List<VirtualMachineCurrentState> vmStates) {
+        vmStatesMap.put("0", vmStates);
+    }
+
+    @Override
+    public List<AgentInfo> getAgentInfos() {
+        List<VirtualMachineCurrentState> vmStates = vmStatesMap.get("0");
+        List<AgentInfo> agentInfos = new ArrayList<>();
+        if (vmStates != null && !vmStates.isEmpty()) {
+            for (VirtualMachineCurrentState s : vmStates) {
+                List<VirtualMachineLease.Range> ranges = s.getCurrAvailableResources().portRanges();
+                int ports = 0;
+                if (ranges != null && !ranges.isEmpty())
+                    for (VirtualMachineLease.Range r : ranges)
+                        ports += r.getEnd() - r.getBeg();
+                Map<String, Protos.Attribute> attributeMap = s.getCurrAvailableResources().getAttributeMap();
+                Map<String, String> attributes = new HashMap<>();
+                if (attributeMap != null && !attributeMap.isEmpty()) {
+                    for (Map.Entry<String, Protos.Attribute> entry : attributeMap.entrySet()) {
+                        attributes.put(entry.getKey(), entry.getValue().getText().getValue());
+                    }
+                }
+                agentInfos.add(new AgentInfo(
+                    s.getHostname(), s.getCurrAvailableResources().cpuCores(),
+                    s.getCurrAvailableResources().memoryMB(), s.getCurrAvailableResources().diskMB(),
+                    ports, s.getCurrAvailableResources().getScalarValues(), attributes, s.getResourceSets().keySet(),
+                    getTimeString(s.getDisabledUntil())
+                ));
+            }
+        }
+        return agentInfos;
     }
 
     @Override
@@ -213,10 +252,16 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
         return result;
     }
 
+    private String getTimeString(long disabledUntil) {
+        if (System.currentTimeMillis() > disabledUntil)
+            return null;
+        return DateTimeExt.toUtcDateTimeString(disabledUntil);
+    }
+
     List<String> manageActiveVMs(final List<VirtualMachineCurrentState> currentStates) {
         List<String> inactiveVMs = new ArrayList<>();
         if(currentStates!=null && !currentStates.isEmpty()) {
-            final Set<String> values = getActiveVMsAttributeValues();
+            final List<String> values = getActiveVMsAttributeValues();
             if(values==null || values.isEmpty())
                 return Collections.EMPTY_LIST; // treat no valid active VMs attribute value as all are active
             for(VirtualMachineCurrentState currentState: currentStates) {
