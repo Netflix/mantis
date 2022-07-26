@@ -35,12 +35,12 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -140,7 +140,7 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     public Set<String> getActiveVMsAttributeValues() {
         return activeVmAttributeValues==null?
             null :
-            new HashSet<>(activeVmAttributeValues.values);
+            ImmutableSet.copyOf(activeVmAttributeValues.values);
     }
 
     private List<JobsOnVMStatus> getJobsOnVMStatus() {
