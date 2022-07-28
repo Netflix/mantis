@@ -52,11 +52,14 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,19 +72,19 @@ public class JobClustersRouteTest extends RouteTestBase {
     private static Thread t;
     private static final int SERVER_PORT = 8200;
     private static CompletionStage<ServerBinding> binding;
+    private static File stateDirectory;
 
     private static String TEST_CLUSTER_NAME = "sine-function";
 
-
     public JobClustersRouteTest() {
         super("JobClustersRouteTest", SERVER_PORT);
-
     }
 
     @BeforeClass
     public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
+        stateDirectory = Files.createTempDirectory("test").toFile();
 
         t = new Thread(() -> {
             try {
@@ -95,7 +98,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
                 ActorRef jobClustersManagerActor = system.actorOf(
                         JobClustersManagerActor.props(
-                                new MantisJobStore(new SimpleCachedFileStorageProvider(true)),
+                                new MantisJobStore(new SimpleCachedFileStorageProvider(stateDirectory, true)),
                                 lifecycleEventPublisher),
                         "jobClustersManager");
                 MantisSchedulerFactory mantisSchedulerFactory = mock(MantisSchedulerFactory.class);
@@ -131,11 +134,12 @@ public class JobClustersRouteTest extends RouteTestBase {
     }
 
     @AfterClass
-    public static void tearDown() {
+    public static void tearDown() throws Exception {
         logger.info("V1JobClusterRouteTest teardown");
         binding.thenCompose(ServerBinding::unbind) // trigger unbinding from the port
                .thenAccept(unbound -> system.terminate()); // and shutdown when done
         t.interrupt();
+        FileUtils.deleteDirectory(stateDirectory);
     }
 
     @Test

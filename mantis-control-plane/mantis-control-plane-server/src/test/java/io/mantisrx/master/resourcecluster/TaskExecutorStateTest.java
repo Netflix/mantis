@@ -33,6 +33,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
+import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
@@ -40,6 +41,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,8 +54,9 @@ public class TaskExecutorStateTest {
 
     private final TestingRpcService rpc = new TestingRpcService();
     private final TaskExecutorGateway gateway = mock(TaskExecutorGateway.class);
+    private final JobMessageRouter router = mock(JobMessageRouter.class);
 
-    private final TaskExecutorState state = TaskExecutorState.of(clock, rpc);
+    private final TaskExecutorState state = TaskExecutorState.of(clock, rpc, router);
 
     private static final TaskExecutorID TASK_EXECUTOR_ID = TaskExecutorID.of("taskExecutorId");
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
@@ -62,6 +65,8 @@ public class TaskExecutorStateTest {
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(ImmutableList.of(1, 2, 3, 4, 5));
     private static final MachineDefinition MACHINE_DEFINITION =
         new MachineDefinition(1.0, 2.0, 3.0, 4.0, 5);
+    private static final Map<String, String> ATTRIBUTES =
+        ImmutableMap.of("attr1", "attr2");
     private static final WorkerId WORKER_ID = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
     @Before
@@ -81,7 +86,7 @@ public class TaskExecutorStateTest {
                 .hostname(HOST_NAME)
                 .workerPorts(WORKER_PORTS)
                 .machineDefinition(MACHINE_DEFINITION)
-                .taskExecutorAttributes(ImmutableMap.of())
+                .taskExecutorAttributes(ATTRIBUTES)
                 .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
@@ -137,7 +142,7 @@ public class TaskExecutorStateTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION)
-            .taskExecutorAttributes(ImmutableMap.of())
+            .taskExecutorAttributes(ATTRIBUTES)
             .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());

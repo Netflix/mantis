@@ -17,12 +17,15 @@
 package io.mantisrx.server.master.store;
 
 import com.netflix.fenzo.functions.Action1;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorsRequest;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
@@ -33,6 +36,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -51,6 +55,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     private final File spoolDir;
     private final File archiveDir;
     private final File namedJobsDir;
+    private final File resourceClustersDir;
     private final ObjectMapper mapper;
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
@@ -70,6 +75,9 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
         this.namedJobsDir = new File(rootDir, "namedJobs");
         createDir(namedJobsDir);
+
+        this.resourceClustersDir = new File(spoolDir, "resourceClusters");
+        createDir(resourceClustersDir);
 
         this.mapper = new ObjectMapper().registerModule(new Jdk8Module()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -557,5 +565,39 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
         try (PrintWriter pwrtr = new PrintWriter(tmpFile)) {
             mapper.writeValue(pwrtr, registration);
         }
+    }
+
+    private File getDisableTaskExecutorsRequestFile(ClusterID clusterID) throws IOException {
+        File file = new File(new File(resourceClustersDir, clusterID.getResourceID()), "disableTaskExecutorRequests");
+        file.createNewFile();
+        return file;
+    }
+
+    @Override
+    public void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException {
+        List<DisableTaskExecutorsRequest> requests =
+            loadAllDisableTaskExecutorsRequests(request.getClusterID());
+        List<DisableTaskExecutorsRequest> newRequests =
+            ImmutableList.<DisableTaskExecutorsRequest>builder().addAll(requests).add(request).build();
+        try (PrintWriter printWriter = new PrintWriter(getDisableTaskExecutorsRequestFile(request.getClusterID()))) {
+            mapper.writeValue(printWriter, newRequests);
+        }
+    }
+
+    @Override
+    public void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException {
+        List<DisableTaskExecutorsRequest> requests =
+            loadAllDisableTaskExecutorsRequests(request.getClusterID());
+        List<DisableTaskExecutorsRequest> newRequests =
+            requests.stream().filter(request1 -> !request1.equals(request)).collect(Collectors.toList());
+        try (PrintWriter printWriter = new PrintWriter(getDisableTaskExecutorsRequestFile(request.getClusterID()))) {
+            mapper.writeValue(printWriter, newRequests);
+        }
+    }
+
+    @Override
+    public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException {
+        File output = getDisableTaskExecutorsRequestFile(clusterID);
+        return mapper.readValue(output, new TypeReference<List<DisableTaskExecutorsRequest>>() {});
     }
 }

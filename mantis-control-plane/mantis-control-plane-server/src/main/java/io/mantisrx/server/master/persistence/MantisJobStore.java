@@ -22,9 +22,11 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.MantisStageMetadataImpl;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorsRequest;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
@@ -167,6 +169,18 @@ public class MantisJobStore {
 
     public void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException {
         storageProvider.storeNewTaskExecutor(registration);
+    }
+
+    public void storeNewDisabledTaskExecutorsRequest(DisableTaskExecutorsRequest request) throws IOException {
+        storageProvider.storeNewDisableTaskExecutorRequest(request);
+    }
+
+    public void deleteExpiredDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) throws IOException {
+        storageProvider.deleteExpiredDisableTaskExecutorRequest(request);
+    }
+
+    public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException {
+        return storageProvider.loadAllDisableTaskExecutorsRequests(clusterID);
     }
 
     public void replaceTerminatedWorker(IMantisWorkerMetadata oldWorker, IMantisWorkerMetadata replacement) throws Exception {

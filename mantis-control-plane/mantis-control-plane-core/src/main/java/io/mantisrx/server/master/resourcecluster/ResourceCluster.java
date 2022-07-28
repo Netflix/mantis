@@ -20,7 +20,9 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.Value;
@@ -37,14 +39,16 @@ import lombok.Value;
 public interface ResourceCluster extends ResourceClusterGateway {
     /**
      * Get the name of the resource cluster
+     *
      * @return name of the resource cluster
      */
     String getName();
+
     /**
      * API that gets invoked when the resource cluster migrates from one machine to another and needs to be initialized.
      *
      * @param taskExecutorID taskExecutorID that was originally running the worker
-     * @param workerId workerID of the task that being run on the task executor
+     * @param workerId       workerID of the task that being run on the task executor
      * @return Ack when the initialization is done
      */
     CompletableFuture<Ack> initializeTaskExecutor(TaskExecutorID taskExecutorID, WorkerId workerId);
@@ -64,7 +68,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * are no task executors.
      *
      * @param machineDefinition machine definition that's requested for the worker
-     * @param workerId worker id of the task that's going to run on the node.
+     * @param workerId          worker id of the task that's going to run on the node.
      * @return task executor assigned for the particular task.
      */
     CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition, WorkerId workerId);
@@ -82,6 +86,31 @@ public interface ResourceCluster extends ResourceClusterGateway {
      */
     CompletableFuture<Ack> refreshClusterScalerRuleSet();
 
+    /**
+     * Disables task executors that match the passed set of attributes
+     *
+     * @param attributes attributes that need to be present in the task executor's set of attributes.
+     * @param expiry     instant at which the request can be marked as complete. this is important because we cannot be constantly checking if new task executors match the disabled criteria or not.
+     * @return a future that completes when the underlying operation is registered by the system
+     */
+    CompletableFuture<Void> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
+
+    /**
+     * Gets the task executors to worker mapping for the given resource cluster
+     *
+     * @return a future mapping task executor IDs to the work they are doing
+     */
+    CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping();
+
+    /**
+     * Gets the task executors to worker mapping for all task executors in the resource cluster that match the
+     * filtering criteria as represented by the attributes.
+     *
+     * @param attributes filtering criteria
+     * @return a future mapping task executor IDs to the work they are doing
+     */
+    CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(Map<String, String> attributes);
+
     class NoResourceAvailableException extends Exception {
 
         public NoResourceAvailableException(String message) {
@@ -95,6 +124,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
         long numAvailableTaskExecutors;
         long numOccupiedTaskExecutors;
         long numAssignedTaskExecutors;
+        long numDisabledTaskExecutors;
     }
 
     @Value

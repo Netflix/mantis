@@ -22,8 +22,6 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Function;
@@ -47,31 +45,6 @@ public class SchedulingInfo implements Serializable {
     @JsonIgnore
     SchedulingInfo(Builder builder) {
         stages.putAll(builder.builderStages);
-    }
-
-    public static void main(String[] args) {
-        Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
-        smap.put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, 0.1, 0.6, null));
-        Builder builder = new Builder()
-                .numberOfStages(2)
-                .multiWorkerScalableStageWithConstraints(
-                        2,
-                        new MachineDefinition(1, 1.24, 0.0, 1, 1),
-                        null, null,
-                        new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
-                )
-                .multiWorkerScalableStageWithConstraints(
-                        3,
-                        new MachineDefinition(1, 1.24, 0.0, 1, 1),
-                        null, null,
-                        new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
-                );
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            System.out.println(mapper.writeValueAsString(builder.build()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public Map<Integer, StageSchedulingInfo> getStages() {

@@ -27,6 +27,7 @@ import java.util.concurrent.CompletionStage;
  * Interface for persisting resource cluster related data.
  * See {@link ResourceClusterStorageProviderAdapter} to see the binding/constructor requirements.
  */
+// todo(sundaram): move this to the persistence package
 public interface ResourceClusterStorageProvider {
     /**
      * Register and save the given cluster spec. Once the returned CompletionStage

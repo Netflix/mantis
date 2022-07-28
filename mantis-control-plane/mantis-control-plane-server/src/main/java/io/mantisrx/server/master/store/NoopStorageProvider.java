@@ -16,8 +16,11 @@
 
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorsRequest;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -143,5 +146,20 @@ public class NoopStorageProvider implements MantisStorageProvider {
     @Override
     public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
 
+    }
+
+    @Override
+    public void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) {
+
+    }
+
+    @Override
+    public void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) {
+
+    }
+
+    @Override
+    public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) {
+        return ImmutableList.of();
     }
 }

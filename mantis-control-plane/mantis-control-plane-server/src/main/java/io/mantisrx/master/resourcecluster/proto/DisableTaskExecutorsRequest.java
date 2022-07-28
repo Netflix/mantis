@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'mantis'
 
-ext {
-    mqlVersion = '3.2.2'
-}
+package io.mantisrx.master.resourcecluster.proto;
 
-dependencies {
-    implementation project(":mantis-runtime")
-    implementation project(":mantis-connectors:mantis-connector-kafka")
+import java.util.Map;
+import lombok.Value;
 
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+@Value
+public class DisableTaskExecutorsRequest {
+    Map<String, String> attributes;
 }

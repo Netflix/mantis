@@ -85,7 +85,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                 .mapAsync(1, rc -> updateRegisteredClusters(rc))
                 .mapAsync(1, rc -> updateClusterSpecImpl(clusterSpecWritable))
                 .mapAsync(1, rc -> getResourceClusterSpecWritable(rc.getId()))
-                .runWith(Sink.last(), system);
+                .runWith(Sink.<ResourceClusterSpecWritable>last(), system);
         log.info("Return future on registerAndUpdateClusterSpec: {}", clusterSpecWritable.getId());
         return fut;
     }
@@ -107,7 +107,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                 )
                 .mapAsync(1, rc -> updateRegisteredClusters(rc))
                 .mapAsync(1, notUsed -> getRegisteredResourceClustersWritable())
-                .runWith(Sink.last(), system);
+                .runWith(Sink.<RegisteredResourceClustersWritable>last(), system);
         log.info("Return future on deregisterCluster: {}", clusterId);
         return fut;
     }
@@ -214,7 +214,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                 .single(ruleSpec)
                 .mapAsync(1, this::updateClusterScaleRules)
                 .mapAsync(1, rc -> getResourceClusterScaleRules(ruleSpec.getClusterId()))
-                .runWith(Sink.last(), system);
+                .runWith(Sink.<ResourceClusterScaleRulesWritable>last(), system);
         log.info("Return future on registerResourceClusterScaleRule with full spec: {}", ruleSpec.getClusterId());
         return fut;
     }
@@ -237,7 +237,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                 )
                 .mapAsync(1, rc -> updateClusterScaleRules(rc))
                 .mapAsync(1, rc -> getResourceClusterScaleRules(rule.getClusterId()))
-                .runWith(Sink.last(), system);
+                .runWith(Sink.<ResourceClusterScaleRulesWritable>last(), system);
         log.info("Return future on registerResourceClusterScaleRule: {}", rule.getClusterId());
         return fut;
     }

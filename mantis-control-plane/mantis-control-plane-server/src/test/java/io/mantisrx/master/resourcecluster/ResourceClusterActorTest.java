@@ -17,7 +17,9 @@
 package io.mantisrx.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import akka.actor.ActorRef;
@@ -27,6 +29,7 @@ import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
@@ -39,21 +42,28 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
+import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 
 public class ResourceClusterActorTest {
@@ -63,6 +73,7 @@ public class ResourceClusterActorTest {
     private static final String TASK_EXECUTOR_ADDRESS = "address";
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
     private static final Duration heartbeatTimeout = Duration.ofSeconds(10);
+    private static final Duration checkForDisabledExecutorsInterval = Duration.ofSeconds(10);
     private static final Duration assignmentTimeout = Duration.ofSeconds(1);
     private static final String HOST_NAME = "hostname";
 
@@ -75,6 +86,10 @@ public class ResourceClusterActorTest {
 
     private static final MachineDefinition MACHINE_DEFINITION_2 =
         new MachineDefinition(4f, 4028, 128.0, 1024, 1);
+    private static final Map<String, String> ATTRIBUTES =
+        ImmutableMap.of("attr1", "attr1");
+    private static final Map<String, String> ATTRIBUTES2 =
+        ImmutableMap.of("attr2", "attr2");
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION =
         TaskExecutorRegistration.builder()
             .taskExecutorID(TASK_EXECUTOR_ID)
@@ -83,8 +98,10 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION)
-            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
-                CONTAINER_DEF_ID_1.getResourceID()))
+            .taskExecutorAttributes(
+                ImmutableMap.of(
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1.getResourceID(),
+                    "attr1", "attr1"))
             .build();
 
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION_2 =
@@ -95,8 +112,10 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION_2)
-            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
-                CONTAINER_DEF_ID_2.getResourceID()))
+            .taskExecutorAttributes(
+                ImmutableMap.of(
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_2.getResourceID(),
+                    "attr2", "attr2"))
             .build();
 
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION_3 =
@@ -107,8 +126,10 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION_2)
-            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
-                CONTAINER_DEF_ID_2.getResourceID()))
+            .taskExecutorAttributes(
+                ImmutableMap.of(
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_2.getResourceID(),
+                    "attr2", "attr2"))
             .build();
 
     private static final WorkerId WORKER_ID =
@@ -123,6 +144,7 @@ public class ResourceClusterActorTest {
     private ResourceClusterTaskExecutorMapper mapper;
     private ActorRef resourceClusterActor;
     private ResourceCluster resourceCluster;
+    private JobMessageRouter jobMessageRouter;
 
     @BeforeClass
     public static void setup() {
@@ -140,6 +162,7 @@ public class ResourceClusterActorTest {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
         mantisJobStore = mock(MantisJobStore.class);
         mapper = ResourceClusterTaskExecutorMapper.inMemory();
+        jobMessageRouter = mock(JobMessageRouter.class);
     }
 
     @Before
@@ -149,9 +172,11 @@ public class ResourceClusterActorTest {
                 CLUSTER_ID,
                 heartbeatTimeout,
                 assignmentTimeout,
+                checkForDisabledExecutorsInterval,
                 Clock.systemDefaultZone(),
                 rpcService,
-                mantisJobStore);
+                mantisJobStore,
+                jobMessageRouter);
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
@@ -350,5 +375,106 @@ public class ResourceClusterActorTest {
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+    }
+
+    @Test
+    public void testIfDisableTaskExecutorRequestsMarkTaskExecutorsAsDisabled() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        // mark task executor as disabled with an expiry set to 10 seconds
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1))).get();
+        assertEquals(
+            ImmutableList.of(),
+            resourceCluster.getAvailableTaskExecutors().get());
+        assertEquals(
+            new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+    }
+
+    @Test
+    public void testIfDisableTaskExecutorRequestsMarkLateTaskExecutorsAsDisabled() throws Exception {
+        // mark task executor as disabled with an expiry set to 10 seconds
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1))).get();
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(
+            ImmutableList.of(),
+            resourceCluster.getAvailableTaskExecutors().get());
+        assertEquals(
+            new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+    }
+
+    @Test
+    public void testIfDisableTaskExecutorRequestsAreExpiredCorrectly() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofSeconds(1))).get();
+        assertEquals(
+            new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+        Thread.sleep(5000);
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_2).get());
+        assertEquals(Ack.getInstance(),
+            resourceCluster
+                .heartBeatFromTaskExecutor(
+                    new TaskExecutorHeartbeat(
+                        TASK_EXECUTOR_ID_2,
+                        CLUSTER_ID,
+                        TaskExecutorReport.available())).get());
+        assertEquals(
+            new ResourceOverview(2, 1, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+    }
+
+    @Test
+    public void testIfDisabledTaskExecutorRequestsAreInitializedCorrectlyWhenTheControlPlaneStarts() throws Exception {
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(Matchers.eq(CLUSTER_ID)))
+            .thenReturn(ImmutableList.of(
+                new DisableTaskExecutorsRequest(
+                    ATTRIBUTES,
+                    CLUSTER_ID,
+                    Instant.now().plus(Duration.ofDays(1)))));
+
+        actorSystem.stop(resourceClusterActor);
+        setupActor();
+
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(
+            new ResourceOverview(1, 0, 0, 0, 1),
+            resourceCluster.resourceOverview().get());
+    }
+
+    @Test
+    public void testIfDisabledTaskExecutorsAreNotAvailableForScheduling() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION_2).get());
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).get());
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID_2, CLUSTER_ID, TaskExecutorReport.available())).get());
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1))).get();
+        assertEquals(TASK_EXECUTOR_ID_2, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+    }
+
+    @Test
+    public void testIfTaskExecutorsThatWereRunningTasksPreviouslyAndRunningCorrectly() throws Exception {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).get());
+        resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofSeconds(1))).get();
+        assertEquals(
+            new ResourceOverview(1, 0, 1, 0, 1),
+            resourceCluster.resourceOverview().get());
+
+        ArgumentCaptor<WorkerEvent> workerEventCaptor = ArgumentCaptor.forClass(WorkerEvent.class);
+        verify(jobMessageRouter).routeWorkerEvent(workerEventCaptor.capture());
+
+        WorkerEvent actualWorkerEvent = workerEventCaptor.getValue();
+        assertTrue(actualWorkerEvent instanceof WorkerOnDisabledVM);
+        assertEquals(WORKER_ID, actualWorkerEvent.getWorkerId());
     }
 }

@@ -30,10 +30,12 @@ import io.mantisrx.master.jobcluster.job.MantisStageMetadataImpl;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorsRequest;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsException;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.store.InvalidNamedJobException;
@@ -42,6 +44,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,6 +56,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -68,11 +73,13 @@ import rx.functions.Action1;
  * name exists but isn't writable.</P>
  */
 public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
-
-    private final static String SPOOL_DIR = "/tmp/MantisSpool";
-    private final static String ARCHIVE_DIR = "/tmp/MantisArchive";
     private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
-    private static final String JOB_CLUSTERS_DIR = SPOOL_DIR + "/jobClusters";
+
+    private final File spoolDir;
+    private final File archiveDir;
+    private final File jobClustersDir;
+    private final File resourceClustersDir;
+
     private static final String JOB_CLUSTERS_COMPLETED_JOBS_FILE_NAME_SUFFIX = "-completedJobs";
     private static final String ACTIVE_VMS_FILENAME = "activeVMs";
     private static final SimpleFilterProvider DEFAULT_FILTER_PROVIDER;
@@ -87,29 +94,47 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
             new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
     public SimpleCachedFileStorageProvider() {
-        this(false);
+        this(new File("/tmp"));
     }
 
     public SimpleCachedFileStorageProvider(boolean cleanupExistingData) {
+        this(new File("/tmp"), cleanupExistingData);
+    }
+
+    public SimpleCachedFileStorageProvider(File rootDir) {
+        this(rootDir, false);
+    }
+
+    public SimpleCachedFileStorageProvider(File rootDir, boolean cleanupExistingData) {
         if (cleanupExistingData) {
             deleteAllFiles();
         }
-        new File(SPOOL_DIR).mkdirs();
-        new File(ARCHIVE_DIR).mkdirs();
-        new File(JOB_CLUSTERS_DIR).mkdirs();
+
+        this.spoolDir = new File(rootDir, "MantisSpool");
+        createDir(spoolDir);
+
+        this.archiveDir = new File(rootDir, "MantisArchive");
+        createDir(archiveDir);
+
+        this.jobClustersDir = new File(spoolDir, "jobClusters");
+        createDir(jobClustersDir);
+
+        this.resourceClustersDir = new File(spoolDir, "resourceClusters");
+        createDir(resourceClustersDir);
+
         logger.debug(" created");
         mapper.setFilterProvider(DEFAULT_FILTER_PROVIDER);
     }
 
-    private static String getWorkerFilename(String prefix, String jobId, int workerIndex, int workerNumber) {
-        return prefix + File.separator + "Worker-" + jobId + "-" + workerIndex + "-" + workerNumber;
+    private static File getWorkerFilename(File rootDir, String jobId, int workerIndex, int workerNumber) {
+        return new File(rootDir, "Worker-" + jobId + "-" + workerIndex + "-" + workerNumber);
     }
 
     //
     @Override
     public void archiveJob(String jobId) throws IOException {
-        File jobFile = new File(getJobFileName(SPOOL_DIR, jobId));
-        jobFile.renameTo(new File(getJobFileName(ARCHIVE_DIR, jobId)));
+        File jobFile = getJobFileName(spoolDir, jobId);
+        Preconditions.checkState(jobFile.renameTo(getJobFileName(archiveDir, jobId)));
         archiveStages(jobId);
         archiveWorkers(jobId);
     }
@@ -118,28 +143,28 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     @Override
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {
 
-        return loadJob(ARCHIVE_DIR, jobId);
+        return loadJob(archiveDir, jobId);
 
     }
 
     public Optional<IMantisJobMetadata> loadActiveJob(String jobId) throws IOException {
-        return loadJob(SPOOL_DIR, jobId);
+        return loadJob(spoolDir, jobId);
     }
 
     public Optional<IMantisJobMetadata> loadArchiveJob(String jobId) throws IOException {
-        return loadJob(ARCHIVE_DIR, jobId);
+        return loadJob(archiveDir, jobId);
     }
 
-    private Optional<IMantisJobMetadata> loadJob(String dir, String jobId) throws IOException {
-        File jobFile = new File(getJobFileName(dir, jobId));
+    private Optional<IMantisJobMetadata> loadJob(File dir, String jobId) throws IOException {
+        File jobFile = getJobFileName(dir, jobId);
         IMantisJobMetadata job = null;
         if (jobFile.exists()) {
             try (FileInputStream fis = new FileInputStream(jobFile)) {
                 job = mapper.readValue(fis, MantisJobMetadataImpl.class);
             }
-            for (IMantisStageMetadata stage : readStagesFor(new File(dir), jobId))
+            for (IMantisStageMetadata stage : readStagesFor(dir, jobId))
                 ((MantisJobMetadataImpl) job).addJobStageIfAbsent(stage);
-            for (IMantisWorkerMetadata worker : readWorkersFor(new File(dir), jobId)) {
+            for (IMantisWorkerMetadata worker : readWorkersFor(dir, jobId)) {
                 try {
                     JobWorker jobWorker = new JobWorker.Builder()
                             .from(worker)
@@ -162,7 +187,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     private void storeStage(IMantisStageMetadata msmd, boolean rewrite) throws IOException {
         System.out.println("Storing stage " + msmd);
-        File stageFile = new File(getStageFileName(SPOOL_DIR, msmd.getJobId(), msmd.getStageNum()));
+        File stageFile = getStageFileName(spoolDir, msmd.getJobId().getId(), msmd.getStageNum());
         if (rewrite)
             stageFile.delete();
         try {stageFile.createNewFile();} catch (SecurityException se) {
@@ -180,16 +205,15 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     }
 
     private void archiveStages(String jobId) {
-        File spoolDir = new File(SPOOL_DIR);
         for (File sFile : spoolDir.listFiles((dir, name) -> {
             return name.startsWith("Stage-" + jobId + "-");
         })) {
-            sFile.renameTo(new File(ARCHIVE_DIR + File.separator + sFile.getName()));
+            sFile.renameTo(new File(archiveDir, sFile.getName()));
         }
     }
 
-    private String getStageFileName(String dirName, JobId jobId, int stageNum) {
-        return dirName + "/Stage-" + jobId.getId() + "-" + stageNum;
+    private File getStageFileName(File dirName, String jobId, int stageNum) {
+        return new File(dirName, "/Stage-" + jobId + "-" + stageNum);
     }
 
     @Override
@@ -223,11 +247,10 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         storeWorker(mwmd.getJobIdObject(), mwmd, true);
     }
 
-    private void createDir(String dirName) {
-        File spoolDirLocation = new File(dirName);
+    private void createDir(File spoolDirLocation) {
         if (spoolDirLocation.exists() &&
                 !(spoolDirLocation.isDirectory() && spoolDirLocation.canWrite()))
-            throw new UnsupportedOperationException("Directory [" + dirName + "] not writeable");
+            throw new UnsupportedOperationException("Directory [" + spoolDirLocation + "] not writeable");
         if (!spoolDirLocation.exists())
             try {spoolDirLocation.mkdirs();} catch (SecurityException se) {
                 throw new UnsupportedOperationException("Can't create dir for writing state - " + se.getMessage(), se);
@@ -238,17 +261,15 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     @Override
     public List<IMantisJobMetadata> loadAllJobs() {
         List<IMantisJobMetadata> jobList = Lists.newArrayList();
-        createDir(SPOOL_DIR);
-        createDir(ARCHIVE_DIR);
 
-        File spoolDirFile = new File(SPOOL_DIR);
+        File spoolDirFile = spoolDir;
         for (File jobFile : spoolDirFile.listFiles((dir, name) -> {
             return name.startsWith("Job-");
         })) {
 
             try {
                 String jobId = jobFile.getName().substring("Job-".length());
-                Optional<IMantisJobMetadata> jobMetaOp = loadJob(SPOOL_DIR, jobId);
+                Optional<IMantisJobMetadata> jobMetaOp = loadJob(spoolDir, jobId);
                 if (jobMetaOp.isPresent()) {
                     jobList.add(jobMetaOp.get());
                 }
@@ -278,16 +299,14 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     public Observable<IMantisJobMetadata> loadAllArchivedJobs() {
         List<IMantisJobMetadata> jobList = Lists.newArrayList();
 
-        createDir(ARCHIVE_DIR);
-
-        File archiveDirFile = new File(ARCHIVE_DIR);
+        File archiveDirFile = archiveDir;
         for (File jobFile : archiveDirFile.listFiles((dir, name) -> {
             return name.startsWith("Job-");
         })) {
 
             try {
                 String jobId = jobFile.getName().substring("Job-".length());
-                Optional<IMantisJobMetadata> jobMetaOp = loadJob(ARCHIVE_DIR, jobId);
+                Optional<IMantisJobMetadata> jobMetaOp = loadJob(archiveDir, jobId);
                 if (jobMetaOp.isPresent()) {
                     jobList.add(jobMetaOp.get());
                 }
@@ -302,10 +321,6 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     @Override
     public List<IJobClusterMetadata> loadAllJobClusters() {
-        createDir(JOB_CLUSTERS_DIR);
-
-        File jobClustersDir = new File(JOB_CLUSTERS_DIR);
-
         final List<IJobClusterMetadata> jobClusterMetadataList = new ArrayList<>();
         for (File jobClusterFile : jobClustersDir.listFiles()) {
             try (FileInputStream fis = new FileInputStream(jobClusterFile)) {
@@ -319,7 +334,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     //    @Override
     public Optional<IJobClusterMetadata> loadJobCluster(String clusterName) {
-        File jobClusterFile = new File(JOB_CLUSTERS_DIR + "/" + clusterName);
+        File jobClusterFile = new File(jobClustersDir, clusterName);
         if (jobClusterFile.exists()) {
             try (FileInputStream fis = new FileInputStream(jobClusterFile)) {
                 IJobClusterMetadata jobClustermeta = mapper.readValue(fis, JobClusterMetadataImpl.class);
@@ -335,9 +350,8 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     @Override
     public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        createDir(JOB_CLUSTERS_DIR);
         List<CompletedJob> completedJobs = Lists.newArrayList();
-        File clustersDir = new File(JOB_CLUSTERS_DIR);
+        File clustersDir = jobClustersDir;
 
         for (File jobClusterFile : clustersDir.listFiles(
                 (dir, name) -> name.endsWith(JOB_CLUSTERS_COMPLETED_JOBS_FILE_NAME_SUFFIX)
@@ -364,7 +378,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     private void storeWorker(JobId jobId, IMantisWorkerMetadata workerMetadata, boolean rewrite)
             throws IOException {
         logger.info("Storing worker {}", workerMetadata);
-        File workerFile = new File(getWorkerFilename(SPOOL_DIR, jobId.getId(), workerMetadata.getWorkerIndex(), workerMetadata.getWorkerNumber()));
+        File workerFile = getWorkerFilename(spoolDir, jobId.getId(), workerMetadata.getWorkerIndex(), workerMetadata.getWorkerNumber());
         if (rewrite)
             workerFile.delete();
         workerFile.createNewFile();
@@ -405,11 +419,10 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     private void archiveWorkers(String jobId)
             throws IOException {
-        File spoolDir = new File(SPOOL_DIR);
         for (File wFile : spoolDir.listFiles((dir, name) -> {
             return name.startsWith("Worker-" + jobId + "-");
         })) {
-            wFile.renameTo(new File(ARCHIVE_DIR + File.separator + wFile.getName()));
+            wFile.renameTo(new File(archiveDir, wFile.getName()));
         }
     }
     //
@@ -421,16 +434,16 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     //
     @Override
     public void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException {
-        File wFile = new File(getWorkerFilename(SPOOL_DIR, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber()));
+        File wFile = getWorkerFilename(spoolDir, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber());
         if (wFile.exists())
-            wFile.renameTo(new File(getWorkerFilename(ARCHIVE_DIR, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber())));
+            wFile.renameTo(getWorkerFilename(spoolDir, mwmd.getJobId(), mwmd.getWorkerIndex(), mwmd.getWorkerNumber()));
     }
 
     @Override
     public void createJobCluster(IJobClusterMetadata jobCluster) throws JobClusterAlreadyExistsException, IOException {
 
         String name = jobCluster.getJobClusterDefinition().getName();
-        File tmpFile = new File(JOB_CLUSTERS_DIR + "/" + name);
+        File tmpFile = new File(jobClustersDir, name);
         logger.info("Storing job cluster " + name + " to file " + tmpFile.getAbsolutePath());
         if (!tmpFile.createNewFile()) {
             throw new JobClusterAlreadyExistsException(name);
@@ -444,14 +457,14 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     public void deleteJobCluster(String name) {
 
 
-        File jobFile = new File(JOB_CLUSTERS_DIR + File.separator + name);
+        File jobFile = new File(jobClustersDir, name);
         try {
             if (!jobFile.exists()) {
                 throw new InvalidNamedJobException(name + " doesn't exist");
             }
             boolean jobClusterDeleted = jobFile.delete();
 
-            File completedJobsFile = new File(JOB_CLUSTERS_DIR + File.separator + name + JOB_CLUSTERS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
+            File completedJobsFile = new File(jobClustersDir, name + JOB_CLUSTERS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
             boolean completedJobClusterDeleted = completedJobsFile.delete();
 
             if (!jobClusterDeleted) { //|| !completedJobClusterDeleted) {
@@ -470,7 +483,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     public void updateJobCluster(IJobClusterMetadata jobCluster) {
 
         String name = jobCluster.getJobClusterDefinition().getName();
-        File tmpFile = new File(JOB_CLUSTERS_DIR + "/" + name);
+        File tmpFile = new File(jobClustersDir, name);
         logger.info("Updating job cluster " + name + " to file " + tmpFile.getAbsolutePath());
         try {
             if (!tmpFile.exists()) {
@@ -489,7 +502,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     @Override
     public void storeNewJob(IMantisJobMetadata jobMetadata) {
 
-        File tmpFile = new File(SPOOL_DIR + "/Job-" + jobMetadata.getJobId());
+        File tmpFile = new File(spoolDir, "/Job-" + jobMetadata.getJobId());
         try {
             if (!tmpFile.createNewFile()) {
                 throw new JobAlreadyExistsException(jobMetadata.getJobId().getId());
@@ -505,7 +518,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     @Override
     public void updateJob(IMantisJobMetadata jobMetadata) throws InvalidJobException, IOException {
-        File jobFile = new File(getJobFileName(SPOOL_DIR, jobMetadata.getJobId().getId()));
+        File jobFile = getJobFileName(spoolDir, jobMetadata.getJobId().getId());
         if (!jobFile.exists()) {
             throw new InvalidJobException(jobMetadata.getJobId().getId());
         }
@@ -518,8 +531,6 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     public void deleteAllFiles() {
         try {
-            File spoolDir = new File(SPOOL_DIR);
-            File archiveDir = new File(ARCHIVE_DIR);
             deleteDir(spoolDir);
             deleteDir(archiveDir);
         } catch (Exception e) {
@@ -541,32 +552,29 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         }
     }
 
-    private void deleteFiles(String dirName, final String jobId, final String filePrefix) {
-        File spoolDir = new File(dirName);
-        if (spoolDir != null) {
-            for (File stageFile : spoolDir.listFiles((dir, name) -> {
-                return name.startsWith(filePrefix + jobId + "-");
-            })) {
-                stageFile.delete();
-            }
+    private static void deleteFiles(File rootDir, final String jobId, final String filePrefix) {
+        for (File stageFile : rootDir.listFiles((dir, name) -> {
+            return name.startsWith(filePrefix + jobId + "-");
+        })) {
+            stageFile.delete();
         }
     }
 
     @Override
     public void deleteJob(String jobId) throws InvalidJobException, IOException {
-        File tmpFile = new File(SPOOL_DIR + "/Job-" + jobId);
+        File tmpFile = getJobFileName(spoolDir, jobId);
         tmpFile.delete();
-        deleteFiles(SPOOL_DIR, jobId, "Stage-");
-        deleteFiles(SPOOL_DIR, jobId, "Worker-");
-        tmpFile = new File(ARCHIVE_DIR + "/Job-" + jobId);
+        deleteFiles(spoolDir, jobId, "Stage-");
+        deleteFiles(spoolDir, jobId, "Worker-");
+        tmpFile = getJobFileName(archiveDir, jobId);
         tmpFile.delete();
-        deleteFiles(ARCHIVE_DIR, jobId, "Stage-");
-        deleteFiles(ARCHIVE_DIR, jobId, "Worker-");
+        deleteFiles(archiveDir, jobId, "Stage-");
+        deleteFiles(archiveDir, jobId, "Worker-");
 
     }
 
-    private String getJobFileName(String dirName, String jobId) {
-        return dirName + "/Job-" + jobId;
+    private File getJobFileName(File jobsDir, String jobId) {
+        return new File(jobsDir, "/Job-" + jobId);
     }
 
     @Override
@@ -576,7 +584,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     private void modifyCompletedJobsForCluster(String name, Action1<List<CompletedJob>> modifier)
             throws IOException {
-        File completedJobsFile = new File(JOB_CLUSTERS_DIR + File.separator + name + JOB_CLUSTERS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
+        File completedJobsFile = new File(jobClustersDir, name + JOB_CLUSTERS_COMPLETED_JOBS_FILE_NAME_SUFFIX);
         List<CompletedJob> completedJobs = new LinkedList<>();
         if (completedJobsFile.exists()) {
             try (FileInputStream fis = new FileInputStream(completedJobsFile)) {
@@ -609,7 +617,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     @Override
     public void setActiveVmAttributeValuesList(List<String> vmAttributesList) throws IOException {
-        File activeSlavesFile = new File(SPOOL_DIR + File.separator + ACTIVE_VMS_FILENAME);
+        File activeSlavesFile = new File(spoolDir, ACTIVE_VMS_FILENAME);
         logger.info("Storing file " + activeSlavesFile.getAbsolutePath());
         if (activeSlavesFile.exists())
             activeSlavesFile.delete();
@@ -621,7 +629,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
 
     @Override
     public List<String> initActiveVmAttributeValuesList() throws IOException {
-        File activeSlavesFile = new File(SPOOL_DIR + File.separator + ACTIVE_VMS_FILENAME);
+        File activeSlavesFile = new File(spoolDir, ACTIVE_VMS_FILENAME);
         if (!activeSlavesFile.exists())
             return Collections.EMPTY_LIST;
         try (FileInputStream fis = new FileInputStream(activeSlavesFile)) {
@@ -657,7 +665,7 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     }
 
     private File getFileFor(TaskExecutorID taskExecutorID) {
-        return new File(SPOOL_DIR + "/TaskExecutor-" + taskExecutorID.getResourceId());
+        return new File(spoolDir, "TaskExecutor-" + taskExecutorID.getResourceId());
     }
 
     @Override
@@ -687,5 +695,39 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         try (PrintWriter pwrtr = new PrintWriter(tmpFile)) {
             mapper.writeValue(pwrtr, registration);
         }
+    }
+
+    private File getDisableTaskExecutorsRequestFile(ClusterID clusterID) throws IOException {
+        File file = new File(new File(resourceClustersDir, clusterID.getResourceID()), "disableTaskExecutorRequests");
+        file.createNewFile();
+        return file;
+    }
+
+    @Override
+    public void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException {
+        List<DisableTaskExecutorsRequest> requests =
+            loadAllDisableTaskExecutorsRequests(request.getClusterID());
+        List<DisableTaskExecutorsRequest> newRequests =
+            ImmutableList.<DisableTaskExecutorsRequest>builder().addAll(requests).add(request).build();
+        try (PrintWriter printWriter = new PrintWriter(getDisableTaskExecutorsRequestFile(request.getClusterID()))) {
+            mapper.writeValue(printWriter, newRequests);
+        }
+    }
+
+    @Override
+    public void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException {
+        List<DisableTaskExecutorsRequest> requests =
+            loadAllDisableTaskExecutorsRequests(request.getClusterID());
+        List<DisableTaskExecutorsRequest> newRequests =
+            requests.stream().filter(request1 -> !request1.equals(request)).collect(Collectors.toList());
+        try (PrintWriter printWriter = new PrintWriter(getDisableTaskExecutorsRequestFile(request.getClusterID()))) {
+            mapper.writeValue(printWriter, newRequests);
+        }
+    }
+
+    @Override
+    public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException {
+        File output = getDisableTaskExecutorsRequestFile(clusterID);
+        return mapper.readValue(output, new TypeReference<List<DisableTaskExecutorsRequest>>() {});
     }
 }
