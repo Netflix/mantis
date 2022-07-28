@@ -14,20 +14,8 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime;
+package io.mantisrx.common;
 
-import lombok.Builder;
-import lombok.Value;
-
-/**
- * Wrapper class for {@link MachineDefinition} with definition id.
- * This is used in resource cluster stack only.
- */
-@Value
-@Builder
-public class MachineDefinitionWrapper {
-    public static final String MachineDefinitionIdKey = "machinedefinitionid";
-
-    String definitionId;
-    MachineDefinition machineDefinition;
+public class WorkerConstants {
+    public static final String WORKER_CONTAINER_DEFINITION_ID = "MANTIS_WORKER_CONTAINER_DEFINITION_ID";
 }

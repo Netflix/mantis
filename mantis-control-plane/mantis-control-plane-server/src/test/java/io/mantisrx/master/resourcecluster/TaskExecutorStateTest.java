@@ -25,7 +25,6 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.util.DelegateClock;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorState;
 import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -60,10 +59,8 @@ public class TaskExecutorStateTest {
     private static final String TASK_EXECUTOR_ADDRESS = "127.0.0.1";
     private static final String HOST_NAME = "hostName";
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(ImmutableList.of(1, 2, 3, 4, 5));
-    private static final MachineDefinitionWrapper MACHINE_DEFINITION =
-        MachineDefinitionWrapper.builder().machineDefinition(
-            new MachineDefinition(1.0, 2.0, 3.0, 4.0, 5))
-            .build();
+    private static final MachineDefinition MACHINE_DEFINITION =
+            new MachineDefinition(1.0, 2.0, 3.0, 4.0, 5);
     private static final WorkerId WORKER_ID = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
     @Before
@@ -82,7 +79,7 @@ public class TaskExecutorStateTest {
                 .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
                 .hostname(HOST_NAME)
                 .workerPorts(WORKER_PORTS)
-                .machineDefinitionWrapper(MACHINE_DEFINITION)
+                .machineDefinition(MACHINE_DEFINITION)
                 .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
@@ -137,7 +134,7 @@ public class TaskExecutorStateTest {
             .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
-            .machineDefinitionWrapper(MACHINE_DEFINITION)
+            .machineDefinition(MACHINE_DEFINITION)
             .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());

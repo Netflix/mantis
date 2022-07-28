@@ -17,7 +17,6 @@ package io.mantisrx.server.worker;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.runtime.MachineDefinitionWrapper;
 
 public class MachineDefinitionUtils {
     public static MachineDefinition sys(WorkerPorts workerPorts, double networkBandwidthInMB) {
@@ -27,12 +26,5 @@ public class MachineDefinitionUtils {
             networkBandwidthInMB,
             Hardware.getSizeOfDisk(),
             workerPorts.getNumberOfPorts());
-    }
-
-    public static MachineDefinitionWrapper wrap(MachineDefinition mDef) {
-        return MachineDefinitionWrapper.builder()
-            .machineDefinition(mDef)
-            .definitionId(System.getenv(MachineDefinitionWrapper.MachineDefinitionIdKey))
-            .build();
     }
 }

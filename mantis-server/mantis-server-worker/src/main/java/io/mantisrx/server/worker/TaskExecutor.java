@@ -19,6 +19,7 @@ import com.mantisrx.common.utils.ListenerCallQueue;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
@@ -40,6 +41,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
@@ -126,15 +128,19 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         MachineDefinition machineDefinition =
             MachineDefinitionUtils.sys(workerPorts, workerConfiguration.getNetworkBandwidthInMB());
         String hostName = workerConfiguration.getExternalAddress();
+        String containerDefinitionId = System.getenv(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID);
 
         this.taskExecutorRegistration =
             TaskExecutorRegistration.builder()
-                .machineDefinitionWrapper(MachineDefinitionUtils.wrap(machineDefinition))
+                .machineDefinition(machineDefinition)
                 .taskExecutorID(taskExecutorID)
                 .clusterID(clusterID)
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
+                .taskExecutorAttributes(ImmutableMap.of(
+                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
+                    containerDefinitionId == null ? "defaultContainerId" : containerDefinitionId))
                 .build();
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 

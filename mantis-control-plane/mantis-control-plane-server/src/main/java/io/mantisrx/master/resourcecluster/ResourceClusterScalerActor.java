@@ -180,15 +180,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         // 3 translate between decision to scale request. (inline for now)
 
         usageResponse.getUsages().forEach(usage -> {
-            if (usage.getDef() == null) {
-                log.debug("Legacy machine definition not supported: ", usage);
-                return;
-            }
+            String skuId = usage.getContainerDefinitionId();
 
-            Optional<String> skuIdO = Optional.ofNullable(usage.getDef().getDefinitionId());
-
-            if (skuIdO.isPresent() && this.skuToRuleMap.containsKey(skuIdO.get())) {
-                Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuIdO.get()).apply(usage);
+            if (this.skuToRuleMap.containsKey(skuId)) {
+                Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuId).apply(usage);
                 if (decisionO.isPresent()) {
                     log.info("Informing scale decision: {}", decisionO.get());
                     switch (decisionO.get().getType()) {
@@ -198,8 +193,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                             this.resourceClusterActor.tell(
                                 GetClusterIdleInstancesRequest.builder()
                                     .clusterID(this.clusterId)
-                                    .skuId(skuIdO.get())
-                                    .machineDefinitionWrapper(usage.getDef())
+                                    .skuId(skuId)
                                     .desireSize(decisionO.get().getDesireSize())
                                     .maxInstanceCount(
                                         Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
@@ -223,7 +217,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
             }
             else {
-                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getDef());
+                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getContainerDefinitionId());
             }
         });
 

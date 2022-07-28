@@ -15,9 +15,11 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
+import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.runtime.MachineDefinitionWrapper;
+import java.util.Map;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
@@ -44,8 +46,13 @@ public class TaskExecutorRegistration {
   WorkerPorts workerPorts;
 
   // machine information identifies the cpu/mem/disk/network resources of the task executor.
-  // machineDefinitionWrapper below should eventually replace legacyMachineDefinition once all TMs are updated to
-  // include the new runtime supporting legacyMachineDefinition.
-  MachineDefinition machineDefinition; // legacy machine definition.
-  MachineDefinitionWrapper machineDefinitionWrapper;
+  MachineDefinition machineDefinition;
+
+  // custom attributes describing the task executor
+  Map<String, String> taskExecutorAttributes;
+
+  public Optional<String> getTaskExecutorContainerDefinitionId() {
+      return Optional.ofNullable(this.getTaskExecutorAttributes() == null ? null : this.getTaskExecutorAttributes()
+              .getOrDefault(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, null));
+  }
 }

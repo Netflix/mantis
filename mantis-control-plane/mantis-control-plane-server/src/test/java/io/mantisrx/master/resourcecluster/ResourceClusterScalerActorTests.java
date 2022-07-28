@@ -43,7 +43,6 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.runtime.MachineDefinition;
-import io.mantisrx.runtime.MachineDefinitionWrapper;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -71,16 +70,13 @@ public class ResourceClusterScalerActorTests {
     private TestKit clusterActorProbe;
     private TestKit hostActorProbe;
 
-    private static final MachineDefinitionWrapper MACHINE_DEFINITION_S =
-        MachineDefinitionWrapper.builder().definitionId(skuSmall).machineDefinition(
-            new MachineDefinition(2, 2048, 700, 10240, 5)).build();
-    private static final MachineDefinitionWrapper MACHINE_DEFINITION_L =
-        MachineDefinitionWrapper.builder().definitionId(skuLarge).machineDefinition(
-            new MachineDefinition(4, 16384, 1400, 81920, 5)).build();
+    private static final MachineDefinition MACHINE_DEFINITION_S =
+        new MachineDefinition(2, 2048, 700, 10240, 5);
+    private static final MachineDefinition MACHINE_DEFINITION_L =
+        new MachineDefinition(4, 16384, 1400, 81920, 5);
 
-    private static final MachineDefinitionWrapper MACHINE_DEFINITION_M =
-        MachineDefinitionWrapper.builder().definitionId(skuMedium).machineDefinition(
-            new MachineDefinition(3, 4096, 700, 10240, 5)).build();
+    private static final MachineDefinition MACHINE_DEFINITION_M =
+        new MachineDefinition(3, 4096, 700, 10240, 5);
 
     @BeforeClass
     public static void setup() {
@@ -145,18 +141,17 @@ public class ResourceClusterScalerActorTests {
             GetClusterUsageResponse.builder()
                 .clusterID(CLUSTER_ID)
                 .usage(
-                    UsageByMachineDefinition.builder().def(MACHINE_DEFINITION_S).idleCount(4).totalCount(10).build())
+                    UsageByMachineDefinition.builder().containerDefinitionId(skuSmall).idleCount(4).totalCount(10).build())
                 .usage(
-                    UsageByMachineDefinition.builder().def(MACHINE_DEFINITION_L).idleCount(16).totalCount(16).build())
+                    UsageByMachineDefinition.builder().containerDefinitionId(skuLarge).idleCount(16).totalCount(16).build())
                 .usage(
-                    UsageByMachineDefinition.builder().def(MACHINE_DEFINITION_M).idleCount(8).totalCount(15).build())
+                    UsageByMachineDefinition.builder().containerDefinitionId(skuMedium).idleCount(8).totalCount(15).build())
                 .build(),
             clusterActorProbe.getRef());
 
         assertEquals(
             GetClusterIdleInstancesRequest.builder()
                 .skuId(skuLarge)
-                .machineDefinitionWrapper(MACHINE_DEFINITION_L)
                 .clusterID(CLUSTER_ID)
                 .desireSize(15)
                 .maxInstanceCount(1)
@@ -259,14 +254,9 @@ public class ResourceClusterScalerActorTests {
                 .build(),
             Clock.fixed(Clock.systemUTC().instant(), ZoneId.systemDefault()));
 
-        MachineDefinitionWrapper mDef =
-            MachineDefinitionWrapper.builder().machineDefinition(
-                new MachineDefinition(2, 2048, 700, 10240, 5))
-                .build();
-
         // Test scale up
         UsageByMachineDefinition usage = UsageByMachineDefinition.builder()
-            .def(mDef).idleCount(4).totalCount(10).build();
+            .containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision = rule.apply(usage);
         int newSize = 11;
         assertEquals(
@@ -282,7 +272,7 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // test cool down
-        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
         assertEquals(Optional.empty(), rule.apply(usage));
     }
 
@@ -301,13 +291,9 @@ public class ResourceClusterScalerActorTests {
                 .build(),
             Clock.systemUTC());
 
-        MachineDefinitionWrapper mDef =
-            MachineDefinitionWrapper.builder().machineDefinition(
-                    new MachineDefinition(2, 2048, 700, 10240, 5))
-                .build();
-
         // Test scale up
-        UsageByMachineDefinition usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        UsageByMachineDefinition usage =
+            UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision = rule.apply(usage);
         int newSize = 11;
         assertEquals(
@@ -323,7 +309,7 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // test cool down
-        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
         assertEquals(Optional.empty(), rule.apply(usage));
 
         Thread.sleep(Duration.ofSeconds(3).toMillis());
@@ -356,13 +342,9 @@ public class ResourceClusterScalerActorTests {
                 .build(),
             Clock.fixed(Instant.MIN, ZoneId.systemDefault()));
 
-        MachineDefinitionWrapper mDef =
-            MachineDefinitionWrapper.builder().machineDefinition(
-                    new MachineDefinition(2, 2048, 700, 10240, 5))
-                .build();
-
         // Test scale up
-        UsageByMachineDefinition usage = UsageByMachineDefinition.builder().def(mDef).idleCount(4).totalCount(10).build();
+        UsageByMachineDefinition usage = UsageByMachineDefinition.builder()
+            .containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision =  rule.apply(usage);
         int newSize = 11;
         assertEquals(
@@ -378,14 +360,14 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // Test empty
-        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(9).totalCount(11).build();
+        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(9).totalCount(11).build();
         decision =  rule.apply(usage);
         assertEquals(
             Optional.empty(),
             decision);
 
         // Test scale up hits max
-        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(0).totalCount(11).build();
+        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(0).totalCount(11).build();
         decision =  rule.apply(usage);
         newSize = 15;
         assertEquals(
@@ -401,7 +383,7 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // Test scale down
-        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(15).totalCount(20).build();
+        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(15).totalCount(20).build();
         decision =  rule.apply(usage);
         newSize = 15;
         assertEquals(
@@ -417,7 +399,7 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // Test scale down hits min.
-        usage = UsageByMachineDefinition.builder().def(mDef).idleCount(15).totalCount(15).build();
+        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(15).totalCount(15).build();
         decision =  rule.apply(usage);
         newSize = 11;
         assertEquals(
