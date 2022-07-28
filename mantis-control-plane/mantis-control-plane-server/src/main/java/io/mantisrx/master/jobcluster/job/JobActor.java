@@ -1871,7 +1871,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             //// heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
             long missedHeartBeatToleranceSecs = (long) (1.5 * ConfigurationProvider.getConfig().getWorkerTimeoutSecs());
             // Allow more time for workers to start
-            long stuckInSubmitToleranceSecs = missedHeartBeatToleranceSecs + 120;
+            long stuckInSubmitToleranceSecs =
+                missedHeartBeatToleranceSecs + ConfigurationProvider.getConfig().getWorkerInitTimeoutSecs();
 
             List<JobWorker> workersToResubmit = Lists.newArrayList();
             // expire worker resubmit entries
