@@ -384,7 +384,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> completeAsync(
                     this.resourceClusterRouteHandler.getClusterScaleRules(
-                        GetResourceClusterScaleRulesRequest.builder().clusterId(clusterName).build()),
+                        GetResourceClusterScaleRulesRequest.builder().clusterId(getClusterID(clusterName)).build()),
                     resp -> completeOK(
                         resp,
                         Jackson.marshaller()),

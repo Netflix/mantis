@@ -58,7 +58,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
 
 public class ResourceClusterScalerActorTests {
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
@@ -95,7 +94,7 @@ public class ResourceClusterScalerActorTests {
         hostActorProbe = new TestKit(actorSystem);
         this.storageProvider = mock(ResourceClusterStorageProvider.class);
 
-        when(this.storageProvider.getResourceClusterScaleRules(CLUSTER_ID.getResourceID()))
+        when(this.storageProvider.getResourceClusterScaleRules(CLUSTER_ID))
             .thenReturn(CompletableFuture.completedFuture(
                 ResourceClusterScaleRulesWritable.builder()
                     .scaleRule(skuSmall, ResourceClusterScaleSpec.builder()
@@ -215,7 +214,7 @@ public class ResourceClusterScalerActorTests {
         GetRuleSetResponse rules = clusterActorProbe.expectMsgClass(GetRuleSetResponse.class);
         assertEquals(2, rules.getRules().size());
 
-        when(this.storageProvider.getResourceClusterScaleRules(ArgumentMatchers.anyString()))
+        when(this.storageProvider.getResourceClusterScaleRules(CLUSTER_ID))
             .thenReturn(CompletableFuture.completedFuture(
                 ResourceClusterScaleRulesWritable.builder()
                     .scaleRule(skuMedium, ResourceClusterScaleSpec.builder()

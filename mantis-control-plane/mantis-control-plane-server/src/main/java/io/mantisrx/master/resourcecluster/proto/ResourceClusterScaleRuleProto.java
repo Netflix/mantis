@@ -17,6 +17,7 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -31,7 +32,7 @@ public class ResourceClusterScaleRuleProto {
     @Builder
     @Value
     public static class GetResourceClusterScaleRulesRequest {
-        String clusterId;
+        ClusterID clusterId;
     }
 
     @Value

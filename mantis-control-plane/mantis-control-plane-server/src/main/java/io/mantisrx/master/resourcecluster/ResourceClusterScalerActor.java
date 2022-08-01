@@ -264,7 +264,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private void fetchRuleSet() {
         CompletionStage<GetRuleSetResponse> fetchFut =
-            this.storageProvider.getResourceClusterScaleRules(this.clusterId.getResourceID())
+            this.storageProvider.getResourceClusterScaleRules(this.clusterId)
                 .thenApply(rules -> {
                     Set<String> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
                     removedKeys.removeAll(rules.getScaleRules().keySet());

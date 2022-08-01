@@ -21,6 +21,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -83,7 +84,7 @@ public class ResourceClusterStorageProviderAdapter implements ResourceClusterSto
     }
 
     @Override
-    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId) {
         return this.providerImpl.getResourceClusterScaleRules(clusterId);
     }
 

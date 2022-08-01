@@ -61,7 +61,7 @@ public class TaskExecutorStateTest {
     private static final String HOST_NAME = "hostName";
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(ImmutableList.of(1, 2, 3, 4, 5));
     private static final MachineDefinition MACHINE_DEFINITION =
-            new MachineDefinition(1.0, 2.0, 3.0, 4.0, 5);
+        new MachineDefinition(1.0, 2.0, 3.0, 4.0, 5);
     private static final WorkerId WORKER_ID = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
     @Before

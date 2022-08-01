@@ -20,6 +20,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -64,11 +65,11 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     }
 
     @Override
-    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId) {
         return CompletableFuture.completedFuture(
             this.clusterRules.getOrDefault(
-                clusterId,
-                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId).build()));
+                clusterId.getResourceID(),
+                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId.getResourceID()).build()));
     }
 
     @Override

@@ -31,6 +31,7 @@ import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWri
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import java.io.File;
@@ -184,16 +185,16 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
     }
 
     @Override
-    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId) {
         final Flow<String, ResourceClusterScaleRulesWritable, NotUsed> jsonToScaleRules =
             Flow.of(String.class).map(mapper.readerFor(ResourceClusterScaleRulesWritable.class)::readValue);
 
         final Source<ResourceClusterScaleRulesWritable, ?> fromFile = FileIO
-            .fromPath(getClusterScaleRuleSpecFilePath(SPOOL_DIR, clusterId))
+            .fromPath(getClusterScaleRuleSpecFilePath(SPOOL_DIR, clusterId.getResourceID()))
             .via(JsonFraming.objectScanner(1024).map(bytes -> bytes.utf8String()))
             .via(jsonToScaleRules)
             .recover(NoSuchFileException.class, () ->
-                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId).build());;
+                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId.getResourceID()).build());;
 
         return fromFile
             .via(Flow.of(ResourceClusterScaleRulesWritable.class)
@@ -212,7 +213,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
             Source
                 .single(ruleSpec)
                 .mapAsync(1, this::updateClusterScaleRules)
-                .mapAsync(1, rc -> getResourceClusterScaleRules(ruleSpec.getClusterId()))
+                .mapAsync(1, rc -> getResourceClusterScaleRules(ClusterID.of(ruleSpec.getClusterId())))
                 .runWith(Sink.last(), system);
         log.info("Return future on registerResourceClusterScaleRule with full spec: {}", ruleSpec.getClusterId());
         return fut;
@@ -224,7 +225,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
         CompletionStage<ResourceClusterScaleRulesWritable> fut =
             Source
                 .single(rule)
-                .mapAsync(1, ruleSpec -> getResourceClusterScaleRules(rule.getClusterId())
+                .mapAsync(1, ruleSpec -> getResourceClusterScaleRules(ClusterID.of(rule.getClusterId()))
                     .thenApplyAsync(rc -> {
                         ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder rcBuilder =
                             (rc == null) ?
@@ -235,7 +236,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                     })
                 )
                 .mapAsync(1, rc -> updateClusterScaleRules(rc))
-                .mapAsync(1, rc -> getResourceClusterScaleRules(rule.getClusterId()))
+                .mapAsync(1, rc -> getResourceClusterScaleRules(ClusterID.of(rule.getClusterId())))
                 .runWith(Sink.last(), system);
         log.info("Return future on registerResourceClusterScaleRule: {}", rule.getClusterId());
         return fut;
