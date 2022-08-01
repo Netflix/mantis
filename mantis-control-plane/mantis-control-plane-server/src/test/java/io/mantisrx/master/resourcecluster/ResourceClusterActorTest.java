@@ -219,7 +219,9 @@ public class ResourceClusterActorTest {
 
         // Test get cluster usage
         TestKit probe = new TestKit(actorSystem);
-        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
+        resourceClusterActor.tell(new GetClusterUsageRequest(
+            CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
         GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         assertEquals(2, usageRes.getUsages().size());
         assertEquals(1, usageRes.getUsages().stream()
@@ -256,7 +258,9 @@ public class ResourceClusterActorTest {
             resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2, WORKER_ID).get());
 
         probe = new TestKit(actorSystem);
-        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
+        resourceClusterActor.tell(new GetClusterUsageRequest(
+                CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
         usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         usage1 =
             usageRes.getUsages().stream()
@@ -287,7 +291,10 @@ public class ResourceClusterActorTest {
             TASK_EXECUTOR_ID_2,
             resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION_2, WORKER_ID).get());
         probe = new TestKit(actorSystem);
-        resourceClusterActor.tell(new GetClusterUsageRequest(CLUSTER_ID), probe.getRef());
+        resourceClusterActor.tell(new GetClusterUsageRequest(
+                CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            probe.getRef());
+
         usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         usage1 =
             usageRes.getUsages().stream()

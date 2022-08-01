@@ -55,6 +55,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -163,13 +164,15 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     kv.getValue().isAvailable() ? 1 : 0,
                     kv.getValue().isRegistered() ? 1 : 0);
 
-                String containerDefId = kv.getValue().getRegistration().getTaskExecutorContainerDefinitionId().get();
-                if (usageByContainerDefId.containsKey(containerDefId)) {
-                    Pair<Integer, Integer> prevState = usageByContainerDefId.get(containerDefId);
-                    usageByContainerDefId.put(containerDefId,
+                String groupKey =
+                    req.getGroupKeyFunc().apply(kv.getValue().getRegistration());
+
+                if (usageByContainerDefId.containsKey(groupKey)) {
+                    Pair<Integer, Integer> prevState = usageByContainerDefId.get(groupKey);
+                    usageByContainerDefId.put(groupKey,
                         new Pair<>(kvState.first() + prevState.first(), kvState.second() + prevState.second()));
                 } else {
-                    usageByContainerDefId.put(containerDefId, kvState);
+                    usageByContainerDefId.put(groupKey, kvState);
                 }
             });
 
@@ -343,13 +346,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             taskExecutorStateMap
                 .entrySet()
                 .stream()
-                .filter(entry -> (
-                    entry.getValue().isAvailable() &&
-                    (entry.getValue().getRegistration().getMachineDefinition() != null
-                        && entry.getValue().getRegistration().getMachineDefinition()
-                        .canFit(request.getMachineDefinition()))
-                    )
-                )
+                .filter(entry -> (entry.getValue().isAvailable() &&
+                    entry.getValue().getRegistration().getMachineDefinition()
+                        .canFit(request.getMachineDefinition())))
                 .findAny();
 
         if (matchedExecutor.isPresent()) {
@@ -542,6 +541,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class GetClusterUsageRequest {
         ClusterID clusterID;
+        Function<TaskExecutorRegistration, String> groupKeyFunc;
     }
 
     @SuppressWarnings("UnusedReturnValue")

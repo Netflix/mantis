@@ -327,10 +327,18 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("300000") // 5 minutes
     int getHeartbeatIntervalInMs();
 
+    /**
+     * Config value for each {@link io.mantisrx.master.resourcecluster.ResourceClusterScalerActor}'s timer to trigger
+     * check on current cluster usage.
+     */
     @Config("mantis.job.master.resource.cluster.scaler.interval.secs")
     @Default("60")
     int getScalerTriggerThresholdInSecs();
 
+    /**
+     * Config value for each {@link io.mantisrx.master.resourcecluster.ResourceClusterScalerActor}'s timer to refresh
+     * its cached scale rules.
+     */
     @Config("mantis.job.master.resource.cluster.scaler.ruleset.refresh.secs")
     @Default("180")
     int getScalerRuleSetRefreshThresholdInSecs();

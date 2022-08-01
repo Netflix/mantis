@@ -36,6 +36,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
@@ -46,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +62,10 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final ClusterID clusterId;
 
+    // Timer threshold of pulling cluster usage.
     private final Duration scalerPullThreshold;
+
+    // Timer threshold of refreshing cluster scale rules from storage provider.
     private final Duration ruleSetRefreshThreshold;
 
     private final ActorRef resourceClusterActor;
@@ -243,12 +248,18 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             log.info("{} scaler is disabled due to no rules", this.clusterId);
             return;
         }
-        this.resourceClusterActor.tell(new GetClusterUsageRequest(this.clusterId), self());
+        this.resourceClusterActor.tell(
+            new GetClusterUsageRequest(
+                this.clusterId, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            self());
     }
 
     private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
         log.info("{}: Requesting cluster rule refresh", this.clusterId);
         this.fetchRuleSet();
+
+        // when calling from API there is no need to wait.
+        getSender().tell(Ack.getInstance(), self());
     }
 
     private void fetchRuleSet() {
@@ -384,4 +395,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         int desireSize;
         ScaleType type;
     }
+
+    static Function<TaskExecutorRegistration, String> groupKeyFromTaskExecutorDefinitionIdFunc =
+        reg -> reg.getTaskExecutorContainerDefinitionId().get();
+
 }

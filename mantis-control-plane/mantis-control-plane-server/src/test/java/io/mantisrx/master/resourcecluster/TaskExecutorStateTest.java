@@ -35,6 +35,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -80,6 +81,7 @@ public class TaskExecutorStateTest {
                 .hostname(HOST_NAME)
                 .workerPorts(WORKER_PORTS)
                 .machineDefinition(MACHINE_DEFINITION)
+                .taskExecutorAttributes(ImmutableMap.of())
                 .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
@@ -135,6 +137,7 @@ public class TaskExecutorStateTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION)
+            .taskExecutorAttributes(ImmutableMap.of())
             .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
