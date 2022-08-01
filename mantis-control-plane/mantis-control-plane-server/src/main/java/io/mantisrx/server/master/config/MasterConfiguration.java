@@ -193,6 +193,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60")
     long getWorkerTimeoutSecs();
 
+    @Config("mantis.worker.heartbeat.interval.init.secs")
+    @Default("180")
+    long getWorkerInitTimeoutSecs();
+
     @Config("mantis.worker.heartbeat.receipts.min.threshold.percent")
     @Default("55")
     double getHeartbeatReceiptsMinThresholdPercentage();
