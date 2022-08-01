@@ -18,6 +18,7 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads.CLUSTER_ID;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import akka.actor.ActorRef;
@@ -29,6 +30,7 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.testkit.JUnitRouteTest;
 import akka.http.javadsl.testkit.TestRoute;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -241,6 +243,11 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
     @Test
     public void testResourceClusterScaleRulesRoutes() throws IOException {
+        ResourceCluster resourceCluster = mock(ResourceCluster.class);
+        when(resourceCluster.requestClusterScalerRuleSetRefresh())
+            .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(resourceClusters.getClusterFor(ClusterID.of(CLUSTER_ID))).thenReturn(resourceCluster);
+
         // test get empty cluster rule.
         testRoute.run(HttpRequest.GET(getResourceClusterScaleRulesEndpoint(CLUSTER_ID)))
             .assertStatusCode(StatusCodes.OK)
@@ -296,6 +303,8 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                 Jackson.fromJSON(
                     ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_RESULT,
                     GetResourceClusterScaleRulesResponse.class));
+
+        verify(resourceCluster).requestClusterScalerRuleSetRefresh();
     }
 
     @Test

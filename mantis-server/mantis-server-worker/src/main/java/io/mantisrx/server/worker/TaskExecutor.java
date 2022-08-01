@@ -46,6 +46,8 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -128,7 +130,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         MachineDefinition machineDefinition =
             MachineDefinitionUtils.sys(workerPorts, workerConfiguration.getNetworkBandwidthInMB());
         String hostName = workerConfiguration.getExternalAddress();
-        String containerDefinitionId = System.getenv(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID);
+        Map<String, String> envMap = new HashMap<>(System.getenv());
+        // Adding a default id for back-compat support.
+        envMap.putIfAbsent(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, "defaultContainerId");
 
         this.taskExecutorRegistration =
             TaskExecutorRegistration.builder()
@@ -138,9 +142,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
-                .taskExecutorAttributes(ImmutableMap.of(
-                    WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
-                    containerDefinitionId == null ? "defaultContainerId" : containerDefinitionId))
+                .taskExecutorAttributes(ImmutableMap.copyOf(envMap))
                 .build();
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 

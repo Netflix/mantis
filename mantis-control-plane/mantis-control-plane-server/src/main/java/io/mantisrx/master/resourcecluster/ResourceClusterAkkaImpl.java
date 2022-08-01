@@ -30,6 +30,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssig
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
+import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -169,5 +170,16 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 .ask(resourceClusterManagerActor, new GetTaskExecutorStatusRequest(taskExecutorID, clusterID), askTimeout)
                 .thenApply(TaskExecutorStatus.class::cast)
                 .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> requestClusterScalerRuleSetRefresh() {
+        return Patterns
+            .ask(
+                resourceClusterManagerActor,
+                TriggerClusterRuleRefreshRequest.builder().clusterID(this.clusterID).build(),
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
     }
 }

@@ -31,10 +31,10 @@ import lombok.Value;
 @Value
 @Builder
 public class TaskExecutorRegistration {
-    @NonNull
+  @NonNull
   TaskExecutorID taskExecutorID;
 
-    @NonNull
+  @NonNull
   ClusterID clusterID;
 
   // RPC address that's used to talk to the task executor
@@ -54,7 +54,7 @@ public class TaskExecutorRegistration {
   MachineDefinition machineDefinition;
 
   // custom attributes describing the task executor
-  @NonNull
+  // TODO make this field non-null once no back-compat required.
   Map<String, String> taskExecutorAttributes;
 
   public Optional<String> getTaskExecutorContainerDefinitionId() {
