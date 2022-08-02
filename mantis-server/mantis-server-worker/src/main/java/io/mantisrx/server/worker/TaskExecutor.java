@@ -130,9 +130,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         MachineDefinition machineDefinition =
             MachineDefinitionUtils.sys(workerPorts, workerConfiguration.getNetworkBandwidthInMB());
         String hostName = workerConfiguration.getExternalAddress();
-        Map<String, String> envMap = new HashMap<>(System.getenv());
+
+        Map<String, String> attributeMap = new HashMap<>(TaskAttributeUtils.getTaskExecutorAttributes());
         // Adding a default id for back-compat support.
-        envMap.putIfAbsent(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, "defaultContainerId");
+        attributeMap.putIfAbsent(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, "defaultContainerId");
 
         this.taskExecutorRegistration =
             TaskExecutorRegistration.builder()
@@ -142,7 +143,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
-                .taskExecutorAttributes(ImmutableMap.copyOf(envMap))
+                .taskExecutorAttributes(ImmutableMap.copyOf(attributeMap))
                 .build();
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 

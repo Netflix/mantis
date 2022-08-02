@@ -366,7 +366,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
             return completeAsync(
                 response.thenCombineAsync(
-                    this.gateway.getClusterFor(getClusterID(clusterName)).requestClusterScalerRuleSetRefresh(),
+                    this.gateway.getClusterFor(getClusterID(clusterName)).refreshClusterScalerRuleSet(),
                     (createResp, dontCare) -> createResp),
                 resp -> complete(
                     StatusCodes.ACCEPTED,
