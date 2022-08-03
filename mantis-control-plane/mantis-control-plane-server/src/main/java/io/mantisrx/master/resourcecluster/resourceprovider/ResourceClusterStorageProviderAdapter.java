@@ -69,7 +69,7 @@ public class ResourceClusterStorageProviderAdapter implements ResourceClusterSto
     }
 
     @Override
-    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(ClusterID clusterId) {
         return this.providerImpl.deregisterCluster(clusterId);
     }
 
@@ -79,7 +79,7 @@ public class ResourceClusterStorageProviderAdapter implements ResourceClusterSto
     }
 
     @Override
-    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id) {
+    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(ClusterID id) {
         return this.providerImpl.getResourceClusterSpecWritable(id);
     }
 

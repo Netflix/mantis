@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * [Test only] Store resource storage data in memory only for testing.
  */
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
-    Map<String, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
+    Map<ClusterID, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
     Map<ClusterID, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
 
     @Override
@@ -40,7 +40,7 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     }
 
     @Override
-    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(ClusterID clusterId) {
         this.clusters.remove(clusterId);
         return getRegisteredResourceClustersWritable();
     }
@@ -52,7 +52,7 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
 
         this.clusters.forEach((key, value) ->
             builder.cluster(
-                key,
+                key.getResourceID(),
                 RegisteredResourceClustersWritable.ClusterRegistration.builder()
                     .clusterId(key).version(value.getVersion()).build()));
 
@@ -60,7 +60,7 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     }
 
     @Override
-    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id) {
+    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(ClusterID id) {
         return CompletableFuture.completedFuture(this.clusters.getOrDefault(id, null));
     }
 

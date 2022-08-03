@@ -194,7 +194,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     .responseCode(ResponseCode.SUCCESS)
                     .registeredResourceClusters(
                         Arrays.asList(RegisteredResourceCluster.builder()
-                            .id(CLUSTER_ID).version("").build()))
+                            .id(ClusterID.of(CLUSTER_ID)).version("").build()))
                     .build());
 
         // test get registered cluster spec
@@ -310,7 +310,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     @Test
     public void testResourceClusterUpgradeRoutes() throws IOException {
         UpgradeClusterContainersRequest createRuleReq1 = UpgradeClusterContainersRequest.builder()
-            .clusterId(CLUSTER_ID)
+            .clusterId(ClusterID.of(CLUSTER_ID))
             .region("us-east-1")
             .optionalBatchMaxSize(50)
             .optionalSkuId("large")

@@ -34,11 +34,11 @@ public interface ResourceClusterStorageProvider {
      */
     CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec);
 
-    CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId);
+    CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(ClusterID clusterId);
 
     CompletionStage<RegisteredResourceClustersWritable> getRegisteredResourceClustersWritable();
 
-    CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id);
+    CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(ClusterID id);
 
     CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId);
 

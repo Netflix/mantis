@@ -17,6 +17,7 @@
 package io.mantisrx.master.resourcecluster.writable;
 
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -30,7 +31,7 @@ import lombok.Value;
 public class ResourceClusterSpecWritable {
     String version;
 
-    String id;
+    ClusterID id;
 
     MantisResourceClusterSpec clusterSpec;
 
@@ -40,7 +41,7 @@ public class ResourceClusterSpecWritable {
     @JsonCreator
     public ResourceClusterSpecWritable(
             @JsonProperty("version") final String version,
-            @JsonProperty("id") final String id,
+            @JsonProperty("id") final ClusterID id,
             @JsonProperty("clusterSpec") final MantisResourceClusterSpec clusterSpec) {
         this.version = version;
         this.id = id;

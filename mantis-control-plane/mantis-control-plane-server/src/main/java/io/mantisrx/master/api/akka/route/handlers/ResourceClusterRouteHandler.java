@@ -30,6 +30,7 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.concurrent.CompletionStage;
 
 public interface ResourceClusterRouteHandler {
@@ -37,7 +38,7 @@ public interface ResourceClusterRouteHandler {
 
     CompletionStage<GetResourceClusterResponse> create(final ProvisionResourceClusterRequest request);
 
-    CompletionStage<DeleteResourceClusterResponse> delete(final String clusterId);
+    CompletionStage<DeleteResourceClusterResponse> delete(final ClusterID clusterId);
 
     CompletionStage<GetResourceClusterResponse> get(final GetResourceClusterSpecRequest request);
 

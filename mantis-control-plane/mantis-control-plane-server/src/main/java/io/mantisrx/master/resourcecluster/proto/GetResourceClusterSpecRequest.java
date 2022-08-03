@@ -16,11 +16,12 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import lombok.Builder;
 import lombok.Value;
 
 @Builder
 @Value
 public class GetResourceClusterSpecRequest {
-    String id;
+    ClusterID id;
 }
