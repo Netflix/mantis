@@ -28,12 +28,12 @@ public class GetClusterUsageResponse {
     ClusterID clusterID;
 
     @Singular
-    List<UsageByMachineDefinition> usages;
+    List<UsageByGroupKey> usages;
 
     @Value
     @Builder
-    public static class UsageByMachineDefinition {
-        String containerDefinitionId;
+    public static class UsageByGroupKey {
+        String usageGroupKey;
         int idleCount;
         int totalCount;
     }

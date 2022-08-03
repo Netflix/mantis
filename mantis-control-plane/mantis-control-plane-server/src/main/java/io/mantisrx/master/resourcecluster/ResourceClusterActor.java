@@ -27,11 +27,12 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
-import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
@@ -150,36 +151,45 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req) {
         log.info("Computing cluster usage: {}", this.clusterID);
-        Map<String, Pair<Integer, Integer>> usageByContainerDefId = new HashMap<>(); // container definition id to usage
+
+        // default grouping is containerSkuID to usage
+        Map<String, Pair<Integer, Integer>> usageByGroupKey = new HashMap<>();
         taskExecutorStateMap.entrySet().stream()
             .forEach(kv -> {
                 if (kv.getValue() == null ||
-                    kv.getValue().getRegistration() == null ||
-                    !kv.getValue().getRegistration().getTaskExecutorContainerDefinitionId().isPresent()) {
-                    log.info("ContainerDefinitionId is empty: {}, {}", this.clusterID, kv.getKey());
+                    kv.getValue().getRegistration() == null) {
+                    log.warn("Empty registration: {}, {}. Skip usage request.", this.clusterID, kv.getKey());
                     return;
                 }
+
+                Optional<String> groupKeyO =
+                    req.getGroupKeyFunc().apply(kv.getValue().getRegistration());
+
+                if (!groupKeyO.isPresent()) {
+                    log.info("Empty groupKey from: {}, {}. Skip usage request.", this.clusterID, kv.getKey());
+                    return;
+                }
+
+                String groupKey = groupKeyO.get();
 
                 Pair<Integer, Integer> kvState = new Pair<>(
                     kv.getValue().isAvailable() ? 1 : 0,
                     kv.getValue().isRegistered() ? 1 : 0);
 
-                String groupKey =
-                    req.getGroupKeyFunc().apply(kv.getValue().getRegistration());
 
-                if (usageByContainerDefId.containsKey(groupKey)) {
-                    Pair<Integer, Integer> prevState = usageByContainerDefId.get(groupKey);
-                    usageByContainerDefId.put(groupKey,
+                if (usageByGroupKey.containsKey(groupKey)) {
+                    Pair<Integer, Integer> prevState = usageByGroupKey.get(groupKey);
+                    usageByGroupKey.put(groupKey,
                         new Pair<>(kvState.first() + prevState.first(), kvState.second() + prevState.second()));
                 } else {
-                    usageByContainerDefId.put(groupKey, kvState);
+                    usageByGroupKey.put(groupKey, kvState);
                 }
             });
 
         GetClusterUsageResponseBuilder resBuilder = GetClusterUsageResponse.builder().clusterID(this.clusterID);
-        usageByContainerDefId.entrySet().stream()
-            .forEach(kv -> resBuilder.usage(UsageByMachineDefinition.builder()
-                .containerDefinitionId(kv.getKey())
+        usageByGroupKey.entrySet().stream()
+            .forEach(kv -> resBuilder.usage(UsageByGroupKey.builder()
+                .usageGroupKey(kv.getKey())
                 .idleCount(kv.getValue().first())
                 .totalCount(kv.getValue().second())
                 .build()));
@@ -197,10 +207,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         List<TaskExecutorID> instanceList = taskExecutorStateMap.entrySet().stream()
             .filter(kv -> {
-                Optional<String> containerDefIdO =
+                if (kv.getValue().getRegistration() == null) {
+                    return false;
+                }
+
+                Optional<ContainerSkuID> skuIdO =
                     kv.getValue().getRegistration().getTaskExecutorContainerDefinitionId();
-                return containerDefIdO.isPresent() &&
-                    containerDefIdO.get().equals(req.getSkuId());
+                return skuIdO.isPresent() && skuIdO.get().equals(req.getSkuId());
             })
             .filter(isAvailable)
             .map(kv -> kv.getKey())
@@ -209,7 +222,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         GetClusterIdleInstancesResponse res = GetClusterIdleInstancesResponse.builder()
             .instanceIds(instanceList)
-            .clusterId(this.clusterID.getResourceID())
+            .clusterId(this.clusterID)
             .skuId(req.getSkuId())
             .build();
         log.info("Return idle instance list: {}", res);
@@ -541,7 +554,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class GetClusterUsageRequest {
         ClusterID clusterID;
-        Function<TaskExecutorRegistration, String> groupKeyFunc;
+        Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
     }
 
     @SuppressWarnings("UnusedReturnValue")

@@ -32,10 +32,12 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRe
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
@@ -72,7 +74,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final ActorRef resourceClusterHostActor;
     private final ResourceClusterStorageProvider storageProvider;
 
-    private final ConcurrentMap<String, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ContainerSkuID, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
 
     private final Clock clock;
 
@@ -135,9 +137,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.numScaleUp = m.getCounter("numScaleUp");
         this.numReachScaleMinLimit = m.getCounter("numReachScaleMinLimit");
         this.numScaleRuleTrigger = m.getCounter("numScaleRuleTrigger");
-
-        // Init timer
-        init();
     }
 
     @Override
@@ -158,7 +157,9 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .build();
     }
 
-    private void init() {
+    @Override
+    public void preStart() throws Exception {
+        log.info("ResourceClusterScaler Actor started: {}", this.clusterId);
         this.fetchRuleSet();
 
         getTimers().startTimerWithFixedDelay(
@@ -170,6 +171,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             "ClusterScalerRuleFetcher-" + this.clusterId,
             new TriggerClusterRuleRefreshRequest(this.clusterId),
             this.ruleSetRefreshThreshold);
+        super.preStart();
     }
 
     private void onGetClusterUsageResponse(GetClusterUsageResponse usageResponse) {
@@ -185,7 +187,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         // 3 translate between decision to scale request. (inline for now)
 
         usageResponse.getUsages().forEach(usage -> {
-            String skuId = usage.getContainerDefinitionId();
+            ContainerSkuID skuId = ContainerSkuID.of(usage.getUsageGroupKey());
 
             if (this.skuToRuleMap.containsKey(skuId)) {
                 Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuId).apply(usage);
@@ -222,7 +224,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
             }
             else {
-                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getContainerDefinitionId());
+                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getUsageGroupKey());
             }
         });
 
@@ -234,7 +236,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         log.info("On GetClusterIdleInstancesResponse, informing host actor: {}", response);
         this.resourceClusterHostActor.tell(
             ScaleResourceRequest.builder()
-                .clusterId(this.clusterId.getResourceID())
+                .clusterId(this.clusterId)
                 .skuId(response.getSkuId())
                 .desireSize(response.getDesireSize())
                 .idleInstances(response.getInstanceIds())
@@ -266,7 +268,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         CompletionStage<GetRuleSetResponse> fetchFut =
             this.storageProvider.getResourceClusterScaleRules(this.clusterId)
                 .thenApply(rules -> {
-                    Set<String> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
+                    Set<ContainerSkuID> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
                     removedKeys.removeAll(rules.getScaleRules().keySet());
                     removedKeys.forEach(this.skuToRuleMap::remove);
 
@@ -289,7 +291,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private ScaleResourceRequest translateScaleDecision(ScaleDecision decision) {
         return ScaleResourceRequest.builder()
-            .clusterId(this.clusterId.getResourceID())
+            .clusterId(this.clusterId)
             .skuId(decision.getSkuId())
             .desireSize(decision.getDesireSize())
             .build();
@@ -317,7 +319,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Builder
     static class GetRuleSetResponse {
         ClusterID clusterID;
-        ImmutableMap<String, ClusterAvailabilityRule> rules;
+        ImmutableMap<ContainerSkuID, ClusterAvailabilityRule> rules;
     }
 
     static class ClusterAvailabilityRule {
@@ -331,7 +333,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
             this.lastActionInstant = Instant.MIN;
         }
-        public Optional<ScaleDecision> apply(GetClusterUsageResponse.UsageByMachineDefinition usage) {
+        public Optional<ScaleDecision> apply(UsageByGroupKey usage) {
             // Cool down check
             if (this.lastActionInstant.plusSeconds(this.scaleSpec.getCoolDownSecs()).compareTo(clock.instant()) > 0) {
                 log.debug("Scale CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
@@ -388,15 +390,18 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Value
     @Builder
     static class ScaleDecision {
-        String skuId;
-        String clusterId;
+        ContainerSkuID skuId;
+        ClusterID clusterId;
         int maxSize;
         int minSize;
         int desireSize;
         ScaleType type;
     }
 
-    static Function<TaskExecutorRegistration, String> groupKeyFromTaskExecutorDefinitionIdFunc =
-        reg -> reg.getTaskExecutorContainerDefinitionId().get();
-
+    /**
+     * {@link TaskExecutorRegistration} holds task attribute map in which the container sku ID's resource id is stored
+     * as a string. Here the key function is used to retrieve the map this string as grouping kye.
+     */
+    static Function<TaskExecutorRegistration, Optional<String>> groupKeyFromTaskExecutorDefinitionIdFunc =
+        reg -> reg.getTaskExecutorContainerDefinitionId().map(id -> id.getResourceID());
 }

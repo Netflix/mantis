@@ -30,6 +30,7 @@ import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWri
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,11 +61,12 @@ public class SimpleFileResourceStorageProviderTests {
     @Test
     public void testResourceClusterRules() throws ExecutionException, InterruptedException, IOException {
         final ClusterID clusterId = ClusterID.of("mantisRCMTest2");
+        final ContainerSkuID smallSkuId = ContainerSkuID.of("small");
         SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system);
 
         ResourceClusterScaleSpec rule1 = ResourceClusterScaleSpec.builder()
-            .clusterId(clusterId.getResourceID())
-            .skuId("small")
+            .clusterId(clusterId)
+            .skuId(smallSkuId)
             .coolDownSecs(5)
             .maxIdleToKeep(10)
             .minIdleToKeep(5)
@@ -77,12 +79,12 @@ public class SimpleFileResourceStorageProviderTests {
         CompletionStage<ResourceClusterScaleRulesWritable> rulesFut = prov.getResourceClusterScaleRules(clusterId);
         ResourceClusterScaleRulesWritable rules = rulesFut.toCompletableFuture().get();
         assertEquals(1, rules.getScaleRules().size());
-        assertEquals(clusterId.getResourceID(), rules.getClusterId());
-        assertEquals(rule1, rules.getScaleRules().get("small"));
+        assertEquals(clusterId, rules.getClusterId());
+        assertEquals(rule1, rules.getScaleRules().get(smallSkuId.getResourceID()));
 
         ResourceClusterScaleSpec rule2 = ResourceClusterScaleSpec.builder()
-            .clusterId(clusterId.getResourceID())
-            .skuId("large")
+            .clusterId(clusterId)
+            .skuId(ContainerSkuID.of("large"))
             .coolDownSecs(9)
             .maxIdleToKeep(99)
             .minIdleToKeep(5)
@@ -95,13 +97,13 @@ public class SimpleFileResourceStorageProviderTests {
         CompletionStage<ResourceClusterScaleRulesWritable> rulesFut2 = prov.getResourceClusterScaleRules(clusterId);
         rules = rulesFut2.toCompletableFuture().get();
         assertEquals(2, rules.getScaleRules().size());
-        assertEquals(clusterId.getResourceID(), rules.getClusterId());
-        assertEquals(rule1, rules.getScaleRules().get("small"));
+        assertEquals(clusterId, rules.getClusterId());
+        assertEquals(rule1, rules.getScaleRules().get(smallSkuId.getResourceID()));
         assertEquals(rule2, rules.getScaleRules().get("large"));
 
         ResourceClusterScaleSpec rule3 = ResourceClusterScaleSpec.builder()
-            .clusterId(clusterId.getResourceID())
-            .skuId("small")
+            .clusterId(clusterId)
+            .skuId(smallSkuId)
             .coolDownSecs(999)
             .maxIdleToKeep(123)
             .minIdleToKeep(2)
@@ -114,8 +116,8 @@ public class SimpleFileResourceStorageProviderTests {
         CompletionStage<ResourceClusterScaleRulesWritable> rulesFut3 = prov.getResourceClusterScaleRules(clusterId);
         rules = rulesFut3.toCompletableFuture().get();
         assertEquals(2, rules.getScaleRules().size());
-        assertEquals(clusterId.getResourceID(), rules.getClusterId());
-        assertEquals(rule3, rules.getScaleRules().get("small"));
+        assertEquals(clusterId, rules.getClusterId());
+        assertEquals(rule3, rules.getScaleRules().get(smallSkuId.getResourceID()));
         assertEquals(rule2, rules.getScaleRules().get("large"));
     }
 

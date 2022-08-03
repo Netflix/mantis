@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
     Map<String, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
-    Map<String, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
+    Map<ClusterID, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {
@@ -68,8 +68,8 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId) {
         return CompletableFuture.completedFuture(
             this.clusterRules.getOrDefault(
-                clusterId.getResourceID(),
-                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId.getResourceID()).build()));
+                clusterId,
+                ResourceClusterScaleRulesWritable.builder().clusterId(clusterId).build()));
     }
 
     @Override
@@ -77,14 +77,14 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
         ResourceClusterScaleSpec rule) {
         if (this.clusterRules.containsKey(rule.getClusterId())) {
             this.clusterRules.computeIfPresent(rule.getClusterId(), (k, v) ->
-                v.toBuilder().scaleRule(rule.getSkuId(), rule).build());
+                v.toBuilder().scaleRule(rule.getSkuId().getResourceID(), rule).build());
         }
         else {
             this.clusterRules.put(
                 rule.getClusterId(),
                 ResourceClusterScaleRulesWritable.builder()
                     .clusterId(rule.getClusterId())
-                    .scaleRule(rule.getSkuId(), rule).build());
+                    .scaleRule(rule.getSkuId().getResourceID(), rule).build());
         }
 
         return CompletableFuture.completedFuture(this.clusterRules.get(rule.getClusterId()));

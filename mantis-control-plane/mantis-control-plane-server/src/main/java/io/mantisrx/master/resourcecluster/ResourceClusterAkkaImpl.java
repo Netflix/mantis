@@ -173,7 +173,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<Ack> requestClusterScalerRuleSetRefresh() {
+    public CompletableFuture<Ack> refreshClusterScalerRuleSet() {
         return Patterns
             .ask(
                 resourceClusterManagerActor,

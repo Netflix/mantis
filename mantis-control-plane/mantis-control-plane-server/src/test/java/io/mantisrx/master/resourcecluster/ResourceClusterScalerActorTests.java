@@ -37,13 +37,14 @@ import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.ScaleType;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
-import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.time.Clock;
@@ -61,9 +62,9 @@ import org.junit.Test;
 
 public class ResourceClusterScalerActorTests {
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
-    private static final String skuSmall = "small";
-    private static final String skuMedium = "medium";
-    private static final String skuLarge = "large";
+    private static final ContainerSkuID skuSmall = ContainerSkuID.of("small");
+    private static final ContainerSkuID skuMedium = ContainerSkuID.of("medium");
+    private static final ContainerSkuID skuLarge = ContainerSkuID.of("large");
     private ActorRef scalerActor;
     private ResourceClusterStorageProvider storageProvider;
     private TestKit clusterActorProbe;
@@ -97,8 +98,8 @@ public class ResourceClusterScalerActorTests {
         when(this.storageProvider.getResourceClusterScaleRules(CLUSTER_ID))
             .thenReturn(CompletableFuture.completedFuture(
                 ResourceClusterScaleRulesWritable.builder()
-                    .scaleRule(skuSmall, ResourceClusterScaleSpec.builder()
-                        .clusterId(CLUSTER_ID.getResourceID())
+                    .scaleRule(skuSmall.getResourceID(), ResourceClusterScaleSpec.builder()
+                        .clusterId(CLUSTER_ID)
                         .skuId(skuSmall)
                         .coolDownSecs(10)
                         .maxIdleToKeep(10)
@@ -106,8 +107,8 @@ public class ResourceClusterScalerActorTests {
                         .minSize(11)
                         .maxSize(15)
                         .build())
-                    .scaleRule(skuLarge, ResourceClusterScaleSpec.builder()
-                        .clusterId(CLUSTER_ID.getResourceID())
+                    .scaleRule(skuLarge.getResourceID(), ResourceClusterScaleSpec.builder()
+                        .clusterId(CLUSTER_ID)
                         .skuId(skuLarge)
                         .coolDownSecs(10)
                         .maxIdleToKeep(15)
@@ -140,11 +141,11 @@ public class ResourceClusterScalerActorTests {
             GetClusterUsageResponse.builder()
                 .clusterID(CLUSTER_ID)
                 .usage(
-                    UsageByMachineDefinition.builder().containerDefinitionId(skuSmall).idleCount(4).totalCount(10).build())
+                    UsageByGroupKey.builder().usageGroupKey(skuSmall.getResourceID()).idleCount(4).totalCount(10).build())
                 .usage(
-                    UsageByMachineDefinition.builder().containerDefinitionId(skuLarge).idleCount(16).totalCount(16).build())
+                    UsageByGroupKey.builder().usageGroupKey(skuLarge.getResourceID()).idleCount(16).totalCount(16).build())
                 .usage(
-                    UsageByMachineDefinition.builder().containerDefinitionId(skuMedium).idleCount(8).totalCount(15).build())
+                    UsageByGroupKey.builder().usageGroupKey(skuMedium.getResourceID()).idleCount(8).totalCount(15).build())
                 .build(),
             clusterActorProbe.getRef());
 
@@ -166,7 +167,7 @@ public class ResourceClusterScalerActorTests {
         int newSize = 11;
         assertTrue(decisions.contains(
             ScaleResourceRequest.builder()
-                .clusterId(CLUSTER_ID.getResourceID())
+                .clusterId(CLUSTER_ID)
                 .skuId(skuSmall)
                 .desireSize(newSize)
                 .build()));
@@ -175,7 +176,7 @@ public class ResourceClusterScalerActorTests {
         ImmutableList<TaskExecutorID> idleInstances = ImmutableList.of(TaskExecutorID.of("agent1"));
         scalerActor.tell(
             GetClusterIdleInstancesResponse.builder()
-                .clusterId(CLUSTER_ID.getResourceID())
+                .clusterId(CLUSTER_ID)
                 .instanceIds(idleInstances)
                 .skuId(skuLarge)
                 .desireSize(15)
@@ -185,7 +186,7 @@ public class ResourceClusterScalerActorTests {
         newSize = 15;
         assertEquals(
             ScaleResourceRequest.builder()
-                .clusterId(CLUSTER_ID.getResourceID())
+                .clusterId(CLUSTER_ID)
                 .skuId(skuLarge)
                 .desireSize(newSize)
                 .idleInstances(idleInstances)
@@ -217,8 +218,8 @@ public class ResourceClusterScalerActorTests {
         when(this.storageProvider.getResourceClusterScaleRules(CLUSTER_ID))
             .thenReturn(CompletableFuture.completedFuture(
                 ResourceClusterScaleRulesWritable.builder()
-                    .scaleRule(skuMedium, ResourceClusterScaleSpec.builder()
-                        .clusterId(CLUSTER_ID.getResourceID())
+                    .scaleRule(skuMedium.getResourceID(), ResourceClusterScaleSpec.builder()
+                        .clusterId(CLUSTER_ID)
                         .skuId(skuMedium)
                         .coolDownSecs(10)
                         .maxIdleToKeep(20)
@@ -243,8 +244,8 @@ public class ResourceClusterScalerActorTests {
         String skuId = "small";
         ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
             ResourceClusterScaleSpec.builder()
-                .clusterId(CLUSTER_ID.getResourceID())
-                .skuId(skuId)
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
                 .coolDownSecs(10)
                 .maxIdleToKeep(10)
                 .minIdleToKeep(5)
@@ -254,15 +255,15 @@ public class ResourceClusterScalerActorTests {
             Clock.fixed(Clock.systemUTC().instant(), ZoneId.systemDefault()));
 
         // Test scale up
-        UsageByMachineDefinition usage = UsageByMachineDefinition.builder()
-            .containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision = rule.apply(usage);
         int newSize = 11;
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
@@ -271,7 +272,7 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // test cool down
-        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
+        usage = UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(4).totalCount(10).build();
         assertEquals(Optional.empty(), rule.apply(usage));
     }
 
@@ -280,8 +281,8 @@ public class ResourceClusterScalerActorTests {
         String skuId = "small";
         ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
             ResourceClusterScaleSpec.builder()
-                .clusterId(CLUSTER_ID.getResourceID())
-                .skuId(skuId)
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
                 .coolDownSecs(2)
                 .maxIdleToKeep(10)
                 .minIdleToKeep(5)
@@ -291,15 +292,15 @@ public class ResourceClusterScalerActorTests {
             Clock.systemUTC());
 
         // Test scale up
-        UsageByMachineDefinition usage =
-            UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
+        UsageByGroupKey usage =
+            UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision = rule.apply(usage);
         int newSize = 11;
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
@@ -308,15 +309,15 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // test cool down
-        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
+        usage = UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(4).totalCount(10).build();
         assertEquals(Optional.empty(), rule.apply(usage));
 
         Thread.sleep(Duration.ofSeconds(3).toMillis());
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
@@ -331,8 +332,8 @@ public class ResourceClusterScalerActorTests {
         String skuId = "small";
         ClusterAvailabilityRule rule = new ClusterAvailabilityRule(
             ResourceClusterScaleSpec.builder()
-                .clusterId(CLUSTER_ID.getResourceID())
-                .skuId(skuId)
+                .clusterId(CLUSTER_ID)
+                .skuId(ContainerSkuID.of(skuId))
                 .coolDownSecs(0)
                 .maxIdleToKeep(10)
                 .minIdleToKeep(5)
@@ -342,15 +343,15 @@ public class ResourceClusterScalerActorTests {
             Clock.fixed(Instant.MIN, ZoneId.systemDefault()));
 
         // Test scale up
-        UsageByMachineDefinition usage = UsageByMachineDefinition.builder()
-            .containerDefinitionId(skuId).idleCount(4).totalCount(10).build();
+        UsageByGroupKey usage = UsageByGroupKey.builder()
+            .usageGroupKey(skuId).idleCount(4).totalCount(10).build();
         Optional<ScaleDecision> decision =  rule.apply(usage);
         int newSize = 11;
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
@@ -359,21 +360,21 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // Test empty
-        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(9).totalCount(11).build();
+        usage = UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(9).totalCount(11).build();
         decision =  rule.apply(usage);
         assertEquals(
             Optional.empty(),
             decision);
 
         // Test scale up hits max
-        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(0).totalCount(11).build();
+        usage = UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(0).totalCount(11).build();
         decision =  rule.apply(usage);
         newSize = 15;
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
@@ -382,14 +383,14 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // Test scale down
-        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(15).totalCount(20).build();
+        usage = UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(15).totalCount(20).build();
         decision =  rule.apply(usage);
         newSize = 15;
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)
@@ -398,14 +399,14 @@ public class ResourceClusterScalerActorTests {
             decision);
 
         // Test scale down hits min.
-        usage = UsageByMachineDefinition.builder().containerDefinitionId(skuId).idleCount(15).totalCount(15).build();
+        usage = UsageByGroupKey.builder().usageGroupKey(skuId).idleCount(15).totalCount(15).build();
         decision =  rule.apply(usage);
         newSize = 11;
         assertEquals(
             Optional.of(
                 ScaleDecision.builder()
-                    .clusterId(CLUSTER_ID.getResourceID())
-                    .skuId(skuId)
+                    .clusterId(CLUSTER_ID)
+                    .skuId(ContainerSkuID.of(skuId))
                     .desireSize(newSize)
                     .minSize(newSize)
                     .maxSize(newSize)

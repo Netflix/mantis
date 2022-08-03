@@ -31,12 +31,13 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRe
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
-import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByMachineDefinition;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
@@ -48,6 +49,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Objects;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -63,9 +65,10 @@ public class ResourceClusterActorTest {
     private static final Duration heartbeatTimeout = Duration.ofSeconds(10);
     private static final Duration assignmentTimeout = Duration.ofSeconds(1);
     private static final String HOST_NAME = "hostname";
-    private static final String CONTAINER_DEF_ID_1 = "SKU1";
-    private static final String CONTAINER_DEF_ID_2 = "SKU2";
-    private static final String CONTAINER_DEF_ID_3 = "SKU3";
+
+    private static final ContainerSkuID CONTAINER_DEF_ID_1 = ContainerSkuID.of("SKU1");
+    private static final ContainerSkuID CONTAINER_DEF_ID_2 = ContainerSkuID.of("SKU2");
+    private static final ContainerSkuID CONTAINER_DEF_ID_3 = ContainerSkuID.of("SKU3");
     private static final WorkerPorts WORKER_PORTS = new WorkerPorts(1, 2, 3, 4, 5);
     private static final MachineDefinition MACHINE_DEFINITION =
         new MachineDefinition(2f, 2014, 128.0, 1024, 1);
@@ -80,7 +83,8 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION)
-            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1))
+            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
+                CONTAINER_DEF_ID_1.getResourceID()))
             .build();
 
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION_2 =
@@ -91,7 +95,8 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION_2)
-            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_2))
+            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
+                CONTAINER_DEF_ID_2.getResourceID()))
             .build();
 
     private static final TaskExecutorRegistration TASK_EXECUTOR_REGISTRATION_3 =
@@ -102,7 +107,8 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION_2)
-            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_2))
+            .taskExecutorAttributes(ImmutableMap.of(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID,
+                CONTAINER_DEF_ID_2.getResourceID()))
             .build();
 
     private static final WorkerId WORKER_ID =
@@ -225,18 +231,20 @@ public class ResourceClusterActorTest {
         GetClusterUsageResponse usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         assertEquals(2, usageRes.getUsages().size());
         assertEquals(1, usageRes.getUsages().stream()
-            .filter(usage -> usage.getContainerDefinitionId() == CONTAINER_DEF_ID_1).count());
-        UsageByMachineDefinition usage1 =
+            .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_1.getResourceID())).count());
+        UsageByGroupKey usage1 =
             usageRes.getUsages().stream()
-                .filter(usage -> usage.getContainerDefinitionId() == CONTAINER_DEF_ID_1).findFirst().get();
+                .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_1.getResourceID()))
+                .findFirst().get();
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
 
         assertEquals(1, usageRes.getUsages().stream()
-            .filter(usage -> usage.getContainerDefinitionId() == CONTAINER_DEF_ID_2).count());
-        UsageByMachineDefinition usage2 =
+            .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID())).count());
+        UsageByGroupKey usage2 =
             usageRes.getUsages().stream()
-                .filter(usage -> usage.getContainerDefinitionId() == CONTAINER_DEF_ID_2).findFirst().get();
+                .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID()))
+                .findFirst().get();
         assertEquals(2, usage2.getIdleCount());
         assertEquals(2, usage2.getTotalCount());
 
@@ -264,13 +272,13 @@ public class ResourceClusterActorTest {
         usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         usage1 =
             usageRes.getUsages().stream()
-                .filter(usage -> usage.getContainerDefinitionId().equals(CONTAINER_DEF_ID_1)).findFirst().get();
+                .filter(usage -> usage.getUsageGroupKey().equals(CONTAINER_DEF_ID_1.getResourceID())).findFirst().get();
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
 
         usage2 =
             usageRes.getUsages().stream()
-                .filter(usage -> usage.getContainerDefinitionId().equals(CONTAINER_DEF_ID_2)).findFirst().get();
+                .filter(usage -> usage.getUsageGroupKey().equals(CONTAINER_DEF_ID_2.getResourceID())).findFirst().get();
         assertEquals(1, usage2.getIdleCount());
         assertEquals(2, usage2.getTotalCount());
 
@@ -298,7 +306,7 @@ public class ResourceClusterActorTest {
         usageRes = probe.expectMsgClass(GetClusterUsageResponse.class);
         usage1 =
             usageRes.getUsages().stream()
-                .filter(usage -> usage.getContainerDefinitionId().equals(CONTAINER_DEF_ID_1)).findFirst().get();
+                .filter(usage -> usage.getUsageGroupKey().equals(CONTAINER_DEF_ID_1.getResourceID())).findFirst().get();
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
 
@@ -317,7 +325,8 @@ public class ResourceClusterActorTest {
 
         usage2 =
             usageRes.getUsages().stream()
-                .filter(usage -> usage.getContainerDefinitionId().equalsIgnoreCase(CONTAINER_DEF_ID_2)).findFirst().get();
+                .filter(usage -> usage.getUsageGroupKey().equalsIgnoreCase(CONTAINER_DEF_ID_2.getResourceID()))
+                .findFirst().get();
         assertEquals(0, usage2.getIdleCount());
         assertEquals(2, usage2.getTotalCount());
     }

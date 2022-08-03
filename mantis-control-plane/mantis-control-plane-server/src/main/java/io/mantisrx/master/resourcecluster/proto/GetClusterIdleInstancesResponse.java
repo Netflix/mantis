@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import java.util.List;
 import lombok.Builder;
@@ -25,8 +27,8 @@ import lombok.Value;
 @Value
 @Builder
 public class GetClusterIdleInstancesResponse {
-    String clusterId;
-    String skuId;
+    ClusterID clusterId;
+    ContainerSkuID skuId;
 
     @Singular
     List<TaskExecutorID> instanceIds;

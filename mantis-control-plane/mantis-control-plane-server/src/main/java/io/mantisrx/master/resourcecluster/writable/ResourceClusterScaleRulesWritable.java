@@ -17,6 +17,7 @@
 package io.mantisrx.master.resourcecluster.writable;
 
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
@@ -27,15 +28,20 @@ import lombok.Value;
 @Value
 @Builder(toBuilder = true)
 public class ResourceClusterScaleRulesWritable {
-    String clusterId;
+    ClusterID clusterId;
     String version;
 
+    /**
+     * [Note] Using composite type as key will cause a bug during ser/deser where key object's toString is invoked
+     * instead of using the ser result and this will cause unexpected behavior (key=(object string from toString())
+     * during deser. Thus using plain string (e.g. resourceID) instead.
+     */
     @Singular
     Map<String, ResourceClusterScaleSpec> scaleRules;
 
     @JsonCreator
     public ResourceClusterScaleRulesWritable(
-        @JsonProperty("clusterId") final String clusterId,
+        @JsonProperty("clusterId") final ClusterID clusterId,
         @JsonProperty("version") final String version,
         @JsonProperty("rules") final Map<String, ResourceClusterScaleSpec> scaleRules) {
         this.clusterId = clusterId;

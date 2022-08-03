@@ -57,8 +57,11 @@ public class TaskExecutorRegistration {
   // TODO make this field non-null once no back-compat required.
   Map<String, String> taskExecutorAttributes;
 
-  public Optional<String> getTaskExecutorContainerDefinitionId() {
-      return Optional.ofNullable(this.getTaskExecutorAttributes() == null ? null : this.getTaskExecutorAttributes()
-              .getOrDefault(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, null));
+  public Optional<ContainerSkuID> getTaskExecutorContainerDefinitionId() {
+      return Optional.ofNullable(
+          this.getTaskExecutorAttributes() == null ||
+              !this.getTaskExecutorAttributes().containsKey(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID) ?
+              null :
+              ContainerSkuID.of(this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)));
   }
 }

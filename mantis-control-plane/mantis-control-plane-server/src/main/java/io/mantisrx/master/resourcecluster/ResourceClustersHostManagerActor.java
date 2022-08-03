@@ -143,7 +143,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         ResourceClusterScaleRulesWritableBuilder rulesBuilder = ResourceClusterScaleRulesWritable.builder()
             .clusterId(req.getClusterId());
         req.getRules().forEach(r -> rulesBuilder.scaleRule(
-            r.getSkuId(),
+            r.getSkuId().getResourceID(),
             ResourceClusterScaleSpec.builder()
                 .maxSize(r.getMaxSize())
                 .minSize(r.getMinSize())

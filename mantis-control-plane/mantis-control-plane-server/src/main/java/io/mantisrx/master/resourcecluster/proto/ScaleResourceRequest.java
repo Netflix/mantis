@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.shaded.com.google.common.base.Joiner;
 import java.util.List;
@@ -27,9 +29,9 @@ import lombok.Value;
 @Builder
 @Value
 public class ScaleResourceRequest {
-    String clusterId;
+    ClusterID clusterId;
 
-    String skuId;
+    ContainerSkuID skuId;
 
     String region;
 
@@ -42,10 +44,10 @@ public class ScaleResourceRequest {
 
     public String getScaleRequestId() {
         return Joiner.on('-').join(
-            this.clusterId,
+            this.clusterId.getResourceID(),
             this.region,
             this.envType.isPresent() ? this.getEnvType().get().name() : "",
-            this.skuId,
+            this.skuId.getResourceID(),
             this.desireSize);
     }
 

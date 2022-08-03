@@ -244,7 +244,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     @Test
     public void testResourceClusterScaleRulesRoutes() throws IOException {
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
-        when(resourceCluster.requestClusterScalerRuleSetRefresh())
+        when(resourceCluster.refreshClusterScalerRuleSet())
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(resourceClusters.getClusterFor(ClusterID.of(CLUSTER_ID))).thenReturn(resourceCluster);
 
@@ -254,7 +254,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
                 GetResourceClusterScaleRulesResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
-                    .clusterId(CLUSTER_ID)
+                    .clusterId(ClusterID.of(CLUSTER_ID))
                     .rules(Collections.emptyList())
                     .build());
 
@@ -272,7 +272,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
                 GetResourceClusterScaleRulesResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
-                    .clusterId(CLUSTER_ID)
+                    .clusterId(ClusterID.of(CLUSTER_ID))
                     .rules(createRuleReq1.getRules())
                     .build());
 
@@ -282,7 +282,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
                 GetResourceClusterScaleRulesResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
-                    .clusterId(CLUSTER_ID)
+                    .clusterId(ClusterID.of(CLUSTER_ID))
                     .rules(createRuleReq1.getRules())
                     .build());
 
@@ -304,7 +304,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_RESULT,
                     GetResourceClusterScaleRulesResponse.class));
 
-        verify(resourceCluster).requestClusterScalerRuleSetRefresh();
+        verify(resourceCluster).refreshClusterScalerRuleSet();
     }
 
     @Test

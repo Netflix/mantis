@@ -17,6 +17,7 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import lombok.Builder;
 import lombok.Value;
 
@@ -24,7 +25,8 @@ import lombok.Value;
 @Builder
 public class GetClusterIdleInstancesRequest {
     ClusterID clusterID;
-    String skuId;
+    ContainerSkuID skuId;
+
     int maxInstanceCount;
     int desireSize;
 }
