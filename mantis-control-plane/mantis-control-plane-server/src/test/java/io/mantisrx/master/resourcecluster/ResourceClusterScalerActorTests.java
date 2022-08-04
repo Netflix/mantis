@@ -277,6 +277,19 @@ public class ResourceClusterScalerActorTests {
     }
 
     @Test
+    public void testScaleResourceRequestToRequestName() {
+
+        ScaleResourceRequest r1 =
+            ScaleResourceRequest.builder()
+                .idleInstance(TaskExecutorID.of("t1"))
+                .clusterId(CLUSTER_ID)
+                .skuId(skuLarge)
+                .build();
+
+        assertEquals("clusterId---large-0", r1.getScaleRequestId());
+    }
+
+    @Test
     public void testRuleFinishCoolDown() throws InterruptedException {
         String skuId = "small";
         ClusterAvailabilityRule rule = new ClusterAvailabilityRule(

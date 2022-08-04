@@ -45,8 +45,8 @@ public class ScaleResourceRequest {
     public String getScaleRequestId() {
         return Joiner.on('-').join(
             this.clusterId.getResourceID(),
-            this.region,
-            this.envType.isPresent() ? this.getEnvType().get().name() : "",
+            this.region == null ? "" : this.region,
+            this.envType != null && this.envType.isPresent() ? this.getEnvType().get().name() : "",
             this.skuId.getResourceID(),
             this.desireSize);
     }
