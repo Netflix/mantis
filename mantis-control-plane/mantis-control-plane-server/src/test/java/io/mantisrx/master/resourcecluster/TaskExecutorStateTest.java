@@ -35,6 +35,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -72,7 +73,16 @@ public class TaskExecutorStateTest {
     public void testRegularLifecycle() {
         Instant currentTime;
         // Registration
-        assertTrue(state.onRegistration(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, TASK_EXECUTOR_ADDRESS, HOST_NAME, WORKER_PORTS, MACHINE_DEFINITION)));
+        assertTrue(state.onRegistration(
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(TASK_EXECUTOR_ID)
+                .clusterID(CLUSTER_ID)
+                .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                .hostname(HOST_NAME)
+                .workerPorts(WORKER_PORTS)
+                .machineDefinition(MACHINE_DEFINITION)
+                .taskExecutorAttributes(ImmutableMap.of())
+                .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
 
@@ -120,7 +130,15 @@ public class TaskExecutorStateTest {
     public void testInitializationLifecycle() {
         Instant currentTime;
         // Registration
-        assertTrue(state.onRegistration(new TaskExecutorRegistration(TASK_EXECUTOR_ID, CLUSTER_ID, TASK_EXECUTOR_ADDRESS, HOST_NAME, WORKER_PORTS, MACHINE_DEFINITION)));
+        assertTrue(state.onRegistration(TaskExecutorRegistration.builder()
+            .taskExecutorID(TASK_EXECUTOR_ID)
+            .clusterID(CLUSTER_ID)
+            .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+            .hostname(HOST_NAME)
+            .workerPorts(WORKER_PORTS)
+            .machineDefinition(MACHINE_DEFINITION)
+            .taskExecutorAttributes(ImmutableMap.of())
+            .build()));
         assertTrue(state.isRegistered());
         assertFalse(state.isDisconnected());
 

@@ -20,6 +20,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -33,13 +34,13 @@ public interface ResourceClusterStorageProvider {
      */
     CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec);
 
-    CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId);
+    CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(ClusterID clusterId);
 
     CompletionStage<RegisteredResourceClustersWritable> getRegisteredResourceClustersWritable();
 
-    CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id);
+    CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(ClusterID id);
 
-    CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId);
+    CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId);
 
     CompletionStage<ResourceClusterScaleRulesWritable> registerResourceClusterScaleRule(
         ResourceClusterScaleRulesWritable ruleSpec);

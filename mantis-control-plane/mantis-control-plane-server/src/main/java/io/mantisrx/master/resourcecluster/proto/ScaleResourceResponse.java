@@ -17,6 +17,8 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -24,9 +26,9 @@ import lombok.Value;
 
 @Value
 public class ScaleResourceResponse extends BaseResponse {
-    String clusterId;
+    ClusterID clusterId;
 
-    String skuId;
+    ContainerSkuID skuId;
 
     String region;
 
@@ -40,8 +42,8 @@ public class ScaleResourceResponse extends BaseResponse {
             @JsonProperty("requestId") final long requestId,
             @JsonProperty("responseCode") final ResponseCode responseCode,
             @JsonProperty("message") final String message,
-            @JsonProperty("clusterId") final String clusterId,
-            @JsonProperty("skuId") String skuId,
+            @JsonProperty("clusterId") final ClusterID clusterId,
+            @JsonProperty("skuId") ContainerSkuID skuId,
             @JsonProperty("region") String region,
             @JsonProperty("envType") MantisResourceClusterEnvType envType,
             @JsonProperty("desireSize") int desireSize) {

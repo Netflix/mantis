@@ -16,13 +16,14 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class UpgradeClusterContainersRequest {
-    String clusterId;
+    ClusterID clusterId;
 
     String region;
 

@@ -20,6 +20,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -29,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * [Test only] Store resource storage data in memory only for testing.
  */
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
-    Map<String, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
-    Map<String, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
+    Map<ClusterID, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
+    Map<ClusterID, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {
@@ -39,7 +40,7 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     }
 
     @Override
-    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(ClusterID clusterId) {
         this.clusters.remove(clusterId);
         return getRegisteredResourceClustersWritable();
     }
@@ -51,7 +52,7 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
 
         this.clusters.forEach((key, value) ->
             builder.cluster(
-                key,
+                key.getResourceID(),
                 RegisteredResourceClustersWritable.ClusterRegistration.builder()
                     .clusterId(key).version(value.getVersion()).build()));
 
@@ -59,12 +60,12 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
     }
 
     @Override
-    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String id) {
+    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(ClusterID id) {
         return CompletableFuture.completedFuture(this.clusters.getOrDefault(id, null));
     }
 
     @Override
-    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId) {
         return CompletableFuture.completedFuture(
             this.clusterRules.getOrDefault(
                 clusterId,
@@ -76,14 +77,14 @@ public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClust
         ResourceClusterScaleSpec rule) {
         if (this.clusterRules.containsKey(rule.getClusterId())) {
             this.clusterRules.computeIfPresent(rule.getClusterId(), (k, v) ->
-                v.toBuilder().scaleRule(rule.getSkuId(), rule).build());
+                v.toBuilder().scaleRule(rule.getSkuId().getResourceID(), rule).build());
         }
         else {
             this.clusterRules.put(
                 rule.getClusterId(),
                 ResourceClusterScaleRulesWritable.builder()
                     .clusterId(rule.getClusterId())
-                    .scaleRule(rule.getSkuId(), rule).build());
+                    .scaleRule(rule.getSkuId().getResourceID(), rule).build());
         }
 
         return CompletableFuture.completedFuture(this.clusterRules.get(rule.getClusterId()));

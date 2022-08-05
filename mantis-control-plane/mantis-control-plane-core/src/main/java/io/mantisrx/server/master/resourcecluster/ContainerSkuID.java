@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.resourcecluster.proto;
+package io.mantisrx.server.master.resourcecluster;
 
-import io.mantisrx.server.master.resourcecluster.ClusterID;
-import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 /**
- * Contract between API route and {@link io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor}.
+ * Represents the container sku ID that the task executor's host container belongs to.
  */
-@Builder
+@RequiredArgsConstructor(staticName="of")
 @Value
-public class ProvisionResourceClusterRequest {
-    ClusterID clusterId;
-
-    MantisResourceClusterSpec clusterSpec;
+public class ContainerSkuID {
+    String resourceID;
 }

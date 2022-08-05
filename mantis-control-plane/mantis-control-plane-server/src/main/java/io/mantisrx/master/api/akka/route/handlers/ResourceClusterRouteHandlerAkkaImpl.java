@@ -35,6 +35,7 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -71,7 +72,7 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
     }
 
     @Override
-    public CompletionStage<DeleteResourceClusterResponse> delete(String clusterId) {
+    public CompletionStage<DeleteResourceClusterResponse> delete(ClusterID clusterId) {
         CompletionStage<DeleteResourceClusterResponse> response =
             ask(this.resourceClustersHostManagerActor,
                 DeleteResourceClusterRequest.builder().clusterId(clusterId).build(),

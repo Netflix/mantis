@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.resourcecluster.writable;
 
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class RegisteredResourceClustersWritable {
     @Value
     @Builder
     public static class ClusterRegistration {
-        String clusterId;
+        ClusterID clusterId;
 
         String version;
 
@@ -50,7 +51,7 @@ public class RegisteredResourceClustersWritable {
          */
         @JsonCreator
         public ClusterRegistration(
-                @JsonProperty("clusterId") final String clusterId,
+                @JsonProperty("clusterId") final ClusterID clusterId,
                 @JsonProperty("version") final String version) {
             this.clusterId = clusterId;
             this.version = version;

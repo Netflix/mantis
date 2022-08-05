@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.resourcecluster.proto;
+package io.mantisrx.common;
 
-import io.mantisrx.server.master.resourcecluster.ClusterID;
-import lombok.Builder;
-import lombok.Value;
-
-/**
- * Contract between API route and {@link io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor}.
- */
-@Builder
-@Value
-public class ProvisionResourceClusterRequest {
-    ClusterID clusterId;
-
-    MantisResourceClusterSpec clusterSpec;
+public class WorkerConstants {
+    public static final String WORKER_CONTAINER_DEFINITION_ID = "MANTIS_WORKER_CONTAINER_DEFINITION_ID";
+    public static final String WORKER_TASK_ATTRIBUTE_ENV_KEY = "MANTIS_WORKER_CONTAINER_ATTRIBUTE";
 }

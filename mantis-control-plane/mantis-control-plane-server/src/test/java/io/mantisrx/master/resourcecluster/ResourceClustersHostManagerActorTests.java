@@ -44,6 +44,8 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -238,7 +240,7 @@ public class ResourceClustersHostManagerActorTests {
             ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
 
         UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
-            .clusterId("mantisTestResCluster1")
+            .clusterId(ClusterID.of("mantisTestResCluster1"))
             .build();
 
         resourceClusterActor.tell(request, probe.getRef());
@@ -256,17 +258,17 @@ public class ResourceClustersHostManagerActorTests {
 
     private ProvisionResourceClusterRequest buildProvisionRequest(String id, String user) {
         ProvisionResourceClusterRequest request = ProvisionResourceClusterRequest.builder()
-                .clusterId(id)
+                .clusterId(ClusterID.of(id))
                 .clusterSpec(MantisResourceClusterSpec.builder()
-                        .id(id)
+                        .id(ClusterID.of(id))
                         .name(id)
                         .envType(MantisResourceClusterEnvType.Prod)
                         .ownerEmail(user)
                         .ownerName(user)
                         .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
-                                .skuId("small")
+                                .skuId(ContainerSkuID.of("small"))
                                 .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
-                                        .skuId("small")
+                                        .skuId(ContainerSkuID.of("small"))
                                         .desireSize(2)
                                         .maxSize(3)
                                         .minSize(1)

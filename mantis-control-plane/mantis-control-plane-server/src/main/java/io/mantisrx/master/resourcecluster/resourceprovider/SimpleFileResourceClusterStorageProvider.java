@@ -31,6 +31,7 @@ import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWri
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import java.io.File;
@@ -73,7 +74,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                                     = (rc == null) ? RegisteredResourceClustersWritable.builder() : rc.toBuilder();
 
                             return rcBuilder.cluster(
-                                            clusterSpecW.getId(),
+                                            clusterSpecW.getId().getResourceID(),
                                             RegisteredResourceClustersWritable.ClusterRegistration.builder()
                                                     .clusterId(clusterSpecW.getId())
                                                     .version(clusterSpecW.getVersion())
@@ -90,7 +91,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
     }
 
     @Override
-    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(String clusterId) {
+    public CompletionStage<RegisteredResourceClustersWritable> deregisterCluster(ClusterID clusterId) {
         log.info("Starting deregisterCluster: {}", clusterId);
         CompletionStage<RegisteredResourceClustersWritable> fut =
             Source
@@ -99,7 +100,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                         RegisteredResourceClustersWritableBuilder rcBuilder = RegisteredResourceClustersWritable.builder();
 
                         rc.getClusters().entrySet().stream()
-                        .filter(kv -> !Objects.equals(clusterId, kv.getKey()))
+                        .filter(kv -> !Objects.equals(clusterId.getResourceID(), kv.getKey()))
                         .forEach(kv -> rcBuilder.cluster(kv.getKey(), kv.getValue()));
                         return rcBuilder.build();
                     })
@@ -114,7 +115,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
     public CompletionStage<ResourceClusterSpecWritable> updateClusterSpecImpl(ResourceClusterSpecWritable spec) {
 
         Sink<ByteString, CompletionStage<IOResult>> fileSink = FileIO.toPath(
-                getClusterSpecFilePath(SPOOL_DIR, spec.getId()));
+                getClusterSpecFilePath(SPOOL_DIR, spec.getId().getResourceID()));
         Source<ResourceClusterSpecWritable, NotUsed> textSource = Source.single(spec);
 
         return textSource
@@ -167,12 +168,12 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
     }
 
     @Override
-    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(String clusterId) {
+    public CompletionStage<ResourceClusterSpecWritable> getResourceClusterSpecWritable(ClusterID clusterId) {
         final Flow<String, ResourceClusterSpecWritable, NotUsed> jsonToRegisteredClusters =
                 Flow.of(String.class).map(mapper.readerFor(ResourceClusterSpecWritable.class)::readValue);
 
         final Source<ResourceClusterSpecWritable, ?> fromFile = FileIO
-                .fromPath(getClusterSpecFilePath(SPOOL_DIR, clusterId))
+                .fromPath(getClusterSpecFilePath(SPOOL_DIR, clusterId.getResourceID()))
                 .via(JsonFraming.objectScanner(1024).map(bytes -> bytes.utf8String()))
                 .via(jsonToRegisteredClusters);
 
@@ -184,12 +185,12 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
     }
 
     @Override
-    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(String clusterId) {
+    public CompletionStage<ResourceClusterScaleRulesWritable> getResourceClusterScaleRules(ClusterID clusterId) {
         final Flow<String, ResourceClusterScaleRulesWritable, NotUsed> jsonToScaleRules =
             Flow.of(String.class).map(mapper.readerFor(ResourceClusterScaleRulesWritable.class)::readValue);
 
         final Source<ResourceClusterScaleRulesWritable, ?> fromFile = FileIO
-            .fromPath(getClusterScaleRuleSpecFilePath(SPOOL_DIR, clusterId))
+            .fromPath(getClusterScaleRuleSpecFilePath(SPOOL_DIR, clusterId.getResourceID()))
             .via(JsonFraming.objectScanner(1024).map(bytes -> bytes.utf8String()))
             .via(jsonToScaleRules)
             .recover(NoSuchFileException.class, () ->
@@ -231,7 +232,7 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
                             ResourceClusterScaleRulesWritable.builder().clusterId(rule.getClusterId()) :
                             rc.toBuilder();
 
-                        return rcBuilder.scaleRule(rule.getSkuId(), rule).build();
+                        return rcBuilder.scaleRule(rule.getSkuId().getResourceID(), rule).build();
                     })
                 )
                 .mapAsync(1, rc -> updateClusterScaleRules(rc))
@@ -242,14 +243,14 @@ public class SimpleFileResourceClusterStorageProvider implements ResourceCluster
     }
 
     public CompletionStage<Boolean> updateClusterScaleRules(ResourceClusterScaleRulesWritable rules) throws IOException {
-        Path ruleFilePath = getClusterScaleRuleSpecFilePath(SPOOL_DIR, rules.getClusterId());
+        Path ruleFilePath = getClusterScaleRuleSpecFilePath(SPOOL_DIR, rules.getClusterId().getResourceID());
         if (Files.notExists(ruleFilePath)) {
             Files.createDirectories(Paths.get(SPOOL_DIR));
             Files.createFile(ruleFilePath);
         }
 
         Sink<ByteString, CompletionStage<IOResult>> rulesFileSink = FileIO.toPath(
-            getClusterScaleRuleSpecFilePath(SPOOL_DIR, rules.getClusterId()));
+            getClusterScaleRuleSpecFilePath(SPOOL_DIR, rules.getClusterId().getResourceID()));
         Source<ResourceClusterScaleRulesWritable, NotUsed> textSource = Source.single(rules);
         return textSource
             .map(mapper::writeValueAsString)

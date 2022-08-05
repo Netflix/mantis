@@ -17,6 +17,8 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
@@ -41,7 +43,7 @@ public class MantisResourceClusterSpec {
     /**
      * ID fields maps to cluster name or spinnaker app name.
      */
-    String id;
+    ClusterID id;
 
     String ownerName;
 
@@ -61,7 +63,7 @@ public class MantisResourceClusterSpec {
     @JsonCreator
     public MantisResourceClusterSpec(
             @JsonProperty("name") final String name,
-            @JsonProperty("id") final String id,
+            @JsonProperty("id") final ClusterID id,
             @JsonProperty("ownerName") final String ownerName,
             @JsonProperty("ownerEmail") final String ownerEmail,
             @JsonProperty("envType") final MantisResourceClusterEnvType envType,
@@ -81,7 +83,7 @@ public class MantisResourceClusterSpec {
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     public static class SkuTypeSpec {
         @EqualsAndHashCode.Include
-        String skuId;
+        ContainerSkuID skuId;
 
         SkuCapacity capacity;
 
@@ -100,7 +102,7 @@ public class MantisResourceClusterSpec {
 
         @JsonCreator
         public SkuTypeSpec(
-                @JsonProperty("skuId") final String skuId,
+                @JsonProperty("skuId") final ContainerSkuID skuId,
                 @JsonProperty("capacity") final SkuCapacity capacity,
                 @JsonProperty("imageId") final String imageId,
                 @JsonProperty("cpuCoreCount") final int cpuCoreCount,
@@ -126,7 +128,7 @@ public class MantisResourceClusterSpec {
     @Builder
     @Value
     public static class SkuCapacity {
-        String skuId;
+        ContainerSkuID skuId;
 
         int minSize;
 
@@ -136,7 +138,7 @@ public class MantisResourceClusterSpec {
 
         @JsonCreator
         public SkuCapacity(
-                @JsonProperty("skuId") final String skuId,
+                @JsonProperty("skuId") final ContainerSkuID skuId,
                 @JsonProperty("minSize") final int minSize,
                 @JsonProperty("maxSize") final int maxSize,
                 @JsonProperty("desireSize") final int desireSize

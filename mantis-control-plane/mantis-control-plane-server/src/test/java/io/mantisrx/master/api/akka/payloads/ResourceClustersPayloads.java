@@ -35,6 +35,8 @@ public class ResourceClustersPayloads {
     public static final String RESOURCE_CLUSTER_SCALE_RULES_RESULT =
         PayloadUtils.getStringFromResource("testpayloads/ResourceClusterScaleRulesResult.json");
 
-    public static final String RESOURCE_CLUSTER_SKU_SCALE = "{\"clusterId\":\"mantisResourceClusterUT1\","
-            + "\"skuId\":\"small\",\"region\":\"us-east-1\",\"envType\":\"Prod\",\"desireSize\":11}\n";
+    public static final String RESOURCE_CLUSTER_SKU_SCALE = "{\"clusterId\":{\"resourceID\": "
+        + "\"mantisResourceClusterUT1\"},"
+            + "\"skuId\":{\"resourceID\": \"small\"},\"region\":\"us-east-1\",\"envType\":\"Prod\","
+        + "\"desireSize\":11}\n";
 }

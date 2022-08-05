@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import static akka.pattern.Patterns.pipe;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -30,22 +32,24 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRe
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
-import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec.SkuTypeSpec;
+import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -60,15 +64,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final ClusterID clusterId;
 
+    // Timer threshold of pulling cluster usage.
     private final Duration scalerPullThreshold;
+
+    // Timer threshold of refreshing cluster scale rules from storage provider.
+    private final Duration ruleSetRefreshThreshold;
 
     private final ActorRef resourceClusterActor;
     private final ActorRef resourceClusterHostActor;
     private final ResourceClusterStorageProvider storageProvider;
 
-    private final ConcurrentMap<String, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
-    private final AtomicReference<MachineDefinitionToSkuMapper> skuMapperRef = new AtomicReference<>(
-        new MachineDefinitionToSkuMapper(null));
+    private final ConcurrentMap<ContainerSkuID, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
 
     private final Clock clock;
 
@@ -82,6 +88,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterId,
         Clock clock,
         Duration scalerPullThreshold,
+        Duration ruleRefreshThreshold,
         ResourceClusterStorageProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
@@ -90,6 +97,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             clusterId,
             clock,
             scalerPullThreshold,
+            ruleRefreshThreshold,
             storageProvider,
             resourceClusterHostActor,
             resourceClusterActor);
@@ -99,6 +107,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterId,
         Clock clock,
         Duration scalerPullThreshold,
+        Duration ruleRefreshThreshold,
         ResourceClusterStorageProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
@@ -108,6 +117,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.storageProvider = storageProvider;
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
+        this.ruleSetRefreshThreshold = ruleRefreshThreshold;
 
         MetricGroupId metricGroupId = new MetricGroupId(
             "ResourceClusterScalerActor",
@@ -127,9 +137,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.numScaleUp = m.getCounter("numScaleUp");
         this.numReachScaleMinLimit = m.getCounter("numReachScaleMinLimit");
         this.numScaleRuleTrigger = m.getCounter("numScaleRuleTrigger");
-
-        // Init timer
-        init();
     }
 
     @Override
@@ -138,32 +145,33 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             ReceiveBuilder
                 .create()
                 .match(TriggerClusterUsageRequest.class, this::onTriggerClusterUsageRequest)
+                .match(TriggerClusterRuleRefreshRequest.class, this::onTriggerClusterRuleRefreshRequest)
+                .match(GetRuleSetRequest.class,
+                    req -> getSender().tell(
+                        GetRuleSetResponse.builder().rules(ImmutableMap.copyOf(this.skuToRuleMap)).build(), self()))
                 .match(GetClusterUsageResponse.class, this::onGetClusterUsageResponse)
                 .match(GetClusterIdleInstancesResponse.class, this::onGetClusterIdleInstancesResponse)
+                .match(GetRuleSetResponse.class,
+                    s -> log.info("[{}] Refreshed rule size: {}", s.getClusterID(), s.getRules().size()))
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
                 .build();
     }
 
-    private void init() {
-        this.storageProvider.getResourceClusterScaleRules(this.clusterId.toString())
-                .thenAccept(rules ->
-                     rules
-                        .getScaleRules().values()
-                        .forEach(rule -> {
-                            log.info("Adding scaleRule: {}", rule);
-                            this.skuToRuleMap.put(
-                                rule.getSkuId(),
-                                new ClusterAvailabilityRule(rule, this.clock));
-                        }));
-
-        this.storageProvider.getResourceClusterSpecWritable(this.clusterId.toString())
-            .thenAccept(specWritable ->
-                this.skuMapperRef.set(new MachineDefinitionToSkuMapper(specWritable.getClusterSpec())));
+    @Override
+    public void preStart() throws Exception {
+        log.info("ResourceClusterScaler Actor started: {}", this.clusterId);
+        this.fetchRuleSet();
 
         getTimers().startTimerWithFixedDelay(
             "ClusterScaler-" + this.clusterId,
             new TriggerClusterUsageRequest(this.clusterId),
             scalerPullThreshold);
+
+        getTimers().startTimerWithFixedDelay(
+            "ClusterScalerRuleFetcher-" + this.clusterId,
+            new TriggerClusterRuleRefreshRequest(this.clusterId),
+            this.ruleSetRefreshThreshold);
+        super.preStart();
     }
 
     private void onGetClusterUsageResponse(GetClusterUsageResponse usageResponse) {
@@ -179,10 +187,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         // 3 translate between decision to scale request. (inline for now)
 
         usageResponse.getUsages().forEach(usage -> {
-            Optional<String> skuIdO = this.skuMapperRef.get().map(usage.getDef());
+            ContainerSkuID skuId = ContainerSkuID.of(usage.getUsageGroupKey());
 
-            if (skuIdO.isPresent() && this.skuToRuleMap.containsKey(skuIdO.get())) {
-                Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuIdO.get()).apply(usage);
+            if (this.skuToRuleMap.containsKey(skuId)) {
+                Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuId).apply(usage);
                 if (decisionO.isPresent()) {
                     log.info("Informing scale decision: {}", decisionO.get());
                     switch (decisionO.get().getType()) {
@@ -192,8 +200,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                             this.resourceClusterActor.tell(
                                 GetClusterIdleInstancesRequest.builder()
                                     .clusterID(this.clusterId)
-                                    .skuId(skuIdO.get())
-                                    .machineDefinition(usage.getDef())
+                                    .skuId(skuId)
                                     .desireSize(decisionO.get().getDesireSize())
                                     .maxInstanceCount(
                                         Math.max(0, usage.getTotalCount() - decisionO.get().getDesireSize()))
@@ -217,7 +224,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 }
             }
             else {
-                log.info("No sku rule is available for {}", usage.getDef());
+                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getUsageGroupKey());
             }
         });
 
@@ -229,7 +236,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         log.info("On GetClusterIdleInstancesResponse, informing host actor: {}", response);
         this.resourceClusterHostActor.tell(
             ScaleResourceRequest.builder()
-                .clusterId(this.clusterId.getResourceID())
+                .clusterId(this.clusterId)
                 .skuId(response.getSkuId())
                 .desireSize(response.getDesireSize())
                 .idleInstances(response.getInstanceIds())
@@ -239,12 +246,52 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private void onTriggerClusterUsageRequest(TriggerClusterUsageRequest req) {
         log.trace("Requesting cluster usage: {}", this.clusterId);
-        this.resourceClusterActor.tell(new GetClusterUsageRequest(this.clusterId), self());
+        if (this.skuToRuleMap.isEmpty()) {
+            log.info("{} scaler is disabled due to no rules", this.clusterId);
+            return;
+        }
+        this.resourceClusterActor.tell(
+            new GetClusterUsageRequest(
+                this.clusterId, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
+            self());
+    }
+
+    private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
+        log.info("{}: Requesting cluster rule refresh", this.clusterId);
+        this.fetchRuleSet();
+
+        // when calling from API there is no need to wait.
+        getSender().tell(Ack.getInstance(), self());
+    }
+
+    private void fetchRuleSet() {
+        CompletionStage<GetRuleSetResponse> fetchFut =
+            this.storageProvider.getResourceClusterScaleRules(this.clusterId)
+                .thenApply(rules -> {
+                    Set<ContainerSkuID> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
+                    removedKeys.removeAll(rules.getScaleRules().keySet());
+                    removedKeys.forEach(this.skuToRuleMap::remove);
+
+                    rules
+                        .getScaleRules().values()
+                        .forEach(rule -> {
+                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, rule);
+                            this.skuToRuleMap.put(
+                                rule.getSkuId(),
+                                new ClusterAvailabilityRule(rule, this.clock));
+                        });
+                    return GetRuleSetResponse.builder()
+                        .rules(ImmutableMap.copyOf(this.skuToRuleMap))
+                        .clusterID(this.clusterId)
+                        .build();
+                });
+
+        pipe(fetchFut, getContext().getDispatcher()).to(getSelf());
     }
 
     private ScaleResourceRequest translateScaleDecision(ScaleDecision decision) {
         return ScaleResourceRequest.builder()
-            .clusterId(this.clusterId.getResourceID())
+            .clusterId(this.clusterId)
             .skuId(decision.getSkuId())
             .desireSize(decision.getDesireSize())
             .build();
@@ -256,41 +303,23 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterID;
     }
 
-    static class MachineDefinitionToSkuMapper {
-        private final Map<MachineDefinition, String> mDefToSkuMap = new HashMap<>();
+    @Value
+    @Builder
+    static class TriggerClusterRuleRefreshRequest {
+        ClusterID clusterID;
+    }
 
-        public MachineDefinitionToSkuMapper(MantisResourceClusterSpec clusterSpec) {
-            if (clusterSpec == null) {
-                return;
-            }
+    @Value
+    @Builder
+    static class GetRuleSetRequest {
+        ClusterID clusterID;
+    }
 
-            clusterSpec.getSkuSpecs().forEach(skuSpec -> {
-                MachineDefinition mDef = skuToMachineDefinition(skuSpec);
-                this.mDefToSkuMap.put(mDef, skuSpec.getSkuId());
-                log.info("Add MachineDefinition mapper: {}, {}", mDef, skuSpec.getSkuId());
-            });
-        }
-
-        /**
-         * Map given {@link MachineDefinition} to the cluster SKU id.
-         * @param mDef Given Machine definition.
-         * @return skuId as string. Empty Optional if not found.
-         */
-        public Optional<String> map(MachineDefinition mDef)
-        {
-            return Optional.ofNullable(this.mDefToSkuMap.getOrDefault(mDef, null));
-        }
-
-        private static MachineDefinition skuToMachineDefinition(SkuTypeSpec sku) {
-            //TODO validate rounding error from TaskExecutor registration.
-            return new MachineDefinition(
-                sku.getCpuCoreCount(),
-                sku.getMemorySizeInBytes(),
-                sku.getNetworkMbps(),
-                sku.getDiskSizeInBytes(),
-                5 // num of ports is currently a hardcoded value from {@link TaskExecutor}.
-            );
-        }
+    @Value
+    @Builder
+    static class GetRuleSetResponse {
+        ClusterID clusterID;
+        ImmutableMap<ContainerSkuID, ClusterAvailabilityRule> rules;
     }
 
     static class ClusterAvailabilityRule {
@@ -304,7 +333,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
             this.lastActionInstant = Instant.MIN;
         }
-        public Optional<ScaleDecision> apply(GetClusterUsageResponse.UsageByMachineDefinition usage) {
+        public Optional<ScaleDecision> apply(UsageByGroupKey usage) {
             // Cool down check
             if (this.lastActionInstant.plusSeconds(this.scaleSpec.getCoolDownSecs()).compareTo(clock.instant()) > 0) {
                 log.debug("Scale CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
@@ -361,11 +390,18 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Value
     @Builder
     static class ScaleDecision {
-        String skuId;
-        String clusterId;
+        ContainerSkuID skuId;
+        ClusterID clusterId;
         int maxSize;
         int minSize;
         int desireSize;
         ScaleType type;
     }
+
+    /**
+     * {@link TaskExecutorRegistration} holds task attribute map in which the container sku ID's resource id is stored
+     * as a string. Here the key function is used to retrieve the map this string as grouping kye.
+     */
+    static Function<TaskExecutorRegistration, Optional<String>> groupKeyFromTaskExecutorDefinitionIdFunc =
+        reg -> reg.getTaskExecutorContainerDefinitionId().map(id -> id.getResourceID());
 }

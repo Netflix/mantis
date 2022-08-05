@@ -17,6 +17,8 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -31,12 +33,12 @@ public class ResourceClusterScaleRuleProto {
     @Builder
     @Value
     public static class GetResourceClusterScaleRulesRequest {
-        String clusterId;
+        ClusterID clusterId;
     }
 
     @Value
     public static class GetResourceClusterScaleRulesResponse extends BaseResponse {
-        String clusterId;
+        ClusterID clusterId;
 
         @Singular
         List<ResourceClusterScaleRule> rules;
@@ -47,7 +49,7 @@ public class ResourceClusterScaleRuleProto {
             @JsonProperty("requestId") final long requestId,
             @JsonProperty("responseCode") final ResponseCode responseCode,
             @JsonProperty("message") final String message,
-            @JsonProperty("clusterId") final String clusterId,
+            @JsonProperty("clusterId") final ClusterID clusterId,
             @JsonProperty("rules") final List<ResourceClusterScaleRule> rules) {
             super(requestId, responseCode, message);
             this.rules = rules;
@@ -58,7 +60,7 @@ public class ResourceClusterScaleRuleProto {
     @Builder
     @Value
     public static class CreateResourceClusterScaleRuleRequest {
-        String clusterId;
+        ClusterID clusterId;
         ResourceClusterScaleRule rule;
     }
 
@@ -68,7 +70,7 @@ public class ResourceClusterScaleRuleProto {
     @Builder
     @Value
     public static class CreateAllResourceClusterScaleRulesRequest {
-        String clusterId;
+        ClusterID clusterId;
 
         @Singular
         @NonNull
@@ -78,8 +80,8 @@ public class ResourceClusterScaleRuleProto {
     @Value
     @Builder
     public static class ResourceClusterScaleRule {
-        String clusterId;
-        String skuId;
+        ClusterID clusterId;
+        ContainerSkuID skuId;
         int minIdleToKeep;
         int minSize;
         int maxIdleToKeep;

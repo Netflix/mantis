@@ -1,9 +1,9 @@
 {
-    "clusterId": "mantisResourceClusterUT1",
+    "clusterId": {"resourceID": "mantisResourceClusterUT1"},
     "rules": [
         {
-            "clusterId": "mantisResourceClusterUT1",
-            "skuId": "small",
+            "clusterId": {"resourceID": "mantisResourceClusterUT1"},
+            "skuId": {"resourceID": "small"},
             "minIdleToKeep": 10,
             "minSize": 10,
             "maxIdleToKeep": 20,
@@ -11,8 +11,8 @@
             "coolDownSecs": 30
         },
         {
-            "clusterId": "mantisResourceClusterUT1",
-            "skuId": "large",
+            "clusterId": {"resourceID": "mantisResourceClusterUT1"},
+            "skuId": {"resourceID": "large"},
             "minIdleToKeep": 5,
             "minSize": 2,
             "maxIdleToKeep": 10,

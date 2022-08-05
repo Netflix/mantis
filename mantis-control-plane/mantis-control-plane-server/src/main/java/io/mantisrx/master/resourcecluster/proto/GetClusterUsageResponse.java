@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.util.List;
 import lombok.Builder;
@@ -29,12 +28,12 @@ public class GetClusterUsageResponse {
     ClusterID clusterID;
 
     @Singular
-    List<UsageByMachineDefinition> usages;
+    List<UsageByGroupKey> usages;
 
     @Value
     @Builder
-    public static class UsageByMachineDefinition {
-        MachineDefinition def;
+    public static class UsageByGroupKey {
+        String usageGroupKey;
         int idleCount;
         int totalCount;
     }

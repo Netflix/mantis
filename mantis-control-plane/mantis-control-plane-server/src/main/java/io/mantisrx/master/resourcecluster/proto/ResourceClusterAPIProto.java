@@ -17,6 +17,7 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -50,12 +51,12 @@ public class ResourceClusterAPIProto {
         @Value
         @Builder
         public static class RegisteredResourceCluster {
-            String id;
+            ClusterID id;
             String version;
 
             @JsonCreator
             public RegisteredResourceCluster(
-                @JsonProperty("id") final String id,
+                @JsonProperty("id") final ClusterID id,
                 @JsonProperty("version") final String version) {
                 this.id = id;
                 this.version = version;
@@ -95,6 +96,6 @@ public class ResourceClusterAPIProto {
     @Builder
     @Value
     public static class DeleteResourceClusterRequest {
-        String clusterId;
+        ClusterID clusterId;
     }
 }

@@ -18,6 +18,7 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads.CLUSTER_ID;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import akka.actor.ActorRef;
@@ -29,6 +30,7 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.testkit.JUnitRouteTest;
 import akka.http.javadsl.testkit.TestRoute;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -64,6 +66,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorSta
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
@@ -113,13 +116,17 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
     @Test
     public void testGetTaskExecutorState() {
-        TaskExecutorRegistration registration = new TaskExecutorRegistration(
-            TaskExecutorID.of("myExecutor"),
-            ClusterID.of("myCluster"),
-            "taskExecutorAddress",
-            "hostName",
-            new WorkerPorts(1, 2, 3, 4, 5),
-            new MachineDefinition(1, 1, 1, 1, 1));
+        TaskExecutorRegistration registration =
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(TaskExecutorID.of("myExecutor"))
+                .clusterID(ClusterID.of("myCluster"))
+                .taskExecutorAddress("taskExecutorAddress")
+                .hostname("hostName")
+                .workerPorts(new WorkerPorts(1, 2, 3, 4, 5))
+                .machineDefinition(new MachineDefinition(1, 1, 1, 1, 1))
+                .taskExecutorAttributes(ImmutableMap.of())
+                .build();
+
         TaskExecutorStatus status =
             new TaskExecutorStatus(registration, true, true, true, null, Instant.now().toEpochMilli());
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
@@ -187,7 +194,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     .responseCode(ResponseCode.SUCCESS)
                     .registeredResourceClusters(
                         Arrays.asList(RegisteredResourceCluster.builder()
-                            .id(CLUSTER_ID).version("").build()))
+                            .id(ClusterID.of(CLUSTER_ID)).version("").build()))
                     .build());
 
         // test get registered cluster spec
@@ -236,13 +243,18 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
     @Test
     public void testResourceClusterScaleRulesRoutes() throws IOException {
+        ResourceCluster resourceCluster = mock(ResourceCluster.class);
+        when(resourceCluster.refreshClusterScalerRuleSet())
+            .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(resourceClusters.getClusterFor(ClusterID.of(CLUSTER_ID))).thenReturn(resourceCluster);
+
         // test get empty cluster rule.
         testRoute.run(HttpRequest.GET(getResourceClusterScaleRulesEndpoint(CLUSTER_ID)))
             .assertStatusCode(StatusCodes.OK)
             .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
                 GetResourceClusterScaleRulesResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
-                    .clusterId(CLUSTER_ID)
+                    .clusterId(ClusterID.of(CLUSTER_ID))
                     .rules(Collections.emptyList())
                     .build());
 
@@ -260,7 +272,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
                 GetResourceClusterScaleRulesResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
-                    .clusterId(CLUSTER_ID)
+                    .clusterId(ClusterID.of(CLUSTER_ID))
                     .rules(createRuleReq1.getRules())
                     .build());
 
@@ -270,7 +282,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertEntityAs(Jackson.unmarshaller(GetResourceClusterScaleRulesResponse.class),
                 GetResourceClusterScaleRulesResponse.builder()
                     .responseCode(ResponseCode.SUCCESS)
-                    .clusterId(CLUSTER_ID)
+                    .clusterId(ClusterID.of(CLUSTER_ID))
                     .rules(createRuleReq1.getRules())
                     .build());
 
@@ -291,12 +303,14 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                 Jackson.fromJSON(
                     ResourceClustersPayloads.RESOURCE_CLUSTER_SCALE_RULES_RESULT,
                     GetResourceClusterScaleRulesResponse.class));
+
+        verify(resourceCluster).refreshClusterScalerRuleSet();
     }
 
     @Test
     public void testResourceClusterUpgradeRoutes() throws IOException {
         UpgradeClusterContainersRequest createRuleReq1 = UpgradeClusterContainersRequest.builder()
-            .clusterId(CLUSTER_ID)
+            .clusterId(ClusterID.of(CLUSTER_ID))
             .region("us-east-1")
             .optionalBatchMaxSize(50)
             .optionalSkuId("large")
@@ -382,7 +396,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                     .region(scaleRequest.getRegion())
                     .skuId(scaleRequest.getSkuId())
                     .clusterId(scaleRequest.getClusterId())
-                    .envType(scaleRequest.getEnvType())
+                    .envType(scaleRequest.getEnvType().get())
                     .desireSize(scaleRequest.getDesireSize())
                     .responseCode(ResponseCode.SUCCESS)
                     .build());

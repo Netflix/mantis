@@ -15,8 +15,13 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
+import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
+import java.util.Map;
+import java.util.Optional;
+import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
 
 /**
@@ -24,20 +29,39 @@ import lombok.Value;
  * Different fields help identify the task executor in different dimensions.
  */
 @Value
+@Builder
 public class TaskExecutorRegistration {
+  @NonNull
   TaskExecutorID taskExecutorID;
 
+  @NonNull
   ClusterID clusterID;
 
   // RPC address that's used to talk to the task executor
+  @NonNull
   String taskExecutorAddress;
 
   // host name of the task executor
+  @NonNull
   String hostname;
 
   // ports used by the task executor for various purposes.
+  @NonNull
   WorkerPorts workerPorts;
 
   // machine information identifies the cpu/mem/disk/network resources of the task executor.
+  @NonNull
   MachineDefinition machineDefinition;
+
+  // custom attributes describing the task executor
+  // TODO make this field non-null once no back-compat required.
+  Map<String, String> taskExecutorAttributes;
+
+  public Optional<ContainerSkuID> getTaskExecutorContainerDefinitionId() {
+      return Optional.ofNullable(
+          this.getTaskExecutorAttributes() == null ||
+              !this.getTaskExecutorAttributes().containsKey(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID) ?
+              null :
+              ContainerSkuID.of(this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)));
+  }
 }

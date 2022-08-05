@@ -1,16 +1,16 @@
 {
-    "clusterId": "mantisResourceClusterUT1",
+    "clusterId": {"resourceID": "mantisResourceClusterUT1"},
     "clusterSpec": {
         "name": "mantisResourceClusterUT1",
-        "id": "mantisResourceClusterUT1",
+        "id": {"resourceID": "mantisResourceClusterUT1"},
         "ownerName": "mantisrx@netflix.com",
         "ownerEmail": "mantisrx@netflix.com",
         "envType": "Prod",
         "skuSpecs": [
             {
-                "skuId": "small",
+                "skuId": {"resourceID": "small"},
                 "capacity": {
-                    "skuId": "small",
+                    "skuId": {"resourceID": "small"},
                     "minSize": 1,
                     "maxSize": 3,
                     "desireSize": 2

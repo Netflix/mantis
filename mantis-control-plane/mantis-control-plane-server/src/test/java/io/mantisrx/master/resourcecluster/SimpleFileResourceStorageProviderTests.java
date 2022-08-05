@@ -29,6 +29,8 @@ import io.mantisrx.master.resourcecluster.resourceprovider.SimpleFileResourceClu
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,12 +60,13 @@ public class SimpleFileResourceStorageProviderTests {
 
     @Test
     public void testResourceClusterRules() throws ExecutionException, InterruptedException, IOException {
-        final String clusterId = "mantisRCMTest2";
+        final ClusterID clusterId = ClusterID.of("mantisRCMTest2");
+        final ContainerSkuID smallSkuId = ContainerSkuID.of("small");
         SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system);
 
         ResourceClusterScaleSpec rule1 = ResourceClusterScaleSpec.builder()
             .clusterId(clusterId)
-            .skuId("small")
+            .skuId(smallSkuId)
             .coolDownSecs(5)
             .maxIdleToKeep(10)
             .minIdleToKeep(5)
@@ -77,11 +80,11 @@ public class SimpleFileResourceStorageProviderTests {
         ResourceClusterScaleRulesWritable rules = rulesFut.toCompletableFuture().get();
         assertEquals(1, rules.getScaleRules().size());
         assertEquals(clusterId, rules.getClusterId());
-        assertEquals(rule1, rules.getScaleRules().get("small"));
+        assertEquals(rule1, rules.getScaleRules().get(smallSkuId.getResourceID()));
 
         ResourceClusterScaleSpec rule2 = ResourceClusterScaleSpec.builder()
             .clusterId(clusterId)
-            .skuId("large")
+            .skuId(ContainerSkuID.of("large"))
             .coolDownSecs(9)
             .maxIdleToKeep(99)
             .minIdleToKeep(5)
@@ -95,12 +98,12 @@ public class SimpleFileResourceStorageProviderTests {
         rules = rulesFut2.toCompletableFuture().get();
         assertEquals(2, rules.getScaleRules().size());
         assertEquals(clusterId, rules.getClusterId());
-        assertEquals(rule1, rules.getScaleRules().get("small"));
+        assertEquals(rule1, rules.getScaleRules().get(smallSkuId.getResourceID()));
         assertEquals(rule2, rules.getScaleRules().get("large"));
 
         ResourceClusterScaleSpec rule3 = ResourceClusterScaleSpec.builder()
             .clusterId(clusterId)
-            .skuId("small")
+            .skuId(smallSkuId)
             .coolDownSecs(999)
             .maxIdleToKeep(123)
             .minIdleToKeep(2)
@@ -114,7 +117,7 @@ public class SimpleFileResourceStorageProviderTests {
         rules = rulesFut3.toCompletableFuture().get();
         assertEquals(2, rules.getScaleRules().size());
         assertEquals(clusterId, rules.getClusterId());
-        assertEquals(rule3, rules.getScaleRules().get("small"));
+        assertEquals(rule3, rules.getScaleRules().get(smallSkuId.getResourceID()));
         assertEquals(rule2, rules.getScaleRules().get("large"));
     }
 
@@ -123,15 +126,15 @@ public class SimpleFileResourceStorageProviderTests {
         final String clusterId = "mantisRCMTest2";
 
         MantisResourceClusterSpec spec = MantisResourceClusterSpec.builder()
-                .id(clusterId)
+                .id(ClusterID.of(clusterId))
                 .name(clusterId)
                 .envType(MantisResourceClusterEnvType.Prod)
                 .ownerEmail("andyz@netflix.com")
                 .ownerName("andyz@netflix.com")
                 .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
-                        .skuId("small")
+                        .skuId(ContainerSkuID.of("small"))
                         .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
-                                .skuId("small")
+                                .skuId(ContainerSkuID.of("small"))
                                 .desireSize(2)
                                 .maxSize(3)
                                 .minSize(1)
@@ -169,13 +172,15 @@ public class SimpleFileResourceStorageProviderTests {
 
         System.out.println(Files.readAllLines(clusterFilePath).stream().collect(Collectors.joining()));
 
-        assertEquals("{\"clusters\":{\"mantisRCMTest2\":{\"clusterId\":\"mantisRCMTest2\",\"version\":\"v1\"}}}",
+        assertEquals("{\"clusters\":{\"mantisRCMTest2\":{\"clusterId\":{\"resourceID\":\"mantisRCMTest2\"},"
+                + "\"version\":\"v1\"}}}",
                 Files.readAllLines(regFilePath).stream().collect(Collectors.joining()));
 
         assertEquals(
-                "{\"version\":\"v1\",\"id\":\"mantisRCMTest2\",\"clusterSpec\":{\"name\":\"mantisRCMTest2\"," +
-                        "\"id\":\"mantisRCMTest2\",\"ownerName\":\"andyz@netflix.com\",\"ownerEmail\":\"andyz@netflix.com\"," +
-                        "\"envType\":\"Prod\",\"skuSpecs\":[{\"skuId\":\"small\",\"capacity\":{\"skuId\":\"small\"," +
+                "{\"version\":\"v1\",\"id\":{\"resourceID\":\"mantisRCMTest2\"},\"clusterSpec\":{\"name\":\"mantisRCMTest2\"," +
+                        "\"id\":{\"resourceID\":\"mantisRCMTest2\"},\"ownerName\":\"andyz@netflix.com\",\"ownerEmail\":\"andyz@netflix.com\"," +
+                        "\"envType\":\"Prod\",\"skuSpecs\":[{\"skuId\":{\"resourceID\":\"small\"},"
+                    + "\"capacity\":{\"skuId\":{\"resourceID\":\"small\"}," +
                         "\"minSize\":1,\"maxSize\":3,\"desireSize\":2},\"imageId\":\"mantistaskexecutor:main"
                         + ".latest\"," +
                         "\"cpuCoreCount\":5,\"memorySizeInBytes\":16384,\"networkMbps\":700,\"diskSizeInBytes\":81920," +
@@ -187,15 +192,15 @@ public class SimpleFileResourceStorageProviderTests {
         //// Test register second cluster.
         String clusterId2 = "clusterApp2";
         MantisResourceClusterSpec spec2 = MantisResourceClusterSpec.builder()
-                .id(clusterId2)
+                .id(ClusterID.of(clusterId2))
                 .name(clusterId2)
                 .envType(MantisResourceClusterEnvType.Prod)
                 .ownerEmail("mantisrx@netflix.com")
                 .ownerName("mantisrx@netflix.com")
                 .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
-                        .skuId("large")
+                        .skuId(ContainerSkuID.of("large"))
                         .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
-                                .skuId("large")
+                                .skuId(ContainerSkuID.of("large"))
                                 .desireSize(3)
                                 .maxSize(4)
                                 .minSize(1)
@@ -228,15 +233,17 @@ public class SimpleFileResourceStorageProviderTests {
         assertTrue(Files.exists(clusterFilePath2));
 
         assertEquals(
-                "{\"clusters\":{\"mantisRCMTest2\":{\"clusterId\":\"mantisRCMTest2\",\"version\":\"v1\"},"
-                        + "\"clusterApp2\":{\"clusterId\":\"clusterApp2\",\"version\":\"v2\"}}}",
+                "{\"clusters\":{\"mantisRCMTest2\":{\"clusterId\":{\"resourceID\":\"mantisRCMTest2\"},\"version\":\"v1\"},"
+                        + "\"clusterApp2\":{\"clusterId\":{\"resourceID\":\"clusterApp2\"},\"version\":\"v2\"}}}",
                 Files.readAllLines(regFilePath).stream().collect(Collectors.joining()));
 
         assertEquals(
-                "{\"version\":\"v2\",\"id\":\"clusterApp2\",\"clusterSpec\":{\"name\":\"clusterApp2\","
-                        + "\"id\":\"clusterApp2\",\"ownerName\":\"mantisrx@netflix.com\",\"ownerEmail\":"
-                        + "\"mantisrx@netflix.com\",\"envType\":\"Prod\",\"skuSpecs\":[{\"skuId\":\"large\","
-                        + "\"capacity\":{\"skuId\":\"large\",\"minSize\":1,\"maxSize\":4,\"desireSize\":3},\"imageId\""
+                "{\"version\":\"v2\",\"id\":{\"resourceID\":\"clusterApp2\"},\"clusterSpec\":{\"name\":\"clusterApp2\","
+                        + "\"id\":{\"resourceID\":\"clusterApp2\"},\"ownerName\":\"mantisrx@netflix.com\",\"ownerEmail\":"
+                        + "\"mantisrx@netflix.com\",\"envType\":\"Prod\","
+                    + "\"skuSpecs\":[{\"skuId\":{\"resourceID\":\"large\"},"
+                        + "\"capacity\":{\"skuId\":{\"resourceID\":\"large\"},\"minSize\":1,\"maxSize\":4,"
+                    + "\"desireSize\":3},\"imageId\""
                         + ":\"dev/mantistaskexecutor:main.2\",\"cpuCoreCount\":19,\"memorySizeInBytes\":54321,"
                         + "\"networkMbps\":3300,\"diskSizeInBytes\":998877,\"skuMetadataFields\":"
                         + "{\"skuKey\":\"us-east-1\",\"sgKey\":\"sg-1, sg-2, sg-3, sg-4\"}}],"
@@ -247,13 +254,13 @@ public class SimpleFileResourceStorageProviderTests {
                 .toCompletableFuture().get();
         assertEquals(2, clusters.getClusters().size());
 
-        assertTrue(clusters.getClusters().containsKey(spec.getId()));
-        assertEquals(spec.getId(), clusters.getClusters().get(spec.getId()).getClusterId());
-        assertEquals(specWritable.getVersion(), clusters.getClusters().get(spec.getId()).getVersion());
+        assertTrue(clusters.getClusters().containsKey(spec.getId().getResourceID()));
+        assertEquals(spec.getId(), clusters.getClusters().get(spec.getId().getResourceID()).getClusterId());
+        assertEquals(specWritable.getVersion(), clusters.getClusters().get(spec.getId().getResourceID()).getVersion());
 
-        assertTrue(clusters.getClusters().containsKey(spec2.getId()));
-        assertEquals(spec2.getId(), clusters.getClusters().get(spec2.getId()).getClusterId());
-        assertEquals(specWritable2.getVersion(), clusters.getClusters().get(spec2.getId()).getVersion());
+        assertTrue(clusters.getClusters().containsKey(spec2.getId().getResourceID()));
+        assertEquals(spec2.getId(), clusters.getClusters().get(spec2.getId().getResourceID()).getClusterId());
+        assertEquals(specWritable2.getVersion(), clusters.getClusters().get(spec2.getId().getResourceID()).getVersion());
 
         CompletionStage<ResourceClusterSpecWritable> clusterSpecFut1 =
                 prov.getResourceClusterSpecWritable(spec.getId());
@@ -267,7 +274,8 @@ public class SimpleFileResourceStorageProviderTests {
 
         assertEquals(specWritable2, specResp2);
 
-        CompletionStage<RegisteredResourceClustersWritable> deregisterFut = prov.deregisterCluster(clusterId2);
+        CompletionStage<RegisteredResourceClustersWritable> deregisterFut =
+            prov.deregisterCluster(ClusterID.of(clusterId2));
         RegisteredResourceClustersWritable resClusters = deregisterFut.toCompletableFuture().get();
 
         assertEquals(1, resClusters.getClusters().size());

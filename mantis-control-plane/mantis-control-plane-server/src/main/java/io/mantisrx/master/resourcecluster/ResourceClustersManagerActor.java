@@ -31,6 +31,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewR
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -44,6 +45,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.runtime.rpc.RpcService;
@@ -59,7 +61,8 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final RpcService rpcService;
     private final MantisJobStore mantisJobStore;
 
-    private final Map<ClusterID, ActorRef> resourceClusterActorMap;
+    // Cluster Id to <ResourceClusterActor, ResourceClusterScalerActor> map.
+    private final Map<ClusterID, ActorHolder> resourceClusterActorMap;
 
     private final ActorRef resourceClusterHostActor;
     private final ResourceClusterStorageProvider resourceStorageProvider;
@@ -126,6 +129,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(TaskExecutorGatewayRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
+                .match(TriggerClusterRuleRefreshRequest.class, req ->
+                    getRCScalerActor(req.getClusterID()).forward(req, context()))
                 .build();
     }
 
@@ -153,6 +158,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                     clusterID,
                     clock,
                     Duration.ofSeconds(masterConfiguration.getScalerTriggerThresholdInSecs()),
+                    Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
                     this.resourceStorageProvider,
                     this.resourceClusterHostActor,
                     rcActor
@@ -163,19 +169,28 @@ class ResourceClustersManagerActor extends AbstractActor {
     }
 
     private ActorRef getRCActor(ClusterID clusterID) {
+        return getOrCreateRCActors(clusterID).getResourceClusterActor();
+    }
+
+    private ActorRef getRCScalerActor(ClusterID clusterID) {
+        return getOrCreateRCActors(clusterID).getResourceClusterScalerActor();
+    }
+
+    private ActorHolder getOrCreateRCActors(ClusterID clusterID) {
         if (resourceClusterActorMap.get(clusterID) != null) {
             return resourceClusterActorMap.get(clusterID);
         } else {
-            ActorRef rcActor = resourceClusterActorMap.computeIfAbsent(clusterID, (dontCare) -> {
-                ActorRef actorRef = createResourceClusterActorFor(clusterID);
-                getContext().watch(actorRef);
-                return actorRef;
-            });
+            return resourceClusterActorMap.computeIfAbsent(clusterID, (dontCare) -> {
+                ActorRef rcActorRef = createResourceClusterActorFor(clusterID);
+                getContext().watch(rcActorRef);
+                ActorRef scalerActorRef = createResourceClusterScalerActorFor(clusterID, rcActorRef);
+                getContext().watch(scalerActorRef);
 
-            // Also create the companion scaler actor.
-            ActorRef scalerActorRef = createResourceClusterScalerActorFor(clusterID, rcActor);
-            getContext().watch(scalerActorRef);
-            return rcActor;
+                return ActorHolder.builder()
+                    .resourceClusterActor(rcActorRef)
+                    .resourceClusterScalerActor(scalerActorRef)
+                    .build();
+            });
         }
     }
 
@@ -195,5 +210,12 @@ class ResourceClustersManagerActor extends AbstractActor {
     @Override
     public SupervisorStrategy supervisorStrategy() {
         return MantisActorSupervisorStrategy.getInstance().create();
+    }
+
+    @Value
+    @Builder
+    static class ActorHolder {
+        ActorRef resourceClusterActor;
+        ActorRef resourceClusterScalerActor;
     }
 }

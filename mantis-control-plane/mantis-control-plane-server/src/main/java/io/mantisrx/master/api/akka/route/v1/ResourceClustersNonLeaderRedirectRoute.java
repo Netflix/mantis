@@ -251,7 +251,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> completeAsync(
                     this.resourceClusterRouteHandler.get(
-                        GetResourceClusterSpecRequest.builder().id(clusterId).build()),
+                        GetResourceClusterSpecRequest.builder().id(ClusterID.of(clusterId)).build()),
                     resp -> completeOK(
                         resp,
                         Jackson.marshaller()),
@@ -295,7 +295,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route deleteResourceClusterInstanceRoute(String clusterId) {
         log.info("DELETE api/v1/resourceClusters/{}", clusterId);
         return completeAsync(
-            this.resourceClusterRouteHandler.delete(clusterId),
+            this.resourceClusterRouteHandler.delete(ClusterID.of(clusterId)),
             resp -> completeOK(
                 resp,
                 Jackson.marshaller()),
@@ -303,9 +303,9 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             HttpVerb.DELETE);
     }
 
-    private Route scaleClusterSku(String clusterName) {
+    private Route scaleClusterSku(String clusterId) {
         return entity(Jackson.unmarshaller(ScaleResourceRequest.class), skuScaleRequest -> {
-            log.info("POST api/v1/resourceClusters/{}/scaleSku {}", clusterName, skuScaleRequest);
+            log.info("POST api/v1/resourceClusters/{}/scaleSku {}", clusterId, skuScaleRequest);
             final CompletionStage<ScaleResourceResponse> response =
                 this.resourceClusterRouteHandler.scale(skuScaleRequest);
 
@@ -322,9 +322,9 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     }
 
 
-    private Route upgradeCluster(String clusterName) {
+    private Route upgradeCluster(String clusterId) {
         return entity(Jackson.unmarshaller(UpgradeClusterContainersRequest.class), upgradeRequest -> {
-            log.info("POST api/v1/resourceClusters/{}/upgrade {}", clusterName, upgradeRequest);
+            log.info("POST api/v1/resourceClusters/{}/upgrade {}", clusterId, upgradeRequest);
             final CompletionStage<UpgradeClusterContainersResponse> response =
                 this.resourceClusterRouteHandler.upgrade(upgradeRequest);
 
@@ -340,9 +340,9 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         });
     }
 
-    private Route createSingleScaleRule(String clusterName) {
+    private Route createSingleScaleRule(String clusterId) {
         return entity(Jackson.unmarshaller(CreateResourceClusterScaleRuleRequest.class), scaleRuleReq -> {
-            log.info("POST api/v1/resourceClusters/{}/scaleRule {}", clusterName, scaleRuleReq);
+            log.info("POST api/v1/resourceClusters/{}/scaleRule {}", clusterId, scaleRuleReq);
             final CompletionStage<GetResourceClusterScaleRulesResponse> response =
                 this.resourceClusterRouteHandler.createSingleScaleRule(scaleRuleReq);
 
@@ -358,14 +358,16 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         });
     }
 
-    private Route createAllScaleRules(String clusterName) {
+    private Route createAllScaleRules(String clusterId) {
         return entity(Jackson.unmarshaller(CreateAllResourceClusterScaleRulesRequest.class), scaleRuleReq -> {
-            log.info("POST api/v1/resourceClusters/{}/scaleRules {}", clusterName, scaleRuleReq);
+            log.info("POST api/v1/resourceClusters/{}/scaleRules {}", clusterId, scaleRuleReq);
             final CompletionStage<GetResourceClusterScaleRulesResponse> response =
                 this.resourceClusterRouteHandler.createAllScaleRule(scaleRuleReq);
 
             return completeAsync(
-                response,
+                response.thenCombineAsync(
+                    this.gateway.getClusterFor(getClusterID(clusterId)).refreshClusterScalerRuleSet(),
+                    (createResp, dontCare) -> createResp),
                 resp -> complete(
                     StatusCodes.ACCEPTED,
                     resp,
@@ -376,13 +378,13 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         });
     }
 
-    private Route getScaleRules(String clusterName) {
-        log.info("GET /api/v1/resourceClusters/{}/scaleRules called", clusterName);
+    private Route getScaleRules(String clusterId) {
+        log.info("GET /api/v1/resourceClusters/{}/scaleRules called", clusterId);
         return parameterMap(param ->
             alwaysCache(routeResultCache, getRequestUriKeyer, () -> extractUri(
                 uri -> completeAsync(
                     this.resourceClusterRouteHandler.getClusterScaleRules(
-                        GetResourceClusterScaleRulesRequest.builder().clusterId(clusterName).build()),
+                        GetResourceClusterScaleRulesRequest.builder().clusterId(getClusterID(clusterId)).build()),
                     resp -> completeOK(
                         resp,
                         Jackson.marshaller()),

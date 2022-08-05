@@ -77,6 +77,11 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     CompletableFuture<TaskExecutorStatus> getTaskExecutorState(TaskExecutorID taskExecutorID);
 
+    /**
+     * Trigger a request to this resource cluster's ResourceClusterScalerActor to refresh the local scale rule set.
+     */
+    CompletableFuture<Ack> refreshClusterScalerRuleSet();
+
     class NoResourceAvailableException extends Exception {
 
         public NoResourceAvailableException(String message) {

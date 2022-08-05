@@ -35,6 +35,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.worker.TaskExecutor.ResourceManagerGatewayCxn;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -59,13 +60,17 @@ public class ResourceManagerGatewayCxnTest {
         WorkerPorts workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
         TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutor");
         ClusterID clusterID = ClusterID.of("cluster");
-        registration = new TaskExecutorRegistration(
-            taskExecutorID,
-            clusterID,
-            "localhost",
-            "host",
-            workerPorts,
-            new MachineDefinition(1, 1, 1, 1, 5));
+        registration =
+            TaskExecutorRegistration.builder()
+                .taskExecutorID(taskExecutorID)
+                .clusterID(clusterID)
+                .hostname("host")
+                .taskExecutorAddress("localhost")
+                .workerPorts(workerPorts)
+                .machineDefinition(new MachineDefinition(1, 1, 1, 1, 5))
+                .taskExecutorAttributes(ImmutableMap.of())
+                .build();
+
         disconnection = new TaskExecutorDisconnection(taskExecutorID, clusterID);
         gateway = mock(ResourceClusterGateway.class);
         report = TaskExecutorReport.available();

@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -24,8 +26,8 @@ import lombok.Value;
 @Value
 @Builder
 public class ResourceClusterScaleSpec {
-    String clusterId;
-    String skuId;
+    ClusterID clusterId;
+    ContainerSkuID skuId;
     int minIdleToKeep;
     int minSize;
     int maxIdleToKeep;
@@ -34,8 +36,8 @@ public class ResourceClusterScaleSpec {
 
     @JsonCreator
     public ResourceClusterScaleSpec(
-        @JsonProperty("clusterId") final String clusterId,
-        @JsonProperty("skuId") final String skuId,
+        @JsonProperty("clusterId") final ClusterID clusterId,
+        @JsonProperty("skuId") final ContainerSkuID skuId,
         @JsonProperty("minIdleToKeep") final int minIdleToKeep,
         @JsonProperty("minSize") final int minSize,
         @JsonProperty("maxIdleToKeep") final int maxIdleToKeep,
