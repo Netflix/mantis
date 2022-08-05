@@ -191,7 +191,7 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     public CompletableFuture<Void> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry) {
         return CompletableFuture.supplyAsync(() -> {
             resourceClusterManagerActor.tell(
-                new ResourceClusterActor.DisableTaskExecutorsRequest(attributes, clusterID, expiry), ActorRef.noSender());
+                new DisableTaskExecutorsRequest(attributes, clusterID, expiry), ActorRef.noSender());
             return null;
         });
     }

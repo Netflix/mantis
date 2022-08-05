@@ -47,6 +47,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -69,7 +70,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.shaded.guava30.com.google.common.collect.Comparators;
-import org.apache.flink.util.Preconditions;
 
 /**
  * Akka actor implementation of ResourceCluster.
@@ -80,7 +80,7 @@ import org.apache.flink.util.Preconditions;
  */
 @ToString(of = {"clusterID"})
 @Slf4j
-public class ResourceClusterActor extends AbstractActorWithTimers {
+class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final Duration heartbeatTimeout;
     private final Duration assignmentTimeout;
@@ -687,27 +687,6 @@ public class ResourceClusterActor extends AbstractActorWithTimers {
     static class GetClusterUsageRequest {
         ClusterID clusterID;
         Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
-    }
-
-    @Value
-    public static class DisableTaskExecutorsRequest {
-        Map<String, String> attributes;
-
-        ClusterID clusterID;
-
-        Instant expiry;
-
-        boolean isExpired(Instant now) {
-            return expiry.compareTo(now) <= 0;
-        }
-
-        boolean targetsSameTaskExecutorsAs(DisableTaskExecutorsRequest another) {
-            return this.attributes.entrySet().containsAll(another.attributes.entrySet());
-        }
-
-        boolean covers(@Nullable TaskExecutorRegistration registration) {
-            return registration != null && registration.containsAttributes(this.attributes);
-        }
     }
 
     @Value

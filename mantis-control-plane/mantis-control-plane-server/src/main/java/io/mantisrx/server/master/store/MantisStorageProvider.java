@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master.store;
 
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
