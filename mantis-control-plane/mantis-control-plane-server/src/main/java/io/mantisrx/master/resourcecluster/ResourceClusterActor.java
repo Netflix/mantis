@@ -132,7 +132,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
 
         timers().startPeriodicTimer(
-            "periodic-disabled-task-executors-test",
+            String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
             new CheckDisabledTaskExecutors("periodic"),
             disabledTaskExecutorsCheckInterval);
     }
@@ -322,6 +322,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
+        ActorRef sender = sender();
         if (addNewDisableTaskExecutorsRequest(request)) {
             try {
                 // store the request in a persistent store in order to retrieve it if the node goes down
@@ -334,9 +335,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     new ExpireDisableTaskExecutorsRequest(request),
                     toExpiry);
                 findAndMarkDisabledTaskExecutors(new CheckDisabledTaskExecutors("new_request"));
+                sender.tell(Ack.getInstance(), self());
             } catch (IOException e) {
                 sender().tell(new Status.Failure(e), self());
             }
+        } else {
+            sender.tell(Ack.getInstance(), self());
         }
     }
 

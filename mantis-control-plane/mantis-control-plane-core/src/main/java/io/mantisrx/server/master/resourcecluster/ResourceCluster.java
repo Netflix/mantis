@@ -93,7 +93,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @param expiry     instant at which the request can be marked as complete. this is important because we cannot be constantly checking if new task executors match the disabled criteria or not.
      * @return a future that completes when the underlying operation is registered by the system
      */
-    CompletableFuture<Void> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
+    CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
 
     /**
      * Gets the task executors to worker mapping for the given resource cluster

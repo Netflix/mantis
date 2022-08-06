@@ -188,12 +188,14 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<Void> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry) {
-        return CompletableFuture.supplyAsync(() -> {
-            resourceClusterManagerActor.tell(
-                new DisableTaskExecutorsRequest(attributes, clusterID, expiry), ActorRef.noSender());
-            return null;
-        });
+    public CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry) {
+        final DisableTaskExecutorsRequest msg = new DisableTaskExecutorsRequest(attributes, clusterID, expiry);
+
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, msg, askTimeout)
+                .thenApply(Ack.class::cast)
+                .toCompletableFuture();
     }
 
     @Override
