@@ -704,6 +704,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Map<String, String> attributes;
     }
 
+    /**
+     * Represents the Availability of a given node in the resource cluster.
+     * Can go from PENDING -> ASSIGNED(workerId) -> RUNNING(workerId) -> PENDING
+     * in the happy path.
+     */
     interface AvailabilityState {
         @Nullable
         WorkerId getWorkerId();
@@ -728,13 +733,18 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             return new Running(workerId);
         }
 
-        default void throwInvalidTransition(WorkerId workerId) throws IllegalStateException {
+        default <T> T throwInvalidTransition() throws IllegalStateException {
             throw new IllegalStateException(
-                String.format("availability state was %s, workerId was %s when workerId %s was assigned",
-                    this, this.getWorkerId(), workerId));
+                String.format("availability state was %s when worker was unassigned", this));
         }
 
-        default void throwInvalidTransition(TaskExecutorReport report) throws IllegalStateException {
+        default <T> T throwInvalidTransition(WorkerId workerId) throws IllegalStateException {
+            throw new IllegalStateException(
+                String.format("availability state was %s when workerId %s was assigned",
+                    this, workerId));
+        }
+
+        default <T> T throwInvalidTransition(TaskExecutorReport report) throws IllegalStateException {
             throw new IllegalStateException(
                 String.format("availability state was %s when report %s was received", this, report));
         }
@@ -764,9 +774,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } else if (report instanceof Occupied) {
                 return AvailabilityState.running(((Occupied) report).getWorkerId());
             } else {
-                throwInvalidTransition(report);
+                return throwInvalidTransition(report);
             }
-            return null;
         }
     }
 
@@ -779,8 +788,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             if (this.workerId.equals(workerId)) {
                 return this;
             } else {
-                throwInvalidTransition(workerId);
-                return null;
+                return throwInvalidTransition(workerId);
             }
         }
 
@@ -796,8 +804,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } else if (report instanceof Occupied) {
                 return AvailabilityState.running(workerId);
             } else {
-                throwInvalidTransition(report);
-                return null;
+                return throwInvalidTransition(report);
             }
         }
     }
@@ -808,13 +815,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         @Override
         public AvailabilityState onAssignment(WorkerId workerId) {
-            throwInvalidTransition(workerId);
-            return null;
+            return throwInvalidTransition(workerId);
         }
 
         @Override
         public AvailabilityState onUnassignment() {
-            throw new UnsupportedOperationException();
+            return throwInvalidTransition();
         }
 
         @Override
@@ -824,8 +830,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } else if (report instanceof Occupied) {
                 return this;
             } else {
-                throwInvalidTransition(report);
-                return null;
+                return throwInvalidTransition(report);
             }
         }
     }
@@ -846,9 +851,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         @Nullable
         private CompletableFuture<TaskExecutorGateway> gateway;
 
+        // availabilityState being null here represents that we don't know about the actual state of the task executor
+        // and are waiting for more information
         @Nullable
         private AvailabilityState availabilityState;
         private boolean disabled;
+        // last interaction initiated by the task executor
         private Instant lastActivity;
         private final Clock clock;
         private final RpcService rpcService;
@@ -996,7 +1004,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         @Nullable
         private WorkerId getWorkerId() {
-            return this.availabilityState.getWorkerId();
+            if (this.availabilityState != null) {
+                return this.availabilityState.getWorkerId();
+            } else {
+                return null;
+            }
         }
 
         private void throwNotRegistered(String message) throws IllegalStateException {
