@@ -31,6 +31,7 @@ import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.Endpoints;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.HttpVerb;
+import io.mantisrx.master.resourcecluster.proto.DisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
@@ -49,6 +50,8 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +72,7 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/getUnregisteredTaskExecutors           (GET)
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
  * /api/v1/resourceClusters/{}/upgrade                                (POST)
+ * /api/v1/resourceClusters/{}/disableTaskExecutors                   (POST)
  * <p>
  * <p>
  * /api/v1/resourceClusters/{}/scaleRule                              (POST)
@@ -147,6 +151,11 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         // POST
                         post(() -> scaleClusterSku(clusterName))
                     ))
+                ),
+                path(
+                    PathMatchers.segment().slash("disableTaskExecutors"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        post(() -> disableTaskExecutors(getClusterID(clusterName)))))
                 ),
                 // /{}/upgrade
                 path(
@@ -231,6 +240,13 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         CompletableFuture<ResourceCluster.TaskExecutorStatus> statusOverview =
             gateway.getClusterFor(clusterID).getTaskExecutorState(taskExecutorID);
         return withFuture(statusOverview);
+    }
+
+    private Route disableTaskExecutors(ClusterID clusterID) {
+        return entity(Jackson.unmarshaller(DisableTaskExecutorsRequest.class), request -> {
+            log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors called with body {}", clusterID, request);
+            return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(request.getAttributes(), Instant.now().plus(Duration.ofHours(24))));
+        });
     }
 
     private ClusterID getClusterID(String clusterName) {

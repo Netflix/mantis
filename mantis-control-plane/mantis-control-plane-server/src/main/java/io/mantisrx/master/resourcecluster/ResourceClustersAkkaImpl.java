@@ -27,6 +27,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
+import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Set;
@@ -78,12 +79,14 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
         RpcService rpcService,
         ActorSystem actorSystem,
         MantisJobStore mantisJobStore,
+        JobMessageRouter jobMessageRouter,
         ActorRef resourceClusterHostActorRef,
         ResourceClusterStorageProvider resourceStorageProvider) {
         final ActorRef resourceClusterManagerActor =
             actorSystem.actorOf(
                 ResourceClustersManagerActor.props(masterConfiguration, Clock.systemDefaultZone(),
-                    rpcService, mantisJobStore, resourceClusterHostActorRef, resourceStorageProvider));
+                    rpcService, mantisJobStore, resourceClusterHostActorRef, resourceStorageProvider,
+                    jobMessageRouter));
         final ResourceClusterTaskExecutorMapper globalMapper =
             ResourceClusterTaskExecutorMapper.inMemory();
 

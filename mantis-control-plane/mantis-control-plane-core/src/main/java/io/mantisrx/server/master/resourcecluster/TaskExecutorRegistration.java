@@ -18,18 +18,28 @@ package io.mantisrx.server.master.resourcecluster;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Optional;
+import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
-import lombok.Value;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
 /**
  * Data structure used at the time of registration by the task executor.
  * Different fields help identify the task executor in different dimensions.
  */
-@Value
 @Builder
+@FieldDefaults(makeFinal=true, level= AccessLevel.PRIVATE)
+@Getter
+@ToString
+@EqualsAndHashCode
 public class TaskExecutorRegistration {
   @NonNull
   TaskExecutorID taskExecutorID;
@@ -56,6 +66,28 @@ public class TaskExecutorRegistration {
   // custom attributes describing the task executor
   // TODO make this field non-null once no back-compat required.
   Map<String, String> taskExecutorAttributes;
+
+    @JsonCreator
+    public TaskExecutorRegistration(
+        @JsonProperty("taskExecutorID") TaskExecutorID taskExecutorID,
+        @JsonProperty("clusterID") ClusterID clusterID,
+        @JsonProperty("taskExecutorAddress") String taskExecutorAddress,
+        @JsonProperty("hostname") String hostname,
+        @JsonProperty("workerPorts") WorkerPorts workerPorts,
+        @JsonProperty("machineDefinition") MachineDefinition machineDefinition,
+        @JsonProperty("taskExecutorAttributes") Map<String, String> taskExecutorAttributes) {
+        this.taskExecutorID = taskExecutorID;
+        this.clusterID = clusterID;
+        this.taskExecutorAddress = taskExecutorAddress;
+        this.hostname = hostname;
+        this.workerPorts = workerPorts;
+        this.machineDefinition = machineDefinition;
+        this.taskExecutorAttributes = (taskExecutorAttributes == null) ? ImmutableMap.of() : taskExecutorAttributes;
+    }
+
+    public boolean containsAttributes(Map<String, String> requiredAttributes) {
+        return taskExecutorAttributes.entrySet().containsAll(requiredAttributes.entrySet());
+    }
 
   public Optional<ContainerSkuID> getTaskExecutorContainerDefinitionId() {
       return Optional.ofNullable(

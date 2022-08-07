@@ -157,6 +157,7 @@ public class MasterMain implements Service {
             IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
+            final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff
             Configuration configuration = loadConfiguration();
@@ -182,12 +183,11 @@ public class MasterMain implements Service {
                     rpcService,
                     system,
                     mantisJobStore,
+                    jobMessageRouter,
                     resourceClustersHostActor,
                     resourceClusterStorageProvider);
 
             // end of new stuff
-
-            final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
 
             final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, vmLeaseRescindedSubject,

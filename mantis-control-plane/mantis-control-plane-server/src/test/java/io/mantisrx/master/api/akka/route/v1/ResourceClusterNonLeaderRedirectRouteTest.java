@@ -17,6 +17,7 @@
 package io.mantisrx.master.api.akka.route.v1;
 
 import static io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads.CLUSTER_ID;
+import static io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads.RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,6 +76,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
 
 public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private static final UnitTestResourceProviderAdapter resourceProviderAdapter =
@@ -128,7 +130,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                 .build();
 
         TaskExecutorStatus status =
-            new TaskExecutorStatus(registration, true, true, true, null, Instant.now().toEpochMilli());
+            new TaskExecutorStatus(registration, true, true, true, false, null, Instant.now().toEpochMilli());
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
         when(resourceCluster.getTaskExecutorState(TaskExecutorID.of("myExecutor")))
             .thenReturn(CompletableFuture.completedFuture(status));
@@ -137,6 +139,30 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         testRouteWithNoopAdapter.run(HttpRequest.GET("/api/v1/resourceClusters/myCluster/taskExecutors/myExecutor/getTaskExecutorState"))
             .assertStatusCode(200)
             .assertEntityAs(Jackson.unmarshaller(TaskExecutorStatus.class), status);
+    }
+
+    @Test
+    public void testDisableTaskExecutorsRoute() {
+        // set up the mocks
+        ResourceCluster resourceCluster = mock(ResourceCluster.class);
+        when(resourceCluster.disableTaskExecutorsFor(ArgumentMatchers.eq(RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS), ArgumentMatchers.any()))
+            .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
+        when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
+
+        // set up the HTTP request that needs to be issued
+        HttpRequest request =
+            HttpRequest
+                .POST("/api/v1/resourceClusters/myCluster/disableTaskExecutors")
+                .withEntity(
+                    HttpEntities.create(
+                        ContentTypes.APPLICATION_JSON,
+                        ResourceClustersPayloads.RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_PAYLOAD));
+
+        // make the request and verify the response
+        testRouteWithNoopAdapter
+            .run(request)
+            .assertStatusCode(200)
+            .assertEntityAs(Jackson.unmarshaller(Ack.class), Ack.getInstance());
     }
 
     @Test

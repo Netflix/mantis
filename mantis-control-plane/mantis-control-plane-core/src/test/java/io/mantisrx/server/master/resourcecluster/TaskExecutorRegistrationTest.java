@@ -18,6 +18,7 @@ package io.mantisrx.server.master.resourcecluster;
 import static org.junit.Assert.assertEquals;
 
 import io.mantisrx.common.JsonSerializer;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 public class TaskExecutorRegistrationTest {
@@ -66,8 +67,63 @@ public class TaskExecutorRegistrationTest {
 
         final TaskExecutorRegistration registration =
                 serializer.fromJSON(str, TaskExecutorRegistration.class);
+        assertEquals(ImmutableMap.of(), registration.getTaskExecutorAttributes());
         final TaskExecutorRegistration deserialized =
                 serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
+        assertEquals(registration, deserialized);
+    }
+
+    @Test
+    public void testDeserializationForV2() throws Exception {
+        String str = "{\n" +
+            "    \"taskExecutorID\":\n" +
+            "    {\n" +
+            "        \"resourceId\": \"25400d92-96ed-40b9-9843-a6e7e248db52\"\n" +
+            "    },\n" +
+            "    \"clusterID\":\n" +
+            "    {\n" +
+            "        \"resourceID\": \"mantistaskexecutor\"\n" +
+            "    },\n" +
+            "    \"taskExecutorAddress\": \"akka.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
+            "    \"hostname\": \"localhost\",\n" +
+            "    \"workerPorts\":\n" +
+            "    {\n" +
+            "        \"metricsPort\": 5051,\n" +
+            "        \"debugPort\": 5052,\n" +
+            "        \"consolePort\": 5053,\n" +
+            "        \"customPort\": 5054,\n" +
+            "        \"ports\":\n" +
+            "        [\n" +
+            "            5055,\n" +
+            "            5051,\n" +
+            "            5052,\n" +
+            "            5053,\n" +
+            "            5054\n" +
+            "        ],\n" +
+            "        \"sinkPort\": 5055,\n" +
+            "        \"numberOfPorts\": 5,\n" +
+            "        \"valid\": true\n" +
+            "    },\n" +
+            "    \"machineDefinition\":\n" +
+            "    {\n" +
+            "        \"cpuCores\": 4.0,\n" +
+            "        \"memoryMB\": 17179869184,\n" +
+            "        \"networkMbps\": 128.0,\n" +
+            "        \"diskMB\": 88969576448,\n" +
+            "        \"numPorts\": 5\n" +
+            "    },\n" +
+            "    \"taskExecutorAttributes\": {\n" +
+            "    \t\"attribute1\": \"attributeValue1\",\n" +
+            "    \t\"attribute2\": \"attributeValue2\",\n" +
+            "    \t\"attribute3\": \"attributeValue3\"\n" +
+            "    }\n" +
+            "}";
+
+        final TaskExecutorRegistration registration =
+            serializer.fromJSON(str, TaskExecutorRegistration.class);
+        assertEquals(ImmutableMap.of("attribute1", "attributeValue1", "attribute2", "attributeValue2", "attribute3", "attributeValue3"), registration.getTaskExecutorAttributes());
+        final TaskExecutorRegistration deserialized =
+            serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
         assertEquals(registration, deserialized);
     }
 }

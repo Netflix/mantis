@@ -23,6 +23,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskE
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorWorkerMappingRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
@@ -39,8 +40,11 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapp
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
@@ -181,5 +185,34 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 askTimeout)
             .thenApply(Ack.class::cast)
             .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry) {
+        final DisableTaskExecutorsRequest msg = new DisableTaskExecutorsRequest(attributes, clusterID, expiry);
+
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, msg, askTimeout)
+                .thenApply(Ack.class::cast)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping() {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new GetTaskExecutorWorkerMappingRequest(ImmutableMap.of()), askTimeout)
+                .thenApply(obj -> (Map<TaskExecutorID, WorkerId>) obj)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(Map<String, String> attributes) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new GetTaskExecutorWorkerMappingRequest(attributes), askTimeout)
+                .thenApply(obj -> (Map<TaskExecutorID, WorkerId>) obj)
+                .toCompletableFuture();
     }
 }

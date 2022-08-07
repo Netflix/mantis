@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.master.store;
 
+import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
@@ -175,4 +177,10 @@ public interface MantisStorageProvider {
     TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException;
 
     void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException;
+
+    void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
+
+    void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
+
+    List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException;
 }

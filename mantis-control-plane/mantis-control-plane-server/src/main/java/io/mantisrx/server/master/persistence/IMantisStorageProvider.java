@@ -20,8 +20,10 @@ import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
+import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
@@ -140,4 +142,10 @@ public interface IMantisStorageProvider {
     TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException;
 
     void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException;
+
+    void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
+
+    void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
+
+    List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException;
 }

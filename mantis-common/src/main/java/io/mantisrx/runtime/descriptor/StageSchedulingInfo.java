@@ -21,8 +21,6 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import lombok.Builder;
@@ -55,16 +53,6 @@ public class StageSchedulingInfo implements Serializable {
         this.scalingPolicy = scalingPolicy;
 
         this.scalable = scalable;
-    }
-
-    public static void main(String[] args) {
-        String json = "{\"numberOfInstances\":1,\"machineDefinition\":{\"cpuCores\":1.0,\"memoryMB\":2048.0,\"diskMB\":1.0,\"numPorts\":1},\"hardConstraints\":[\"UniqueHost\"],\"softConstraints\":[\"ExclusiveHost\"],\"scalable\":\"true\"}";
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            StageSchedulingInfo info = mapper.readValue(json, StageSchedulingInfo.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public int getNumberOfInstances() {

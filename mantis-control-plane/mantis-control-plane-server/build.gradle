@@ -51,6 +51,7 @@ dependencies {
     testCompile "org.testng:testng:$testngVersion"
     testImplementation testFixtures(project(":mantis-common"))
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
+    testImplementation libraries.commonsIo
 }
 
 mainClassName = "io.mantisrx.server.master.MasterMain"

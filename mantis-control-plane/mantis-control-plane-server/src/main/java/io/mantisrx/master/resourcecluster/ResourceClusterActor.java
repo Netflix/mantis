@@ -44,7 +44,11 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
+import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -65,6 +69,7 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.runtime.rpc.RpcService;
+import org.apache.flink.shaded.guava30.com.google.common.collect.Comparators;
 
 /**
  * Akka actor implementation of ResourceCluster.
@@ -79,6 +84,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final Duration heartbeatTimeout;
     private final Duration assignmentTimeout;
+    private final Duration disabledTaskExecutorsCheckInterval;
 
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap;
     private final Clock clock;
@@ -86,26 +92,49 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final RpcService rpcService;
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
+    private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsRequests;
+    private final JobMessageRouter jobMessageRouter;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, clock, rpcService, mantisJobStore);
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter);
     }
 
     ResourceClusterActor(
         ClusterID clusterID,
         Duration heartbeatTimeout,
         Duration assignmentTimeout,
+        Duration disabledTaskExecutorsCheckInterval,
         Clock clock,
         RpcService rpcService,
-        MantisJobStore mantisJobStore) {
+        MantisJobStore mantisJobStore,
+        JobMessageRouter jobMessageRouter) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
+        this.disabledTaskExecutorsCheckInterval = disabledTaskExecutorsCheckInterval;
+
         this.clock = clock;
         this.rpcService = rpcService;
+        this.jobMessageRouter = jobMessageRouter;
         this.taskExecutorStateMap = new HashMap<>();
         this.taskExecutorsReadyToPerformWork = new HashSet<>();
         this.mantisJobStore = mantisJobStore;
+        this.activeDisableTaskExecutorsRequests = new HashSet<>();
+    }
+
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
+        List<DisableTaskExecutorsRequest> activeRequests =
+            mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
+        for (DisableTaskExecutorsRequest request : activeRequests) {
+            onNewDisableTaskExecutorsRequest(request);
+        }
+
+        timers().startPeriodicTimer(
+            String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
+            new CheckDisabledTaskExecutors("periodic"),
+            disabledTaskExecutorsCheckInterval);
     }
 
     @Override
@@ -116,6 +145,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetRegisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isRegistered), self()))
                 .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isBusy), self()))
                 .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
+                .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isDisabled), self()))
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
                 .match(GetClusterUsageRequest.class, req -> sender().tell(getClusterUsage(req), self()))
@@ -134,6 +164,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
                 .match(TaskExecutorGatewayRequest.class, this::onTaskExecutorGatewayRequest)
+                .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
+                .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
+                .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
+                .match(GetTaskExecutorWorkerMappingRequest.class, req -> sender().tell(getTaskExecutorWorkerMapping(req.getAttributes()), self()))
                 .build();
     }
 
@@ -148,6 +182,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAvailable =
         e -> e.getValue().isAvailable();
+
+    private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isDisabled =
+        e -> e.getValue().isDisabled();
 
     private GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req) {
         log.info("Computing cluster usage: {}", this.clusterID);
@@ -272,6 +309,88 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
+    // custom equals function to check if the existing set already has the request under consideration.
+    private boolean addNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest newRequest) {
+        for (DisableTaskExecutorsRequest existing: activeDisableTaskExecutorsRequests) {
+            if (existing.targetsSameTaskExecutorsAs(newRequest)) {
+                return false;
+            }
+        }
+
+        Preconditions.checkState(activeDisableTaskExecutorsRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
+        return true;
+    }
+
+    private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
+        ActorRef sender = sender();
+        if (addNewDisableTaskExecutorsRequest(request)) {
+            try {
+                // store the request in a persistent store in order to retrieve it if the node goes down
+                mantisJobStore.storeNewDisabledTaskExecutorsRequest(request);
+                // figure out the time to expire the current request
+                Duration toExpiry = Comparators.max(Duration.between(clock.instant(), request.getExpiry()), Duration.ZERO);
+                // setup a timer to clear it after a given period
+                getTimers().startSingleTimer(
+                    getExpiryKeyFor(request),
+                    new ExpireDisableTaskExecutorsRequest(request),
+                    toExpiry);
+                findAndMarkDisabledTaskExecutors(new CheckDisabledTaskExecutors("new_request"));
+                sender.tell(Ack.getInstance(), self());
+            } catch (IOException e) {
+                sender().tell(new Status.Failure(e), self());
+            }
+        } else {
+            sender.tell(Ack.getInstance(), self());
+        }
+    }
+
+    private String getExpiryKeyFor(DisableTaskExecutorsRequest request) {
+        return "ExpireDisableTaskExecutorsRequest-" + request;
+    }
+
+    private void findAndMarkDisabledTaskExecutors(CheckDisabledTaskExecutors r) {
+        log.info("Checking for disabled task executors because of {}", r.getReason());
+        final Instant now = clock.instant();
+        for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
+            if (request.isExpired(now)) {
+                self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
+            } else {
+                // go and mark all task executors that match the filter as disabled
+                taskExecutorStateMap.forEach((taskExecutorId, taskExecutorState) -> {
+                    if (request.covers(taskExecutorState.getRegistration())) {
+                        if (taskExecutorState.onNodeDisabled()) {
+                            log.info("Marking task executor {} as disabled", taskExecutorId);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
+        try {
+            log.info("Expiring Disable Task Executors Request {}", request.getRequest());
+            getTimers().cancel(getExpiryKeyFor(request.getRequest()));
+            if (activeDisableTaskExecutorsRequests.remove(request.getRequest())) {
+                mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());
+            }
+        } catch (Exception e) {
+            log.error("Failed to delete expired {}", request.getRequest());
+        }
+    }
+
+    private Map<TaskExecutorID, WorkerId> getTaskExecutorWorkerMapping(Map<String, String> attributes) {
+        final Map<TaskExecutorID, WorkerId> result = new HashMap<>();
+        taskExecutorStateMap.forEach((taskExecutorID, taskExecutorState) -> {
+            if (taskExecutorState.getRegistration() != null && taskExecutorState.getRegistration().containsAttributes(attributes)) {
+                if (taskExecutorState.isRunningTask()) {
+                    result.put(taskExecutorID, taskExecutorState.getWorkerId());
+                }
+            }
+        });
+        return result;
+    }
+
     private void onTaskExecutorInitialization(InitializeTaskExecutorRequest request) {
         log.info("Initializing taskExecutor {} for the resource cluster {}", request.getTaskExecutorID(), this);
         ActorRef sender = sender();
@@ -304,6 +423,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             if (stateChange) {
                 if (state.isAvailable()) {
                     taskExecutorsReadyToPerformWork.add(taskExecutorID);
+                }
+                // check if the task executor has been marked as 'Disabled'
+                for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
+                    if (request.covers(registration)) {
+                        log.info("Newly registered task executor {} was already marked for disabling because of {}", registration.getTaskExecutorID(), request);
+                        state.onNodeDisabled();
+                    }
                 }
                 updateHeartbeatTimeout(registration.getTaskExecutorID());
             }
@@ -406,8 +532,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         long numAvailable = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isAvailable).count();
         long numOccupied = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isRunningTask).count();
         long numAssigned = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isAssigned).count();
+        long numDisabled = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isDisabled).count();
 
-        return new ResourceOverview(numRegistered, numAvailable, numOccupied, numAssigned);
+        return new ResourceOverview(numRegistered, numAvailable, numOccupied, numAssigned, numDisabled);
     }
 
     private TaskExecutorStatus getTaskExecutorStatus(TaskExecutorID taskExecutorID) {
@@ -417,6 +544,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             state.isRegistered(),
             state.isRunningTask(),
             state.isAssigned(),
+            state.isDisabled(),
             state.getWorkerId(),
             state.getLastActivity().toEpochMilli());
     }
@@ -461,7 +589,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void setupTaskExecutorStateIfNecessary(TaskExecutorID taskExecutorID) {
-        taskExecutorStateMap.putIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService));
+        taskExecutorStateMap.putIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
     }
 
     private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {
@@ -489,6 +617,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class TaskExecutorAssignmentTimeout {
         TaskExecutorID taskExecutorID;
+    }
+
+    @Value
+    static class ExpireDisableTaskExecutorsRequest {
+        DisableTaskExecutorsRequest request;
     }
 
     @Value
@@ -529,6 +662,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     static class GetAvailableTaskExecutorsRequest {
         ClusterID clusterID;
     }
+    @Value
+    static class GetDisabledTaskExecutorsRequest {
+        ClusterID clusterID;
+    }
 
     @Value
     static class GetBusyTaskExecutorsRequest {
@@ -557,6 +694,147 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
     }
 
+    @Value
+    private static class CheckDisabledTaskExecutors {
+        String reason;
+    }
+
+    @Value
+    static class GetTaskExecutorWorkerMappingRequest {
+        Map<String, String> attributes;
+    }
+
+    /**
+     * Represents the Availability of a given node in the resource cluster.
+     * Can go from PENDING -> ASSIGNED(workerId) -> RUNNING(workerId) -> PENDING
+     * in the happy path.
+     */
+    interface AvailabilityState {
+        @Nullable
+        WorkerId getWorkerId();
+
+        AvailabilityState onAssignment(WorkerId workerId);
+
+        AvailabilityState onUnassignment();
+
+        AvailabilityState onTaskExecutorStatusChange(TaskExecutorReport report);
+
+        Pending PENDING = new Pending();
+
+        static AvailabilityState pending() {
+            return PENDING;
+        }
+
+        static AvailabilityState assigned(WorkerId workerId) {
+            return new Assigned(workerId);
+        }
+
+        static AvailabilityState running(WorkerId workerId) {
+            return new Running(workerId);
+        }
+
+        default <T> T throwInvalidTransition() throws IllegalStateException {
+            throw new IllegalStateException(
+                String.format("availability state was %s when worker was unassigned", this));
+        }
+
+        default <T> T throwInvalidTransition(WorkerId workerId) throws IllegalStateException {
+            throw new IllegalStateException(
+                String.format("availability state was %s when workerId %s was assigned",
+                    this, workerId));
+        }
+
+        default <T> T throwInvalidTransition(TaskExecutorReport report) throws IllegalStateException {
+            throw new IllegalStateException(
+                String.format("availability state was %s when report %s was received", this, report));
+        }
+    }
+
+    @Value
+    static class Pending implements AvailabilityState {
+        @Override
+        public WorkerId getWorkerId() {
+            return null;
+        }
+
+        @Override
+        public AvailabilityState onAssignment(WorkerId workerId) {
+            return AvailabilityState.assigned(workerId);
+        }
+
+        @Override
+        public AvailabilityState onUnassignment() {
+            return this;
+        }
+
+        @Override
+        public AvailabilityState onTaskExecutorStatusChange(TaskExecutorReport report) {
+            if (report instanceof Available) {
+                return this;
+            } else if (report instanceof Occupied) {
+                return AvailabilityState.running(((Occupied) report).getWorkerId());
+            } else {
+                return throwInvalidTransition(report);
+            }
+        }
+    }
+
+    @Value
+    static class Assigned implements AvailabilityState {
+        WorkerId workerId;
+
+        @Override
+        public AvailabilityState onAssignment(WorkerId workerId) {
+            if (this.workerId.equals(workerId)) {
+                return this;
+            } else {
+                return throwInvalidTransition(workerId);
+            }
+        }
+
+        @Override
+        public AvailabilityState onUnassignment() {
+            return AvailabilityState.pending();
+        }
+
+        @Override
+        public AvailabilityState onTaskExecutorStatusChange(TaskExecutorReport report) {
+            if (report instanceof Available) {
+                return this;
+            } else if (report instanceof Occupied) {
+                return AvailabilityState.running(workerId);
+            } else {
+                return throwInvalidTransition(report);
+            }
+        }
+    }
+
+    @Value
+    static class Running implements AvailabilityState {
+        WorkerId workerId;
+
+        @Override
+        public AvailabilityState onAssignment(WorkerId workerId) {
+            return throwInvalidTransition(workerId);
+        }
+
+        @Override
+        public AvailabilityState onUnassignment() {
+            return throwInvalidTransition();
+        }
+
+        @Override
+        public AvailabilityState onTaskExecutorStatusChange(TaskExecutorReport report) {
+            if (report instanceof Available) {
+                return AvailabilityState.pending();
+            } else if (report instanceof Occupied) {
+                return this;
+            } else {
+                return throwInvalidTransition(report);
+            }
+        }
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     @AllArgsConstructor
     static class TaskExecutorState {
@@ -566,12 +844,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             Unregistered,
         }
 
-        enum AvailabilityState {
-            Pending,
-            Assigned,
-            Running,
-        }
-
         private RegistrationState state;
         @Nullable
         private TaskExecutorRegistration registration;
@@ -579,24 +851,28 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         @Nullable
         private CompletableFuture<TaskExecutorGateway> gateway;
 
+        // availabilityState being null here represents that we don't know about the actual state of the task executor
+        // and are waiting for more information
         @Nullable
         private AvailabilityState availabilityState;
-        @Nullable
-        private WorkerId workerId;
+        private boolean disabled;
+        // last interaction initiated by the task executor
         private Instant lastActivity;
         private final Clock clock;
         private final RpcService rpcService;
+        private final JobMessageRouter jobMessageRouter;
 
-        static TaskExecutorState of(Clock clock, RpcService rpcService) {
+        static TaskExecutorState of(Clock clock, RpcService rpcService, JobMessageRouter jobMessageRouter) {
             return new TaskExecutorState(
                 RegistrationState.Unregistered,
                 null,
                 null,
                 null,
-                null,
+                false,
                 clock.instant(),
                 clock,
-                rpcService);
+                rpcService,
+                jobMessageRouter);
         }
 
         boolean isRegistered() {
@@ -605,6 +881,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         boolean isDisconnected() {
             return !isRegistered();
+        }
+
+        boolean isDisabled() {
+            return disabled;
         }
 
         boolean onRegistration(TaskExecutorRegistration registration) {
@@ -631,8 +911,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } else {
                 state = RegistrationState.Unregistered;
                 registration = null;
-                workerId = null;
-                availabilityState = null;
+                setAvailabilityState(null);
                 gateway = null;
                 updateTicker();
                 return true;
@@ -641,9 +920,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         private static AvailabilityState from(TaskExecutorReport report) {
             if (report instanceof Available) {
-                return AvailabilityState.Pending;
+                return AvailabilityState.pending();
             } else if (report instanceof Occupied) {
-                return AvailabilityState.Running;
+                return AvailabilityState.running(((Occupied) report).getWorkerId());
             } else {
                 throw new RuntimeException(String.format("TaskExecutorReport=%s was unexpected", report));
             }
@@ -655,24 +934,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             }
 
             if (this.availabilityState == null) {
-                throwInvalidTransition(workerId);
-            } else {
-                switch (this.availabilityState) {
-                    case Pending:
-                        this.workerId = workerId;
-                        this.availabilityState = AvailabilityState.Assigned;
-                        return true;
-                    case Assigned:
-                        if (!this.workerId.equals(workerId)) {
-                            throwInvalidTransition(workerId);
-                        } else {
-                            return false;
-                        }
-                    default:
-                        throwInvalidTransition(workerId);
-                }
+                throw new IllegalStateException("availability state was null when unassignmentas was issued");
             }
-            return false;
+
+            return setAvailabilityState(this.availabilityState.onAssignment(workerId));
         }
 
         boolean onUnassignment() throws IllegalStateException {
@@ -680,17 +945,19 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 throw new IllegalStateException("availability state was null when unassignment was issued");
             }
 
-            switch (this.availabilityState) {
-                case Assigned:
-                    this.workerId = null;
-                    this.availabilityState = AvailabilityState.Pending;
-                    return true;
-                case Pending:
-                    return false;
-                default:
-                    throwInvalidTransition(workerId);
+            return setAvailabilityState(this.availabilityState.onUnassignment());
+        }
+
+        boolean onNodeDisabled() {
+            if (!this.disabled) {
+                this.disabled = true;
+                if (this.availabilityState instanceof Running) {
+                    jobMessageRouter.routeWorkerEvent(new WorkerOnDisabledVM(this.availabilityState.getWorkerId()));
+                }
+                return true;
+            } else {
+                return false;
             }
-            return false;
         }
 
         boolean onHeartbeat(TaskExecutorHeartbeat heartbeat) throws IllegalStateException {
@@ -715,47 +982,33 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         private boolean handleStatusChange(TaskExecutorReport report) throws IllegalStateException {
             if (availabilityState == null) {
-                availabilityState = from(report);
+                return setAvailabilityState(from(report));
+            } else {
+                return setAvailabilityState(availabilityState.onTaskExecutorStatusChange(report));
+            }
+        }
+
+        private boolean setAvailabilityState(AvailabilityState newState) {
+            if (this.availabilityState != newState) {
+                this.availabilityState = newState;
+                if (this.availabilityState instanceof Running) {
+                    if (isDisabled()) {
+                        jobMessageRouter.routeWorkerEvent(new WorkerOnDisabledVM(newState.getWorkerId()));
+                    }
+                }
                 return true;
             } else {
-                switch (availabilityState) {
-                    case Pending:
-                        if (report instanceof Available) {
-                            return false;
-                        } else if (report instanceof Occupied) {
-                            throwInvalidTransition(report);
-                        }
-                    case Assigned:
-                        if (report instanceof Available) {
-                            return false;
-                        } else if (report instanceof Occupied) {
-                            if (((Occupied) report).getWorkerId().equals(workerId)) {
-                                this.availabilityState = AvailabilityState.Running;
-                                return true;
-                            } else {
-                                throwInvalidTransition(report);
-                            }
-                        }
-                    case Running:
-                        if (report instanceof Available) {
-                            this.workerId = null;
-                            this.availabilityState = AvailabilityState.Pending;
-                            return true;
-                        } else if (report instanceof Occupied) {
-                            if (!((Occupied) report).getWorkerId().equals(workerId)) {
-                                throwInvalidTransition(report);
-                            } else {
-                                return false;
-                            }
-                        }
-                }
+                return false;
             }
-            return false;
         }
 
         @Nullable
         private WorkerId getWorkerId() {
-            return this.workerId;
+            if (this.availabilityState != null) {
+                return this.availabilityState.getWorkerId();
+            } else {
+                return null;
+            }
         }
 
         private void throwNotRegistered(String message) throws IllegalStateException {
@@ -763,32 +1016,20 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 String.format("Task Executor un-registered when it received %s", message));
         }
 
-        private void throwInvalidTransition(TaskExecutorReport report) throws IllegalStateException {
-            throw new IllegalStateException(
-                String.format("availability state was %s, workerId was %s when report %s was received",
-                    this.availabilityState, this.workerId, report));
-        }
-
-        private void throwInvalidTransition(WorkerId workerId) throws IllegalStateException {
-            throw new IllegalStateException(
-                String.format("availability state was %s, workerId was %s when workerId %s was assigned",
-                    this.availabilityState, this.workerId, workerId));
-        }
-
         private void updateTicker() {
             this.lastActivity = clock.instant();
         }
 
         boolean isAvailable() {
-            return this.availabilityState == AvailabilityState.Pending;
+            return this.availabilityState instanceof Pending && !isDisabled();
         }
 
         boolean isRunningTask() {
-            return this.availabilityState == AvailabilityState.Running;
+            return this.availabilityState instanceof Running;
         }
 
         boolean isAssigned() {
-            return this.availabilityState == AvailabilityState.Assigned;
+            return this.availabilityState instanceof Assigned;
         }
 
         // Captures the last interaction from the task executor. Any interactions
