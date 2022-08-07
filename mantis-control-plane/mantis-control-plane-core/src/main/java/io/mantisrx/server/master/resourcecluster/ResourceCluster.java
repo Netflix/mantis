@@ -133,6 +133,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
         boolean registered;
         boolean runningTask;
         boolean assignedTask;
+        boolean disabled;
         @Nullable
         WorkerId workerId;
         long lastHeartbeatInMs;

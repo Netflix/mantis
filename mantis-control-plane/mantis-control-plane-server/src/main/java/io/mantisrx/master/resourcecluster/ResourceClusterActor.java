@@ -544,6 +544,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             state.isRegistered(),
             state.isRunningTask(),
             state.isAssigned(),
+            state.isDisabled(),
             state.getWorkerId(),
             state.getLastActivity().toEpochMilli());
     }

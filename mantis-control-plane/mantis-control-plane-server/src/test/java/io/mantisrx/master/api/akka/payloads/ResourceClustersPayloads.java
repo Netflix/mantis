@@ -17,6 +17,9 @@
 package io.mantisrx.master.api.akka.payloads;
 
 
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import java.util.Map;
+
 public class ResourceClustersPayloads {
     public static final String CLUSTER_ID = "mantisResourceClusterUT1";
 
@@ -39,4 +42,14 @@ public class ResourceClustersPayloads {
         + "\"mantisResourceClusterUT1\"},"
             + "\"skuId\":{\"resourceID\": \"small\"},\"region\":\"us-east-1\",\"envType\":\"Prod\","
         + "\"desireSize\":11}\n";
+
+    public static final String RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_PAYLOAD = "" +
+        "{\n" +
+        "  \"attributes\": {\n" +
+        "    \"attr1\": \"attr1\"\n" +
+        "  }\n" +
+        "}";
+
+    public static final Map<String, String> RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS =
+        ImmutableMap.of("attr1", "attr1");
 }
