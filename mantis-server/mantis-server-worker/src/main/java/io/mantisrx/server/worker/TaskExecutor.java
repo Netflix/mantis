@@ -19,7 +19,6 @@ import com.mantisrx.common.utils.ListenerCallQueue;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
-import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
@@ -46,8 +45,6 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -131,10 +128,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             MachineDefinitionUtils.sys(workerPorts, workerConfiguration.getNetworkBandwidthInMB());
         String hostName = workerConfiguration.getExternalAddress();
 
-        Map<String, String> attributeMap = new HashMap<>(TaskAttributeUtils.getTaskExecutorAttributes());
-        // Adding a default id for back-compat support.
-        attributeMap.putIfAbsent(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, "defaultContainerId");
-
         this.taskExecutorRegistration =
             TaskExecutorRegistration.builder()
                 .machineDefinition(machineDefinition)
@@ -143,7 +136,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
-                .taskExecutorAttributes(ImmutableMap.copyOf(attributeMap))
+                .taskExecutorAttributes(ImmutableMap.copyOf(workerConfiguration.getTaskExecutorAttributes()))
                 .build();
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 
