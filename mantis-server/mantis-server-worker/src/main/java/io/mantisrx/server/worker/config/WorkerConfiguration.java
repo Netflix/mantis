@@ -17,8 +17,11 @@
 package io.mantisrx.server.worker.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.shaded.com.google.common.base.Splitter;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.net.URI;
+import java.util.Map;
 import org.apache.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
@@ -118,4 +121,17 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Config("mantis.taskexecutor.hardware.network-bandwidth-in-mb")
     @Default(value = "128.0")
     double getNetworkBandwidthInMB();
+
+    @Config("mantis.taskexecutor.attributes")
+    @Default(value = "")
+    String taskExecutorAttributes();
+
+    default Map<String, String> getTaskExecutorAttributes() {
+        String input = taskExecutorAttributes();
+        if (input == null || input.isEmpty()) {
+            return ImmutableMap.of();
+        }
+
+        return Splitter.on(",").withKeyValueSeparator(':').split(input);
+    }
 }
