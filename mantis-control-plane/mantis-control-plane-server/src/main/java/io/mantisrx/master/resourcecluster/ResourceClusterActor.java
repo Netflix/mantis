@@ -349,7 +349,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void findAndMarkDisabledTaskExecutors(CheckDisabledTaskExecutors r) {
-        log.info("Checking for disabled task executors because of {}", r.getReason());
+        log.info("Checking disabled task executors for Cluster {} because of {}", clusterID.getResourceID(), r.getReason());
         final Instant now = clock.instant();
         for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
             if (request.isExpired(now)) {
