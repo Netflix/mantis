@@ -45,14 +45,17 @@ public class MantisActorSupervisorStrategy implements SupervisorStrategyConfigur
         return new OneForOneStrategy(DeciderBuilder
             .match(ActorInitializationException.class, e -> {
                 ActorSystemMetrics.getInstance().incrementActorInitExceptionCount();
+                LOGGER.error("Stopping the actor because of exception", e);
                 return SupervisorStrategy.stop();
             })
             .match(ActorKilledException.class, e -> {
                 ActorSystemMetrics.getInstance().incrementActorKilledCount();
+                LOGGER.error("Stopping the actor because of exception", e);
                 return SupervisorStrategy.stop();
             })
             .match(DeathPactException.class, e -> {
                 ActorSystemMetrics.getInstance().incrementActorDeathPactExcCount();
+                LOGGER.error("Stopping the actor because of exception", e);
                 return SupervisorStrategy.stop();
             })
             .match(Exception.class, e -> {

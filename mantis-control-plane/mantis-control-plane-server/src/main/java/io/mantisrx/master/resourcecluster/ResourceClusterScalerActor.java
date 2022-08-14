@@ -159,7 +159,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     @Override
     public void preStart() throws Exception {
-        log.info("ResourceClusterScaler Actor started: {}", this.clusterId);
+        super.preStart();
+        log.info("ResourceClusterScaler Actor {} starting", this.clusterId);
         this.fetchRuleSet();
 
         getTimers().startTimerWithFixedDelay(
@@ -171,7 +172,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             "ClusterScalerRuleFetcher-" + this.clusterId,
             new TriggerClusterRuleRefreshRequest(this.clusterId),
             this.ruleSetRefreshThreshold);
-        super.preStart();
     }
 
     private void onGetClusterUsageResponse(GetClusterUsageResponse usageResponse) {
