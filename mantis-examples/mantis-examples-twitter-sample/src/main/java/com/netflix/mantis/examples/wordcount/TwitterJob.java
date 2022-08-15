@@ -51,11 +51,19 @@ public class TwitterJob extends MantisJobProvider<String> {
 
     @Override
     public Job<String> getJobInstance() {
+        final JsonSerializer jsonSerializer = new JsonSerializer();
         return MantisJob
                 .source(new TwitterSource())
                 // Simply echoes the tweet
                 .stage((context, dataO) -> dataO
-                        .map(JsonSerializer::toMap)
+                        .map(event -> {
+                            try {
+                                return jsonSerializer.toMap(event);
+                            } catch (Exception e) {
+                                log.error("Failed to deserialize event {}", event, e);
+                                return null;
+                            }
+                        })
                         // filter out english tweets
                         .filter((eventMap) -> {
                             if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {

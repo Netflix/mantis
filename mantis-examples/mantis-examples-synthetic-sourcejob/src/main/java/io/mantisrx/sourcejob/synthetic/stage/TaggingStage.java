@@ -59,10 +59,11 @@ public class TaggingStage  implements ScalarComputation<String, TaggedData> {
     private AtomicBoolean errorLogged = new AtomicBoolean(false);
     @Override
     public Observable<TaggedData> call(Context context, Observable<String> dataO) {
+        final JsonSerializer jsonSerializer = new JsonSerializer();
         return dataO
                 .map((event) -> {
                     try {
-                        return JsonSerializer.toMap(event);
+                        return jsonSerializer.toMap(event);
                     } catch (Exception e) {
                         log.error(e.getMessage());
                         return null;
