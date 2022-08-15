@@ -16,7 +16,7 @@
 
 package io.mantisrx.sourcejob.synthetic.stage;
 
-import com.mantisrx.common.utils.JsonUtility;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.codec.Codec;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
@@ -62,7 +62,7 @@ public class TaggingStage  implements ScalarComputation<String, TaggedData> {
         return dataO
                 .map((event) -> {
                     try {
-                        return JsonUtility.jsonToMap(event);
+                        return JsonSerializer.toMap(event);
                     } catch (Exception e) {
                         log.error(e.getMessage());
                         return null;

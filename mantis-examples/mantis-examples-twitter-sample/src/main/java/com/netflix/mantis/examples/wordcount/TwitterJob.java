@@ -16,10 +16,10 @@
 
 package com.netflix.mantis.examples.wordcount;
 
-import com.mantisrx.common.utils.JsonUtility;
 import com.netflix.mantis.examples.config.StageConfigs;
 import com.netflix.mantis.examples.core.WordCountPair;
 import com.netflix.mantis.examples.wordcount.sources.TwitterSource;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJob;
 import io.mantisrx.runtime.MantisJobProvider;
@@ -55,7 +55,7 @@ public class TwitterJob extends MantisJobProvider<String> {
                 .source(new TwitterSource())
                 // Simply echoes the tweet
                 .stage((context, dataO) -> dataO
-                        .map(JsonUtility::jsonToMap)
+                        .map(JsonSerializer::toMap)
                         // filter out english tweets
                         .filter((eventMap) -> {
                             if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {

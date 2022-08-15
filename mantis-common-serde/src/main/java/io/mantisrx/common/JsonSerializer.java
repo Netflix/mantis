@@ -22,6 +22,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
+import java.util.Map;
 
 public class JsonSerializer {
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper()
@@ -53,5 +54,10 @@ public class JsonSerializer {
 
     public byte[] toJsonBytes(Object object) throws IOException {
         return defaultObjectMapper.writeValueAsBytes(object);
+    }
+
+    public Map<String, Object> toMap(String json) throws IOException {
+        return defaultObjectMapper.readValue(json, new TypeReference<Map<String, Object>>() {
+        });
     }
 }
