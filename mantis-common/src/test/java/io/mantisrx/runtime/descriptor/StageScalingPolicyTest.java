@@ -22,6 +22,7 @@ import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy.RollingCount;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy.ScalingReason;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy.Strategy;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -70,7 +71,9 @@ public class StageScalingPolicyTest {
             "    },\n" +
             "    \"enabled\": true\n" +
             "}";
-        assertEquals(expected.replaceAll("[\n\\s]+", ""), serializer.toJson(policy));
+        StageScalingPolicy actual =
+            serializer.fromJson(expected.getBytes(StandardCharsets.UTF_8), StageScalingPolicy.class);
+        assertEquals(policy, actual);
     }
 
     @Test
