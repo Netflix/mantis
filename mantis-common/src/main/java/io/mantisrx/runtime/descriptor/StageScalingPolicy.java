@@ -19,12 +19,13 @@ package io.mantisrx.runtime.descriptor;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 
 public class StageScalingPolicy implements Serializable {
@@ -53,28 +54,6 @@ public class StageScalingPolicy implements Serializable {
         this.decrement = Math.max(decrement, 1);
         this.coolDownSecs = coolDownSecs;
         this.strategies = strategies == null ? new HashMap<ScalingReason, Strategy>() : new HashMap<>(strategies);
-    }
-
-    public static void main(String[] args) {
-        Map<ScalingReason, Strategy> smap = new HashMap<>();
-        smap.put(ScalingReason.CPU, new Strategy(ScalingReason.CPU, 0.5, 0.75, null));
-        smap.put(ScalingReason.DataDrop, new Strategy(ScalingReason.DataDrop, 0.0, 2.0, null));
-        StageScalingPolicy policy = new StageScalingPolicy(1, 1, 2, 1, 1, 60, smap);
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            System.out.println(mapper.writeValueAsString(policy));
-            String json1 = "{\"stage\":1,\"min\":1,\"max\":2,\"increment\":1,\"decrement\":1,\"strategies\":{},\"enabled\":false}";
-            StageScalingPolicy sp = mapper.readValue(json1, StageScalingPolicy.class);
-            //System.out.println(mapper.writeValueAsString(sp));
-            String json2 = "{\"stage\":1,\"min\":1,\"max\":5,\"increment\":1,\"decrement\":1,\"coolDownSecs\":600,\"strategies\":{\"CPU\":{\"reason\":\"CPU\",\"scaleDownBelowPct\":50,\"scaleUpAbovePct\":75}},\"enabled\":true}";
-            sp = mapper.readValue(json2, StageScalingPolicy.class);
-            System.out.println(mapper.writeValueAsString(sp));
-            String json3 = "{\"stage\":1,\"min\":1,\"max\":3,\"increment\":1,\"decrement\":1,\"coolDownSecs\":0,\"strategies\":{\"Memory\":{\"reason\":\"Memory\",\"scaleDownBelowPct\":65,\"scaleUpAbovePct\":80,\"rollingCount\":{\"count\":6,\"of\":10}}},\"enabled\":true}";
-            sp = mapper.readValue(json3, StageScalingPolicy.class);
-            //System.out.println(mapper.writeValueAsString(sp));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public int getStage() {
@@ -185,6 +164,9 @@ public class StageScalingPolicy implements Serializable {
         SourceJobDrop
     }
 
+    @Getter
+    @ToString
+    @EqualsAndHashCode
     public static class RollingCount implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -196,24 +178,11 @@ public class StageScalingPolicy implements Serializable {
             this.count = count;
             this.of = of;
         }
-
-        public int getCount() {
-            return count;
-        }
-
-        public int getOf() {
-            return of;
-        }
-
-        @Override
-        public String toString() {
-            return "RollingCount{" +
-                    "count=" + count +
-                    ", of=" + of +
-                    '}';
-        }
     }
 
+    @ToString
+    @Getter
+    @EqualsAndHashCode
     public static class Strategy implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -232,32 +201,6 @@ public class StageScalingPolicy implements Serializable {
             this.scaleDownBelowPct = scaleDownBelowPct;
             this.scaleUpAbovePct = Math.max(scaleDownBelowPct, scaleUpAbovePct);
             this.rollingCount = rollingCount == null ? new RollingCount(1, 1) : rollingCount;
-        }
-
-        public ScalingReason getReason() {
-            return reason;
-        }
-
-        public double getScaleDownBelowPct() {
-            return scaleDownBelowPct;
-        }
-
-        public double getScaleUpAbovePct() {
-            return scaleUpAbovePct;
-        }
-
-        public RollingCount getRollingCount() {
-            return rollingCount;
-        }
-
-        @Override
-        public String toString() {
-            return "Strategy{" +
-                    "reason=" + reason +
-                    ", scaleDownBelowPct=" + scaleDownBelowPct +
-                    ", scaleUpAbovePct=" + scaleUpAbovePct +
-                    ", rollingCount=" + rollingCount +
-                    '}';
         }
     }
 }
