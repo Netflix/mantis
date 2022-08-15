@@ -50,7 +50,7 @@ dependencies {
 //    TODO(sundaram): This can only be added when we can get rid of all ObjectMappers spilled throughout the codebase
 //    as the absence of this change would mean Instant for instance cannot be serialized by the existing ObjectMappers.
 //    @see <a href="https://github.com/Netflix/mantis/issues/194">Github issue describing the ObjectMapper problem</a>
-//    shaded "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+    shaded "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
     shaded "com.fasterxml.jackson.module:jackson-module-afterburner:$jacksonVersion"
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
     shaded libraries.vavrJackson
