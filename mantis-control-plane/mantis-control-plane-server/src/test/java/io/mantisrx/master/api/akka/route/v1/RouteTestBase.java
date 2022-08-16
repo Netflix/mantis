@@ -74,8 +74,18 @@ public abstract class RouteTestBase {
 
     @AfterClass
     public static void tearDownActorSystem() {
-        http.shutdownAllConnectionPools();
-        materializer.shutdown();
+        try {
+            http.shutdownAllConnectionPools();
+        } catch (Exception e) {
+            logger.error("Failed to close http", e);
+        }
+
+        try {
+            materializer.shutdown();
+        } catch (Exception e) {
+            logger.error("Failed to shutdown materializer", e);
+        }
+
         TestKit.shutdownActorSystem(system);
     }
 
