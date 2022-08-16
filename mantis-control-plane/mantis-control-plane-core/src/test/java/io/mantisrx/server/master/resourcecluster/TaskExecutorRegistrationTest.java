@@ -126,4 +126,45 @@ public class TaskExecutorRegistrationTest {
             serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
         assertEquals(registration, deserialized);
     }
+
+    @Test
+    public void testSerialization() throws Exception {
+        String expected = "{\n" +
+            "    \"taskExecutorID\":\n" +
+            "    {\n" +
+            "        \"resourceId\": \"25400d92-96ed-40b9-9843-a6e7e248db52\"\n" +
+            "    },\n" +
+            "    \"clusterID\":\n" +
+            "    {\n" +
+            "        \"resourceID\": \"mantistaskexecutor\"\n" +
+            "    },\n" +
+            "    \"taskExecutorAddress\": \"akka.tcp://flink@100.118.114.30:5050/user/rpc/worker_0\",\n" +
+            "    \"hostname\": \"localhost\",\n" +
+            "    \"workerPorts\":\n" +
+            "    {\n" +
+            "        \"metricsPort\": 5051,\n" +
+            "        \"debugPort\": 5052,\n" +
+            "        \"consolePort\": 5053,\n" +
+            "        \"customPort\": 5054,\n" +
+            "        \"ports\":\n" +
+            "        [\n" +
+            "            5055" +
+            "        ],\n" +
+            "        \"sinkPort\": 5055\n" +
+            "    },\n" +
+            "    \"machineDefinition\":\n" +
+            "    {\n" +
+            "        \"cpuCores\": 4.0,\n" +
+            "        \"memoryMB\": 1.7179869184E10,\n" +
+            "        \"networkMbps\": 128.0,\n" +
+            "        \"diskMB\": 8.8969576448E10,\n" +
+            "        \"numPorts\": 5\n" +
+            "    },\n" +
+            "    \"taskExecutorAttributes\":\n" +
+            "    {}\n" +
+            "}";
+        final TaskExecutorRegistration registration =
+            serializer.fromJSON(expected, TaskExecutorRegistration.class);
+        assertEquals(expected.replaceAll("[\\n\\s]+", ""), serializer.toJson(registration));
+    }
 }
