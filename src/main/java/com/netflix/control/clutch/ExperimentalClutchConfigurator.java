@@ -73,7 +73,7 @@ public class ExperimentalClutchConfigurator implements Observable.Transformer<Ev
     public Observable<ClutchConfiguration> call(Observable<Event> eventObservable) {
         Observable<ClutchConfiguration> configs = timer
                 .map(__ -> getConfig())
-                .doOnNext(config -> log.info("New Config: ", config.toString()));
+                .doOnNext(config -> log.info("New Config: {}", config.toString()));
 
         Observable<ClutchConfiguration> initialConfig = Observable
                 .interval(this.initialConfigMilis, TimeUnit.MILLISECONDS)
