@@ -399,7 +399,17 @@ public class MantisJobStore {
             }
         }
 
-        private IMantisJobMetadata loadArchivedJob(String jobId) throws IOException, InvalidJobException, ExecutionException {
+        private IMantisJobMetadata loadArchivedJob(String jobId) {
+            try
+            {
+                return loadArchivedJobImpl(jobId);
+            } catch (IOException|ExecutionException e) {
+                logger.warn("Failed to load archive job {}, error: {}", jobId, e);
+                return null;
+            }
+        }
+
+        private IMantisJobMetadata loadArchivedJobImpl(String jobId) throws IOException, ExecutionException {
             if (logger.isTraceEnabled()) {logger.trace("Loading archived job {}", jobId);}
             final Optional<IMantisJobMetadata> jobMetadata = storageProvider.loadArchivedJob(jobId);
             if (!jobMetadata.isPresent())
