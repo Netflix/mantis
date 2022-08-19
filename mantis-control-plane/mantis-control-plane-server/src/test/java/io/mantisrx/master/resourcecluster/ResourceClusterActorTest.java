@@ -63,6 +63,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Matchers;
 
 public class ResourceClusterActorTest {
@@ -194,7 +195,9 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testInitializationAfterRestart() throws Exception {
-        when(mantisJobStore.getTaskExecutor(Matchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+            .thenReturn(ImmutableList.of());
+        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
         assertEquals(
             Ack.getInstance(),
             resourceCluster.initializeTaskExecutor(TASK_EXECUTOR_ID, WORKER_ID).get());
