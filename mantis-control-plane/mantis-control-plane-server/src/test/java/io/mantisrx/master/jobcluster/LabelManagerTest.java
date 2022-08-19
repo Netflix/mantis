@@ -23,6 +23,7 @@ import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.command.InvalidJobException;
+import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -152,20 +153,59 @@ public class LabelManagerTest {
 
     }
 
+    @Test
+    public void insertResourceClusterLabel() throws InvalidJobException {
+        List<Label> labels = new ArrayList<>();
+        DeploymentStrategy dS = DeploymentStrategy.builder().resourceClusterId("resc1").build();
+        JobDefinition jobDefinition = generateJobDefinitionBuilder(
+            "insertResourceClusterLabelTest", labels, "art.zip", "1.0", dS)
+            .build();
+        assertEquals(1, jobDefinition.getLabels().size());
+        Label label = jobDefinition.getLabels().get(0);
+        assertEquals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, label.getName());
+        assertEquals("resc1", label.getValue());
+
+        DeploymentStrategy dS2 = DeploymentStrategy.builder().build();
+        jobDefinition = generateJobDefinitionBuilder(
+            "insertResourceClusterLabelTest", labels, "art.zip", "1.0", dS2)
+            .build();
+        assertEquals(0, jobDefinition.getLabels().size());
+
+        jobDefinition = generateJobDefinitionBuilder(
+            "insertResourceClusterLabelTest", labels, "art.zip", "1.0", null)
+            .build();
+        assertEquals(0, jobDefinition.getLabels().size());
+
+        // test override
+        List<Label> labels2 = Lists.newArrayList(new Label(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, "wrongCluster"));
+        jobDefinition = generateJobDefinitionBuilder(
+            "insertResourceClusterLabelTest", labels2, "art.zip", "1.0", dS)
+            .build();
+        assertEquals(1, jobDefinition.getLabels().size());
+        label = jobDefinition.getLabels().get(0);
+        assertEquals(MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label, label.getName());
+        assertEquals("resc1", label.getValue());
+    }
+
+    JobDefinition.Builder generateJobDefinitionBuilder(
+        String name, List<Label> labelList, String artifactName, String version, DeploymentStrategy deploymentStrategy) {
+        return new JobDefinition.Builder()
+            .withName(name)
+            .withParameters(Lists.newArrayList())
+            .withLabels(labelList)
+            .withSchedulingInfo(JobClusterTest.SINGLE_WORKER_SCHED_INFO)
+            .withArtifactName(artifactName)
+            .withVersion(version)
+            .withSubscriptionTimeoutSecs(1)
+            .withUser("njoshi")
+            .withJobSla(new JobSla(0, 0,
+                JobSla.StreamSLAType.Lossy, MantisJobDurationType.Transient, "userType"))
+            .withDeploymentStrategy(deploymentStrategy);
+    }
+
     JobDefinition generateJobDefinition(String name, List<Label> labelList, String artifactName, String version)
             throws InvalidJobException {
-        return new JobDefinition.Builder()
-                .withName(name)
-                .withParameters(Lists.newArrayList())
-                .withLabels(labelList)
-                .withSchedulingInfo(JobClusterTest.SINGLE_WORKER_SCHED_INFO)
-                .withArtifactName(artifactName)
-                .withVersion(version)
-                .withSubscriptionTimeoutSecs(1)
-                .withUser("njoshi")
-                .withJobSla(new JobSla(0, 0,
-                        JobSla.StreamSLAType.Lossy, MantisJobDurationType.Transient, "userType"))
-
+        return generateJobDefinitionBuilder(name, labelList, artifactName, version, null)
                 .build();
     }
 
