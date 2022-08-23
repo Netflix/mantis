@@ -16,11 +16,16 @@
 
 package io.mantisrx.runtime.descriptor;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import io.mantisrx.common.JsonSerializer;
 import org.junit.Test;
 
 public class DeploymentStrategyTest {
+    private final JsonSerializer serializer = new JsonSerializer();
+
     @Test
     public void shouldRequireInheritInstanceCheck() {
         DeploymentStrategy res = DeploymentStrategy.builder()
@@ -63,5 +68,34 @@ public class DeploymentStrategyTest {
         assertFalse(res.requireInheritInstanceCheck(1));
         assertFalse(res.requireInheritInstanceCheck(2));
         assertFalse(res.requireInheritInstanceCheck());
+    }
+
+    @Test
+    public void testSerialization() throws Exception {
+        String expected = "{"
+            + "\"stageDeploymentStrategyMap\":"
+            + "{"
+                + "\"1\":{\"inheritInstanceCount\":false},"
+                + "\"2\":{\"inheritInstanceCount\":true},"
+                + "\"3\":{\"inheritInstanceCount\":true}},"
+            + "\"resourceClusterId\":\"rescluster1\""
+            + "}";
+
+        final DeploymentStrategy ds = serializer.fromJSON(expected, DeploymentStrategy.class);
+        assertEquals(expected.replaceAll("[\\n\\s]+", ""), serializer.toJson(ds));
+    }
+
+    @Test
+    public void testSerializationBackCompat() throws Exception {
+        String expected = "{"
+            + "\"stageDeploymentStrategyMap\":"
+            + "{"
+            + "\"1\":{\"inheritInstanceCount\":false},"
+            + "\"2\":{\"inheritInstanceCount\":true},"
+            + "\"3\":{\"inheritInstanceCount\":true}}"
+            + "}";
+
+        final DeploymentStrategy ds = serializer.fromJSON(expected, DeploymentStrategy.class);
+        assertEquals(expected.replaceAll("[\\n\\s]+", ""), serializer.toJson(ds));
     }
 }

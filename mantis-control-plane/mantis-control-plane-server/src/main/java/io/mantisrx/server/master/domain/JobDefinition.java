@@ -19,6 +19,7 @@ package io.mantisrx.server.master.domain;
 import static io.mantisrx.master.jobcluster.LabelManager.SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL;
 
 import io.mantisrx.common.Label;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -32,8 +33,17 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
-import java.util.*;
+import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.ToString;
 
 @ToString
@@ -50,7 +60,7 @@ public class JobDefinition {
     private final SchedulingInfo schedulingInfo;
     private final DeploymentStrategy deploymentStrategy;
     private final int withNumberOfStages;
-    private List<Label> labels;
+    private Map<String, Label> labels; // Map label->name to label instance.
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -77,9 +87,9 @@ public class JobDefinition {
         }
 
         if (labels != null) {
-            this.labels = labels;
+            this.labels = labels.stream().collect(Collectors.toMap(Label::getName, Function.identity()));
         } else {
-            this.labels = new LinkedList<>();
+            this.labels = new HashMap<>();
         }
         this.jobSla = jobSla;
         if (subscriptionTimeoutSecs > 0) {
@@ -90,8 +100,8 @@ public class JobDefinition {
         this.schedulingInfo = schedulingInfo;
         this.deploymentStrategy = deploymentStrategy;
         this.withNumberOfStages = withNumberOfStages;
+        postProcess();
         validate(true);
-
     }
 
     @Override
@@ -139,6 +149,16 @@ public class JobDefinition {
 
     public void validateSchedulingInfo() throws InvalidJobException {
         validateSchedulingInfo(false);
+    }
+
+    private void postProcess() {
+        if (this.deploymentStrategy != null && !Strings.isNullOrEmpty(this.deploymentStrategy.getResourceClusterId())) {
+            this.labels.put(
+                SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
+                new Label(
+                    SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
+                    this.deploymentStrategy.getResourceClusterId()));
+        }
     }
 
     private void validateSchedulingInfo(boolean schedulingInfoOptional) throws InvalidJobException {
@@ -210,7 +230,7 @@ public class JobDefinition {
     //        this.schedulingInfo = schedulingInfo;
     //    }
     public List<Label> getLabels() {
-        return Collections.unmodifiableList(this.labels);
+        return ImmutableList.copyOf(this.labels.values());
     }
 
     public int getNumberOfStages() {

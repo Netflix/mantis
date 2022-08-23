@@ -16,10 +16,13 @@
 
 package io.mantisrx.runtime.descriptor;
 
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonInclude;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Singular;
 import lombok.ToString;
 
@@ -27,23 +30,36 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class DeploymentStrategy {
-    @Singular(ignoreNullCollections = true) private Map<Integer, StageDeploymentStrategy> stages;
+    @Singular(ignoreNullCollections = true, value = "stage")
+    @Getter
+    private final Map<Integer, StageDeploymentStrategy> stageDeploymentStrategyMap;
+
+    /**
+     * If this field is not empty, it's used to indicate this is a resource cluster stack deployment and will be hosted
+     * on the given resource cluster.
+     */
+    @Getter
+    @JsonInclude(Include.NON_NULL)
+    private final String resourceClusterId;
 
     public DeploymentStrategy(
-            @JsonProperty("stageDeploymentStrategyMap") Map<Integer, StageDeploymentStrategy> stages) {
-        this.stages = stages;
+        @JsonProperty("stageDeploymentStrategyMap") Map<Integer, StageDeploymentStrategy> stageDeploymentStrategyMap,
+        @JsonProperty("resourceClusterId") String resourceClusterId) {
+        this.stageDeploymentStrategyMap = stageDeploymentStrategyMap;
+        this.resourceClusterId = resourceClusterId;
     }
 
     public StageDeploymentStrategy forStage(int stageNum) {
-        if (!this.stages.containsKey(stageNum)) { return null; }
-        return stages.get(stageNum);
+        if (!this.stageDeploymentStrategyMap.containsKey(stageNum)) { return null; }
+        return stageDeploymentStrategyMap.get(stageNum);
     }
 
     public boolean requireInheritInstanceCheck() {
-        return this.stages != null && this.stages.values().stream().anyMatch(StageDeploymentStrategy::isInheritInstanceCount);
+        return this.stageDeploymentStrategyMap != null && this.stageDeploymentStrategyMap.values().stream().anyMatch(StageDeploymentStrategy::isInheritInstanceCount);
     }
 
     public boolean requireInheritInstanceCheck(int stageNum) {
-        return this.stages != null && this.stages.containsKey(stageNum) && this.stages.get(stageNum).isInheritInstanceCount();
+        return this.stageDeploymentStrategyMap
+            != null && this.stageDeploymentStrategyMap.containsKey(stageNum) && this.stageDeploymentStrategyMap.get(stageNum).isInheritInstanceCount();
     }
 }
