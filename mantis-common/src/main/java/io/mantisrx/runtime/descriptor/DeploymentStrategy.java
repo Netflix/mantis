@@ -36,7 +36,7 @@ public class DeploymentStrategy {
 
     /**
      * If this field is not empty, it's used to indicate this is a resource cluster stack deployment and will be hosted
-     * to the given resource cluster Id.
+     * on the given resource cluster.
      */
     @Getter
     @JsonInclude(Include.NON_NULL)
