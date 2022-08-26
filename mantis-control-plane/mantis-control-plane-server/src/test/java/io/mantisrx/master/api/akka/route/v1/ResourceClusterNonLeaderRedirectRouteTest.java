@@ -62,16 +62,19 @@ import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorag
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.junit.BeforeClass;
@@ -139,6 +142,37 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         testRouteWithNoopAdapter.run(HttpRequest.GET("/api/v1/resourceClusters/myCluster/taskExecutors/myExecutor/getTaskExecutorState"))
             .assertStatusCode(200)
             .assertEntityAs(Jackson.unmarshaller(TaskExecutorStatus.class), status);
+    }
+
+    @Test
+    public void testGetActiveJobOverview() {
+        PagedActiveJobOverview overview1 = new PagedActiveJobOverview(ImmutableList.of(), 0);
+        PagedActiveJobOverview overview2 = new PagedActiveJobOverview(ImmutableList.of("test"), 1);
+        PagedActiveJobOverview overview3 = new PagedActiveJobOverview(ImmutableList.of("test"), 99);
+
+        ResourceCluster resourceCluster = mock(ResourceCluster.class);
+        when(resourceCluster.getActiveJobOverview(Optional.empty(), Optional.empty()))
+            .thenReturn(CompletableFuture.completedFuture(overview1));
+        when(resourceCluster.getActiveJobOverview(Optional.of(0), Optional.of(9)))
+            .thenReturn(CompletableFuture.completedFuture(overview2));
+        when(resourceCluster.getActiveJobOverview(Optional.empty(), Optional.of(99)))
+            .thenReturn(CompletableFuture.completedFuture(overview3));
+        when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
+
+        testRouteWithNoopAdapter.run(HttpRequest.GET(
+                "/api/v1/resourceClusters/myCluster/activeJobOverview"))
+            .assertStatusCode(200)
+            .assertEntityAs(Jackson.unmarshaller(PagedActiveJobOverview.class), overview1);
+
+        testRouteWithNoopAdapter.run(HttpRequest.GET(
+            "/api/v1/resourceClusters/myCluster/activeJobOverview?startingIndex=0&pageSize=9"))
+            .assertStatusCode(200)
+            .assertEntityAs(Jackson.unmarshaller(PagedActiveJobOverview.class), overview2);
+
+        testRouteWithNoopAdapter.run(HttpRequest.GET(
+                "/api/v1/resourceClusters/myCluster/activeJobOverview?pageSize=99"))
+            .assertStatusCode(200)
+            .assertEntityAs(Jackson.unmarshaller(PagedActiveJobOverview.class), overview3);
     }
 
     @Test

@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
@@ -35,6 +36,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClus
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -45,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements ResourceCluster {
@@ -195,6 +198,23 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
             Patterns
                 .ask(resourceClusterManagerActor, msg, askTimeout)
                 .thenApply(Ack.class::cast)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<PagedActiveJobOverview> getActiveJobOverview(
+        Optional<Integer> startingIndex,
+        Optional<Integer> maxSize) {
+        final GetActiveJobsRequest msg = GetActiveJobsRequest.builder()
+            .clusterID(clusterID)
+            .startingIndex(startingIndex)
+            .pageSize(maxSize)
+            .build();
+
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, msg, askTimeout)
+                .thenApply(PagedActiveJobOverview.class::cast)
                 .toCompletableFuture();
     }
 
