@@ -58,11 +58,11 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -404,8 +404,8 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testGetMultipleActiveJobs() throws ExecutionException, InterruptedException {
-        final int n = 11;
-        Set<String> expectedJobIdList = new HashSet<>(n);
+        final int n = 10;
+        List<String> expectedJobIdList = new ArrayList<>(n);
         for (int i = 0; i < n * 2; i ++) {
             int idx = (i % n);
             TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutorId" + i);
@@ -434,7 +434,10 @@ public class ResourceClusterActorTest {
 
             WorkerId workerId =
                 WorkerId.fromIdUnsafe(String.format("late-sine-function-tutorial-%d-worker-%d-1", idx, i));
-            expectedJobIdList.add(String.format("late-sine-function-tutorial-%d", idx));
+            if (i < n) {
+                expectedJobIdList.add(String.format("late-sine-function-tutorial-%d", idx));
+            }
+
             assertEquals(
                 taskExecutorID,
                 resourceCluster.getTaskExecutorFor(
@@ -449,10 +452,10 @@ public class ResourceClusterActorTest {
             probe.getRef());
         PagedActiveJobOverview jobsList = probe.expectMsgClass(PagedActiveJobOverview.class);
         assertEquals(n, jobsList.getActiveJobs().size());
-        assertEquals(expectedJobIdList, new HashSet<>(jobsList.getActiveJobs()));
+        assertEquals(expectedJobIdList, jobsList.getActiveJobs());
         assertEquals(n, jobsList.getEndPosition());
 
-        Set<String> resJobsSet = new HashSet<>();
+        List<String> resJobsList = new ArrayList<>();
         int start = 0;
 
         do {
@@ -464,11 +467,11 @@ public class ResourceClusterActorTest {
                     .build(),
                 probe.getRef());
             jobsList = probe.expectMsgClass(PagedActiveJobOverview.class);
-            resJobsSet.addAll(jobsList.getActiveJobs());
+            resJobsList.addAll(jobsList.getActiveJobs());
             assertTrue(jobsList.getActiveJobs().size() <= 5);
             start = jobsList.getEndPosition();
         } while (jobsList.getActiveJobs().size() > 0);
-        assertEquals(expectedJobIdList, resJobsSet);
+        assertEquals(expectedJobIdList, resJobsList);
     }
 
     @Test

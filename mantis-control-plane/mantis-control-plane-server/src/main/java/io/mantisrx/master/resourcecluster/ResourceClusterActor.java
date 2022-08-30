@@ -289,6 +289,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             .filter(Objects::nonNull)
             .map(WorkerId::getJobId)
             .distinct()
+            .sorted((String::compareToIgnoreCase))
             .skip(req.getStartingIndex().orElse(0))
             .limit(req.getPageSize().orElse(3000))
             .collect(Collectors.toList());
@@ -686,6 +687,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     @Value
     @Builder
+    @AllArgsConstructor // needed for build to work with custom ctor.
     static class GetActiveJobsRequest {
         ClusterID clusterID;
         Optional<Integer> startingIndex;
@@ -695,12 +697,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             this.clusterID = clusterID;
             this.pageSize = Optional.empty();
             this.startingIndex = Optional.empty();
-        }
-
-        public GetActiveJobsRequest(ClusterID clusterID, Optional<Integer> startingIndex, Optional<Integer> pageSize) {
-            this.clusterID = clusterID;
-            this.pageSize = pageSize;
-            this.startingIndex = startingIndex;
         }
     }
 
