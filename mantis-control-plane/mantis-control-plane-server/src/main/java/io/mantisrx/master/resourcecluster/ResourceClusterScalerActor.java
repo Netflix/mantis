@@ -259,9 +259,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private void onTriggerClusterRuleRefreshRequest(TriggerClusterRuleRefreshRequest req) {
         log.info("{}: Requesting cluster rule refresh", this.clusterId);
         this.fetchRuleSet();
-
-        // when calling from API there is no need to wait.
-        getSender().tell(Ack.getInstance(), self());
     }
 
     private void fetchRuleSet() {
