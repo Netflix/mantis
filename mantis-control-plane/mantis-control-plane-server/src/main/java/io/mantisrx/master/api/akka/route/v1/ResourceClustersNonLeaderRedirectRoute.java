@@ -47,11 +47,13 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
@@ -171,6 +173,14 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     PathMatchers.segment().slash("getResourceOverview"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() -> getResourceOverview(getClusterID(clusterName)))))
                 ),
+                // /{}/activeJobOverview?pageSize={}&startingIndex={}
+                path(
+                    PathMatchers.segment().slash("activeJobOverview"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(get(() ->
+                        parameterOptional("startingIndex", startingIndex ->
+                            parameterOptional("pageSize", pageSize ->
+                                getActiveJobOverview(getClusterID(clusterName), startingIndex, pageSize))))))
+                ),
                 // /{}/getRegisteredTaskExecutors
                 path(
                     PathMatchers.segment().slash("getRegisteredTaskExecutors"),
@@ -228,6 +238,14 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private Route listClusters() {
         return withFuture(gateway.listActiveClusters());
+    }
+
+    private Route getActiveJobOverview(ClusterID clusterID, Optional<String> startingIndex, Optional<String> pageSize) {
+        CompletableFuture<PagedActiveJobOverview> jobsOverview =
+            gateway.getClusterFor(clusterID).getActiveJobOverview(
+                startingIndex.map(Integer::parseInt),
+                pageSize.map(Integer::parseInt));
+        return withFuture(jobsOverview);
     }
 
     private Route getResourceOverview(ClusterID clusterID) {

@@ -33,6 +33,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
+import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
@@ -57,6 +58,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -65,6 +67,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -147,6 +150,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
                 .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isDisabled), self()))
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
+                .match(GetActiveJobsRequest.class, this::getActiveJobs)
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
                 .match(GetClusterUsageRequest.class, req -> sender().tell(getClusterUsage(req), self()))
                 .match(GetClusterIdleInstancesRequest.class,
@@ -275,6 +279,29 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     .filter(predicate)
                     .map(Entry::getKey)
                     .collect(Collectors.toList()));
+    }
+
+    private void getActiveJobs(GetActiveJobsRequest req) {
+        List<String> pagedList = this.taskExecutorStateMap
+            .values()
+            .stream()
+            .map(TaskExecutorState::getWorkerId)
+            .filter(Objects::nonNull)
+            .map(WorkerId::getJobId)
+            .distinct()
+            .sorted((String::compareToIgnoreCase))
+            .skip(req.getStartingIndex().orElse(0))
+            .limit(req.getPageSize().orElse(3000))
+            .collect(Collectors.toList());
+
+        PagedActiveJobOverview res =
+            new PagedActiveJobOverview(
+                pagedList,
+                req.getStartingIndex().orElse(0) + pagedList.size()
+            );
+
+        log.info("Returning getActiveJobs res starting at {}: {}", req.getStartingIndex(), res.getActiveJobs().size());
+        sender().tell(res, self());
     }
 
     private void onTaskExecutorInfoRequest(TaskExecutorInfoRequest request) {
@@ -656,6 +683,21 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class GetRegisteredTaskExecutorsRequest {
         ClusterID clusterID;
+    }
+
+    @Value
+    @Builder
+    @AllArgsConstructor // needed for build to work with custom ctor.
+    static class GetActiveJobsRequest {
+        ClusterID clusterID;
+        Optional<Integer> startingIndex;
+        Optional<Integer> pageSize;
+
+        public GetActiveJobsRequest(ClusterID clusterID) {
+            this.clusterID = clusterID;
+            this.pageSize = Optional.empty();
+            this.startingIndex = Optional.empty();
+        }
     }
 
     @Value

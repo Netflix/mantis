@@ -23,6 +23,7 @@ import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.Value;
@@ -94,6 +95,16 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @return a future that completes when the underlying operation is registered by the system
      */
     CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
+
+    /**
+     * Get a paged result of all active jobs associated with this resource cluster.
+     * @param startingIndex Starting index for the paged list of all the active jobs.
+     * @param pageSize Max size of returned paged list.
+     * @return PagedActiveJobOverview instance.
+     */
+    CompletableFuture<PagedActiveJobOverview> getActiveJobOverview(
+        Optional<Integer> startingIndex,
+        Optional<Integer> pageSize);
 
     /**
      * Gets the task executors to worker mapping for the given resource cluster

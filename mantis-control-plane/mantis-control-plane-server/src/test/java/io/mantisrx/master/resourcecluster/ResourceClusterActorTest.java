@@ -29,6 +29,7 @@ import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
@@ -40,6 +41,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
+import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
@@ -56,8 +58,12 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -222,7 +228,7 @@ public class ResourceClusterActorTest {
     }
 
     @Test
-    public void testGetTaskExecutorsUsage() throws Exception {
+    public void testGetTaskExecutorsUsageAndList() throws Exception {
         assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).get());
         assertEquals(Ack.getInstance(),
             resourceCluster
@@ -274,6 +280,14 @@ public class ResourceClusterActorTest {
                 .findFirst().get();
         assertEquals(2, usage2.getIdleCount());
         assertEquals(2, usage2.getTotalCount());
+
+        // test get empty job list
+        resourceClusterActor.tell(new GetActiveJobsRequest(
+                CLUSTER_ID),
+            probe.getRef());
+        PagedActiveJobOverview jobsList = probe.expectMsgClass(PagedActiveJobOverview.class);
+        assertEquals(0, jobsList.getActiveJobs().size());
+        assertEquals(0, jobsList.getEndPosition());
 
         // test get idle list
         resourceClusterActor.tell(
@@ -337,6 +351,15 @@ public class ResourceClusterActorTest {
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
 
+        // test get non-empty job list
+        resourceClusterActor.tell(new GetActiveJobsRequest(
+                CLUSTER_ID),
+            probe.getRef());
+        jobsList = probe.expectMsgClass(PagedActiveJobOverview.class);
+        assertEquals(1, jobsList.getActiveJobs().size());
+        assertTrue(jobsList.getActiveJobs().contains(WORKER_ID.getJobId()));
+        assertEquals(1, jobsList.getEndPosition());
+
         // test get idle list
         resourceClusterActor.tell(
             GetClusterIdleInstancesRequest.builder()
@@ -377,6 +400,78 @@ public class ResourceClusterActorTest {
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+    }
+
+    @Test
+    public void testGetMultipleActiveJobs() throws ExecutionException, InterruptedException {
+        final int n = 10;
+        List<String> expectedJobIdList = new ArrayList<>(n);
+        for (int i = 0; i < n * 2; i ++) {
+            int idx = (i % n);
+            TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutorId" + i);
+            assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(
+                TaskExecutorRegistration.builder()
+                    .taskExecutorID(taskExecutorID)
+                    .clusterID(CLUSTER_ID)
+                    .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                    .hostname(HOST_NAME + i)
+                    .workerPorts(WORKER_PORTS)
+                    .machineDefinition(MACHINE_DEFINITION)
+                    .taskExecutorAttributes(
+                        ImmutableMap.of(
+                            WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1.getResourceID(),
+                            "attr1", "attr1"))
+                    .build()
+            ).get());
+
+            assertEquals(Ack.getInstance(),
+                resourceCluster
+                    .heartBeatFromTaskExecutor(
+                        new TaskExecutorHeartbeat(
+                            taskExecutorID,
+                            CLUSTER_ID,
+                            TaskExecutorReport.available())).get());
+
+            WorkerId workerId =
+                WorkerId.fromIdUnsafe(String.format("late-sine-function-tutorial-%d-worker-%d-1", idx, i));
+            if (i < n) {
+                expectedJobIdList.add(String.format("late-sine-function-tutorial-%d", idx));
+            }
+
+            assertEquals(
+                taskExecutorID,
+                resourceCluster.getTaskExecutorFor(
+                    MACHINE_DEFINITION,
+                    workerId)
+                    .get());
+        }
+
+        TestKit probe = new TestKit(actorSystem);
+        resourceClusterActor.tell(new GetActiveJobsRequest(
+                CLUSTER_ID),
+            probe.getRef());
+        PagedActiveJobOverview jobsList = probe.expectMsgClass(PagedActiveJobOverview.class);
+        assertEquals(n, jobsList.getActiveJobs().size());
+        assertEquals(expectedJobIdList, jobsList.getActiveJobs());
+        assertEquals(n, jobsList.getEndPosition());
+
+        List<String> resJobsList = new ArrayList<>();
+        int start = 0;
+
+        do {
+            resourceClusterActor.tell(
+                GetActiveJobsRequest.builder()
+                    .clusterID(CLUSTER_ID)
+                    .startingIndex(Optional.of(start))
+                    .pageSize(Optional.of(5))
+                    .build(),
+                probe.getRef());
+            jobsList = probe.expectMsgClass(PagedActiveJobOverview.class);
+            resJobsList.addAll(jobsList.getActiveJobs());
+            assertTrue(jobsList.getActiveJobs().size() <= 5);
+            start = jobsList.getEndPosition();
+        } while (jobsList.getActiveJobs().size() > 0);
+        assertEquals(expectedJobIdList, resJobsList);
     }
 
     @Test
