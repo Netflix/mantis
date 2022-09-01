@@ -47,7 +47,6 @@ import io.mantisrx.master.events.WorkerRegistryV2;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProviderAdapter;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
@@ -162,13 +161,10 @@ public class MasterMain implements Service {
             // Beginning of new stuff
             Configuration configuration = loadConfiguration();
 
-            ResourceClusterStorageProviderAdapter resourceClusterStorageProvider =
-                new ResourceClusterStorageProviderAdapter(this.config.getResourceClusterStorageProvider(), system);
-
             final ActorRef resourceClustersHostActor = system.actorOf(
                 ResourceClustersHostManagerActor.props(
                     new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
-                    resourceClusterStorageProvider),
+                    config.getResourceClusterStorageProvider()),
                 "ResourceClusterHostActor");
 
             final RpcSystem rpcSystem =
@@ -185,7 +181,7 @@ public class MasterMain implements Service {
                     mantisJobStore,
                     jobMessageRouter,
                     resourceClustersHostActor,
-                    resourceClusterStorageProvider);
+                    config.getResourceClusterStorageProvider());
 
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;

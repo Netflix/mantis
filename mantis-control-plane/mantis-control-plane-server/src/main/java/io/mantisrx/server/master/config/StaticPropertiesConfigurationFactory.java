@@ -17,10 +17,7 @@
 package io.mantisrx.server.master.config;
 
 import io.mantisrx.server.core.MetricsCoercer;
-import io.mantisrx.server.master.store.MantisStorageProvider;
 import java.util.Properties;
-import org.skife.config.Coercer;
-import org.skife.config.Coercible;
 import org.skife.config.ConfigurationObjectFactory;
 
 
@@ -32,31 +29,26 @@ public class StaticPropertiesConfigurationFactory implements ConfigurationFactor
     public StaticPropertiesConfigurationFactory(Properties props) {
         delegate = new ConfigurationObjectFactory(props);
         delegate.addCoercible(new MetricsCoercer(props));
-        //      delegate.addCoercible(new MantisPropertiesCoercer(props));
-        delegate.addCoercible(new Coercible<MantisStorageProvider>() {
-
-            @Override
-            public Coercer<MantisStorageProvider> accept(Class<?> clazz) {
-                if (MantisStorageProvider.class.isAssignableFrom(clazz)) {
-                    return new Coercer<MantisStorageProvider>() {
-                        @Override
-                        public MantisStorageProvider coerce(String className) {
-                            try {
-                                return (MantisStorageProvider) Class.forName(className).newInstance();
-                            } catch (Exception e) {
-                                throw new IllegalArgumentException(
-                                        String.format(
-                                                "The value %s is not a valid class name for %s implementation. ",
-                                                className,
-                                                MantisStorageProvider.class.getName()
-                                        ));
-                            }
+        delegate.addCoercible(clazz -> {
+            return className -> {
+                try {
+                    if (clazz.isAssignableFrom(Class.forName(className))) {
+                        try {
+                            return Class.forName(className).newInstance();
+                        } catch (Exception e) {
+                            throw new IllegalArgumentException(
+                                String.format(
+                                    "The value %s is not a valid class name for %s implementation. ",
+                                    className,
+                                    clazz.getName()));
                         }
-                    };
+                    } else {
+                        return null;
+                    }
+                } catch (ClassNotFoundException e) {
+                    return null;
                 }
-
-                return null;
-            }
+            };
         });
 
         config = delegate.build(MasterConfiguration.class);
