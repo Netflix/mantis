@@ -58,7 +58,6 @@ import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterRe
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProviderAdapter;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -92,7 +91,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private final ActorRef resourceClustersHostManagerActorWithNoopAdapter = system.actorOf(
         ResourceClustersHostManagerActor.props(
             new ResourceClusterProviderAdapter(ConfigurationProvider.getConfig().getResourceClusterProvider(), system),
-            new ResourceClusterStorageProviderAdapter(ConfigurationProvider.getConfig().getResourceClusterStorageProvider(), system)),
+            ConfigurationProvider.getConfig().getResourceClusterStorageProvider()),
         "jobClustersManagerNoop");
 
     private final ActorRef resourceClustersHostManagerActorWithTestAdapter = system.actorOf(

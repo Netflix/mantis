@@ -25,13 +25,15 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 
 /**
  * [Test only] Store resource storage data in memory only for testing.
  */
+@RequiredArgsConstructor
 public class InMemoryOnlyResourceClusterStorageProvider implements ResourceClusterStorageProvider {
-    Map<ClusterID, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
-    Map<ClusterID, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
+    private final Map<ClusterID, ResourceClusterSpecWritable> clusters = new ConcurrentHashMap<>();
+    private final Map<ClusterID, ResourceClusterScaleRulesWritable> clusterRules = new ConcurrentHashMap<>();
 
     @Override
     public CompletionStage<ResourceClusterSpecWritable> registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) {

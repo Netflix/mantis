@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.config;
 
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.MantisStorageProvider;
 import java.time.Duration;
@@ -48,7 +49,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     MantisStorageProvider getStorageProvider();
 
     @Config("mantis.master.resourceClusterStorageProvider")
-    String getResourceClusterStorageProvider();
+    ResourceClusterStorageProvider getResourceClusterStorageProvider();
 
     @Config("mantis.master.resourceClusterProvider")
     String getResourceClusterProvider();
