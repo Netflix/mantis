@@ -20,9 +20,12 @@ import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonInclude;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Singular;
 
@@ -38,6 +41,12 @@ public class StageSchedulingInfo implements Serializable {
     private final StageScalingPolicy scalingPolicy;
     private final boolean scalable;
 
+    /**
+     * Nullable field to store container attributes like sku ID assigned to this stage.
+     */
+    @JsonInclude(Include.NON_NULL)
+    private final Map<String, String> containerAttributes;
+
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public StageSchedulingInfo(@JsonProperty("numberOfInstances") int numberOfInstances,
@@ -45,7 +54,8 @@ public class StageSchedulingInfo implements Serializable {
                                @JsonProperty("hardConstraints") List<JobConstraints> hardConstraints,
                                @JsonProperty("softConstraints") List<JobConstraints> softConstraints,
                                @JsonProperty("scalingPolicy") StageScalingPolicy scalingPolicy,
-                               @JsonProperty("scalable") boolean scalable) {
+                               @JsonProperty("scalable") boolean scalable,
+                               @JsonProperty("containerAttributes") Map<String, String> containerAttributes) {
         this.numberOfInstances = numberOfInstances;
         this.machineDefinition = machineDefinition;
         this.hardConstraints = hardConstraints;
@@ -53,6 +63,7 @@ public class StageSchedulingInfo implements Serializable {
         this.scalingPolicy = scalingPolicy;
 
         this.scalable = scalable;
+        this.containerAttributes = containerAttributes;
     }
 
     public int getNumberOfInstances() {
@@ -79,6 +90,10 @@ public class StageSchedulingInfo implements Serializable {
         return scalable;
     }
 
+    public Map<String, String> getContainerAttributes() {
+        return this.containerAttributes;
+    }
+
     @Override
     public String toString() {
         return "StageSchedulingInfo{" +
@@ -88,6 +103,7 @@ public class StageSchedulingInfo implements Serializable {
                 ", softConstraints=" + softConstraints +
                 ", scalingPolicy=" + scalingPolicy +
                 ", scalable=" + scalable +
+                ", containerAttributes=" + containerAttributes +
                 '}';
     }
 
@@ -101,6 +117,7 @@ public class StageSchedulingInfo implements Serializable {
         result = prime * result + (scalable ? 1231 : 1237);
         result = prime * result + ((scalingPolicy == null) ? 0 : scalingPolicy.hashCode());
         result = prime * result + ((softConstraints == null) ? 0 : softConstraints.hashCode());
+        result = prime * result + ((containerAttributes == null) ? 0 : containerAttributes.hashCode());
         return result;
     }
 
@@ -136,6 +153,11 @@ public class StageSchedulingInfo implements Serializable {
             if (other.softConstraints != null)
                 return false;
         } else if (!softConstraints.equals(other.softConstraints))
+            return false;
+        if (containerAttributes == null) {
+            if (other.containerAttributes != null)
+                return false;
+        } else if (!containerAttributes.equals(other.containerAttributes))
             return false;
         return true;
     }

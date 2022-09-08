@@ -140,8 +140,8 @@ public class SimpleFileResourceStorageProviderTests {
                                 .minSize(1)
                                 .build())
                         .cpuCoreCount(5)
-                        .memorySizeInBytes(16384)
-                        .diskSizeInBytes(81920)
+                        .memorySizeInMB(16384)
+                        .diskSizeInMB(81920)
                         .networkMbps(700)
                         .imageId("mantistaskexecutor:main.latest")
                         .skuMetadataField(
@@ -183,7 +183,7 @@ public class SimpleFileResourceStorageProviderTests {
                     + "\"capacity\":{\"skuId\":{\"resourceID\":\"small\"}," +
                         "\"minSize\":1,\"maxSize\":3,\"desireSize\":2},\"imageId\":\"mantistaskexecutor:main"
                         + ".latest\"," +
-                        "\"cpuCoreCount\":5,\"memorySizeInBytes\":16384,\"networkMbps\":700,\"diskSizeInBytes\":81920," +
+                        "\"cpuCoreCount\":5,\"memorySizeInMB\":16384,\"networkMbps\":700,\"diskSizeInMB\":81920," +
                         "\"skuMetadataFields\":{\"skuKey\":\"us-east-1\","
                         + "\"sgKey\":\"sg-1," +
                         " sg-2, sg-3, sg-4\"}}],\"clusterMetadataFields\":{}}}",
@@ -206,8 +206,8 @@ public class SimpleFileResourceStorageProviderTests {
                                 .minSize(1)
                                 .build())
                         .cpuCoreCount(19)
-                        .memorySizeInBytes(54321)
-                        .diskSizeInBytes(998877)
+                        .memorySizeInMB(54321)
+                        .diskSizeInMB(998877)
                         .networkMbps(3300)
                         .imageId("dev/mantistaskexecutor:main.2")
                         .skuMetadataField(
@@ -244,8 +244,8 @@ public class SimpleFileResourceStorageProviderTests {
                     + "\"skuSpecs\":[{\"skuId\":{\"resourceID\":\"large\"},"
                         + "\"capacity\":{\"skuId\":{\"resourceID\":\"large\"},\"minSize\":1,\"maxSize\":4,"
                     + "\"desireSize\":3},\"imageId\""
-                        + ":\"dev/mantistaskexecutor:main.2\",\"cpuCoreCount\":19,\"memorySizeInBytes\":54321,"
-                        + "\"networkMbps\":3300,\"diskSizeInBytes\":998877,\"skuMetadataFields\":"
+                        + ":\"dev/mantistaskexecutor:main.2\",\"cpuCoreCount\":19,\"memorySizeInMB\":54321,"
+                        + "\"networkMbps\":3300,\"diskSizeInMB\":998877,\"skuMetadataFields\":"
                         + "{\"skuKey\":\"us-east-1\",\"sgKey\":\"sg-1, sg-2, sg-3, sg-4\"}}],"
                         + "\"clusterMetadataFields\":{}}}",
                 Files.readAllLines(clusterFilePath2).stream().collect(Collectors.joining()));
