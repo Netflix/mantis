@@ -396,10 +396,17 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
         }
 
         public Builder mergeConfigsAndOverrideRest(IJobClusterDefinition oldDefn, IJobClusterDefinition newDefn) {
-            logger.info("Existing JobClusterConfigs {} ", oldDefn.getJobClusterConfigs());
+            List<JobClusterConfig> oldConfigs = oldDefn.getJobClusterConfigs();
+            logger.info("Existing JobClusterConfigs {} ", oldConfigs);
             logger.info("New JobClusterConfig {} ", newDefn.getJobClusterConfig());
 
-            this.jobClusterConfigs.addAll(oldDefn.getJobClusterConfigs());
+            if (oldConfigs != null) {
+                List<JobClusterConfig> subList = Collections.unmodifiableList(oldConfigs.subList(
+                    Math.max(0, oldConfigs.size() - 2),
+                    oldConfigs.size() - 1
+                ));
+                this.jobClusterConfigs.addAll(subList);
+            }
             this.jobClusterConfigs.add(newDefn.getJobClusterConfig());
             logger.info("Merged JobClusterConfigs {} ", this.jobClusterConfigs);
             this.sla = newDefn.getSLA();
