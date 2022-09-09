@@ -87,7 +87,7 @@ public class JobDefinition {
         }
 
         if (labels != null) {
-            this.labels = labels.stream().collect(Collectors.toMap(Label::getName, Function.identity()));
+            this.labels = labels.stream().collect(Collectors.toMap(Label::getName, Function.identity(), (l1, l2) -> l2));
         } else {
             this.labels = new HashMap<>();
         }
