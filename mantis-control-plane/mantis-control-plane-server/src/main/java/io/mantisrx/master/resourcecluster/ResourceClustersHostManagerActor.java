@@ -23,6 +23,7 @@ import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
+import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec.SkuTypeSpec;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
@@ -44,6 +45,8 @@ import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWrit
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
+import io.mantisrx.shaded.com.google.common.base.Strings;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -265,7 +268,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         log.info("Entering onProvisionResourceClusterRequest: " + req);
 
         // For now only full spec is supported during provision stage.
-        if (req.getClusterSpec() == null) {
+        if (!validateClusterSpec(req)) {
             pipe(
                 CompletableFuture.completedFuture(GetResourceClusterResponse.builder()
                     .responseCode(ResponseCode.CLIENT_ERROR)
@@ -273,6 +276,9 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                     .build()),
                 getContext().dispatcher())
                 .to(getSender());
+            log.info("Invalid cluster spec, return client error. Req: {}", req.getClusterId());
+            log.debug("Full invalid Req: {}", req);
+            return;
         }
 
         ResourceClusterSpecWritable specWritable = ResourceClusterSpecWritable.builder()
@@ -326,5 +332,29 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
         pipe(this.resourceClusterProvider.upgradeContainerResource(req), getContext().dispatcher()).to(getSender());
 
+    }
+
+    private static boolean validateClusterSpec(ProvisionResourceClusterRequest req) {
+        if (req.getClusterSpec() == null) {
+            log.info("Empty request without cluster spec: {}", req.getClusterId());
+            return false;
+        }
+
+        if (!req.getClusterId().equals(req.getClusterSpec().getId())) {
+            log.info("Mismatch cluster id: {}, {}", req.getClusterId(), req.getClusterSpec().getId());
+            return false;
+        }
+
+        Optional<SkuTypeSpec> invalidSku = req.getClusterSpec().getSkuSpecs().stream().filter(sku ->
+            sku.getSkuId() == null || sku.getCapacity() == null || sku.getCpuCoreCount() < 1 ||
+                sku.getDiskSizeInMB() < 1 || sku.getMemorySizeInMB() < 1 || sku.getNetworkMbps() < 1 ||
+                Strings.isNullOrEmpty(sku.getImageId())).findAny();
+
+        if (invalidSku.isPresent()) {
+            log.info("Empty request without cluster spec: {}, {}", req.getClusterId(), invalidSku.get());
+            return false;
+        }
+
+        return true;
     }
 }

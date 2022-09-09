@@ -23,7 +23,10 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -93,12 +96,36 @@ public class SchedulingInfo implements Serializable {
                             .build());
         }
 
+        public Builder singleWorkerStageWithConstraints(
+            MachineDefinition machineDefinition,
+            List<JobConstraints> hardConstraints,
+            List<JobConstraints> softConstraints,
+            Map<String, String> containerAttributes) {
+            return this.addStage(
+                StageSchedulingInfo.builder()
+                    .numberOfInstances(1)
+                    .machineDefinition(machineDefinition)
+                    .hardConstraints(hardConstraints)
+                    .softConstraints(softConstraints)
+                    .containerAttributes(containerAttributes)
+                    .build());
+        }
+
         public Builder singleWorkerStage(MachineDefinition machineDefinition) {
             return this.addStage(
                     StageSchedulingInfo.builder()
                             .numberOfInstances(1)
                             .machineDefinition(machineDefinition)
                             .build());
+        }
+
+        public Builder singleWorkerStage(MachineDefinition machineDefinition, Map<String, String> containerAttributes) {
+            return this.addStage(
+                StageSchedulingInfo.builder()
+                    .numberOfInstances(1)
+                    .machineDefinition(machineDefinition)
+                    .containerAttributes(containerAttributes)
+                    .build());
         }
 
         public Builder multiWorkerScalableStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
@@ -117,6 +144,23 @@ public class SchedulingInfo implements Serializable {
                             .build());
         }
 
+        public Builder multiWorkerScalableStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
+            List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints,
+            StageScalingPolicy scalingPolicy, Map<String, String> containerAttributes) {
+            StageScalingPolicy ssp = new StageScalingPolicy(currentStage, scalingPolicy.getMin(), scalingPolicy.getMax(),
+                scalingPolicy.getIncrement(), scalingPolicy.getDecrement(), scalingPolicy.getCoolDownSecs(), scalingPolicy.getStrategies());
+            return this.addStage(
+                StageSchedulingInfo.builder()
+                    .numberOfInstances(numberOfWorkers)
+                    .machineDefinition(machineDefinition)
+                    .hardConstraints(hardConstraints)
+                    .softConstraints(softConstraints)
+                    .scalingPolicy(ssp)
+                    .scalable(ssp.isEnabled())
+                    .containerAttributes(containerAttributes)
+                    .build());
+        }
+
         public Builder multiWorkerStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
                                                        List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints) {
             return this.addStage(
@@ -128,8 +172,25 @@ public class SchedulingInfo implements Serializable {
                             .build());
         }
 
+        public Builder multiWorkerStageWithConstraints(int numberOfWorkers, MachineDefinition machineDefinition,
+            List<JobConstraints> hardConstraints, List<JobConstraints> softConstraints, Map<String, String> containerAttributes) {
+            return this.addStage(
+                StageSchedulingInfo.builder()
+                    .numberOfInstances(numberOfWorkers)
+                    .machineDefinition(machineDefinition)
+                    .hardConstraints(hardConstraints)
+                    .softConstraints(softConstraints)
+                    .containerAttributes(containerAttributes)
+                    .build());
+        }
+
         public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition) {
             return multiWorkerStage(numberOfWorkers, machineDefinition, false);
+        }
+
+        public Builder multiWorkerStage(
+            int numberOfWorkers, MachineDefinition machineDefinition, Map<String, String> containerAttributes) {
+            return multiWorkerStage(numberOfWorkers, machineDefinition, false, containerAttributes);
         }
 
         public Builder multiWorkerStage(int numberOfWorkers, MachineDefinition machineDefinition, boolean scalable) {
@@ -139,6 +200,18 @@ public class SchedulingInfo implements Serializable {
                             .machineDefinition(machineDefinition)
                             .scalable(scalable)
                             .build());
+        }
+
+        public Builder multiWorkerStage(
+            int numberOfWorkers, MachineDefinition machineDefinition, boolean scalable,
+            Map<String, String> containerAttributes) {
+            return this.addStage(
+                StageSchedulingInfo.builder()
+                    .numberOfInstances(numberOfWorkers)
+                    .machineDefinition(machineDefinition)
+                    .scalable(scalable)
+                    .containerAttributes(containerAttributes)
+                    .build());
         }
 
         /**

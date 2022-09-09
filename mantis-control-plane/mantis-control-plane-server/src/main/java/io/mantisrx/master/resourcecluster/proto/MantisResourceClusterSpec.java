@@ -91,11 +91,11 @@ public class MantisResourceClusterSpec {
 
         int cpuCoreCount;
 
-        int memorySizeInBytes;
+        int memorySizeInMB;
 
         int networkMbps;
 
-        int diskSizeInBytes;
+        int diskSizeInMB;
 
         @Singular
         Map<String, String> skuMetadataFields;
@@ -106,17 +106,17 @@ public class MantisResourceClusterSpec {
                 @JsonProperty("capacity") final SkuCapacity capacity,
                 @JsonProperty("imageId") final String imageId,
                 @JsonProperty("cpuCoreCount") final int cpuCoreCount,
-                @JsonProperty("memorySizeInBytes") final int memorySizeInBytes,
+                @JsonProperty("memorySizeInBytes") final int memorySizeInMB,
                 @JsonProperty("networkMbps") final int networkMbps,
-                @JsonProperty("diskSizeInBytes") final int diskSizeInBytes,
+                @JsonProperty("diskSizeInBytes") final int diskSizeInMB,
                 @JsonProperty("skuMetadataFields") final Map<String, String> skuMetadataFields) {
             this.skuId = skuId;
             this.capacity = capacity;
             this.imageId = imageId;
             this.cpuCoreCount = cpuCoreCount;
-            this.memorySizeInBytes = memorySizeInBytes;
+            this.memorySizeInMB = memorySizeInMB;
             this.networkMbps = networkMbps;
-            this.diskSizeInBytes = diskSizeInBytes;
+            this.diskSizeInMB = diskSizeInMB;
             this.skuMetadataFields = skuMetadataFields;
         }
     }

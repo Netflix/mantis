@@ -140,6 +140,222 @@ public class ResourceClustersHostManagerActorTests {
     }
 
     @Test
+    public void testProvisionSpecError() {
+        TestKit probe = new TestKit(system);
+        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
+
+        ResourceClusterProvisionSubmissionResponse provisionResponse =
+            ResourceClusterProvisionSubmissionResponse.builder().response("123").build();
+        when(resProvider.provisionClusterIfNotPresent(any())).thenReturn(CompletableFuture.completedFuture(
+            provisionResponse
+        ));
+
+        when(resProvider.getResponseHandler()).thenReturn(responseHandler);
+
+        ActorRef resourceClusterHostActor = system.actorOf(
+            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+
+        ProvisionResourceClusterRequest request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .build();;
+
+        resourceClusterHostActor.tell(request, probe.getRef());
+        GetResourceClusterResponse createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .clusterSpec(MantisResourceClusterSpec.builder()
+                    .id(ClusterID.of("id2"))
+                        .build())
+                .build();
+
+        resourceClusterHostActor.tell(request, probe.getRef());
+        createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .clusterSpec(MantisResourceClusterSpec.builder()
+                    .id(ClusterID.of("id1"))
+                    .name("id1name")
+                    .envType(MantisResourceClusterEnvType.Prod)
+                    .ownerEmail("user")
+                    .ownerName("user")
+                    .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
+                        //.skuId(ContainerSkuID.of("small"))
+                        .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
+                            .skuId(ContainerSkuID.of("small"))
+                            .desireSize(2)
+                            .maxSize(3)
+                            .minSize(1)
+                            .build())
+                        .cpuCoreCount(2)
+                        .memorySizeInMB(16384)
+                        .diskSizeInMB(81920)
+                        .networkMbps(700)
+                        .imageId("dev/mantistaskexecutor:main-latest")
+                        .skuMetadataField(
+                            "skuKey",
+                            "us-east-1")
+                        .skuMetadataField(
+                            "sgKey",
+                            "sg-11, sg-22, sg-33, sg-44")
+                        .build())
+                    .build())
+                .build();
+        resourceClusterHostActor.tell(request, probe.getRef());
+        createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .clusterSpec(MantisResourceClusterSpec.builder()
+                    .id(ClusterID.of("id1"))
+                    .name("id1name")
+                    .envType(MantisResourceClusterEnvType.Prod)
+                    .ownerEmail("user")
+                    .ownerName("user")
+                    .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
+                        .skuId(ContainerSkuID.of("small"))
+                        .cpuCoreCount(2)
+                        .memorySizeInMB(16384)
+                        .diskSizeInMB(81920)
+                        .networkMbps(700)
+                        .imageId("dev/mantistaskexecutor:main-latest")
+                        .skuMetadataField(
+                            "skuKey",
+                            "us-east-1")
+                        .skuMetadataField(
+                            "sgKey",
+                            "sg-11, sg-22, sg-33, sg-44")
+                        .build())
+                    .build())
+                .build();
+        resourceClusterHostActor.tell(request, probe.getRef());
+        createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .clusterSpec(MantisResourceClusterSpec.builder()
+                    .id(ClusterID.of("id1"))
+                    .name("id1name")
+                    .envType(MantisResourceClusterEnvType.Prod)
+                    .ownerEmail("user")
+                    .ownerName("user")
+                    .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
+                        .skuId(ContainerSkuID.of("small"))
+                        .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
+                            .skuId(ContainerSkuID.of("small"))
+                            .desireSize(2)
+                            .maxSize(3)
+                            .minSize(1)
+                            .build())
+                        .memorySizeInMB(16384)
+                        .diskSizeInMB(81920)
+                        .networkMbps(700)
+                        .imageId("dev/mantistaskexecutor:main-latest")
+                        .skuMetadataField(
+                            "skuKey",
+                            "us-east-1")
+                        .skuMetadataField(
+                            "sgKey",
+                            "sg-11, sg-22, sg-33, sg-44")
+                        .build())
+                    .build())
+                .build();
+        resourceClusterHostActor.tell(request, probe.getRef());
+        createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .clusterSpec(MantisResourceClusterSpec.builder()
+                    .id(ClusterID.of("id1"))
+                    .name("id1name")
+                    .envType(MantisResourceClusterEnvType.Prod)
+                    .ownerEmail("user")
+                    .ownerName("user")
+                    .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
+                        .skuId(ContainerSkuID.of("small"))
+                        .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
+                            .skuId(ContainerSkuID.of("small"))
+                            .desireSize(2)
+                            .maxSize(3)
+                            .minSize(1)
+                            .build())
+                        .cpuCoreCount(2)
+                        .diskSizeInMB(81920)
+                        .networkMbps(700)
+                        .imageId("dev/mantistaskexecutor:main-latest")
+                        .skuMetadataField(
+                            "skuKey",
+                            "us-east-1")
+                        .skuMetadataField(
+                            "sgKey",
+                            "sg-11, sg-22, sg-33, sg-44")
+                        .build())
+                    .build())
+                .build();
+        resourceClusterHostActor.tell(request, probe.getRef());
+        createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        request =
+            ProvisionResourceClusterRequest.builder()
+                .clusterId(ClusterID.of("id1"))
+                .clusterSpec(MantisResourceClusterSpec.builder()
+                    .id(ClusterID.of("id1"))
+                    .name("id1name")
+                    .envType(MantisResourceClusterEnvType.Prod)
+                    .ownerEmail("user")
+                    .ownerName("user")
+                    .skuSpec(MantisResourceClusterSpec.SkuTypeSpec.builder()
+                        .skuId(ContainerSkuID.of("small"))
+                        .capacity(MantisResourceClusterSpec.SkuCapacity.builder()
+                            .skuId(ContainerSkuID.of("small"))
+                            .desireSize(2)
+                            .maxSize(3)
+                            .minSize(1)
+                            .build())
+                        .cpuCoreCount(2)
+                        .memorySizeInMB(16384)
+                        .diskSizeInMB(0)
+                        .networkMbps(700)
+                        .imageId("dev/mantistaskexecutor:main-latest")
+                        .skuMetadataField(
+                            "skuKey",
+                            "us-east-1")
+                        .skuMetadataField(
+                            "sgKey",
+                            "sg-11, sg-22, sg-33, sg-44")
+                        .build())
+                    .build())
+                .build();
+        resourceClusterHostActor.tell(request, probe.getRef());
+        createResp = probe.expectMsgClass(GetResourceClusterResponse.class);
+        assertEquals(ResponseCode.CLIENT_ERROR, createResp.responseCode);
+        verify(resProvider, times(0)).provisionClusterIfNotPresent(any());
+
+        probe.getSystem().stop(resourceClusterHostActor);
+    }
+
+    @Test
     public void testProvisionPersisError() {
         TestKit probe = new TestKit(system);
         ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
@@ -274,8 +490,8 @@ public class ResourceClustersHostManagerActorTests {
                                         .minSize(1)
                                         .build())
                                 .cpuCoreCount(2)
-                                .memorySizeInBytes(16384)
-                                .diskSizeInBytes(81920)
+                                .memorySizeInMB(16384)
+                                .diskSizeInMB(81920)
                                 .networkMbps(700)
                                 .imageId("dev/mantistaskexecutor:main-latest")
                                 .skuMetadataField(

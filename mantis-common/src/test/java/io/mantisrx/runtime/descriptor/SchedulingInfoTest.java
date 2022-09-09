@@ -18,11 +18,12 @@ package io.mantisrx.runtime.descriptor;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.descriptor.SchedulingInfo.Builder;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -247,6 +248,121 @@ public class SchedulingInfoTest {
             "                \"enabled\": true" +
             "            }," +
             "            \"scalable\": true" +
+            "        }" +
+            "    }" +
+            "}";
+        assertEquals(expected.replaceAll("\\s+", ""), serializer.toJson(builder.build()));
+    }
+
+    @Test
+    public void testSerializationWithSkuId() throws Exception {
+        Map<StageScalingPolicy.ScalingReason, StageScalingPolicy.Strategy> smap = new HashMap<>();
+        smap.put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, 0.1, 0.6, null));
+        Builder builder = new Builder()
+            .numberOfStages(2)
+            .multiWorkerScalableStageWithConstraints(
+                2,
+                new MachineDefinition(1, 1.24, 0.0, 1, 1),
+                null, null,
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap),
+                ImmutableMap.of("containerSkuID", "sku1")
+            )
+            .multiWorkerScalableStageWithConstraints(
+                3,
+                new MachineDefinition(1, 1.24, 0.0, 1, 1),
+                null, null,
+                new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap),
+                ImmutableMap.of("containerSkuID", "sku2")
+            );
+
+        JsonSerializer serializer = new JsonSerializer();
+        String expected = "" +
+            "{" +
+            "    \"stages\":" +
+            "    {" +
+            "        \"1\":" +
+            "        {" +
+            "            \"numberOfInstances\": 2," +
+            "            \"machineDefinition\":" +
+            "            {" +
+            "                \"cpuCores\": 1.0," +
+            "                \"memoryMB\": 1.24," +
+            "                \"networkMbps\": 128.0," +
+            "                \"diskMB\": 1.0," +
+            "                \"numPorts\": 1" +
+            "            }," +
+            "            \"hardConstraints\":" +
+            "            []," +
+            "            \"softConstraints\":" +
+            "            []," +
+            "            \"scalingPolicy\":" +
+            "            {" +
+            "                \"stage\": 1," +
+            "                \"min\": 1," +
+            "                \"max\": 3," +
+            "                \"increment\": 1," +
+            "                \"decrement\": 1," +
+            "                \"coolDownSecs\": 60," +
+            "                \"strategies\":" +
+            "                {" +
+            "                    \"Memory\":" +
+            "                    {" +
+            "                        \"reason\": \"Memory\"," +
+            "                        \"scaleDownBelowPct\": 0.1," +
+            "                        \"scaleUpAbovePct\": 0.6," +
+            "                        \"rollingCount\":" +
+            "                        {" +
+            "                            \"count\": 1," +
+            "                            \"of\": 1" +
+            "                        }" +
+            "                    }" +
+            "                }," +
+            "                \"enabled\": true" +
+            "            }," +
+            "            \"scalable\": true," +
+            "            \"containerAttributes\": {\"containerSkuID\":\"sku1\"}" +
+            "        }," +
+            "        \"2\":" +
+            "        {" +
+            "            \"numberOfInstances\": 3," +
+            "            \"machineDefinition\":" +
+            "            {" +
+            "                \"cpuCores\": 1.0," +
+            "                \"memoryMB\": 1.24," +
+            "                \"networkMbps\": 128.0," +
+            "                \"diskMB\": 1.0," +
+            "                \"numPorts\": 1" +
+            "            }," +
+            "            \"hardConstraints\":" +
+            "            []," +
+            "            \"softConstraints\":" +
+            "            []," +
+            "            \"scalingPolicy\":" +
+            "            {" +
+            "                \"stage\": 2," +
+            "                \"min\": 1," +
+            "                \"max\": 3," +
+            "                \"increment\": 1," +
+            "                \"decrement\": 1," +
+            "                \"coolDownSecs\": 60," +
+            "                \"strategies\":" +
+            "                {" +
+            "                    \"Memory\":" +
+            "                    {" +
+            "                        \"reason\": \"Memory\"," +
+            "                        \"scaleDownBelowPct\": 0.1," +
+            "                        \"scaleUpAbovePct\": 0.6," +
+            "                        \"rollingCount\":" +
+            "                        {" +
+            "                            \"count\": 1," +
+            "                            \"of\": 1" +
+            "                        }" +
+            "                    }" +
+            "                }," +
+            "                \"enabled\": true" +
+            "            }," +
+            "            \"scalable\": true," +
+            "            \"containerAttributes\": {\"containerSkuID\":\"sku2\"}" +
             "        }" +
             "    }" +
             "}";
