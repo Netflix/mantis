@@ -402,8 +402,8 @@ public class JobClusterDefinitionImpl implements IJobClusterDefinition {
 
             if (oldConfigs != null) {
                 List<JobClusterConfig> subList = Collections.unmodifiableList(oldConfigs.subList(
-                    Math.max(0, oldConfigs.size() - 2),
-                    oldConfigs.size() - 1
+                    Math.max(0, oldConfigs.size() - 3),
+                    oldConfigs.size()
                 ));
                 this.jobClusterConfigs.addAll(subList);
             }
