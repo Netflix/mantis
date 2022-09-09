@@ -184,7 +184,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     }
 
-    private Closeable startSendingHeartbeats(final Observer<Status> jobStatus, String workerName, double networkMbps) {
+    private Closeable startSendingHeartbeats(final Observer<Status> jobStatus, double networkMbps) {
         heartbeatRef.get().setPayload("" + StatusPayloads.Type.SubscriptionState, "" + false);
         Future<?> heartbeatFuture =
             scheduledExecutorService
@@ -197,7 +197,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get());
         droppedPayloadSetter.start(heartbeatIntervalSecs);
 
-        ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, workerName, networkMbps);
+        ResourceUsagePayloadSetter usagePayloadSetter = new ResourceUsagePayloadSetter(heartbeatRef.get(), config, networkMbps);
         usagePayloadSetter.start(heartbeatIntervalSecs);
 
         return Closeables.combine(() -> heartbeatFuture.cancel(false), droppedPayloadSetter, usagePayloadSetter);
@@ -235,32 +235,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 });
 
 
-    }
-
-    /**
-     * Deprecated.
-     *
-     * @param selfSchedulingInfo
-     * @param jobId
-     * @param stageNum
-     *
-     * @return
-     */
-    private BehaviorSubject<Boolean> createPrevStageCompletedObservable(Observable<JobSchedulingInfo> selfSchedulingInfo, String jobId, final int stageNum) {
-        BehaviorSubject<Boolean> s = BehaviorSubject.create(false);
-
-        //		if(stageNum>1) {
-        //			selfSchedulingInfo
-        //					.map(schedulingInfo -> {
-        //						final Map<Integer, WorkerAssignments> workerAssignmentsMap = schedulingInfo.getWorkerAssignments();
-        //						if (workerAssignmentsMap == null)
-        //							return false;
-        //						final WorkerAssignments workerAssignments = workerAssignmentsMap.get(stageNum - 1);
-        //						return workerAssignments != null && workerAssignments.getActiveWorkers() == 0;
-        //					})
-        //					.subscribe(s);
-        //		}
-        return s;
     }
 
     private void signalStarted(RunningWorker rw) {
@@ -360,9 +334,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
                     rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), hostname));
             final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
-            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(),
-                    new WorkerId(executionRequest.getJobId(), executionRequest.getWorkerIndex(),
-                            executionRequest.getWorkerNumber()).getId(), networkMbps);
+            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(), networkMbps);
             closeables.add(heartbeatCloseable);
 
             // execute stage

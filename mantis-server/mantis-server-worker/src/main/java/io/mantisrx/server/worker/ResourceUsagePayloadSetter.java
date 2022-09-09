@@ -22,7 +22,8 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
-import io.mantisrx.server.worker.mesos.MesosResourceUsageUtils;
+import io.mantisrx.server.worker.metrics.Usage;
+import io.mantisrx.server.worker.metrics.MetricsCollector;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
@@ -37,43 +38,26 @@ import org.slf4j.LoggerFactory;
 public class ResourceUsagePayloadSetter implements Closeable {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceUsagePayloadSetter.class);
-    private static final String metricPrefix = "tcpServer";
     private static final long bigUsageChgReportingIntervalSecs = 10;
     private static final double bigIncreaseThreshold = 0.05;
     private final Heartbeat heartbeat;
-    private final String workerName;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ScheduledThreadPoolExecutor executor;
-    private final String defaultReportingSchedule = "5,5,10,10,20,30";
     private final long[] reportingIntervals;
     private final AtomicInteger counter = new AtomicInteger();
-    private final double MB = 1024.0 * 1024;
-    private final MesosResourceUsageUtils resourceUsageUtils;
-    private final String cpuLimitGaugeName = MetricStringConstants.CPU_PCT_LIMIT;
+    private final MetricsCollector resourceUsageUtils;
     private final Gauge cpuLimitGauge;
-    private final String cpuUsageCurrGaugeName = MetricStringConstants.CPU_PCT_USAGE_CURR;
     private final Gauge cpuUsageCurrGauge;
-    private final String cpuUsagePeakGaugeName = MetricStringConstants.CPU_PCT_USAGE_PEAK;
     private final Gauge cpuUsagePeakGauge;
-    private final String memLimitGaugeName = MetricStringConstants.MEM_LIMIT;
     private final Gauge memLimitGauge;
-    private final String cachedMemUsageCurrGaugeName = MetricStringConstants.CACHED_MEM_USAGE_CURR;
     private final Gauge cachedMemUsageCurrGauge;
-    private final String cachedMemUsagePeakGaugeName = MetricStringConstants.CACHED_MEM_USAGE_PEAK;
     private final Gauge cachedMemUsagePeakGauge;
-    private final String totMemUsageCurrGaugeName = MetricStringConstants.TOT_MEM_USAGE_CURR;
     private final Gauge totMemUsageCurrGauge;
-    private final String totMemUsagePeakGaugeName = MetricStringConstants.TOT_MEM_USAGE_PEAK;
     private final Gauge totMemUsagePeakGauge;
     private final Gauge nwBytesLimitGauge;
-    private final String nwBytesLimitGaugeName = MetricStringConstants.NW_BYTES_LIMIT;
-    private final String nwBytesUsageCurrGaugeName = MetricStringConstants.NW_BYTES_USAGE_CURR;
     private final Gauge nwBytesUsageCurrGauge;
-    private final String nwBytesUsagePeakGaugeName = MetricStringConstants.NW_BYTES_USAGE_PEAK;
     private final Gauge nwBytesUsagePeakGauge;
-    private final String jvmMemoryUsedGaugeName = "jvmMemoryUsedBytes";
     private final Gauge jvmMemoryUsedGauge;
-    private final String jvmMemoryMaxGaugeName = "jvmMemoryMaxBytes";
     private final Gauge jvmMemoryMaxGauge;
     private final double nwBytesLimit;
     private double prev_cpus_system_time_secs = -1.0;
@@ -88,18 +72,31 @@ public class ResourceUsagePayloadSetter implements Closeable {
     private double peakBytesWritten = 0.0;
     private StatusPayloads.ResourceUsage oldUsage = null;
 
-    public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config, String workerName, double networkMbps) {
+    public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config, double networkMbps) {
         this.heartbeat = heartbeat;
-        this.workerName = workerName;
         this.nwBytesLimit = networkMbps * 1024.0 * 1024.0 / 8.0; // convert from bits to bytes
         executor = new ScheduledThreadPoolExecutor(1);
+        String defaultReportingSchedule = "5,5,10,10,20,30";
         StringTokenizer tokenizer = new StringTokenizer(defaultReportingSchedule, ",");
         reportingIntervals = new long[tokenizer.countTokens()];
         int t = 0;
         while (tokenizer.hasMoreTokens()) {
             reportingIntervals[t++] = Long.parseLong(tokenizer.nextToken());
         }
-        resourceUsageUtils = new MesosResourceUsageUtils(config.getMesosSlavePort());
+        resourceUsageUtils = config.getUsageSupplier();
+        String cpuLimitGaugeName = MetricStringConstants.CPU_PCT_LIMIT;
+        String cpuUsageCurrGaugeName = MetricStringConstants.CPU_PCT_USAGE_CURR;
+        String cpuUsagePeakGaugeName = MetricStringConstants.CPU_PCT_USAGE_PEAK;
+        String memLimitGaugeName = MetricStringConstants.MEM_LIMIT;
+        String cachedMemUsageCurrGaugeName = MetricStringConstants.CACHED_MEM_USAGE_CURR;
+        String cachedMemUsagePeakGaugeName = MetricStringConstants.CACHED_MEM_USAGE_PEAK;
+        String totMemUsageCurrGaugeName = MetricStringConstants.TOT_MEM_USAGE_CURR;
+        String totMemUsagePeakGaugeName = MetricStringConstants.TOT_MEM_USAGE_PEAK;
+        String nwBytesLimitGaugeName = MetricStringConstants.NW_BYTES_LIMIT;
+        String nwBytesUsageCurrGaugeName = MetricStringConstants.NW_BYTES_USAGE_CURR;
+        String nwBytesUsagePeakGaugeName = MetricStringConstants.NW_BYTES_USAGE_PEAK;
+        String jvmMemoryUsedGaugeName = "jvmMemoryUsedBytes";
+        String jvmMemoryMaxGaugeName = "jvmMemoryMaxBytes";
         Metrics m = new Metrics.Builder()
                 .name("ResourceUsage")
                 .addGauge(cpuLimitGaugeName)
@@ -210,56 +207,40 @@ public class ResourceUsagePayloadSetter implements Closeable {
     }
 
     private StatusPayloads.ResourceUsage evalResourceUsage() {
-        final MesosResourceUsageUtils.Usage usage = resourceUsageUtils.getCurrentUsage(workerName);
+        final Usage usage = resourceUsageUtils.get();
         if (prevStatsGatheredAt == 0L) {
             setPreviousStats(usage);
             return null;
         }
         double duration = ((double) System.currentTimeMillis() - (double) prevStatsGatheredAt) / 1000.0;
-        double cpuSecs = (usage.getCpus_system_time_secs() - prev_cpus_system_time_secs) / duration +
-                (usage.getCpus_user_time_secs() - prev_cpus_user_time_secs) / duration;
+        double cpuSecs = (usage.getCpusSystemTimeSecs() - prev_cpus_system_time_secs) / duration +
+                (usage.getCpusUserTimeSecs() - prev_cpus_user_time_secs) / duration;
         if (cpuSecs > peakCpuUsage)
             peakCpuUsage = cpuSecs;
-        if (usage.getMem_rss_bytes() > peakTotMem)
-            peakTotMem = usage.getMem_rss_bytes();
-        double memCache = Math.max(0.0, usage.getMem_rss_bytes() - usage.getMem_anon_bytes());
+        if (usage.getMemRssBytes() > peakTotMem)
+            peakTotMem = usage.getMemRssBytes();
+        double memCache = Math.max(0.0, usage.getMemRssBytes() - usage.getMemAnonBytes());
         if (memCache > peakMemCache)
             peakMemCache = memCache;
-        double readBw = (usage.getNetwork_read_bytes() - prev_bytes_read) / duration; // TODO check if byteCounts are already rate counts
-        double writeBw = (usage.getNetwork_write_bytes() - prev_bytes_written) / duration;
+        double readBw = (usage.getNetworkReadBytes() - prev_bytes_read) / duration; // TODO check if byteCounts are already rate counts
+        double writeBw = (usage.getNetworkWriteBytes() - prev_bytes_written) / duration;
         if (readBw > peakBytesRead)
             peakBytesRead = readBw;
         if (writeBw > peakBytesWritten)
             peakBytesWritten = writeBw;
         // set previous values to new values
         setPreviousStats(usage);
-        return new StatusPayloads.ResourceUsage(usage.getCpus_limit(), cpuSecs, peakCpuUsage, usage.getMem_limit() / MB,
-                memCache / MB, peakMemCache / MB, usage.getMem_rss_bytes() / MB, peakTotMem / MB,
+        double MB = 1024.0 * 1024;
+        return new StatusPayloads.ResourceUsage(usage.getCpusLimit(), cpuSecs, peakCpuUsage, usage.getMemLimit() / MB,
+                memCache / MB, peakMemCache / MB, usage.getMemRssBytes() / MB, peakTotMem / MB,
             Math.max(readBw, writeBw), Math.max(peakBytesRead, peakBytesWritten));
     }
 
-    private void setPreviousStats(MesosResourceUsageUtils.Usage usage) {
-        prev_cpus_system_time_secs = usage.getCpus_system_time_secs();
-        prev_cpus_user_time_secs = usage.getCpus_user_time_secs();
-        prev_bytes_read = usage.getNetwork_read_bytes();
-        prev_bytes_written = usage.getNetwork_write_bytes();
+    private void setPreviousStats(Usage usage) {
+        prev_cpus_system_time_secs = usage.getCpusSystemTimeSecs();
+        prev_cpus_user_time_secs = usage.getCpusUserTimeSecs();
+        prev_bytes_read = usage.getNetworkReadBytes();
+        prev_bytes_written = usage.getNetworkWriteBytes();
         prevStatsGatheredAt = System.currentTimeMillis();
     }
-
-    //    private long[] checkBytesCounts() {
-    //        final Collection<Metrics> metrics = MetricsRegistry.getInstance().getMetrics(metricPrefix);
-    //        long[] bytesCounts = {0L, 0L};
-    //        if(metrics!=null && !metrics.isEmpty()) {
-    //            //logger.info("Got " + metrics.size() + " metrics for bytesWritten");
-    //            for(Metrics m: metrics) {
-    //                Counter counter = m.getCounter("bytesWritten");
-    //                if(counter!=null)
-    //                    bytesCounts[1] += counter.rateValue(); // .value(); // TODO do we need .rateValue() instead?
-    //                counter = m.getCounter("bytesRead");
-    //                if(counter!=null)
-    //                    bytesCounts[0] += counter.rateValue(); // .value(); // TODO do we need .rateValue() instead?
-    //            }
-    //        }
-    //        return bytesCounts;
-    //    }
 }
