@@ -180,13 +180,13 @@ public class SimpleFileResourceStorageProviderTests {
                 "{\"version\":\"v1\",\"id\":{\"resourceID\":\"mantisRCMTest2\"},\"clusterSpec\":{\"name\":\"mantisRCMTest2\"," +
                         "\"id\":{\"resourceID\":\"mantisRCMTest2\"},\"ownerName\":\"andyz@netflix.com\",\"ownerEmail\":\"andyz@netflix.com\"," +
                         "\"envType\":\"Prod\",\"skuSpecs\":[{\"skuId\":{\"resourceID\":\"small\"},"
-                    + "\"capacity\":{\"skuId\":{\"resourceID\":\"small\"}," +
-                        "\"minSize\":1,\"maxSize\":3,\"desireSize\":2},\"imageId\":\"mantistaskexecutor:main"
-                        + ".latest\"," +
-                        "\"cpuCoreCount\":5,\"memorySizeInMB\":16384,\"networkMbps\":700,\"diskSizeInMB\":81920," +
-                        "\"skuMetadataFields\":{\"skuKey\":\"us-east-1\","
-                        + "\"sgKey\":\"sg-1," +
-                        " sg-2, sg-3, sg-4\"}}],\"clusterMetadataFields\":{}}}",
+                        + "\"capacity\":{\"skuId\":{\"resourceID\":\"small\"},"
+                        + "\"minSize\":1,\"maxSize\":3,\"desireSize\":2},\"imageId\":\"mantistaskexecutor:main"
+                        + ".latest\",\"cpuCoreCount\":5,\"networkMbps\":700,"
+                        + "\"skuMetadataFields\":{\"skuKey\":\"us-east-1\","
+                        + "\"sgKey\":\"sg-1,"
+                        + " sg-2, sg-3, sg-4\"},\"memorySizeInMB\":16384,\"diskSizeInMB\":81920}],"
+                        + "\"clusterMetadataFields\":{}}}",
                 Files.readAllLines(clusterFilePath).stream().collect(Collectors.joining()));
 
         //// Test register second cluster.
@@ -241,12 +241,13 @@ public class SimpleFileResourceStorageProviderTests {
                 "{\"version\":\"v2\",\"id\":{\"resourceID\":\"clusterApp2\"},\"clusterSpec\":{\"name\":\"clusterApp2\","
                         + "\"id\":{\"resourceID\":\"clusterApp2\"},\"ownerName\":\"mantisrx@netflix.com\",\"ownerEmail\":"
                         + "\"mantisrx@netflix.com\",\"envType\":\"Prod\","
-                    + "\"skuSpecs\":[{\"skuId\":{\"resourceID\":\"large\"},"
+                        + "\"skuSpecs\":[{\"skuId\":{\"resourceID\":\"large\"},"
                         + "\"capacity\":{\"skuId\":{\"resourceID\":\"large\"},\"minSize\":1,\"maxSize\":4,"
-                    + "\"desireSize\":3},\"imageId\""
-                        + ":\"dev/mantistaskexecutor:main.2\",\"cpuCoreCount\":19,\"memorySizeInMB\":54321,"
-                        + "\"networkMbps\":3300,\"diskSizeInMB\":998877,\"skuMetadataFields\":"
-                        + "{\"skuKey\":\"us-east-1\",\"sgKey\":\"sg-1, sg-2, sg-3, sg-4\"}}],"
+                        + "\"desireSize\":3},\"imageId\""
+                        + ":\"dev/mantistaskexecutor:main.2\",\"cpuCoreCount\":19,"
+                        + "\"networkMbps\":3300,\"skuMetadataFields\":"
+                        + "{\"skuKey\":\"us-east-1\",\"sgKey\":\"sg-1, sg-2, sg-3, sg-4\"},"
+                        + "\"memorySizeInMB\":54321,\"diskSizeInMB\":998877}],"
                         + "\"clusterMetadataFields\":{}}}",
                 Files.readAllLines(clusterFilePath2).stream().collect(Collectors.joining()));
 
