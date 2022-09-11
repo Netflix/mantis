@@ -19,7 +19,6 @@ package io.mantisrx.server.core;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 
 
 public class StatusPayloads {
@@ -51,7 +50,6 @@ public class StatusPayloads {
         }
     }
 
-    @Builder
     public static class ResourceUsage {
 
         private final double cpuLimit;
