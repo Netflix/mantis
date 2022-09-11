@@ -37,11 +37,10 @@ public class PluginCoercible<T> implements Coercible<T> {
             return value -> {
                 try {
                     Class<?> derivedType = Class.forName(value);
-                    Preconditions.checkArgument(derivedType.isAssignableFrom(tClass));
                     Method candidate = derivedType.getMethod("valueOf", Properties.class);
                     // Method must be 'static valueOf(Properties)' and return the type in question.
                     Preconditions.checkArgument(Modifier.isStatic(candidate.getModifiers()));
-                    Preconditions.checkArgument(candidate.getReturnType().isAssignableFrom(type));
+                    Preconditions.checkArgument(type.isAssignableFrom(candidate.getReturnType()));
 
                     return (T) candidate.invoke(null, properties);
                 } catch (Exception e) {

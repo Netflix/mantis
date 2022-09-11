@@ -51,7 +51,7 @@ public class MesosMetricsCollector implements MetricsCollector {
             });
 
     @SuppressWarnings("unused")
-    public MesosMetricsCollector valueOf(Properties properties) {
+    public static MesosMetricsCollector valueOf(Properties properties) {
         int slavePort = Integer.parseInt(properties.getProperty("mantis.agent.mesos.slave.port", "5051"));
         String taskId = System.getenv("MESOS_TASK_ID");
         return new MesosMetricsCollector(slavePort, taskId);

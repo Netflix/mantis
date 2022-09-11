@@ -23,7 +23,6 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.net.URI;
 import java.util.Map;
-import javax.ws.rs.DefaultValue;
 import org.apache.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
@@ -110,7 +109,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     Integer getBindPort();
 
     @Config("mantis.taskexecutor.metrics.collector")
-    @DefaultValue("io.mantisrx.server.worker.mesos.MesosMetricsCollector")
+    @Default("io.mantisrx.server.worker.mesos.MesosMetricsCollector")
     MetricsCollector getUsageSupplier();
 
     // ------------------------------------------------------------------------

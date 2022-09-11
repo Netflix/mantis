@@ -37,7 +37,6 @@ import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.HttpSources;
 import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
-import io.mantisrx.server.core.Configurations;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
@@ -53,6 +52,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.TaskExecutor.Listener;
+import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -109,12 +109,13 @@ public class TaskExecutorTest {
         props.setProperty("mantis.taskexecutor.local.storage-dir", "");
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
+        props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.worker.metrics.DummyMetricsCollector");
 
         startedSignal = new CountDownLatch(1);
         doneSignal = new CountDownLatch(1);
         terminatedSignal = new CountDownLatch(1);
 
-        workerConfiguration = Configurations.frmProperties(props, WorkerConfiguration.class);
+        workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
         rpcService = new TestingRpcService();
 
         masterMonitor = mock(MantisMasterGateway.class);
