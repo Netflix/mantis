@@ -19,6 +19,7 @@ package io.mantisrx.server.worker.metrics;
 import java.io.IOException;
 import java.util.Properties;
 
+@SuppressWarnings("unused")
 public class DummyMetricsCollector implements MetricsCollector {
     @SuppressWarnings("unused")
     public static DummyMetricsCollector valueOf(Properties properties) {
