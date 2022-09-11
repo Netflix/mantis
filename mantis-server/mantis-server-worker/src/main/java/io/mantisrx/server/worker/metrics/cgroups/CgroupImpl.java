@@ -32,7 +32,12 @@ public class CgroupImpl implements Cgroup {
 
     @Override
     public Long getMetric(String subsystem, String metricName) throws IOException {
-        return null;
+        Path metricPath = Paths.get(path, subsystem, metricName);
+        try {
+            return Files.readAllLines(metricPath).stream().findFirst().map(Long::valueOf).get();
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     /**

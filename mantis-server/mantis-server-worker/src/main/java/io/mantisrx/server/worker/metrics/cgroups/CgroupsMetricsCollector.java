@@ -16,28 +16,27 @@
 
 package io.mantisrx.server.worker.metrics.cgroups;
 
-import io.mantisrx.server.worker.metrics.Usage;
 import io.mantisrx.server.worker.metrics.MetricsCollector;
+import io.mantisrx.server.worker.metrics.Usage;
 import java.io.IOException;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class CgroupsMetricsCollector implements MetricsCollector {
-    private final String deviceName;
     private final CpuAcctsSubsystemProcess cpu;
     private final MemorySubsystemProcess memory;
     private final NetworkSubsystemProcess network;
 
+    @SuppressWarnings("unused")
     public static CgroupsMetricsCollector valueOf(Properties properties) {
-        String cgroupPath = properties.getProperty("mantis.cgroups.path", "/sys/fs/cgroup/cpuacct");
+        String cgroupPath = properties.getProperty("mantis.cgroups.path", "/sys/fs/cgroup");
         String networkIfacePath = properties.getProperty("mantis.cgroups.networkPath", "/proc/net/dev");
-        String interfaceName = properties.getProperty("mantis.cgroups.interface");
+        String interfaceName = properties.getProperty("mantis.cgroups.interface", "eth0");
         return new CgroupsMetricsCollector(cgroupPath, networkIfacePath, interfaceName);
     }
 
     public CgroupsMetricsCollector(String cgroupPath, String networkIfacePath, String interfaceName) {
-        this.deviceName = interfaceName;
         Cgroup cgroup = new CgroupImpl(cgroupPath);
         this.cpu = new CpuAcctsSubsystemProcess(cgroup);
         this.memory = new MemorySubsystemProcess(cgroup);

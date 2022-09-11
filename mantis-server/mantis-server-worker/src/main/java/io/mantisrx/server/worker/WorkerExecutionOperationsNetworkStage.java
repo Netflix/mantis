@@ -33,7 +33,6 @@ import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.Parameters;
 import io.mantisrx.server.core.*;
 import io.mantisrx.server.core.Status.TYPE;
-import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
@@ -61,7 +60,6 @@ import rx.Observer;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
-import rx.subjects.BehaviorSubject;
 
 // stage that actually calls custom stage method
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {

@@ -16,13 +16,12 @@
 
 package io.mantisrx.server.worker.config;
 
-import static org.skife.config.DefaultCoercibles.convertException;
-
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.base.Preconditions;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
+import org.apache.flink.util.ExceptionUtils;
 import org.skife.config.Coercer;
 import org.skife.config.Coercible;
 
@@ -30,60 +29,28 @@ import org.skife.config.Coercible;
 public class PluginCoercible<T> implements Coercible<T> {
 
     private final Class<T> tClass;
+    private final Properties properties;
 
+    @SuppressWarnings("unchecked")
     public Coercer<T> accept(final Class<?> type) {
+        if (tClass.isAssignableFrom(type)) {
+            return value -> {
+                try {
+                    Class<?> derivedType = Class.forName(value);
+                    Preconditions.checkArgument(derivedType.isAssignableFrom(tClass));
+                    Method candidate = derivedType.getMethod("valueOf", Properties.class);
+                    // Method must be 'static valueOf(Properties)' and return the type in question.
+                    Preconditions.checkArgument(Modifier.isStatic(candidate.getModifiers()));
+                    Preconditions.checkArgument(candidate.getReturnType().isAssignableFrom(type));
 
-        Coercer<T> coercer = null;
-            if (tClass.isAssignableFrom(type)) {
-                coercer = new Coercer<T>() {
-                    @Override
-                    public T coerce(String value) {
-                        try {
-                            Class<?> derivedType = Class.forName(value);
-                            Preconditions.checkArgument(derivedType.isAssignableFrom(tClass));
-                            Method candidate = derivedType.getMethod("valueOf", Properties.class);
-                            Preconditions.checkArgument(Modifier.isStatic(candidate.getModifiers()));
-                            Preconditions.checkArgument(candidate.getReturnType().isAssignableFrom(type));
-                        } catch (Exception e) {
-                            throw convertException(e);
-                        }
-                    }
+                    return (T) candidate.invoke(null, properties);
+                } catch (Exception e) {
+                    ExceptionUtils.rethrow(e);
+                    return null;
                 }
-            } else {
-                return null;
-            }
-            // Method must be 'static valueOf(Properties)' and return the type in question.
-//            Method candidate = type.getMethod("valueOf", Properties.class);
-//            if (!Modifier.isStatic(candidate.getModifiers())) {
-//                // not static.
-//                candidate = null;
-//            }
-//            else if (!candidate.getReturnType().isAssignableFrom(type)) {
-//                // does not return the right type.
-//                candidate = null;
-//            }
-
-            if (candidate != null) {
-                final Method valueOfMethod = candidate;
-
-                coercer = new Coercer<Object>() {
-                    public Object coerce(final String value)
-                    {
-                        try {
-                            return value == null ? null : valueOfMethod.invoke(null, value);
-                        }
-                        catch (Exception e) {
-                            throw convertException(e);
-                        }
-                    }
-                };
-            }
+            };
+        } else {
+            return null;
         }
-        catch(NoSuchMethodException nsme) {
-            // Don't do anything, the class does not have a method.
-        }
-
-        coercerMap.put(type, coercer);
-        return coercer;
     }
 }

@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.worker.mesos;
 
-import io.mantisrx.server.worker.metrics.Usage;
 import io.mantisrx.server.worker.metrics.MetricsCollector;
+import io.mantisrx.server.worker.metrics.Usage;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.OperatorOnErrorResumeNextViaFunction;
 import java.nio.charset.Charset;
@@ -35,7 +35,6 @@ import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
 
-
 public class MesosMetricsCollector implements MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(MesosMetricsCollector.class);
@@ -51,6 +50,7 @@ public class MesosMetricsCollector implements MetricsCollector {
                 return Observable.timer(delay, TimeUnit.SECONDS);
             });
 
+    @SuppressWarnings("unused")
     public MesosMetricsCollector valueOf(Properties properties) {
         int slavePort = Integer.parseInt(properties.getProperty("mantis.agent.mesos.slave.port", "5051"));
         String taskId = System.getenv("MESOS_TASK_ID");
