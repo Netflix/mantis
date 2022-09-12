@@ -19,6 +19,7 @@ package io.mantisrx.server.worker;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.common.storage.StorageUnit;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
@@ -237,10 +238,17 @@ public class ResourceUsagePayloadSetter implements Closeable {
             peakBytesWritten = writeBw;
         // set previous values to new values
         setPreviousStats(usage);
-        double MB = 1024.0 * 1024;
-        return new StatusPayloads.ResourceUsage(usage.getCpusLimit(), cpuSecs, peakCpuUsage, usage.getMemLimit() / MB,
-                memCache / MB, peakMemCache / MB, usage.getMemRssBytes() / MB, peakTotMem / MB,
-            Math.max(readBw, writeBw), Math.max(peakBytesRead, peakBytesWritten));
+        return new StatusPayloads.ResourceUsage(
+            usage.getCpusLimit(),
+            cpuSecs,
+            peakCpuUsage,
+            StorageUnit.BYTES.toMBs(usage.getMemLimit()),
+            StorageUnit.BYTES.toMBs(memCache),
+            StorageUnit.BYTES.toMBs(peakMemCache),
+            StorageUnit.BYTES.toMBs(usage.getMemRssBytes()),
+            StorageUnit.BYTES.toMBs(peakTotMem),
+            Math.max(readBw, writeBw),
+            Math.max(peakBytesRead, peakBytesWritten));
     }
 
     private void setPreviousStats(Usage usage) {

@@ -25,6 +25,29 @@ import org.apache.flink.util.ExceptionUtils;
 import org.skife.config.Coercer;
 import org.skife.config.Coercible;
 
+/**
+ * Coorcible that converts a value to a class object. The value represents the class object that needs to be
+ * initialized. The mechanism for initializing the class object is as follows:
+ *   1. The class, as represented by the value, is searched for a static method with the signature
+ *      static T valueOf(Properties properties)
+ *   2. The method is called with all the properties that the configuration is aware of.
+ *
+ * <pre>
+ *   Example usage:
+ *   interface Configuration {
+ *       @Config("mantis.taskexecutor.metrics.collector")
+ *       @Default("io.mantisrx.server.worker.mesos.MesosMetricsCollector")
+ *       MetricsCollector getUsageSupplier();
+ *   }
+ *
+ *   class MesosMetricsCollector {
+ *       public static MesosMetricsCollector valueOf(Properties properties) {
+ *       }
+ *   }
+ *   </pre>
+ *
+ * @param <T> type of the object that the value needs to return
+ */
 @RequiredArgsConstructor
 public class PluginCoercible<T> implements Coercible<T> {
 
