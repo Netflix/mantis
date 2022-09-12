@@ -35,6 +35,10 @@ import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
 
+/**
+ * Mesos implementation of MetricsCollector that collects metrics using the statistics endpoint on the mesos agent.
+ * <a href="https://mesos.readthedocs.io/en/latest/endpoints/slave/monitor/statistics.json/">mesos statics endpoint link</a>
+ */
 public class MesosMetricsCollector implements MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(MesosMetricsCollector.class);
@@ -43,12 +47,12 @@ public class MesosMetricsCollector implements MetricsCollector {
     private final int slavePort;
     private final String taskId;
     private final Func1<Observable<? extends Throwable>, Observable<?>> retryLogic = attempts -> attempts
-            .zipWith(Observable.range(1, 3), (Func2<Throwable, Integer, Integer>) (t1, integer) -> integer)
-            .flatMap((Func1<Integer, Observable<?>>) integer -> {
-                long delay = 2L;
-                logger.info(": retrying conx after sleeping for " + delay + " secs");
-                return Observable.timer(delay, TimeUnit.SECONDS);
-            });
+        .zipWith(Observable.range(1, 3), (Func2<Throwable, Integer, Integer>) (t1, integer) -> integer)
+        .flatMap((Func1<Integer, Observable<?>>) integer -> {
+            long delay = 2L;
+            logger.info(": retrying conx after sleeping for " + delay + " secs");
+            return Observable.timer(delay, TimeUnit.SECONDS);
+        });
 
     @SuppressWarnings("unused")
     public static MesosMetricsCollector valueOf(Properties properties) {
@@ -57,7 +61,7 @@ public class MesosMetricsCollector implements MetricsCollector {
         return new MesosMetricsCollector(slavePort, taskId);
     }
 
-    public MesosMetricsCollector(int slavePort, String taskId) {
+    MesosMetricsCollector(int slavePort, String taskId) {
         this.slavePort = slavePort;
         this.taskId = taskId;
     }
@@ -66,16 +70,16 @@ public class MesosMetricsCollector implements MetricsCollector {
         String usageEndpoint = "monitor/statistics.json";
         final String url = "http://localhost:" + slavePort + "/" + usageEndpoint;
         return RxNetty
-                .createHttpRequest(HttpClientRequest.createGet(url), new HttpClient.HttpClientConfig.Builder()
-                        .setFollowRedirect(true).followRedirect(MAX_REDIRECTS).build())
-                .lift(new OperatorOnErrorResumeNextViaFunction<>(t -> Observable.error(t)))
-                .timeout(GET_TIMEOUT_SECS, TimeUnit.SECONDS)
-                .retryWhen(retryLogic)
-                .flatMap((Func1<HttpClientResponse<ByteBuf>, Observable<ByteBuf>>) r -> r.getContent())
-                .map(o -> o.toString(Charset.defaultCharset()))
-                .doOnError(throwable -> logger.warn("Can't get resource usage from mesos slave endpoint (" + url + ") - " + throwable.getMessage(), throwable))
-                .toBlocking()
-                .firstOrDefault("");
+            .createHttpRequest(HttpClientRequest.createGet(url), new HttpClient.HttpClientConfig.Builder()
+                .setFollowRedirect(true).followRedirect(MAX_REDIRECTS).build())
+            .lift(new OperatorOnErrorResumeNextViaFunction<>(t -> Observable.error(t)))
+            .timeout(GET_TIMEOUT_SECS, TimeUnit.SECONDS)
+            .retryWhen(retryLogic)
+            .flatMap((Func1<HttpClientResponse<ByteBuf>, Observable<ByteBuf>>) r -> r.getContent())
+            .map(o -> o.toString(Charset.defaultCharset()))
+            .doOnError(throwable -> logger.warn("Can't get resource usage from mesos slave endpoint (" + url + ") - " + throwable.getMessage(), throwable))
+            .toBlocking()
+            .firstOrDefault("");
     }
 
     public Usage get() {
