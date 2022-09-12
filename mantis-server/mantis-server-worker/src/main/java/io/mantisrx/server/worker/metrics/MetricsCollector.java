@@ -18,6 +18,11 @@ package io.mantisrx.server.worker.metrics;
 
 import java.io.IOException;
 
+/**
+ * Abstraction useful for collecting metrics about the node on which the worker task is running.
+ * The metrics that are collected from the node are available via the metrics port, which is used
+ * by the jobmanager node then for auto-scaling.
+ */
 public interface MetricsCollector {
     Usage get() throws IOException;
 }

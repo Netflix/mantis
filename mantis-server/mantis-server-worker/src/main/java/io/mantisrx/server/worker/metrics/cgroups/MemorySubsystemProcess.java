@@ -24,6 +24,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Uses cgroup memory.stat for collecting various metrics about the memory usage of the container.
+ * Implementation uses ideas from the <a href="https://github.com/apache/mesos/blob/96339efb53f7cdf1126ead7755d2b83b435e3263/src/slave/containerizer/mesos/isolators/cgroups/subsystems/memory.cpp#L474-L499">actual mesos implementation</a> used in the statistics.json endpoint.
+ */
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class MemorySubsystemProcess implements SubsystemProcess {

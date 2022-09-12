@@ -22,6 +22,10 @@ import java.io.IOException;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Cgroups based metrics collector.
+ * This assumes that the worker task is being run on a cgroup based on container.
+ */
 @RequiredArgsConstructor
 public class CgroupsMetricsCollector implements MetricsCollector {
     private final CpuAcctsSubsystemProcess cpu;

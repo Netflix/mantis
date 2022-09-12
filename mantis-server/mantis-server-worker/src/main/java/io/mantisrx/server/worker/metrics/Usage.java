@@ -26,46 +26,9 @@ import lombok.Value;
 public class Usage {
 
     double cpusLimit;
-    /**
-     * // Add the cpuacct.stat information.
-     * Try<hashmap<string, uint64_t>> stat = cgroups::stat(
-     * hierarchy,
-     * cgroup,
-     * "cpuacct.stat");
-     * <p>
-     * if (stat.isError()) {
-     * return Failure("Failed to read 'cpuacct.stat': " + stat.error());
-     * }
-     * <p>
-     * // TODO(bmahler): Add namespacing to cgroups to enforce the expected
-     * // structure, e.g., cgroups::cpuacct::stat.
-     * Option<uint64_t> user = stat->get("user");
-     * Option<uint64_t> system = stat->get("system");
-     * <p>
-     * if (user.isSome() && system.isSome()) {
-     * result.set_cpus_user_time_secs((double) user.get() / (double) ticks);
-     * result.set_cpus_system_time_secs((double) system.get() / (double) ticks);
-     * }
-     */
     double cpusSystemTimeSecs;
     double cpusUserTimeSecs;
     double memLimit;
-    /**
-     * // TODO(bmahler): Add namespacing to cgroups to enforce the expected
-     * // structure, e.g, cgroups::memory::stat.
-     * Try<hashmap<string, uint64_t>> stat = cgroups::stat(
-     * hierarchy,
-     * cgroup,
-     * "memory.stat");
-     * <p>
-     * Option<uint64_t> total_rss = stat->get("total_rss");
-     * if (total_rss.isSome()) {
-     * // TODO(chzhcn): mem_anon_bytes is deprecated in 0.23.0 and will
-     * // be removed in 0.24.0.
-     * result.set_mem_anon_bytes(total_rss.get());
-     * result.set_mem_rss_bytes(total_rss.get());
-     * }
-     */
     double memRssBytes;
     double memAnonBytes;
     double networkReadBytes;

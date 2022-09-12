@@ -24,6 +24,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Uses cpuacct.stat file for setting various metrics.
+ * Code uses ideas from the <a href="https://github.com/apache/mesos/blob/96339efb53f7cdf1126ead7755d2b83b435e3263/src/slave/containerizer/mesos/isolators/cgroups/subsystems/cpuacct.cpp#L90-L108">mesos implementation here</a> .
+ */
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class CpuAcctsSubsystemProcess implements SubsystemProcess {
@@ -46,7 +50,7 @@ class CpuAcctsSubsystemProcess implements SubsystemProcess {
         Long period = cgroup.getMetric("cpuacct", "cpu.cfs_period_us");
         double quotaCount = 0;
         if (quota > -1 && period > 0) {
-            quotaCount = Math.ceil((float)quota / (float)period);
+            quotaCount = Math.ceil((float) quota / (float) period);
         }
 
         if (quotaCount > 0.) {

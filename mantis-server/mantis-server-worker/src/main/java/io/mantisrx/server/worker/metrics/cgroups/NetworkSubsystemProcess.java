@@ -25,17 +25,14 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
+/**
+ * Implementation uses ideas from <a href="https://github.com/python-diamond/Diamond/blob/master/src/collectors/network/network.py">the diamond project</a>'s network metrics collector.
+ */
 @RequiredArgsConstructor
-public class NetworkSubsystemProcess implements SubsystemProcess {
-    private static final String DEFAULT_FILENAME = "/proc/net/dev";
+class NetworkSubsystemProcess implements SubsystemProcess {
 
     private final String fileName;
     private final String device;
-
-    public NetworkSubsystemProcess(String device) {
-        this.fileName = DEFAULT_FILENAME;
-        this.device = device;
-    }
 
     private Map<String, NetworkStats> getDeviceLevelStats() throws IOException {
         Map<String, NetworkStats> result = new HashMap<>();
