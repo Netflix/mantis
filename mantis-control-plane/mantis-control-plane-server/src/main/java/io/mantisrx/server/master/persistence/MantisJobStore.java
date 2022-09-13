@@ -382,7 +382,7 @@ public class MantisJobStore {
 
     private class ArchivedJobsMetadataCache {
 
-        private final Cache<String, IMantisJobMetadata> cache;
+        private final Cache<String, Optional<IMantisJobMetadata>> cache;
 
         ArchivedJobsMetadataCache(int cacheSize) {
             cache = CacheBuilder
@@ -393,33 +393,25 @@ public class MantisJobStore {
 
         IMantisJobMetadata getJob(String jobId) {
             try {
-                return cache.get(jobId, () -> loadArchivedJob(jobId));
-            } catch (ExecutionException e) {
+                final Optional<IMantisJobMetadata> jobMetadata = cache.get(jobId, () -> loadArchivedJobImpl(jobId));
+                return jobMetadata.orElse(null);
+            } catch (Exception e) {
                 return null;
             }
         }
 
-        private IMantisJobMetadata loadArchivedJob(String jobId) {
-            try
-            {
-                return loadArchivedJobImpl(jobId);
-            } catch (IOException|ExecutionException e) {
-                logger.warn("Failed to load archive job {}, error: {}", jobId, e);
-                return null;
-            }
-        }
-
-        private IMantisJobMetadata loadArchivedJobImpl(String jobId) throws IOException, ExecutionException {
+        private Optional<IMantisJobMetadata> loadArchivedJobImpl(String jobId) throws IOException, ExecutionException {
             if (logger.isTraceEnabled()) {logger.trace("Loading archived job {}", jobId);}
             final Optional<IMantisJobMetadata> jobMetadata = storageProvider.loadArchivedJob(jobId);
-            if (!jobMetadata.isPresent())
-                throw new ExecutionException(new InvalidJobException(jobId));
+            if (!jobMetadata.isPresent()) {
+                logger.warn("Failed to load archived job {}. No job found!", jobId);
+            }
             if (logger.isTraceEnabled()) {logger.trace("Loaded archived job {}", jobMetadata);}
-            return jobMetadata.get();
+            return jobMetadata;
         }
 
         void add(IMantisJobMetadata job) {
-            cache.put(job.getJobId().getId(), job);
+            cache.put(job.getJobId().getId(), Optional.ofNullable(job));
         }
 
         void remove(String jobId) {
