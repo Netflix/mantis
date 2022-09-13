@@ -36,7 +36,7 @@ public class CgroupsMetricsCollector implements MetricsCollector {
     public static CgroupsMetricsCollector valueOf(Properties properties) {
         String cgroupPath = properties.getProperty("mantis.cgroups.path", "/sys/fs/cgroup");
         String networkIfacePath = properties.getProperty("mantis.cgroups.networkPath", "/proc/net/dev");
-        String interfaceName = properties.getProperty("mantis.cgroups.interface", "eth0");
+        String interfaceName = properties.getProperty("mantis.cgroups.interface", "eth0:");
         return new CgroupsMetricsCollector(cgroupPath, networkIfacePath, interfaceName);
     }
 
