@@ -18,7 +18,6 @@ package io.mantisrx.server.worker.config;
 
 import static org.junit.Assert.assertEquals;
 
-import io.mantisrx.server.core.Configurations;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Properties;
 import org.junit.Test;
@@ -30,7 +29,7 @@ public class WorkerConfigurationTest {
         final Properties props = new Properties();
         props.setProperty("mantis.zookeeper.root", "");
         props.setProperty("mantis.taskexecutor.attributes", "");
-        final WorkerConfiguration workerConfiguration = Configurations.frmProperties(props, WorkerConfiguration.class);
+        final WorkerConfiguration workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
         assertEquals(ImmutableMap.of(), workerConfiguration.getTaskExecutorAttributes());
     }
 
@@ -39,7 +38,7 @@ public class WorkerConfigurationTest {
         final Properties props = new Properties();
         props.setProperty("mantis.taskexecutor.attributes", "key1:val1");
         props.setProperty("mantis.zookeeper.root", "");
-        final WorkerConfiguration workerConfiguration = Configurations.frmProperties(props, WorkerConfiguration.class);
+        final WorkerConfiguration workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
         assertEquals(ImmutableMap.of("key1", "val1"), workerConfiguration.getTaskExecutorAttributes());
     }
 
@@ -48,7 +47,7 @@ public class WorkerConfigurationTest {
         final Properties props = new Properties();
         props.setProperty("mantis.taskexecutor.attributes", "key1:val1,key2:val2,key3:val3");
         props.setProperty("mantis.zookeeper.root", "");
-        final WorkerConfiguration workerConfiguration = Configurations.frmProperties(props, WorkerConfiguration.class);
+        final WorkerConfiguration workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
         assertEquals(ImmutableMap.of("key1", "val1", "key2", "val2", "key3", "val3"), workerConfiguration.getTaskExecutorAttributes());
     }
 }

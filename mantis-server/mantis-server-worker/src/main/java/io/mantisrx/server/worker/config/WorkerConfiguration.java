@@ -17,6 +17,7 @@
 package io.mantisrx.server.worker.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.server.worker.metrics.MetricsCollector;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -106,6 +107,10 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Config("mantis.taskexecutor.rpc.bind-port")
     @DefaultNull
     Integer getBindPort();
+
+    @Config("mantis.taskexecutor.metrics.collector")
+    @Default("io.mantisrx.server.worker.mesos.MesosMetricsCollector")
+    MetricsCollector getUsageSupplier();
 
     // ------------------------------------------------------------------------
     //  BlobStore related configurations
