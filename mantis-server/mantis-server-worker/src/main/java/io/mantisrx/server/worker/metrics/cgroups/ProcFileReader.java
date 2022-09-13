@@ -81,6 +81,16 @@ public class ProcFileReader implements Closeable {
         }
     }
 
+    private int nextStartIndex() throws IOException {
+        for (int i = 0; i < mTail; i++) {
+            if (mBuffer[i] != ' ') {
+                return i;
+            }
+        }
+
+        return mTail;
+    }
+
     /**
      * Find buffer index of next token delimiter, usually space or newline. Will
      * fill buffer as needed.
@@ -91,6 +101,7 @@ public class ProcFileReader implements Closeable {
         }
 
         int i = 0;
+        boolean nonWhitespaceSeen = false;
         do {
             // scan forward for token boundary
             for (; i < mTail; i++) {
@@ -99,8 +110,12 @@ public class ProcFileReader implements Closeable {
                     mLineFinished = true;
                     return i;
                 }
-                if (b == ' ') {
+                if (b == ' ' && nonWhitespaceSeen) {
                     return i;
+                }
+
+                if (b != ' ') {
+                    nonWhitespaceSeen = true;
                 }
             }
         } while (fillBuf() > 0);
@@ -144,7 +159,12 @@ public class ProcFileReader implements Closeable {
      */
     public String nextString() throws IOException {
         final int tokenIndex = nextTokenIndex();
-        final String s = new String(mBuffer, 0, tokenIndex, Charsets.US_ASCII);
+        if (tokenIndex == 0) {
+            return "";
+        }
+
+        final int startIndex = nextStartIndex();
+        final String s = new String(mBuffer, startIndex, (tokenIndex - startIndex), Charsets.US_ASCII);
         consumeBuf(tokenIndex + 1);
         return s;
     }
@@ -154,11 +174,12 @@ public class ProcFileReader implements Closeable {
      */
     public long nextLong() throws IOException {
         final int tokenIndex = nextTokenIndex();
-        final boolean negative = mBuffer[0] == '-';
+        final int startIndex = nextStartIndex();
+        final boolean negative = mBuffer[startIndex] == '-';
 
         // TODO: refactor into something like IntegralToString
         long result = 0;
-        for (int i = negative ? 1 : 0; i < tokenIndex; i++) {
+        for (int i = negative ? startIndex + 1 : startIndex; i < tokenIndex; i++) {
             final int digit = mBuffer[i] - '0';
             if (digit < 0 || digit > 9) {
                 throw invalidLong(tokenIndex);

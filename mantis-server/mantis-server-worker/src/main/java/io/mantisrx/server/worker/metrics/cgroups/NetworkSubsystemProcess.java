@@ -38,23 +38,26 @@ class NetworkSubsystemProcess implements SubsystemProcess {
         Map<String, NetworkStats> result = new HashMap<>();
         try (ProcFileReader reader = new ProcFileReader(Files.newInputStream(Paths.get(fileName)))) {
 
+            // consume header
+            reader.finishLine();
+            reader.finishLine();
             while (reader.hasMoreData()) {
                 String iface = reader.nextString();
-                final boolean active = reader.nextInt() != 0;
+                if (iface.isEmpty()) {
+                    break;
+                }
 
                 // always include snapshot values
                 long rxBytes = reader.nextLong();
                 long rxPackets = reader.nextLong();
+                reader.nextLong(); // errs skip
+                reader.nextLong(); // drop skip
+                reader.nextLong(); // fifo skip
+                reader.nextLong(); // frame skip
+                reader.nextLong(); // compressed skip
+                reader.nextLong(); // multicast skip
                 long txBytes = reader.nextLong();
                 long txPackets = reader.nextLong();
-
-                // fold in active numbers, but only when active
-                if (active) {
-                    rxBytes += reader.nextLong();
-                    rxPackets += reader.nextLong();
-                    txBytes += reader.nextLong();
-                    txPackets += reader.nextLong();
-                }
 
                 result.put(iface, new NetworkStats(rxBytes, rxPackets, txBytes, txPackets));
                 reader.finishLine();
@@ -70,7 +73,8 @@ class NetworkSubsystemProcess implements SubsystemProcess {
 
     @Override
     public void getUsage(UsageBuilder usageBuilder) throws IOException {
-        NetworkStats stats = getDeviceLevelStats().get(device);
+        Map<String, NetworkStats> result = getDeviceLevelStats();
+        NetworkStats stats = result.get(device);
         usageBuilder.networkReadBytes(stats.getRxBytes());
         usageBuilder.networkWriteBytes(stats.getTxBytes());
     }
