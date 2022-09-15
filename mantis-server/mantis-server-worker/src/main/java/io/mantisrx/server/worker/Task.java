@@ -25,6 +25,8 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
+import io.mantisrx.server.worker.factory.DefaultExecuteStageServiceFactory;
+import io.mantisrx.server.worker.factory.ExecuteStageServiceFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.util.ArrayList;
@@ -61,6 +63,8 @@ public class Task extends AbstractIdleService {
 
     private final ExecuteStageRequest executeStageRequest;
 
+    private final ExecuteStageServiceFactory executeStageServiceFactory;
+
     public Task(
         WrappedExecuteStageRequest wrappedExecuteStageRequest,
         WorkerConfiguration config,
@@ -77,6 +81,31 @@ public class Task extends AbstractIdleService {
         this.hostname = hostname;
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
         this.mantisJob = mantisJob;
+
+        log.info("using Default ExecuteStageServiceFactory");
+        this.executeStageServiceFactory = new DefaultExecuteStageServiceFactory();
+    }
+
+    public Task(
+        WrappedExecuteStageRequest wrappedExecuteStageRequest,
+        WorkerConfiguration config,
+        MantisMasterGateway masterMonitor,
+        ClassLoaderHandle classLoaderHandle,
+        Factory sinkSubscriptionStateHandlerFactory,
+        Optional<String> hostname,
+        Optional<Job> mantisJob,
+        ExecuteStageServiceFactory executeStageServiceFactory) {
+        this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
+        this.config = config;
+        this.masterMonitor = masterMonitor;
+        this.classLoaderHandle = classLoaderHandle;
+        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+        this.hostname = hostname;
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+        this.mantisJob = mantisJob;
+
+        log.info("using custom ExecuteStageServiceFactory: {}", executeStageServiceFactory.getClass().getName());
+        this.executeStageServiceFactory = executeStageServiceFactory;
     }
 
     @Override
@@ -98,19 +127,21 @@ public class Task extends AbstractIdleService {
         mantisServices.add(MetricsFactory.newMetricsPublisher(config, executeStageRequest));
         WorkerMetricsClient workerMetricsClient = new WorkerMetricsClient(masterMonitor);
 
-        mantisServices.add(new ExecuteStageRequestService(
-            executeStageSubject,
-            tasksStatusSubject,
-            new WorkerExecutionOperationsNetworkStage(
-                vmTaskStatusSubject,
-                masterMonitor,
-                config,
-                workerMetricsClient,
-                sinkSubscriptionStateHandlerFactory,
-                hostname),
-            classLoaderHandle,
-            getJobProviderClass(),
-            mantisJob));
+        mantisServices.add(
+            this.executeStageServiceFactory.getExecuteStageService(
+                this.executeStageRequest,
+                executeStageSubject,
+                tasksStatusSubject,
+                new WorkerExecutionOperationsNetworkStage(
+                    vmTaskStatusSubject,
+                    masterMonitor,
+                    config,
+                    workerMetricsClient,
+                    sinkSubscriptionStateHandlerFactory,
+                    hostname),
+                classLoaderHandle,
+                getJobProviderClass(),
+                mantisJob));
 
         log.info("Starting Mantis Worker for task {}", this);
         for (Service service : mantisServices) {
