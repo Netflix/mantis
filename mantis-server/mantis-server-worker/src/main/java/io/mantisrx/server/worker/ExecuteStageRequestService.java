@@ -18,9 +18,9 @@ package io.mantisrx.server.worker;
 
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobProvider;
-import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.worker.factory.ExecuteStageService;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.Closeable;
 import java.io.IOException;
@@ -35,7 +35,7 @@ import rx.Subscription;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
-public class ExecuteStageRequestService extends BaseService {
+public class ExecuteStageRequestService extends ExecuteStageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExecuteStageRequestService.class);
     private final Observable<WrappedExecuteStageRequest> executeStageRequestObservable;

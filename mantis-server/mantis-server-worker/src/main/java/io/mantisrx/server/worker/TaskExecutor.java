@@ -39,6 +39,8 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
+import io.mantisrx.server.worker.factory.DefaultExecuteStageServiceFactory;
+import io.mantisrx.server.worker.factory.ExecuteStageServiceFactory;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
@@ -88,6 +90,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
     private final ListenerCallQueue<Listener> listeners = new ListenerCallQueue<>();
+    private final ExecuteStageServiceFactory executeStageServiceFactory;
 
     // the reason the MantisMasterGateway field is not final is because we expect the HighAvailabilityServices
     // to be started before we can get the MantisMasterGateway
@@ -107,7 +110,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
-        Factory subscriptionStateHandlerFactory) {
+        Factory subscriptionStateHandlerFactory,
+        ExecuteStageServiceFactory executeStageServiceFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -145,6 +149,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 Hardware.getNumberCPUCores(),
                 new ExecutorThreadFactory("taskexecutor-io"));
         this.resourceManagerCxnIdx = 0;
+
+        this.executeStageServiceFactory =
+            executeStageServiceFactory == null ?
+                new DefaultExecuteStageServiceFactory() :
+                executeStageServiceFactory;
     }
 
     @Override
@@ -432,7 +441,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             classLoaderHandle,
             subscriptionStateHandlerFactory,
             Optional.of(getHostname()),
-            Optional.empty());
+            Optional.empty(),
+            this.executeStageServiceFactory);
 
         setCurrentTask(task);
 

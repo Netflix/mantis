@@ -21,6 +21,7 @@ import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.worker.config.WorkerConfiguration;
+import io.mantisrx.server.worker.factory.ExecuteStageServiceFactory;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
@@ -85,6 +86,8 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private final HighAvailabilityServices highAvailabilityServices;
         @Nullable
         private SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory;
+        @Nullable
+        private ExecuteStageServiceFactory executeStageServiceFactory;
         private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
 
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
@@ -137,6 +140,12 @@ public class TaskExecutorStarter extends AbstractIdleService {
             return this;
         }
 
+        public TaskExecutorStarterBuilder executeStageServiceFactory(
+            ExecuteStageServiceFactory executeStageServiceFactory) {
+            this.executeStageServiceFactory = executeStageServiceFactory;
+            return this;
+        }
+
         private ClassLoaderHandle getClassLoaderHandle() throws Exception {
             if (this.classLoaderHandle == null) {
                 return new BlobStoreAwareClassLoaderHandle(
@@ -175,7 +184,8 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     workerConfiguration,
                     highAvailabilityServices,
                     getClassLoaderHandle(),
-                    getSinkSubscriptionHandlerFactory());
+                    getSinkSubscriptionHandlerFactory(),
+                    this.executeStageServiceFactory);
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
                 taskExecutor.addListener(listener._1(), listener._2());
