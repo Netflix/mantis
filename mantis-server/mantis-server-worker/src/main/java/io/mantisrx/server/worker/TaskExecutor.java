@@ -46,7 +46,6 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
-import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -409,8 +408,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
-    @VisibleForTesting
-    <T> CompletableFuture<T> callInMainThread(Callable<CompletableFuture<T>> tSupplier,
+    public <T> CompletableFuture<T> callInMainThread(Callable<CompletableFuture<T>> tSupplier,
                                               Time timeout) {
         return this.callAsync(tSupplier, timeout).thenCompose(t -> t);
     }
