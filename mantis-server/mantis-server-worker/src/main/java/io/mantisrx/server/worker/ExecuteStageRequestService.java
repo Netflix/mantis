@@ -116,6 +116,11 @@ public class ExecuteStageRequestService extends ExecuteStageService {
                                     mantisJob = mantisJobProvider.getJobInstance();
                                 }
                             } else {
+                                //todo: handle class loader setting more gracefully
+                                if (ExecuteStageRequestService.this.classLoaderHandle == null) {
+                                    cl = Thread.currentThread().getContextClassLoader();
+                                    logger.info("Using classloader: {}", cl.toString());
+                                }
                                 mantisJob = ExecuteStageRequestService.this.mantisJob.get();
                             }
                         } catch (Throwable e) {
