@@ -19,10 +19,16 @@ package io.mantisrx.server.worker.factory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.ClassLoaderHandle;
 import io.mantisrx.server.worker.ExecuteStageRequestService;
+import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.WorkerExecutionOperations;
+import io.mantisrx.server.worker.WorkerExecutionOperationsNetworkStage;
 import io.mantisrx.server.worker.WrappedExecuteStageRequest;
+import io.mantisrx.server.worker.client.WorkerMetricsClient;
+import io.mantisrx.server.worker.config.WorkerConfiguration;
+import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import java.util.Optional;
 import rx.Observable;
 import rx.Observer;
@@ -41,6 +47,36 @@ public class DefaultExecuteStageServiceFactory implements ExecuteStageServiceFac
             executeStageRequestObservable,
             tasksStatusObserver,
             executionOperations,
+            classLoaderHandle,
+            jobProviderClass,
+            mantisJob);
+    }
+
+    @Override
+    public ExecuteStageService getExecuteStageService(
+        ExecuteStageRequest executeStageRequest,
+        Observable<WrappedExecuteStageRequest> executeStageRequestObservable,
+        Observer<Observable<Status>> tasksStatusObserver,
+        Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
+        MantisMasterGateway mantisMasterApi,
+        WorkerConfiguration config,
+        WorkerMetricsClient workerMetricsClient,
+        Factory sinkSubscriptionStateHandlerFactory,
+        Optional<String> hostname,
+        ClassLoaderHandle classLoaderHandle,
+        Optional<String> jobProviderClass,
+        Optional<Job> mantisJob) {
+        return new ExecuteStageRequestService(
+            executeStageRequestObservable,
+            tasksStatusObserver,
+            new WorkerExecutionOperationsNetworkStage(
+                vmTaskStatusObserver,
+                mantisMasterApi,
+                config,
+                workerMetricsClient,
+                sinkSubscriptionStateHandlerFactory,
+                hostname
+            ),
             classLoaderHandle,
             jobProviderClass,
             mantisJob);
