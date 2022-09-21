@@ -23,50 +23,49 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.SchedulingService;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
-  private final ActorSystem actorSystem;
-  private final ResourceClusters resourceClusters;
-  private final ExecuteStageRequestFactory executeStageRequestFactory;
-  private final JobMessageRouter jobMessageRouter;
-  private final SchedulingService mesosSchedulingService;
-  private final MasterConfiguration masterConfiguration;
-  private final MetricsRegistry metricsRegistry;
-  private final Map<ClusterID, ActorRef> actorRefMap = new HashMap<>();
+    private final ActorSystem actorSystem;
+    private final ResourceClusters resourceClusters;
+    private final ExecuteStageRequestFactory executeStageRequestFactory;
+    private final JobMessageRouter jobMessageRouter;
+    private final SchedulingService mesosSchedulingService;
+    private final MasterConfiguration masterConfiguration;
+    private final MetricsRegistry metricsRegistry;
+    private final Map<ClusterID, ActorRef> actorRefMap = new HashMap<>();
 
-  @Override
-  public MantisScheduler forJob(JobDefinition jobDefinition) {
-    Optional<ClusterID> clusterIDOptional = jobDefinition.getResourceCluster();
-
-    if (clusterIDOptional.isPresent()) {
-      ActorRef resourceClusterAwareSchedulerActor =
-          actorRefMap.compute(clusterIDOptional.get(), (dontCare, oldRef) -> {
-            if (oldRef != null) {
-              return oldRef;
-            } else {
-              return actorSystem.actorOf(
-                  ResourceClusterAwareSchedulerActor.props(
-                      masterConfiguration.getSchedulerMaxRetries(),
-                      masterConfiguration.getSchedulerMaxRetries(),
-                      masterConfiguration.getSchedulerIntervalBetweenRetries(),
-                      resourceClusters.getClusterFor(clusterIDOptional.get()),
-                      executeStageRequestFactory,
-                      jobMessageRouter,
-                      metricsRegistry),
-                  "scheduler-for-" + clusterIDOptional.get().getResourceID());
-            }
-          });
-      return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
-    } else {
-      return mesosSchedulingService;
+    @Override
+    public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
+        Optional<ClusterID> clusterIDOptional = Optional.ofNullable(clusterID);
+        if (clusterIDOptional.isPresent()) {
+            ActorRef resourceClusterAwareSchedulerActor =
+                actorRefMap.compute(clusterIDOptional.get(), (dontCare, oldRef) -> {
+                    if (oldRef != null) {
+                        return oldRef;
+                    } else {
+                        return actorSystem.actorOf(
+                            ResourceClusterAwareSchedulerActor.props(
+                                masterConfiguration.getSchedulerMaxRetries(),
+                                masterConfiguration.getSchedulerMaxRetries(),
+                                masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                                resourceClusters.getClusterFor(clusterIDOptional.get()),
+                                executeStageRequestFactory,
+                                jobMessageRouter,
+                                metricsRegistry),
+                            "scheduler-for-" + clusterIDOptional.get().getResourceID());
+                    }
+                });
+            return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
+        } else {
+            return mesosSchedulingService;
+        }
     }
-  }
 }

@@ -17,10 +17,25 @@
 package io.mantisrx.server.master.scheduler;
 
 import io.mantisrx.server.master.domain.JobDefinition;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Factory for the Mantis Scheduler based on the JobDefinition
  */
+@FunctionalInterface
 public interface MantisSchedulerFactory {
-    MantisScheduler forJob(JobDefinition jobDefinition);
+    default MantisScheduler forJob(JobDefinition jobDefinition) {
+        Optional<ClusterID> clusterIDOptional = jobDefinition.getResourceCluster();
+        return forClusterID(clusterIDOptional.orElse(null));
+    }
+
+    /**
+     * returns the MantisScheduler based on the ClusterID.
+     *
+     * @param clusterID cluster ID for which the mantisscheduler is requested.
+     * @return MantisScheduler corresponding to the ClusterID.
+     */
+    MantisScheduler forClusterID(@Nullable ClusterID clusterID);
 }
