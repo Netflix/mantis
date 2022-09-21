@@ -23,7 +23,6 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.SchedulingService;
 import io.mantisrx.server.master.config.MasterConfiguration;
-import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.HashMap;
@@ -42,12 +41,6 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
     private final Map<ClusterID, ActorRef> actorRefMap = new HashMap<>();
-
-    @Override
-    public MantisScheduler forJob(JobDefinition jobDefinition) {
-        Optional<ClusterID> clusterIDOptional = jobDefinition.getResourceCluster();
-        return forClusterID(clusterIDOptional.orElse(null));
-    }
 
     @Override
     public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
