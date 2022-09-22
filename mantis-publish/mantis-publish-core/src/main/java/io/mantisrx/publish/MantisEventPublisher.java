@@ -19,7 +19,6 @@ package io.mantisrx.publish;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.api.EventPublisher;
 import io.mantisrx.publish.api.PublishStatus;
-import io.mantisrx.publish.api.StreamType;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.metrics.StreamMetrics;
 import java.util.Optional;
@@ -43,11 +42,6 @@ public class MantisEventPublisher implements EventPublisher {
                                 StreamManager streamManager) {
         this.mrePublishConfiguration = mrePublishConfiguration;
         this.streamManager = streamManager;
-    }
-
-    @Override
-    public CompletionStage<PublishStatus> publish(final Event event) {
-        return publish(StreamType.DEFAULT_EVENT_STREAM, event);
     }
 
     @Override
