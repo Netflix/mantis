@@ -59,7 +59,22 @@ public interface EventPublisher {
      * @param event event data to publish to Mantis
      * @return {@link CompletionStage<PublishStatus>} status of publishing the message
      */
-    CompletionStage<PublishStatus> publish(Event event);
+    default CompletionStage<PublishStatus> publish(Event event) {
+        return publish(StreamType.DEFAULT_EVENT_STREAM, event);
+    }
+
+    /**
+     * Returns whether or not this event publisher has active {@link Subscription}s on
+     * {@value StreamType#DEFAULT_EVENT_STREAM}
+     * <p>
+     * This method is useful for checking for the existence of a stream before
+     * calling {@link EventPublisher#publish(Event)} to avoid the performance penalty when there
+     * are no active subscriptions for the stream.
+     *
+     */
+    default boolean hasSubscriptions() {
+        return hasSubscriptions(StreamType.DEFAULT_EVENT_STREAM);
+    }
 
     /**
      * Returns whether or not this event publisher has active {@link Subscription}s.
