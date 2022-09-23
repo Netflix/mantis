@@ -111,6 +111,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
                 .doOnNext(d -> log.info("Integral: {}", d))
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
                 .map(delta -> this.scaleComputer.apply(config, this.currentSize.get(), delta))
+                .doOnNext(d -> log.info("New desired size: {}, existing size: {}", d, this.currentSize.get()))
                 .filter(scale -> this.currentSize.get() != Math.round(Math.ceil(scale)))
                 .lift(actuator)
                 .doOnNext(scale -> this.currentSize.set(Math.round(Math.ceil(scale))))
