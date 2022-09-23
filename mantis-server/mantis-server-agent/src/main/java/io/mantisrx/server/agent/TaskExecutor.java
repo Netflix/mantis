@@ -29,11 +29,11 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.ITask;
-import io.mantisrx.server.master.client.TaskFactory;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
+import io.mantisrx.server.master.client.TaskFactory;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -451,7 +451,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 request, classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
-            ITask task = this.taskFactory.getITaskInstance(cl);
+            ITask task = this.taskFactory.getITaskInstance(request, cl);
 
             task.initialize(
                 wrappedRequest,
