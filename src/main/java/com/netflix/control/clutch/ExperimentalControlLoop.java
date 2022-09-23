@@ -34,35 +34,33 @@ import rx.Subscription;
 public class ExperimentalControlLoop implements Observable.Transformer<Event, Double> {
     private final ClutchConfiguration config;
     private final IActuator actuator;
-    private final Double initialSize;
     private final AtomicDouble dampener;
 
     private final AtomicLong cooldownTimestamp;
-    private final AtomicLong currentScale;
+    private final AtomicLong currentSize;
     private final AtomicDouble lastLag;
     private final Observable<Integer> size;
     private final IRpsMetricComputer rpsMetricComputer;
     private final IScaleComputer scaleComputer;
     private long cooldownMillis;
 
-    public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
+    public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, AtomicLong currentSize,
                                    Observable<Long> timer, Observable<Integer> size) {
-        this(config, actuator, initialSize, new AtomicDouble(1.0), timer, size,
+        this(config, actuator, currentSize, new AtomicDouble(1.0), timer, size,
                 new DefaultRpsMetricComputer(), new DefaultScaleComputer());
     }
 
-    public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, Double initialSize,
+    public ExperimentalControlLoop(ClutchConfiguration config, IActuator actuator, AtomicLong currentSize,
                                    AtomicDouble dampener, Observable<Long> timer, Observable<Integer> size,
                                    IRpsMetricComputer rpsMetricComputer,
                                    IScaleComputer scaleComputer) {
         this.config = config;
         this.actuator = actuator;
-        this.initialSize = initialSize;
         this.dampener = dampener;
         this.cooldownMillis = config.getCooldownUnits().toMillis(config.cooldownInterval);
 
-        this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + this.cooldownMillis);
-        this.currentScale = new AtomicLong(Math.round(initialSize));
+        this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis());
+        this.currentSize = currentSize;
         this.lastLag = new AtomicDouble(0.0);
         this.size = size;
         this.rpsMetricComputer = rpsMetricComputer;
@@ -90,7 +88,7 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
         Integrator deltaIntegrator = new Integrator(0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, config.integralDecay);
 
         Subscription sizeSub = size
-                .doOnNext(currentScale::set)
+                .doOnNext(currentSize::set)
                 .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
                 .doOnNext(n -> log.info("Clutch received new scheduling update with {} workers.", n))
                 .subscribe();
@@ -112,10 +110,10 @@ public class ExperimentalControlLoop implements Observable.Transformer<Event, Do
                 .lift(deltaIntegrator)
                 .doOnNext(d -> log.info("Integral: {}", d))
                 .filter(__ -> this.cooldownMillis == 0 || cooldownTimestamp.get() <= System.currentTimeMillis() - this.cooldownMillis)
-                .map(delta -> this.scaleComputer.apply(config, this.currentScale.get(), delta))
-                .filter(scale -> this.currentScale.get() != Math.round(Math.ceil(scale)))
+                .map(delta -> this.scaleComputer.apply(config, this.currentSize.get(), delta))
+                .filter(scale -> this.currentSize.get() != Math.round(Math.ceil(scale)))
                 .lift(actuator)
-                .doOnNext(scale -> this.currentScale.set(Math.round(Math.ceil(scale))))
+                .doOnNext(scale -> this.currentSize.set(Math.round(Math.ceil(scale))))
                 .doOnNext(__ -> deltaIntegrator.setSum(0))
                 .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis()))
                 .doOnUnsubscribe(() -> {

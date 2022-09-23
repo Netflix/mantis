@@ -25,6 +25,7 @@ import rx.subjects.PublishSubject;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,7 +48,7 @@ public class ExperimentalControlLoopTest {
         TestActuator actuator = new TestActuator();
         CountDownLatch latch = actuator.createLatch();
 
-        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, 100.0,
+        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, new AtomicLong(100),
                 new AtomicDouble(1.0), Observable.timer(10, TimeUnit.MINUTES), Observable.just(100),
                 new ExperimentalControlLoop.DefaultRpsMetricComputer(),
                 new ExperimentalControlLoop.DefaultScaleComputer());
@@ -102,7 +103,7 @@ public class ExperimentalControlLoopTest {
         TestActuator actuator = new TestActuator();
         CountDownLatch latch = actuator.createLatch();
 
-        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, 100.0,
+        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, new AtomicLong(100),
                 new AtomicDouble(1.0), Observable.timer(10, TimeUnit.MINUTES), Observable.just(100),
                 new ExperimentalControlLoop.DefaultRpsMetricComputer(),
                 new ExperimentalControlLoop.DefaultScaleComputer());
@@ -144,7 +145,7 @@ public class ExperimentalControlLoopTest {
         TestActuator actuator = new TestActuator();
         CountDownLatch latch = actuator.createLatch();
 
-        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, 100.0,
+        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, new AtomicLong(100),
                 new AtomicDouble(1.0), Observable.timer(10, TimeUnit.MINUTES), Observable.just(100),
                 new ExperimentalControlLoop.DefaultRpsMetricComputer(),
                 new ExperimentalControlLoop.DefaultScaleComputer());
@@ -182,7 +183,7 @@ public class ExperimentalControlLoopTest {
         TestActuator actuator = new TestActuator();
         CountDownLatch latch = actuator.createLatch();
 
-        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, 100.0,
+        ExperimentalControlLoop controlLoop = new ExperimentalControlLoop(config, actuator, new AtomicLong(100),
                 new AtomicDouble(1.0), Observable.timer(10, TimeUnit.MINUTES), Observable.just(100),
                 new ExperimentalControlLoop.DefaultRpsMetricComputer(),
                 new ExperimentalControlLoop.DefaultScaleComputer());
