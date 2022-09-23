@@ -19,13 +19,13 @@ package io.mantisrx.server.agent;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.ITask;
-import io.mantisrx.server.master.client.ITaskFactory;
+import io.mantisrx.server.master.client.TaskFactory;
 import java.util.ServiceLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
 
 @Slf4j
-public class SingleTaskOnlyFactory implements ITaskFactory {
+public class SingleTaskOnlyFactory implements TaskFactory {
 
     @Override
     public ITask getITaskInstance(ClassLoader cl) {
