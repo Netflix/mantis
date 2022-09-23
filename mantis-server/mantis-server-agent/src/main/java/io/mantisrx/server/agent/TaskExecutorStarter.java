@@ -21,6 +21,7 @@ import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.TaskFactory;
 import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -87,6 +88,9 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private final HighAvailabilityServices highAvailabilityServices;
         @Nullable
         private SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory;
+        @Nullable
+        private TaskFactory taskFactory;
+
         private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
 
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
@@ -134,6 +138,11 @@ public class TaskExecutorStarter extends AbstractIdleService {
             }
         }
 
+        public TaskExecutorStarterBuilder taskFactory(TaskFactory taskFactory) {
+            this.taskFactory = taskFactory;
+            return this;
+        }
+
         public TaskExecutorStarterBuilder classLoaderHandle(ClassLoaderHandle classLoaderHandle) {
             this.classLoaderHandle = classLoaderHandle;
             return this;
@@ -177,7 +186,8 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     workerConfiguration,
                     highAvailabilityServices,
                     getClassLoaderHandle(),
-                    getSinkSubscriptionHandlerFactory());
+                    getSinkSubscriptionHandlerFactory(),
+                    this.taskFactory);
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
                 taskExecutor.addListener(listener._1(), listener._2());

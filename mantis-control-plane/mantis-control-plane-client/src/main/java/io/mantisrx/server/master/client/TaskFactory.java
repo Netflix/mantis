@@ -19,7 +19,10 @@ package io.mantisrx.server.master.client;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import org.apache.flink.util.UserCodeClassLoader;
 
-public interface ITaskFactory {
+/**
+ * Interface to factory building ITask implementation instance. Can be override to use customized ITask impl.
+ */
+public interface TaskFactory {
     ITask getITaskInstance(ClassLoader cl);
 
     UserCodeClassLoader getUserCodeClassLoader(

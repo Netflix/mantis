@@ -29,7 +29,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.ITask;
-import io.mantisrx.server.master.client.ITaskFactory;
+import io.mantisrx.server.master.client.TaskFactory;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
@@ -109,7 +109,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private int resourceManagerCxnIdx;
     private Throwable previousFailure;
 
-    private final ITaskFactory taskFactory;
+    private final TaskFactory taskFactory;
 
     public TaskExecutor(
         RpcService rpcService,
@@ -127,7 +127,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
-        ITaskFactory taskFactory) {
+        TaskFactory taskFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -498,26 +498,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
-    // private void startCurrentTask() {
-    //     validateRunsInMainThread();
-    //
-    //     if (currentTask.state().equals(Service.State.NEW)) {
-    //         CompletableFuture<Void> currentTaskSuccessfullyStartFuture =
-    //             Services.startAsync(currentTask, getMainThreadExecutor());
-    //
-    //         currentTaskSuccessfullyStartFuture
-    //             .whenCompleteAsync((dontCare, throwable) -> {
-    //                 if (throwable != null) {
-    //                     // okay failed to start task successfully
-    //                     // lets stop it
-    //                     setCurrentTask(null);
-    //                     setPreviousFailure(throwable);
-    //                 }
-    //             });
-    //     }
-    // }
-
-
     private void setCurrentTask(@Nullable ITask task) {
         validateRunsInMainThread();
 
@@ -580,28 +560,6 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             return CompletableFuture.completedFuture(Ack.getInstance());
         }
     }
-
-    // private void stopCurrentTask() {
-    //     validateRunsInMainThread();
-    //     if (this.currentTask != null) {
-    //         try {
-    //             if (this.currentTask.state().ordinal() <= Service.State.RUNNING.ordinal()) {
-    //                 CompletableFuture<Void> stopTaskFuture =
-    //                     Services.stopAsync(this.currentTask, getIOExecutor());
-    //
-    //                 stopTaskFuture
-    //                     .whenCompleteAsync((dontCare, throwable) -> {
-    //                         setCurrentTask(null);
-    //                         if (throwable != null) {
-    //                             setPreviousFailure(throwable);
-    //                         }
-    //                     }, getMainThreadExecutor());
-    //             }
-    //         } catch (Exception e) {
-    //             log.error("stopping current task failed", e);
-    //         }
-    //     }
-    // }
 
     private CompletableFuture<Void> stopCurrentTask() {
         validateRunsInMainThread();
