@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker.metrics;
+package io.mantisrx.server.agent;
 
+import io.mantisrx.server.master.client.config.MetricsCollector;
+import io.mantisrx.server.master.client.config.Usage;
 import java.io.IOException;
 import java.util.Properties;
 

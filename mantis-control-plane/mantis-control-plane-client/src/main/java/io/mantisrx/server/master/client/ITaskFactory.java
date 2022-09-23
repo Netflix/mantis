@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker.metrics.cgroups;
+package io.mantisrx.server.master.client;
 
-import io.mantisrx.server.master.client.config.Usage;
-import java.io.IOException;
+import io.mantisrx.server.core.ExecuteStageRequest;
+import org.apache.flink.util.UserCodeClassLoader;
 
-interface SubsystemProcess {
-    void getUsage(Usage.UsageBuilder usageBuilder) throws IOException;
+public interface ITaskFactory {
+    ITask getITaskInstance(ClassLoader cl);
+
+    UserCodeClassLoader getUserCodeClassLoader(
+        ExecuteStageRequest request,
+        ClassLoaderHandle classLoaderHandle);
 }

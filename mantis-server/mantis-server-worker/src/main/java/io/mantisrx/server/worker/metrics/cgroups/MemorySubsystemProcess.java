@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker.metrics.cgroups;
 
-import io.mantisrx.server.worker.metrics.Usage.UsageBuilder;
+import io.mantisrx.server.master.client.config.Usage.UsageBuilder;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;

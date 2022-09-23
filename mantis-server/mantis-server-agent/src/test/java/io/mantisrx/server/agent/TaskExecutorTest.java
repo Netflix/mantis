@@ -37,6 +37,7 @@ import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.HttpSources;
 import io.mantisrx.runtime.source.http.impl.HttpClientFactories;
 import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
+import io.mantisrx.server.agent.TaskExecutor.Listener;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
@@ -46,6 +47,7 @@ import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.ITask;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
@@ -53,10 +55,7 @@ import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
-import io.mantisrx.server.worker.TaskExecutor.Listener;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
@@ -113,7 +112,7 @@ public class TaskExecutorTest {
         props.setProperty("mantis.taskexecutor.local.storage-dir", "");
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
-        props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.worker.metrics.DummyMetricsCollector");
+        props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.agent.DummyMetricsCollector");
 
         startedSignal = new CountDownLatch(1);
         doneSignal = new CountDownLatch(1);
@@ -406,22 +405,22 @@ public class TaskExecutorTest {
         boolean cancelledCalled = false;
 
         @Override
-        public void onTaskStarting(Task task) {
+        public void onTaskStarting(ITask task) {
             startingCalled = true;
         }
 
         @Override
-        public void onTaskFailed(Task task, Throwable throwable) {
+        public void onTaskFailed(ITask task, Throwable throwable) {
             failedCalled = true;
         }
 
         @Override
-        public void onTaskCancelling(Task task) {
+        public void onTaskCancelling(ITask task) {
             cancellingCalled = true;
         }
 
         @Override
-        public void onTaskCancelled(Task task, @Nullable Throwable throwable) {
+        public void onTaskCancelled(ITask task, @Nullable Throwable throwable) {
             cancelledCalled = true;
         }
     }

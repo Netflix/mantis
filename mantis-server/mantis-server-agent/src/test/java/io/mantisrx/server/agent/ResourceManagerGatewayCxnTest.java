@@ -35,7 +35,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
-import io.mantisrx.server.worker.TaskExecutor.ResourceManagerGatewayCxn;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.util.concurrent.CompletableFuture;

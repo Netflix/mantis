@@ -18,7 +18,7 @@ package io.mantisrx.server.worker.metrics.cgroups;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableMap;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.io.Resources;
 import java.io.IOException;
 import org.junit.Test;

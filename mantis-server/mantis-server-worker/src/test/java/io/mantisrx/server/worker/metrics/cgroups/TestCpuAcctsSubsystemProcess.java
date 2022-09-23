@@ -20,8 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableMap;
-import io.mantisrx.server.worker.metrics.Usage;
+import io.mantisrx.server.master.client.config.Usage;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 public class TestCpuAcctsSubsystemProcess {

@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker.metrics;
+package io.mantisrx.server.master.client.config;
 
-import java.io.IOException;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-/**
- * Abstraction useful for collecting metrics about the node on which the worker task is running.
- * The metrics that are collected from the node are available via the metrics port, which is used
- * by the jobmanager node then for auto-scaling.
- */
-public interface MetricsCollector {
-    Usage get() throws IOException;
+@RequiredArgsConstructor
+@Value
+@Builder
+public class Usage {
+
+    double cpusLimit;
+    double cpusSystemTimeSecs;
+    double cpusUserTimeSecs;
+    double memLimit;
+    double memRssBytes;
+    double memAnonBytes;
+    double networkReadBytes;
+    double networkWriteBytes;
 }
