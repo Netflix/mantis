@@ -451,7 +451,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 request, classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
-            ITask task = this.taskFactory.getITaskInstance(cl);
+            ITask task = this.taskFactory.getITaskInstance(request, cl);
 
             task.initialize(
                 wrappedRequest,
