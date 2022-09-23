@@ -29,6 +29,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.ITask;
+import io.mantisrx.server.master.client.ITaskFactory;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
@@ -51,7 +52,6 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -109,12 +109,25 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private int resourceManagerCxnIdx;
     private Throwable previousFailure;
 
+    private final ITaskFactory taskFactory;
+
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory) {
+        this(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
+            subscriptionStateHandlerFactory, null);
+    }
+
+    public TaskExecutor(
+        RpcService rpcService,
+        WorkerConfiguration workerConfiguration,
+        HighAvailabilityServices highAvailabilityServices,
+        ClassLoaderHandle classLoaderHandle,
+        SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
+        ITaskFactory taskFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -152,6 +165,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 Hardware.getNumberCPUCores(),
                 new ExecutorThreadFactory("taskexecutor-io"));
         this.resourceManagerCxnIdx = 0;
+        this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
     }
 
     @Override
@@ -433,11 +447,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             new WrappedExecuteStageRequest(PublishSubject.create(), request);
 
         try {
-            UserCodeClassLoader userCodeClassLoader = ClassLoaderHandle.createUserCodeClassloader(request, classLoaderHandle);
+            UserCodeClassLoader userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
+                request, classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
-            ServiceLoader<ITask> loader = ServiceLoader.load(ITask.class, cl);
             // There should only be 1 task implementation provided by mantis-server-worker.
-            ITask task = loader.iterator().next();
+            ITask task = this.taskFactory.getITaskInstance(cl);
 
             task.initialize(
                 wrappedRequest,
@@ -455,7 +469,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         } catch (Exception ex) {
             log.error("Failed to submit task, request: {}", request, ex);
             return CompletableFutures.exceptionallyCompletedFuture(
-                new TaskNotFoundException(null, ex));
+                new TaskNotFoundException(request.getWorkerId(), ex));
         }
     }
 

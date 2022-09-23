@@ -18,6 +18,7 @@ package io.mantisrx.server.worker.config;
 
 import static org.junit.Assert.assertEquals;
 
+import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Properties;
 import org.junit.Test;

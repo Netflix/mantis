@@ -18,8 +18,8 @@ package io.mantisrx.server.worker.metrics.cgroups;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.common.io.Resources;
-import io.mantisrx.server.worker.metrics.Usage;
+import io.mantisrx.server.master.client.config.Usage;
+import io.mantisrx.shaded.com.google.common.io.Resources;
 import org.junit.Test;
 
 public class TestNetworkSubsystemProcess {

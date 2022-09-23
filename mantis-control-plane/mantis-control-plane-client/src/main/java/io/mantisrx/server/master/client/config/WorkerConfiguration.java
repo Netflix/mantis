@@ -17,7 +17,6 @@
 package io.mantisrx.server.master.client.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
-import io.mantisrx.server.worker.metrics.MetricsCollector;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
