@@ -55,7 +55,7 @@ public class Task extends AbstractIdleService implements ITask {
 
     private SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory;
 
-    private final PublishSubject<Observable<Status>> tasksStatusSubject = PublishSubject.create();
+    private final PublishSubject<Observable<Status>> tasksStatusSubject;
 
     private final PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
 
@@ -65,6 +65,15 @@ public class Task extends AbstractIdleService implements ITask {
     private Optional<Job> mantisJob = Optional.empty();
 
     private ExecuteStageRequest executeStageRequest;
+
+    public Task() {
+        this.tasksStatusSubject = PublishSubject.create();
+    }
+
+    public Task(PublishSubject<Observable<Status>> tasksStatusSubject) {
+        this.tasksStatusSubject = tasksStatusSubject;
+    }
+
 
     @Override
     public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
