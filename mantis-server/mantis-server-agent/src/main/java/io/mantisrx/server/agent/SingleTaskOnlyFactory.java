@@ -28,7 +28,7 @@ import org.apache.flink.util.UserCodeClassLoader;
 public class SingleTaskOnlyFactory implements TaskFactory {
 
     @Override
-    public ITask getITaskInstance(ClassLoader cl) {
+    public ITask getITaskInstance(ExecuteStageRequest request, ClassLoader cl) {
         ServiceLoader<ITask> loader = ServiceLoader.load(ITask.class, cl);
         // This factory is used when only 1 task implementation provided by mantis-server-worker.
         return loader.iterator().next();
