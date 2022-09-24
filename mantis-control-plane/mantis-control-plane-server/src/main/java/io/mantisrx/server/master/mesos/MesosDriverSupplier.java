@@ -98,7 +98,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
                     new MesosSchedulerCallbackHandler(addVMLeaseAction, vmLeaseRescindedObserver, jobMessageRouter,
                             workerRegistry);
             final Protos.FrameworkInfo framework = Protos.FrameworkInfo.newBuilder()
-                    .setUser("")
+                    .setUser(masterConfig.getMantisFrameworkUserName())
                     .setName(masterConfig.getMantisFrameworkName())
                     .setFailoverTimeout(masterConfig.getMesosFailoverTimeOutSecs())
                     .setId(Protos.FrameworkID.newBuilder().setValue(masterConfig.getMantisFrameworkName()))
