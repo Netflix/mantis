@@ -27,6 +27,7 @@ import rx.Observable;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Clutch experimental is taking a radically different approach to auto scaling, something akin to the first
@@ -35,12 +36,12 @@ import java.util.concurrent.TimeUnit;
 public class ClutchExperimental implements Observable.Transformer<Event, Object> {
 
     private final IActuator actuator;
-    private final Integer initialSize;
+    private final AtomicLong currentSize;
     private final Integer minSize;
     private final Integer maxSize;
 
     private final Observable<Long> timer;
-    private final Observable<Integer> size;
+    private final Observable<Integer> sizeObs;
     private final long initialConfigMillis;
     private final Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator;
     private final IRpsMetricComputer rpsMetricComputer;
@@ -52,7 +53,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
      * @param initialSize The initial size of the cluster as it exists before scaling.
      * @param minSize The minimum size to which the cluster can/should scale.
      * @param maxSize The maximum size to which the cluster can/should scale.
-     * @param size An observable indicating the size of the cluster should external events resize it.
+     * @param sizeObs An observable indicating the size of the cluster should external events resize it.
      * @param timer An observable on which each tick signifies a new configuration should be emitted.
      * @param initialConfigMillis The initial number of milliseconds before initial configuration.
      * @param configurator Function to generate a ClutchConfiguration based on metric sketches.
@@ -61,15 +62,15 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
      *
      */
     public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
-                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis,
+                              Observable<Integer> sizeObs, Observable<Long> timer, long initialConfigMillis,
                               Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator,
                               IRpsMetricComputer rpsMetricComputer,
                               IScaleComputer scaleComputer) {
         this.actuator = actuator;
-        this.initialSize = initialSize;
+        this.currentSize = new AtomicLong(initialSize);
         this.minSize = minSize;
         this.maxSize = maxSize;
-        this.size = size;
+        this.sizeObs = sizeObs;
         this.timer = timer;
         this.initialConfigMillis = initialConfigMillis;
         this.configurator = configurator;
@@ -77,17 +78,17 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
         this.scaleComputer = scaleComputer;
     }
 
-    public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
-                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis,
+    public ClutchExperimental(IActuator actuator, Integer currentSize, Integer minSize, Integer maxSize,
+                              Observable<Integer> sizeObs, Observable<Long> timer, long initialConfigMillis,
                               Function1<Map<Clutch.Metric, UpdateDoublesSketch>, ClutchConfiguration> configurator) {
-        this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, configurator,
+        this(actuator, currentSize, minSize, maxSize, sizeObs, timer, initialConfigMillis, configurator,
                 new ExperimentalControlLoop.DefaultRpsMetricComputer(), new ExperimentalControlLoop.DefaultScaleComputer());
     }
 
-    public ClutchExperimental(IActuator actuator, Integer initialSize, Integer minSize, Integer maxSize,
-                              Observable<Integer> size, Observable<Long> timer, long initialConfigMillis, long coolDownSeconds) {
+    public ClutchExperimental(IActuator actuator, Integer currentSize, Integer minSize, Integer maxSize,
+                              Observable<Integer> sizeObs, Observable<Long> timer, long initialConfigMillis, long coolDownSeconds) {
 
-        this(actuator, initialSize, minSize, maxSize, size, timer, initialConfigMillis, (sketches) -> {
+        this(actuator, currentSize, minSize, maxSize, sizeObs, timer, initialConfigMillis, (sketches) -> {
             double setPoint = 0.6 * sketches.get(Clutch.Metric.RPS).getQuantile(0.99);
             Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.15, 0.0);
 
@@ -120,7 +121,7 @@ public class ClutchExperimental implements Observable.Transformer<Event, Object>
                         initialConfigMillis, configurator))
                 .switchMap(config -> events
                         .compose(new ExperimentalControlLoop(config, this.actuator,
-                                this.initialSize.doubleValue(), new AtomicDouble(1.0), timer, size,
+                                this.currentSize, new AtomicDouble(1.0), timer, sizeObs,
                                 this.rpsMetricComputer, this.scaleComputer)));
     }
 }
