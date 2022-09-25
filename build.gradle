@@ -23,7 +23,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:9.1.0'
+        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:9.4.2'
     }
 }
 
@@ -63,6 +63,9 @@ if (project.hasProperty('useMavenLocal')) {
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://netflixoss.jfrog.io/artifactory/maven-oss-candidates"
+    }
 }
 
 dependencies {
