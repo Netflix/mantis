@@ -156,6 +156,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("MantisFramework")
     String getMantisFrameworkName();
 
+    @Config("mantis.master.framework.user")
+    @Default("")
+    String getMantisFrameworkUserName();
+
     @Config("mantis.worker.executor.name")
     @Default("Mantis Worker Executor")
     String getWorkerExecutorName();
