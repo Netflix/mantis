@@ -1,0 +1,95 @@
+{
+    "annotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "baseline-exact-dependencies-main": {
+        "io.vavr:vavr": {
+            "locked": "0.9.2"
+        }
+    },
+    "compileClasspath": {
+        "io.vavr:vavr": {
+            "locked": "0.9.2"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "lombok": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "runtimeClasspath": {
+        "io.vavr:vavr": {
+            "locked": "0.9.2"
+        }
+    },
+    "shaded": {
+        "com.fasterxml.jackson.core:jackson-annotations": {
+            "locked": "2.12.7"
+        },
+        "com.fasterxml.jackson.core:jackson-core": {
+            "locked": "2.12.7"
+        },
+        "com.fasterxml.jackson.core:jackson-databind": {
+            "locked": "2.12.7"
+        },
+        "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor": {
+            "locked": "2.12.7"
+        },
+        "com.fasterxml.jackson.datatype:jackson-datatype-jdk8": {
+            "locked": "2.12.7"
+        },
+        "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": {
+            "locked": "2.12.7"
+        },
+        "com.fasterxml.jackson.module:jackson-module-afterburner": {
+            "locked": "2.12.7"
+        },
+        "com.google.guava:guava": {
+            "locked": "18.0"
+        },
+        "io.netty:netty": {
+            "locked": "3.7.0.Final"
+        },
+        "io.vavr:vavr-jackson": {
+            "locked": "0.9.2"
+        },
+        "jline:jline": {
+            "locked": "0.9.94"
+        },
+        "org.apache.curator:curator-client": {
+            "locked": "2.12.0"
+        },
+        "org.apache.curator:curator-framework": {
+            "locked": "2.12.0"
+        },
+        "org.apache.curator:curator-recipes": {
+            "locked": "2.12.0"
+        },
+        "org.apache.zookeeper:zookeeper": {
+            "locked": "3.4.14"
+        }
+    },
+    "testAnnotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "testCompileClasspath": {
+        "io.vavr:vavr": {
+            "locked": "0.9.2"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "testRuntimeClasspath": {
+        "io.vavr:vavr": {
+            "locked": "0.9.2"
+        }
+    }
+}
