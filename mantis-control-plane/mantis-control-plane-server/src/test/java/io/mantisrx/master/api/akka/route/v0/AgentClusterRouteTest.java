@@ -38,6 +38,7 @@ import akka.util.ByteString;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;
+import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.payloads.AgentClusterPayloads;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
@@ -116,6 +117,7 @@ public class AgentClusterRouteTest {
         t = new Thread(() -> {
             try {
                 // boot up server using the route as defined below
+                TestHelpers.setupMasterConfig();
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
                 IMantisStorageProvider storageProvider = new SimpleCachedFileStorageProvider(true);
