@@ -112,6 +112,7 @@ public class ExecuteStageRequestService extends BaseService {
                                     mantisJob = mantisJobProvider.getJobInstance();
                                 }
                             } else {
+                                cl = userCodeClassLoader.asClassLoader();
                                 mantisJob = ExecuteStageRequestService.this.mantisJob.get();
                             }
                         } catch (Throwable e) {
