@@ -34,10 +34,10 @@ public class ScalarStages<T> extends Stages<T> {
         super(self.getSource(), self.getStages(), stage, inputCodec);
     }
 
-    public <K, R> KeyedStages<K, R> stage(ToKeyComputation<T, K, R> computation,
-                                    ScalarToKey.Config<T, K, R> config) {
-        return new KeyedStages<>(this,
-            new ScalarToKey<>(computation, config, inputCodec), config.getKeyCodec(), config.getCodec());
+    public <R> KeyedStages<R> stage(ToKeyComputation<T, String, R> computation,
+                                    ScalarToKey.Config<T, String, R> config) {
+        return new KeyedStages<R>(this,
+                new ScalarToKey<T, String, R>(computation, config, inputCodec), config.getCodec());
     }
 
     /**
@@ -48,22 +48,22 @@ public class ScalarStages<T> extends Stages<T> {
      *
      * @return
      */
-    public <K, R> KeyedStages<K, R> stage(ToGroupComputation<T, K, R> computation,
-                                    ScalarToGroup.Config<T, K, R> config) {
-        return new KeyedStages<>(this, new ScalarToGroup<>(computation, config, inputCodec), config.getKeyCodec(), config.getCodec());
+    public <R> KeyedStages<R> stage(ToGroupComputation<T, String, R> computation,
+                                    ScalarToGroup.Config<T, String, R> config) {
+        return new KeyedStages<>(this, new ScalarToGroup<>(computation, config, inputCodec), config.getCodec());
     }
 
     public <R> ScalarStages<R> stage(ScalarComputation<T, R> computation,
                                      ScalarToScalar.Config<T, R> config) {
-        return new ScalarStages<>(this,
-            new ScalarToScalar<>(computation, config, inputCodec), config.getCodec());
+        return new ScalarStages<R>(this,
+                new ScalarToScalar<T, R>(computation, config, inputCodec), config.getCodec());
     }
 
     public Config<T> sink(Sink<T> sink) {
-        return new Config<>(this, new SinkHolder<>(sink));
+        return new Config<T>(this, new SinkHolder<T>(sink));
     }
 
     public Config<T> sink(SelfDocumentingSink<T> sink) {
-        return new Config<>(this, new SinkHolder<>(sink));
+        return new Config<T>(this, new SinkHolder<T>(sink));
     }
 }

@@ -93,10 +93,13 @@ public final class ObservableTrigger {
             }
         };
 
-        Action1<MonitoredQueue<T>> doOnStop = t1 -> {
-            if (subRef.get() != null) {
-                logger.warn("Connections from next stage has dropped to 0. Do not propagate unsubscribe");
-                //	subRef.get().unsubscribe();
+        Action1<MonitoredQueue<T>> doOnStop = new Action1<MonitoredQueue<T>>() {
+            @Override
+            public void call(MonitoredQueue<T> t1) {
+                if (subRef.get() != null) {
+                    logger.warn("Connections from next stage has dropped to 0. Do not propagate unsubscribe");
+                    //	subRef.get().unsubscribe();
+                }
             }
         };
 
@@ -143,10 +146,13 @@ public final class ObservableTrigger {
                         )
         );
 
-        Action1<MonitoredQueue<T>> doOnStop = t1 -> {
-            if (subRef.get() != null) {
-                logger.warn("Connections from next stage has dropped to 0 for SSE stage. propagate unsubscribe");
-                subRef.get().unsubscribe();
+        Action1<MonitoredQueue<T>> doOnStop = new Action1<MonitoredQueue<T>>() {
+            @Override
+            public void call(MonitoredQueue<T> t1) {
+                if (subRef.get() != null) {
+                    logger.warn("Connections from next stage has dropped to 0 for SSE stage. propagate unsubscribe");
+                    subRef.get().unsubscribe();
+                }
             }
         };
 

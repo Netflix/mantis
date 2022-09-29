@@ -61,9 +61,9 @@ public class SourceHolder<T> {
         return metadata;
     }
 
-    public <K, R> KeyedStages<K, R> stage(ToKeyComputation<T, K, R> computation,
-                                    ScalarToKey.Config<T, K, R> config) {
-        return new KeyedStages<>(this, new ScalarToKey<>(computation, config, failCodec), config.getKeyCodec(), config.getCodec());
+    public <R> KeyedStages<R> stage(ToKeyComputation<T, String, R> computation,
+                                    ScalarToKey.Config<T, String, R> config) {
+        return new KeyedStages<R>(this, new ScalarToKey<T, String, R>(computation, config, failCodec), config.getCodec());
     }
 
     /**
@@ -74,14 +74,14 @@ public class SourceHolder<T> {
      *
      * @return
      */
-    public <K, R> KeyedStages<K, R> stage(ToGroupComputation<T, K, R> computation,
-                                    ScalarToGroup.Config<T, K, R> config) {
-        return new KeyedStages<>(this, new ScalarToGroup<>(computation, config, failCodec), config.getKeyCodec(), config.getCodec());
+    public <R> KeyedStages<R> stage(ToGroupComputation<T, String, R> computation,
+                                    ScalarToGroup.Config<T, String, R> config) {
+        return new KeyedStages<R>(this, new ScalarToGroup<T, String, R>(computation, config, failCodec), config.getCodec());
     }
 
 
     public <R> ScalarStages<R> stage(ScalarComputation<T, R> computation,
                                      ScalarToScalar.Config<T, R> config) {
-        return new ScalarStages<>(this, new ScalarToScalar<>(computation, config, failCodec), config.getCodec());
+        return new ScalarStages<R>(this, new ScalarToScalar<T, R>(computation, config, failCodec), config.getCodec());
     }
 }

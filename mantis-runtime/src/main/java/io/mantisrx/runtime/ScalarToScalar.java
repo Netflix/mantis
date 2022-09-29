@@ -16,9 +16,9 @@
 
 package io.mantisrx.runtime;
 
-import io.mantisrx.common.codec.Codec;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
+import io.reactivex.netty.codec.Codec;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,18 +30,28 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
     private List<ParameterDefinition<?>> parameters;
 
     /**
-     * @deprecated As of release 0.603, use {@link #ScalarToScalar(ScalarComputation, Config, Codec)} instead
+     * @deprecated As of release 0.603, use {@link #ScalarToScalar(ScalarComputation, Config, io.mantisrx.common.codec.Codec)} instead
      */
     ScalarToScalar(ScalarComputation<T, R> computation,
-                   Config<T, R> config, final io.reactivex.netty.codec.Codec<T> inputCodec) {
-        super(config.description, NettyCodec.fromNetty(inputCodec), config.codec, config.inputStrategy, config.parameters, config.concurrency);
+                   Config<T, R> config, final Codec<T> inputCodec) {
+        super(config.description, new io.mantisrx.common.codec.Codec<T>() {
+            @Override
+            public T decode(byte[] bytes) {
+                return inputCodec.decode(bytes);
+            }
+
+            @Override
+            public byte[] encode(T value) {
+                return inputCodec.encode(value);
+            }
+        }, config.codec, config.inputStrategy, config.parameters, config.concurrency);
         this.computation = computation;
         this.inputStrategy = config.inputStrategy;
     }
 
 
     ScalarToScalar(ScalarComputation<T, R> computation,
-                   Config<T, R> config, Codec<T> inputCodec) {
+                   Config<T, R> config, io.mantisrx.common.codec.Codec<T> inputCodec) {
         super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
         this.computation = computation;
         this.inputStrategy = config.inputStrategy;
@@ -63,7 +73,7 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
 
     public static class Config<T, R> {
 
-        private Codec<R> codec;
+        private io.mantisrx.common.codec.Codec<R> codec;
         private String description;
         // default input type is serial for 'collecting' use case
         private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
@@ -76,14 +86,24 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
          *
          * @return
          *
-         * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
+         * @deprecated As of release 0.603, use {@link #codec(io.mantisrx.common.codec.Codec)} instead
          */
-        public Config<T, R> codec(final io.reactivex.netty.codec.Codec<R> codec) {
-            this.codec = NettyCodec.fromNetty(codec);
+        public Config<T, R> codec(final Codec<R> codec) {
+            this.codec = new io.mantisrx.common.codec.Codec<R>() {
+                @Override
+                public R decode(byte[] bytes) {
+                    return codec.decode(bytes);
+                }
+
+                @Override
+                public byte[] encode(R value) {
+                    return codec.encode(value);
+                }
+            };
             return this;
         }
 
-        public Config<T, R> codec(Codec<R> codec) {
+        public Config<T, R> codec(io.mantisrx.common.codec.Codec<R> codec) {
             this.codec = codec;
             return this;
         }
@@ -109,7 +129,7 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
             return this;
         }
 
-        public Codec<R> getCodec() {
+        public io.mantisrx.common.codec.Codec<R> getCodec() {
             return codec;
         }
 
