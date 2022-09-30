@@ -1,0 +1,194 @@
+{
+    "annotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "baseline-exact-dependencies-main": {
+        "com.netflix.archaius:archaius2-core": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.spectator:spectator-ext-ipc": {
+            "locked": "0.134.0"
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.2.2"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.36"
+        }
+    },
+    "baseline-exact-dependencies-test": {
+        "com.github.tomakehurst:wiremock-jre8": {
+            "locked": "2.21.0"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "2.18.3"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.36"
+        }
+    },
+    "compileClasspath": {
+        "com.netflix.archaius:archaius2-api": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "0.134.0"
+        },
+        "com.netflix.spectator:spectator-ext-ipc": {
+            "locked": "0.134.0"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-discovery-proto"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.2.2"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.36"
+        }
+    },
+    "lombok": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "runtimeClasspath": {
+        "com.netflix.archaius:archaius2-api": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "0.134.0"
+        },
+        "com.netflix.spectator:spectator-ext-ipc": {
+            "locked": "0.134.0"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-discovery-proto"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.2.2"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.36"
+        }
+    },
+    "testAnnotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "testCompileClasspath": {
+        "com.github.tomakehurst:wiremock-jre8": {
+            "locked": "2.21.0"
+        },
+        "com.netflix.archaius:archaius2-api": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "0.134.0"
+        },
+        "com.netflix.spectator:spectator-ext-ipc": {
+            "locked": "0.134.0"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-discovery-proto"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.2.2"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "2.18.3"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.36"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.36"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.github.tomakehurst:wiremock-jre8": {
+            "locked": "2.21.0"
+        },
+        "com.netflix.archaius:archaius2-api": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.archaius:archaius2-core": {
+            "locked": "2.3.17"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "locked": "0.134.0"
+        },
+        "com.netflix.spectator:spectator-ext-ipc": {
+            "locked": "0.134.0"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-discovery-proto"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.2.2"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.3.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.3.2"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "2.18.3"
+        },
+        "org.slf4j:slf4j-api": {
+            "locked": "1.7.36"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "locked": "1.7.36"
+        }
+    }
+}

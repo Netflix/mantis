@@ -1,0 +1,455 @@
+{
+    "annotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "baseline-exact-dependencies-test": {
+        "junit:junit-dep": {
+            "locked": "4.11"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "1.9.5"
+        }
+    },
+    "compileClasspath": {
+        "com.netflix.numerus:numerus": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.92.2"
+        },
+        "com.netflix:mantis-rxnetty": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.4.19.1"
+        },
+        "io.mantisrx:mantis-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-network": {
+            "project": true
+        },
+        "io.mantisrx:mantis-remote-observable": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
+        },
+        "io.netty:netty-buffer": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-codec-http": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-handler": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-transport-native-epoll": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.reactivex:rxjava": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.3.8"
+        },
+        "org.jctools:jctools-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.2.1"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.xerial.snappy:snappy-java": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1.8.4"
+        }
+    },
+    "lombok": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "runtimeClasspath": {
+        "com.netflix.numerus:numerus": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1"
+        },
+        "com.netflix.rxjava:rxjava-math": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "0.20.6"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.92.2"
+        },
+        "com.netflix:mantis-rxnetty": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.4.19.1"
+        },
+        "io.mantisrx:mantis-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-network": {
+            "project": true
+        },
+        "io.mantisrx:mantis-remote-observable": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
+        },
+        "io.netty:netty-buffer": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-codec-http": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-handler": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-transport-native-epoll": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.reactivex:rxjava": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.3.8"
+        },
+        "org.jctools:jctools-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.2.1"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.xerial.snappy:snappy-java": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1.8.4"
+        }
+    },
+    "testAnnotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "testCompileClasspath": {
+        "com.netflix.numerus:numerus": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.92.2"
+        },
+        "com.netflix:mantis-rxnetty": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.4.19.1"
+        },
+        "io.mantisrx:mantis-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-network": {
+            "project": true
+        },
+        "io.mantisrx:mantis-remote-observable": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
+        },
+        "io.netty:netty-buffer": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-codec-http": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-handler": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-transport-native-epoll": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.reactivex:rxjava": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.3.8"
+        },
+        "junit:junit-dep": {
+            "locked": "4.11"
+        },
+        "org.jctools:jctools-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.2.1"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "1.9.5"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.xerial.snappy:snappy-java": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1.8.4"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.netflix.numerus:numerus": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1"
+        },
+        "com.netflix.rxjava:rxjava-math": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "0.20.6"
+        },
+        "com.netflix.spectator:spectator-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.92.2"
+        },
+        "com.netflix:mantis-rxnetty": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "0.4.19.1"
+        },
+        "io.mantisrx:mantis-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-network": {
+            "project": true
+        },
+        "io.mantisrx:mantis-remote-observable": {
+            "project": true
+        },
+        "io.mantisrx:mantis-shaded": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mql-jvm": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
+        },
+        "io.netty:netty-buffer": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-codec-http": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-handler": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.netty:netty-transport-native-epoll": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.1.17.Final"
+        },
+        "io.reactivex:rxjava": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.3.8"
+        },
+        "junit:junit-dep": {
+            "locked": "4.11"
+        },
+        "org.jctools:jctools-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.2.1"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "1.9.5"
+        },
+        "org.slf4j:slf4j-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.slf4j:slf4j-log4j12": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common",
+                "io.mantisrx:mantis-remote-observable"
+            ],
+            "locked": "1.7.36"
+        },
+        "org.xerial.snappy:snappy-java": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "1.1.8.4"
+        }
+    }
+}

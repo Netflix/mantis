@@ -1,0 +1,63 @@
+{
+    "annotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "baseline-exact-dependencies-test": {
+        "junit:junit-dep": {
+            "locked": "4.11"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "1.9.5"
+        }
+    },
+    "compileClasspath": {
+        "io.mantisrx:mantis-shaded": {
+            "project": true
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "lombok": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "runtimeClasspath": {
+        "io.mantisrx:mantis-shaded": {
+            "project": true
+        }
+    },
+    "testAnnotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "testCompileClasspath": {
+        "io.mantisrx:mantis-shaded": {
+            "project": true
+        },
+        "junit:junit-dep": {
+            "locked": "4.11"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "1.9.5"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.20"
+        }
+    },
+    "testRuntimeClasspath": {
+        "io.mantisrx:mantis-shaded": {
+            "project": true
+        },
+        "junit:junit-dep": {
+            "locked": "4.11"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "1.9.5"
+        }
+    }
+}
