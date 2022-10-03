@@ -35,14 +35,15 @@ public class BlobStoreTest {
         when(blobStore.get(any())).thenReturn(file);
 
         final BlobStore prefixedBlobStpre =
-            new BlobStore.PrefixedBlobStore(new URI("s3://netflix.s3.genpop.prod/mantis/jobs/"), blobStore);
+            new BlobStore.PrefixedBlobStore(new URI("s3://mantisrx.s3.store/mantis/jobs/"), blobStore);
         prefixedBlobStpre.get(new URI("http://sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
 
         final URI expectedUri =
-            new URI("s3://netflix.s3.genpop.prod/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
+            new URI("s3://mantisrx.s3.store/mantis/jobs/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
         verify(blobStore, times(1)).get(Matchers.eq(expectedUri));
 
-        prefixedBlobStpre.get(new URI("https://mantis.us-east-1.prod.netflix.net/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
+        prefixedBlobStpre.get(new URI(
+            "https://mantisrx.region.prod.io.net/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip"));
         verify(blobStore, times(2)).get(Matchers.eq(expectedUri));
     }
 }
