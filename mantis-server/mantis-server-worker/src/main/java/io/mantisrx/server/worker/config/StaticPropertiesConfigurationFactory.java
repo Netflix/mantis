@@ -16,23 +16,17 @@
 
 package io.mantisrx.server.worker.config;
 
-import io.mantisrx.server.core.MetricsCoercer;
-import io.mantisrx.server.master.client.config.MetricsCollector;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
+import io.mantisrx.server.master.client.config.WorkerConfigurationUtils;
 import java.util.Properties;
-import org.skife.config.ConfigurationObjectFactory;
 
 
 public class StaticPropertiesConfigurationFactory implements ConfigurationFactory {
 
-    private final ConfigurationObjectFactory delegate;
     private final WorkerConfiguration config;
 
     public StaticPropertiesConfigurationFactory(Properties props) {
-        delegate = new ConfigurationObjectFactory(props);
-        delegate.addCoercible(new MetricsCoercer(props));
-        delegate.addCoercible(new PluginCoercible<>(MetricsCollector.class, props));
-        config = delegate.build(WorkerConfiguration.class);
+        config = WorkerConfigurationUtils.frmProperties(props, WorkerConfiguration.class);
     }
 
     @Override
@@ -43,7 +37,6 @@ public class StaticPropertiesConfigurationFactory implements ConfigurationFactor
     @Override
     public String toString() {
         return "StaticPropertiesConfigurationFactory{" +
-                "delegate=" + delegate +
                 ", config=" + config +
                 '}';
     }

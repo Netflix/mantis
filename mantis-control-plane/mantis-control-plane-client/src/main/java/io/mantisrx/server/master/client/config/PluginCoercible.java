@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.worker.config;
+package io.mantisrx.server.master.client.config;
 
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.base.Preconditions;
 import java.lang.reflect.Method;
