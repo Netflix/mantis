@@ -31,7 +31,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.96.0"
@@ -263,7 +262,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.96.0"
@@ -540,7 +538,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.96.0"
@@ -852,7 +849,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.96.0"
@@ -1136,7 +1132,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.96.0"

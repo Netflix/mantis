@@ -12,10 +12,7 @@
             "locked": "1.1.1"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -64,9 +61,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -168,7 +162,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -202,10 +196,7 @@
             "locked": "1.1.1"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -254,9 +245,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -361,7 +349,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -395,10 +383,7 @@
             "locked": "0.20.6"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -460,9 +445,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -548,6 +530,12 @@
             ],
             "locked": "1.14.2"
         },
+        "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
+            "locked": "2.7.7"
+        },
         "org.apache.mesos:mesos": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -590,14 +578,14 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "1.7.0"
+            "locked": "1.7.10"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [
@@ -619,10 +607,7 @@
             "locked": "1.1.1"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -671,9 +656,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -787,7 +769,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -816,10 +798,7 @@
             "locked": "0.20.6"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -881,9 +860,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -975,6 +951,12 @@
             ],
             "locked": "1.14.2"
         },
+        "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
+            "locked": "2.7.7"
+        },
         "org.apache.mesos:mesos": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -1020,14 +1002,14 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "1.7.0"
+            "locked": "1.7.10"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [

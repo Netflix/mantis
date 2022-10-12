@@ -44,6 +44,8 @@ dependencies {
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
 
+    implementation libraries.spectatorApi
+
     testCompile "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
     testCompile "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"
     testCompile libraries.junit4

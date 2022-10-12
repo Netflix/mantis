@@ -12,10 +12,7 @@
             "locked": "1.1.1"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -23,14 +20,8 @@
             ],
             "locked": "0.4.19.1"
         },
-        "com.spotify:completable-futures": {
-            "locked": "0.3.1"
-        },
         "com.yahoo.datasketches:sketches-core": {
             "locked": "0.9.1"
-        },
-        "commons-io:commons-io": {
-            "locked": "2.11.0"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -73,9 +64,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-rxcontrol": {
@@ -130,9 +118,6 @@
             ],
             "locked": "2.11.2"
         },
-        "net.lingala.zip4j:zip4j": {
-            "locked": "2.9.0"
-        },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
@@ -153,12 +138,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.hadoop:hadoop-aws": {
-            "locked": "2.7.7"
-        },
-        "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.7"
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.6"
@@ -198,7 +177,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -219,12 +198,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
-        },
-        "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -355,7 +328,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -378,10 +351,7 @@
             "locked": "1.1.1"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -389,14 +359,8 @@
             ],
             "locked": "0.4.19.1"
         },
-        "com.spotify:completable-futures": {
-            "locked": "0.3.1"
-        },
         "com.yahoo.datasketches:sketches-core": {
             "locked": "0.9.1"
-        },
-        "commons-io:commons-io": {
-            "locked": "2.11.0"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -439,9 +403,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-rxcontrol": {
@@ -496,9 +457,6 @@
             ],
             "locked": "2.11.2"
         },
-        "net.lingala.zip4j:zip4j": {
-            "locked": "2.9.0"
-        },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
@@ -519,12 +477,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.hadoop:hadoop-aws": {
-            "locked": "2.7.7"
-        },
-        "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.7"
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.6"
@@ -567,7 +519,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -601,10 +553,7 @@
             "locked": "0.20.6"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -669,9 +618,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-rxcontrol": {
@@ -742,9 +688,6 @@
             ],
             "locked": "1.0"
         },
-        "net.lingala.zip4j:zip4j": {
-            "locked": "2.9.0"
-        },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
@@ -766,10 +709,10 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.hadoop:hadoop-aws": {
-            "locked": "2.7.7"
-        },
         "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "2.7.7"
         },
         "org.apache.httpcomponents:httpclient": {
@@ -817,7 +760,7 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -846,10 +789,7 @@
             "locked": "1.1.1"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -857,14 +797,8 @@
             ],
             "locked": "0.4.19.1"
         },
-        "com.spotify:completable-futures": {
-            "locked": "0.3.1"
-        },
         "com.yahoo.datasketches:sketches-core": {
             "locked": "0.9.1"
-        },
-        "commons-io:commons-io": {
-            "locked": "2.11.0"
         },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
@@ -909,9 +843,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-rxcontrol": {
@@ -975,9 +906,6 @@
         "junit:junit-dep": {
             "locked": "4.11"
         },
-        "net.lingala.zip4j:zip4j": {
-            "locked": "2.9.0"
-        },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
@@ -998,12 +926,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
-        },
-        "org.apache.hadoop:hadoop-aws": {
-            "locked": "2.7.7"
-        },
-        "org.apache.hadoop:hadoop-common": {
-            "locked": "2.7.7"
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.6"
@@ -1052,7 +974,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.26"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -1081,10 +1003,7 @@
             "locked": "0.20.6"
         },
         "com.netflix.spectator:spectator-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-common"
-            ],
-            "locked": "0.92.2"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -1151,9 +1070,6 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-server-worker-client"
-            ],
             "project": true
         },
         "io.mantisrx:mantis-rxcontrol": {
@@ -1233,9 +1149,6 @@
             ],
             "locked": "1.0"
         },
-        "net.lingala.zip4j:zip4j": {
-            "locked": "2.9.0"
-        },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
@@ -1257,10 +1170,10 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.hadoop:hadoop-aws": {
-            "locked": "2.7.7"
-        },
         "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "2.7.7"
         },
         "org.apache.httpcomponents:httpclient": {
@@ -1314,7 +1227,7 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
