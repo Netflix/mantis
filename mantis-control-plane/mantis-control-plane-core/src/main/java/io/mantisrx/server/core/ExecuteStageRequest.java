@@ -62,9 +62,9 @@ public class ExecuteStageRequest implements Serializable {
     private final int stage;
     private final int totalNumStages;
     private final int metricsPort;
-    private final List<Integer> ports = new LinkedList<Integer>();
+    private final List<Integer> ports = new LinkedList<>();
     private final long timeoutToReportStart;
-    private List<Parameter> parameters = new LinkedList<Parameter>();
+    private final List<Parameter> parameters;
     private final SchedulingInfo schedulingInfo;
     private final MantisJobDurationType durationType;
     // class name that provides the job provider.

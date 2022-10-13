@@ -30,6 +30,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.store.InvalidNamedJobException;
 import io.mantisrx.server.master.store.JobAlreadyExistsException;
 import io.mantisrx.server.master.store.JobNameAlreadyExistsException;
+import io.mantisrx.server.master.store.MantisJobMetadata;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStorageProvider;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
@@ -38,6 +39,7 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -61,101 +63,75 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
 
     @Override
     public void storeNewJob(IMantisJobMetadata jobMetadata) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Enter storeNewJob {}", jobMetadata); }
         MantisJobMetadataWritable mjmw = DataFormatAdapter.convertMantisJobMetadataToMantisJobMetadataWriteable(jobMetadata);
         try {
             sProvider.storeNewJob(mjmw);
         } catch (JobAlreadyExistsException | IOException e) {
             throw new Exception(e);
         }
-        if (logger.isTraceEnabled()) { logger.trace("Exit store New job");}
     }
 
     @Override
     public void updateJob(IMantisJobMetadata jobMetadata) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Enter updateJob {}", jobMetadata);}
         MantisJobMetadataWritable mjmw = DataFormatAdapter.convertMantisJobMetadataToMantisJobMetadataWriteable(jobMetadata);
         try {
             sProvider.updateJob(mjmw);
         } catch (io.mantisrx.server.master.store.InvalidJobException e) {
             throw new Exception(e);
         }
-        if (logger.isTraceEnabled()) { logger.trace("Exit updateJob");}
     }
 
     @Override
     public void archiveJob(String jobId) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter archiveJob {}", jobId);}
         sProvider.archiveJob(jobId);
-        if (logger.isTraceEnabled()) { logger.trace("Exit archiveJob");}
     }
 
     @Override
     public void deleteJob(String jobId) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Enter delete job {}", jobId);}
         try {
             sProvider.deleteJob(jobId);
         } catch (io.mantisrx.server.master.store.InvalidJobException e) {
             throw new Exception(e);
         }
-
-        if (logger.isTraceEnabled()) { logger.trace("Exit deleteJob");}
-
     }
 
     @Override
     public void storeMantisStage(IMantisStageMetadata msmd) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter storeMantisStage {}", msmd);}
         sProvider.storeMantisStage(DataFormatAdapter.convertMantisStageMetadataToMantisStageMetadataWriteable(msmd));
-        if (logger.isTraceEnabled()) { logger.trace("Exit storeMantisStage");}
-
     }
 
     @Override
     public void updateMantisStage(IMantisStageMetadata msmd) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter updateMantisStage {}", msmd);}
         sProvider.updateMantisStage(DataFormatAdapter.convertMantisStageMetadataToMantisStageMetadataWriteable(msmd));
-        if (logger.isTraceEnabled()) { logger.trace("Exit updateMantisStage");}
-
     }
 
     @Override
     public void storeWorker(IMantisWorkerMetadata workerMetadata) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter storeWorker {}", workerMetadata);}
         sProvider.storeWorker(DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(workerMetadata));
-        if (logger.isTraceEnabled()) { logger.trace("Exit storeWorker");}
-
     }
 
     @Override
     public void storeWorkers(String jobId, List<IMantisWorkerMetadata> workers) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter storeWorkers {} for Job {}", workers.size(), jobId);}
         List<MantisWorkerMetadataWritable> convertedList = new ArrayList<>(workers.size());
         for (IMantisWorkerMetadata worker : workers) {
             convertedList.add(DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(worker));
         }
         sProvider.storeWorkers(jobId, convertedList);
-        if (logger.isTraceEnabled()) { logger.trace("Exit storeWorkers");}
     }
 
     @Override
     public void storeAndUpdateWorkers(IMantisWorkerMetadata existingWorker, IMantisWorkerMetadata newWorker)
             throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Enter storeAndUpdateWorkers");}
         try {
             sProvider.storeAndUpdateWorkers(DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(existingWorker), DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(newWorker));
         } catch (io.mantisrx.server.master.store.InvalidJobException e) {
             throw new Exception(e);
         }
-        if (logger.isTraceEnabled()) { logger.trace("Exit storeAndUpdateWorkers");}
-
     }
 
     @Override
     public void updateWorker(IMantisWorkerMetadata worker) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter updateWorker {}", worker);}
         sProvider.updateWorker(DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(worker));
-        if (logger.isTraceEnabled()) { logger.trace("Exit updateWorker");}
     }
 
     @Override
@@ -176,27 +152,23 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
 
     @Override
     public Observable<IMantisJobMetadata> loadAllArchivedJobs() {
-        if (logger.isTraceEnabled()) { logger.trace("In StorageAdapter.loadAllArchivedJobs"); }
         return sProvider.initArchivedJobs().map((mjm) -> {
             try {
-                if (logger.isDebugEnabled()) { logger.debug("Reading Archived Job {}", mjm); }
+                logger.debug("Reading Archived Job {}", mjm);
 
                 IMantisJobMetadata archivedJob = DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(mjm, eventPublisher, true);
-                if (logger.isDebugEnabled()) { logger.debug("Read Archived Job {}", archivedJob); }
+                logger.debug("Read Archived Job {}", archivedJob);
                 return archivedJob;
             } catch (Exception e) {
-                logger.error("Exception {} occurred converting archived job {}", e, Optional.ofNullable(mjm).map(j -> j.getJobId()).orElse(""));
+                logger.error("Exception {} occurred converting archived job {}", e, Optional.ofNullable(mjm).map(MantisJobMetadata::getJobId).orElse(""));
                 return null;
             }
-        })
-                .filter((j) -> j != null)
-                ;
+        }).filter(Objects::nonNull);
     }
 
     @Override
     public List<IJobClusterMetadata> loadAllJobClusters() throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter StorageAdapter.loadAllJobClusters"); }
-        List<IJobClusterMetadata> jobClusters = Lists.newArrayList();
+        List<IJobClusterMetadata> jobClusters;
         List<NamedJob> namedJobList = sProvider.initNamedJobs();
         AtomicInteger failedCount = new AtomicInteger();
         AtomicInteger successCount = new AtomicInteger();
@@ -215,20 +187,18 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
                     }
                     return null;
                 })
-                .filter((jobClusterMeta) -> jobClusterMeta != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         logger.info("Succesfully read and converted {} job clusters", successCount.get());
         logger.info("Failed to read and converted {} job clusters", failedCount.get());
 
-        if (logger.isTraceEnabled()) { logger.trace("Exit StorageAdapter.loadAllJobClusters"); }
         return jobClusters;
     }
 
 
     @Override
     public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("In StorageAdapter.loadAllCompletedJobs"); }
         List<CompletedJob> completedJobsList = Lists.newArrayList();
 
         Observable<NamedJob.CompletedJob> namedJobCompletedJobs = sProvider.initNamedJobCompletedJobs();
@@ -241,16 +211,13 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
                 successCount.getAndIncrement();
                 return convertedCompletedJob;
             } catch (Exception e) {
-                logger.error("Exception {} converting {} ", e.getMessage(), completedJob);
-                logger.error("Conversion errors is", e);
+                logger.error("Exception {} converting {}, ", e.getMessage(), completedJob, e);
                 failedCount.getAndIncrement();
             }
             return null;
         })
-                .filter((convertedCompletedJob) -> convertedCompletedJob != null)
-                .forEach((jb) -> completedJobsList.add(jb), error -> {
-                    errorMsg.set(error.getMessage());
-                });
+                .filter(Objects::nonNull)
+                .forEach(completedJobsList::add, error -> errorMsg.set(error.getMessage()));
 
         if (!errorMsg.get().isEmpty()) {
             logger.error("Exception occurred loading completed jobs {}", errorMsg.get());
@@ -260,105 +227,67 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
         logger.info("Succesfully read and converted {} job clusters", successCount.get());
         logger.info("Failed to read and converted {} job clusters", failedCount.get());
 
-        if (logger.isTraceEnabled()) { logger.trace("Exit StorageAdapter.loadAllCompletedJobs"); }
         return completedJobsList;
     }
 
 
     @Override
     public void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter MantisStorageProviderAdapter:archiveWorker {}", mwmd); }
         sProvider.archiveWorker(DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(mwmd));
-        if (logger.isTraceEnabled()) { logger.trace("Exit MantisStorageProviderAdapter:archiveWorker {}", mwmd); }
     }
 
     @Override
     public List<IMantisWorkerMetadata> getArchivedWorkers(String jobId) throws IOException {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Enter MantisStorageProviderAdapter:getArchivedWorkers {}", jobId);
-        }
         List<IMantisWorkerMetadata> archivedWorkers = Lists.newArrayList();
         for (MantisWorkerMetadataWritable mantisWorkerMetadataWritable : sProvider.getArchivedWorkers(jobId)) {
             try {
                 archivedWorkers.add(DataFormatAdapter.convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(mantisWorkerMetadataWritable, eventPublisher).getMetadata());
             } catch (Exception e) {
-                logger.error("Exception {} converting {} ", e.getMessage(), mantisWorkerMetadataWritable);
+                logger.error("Exception {} converting {}", e.getMessage(), mantisWorkerMetadataWritable, e);
             }
-        }
-        if (logger.isTraceEnabled()) {
-            logger.trace("Exit MantisStorageProviderAdapter:getArchivedWorkers {} with {} workers", jobId, archivedWorkers.size());
         }
         return archivedWorkers;
     }
 
     @Override
     public void createJobCluster(IJobClusterMetadata jobCluster) throws Exception {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Enter MantisStorageProviderAdapter:createJobCluster {}", jobCluster);
-        }
         try {
             sProvider.storeNewNamedJob(DataFormatAdapter.convertJobClusterMetadataToNamedJob(jobCluster));
         } catch (JobNameAlreadyExistsException e) {
             throw new Exception(e);
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("Exit MantisStorageProviderAdapter:createJobCluster {}", jobCluster);
-        }
-
     }
 
     @Override
     public void updateJobCluster(IJobClusterMetadata jobCluster) throws Exception {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Enter MantisStorageProviderAdapter:updateJobCluster {}", jobCluster);
-        }
         try {
             sProvider.updateNamedJob(DataFormatAdapter.convertJobClusterMetadataToNamedJob(jobCluster));
         } catch (InvalidNamedJobException e) {
             throw new Exception(e);
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("Exit MantisStorageProviderAdapter:createJobCluster {}", jobCluster);
-        }
     }
 
     @Override
     public void deleteJobCluster(String name) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Enter MantisStorageProviderAdapter:deleteJobCluster {}", name); }
         try {
             sProvider.deleteNamedJob(name);
         } catch (IOException e) {
             throw new Exception(e);
         }
-        if (logger.isTraceEnabled()) { logger.trace("Exit MantisStorageProviderAdapter:createJobCluster {}", name); }
     }
 
     @Override
     public void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Enter MantisStorageProviderAdapter:storeCompletedJobForCluster {}", name);
-        }
         sProvider.storeCompletedJobForNamedJob(name, DataFormatAdapter.convertCompletedJobToNamedJobCompletedJob(job));
-        if (logger.isTraceEnabled()) {
-            logger.trace("Enter MantisStorageProviderAdapter:storeCompletedJobForCluster {}", name);
-        }
-
     }
 
     @Override
     public void removeCompletedJobForCluster(String name, String jobId) throws IOException {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Enter MantisStorageProviderAdapter:removeCompletedJobForCluster {}", jobId);
-        }
         sProvider.removeCompledtedJobForNamedJob(name, jobId);
-        if (logger.isTraceEnabled()) {
-            logger.trace("Exit MantisStorageProviderAdapter:removeCompletedJobForCluster {}", jobId);
-        }
     }
 
     @Override
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Enter MantisStorageProviderAdapter:loadArchivedJob {}", jobId); }
         IMantisJobMetadata mantisJobMetadata;
         try {
             MantisJobMetadataWritable archJob = sProvider.loadArchivedJob(jobId);
@@ -367,9 +296,7 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
             logger.error("Exception loading archived Job", e);
             return Optional.empty();
         }
-        if (logger.isTraceEnabled()) { logger.trace("Exit MantisStorageProviderAdapter:loadArchivedJob {}", jobId); }
         return Optional.ofNullable(mantisJobMetadata);
-
     }
 
 

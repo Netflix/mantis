@@ -73,11 +73,9 @@ public class MantisJobStore {
                     archivedJobsMetadataCache.add(job);
                     archivedJobIds.put(job.getJobId().getId(), job.getJobId().getId());
                     terminatedJobsToDelete.add(new TerminatedJob(job.getJobId().getId(), getTerminatedAt(job)));
-                }, (e) -> {
-                    logger.warn("Exception loading archived Jobs", e);
-                }, () -> {
-                    logger.info("Finished Loading all archived Jobs!");
-                });
+                },
+                    (e) -> logger.warn("Exception loading archived Jobs", e),
+                    () -> logger.info("Finished Loading all archived Jobs!"));
     }
 
 
@@ -92,74 +90,51 @@ public class MantisJobStore {
     }
 
     public List<IJobClusterMetadata> loadAllJobClusters() throws IOException {
-        if (logger.isTraceEnabled()) {logger.trace("Loading all job clusters"); }
         List<IJobClusterMetadata> iJobClusterMetadataList = storageProvider.loadAllJobClusters();
         logger.info("Loaded {} job clusters", iJobClusterMetadataList.size());
         return iJobClusterMetadataList;
     }
 
     public List<IMantisJobMetadata> loadAllActiveJobs() throws IOException {
-        if (logger.isTraceEnabled()) {logger.trace("Loading all active jobs"); }
         List<IMantisJobMetadata> mantisJobMetadataList = storageProvider.loadAllJobs();
         logger.info("Loaded {} active jobs", mantisJobMetadataList.size());
         return mantisJobMetadataList;
     }
 
     public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        if (logger.isTraceEnabled()) {logger.trace("Loading all completed jobs"); }
         List<CompletedJob> completedJobs = storageProvider.loadAllCompletedJobs();
         logger.info("Loaded {} completed jobs", completedJobs.size());
         return completedJobs;
     }
 
     public void createJobCluster(IJobClusterMetadata jobCluster) throws Exception {
-        if (logger.isTraceEnabled()) {logger.trace("Creating Job Cluster {}", jobCluster); }
         storageProvider.createJobCluster(jobCluster);
-        if (logger.isTraceEnabled()) {
-            logger.trace("Created Job Cluster {}", jobCluster.getJobClusterDefinition().getName());
-        }
     }
 
     public void updateJobCluster(IJobClusterMetadata jobCluster) throws Exception {
-        if (logger.isTraceEnabled()) {logger.trace("Updating Job Cluster {}", jobCluster); }
         storageProvider.updateJobCluster(jobCluster);
-        if (logger.isTraceEnabled()) {
-            logger.trace("Updated Job Cluster {}", jobCluster.getJobClusterDefinition().getName());
-        }
     }
 
     public void deleteJobCluster(String name) throws Exception {
-        if (logger.isTraceEnabled()) {logger.trace("Deleting Job Cluster {}", name); }
         storageProvider.deleteJobCluster(name);
-        if (logger.isTraceEnabled()) {logger.trace("Deleted Job Cluster {}", name); }
-
     }
 
     public void deleteJob(String jobId) throws Exception {
-        if (logger.isTraceEnabled()) {logger.trace("Deleting Job  {}", jobId); }
         archivedJobsMetadataCache.remove(jobId);
         archivedWorkersCache.remove(jobId);
         storageProvider.deleteJob(jobId);
-        if (logger.isTraceEnabled()) {logger.trace("Deleted Job  {}", jobId); }
-
     }
 
     public void deleteCompletedJob(String clusterName, String jobId) throws IOException {
-        if (logger.isTraceEnabled()) {logger.trace("Deleting completed Job  {}", jobId); }
         storageProvider.removeCompletedJobForCluster(clusterName, jobId);
-        if (logger.isTraceEnabled()) {logger.trace("Deleted completed job {}", jobId); }
     }
 
     public void storeCompletedJobForCluster(String name, CompletedJob completedJob) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Storing completed Job for cluster {}", completedJob);}
         storageProvider.storeCompletedJobForCluster(name, completedJob);
-        if (logger.isTraceEnabled()) { logger.trace("Stored completed Job for cluster {}", completedJob);}
     }
 
     public void storeNewJob(IMantisJobMetadata jobMetadata) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Storing new Job{}", jobMetadata);}
         storageProvider.storeNewJob(jobMetadata);
-        if (logger.isTraceEnabled()) { logger.trace("Stored new Job {}", jobMetadata);}
 
     }
 
@@ -184,18 +159,11 @@ public class MantisJobStore {
     }
 
     public void replaceTerminatedWorker(IMantisWorkerMetadata oldWorker, IMantisWorkerMetadata replacement) throws Exception {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Replace terminated worker  {} with new worker {}", oldWorker, replacement);
-        }
         storageProvider.storeAndUpdateWorkers(oldWorker, replacement);
-        if (logger.isTraceEnabled()) { logger.trace("Replaced terminated worker {}", oldWorker);}
-
     }
 
     public void updateJob(final IMantisJobMetadata jobMetadata) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Update Job {}", jobMetadata);}
         storageProvider.updateJob(jobMetadata);
-        if (logger.isTraceEnabled()) { logger.trace("Updated Job {}", jobMetadata);}
     }
 
     public void updateStage(IMantisStageMetadata stageMeta) throws IOException {
@@ -204,11 +172,10 @@ public class MantisJobStore {
 
     public List<? extends IMantisWorkerMetadata> storeNewWorkers(IMantisJobMetadata job, List<IMantisWorkerMetadata> workerRequests)
             throws IOException, InvalidJobException {
-        if (logger.isTraceEnabled()) { logger.trace("Storing new workers for  Job {} ", job);}
         if (workerRequests == null || workerRequests.isEmpty())
             return null;
         String jobId = workerRequests.get(0).getJobId();
-        if (logger.isDebugEnabled()) { logger.debug("Adding " + workerRequests.size() + " workers for job " + jobId); }
+        logger.debug("Adding {} workers for job {}", workerRequests.size(), jobId);
 
         List<IMantisWorkerMetadata> addedWorkers = new ArrayList<>();
         List<Integer> savedStageList = Lists.newArrayList();
@@ -227,42 +194,16 @@ public class MantisJobStore {
             addedWorkers.add(workerRequest);
         }
         storageProvider.storeWorkers(jobId, addedWorkers);
-        if (logger.isTraceEnabled()) { logger.trace("Stored new workers for Job {}", addedWorkers);}
         return addedWorkers;
     }
 
     public void storeNewWorker(IMantisWorkerMetadata workerRequest)
             throws IOException, InvalidJobException {
-        if (logger.isTraceEnabled()) { logger.trace("Adding worker index=" + workerRequest.getWorkerIndex()); }
-
-        //if(job == null)
-        //    throw new InvalidJobException(workerRequest.getJobId(), workerRequest.getStageNum(), workerRequest.getWorkerIndex());
-        //	        if(job.getStageMetadata(workerRequest.getWorkerStage()) == null) {
-        //	            IMantisStageMetadata msmd = new MantisStageMetadataImpl.Builder().from(workerRequest).build();
-        //	            boolean added = job.addJobStageIfAbsent(msmd);
-        //	            if(added)
-        //	                storageProvider.storeMantisStage(msmd); // store the new
-        //	        }
-        //	        IMantisWorkerMetadata mwmd = new MantisWorkerMetadataImpl.Builder().from(workerRequest).build();
-        //	        if(!job.addWorkerMetadata(workerRequest.getWorkerStage(), mwmd, null)) {
-        //	            IMantisWorkerMetadata tmp = job.getWorkerByIndex(workerRequest.getWorkerStage(), workerRequest.getWorkerIndex());
-        //	            throw new InvalidJobException(job.getJobId().getId(), workerRequest.getWorkerStage(), workerRequest.getWorkerIndex(),
-        //	                    new Exception("Couldn't add worker " + workerRequest.getWorkerNumber() + " as index " +
-        //	                    workerRequest.getWorkerIndex() + ", that index already has worker " +
-        //	                            tmp.getWorkerNumber()));
-        //	        }
         storageProvider.storeWorker(workerRequest);
-
     }
 
     public void updateWorker(IMantisWorkerMetadata worker) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Updating worker index=" + worker.getWorkerIndex()); }
         storageProvider.updateWorker(worker);
-        if (logger.isTraceEnabled()) { logger.trace("Updated worker index=" + worker.getWorkerIndex()); }
-        // make archive explicit
-        //        if(archiveIfError && WorkerState.isErrorState(worker.getState())) {
-        //            archiveWorker(worker);
-        //        }
     }
 
     private void archiveWorkersIfAny(IMantisJobMetadata mjmd) throws IOException {
@@ -275,34 +216,28 @@ public class MantisJobStore {
     }
 
     public void archiveWorker(IMantisWorkerMetadata worker) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Archiving worker index=" + worker.getWorkerIndex()); }
         storageProvider.archiveWorker(worker);
         ConcurrentMap<Integer, IMantisWorkerMetadata> workersMap = null;
         try {
             workersMap = archivedWorkersCache.getArchivedWorkerMap(worker.getJobId());
             workersMap.putIfAbsent(worker.getWorkerNumber(), worker);
         } catch (ExecutionException e) {
-            logger.warn("Error adding worker to archived cache {}", e);
+            logger.warn("Error adding worker to archived cache", e);
         }
-        if (logger.isTraceEnabled()) { logger.trace("Archived worker index=" + worker.getWorkerIndex()); }
 
     }
 
     public Optional<IMantisJobMetadata> getArchivedJob(final String jobId) {
-        if (logger.isTraceEnabled()) { logger.trace("Get Archived Job {}", jobId);}
         final Optional<IMantisJobMetadata> jobOp = Optional.ofNullable(archivedJobsMetadataCache.getJob(jobId));
         if (!jobOp.isPresent()) {
             logger.error("archivedJobsMetadataCache found no job for job ID {}", jobId);
         }
-        if (logger.isTraceEnabled()) { logger.trace("Got archived Job {}", jobOp);}
         return jobOp;
     }
 
     public void archiveJob(IMantisJobMetadata job) throws IOException {
-        if (logger.isTraceEnabled()) { logger.trace("Archiving Job {}", job);}
         archivedJobsMetadataCache.add(job);
         storageProvider.archiveJob(job.getJobId().getId());
-        if (logger.isTraceEnabled()) { logger.trace("Archived Job {}", job.getJobId());}
     }
 
     /**
@@ -318,21 +253,14 @@ public class MantisJobStore {
                 return Optional.ofNullable(workersMap.get(workerNumber));
             }
         } catch (ExecutionException e) {
-            logger.warn("Exception getting archived Worker {}", e);
+            logger.warn("Exception getting archived worker", e);
         }
 
         return Optional.empty();
     }
 
     public List<IMantisWorkerMetadata> getArchivedWorkers(String jobId) throws Exception {
-        if (logger.isTraceEnabled()) { logger.trace("Getting Archived workers for Job {}", jobId);}
-        List archivedWorkers = new ArrayList<>(archivedWorkersCache.getArchivedWorkerMap(jobId).values());
-        if (logger.isTraceEnabled()) {
-            logger.trace("Fetched archived {} workers for Job  {}", archivedWorkers.size(), jobId);
-        }
-        return archivedWorkers;
-
-
+        return new ArrayList<>(archivedWorkersCache.getArchivedWorkerMap(jobId).values());
     }
 
     private static class TerminatedJob implements Comparable<TerminatedJob> {
@@ -401,12 +329,10 @@ public class MantisJobStore {
         }
 
         private Optional<IMantisJobMetadata> loadArchivedJobImpl(String jobId) throws IOException, ExecutionException {
-            if (logger.isTraceEnabled()) {logger.trace("Loading archived job {}", jobId);}
             final Optional<IMantisJobMetadata> jobMetadata = storageProvider.loadArchivedJob(jobId);
             if (!jobMetadata.isPresent()) {
                 logger.warn("Failed to load archived job {}. No job found!", jobId);
             }
-            if (logger.isTraceEnabled()) {logger.trace("Loaded archived job {}", jobMetadata);}
             return jobMetadata;
         }
 
