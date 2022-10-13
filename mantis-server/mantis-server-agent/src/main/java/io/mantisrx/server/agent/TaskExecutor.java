@@ -446,12 +446,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         WrappedExecuteStageRequest wrappedRequest =
             new WrappedExecuteStageRequest(PublishSubject.create(), request);
 
+        // do not wait for task processing (e.g. artifact download).
+        getIOExecutor().execute(() -> this.prepareTask(wrappedRequest));
+        return CompletableFuture.completedFuture(Ack.getInstance());
+    }
+
+    private void prepareTask(WrappedExecuteStageRequest wrappedRequest) {
         try {
             UserCodeClassLoader userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
-                request, classLoaderHandle);
+                wrappedRequest.getRequest(), classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
-            ITask task = this.taskFactory.getITaskInstance(request, cl);
+            ITask task = this.taskFactory.getITaskInstance(wrappedRequest.getRequest(), cl);
 
             task.initialize(
                 wrappedRequest,
@@ -462,15 +468,19 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 Optional.of(getHostname())
             );
 
-            setCurrentTask(task);
-
-            scheduleRunAsync(this::startCurrentTask, 0, TimeUnit.MILLISECONDS);
-            return CompletableFuture.completedFuture(Ack.getInstance());
+            scheduleRunAsync(() -> {
+                setCurrentTask(task);
+                startCurrentTask();
+            }, 0, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
-            log.error("Failed to submit task, request: {}", request, ex);
-            return CompletableFutures.exceptionallyCompletedFuture(
-                new TaskNotFoundException(request.getWorkerId(), ex));
+            log.error("Failed to submit task, request: {}", wrappedRequest.getRequest(), ex);
+            listeners.enqueue(getTaskFailedEvent(null, ex));
         }
+        finally {
+            getIOExecutor().execute(listeners::dispatch);
+        }
+
+
     }
 
     private void startCurrentTask() {
