@@ -31,8 +31,11 @@ buildscript {
         classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
         classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
         classpath 'com.palantir.baseline:gradle-baseline-java:4.0.0'
+        classpath "com.vanniktech:gradle-dependency-graph-generator-plugin:0.8.0"
     }
 }
+
+apply plugin: "com.vanniktech.dependency.graph.generator"
 
 ext.versions = [
         flink   : "1.14.2",
