@@ -868,6 +868,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             // take poison pill
             performFinalShutdown();
         } catch (Exception e) {
+            LOGGER.error("Failed to kill job {}", jobId, e);
             sender.tell(new JobClusterProto.KillJobResponse(req.requestId, SERVER_ERROR, getJobState(),
                     getJobId() + " Could not be terminated due to " + e.getMessage(), getJobId(),
                     this.mantisJobMetaData, req.user, req.requestor), getSelf());
