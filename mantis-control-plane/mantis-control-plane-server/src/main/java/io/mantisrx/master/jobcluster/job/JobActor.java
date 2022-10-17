@@ -843,10 +843,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         if (LOGGER.isDebugEnabled()) {
             LOGGER.info("shutting down job with metadata {}", mantisJobMetaData);
         }
-        eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
+        try {
+            eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
                 "Killing job, reason: " + req.reason,
                 getJobId(), getJobState()));
-        try {
             JobState newState;
             if (req.jobCompletedReason.equals(JobCompletedReason.Error)
                     || req.jobCompletedReason.equals(JobCompletedReason.Lost)) {
