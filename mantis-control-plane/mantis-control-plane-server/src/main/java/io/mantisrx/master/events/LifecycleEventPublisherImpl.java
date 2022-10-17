@@ -47,7 +47,7 @@ public class LifecycleEventPublisherImpl implements LifecycleEventPublisher {
                 workerEventSubscriber.process(jobStatusEvent);
             }
         } catch (Exception e) {
-            log.error("Failed to publish the event; Ignoring the failure as this is just a listener interface", e);
+            log.error("Failed to publish the event={}; Ignoring the failure as this is just a listener interface", statusEvent, e);
         }
     }
 

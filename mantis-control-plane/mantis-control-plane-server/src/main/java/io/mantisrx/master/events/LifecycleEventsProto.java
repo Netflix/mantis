@@ -28,6 +28,10 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import java.util.Optional;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 public class LifecycleEventsProto {
 
@@ -95,6 +99,10 @@ public class LifecycleEventsProto {
         }
     }
 
+    @Getter
+    @EqualsAndHashCode
+    @AllArgsConstructor
+    @ToString
     public static class StatusEvent {
         public enum StatusEventType {
             ERROR, WARN, INFO, DEBUG, HEARTBEAT
@@ -106,26 +114,10 @@ public class LifecycleEventsProto {
         public StatusEvent(StatusEventType type, String message) {
             this(type, message, System.currentTimeMillis());
         }
-
-        public StatusEvent(StatusEventType type, String message, long ts) {
-            this.statusEventType = type;
-            this.message = message;
-            timestamp = ts;
-        }
-
-        public StatusEventType getStatusEventType() {
-            return statusEventType;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public long getTimestamp() {
-            return timestamp;
-        }
     }
 
+    @Getter
+    @ToString
     public static final class WorkerStatusEvent extends StatusEvent {
         private final int stageNum;
         private final WorkerId workerId;
@@ -185,33 +177,9 @@ public class LifecycleEventsProto {
             this.workerState = workerState;
             this.hostName = hostName;
         }
-
-        public int getStageNum() {
-            return stageNum;
-        }
-
-        public WorkerId getWorkerId() {
-            return workerId;
-        }
-
-        public WorkerState getWorkerState() {
-            return workerState;
-        }
-
-        public Optional<String> getHostName() { return this.hostName; }
-
-        @Override
-        public String toString() {
-            return "WorkerStatusEvent{" +
-                    "stageNum=" + stageNum +
-                    ", workerId=" + workerId +
-                    ", workerState=" + workerState +
-                    ", hostName=" + hostName.orElse("") +
-                    '}';
-        }
-
     }
 
+    @ToString
     public static final class JobStatusEvent extends StatusEvent {
         private final JobId jobId;
         private final JobState jobState;
@@ -232,19 +200,9 @@ public class LifecycleEventsProto {
         public JobState getJobState() {
             return jobState;
         }
-
-        @Override
-        public String toString() {
-            return "JobStatusEvent{" +
-                "statusEventType=" + statusEventType +
-                ", message='" + message + '\'' +
-                ", timestamp=" + timestamp +
-                ", jobId='" + jobId + '\'' +
-                ", jobState=" + jobState +
-                '}';
-        }
     }
 
+    @ToString
     public static final class JobClusterStatusEvent extends StatusEvent {
         private final String jobCluster;
 
@@ -257,16 +215,6 @@ public class LifecycleEventsProto {
 
         public String getJobCluster() {
             return jobCluster;
-        }
-
-        @Override
-        public String toString() {
-            return "JobClusterStatusEvent{" +
-                "statusEventType=" + statusEventType +
-                ", message='" + message + '\'' +
-                ", timestamp=" + timestamp +
-                ", jobCluster='" + jobCluster + '\'' +
-                '}';
         }
     }
 
