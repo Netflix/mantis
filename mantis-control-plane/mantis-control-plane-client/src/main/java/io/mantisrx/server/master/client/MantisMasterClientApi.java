@@ -534,12 +534,12 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                                     Integer sinkStage = getSinkStageNumFromJsonResponse(jobId, response);
                                     if (sinkStage < 0) {
                                         logger.warn("Job " + jobId + " not found");
-                                        return Observable.error(new Exception("Job " + jobId + " not found"));
+                                        return Observable.error(new Exception("Job " + jobId + " not found, response: " + response));
                                     }
                                     return Observable.just(sinkStage);
                                 } catch (MasterClientException e) {
                                     logger.warn("Can't get sink stage info for " + jobId + ": " + e.getMessage());
-                                    return Observable.error(e);
+                                    return Observable.error(new Exception("Can't get sink stage info for " + jobId + ": " + e.getMessage(), e));
                                 }
                             })
                             .retryWhen(retryLogic)
