@@ -15,7 +15,7 @@
  */
 
 dependencies {
-    compile project(":mantis-control-plane:mantis-control-plane-core")
+    api project(":mantis-control-plane:mantis-control-plane-core")
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
