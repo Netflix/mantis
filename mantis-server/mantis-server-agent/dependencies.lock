@@ -37,6 +37,7 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
             "project": true
@@ -52,6 +53,9 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-client"
             ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-loader": {
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -95,7 +99,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "net.lingala.zip4j:zip4j": {
             "locked": "2.9.0"
@@ -205,6 +209,7 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -233,6 +238,12 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-server-worker"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-loader": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-server-worker"
             ],
@@ -300,7 +311,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -427,6 +438,7 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
             "project": true
@@ -442,6 +454,9 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-client"
             ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-loader": {
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -485,7 +500,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "net.lingala.zip4j:zip4j": {
             "locked": "2.9.0"
@@ -614,6 +629,7 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker-client"
             ],
             "project": true
@@ -629,6 +645,9 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-client"
             ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-loader": {
             "project": true
         },
         "io.mantisrx:mantis-server-worker-client": {
@@ -681,7 +700,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -712,7 +731,8 @@
         },
         "org.apache.hadoop:hadoop-common": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-client"
+                "io.mantisrx:mantis-control-plane-client",
+                "io.mantisrx:mantis-runtime-loader"
             ],
             "locked": "2.7.7"
         },
@@ -819,6 +839,7 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -847,6 +868,12 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-server-worker"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-loader": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-server-worker"
             ],
@@ -914,7 +941,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -1077,6 +1104,7 @@
         },
         "io.mantisrx:mantis-control-plane-client": {
             "firstLevelTransitive": [
+                "io.mantisrx:mantis-runtime-loader",
                 "io.mantisrx:mantis-server-worker",
                 "io.mantisrx:mantis-server-worker-client"
             ],
@@ -1105,6 +1133,12 @@
             "project": true
         },
         "io.mantisrx:mantis-runtime": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-server-worker"
+            ],
+            "project": true
+        },
+        "io.mantisrx:mantis-runtime-loader": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-server-worker"
             ],
@@ -1180,7 +1214,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -1223,7 +1257,8 @@
         },
         "org.apache.hadoop:hadoop-common": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-client"
+                "io.mantisrx:mantis-control-plane-client",
+                "io.mantisrx:mantis-runtime-loader"
             ],
             "locked": "2.7.7"
         },

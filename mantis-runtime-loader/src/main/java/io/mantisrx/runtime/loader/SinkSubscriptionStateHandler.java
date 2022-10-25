@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.runtime.loader;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import java.time.Clock;

@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.client;
+package io.mantisrx.runtime.loader;
 
+import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import java.util.Optional;
@@ -31,7 +33,7 @@ public interface ITask extends Service {
                     WorkerConfiguration config,
                     MantisMasterGateway masterMonitor,
                     UserCodeClassLoader userCodeClassLoader,
-                    SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
+                    Factory sinkSubscriptionStateHandlerFactory,
                     Optional<String> hostname);
 
     Observable<Status> getStatus();

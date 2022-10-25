@@ -16,15 +16,15 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.loader.ITask;
+import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
-import io.mantisrx.server.master.client.ITask;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;

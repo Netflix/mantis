@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mantisrx.server.master.client;
+package io.mantisrx.runtime.loader;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;

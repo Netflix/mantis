@@ -15,7 +15,7 @@
  */
 
 dependencies {
-    implementation project(":mantis-control-plane:mantis-control-plane-client")
+    implementation project(":mantis-runtime-loader")
     implementation project(":mantis-server:mantis-server-worker-client")
 
     compile libraries.vavr

@@ -17,12 +17,12 @@
 package io.mantisrx.server.agent;
 
 import com.mantisrx.common.utils.Services;
+import io.mantisrx.runtime.loader.ClassLoaderHandle;
+import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
+import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
-import io.mantisrx.server.master.client.ClassLoaderHandle;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
-import io.mantisrx.server.master.client.SinkSubscriptionStateHandler;
-import io.mantisrx.server.master.client.TaskFactory;
 import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;

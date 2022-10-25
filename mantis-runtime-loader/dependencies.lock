@@ -5,14 +5,8 @@
         }
     },
     "baseline-exact-dependencies-main": {
-        "com.spotify:completable-futures": {
-            "locked": "0.3.1"
-        },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.7"
-        },
-        "org.asynchttpclient:async-http-client": {
-            "locked": "2.12.3"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -115,9 +109,6 @@
             ],
             "locked": "0.4.19.1"
         },
-        "com.spotify:completable-futures": {
-            "locked": "0.3.1"
-        },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -130,10 +121,19 @@
             ],
             "project": true
         },
+        "io.mantisrx:mantis-control-plane-client": {
+            "project": true
+        },
         "io.mantisrx:mantis-control-plane-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-remote-observable": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-shaded": {
@@ -147,19 +147,19 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.17.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.17.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.17.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -200,9 +200,6 @@
             ],
             "locked": "1.7.2"
         },
-        "org.asynchttpclient:async-http-client": {
-            "locked": "2.12.3"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -234,7 +231,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -274,6 +271,9 @@
             "locked": "0.4.19.1"
         },
         "com.spotify:completable-futures": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "0.3.1"
         },
         "commons-io:commons-io": {
@@ -295,10 +295,19 @@
             ],
             "project": true
         },
+        "io.mantisrx:mantis-control-plane-client": {
+            "project": true
+        },
         "io.mantisrx:mantis-control-plane-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-remote-observable": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-shaded": {
@@ -375,6 +384,9 @@
             "locked": "1.14.2"
         },
         "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "2.7.7"
         },
         "org.apache.mesos:mesos": {
@@ -384,6 +396,9 @@
             "locked": "1.7.2"
         },
         "org.asynchttpclient:async-http-client": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "2.12.3"
         },
         "org.hdrhistogram:HdrHistogram": {
@@ -452,9 +467,6 @@
             ],
             "locked": "0.4.19.1"
         },
-        "com.spotify:completable-futures": {
-            "locked": "0.3.1"
-        },
         "io.mantisrx:mantis-common": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
@@ -468,10 +480,19 @@
             ],
             "project": true
         },
+        "io.mantisrx:mantis-control-plane-client": {
+            "project": true
+        },
         "io.mantisrx:mantis-control-plane-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-remote-observable": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-shaded": {
@@ -485,19 +506,19 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.17.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.17.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.17.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -544,9 +565,6 @@
             ],
             "locked": "1.7.2"
         },
-        "org.asynchttpclient:async-http-client": {
-            "locked": "2.12.3"
-        },
         "org.hdrhistogram:HdrHistogram": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -581,7 +599,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.7.30"
+            "locked": "1.7.15"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -619,6 +637,9 @@
             "locked": "0.4.19.1"
         },
         "com.spotify:completable-futures": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "0.3.1"
         },
         "commons-io:commons-io": {
@@ -641,10 +662,19 @@
             ],
             "project": true
         },
+        "io.mantisrx:mantis-control-plane-client": {
+            "project": true
+        },
         "io.mantisrx:mantis-control-plane-core": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-remote-observable": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "project": true
         },
         "io.mantisrx:mantis-shaded": {
@@ -727,6 +757,9 @@
             "locked": "1.14.2"
         },
         "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "2.7.7"
         },
         "org.apache.mesos:mesos": {
@@ -736,6 +769,9 @@
             "locked": "1.7.2"
         },
         "org.asynchttpclient:async-http-client": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
             "locked": "2.12.3"
         },
         "org.hdrhistogram:HdrHistogram": {

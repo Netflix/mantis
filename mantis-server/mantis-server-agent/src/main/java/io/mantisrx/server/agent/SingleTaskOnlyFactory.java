@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.agent;
 
+import io.mantisrx.runtime.loader.ClassLoaderHandle;
+import io.mantisrx.runtime.loader.ITask;
+import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.master.client.ClassLoaderHandle;
-import io.mantisrx.server.master.client.ITask;
-import io.mantisrx.server.master.client.TaskFactory;
 import java.util.ServiceLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;

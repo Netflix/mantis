@@ -16,7 +16,7 @@
 package io.mantisrx.server.agent;
 
 import com.mantisrx.common.utils.Closeables;
-import io.mantisrx.server.master.client.ClassLoaderHandle;
+import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;

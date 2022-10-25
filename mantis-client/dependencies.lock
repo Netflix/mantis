@@ -107,7 +107,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
@@ -291,7 +291,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
@@ -504,7 +504,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -702,7 +702,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -919,7 +919,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "junit:junit": {
             "locked": "4.11"

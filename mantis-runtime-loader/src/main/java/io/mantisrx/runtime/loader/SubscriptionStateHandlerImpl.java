@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.client;
+package io.mantisrx.runtime.loader;
 
+import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import java.time.Clock;
