@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.cgroups;
+package io.mantisrx.server.agent.metrics.cgroups;
 
-import io.mantisrx.runtime.loader.config.Usage;
 import java.io.IOException;
+import java.util.Map;
 
-interface SubsystemProcess {
-    void getUsage(Usage.UsageBuilder usageBuilder) throws IOException;
+interface Cgroup {
+    Long getMetric(String subsystem, String metricName) throws IOException;
+    Map<String, Long> getStats(String subsystem, String stat) throws IOException;
 }

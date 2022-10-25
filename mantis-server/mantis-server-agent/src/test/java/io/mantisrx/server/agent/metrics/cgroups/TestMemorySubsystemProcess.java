@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.cgroups;
+package io.mantisrx.server.agent.metrics.cgroups;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.cgroups;
+package io.mantisrx.server.agent.metrics.cgroups;
 
 import io.mantisrx.runtime.loader.config.MetricsCollector;
 import io.mantisrx.runtime.loader.config.Usage;

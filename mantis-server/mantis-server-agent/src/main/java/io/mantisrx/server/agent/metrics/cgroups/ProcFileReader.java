@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.cgroups;
+package io.mantisrx.server.agent.metrics.cgroups;
 
 import io.mantisrx.shaded.com.google.common.base.Charsets;
 import java.io.Closeable;

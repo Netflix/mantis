@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.agent.cgroups;
+package io.mantisrx.server.agent.metrics.cgroups;
 
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.base.Preconditions;
 import io.vavr.Tuple2;
