@@ -17,7 +17,7 @@
 package io.mantisrx.server.worker.config;
 
 
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 
 /**
  * Provides static and global access to configuration objects. The method io.mantisrx.server.master.config.ConfigurationProvider#initialize(ConfigurationFactory)

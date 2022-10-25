@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.worker.config;
 
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
-import io.mantisrx.server.master.client.config.WorkerConfigurationUtils;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import java.util.Properties;
 
 

@@ -22,6 +22,7 @@ import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
@@ -29,7 +30,6 @@ import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
@@ -145,9 +145,8 @@ public class MantisWorker extends BaseService {
                                 wrappedRequest,
                                 config,
                                 gateway,
-                                ClassLoaderHandle.createUserCodeClassloader(
-                                    wrappedRequest.getRequest(),
-                                    ClassLoaderHandle.fixed(getClass().getClassLoader())),
+                                ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
+                                    wrappedRequest.getRequest()),
                                 SinkSubscriptionStateHandler
                                     .Factory
                                     .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(

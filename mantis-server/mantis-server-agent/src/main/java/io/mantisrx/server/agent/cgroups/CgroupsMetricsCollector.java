@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.agent.cgroups;
 
-import io.mantisrx.server.master.client.config.MetricsCollector;
-import io.mantisrx.server.master.client.config.Usage;
+import io.mantisrx.runtime.loader.config.MetricsCollector;
+import io.mantisrx.runtime.loader.config.Usage;
 import java.io.IOException;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;

@@ -41,9 +41,7 @@ public class SingleTaskOnlyFactory implements TaskFactory {
         ExecuteStageRequest request,
         ClassLoaderHandle classLoaderHandle) {
         try {
-            UserCodeClassLoader userCodeClassLoader = ClassLoaderHandle.createUserCodeClassloader(
-                request, classLoaderHandle);
-            return userCodeClassLoader;
+            return classLoaderHandle.createUserCodeClassloader(request);
         } catch (Exception ex) {
             log.error("Failed to submit task, request: {}", request, ex);
             throw new RuntimeException(ex);

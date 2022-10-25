@@ -18,7 +18,7 @@ package io.mantisrx.server.agent.cgroups;
 
 import static org.junit.Assert.assertEquals;
 
-import io.mantisrx.server.master.client.config.Usage;
+import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.io.Resources;
 import org.junit.Test;
 

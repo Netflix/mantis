@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.client.config;
+package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.server.core.MetricsCoercer;
+import io.mantisrx.server.master.client.config.PluginCoercible;
 import java.util.Properties;
 import org.skife.config.ConfigurationObjectFactory;
 

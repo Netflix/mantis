@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.agent.cgroups;
 
-import io.mantisrx.server.master.client.config.Usage;
+import io.mantisrx.runtime.loader.config.Usage;
 import java.io.IOException;
 
 interface SubsystemProcess {

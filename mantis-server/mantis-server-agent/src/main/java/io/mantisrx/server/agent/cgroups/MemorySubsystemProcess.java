@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.agent.cgroups;
 
-import io.mantisrx.server.master.client.config.Usage.UsageBuilder;
+import io.mantisrx.runtime.loader.config.Usage.UsageBuilder;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;

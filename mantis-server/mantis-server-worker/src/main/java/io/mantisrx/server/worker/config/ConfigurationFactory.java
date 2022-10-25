@@ -17,7 +17,7 @@
 package io.mantisrx.server.worker.config;
 
 
-import io.mantisrx.server.master.client.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 
 /**
  * An implementation of this class should return an instance of io.mantisrx.server.master.config.MasterConfiguration.

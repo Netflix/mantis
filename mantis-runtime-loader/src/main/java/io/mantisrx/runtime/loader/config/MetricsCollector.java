@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.client.config;
+package io.mantisrx.runtime.loader.config;
 
 import java.io.IOException;
 

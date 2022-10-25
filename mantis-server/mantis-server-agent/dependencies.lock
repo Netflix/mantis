@@ -731,8 +731,7 @@
         },
         "org.apache.hadoop:hadoop-common": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-client",
-                "io.mantisrx:mantis-runtime-loader"
+                "io.mantisrx:mantis-control-plane-client"
             ],
             "locked": "2.7.7"
         },
@@ -1257,8 +1256,7 @@
         },
         "org.apache.hadoop:hadoop-common": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-client",
-                "io.mantisrx:mantis-runtime-loader"
+                "io.mantisrx:mantis-control-plane-client"
             ],
             "locked": "2.7.7"
         },
