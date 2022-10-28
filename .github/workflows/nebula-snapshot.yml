@@ -26,14 +26,13 @@ jobs:
           arguments: --info --stacktrace build -x test snapshot
       - name: Create PR Comment String
         run: |
-          MY_STRING=$(cat ${GITHUB_WORKSPACE}/build/versions.txt)
-          echo "::set-output name=content::$MY_STRING"
-          id: my_string
+          PR_STR=$(cat ${GITHUB_WORKSPACE}/build/versions.txt)
+          echo "PR_STR=${PR_STR}" >> $GITHUB_ENV
       - name: Upload
         uses: mshick/add-pr-comment@v1
         with:
           message: |
             **Uploaded Artifacts**
-            "${{ steps.my_string.outputs.content }}"
+            "${{ env.PR_STR }}"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false # This is the default
