@@ -18,8 +18,7 @@ dependencies {
     api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
 
-    compile libraries.vavr
-
+    implementation libraries.vavr
     implementation libraries.zip4j
     implementation libraries.commonsIo
     implementation libraries.hadoopCommon
