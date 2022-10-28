@@ -26,6 +26,7 @@ import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -70,12 +71,16 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
         logger.info("The ZK master monitor has started");
     }
 
-    private void onMasterNodeUpdated(byte[] data) throws Exception {
-        logger.info("value was {}", new String(data));
-        MasterDescription description = DefaultObjectMapper.getInstance().readValue(data, MasterDescription.class);
-        logger.info("new master description = {}", description);
-        latestMaster.set(description);
-        masterSubject.onNext(description);
+    private void onMasterNodeUpdated(@Nullable byte[] data) throws Exception {
+        if (data != null) {
+            logger.info("value was {}", new String(data));
+            MasterDescription description = DefaultObjectMapper.getInstance().readValue(data, MasterDescription.class);
+            logger.info("new master description = {}", description);
+            latestMaster.set(description);
+            masterSubject.onNext(description);
+        } else {
+            logger.info("looks like there's no master at the moment");
+        }
     }
 
     private void retrieveMaster() {
@@ -106,7 +111,12 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
         return masterSubject;
     }
 
+    /**
+     *
+     * @return
+     */
     @Override
+    @Nullable
     public MasterDescription getLatestMaster() {
         Preconditions.checkState(isRunning(), "ZookeeperMasterMonitor is currently not running but instead is at state %s", state());
         return latestMaster.get();

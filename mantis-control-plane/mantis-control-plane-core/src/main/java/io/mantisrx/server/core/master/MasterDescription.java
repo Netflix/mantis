@@ -19,13 +19,16 @@ package io.mantisrx.server.core.master;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.google.common.base.Objects;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 
 /**
  * A JSON-serializable data transfer object for Mantis master descriptions. It's used to transfer
  * metadata between master and workers.
  */
+@EqualsAndHashCode
+@ToString
 public class MasterDescription {
 
     public static final String JSON_PROP_HOSTNAME = "hostname";
@@ -115,49 +118,5 @@ public class MasterDescription {
     @JsonProperty(JSON_PROP_CONSOLE_PORT)
     public int getConsolePort() {
         return consolePort;
-    }
-
-
-    @Override
-    public String toString() {
-        return Objects.toStringHelper(this)
-                .add("hostname", hostname)
-                .add("hostIP", hostIP)
-                .add("apiPort", apiPort)
-                .add("schedInfoPort", schedInfoPort)
-                .add("apiPortV2", apiPortV2)
-                .add("apiStatusUri", apiStatusUri)
-                .add("createTime", createTime)
-                .add("consolePort", consolePort)
-                .toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        MasterDescription that = (MasterDescription) o;
-
-        if (apiPort != that.apiPort) return false;
-        if (schedInfoPort != that.schedInfoPort) return false;
-        if (apiPortV2 != that.apiPortV2) return false;
-        if (consolePort != that.consolePort) return false;
-        if (createTime != that.createTime) return false;
-        if (apiStatusUri != null ? !apiStatusUri.equals(that.apiStatusUri) : that.apiStatusUri != null) return false;
-        if (hostIP != null ? !hostIP.equals(that.hostIP) : that.hostIP != null) return false;
-        return hostname != null ? hostname.equals(that.hostname) : that.hostname == null;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = hostname != null ? hostname.hashCode() : 0;
-        result = 31 * result + (hostIP != null ? hostIP.hashCode() : 0);
-        result = 31 * result + apiPort;
-        result = 31 * result + apiPortV2;
-        result = 31 * result + (apiStatusUri != null ? apiStatusUri.hashCode() : 0);
-        result = 31 * result + (int) (createTime ^ (createTime >>> 32));
-        result = 31 * result + consolePort;
-        return result;
     }
 }

@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.core.master;
 
+import javax.annotation.Nullable;
 import rx.Observable;
 
 
@@ -23,5 +24,12 @@ public interface MasterMonitor {
 
     Observable<MasterDescription> getMasterObservable();
 
+    /**
+     * Returns the latest master if there's one. If there has been no master in recently history,
+     * then this return null.
+     *
+     * @return Latest description of the master
+     */
+    @Nullable
     MasterDescription getLatestMaster();
 }
