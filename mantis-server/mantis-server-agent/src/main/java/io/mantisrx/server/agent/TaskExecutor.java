@@ -23,7 +23,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
-import io.mantisrx.runtime.loader.ITask;
+import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
@@ -104,7 +104,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // represents the current connection to the resource manager.
     private ResourceManagerGatewayCxn currentResourceManagerCxn;
     private TaskExecutorReport currentReport;
-    private ITask currentTask;
+    private RuntimeTask currentTask;
     private Subscription currentTaskStatusSubscription;
     private int resourceManagerCxnIdx;
     private Throwable previousFailure;
@@ -127,7 +127,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         HighAvailabilityServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
-        TaskFactory taskFactory) {
+        @Nullable TaskFactory taskFactory) {
         super(rpcService, RpcServiceUtils.createRandomName("worker"));
 
         // this is the task executor ID that will be used for the rest of the JVM process
@@ -457,7 +457,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 wrappedRequest.getRequest(), classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
-            ITask task = this.taskFactory.getITaskInstance(wrappedRequest.getRequest(), cl);
+            RuntimeTask task = this.taskFactory.getRuntimeTaskInstance(wrappedRequest.getRequest(), cl);
 
             task.initialize(
                 wrappedRequest,
@@ -498,7 +498,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     if (throwable != null) {
                         // okay failed to start task successfully
                         // lets stop it
-                        ITask task = currentTask;
+                        RuntimeTask task = currentTask;
                         setCurrentTask(null);
                         setPreviousFailure(throwable);
                         listeners.enqueue(getTaskFailedEvent(task, throwable));
@@ -508,7 +508,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
     }
 
-    private void setCurrentTask(@Nullable ITask task) {
+    private void setCurrentTask(@Nullable RuntimeTask task) {
         validateRunsInMainThread();
 
         this.currentTask = task;
@@ -582,7 +582,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
                     return stopTaskFuture
                         .whenCompleteAsync((dontCare, throwable) -> {
-                            ITask t = this.currentTask;
+                            RuntimeTask t = this.currentTask;
                             setCurrentTask(null);
                             if (throwable != null) {
                                 setPreviousFailure(throwable);
@@ -669,36 +669,36 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
      *   -> when a cancellation is complete
      */
     public interface Listener {
-        void onTaskStarting(ITask task);
+        void onTaskStarting(RuntimeTask task);
 
-        void onTaskFailed(ITask task, Throwable throwable);
+        void onTaskFailed(RuntimeTask task, Throwable throwable);
 
-        void onTaskCancelling(ITask task);
+        void onTaskCancelling(RuntimeTask task);
 
-        void onTaskCancelled(ITask task, @Nullable Throwable throwable);
+        void onTaskCancelled(RuntimeTask task, @Nullable Throwable throwable);
 
         static Listener noop() {
             return new Listener() {
                 @Override
-                public void onTaskStarting(ITask task) {
+                public void onTaskStarting(RuntimeTask task) {
                 }
 
                 @Override
-                public void onTaskFailed(ITask task, Throwable throwable) {
+                public void onTaskFailed(RuntimeTask task, Throwable throwable) {
                 }
 
                 @Override
-                public void onTaskCancelling(ITask task) {
+                public void onTaskCancelling(RuntimeTask task) {
                 }
 
                 @Override
-                public void onTaskCancelled(ITask task, @Nullable Throwable throwable) {
+                public void onTaskCancelled(RuntimeTask task, @Nullable Throwable throwable) {
                 }
             };
         }
     }
 
-    private static ListenerCallQueue.Event<Listener> getTaskStartingEvent(ITask task) {
+    private static ListenerCallQueue.Event<Listener> getTaskStartingEvent(RuntimeTask task) {
         return new ListenerCallQueue.Event<Listener>() {
             @Override
             public void call(Listener listener) {
@@ -712,7 +712,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         };
     }
 
-    private static ListenerCallQueue.Event<Listener> getTaskCancellingEvent(ITask task) {
+    private static ListenerCallQueue.Event<Listener> getTaskCancellingEvent(RuntimeTask task) {
         return new ListenerCallQueue.Event<Listener>() {
             @Override
             public void call(Listener listener) {
@@ -726,7 +726,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         };
     }
 
-    private static ListenerCallQueue.Event<Listener> getTaskFailedEvent(ITask task, Throwable throwable) {
+    private static ListenerCallQueue.Event<Listener> getTaskFailedEvent(RuntimeTask task, Throwable throwable) {
         return new ListenerCallQueue.Event<Listener>() {
             @Override
             public void call(Listener listener) {
@@ -740,7 +740,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         };
     }
 
-    private static ListenerCallQueue.Event<Listener> getTaskCancelledEvent(ITask task, @Nullable Throwable throwable) {
+    private static ListenerCallQueue.Event<Listener> getTaskCancelledEvent(RuntimeTask task, @Nullable Throwable throwable) {
         return new ListenerCallQueue.Event<Listener>() {
             @Override
             public void call(Listener listener) {

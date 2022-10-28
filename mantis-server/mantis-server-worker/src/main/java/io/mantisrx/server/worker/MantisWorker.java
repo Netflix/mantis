@@ -120,7 +120,7 @@ public class MantisWorker extends BaseService {
         mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
         // TODO(sundaram): inline services are hard to read. Would be good to refactor this.
         mantisServices.add(new Service() {
-            private Task task;
+            private RuntimeTaskImpl runtimeTaskImpl;
             private Subscription taskStatusUpdateSubscription;
             private Subscription vmStatusSubscription;
 
@@ -140,8 +140,8 @@ public class MantisWorker extends BaseService {
                     .first()
                     .subscribe(wrappedRequest -> {
                         try {
-                            task = new Task();
-                            task.initialize(
+                            runtimeTaskImpl = new RuntimeTaskImpl();
+                            runtimeTaskImpl.initialize(
                                 wrappedRequest,
                                 config,
                                 gateway,
@@ -154,16 +154,16 @@ public class MantisWorker extends BaseService {
                                         Clock.systemDefaultZone()),
                                 Optional.empty()
                             );
-                            task.setJob(jobToRun);
+                            runtimeTaskImpl.setJob(jobToRun);
 
                             taskStatusUpdateSubscription =
-                                task
+                                runtimeTaskImpl
                                     .getStatus()
                                     .subscribe(statusUpdateHandler::onStatusUpdate);
 
                             vmStatusSubscription =
-                                task.getVMStatus().subscribe(vmTaskStatusSubject);
-                            task.startAsync();
+                                runtimeTaskImpl.getVMStatus().subscribe(vmTaskStatusSubject);
+                            runtimeTaskImpl.startAsync();
                         } catch (Exception ex) {
                             logger.error("Failed to start task, request: {}", wrappedRequest, ex);
                             throw new RuntimeException("Failed to start task", ex);
@@ -173,9 +173,9 @@ public class MantisWorker extends BaseService {
 
             @Override
             public void shutdown() {
-                if (task != null) {
+                if (runtimeTaskImpl != null) {
                     try {
-                        task.stopAsync().awaitTerminated();
+                        runtimeTaskImpl.stopAsync().awaitTerminated();
                     } finally {
                         taskStatusUpdateSubscription.unsubscribe();
                         vmStatusSubscription.unsubscribe();

@@ -17,7 +17,7 @@
 package io.mantisrx.server.agent;
 
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
-import io.mantisrx.runtime.loader.ITask;
+import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import java.util.ServiceLoader;
@@ -25,14 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
 
 /**
- * This factory is used when there is only 1 ITask implementation.
+ * This factory is used when there is only 1 RuntimeTask implementation.
  */
 @Slf4j
 public class SingleTaskOnlyFactory implements TaskFactory {
 
     @Override
-    public ITask getITaskInstance(ExecuteStageRequest request, ClassLoader cl) {
-        ServiceLoader<ITask> loader = ServiceLoader.load(ITask.class, cl);
+    public RuntimeTask getRuntimeTaskInstance(ExecuteStageRequest request, ClassLoader cl) {
+        ServiceLoader<RuntimeTask> loader = ServiceLoader.load(RuntimeTask.class, cl);
         return loader.iterator().next();
     }
 

@@ -27,7 +27,7 @@ import java.util.Optional;
 import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 
-public interface ITask extends Service {
+public interface RuntimeTask extends Service {
 
     void initialize(WrappedExecuteStageRequest request,
                     WorkerConfiguration config,

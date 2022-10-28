@@ -34,7 +34,7 @@ import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
-import io.mantisrx.runtime.loader.ITask;
+import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
@@ -86,7 +86,7 @@ import rx.Observable;
 import rx.Subscription;
 
 @Slf4j
-public class TaskExecutorTest {
+public class RuntimeTaskImplExecutorTest {
 
     private WorkerConfiguration workerConfiguration;
     private RpcService rpcService;
@@ -405,22 +405,22 @@ public class TaskExecutorTest {
         boolean cancelledCalled = false;
 
         @Override
-        public void onTaskStarting(ITask task) {
+        public void onTaskStarting(RuntimeTask task) {
             startingCalled = true;
         }
 
         @Override
-        public void onTaskFailed(ITask task, Throwable throwable) {
+        public void onTaskFailed(RuntimeTask task, Throwable throwable) {
             failedCalled = true;
         }
 
         @Override
-        public void onTaskCancelling(ITask task) {
+        public void onTaskCancelling(RuntimeTask task) {
             cancellingCalled = true;
         }
 
         @Override
-        public void onTaskCancelled(ITask task, @Nullable Throwable throwable) {
+        public void onTaskCancelled(RuntimeTask task, @Nullable Throwable throwable) {
             cancelledCalled = true;
         }
     }

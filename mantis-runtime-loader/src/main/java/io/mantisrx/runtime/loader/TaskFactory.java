@@ -23,7 +23,7 @@ import org.apache.flink.util.UserCodeClassLoader;
  * Interface to factory building ITask implementation instance. Can be override to use customized ITask impl.
  */
 public interface TaskFactory {
-    ITask getITaskInstance(ExecuteStageRequest request, ClassLoader cl);
+    RuntimeTask getRuntimeTaskInstance(ExecuteStageRequest request, ClassLoader cl);
 
     UserCodeClassLoader getUserCodeClassLoader(
         ExecuteStageRequest request,

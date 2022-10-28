@@ -16,7 +16,7 @@
 package io.mantisrx.server.worker;
 
 import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.loader.ITask;
+import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.ExecuteStageRequest;
@@ -29,8 +29,6 @@ import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +39,7 @@ import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Slf4j
-public class Task extends AbstractIdleService implements ITask {
+public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask {
 
     private WrappedExecuteStageRequest wrappedExecuteStageRequest;
 
@@ -66,11 +64,11 @@ public class Task extends AbstractIdleService implements ITask {
 
     private ExecuteStageRequest executeStageRequest;
 
-    public Task() {
+    public RuntimeTaskImpl() {
         this.tasksStatusSubject = PublishSubject.create();
     }
 
-    public Task(PublishSubject<Observable<Status>> tasksStatusSubject) {
+    public RuntimeTaskImpl(PublishSubject<Observable<Status>> tasksStatusSubject) {
         this.tasksStatusSubject = tasksStatusSubject;
     }
 
@@ -155,7 +153,6 @@ public class Task extends AbstractIdleService implements ITask {
                 throw e;
             }
         }
-        closeUserCodeClassLoader();
     }
 
     private Optional<String> getJobProviderClass() {
@@ -173,17 +170,5 @@ public class Task extends AbstractIdleService implements ITask {
 
     public WorkerId getWorkerId() {
         return executeStageRequest.getWorkerId();
-    }
-
-    private void closeUserCodeClassLoader() {
-        if (userCodeClassLoader != null) {
-            if (userCodeClassLoader.asClassLoader() instanceof Closeable) {
-                try {
-                    ((Closeable) userCodeClassLoader.asClassLoader()).close();
-                } catch (IOException ex) {
-                    log.error("Failed to close user class loader successfully", ex);
-                }
-            }
-        }
     }
 }
