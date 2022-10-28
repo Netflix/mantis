@@ -54,6 +54,7 @@ include ':mantis-publish:mantis-publish-netty-guice'
 
 include 'mantis-remote-observable'
 include 'mantis-runtime'
+include 'mantis-runtime-loader'
 
 include 'mantis-server:mantis-server-agent'
 include 'mantis-server:mantis-server-worker'

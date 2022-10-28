@@ -27,6 +27,8 @@ public class UpgradeClusterContainersRequest {
 
     String region;
 
+    String optionalImageId;
+
     String optionalSkuId;
 
     MantisResourceClusterEnvType optionalEnvType;

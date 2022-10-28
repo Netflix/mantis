@@ -20,14 +20,18 @@ import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.loader.ClassLoaderHandle;
+import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
+import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
 import java.io.File;
@@ -116,7 +120,7 @@ public class MantisWorker extends BaseService {
         mantisServices.add(new VirualMachineWorkerServiceMesosImpl(executeStageSubject, vmTaskStatusSubject));
         // TODO(sundaram): inline services are hard to read. Would be good to refactor this.
         mantisServices.add(new Service() {
-            private Task task;
+            private RuntimeTaskImpl runtimeTaskImpl;
             private Subscription taskStatusUpdateSubscription;
             private Subscription vmStatusSubscription;
 
@@ -135,34 +139,43 @@ public class MantisWorker extends BaseService {
                     .asObservable()
                     .first()
                     .subscribe(wrappedRequest -> {
-                        task = new Task(
-                            wrappedRequest,
-                            config,
-                            gateway,
-                            ClassLoaderHandle.fixed(classLoader),
-                            SinkSubscriptionStateHandler
-                                .Factory
-                                .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                    gateway,
-                                    Clock.systemDefaultZone()),
-                            Optional.empty(),
-                            jobToRun);
-                        taskStatusUpdateSubscription =
-                            task
-                                .getStatus()
-                                .subscribe(statusUpdateHandler::onStatusUpdate);
+                        try {
+                            runtimeTaskImpl = new RuntimeTaskImpl();
+                            runtimeTaskImpl.initialize(
+                                wrappedRequest,
+                                config,
+                                gateway,
+                                ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
+                                    wrappedRequest.getRequest()),
+                                SinkSubscriptionStateHandler
+                                    .Factory
+                                    .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                                        gateway,
+                                        Clock.systemDefaultZone()),
+                                Optional.empty()
+                            );
+                            runtimeTaskImpl.setJob(jobToRun);
 
-                        vmStatusSubscription =
-                            task.getVMStatus().subscribe(vmTaskStatusSubject);
-                        task.startAsync();
+                            taskStatusUpdateSubscription =
+                                runtimeTaskImpl
+                                    .getStatus()
+                                    .subscribe(statusUpdateHandler::onStatusUpdate);
+
+                            vmStatusSubscription =
+                                runtimeTaskImpl.getVMStatus().subscribe(vmTaskStatusSubject);
+                            runtimeTaskImpl.startAsync();
+                        } catch (Exception ex) {
+                            logger.error("Failed to start task, request: {}", wrappedRequest, ex);
+                            throw new RuntimeException("Failed to start task", ex);
+                        }
                     });
             }
 
             @Override
             public void shutdown() {
-                if (task != null) {
+                if (runtimeTaskImpl != null) {
                     try {
-                        task.stopAsync().awaitTerminated();
+                        runtimeTaskImpl.stopAsync().awaitTerminated();
                     } finally {
                         taskStatusUpdateSubscription.unsubscribe();
                         vmStatusSubscription.unsubscribe();

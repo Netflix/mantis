@@ -22,7 +22,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.134.0"
@@ -122,7 +121,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
@@ -210,7 +209,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.134.0"
@@ -310,7 +308,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
@@ -418,10 +416,10 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
+                "io.mantisrx:mantis-client",
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "0.134.0"
+            "locked": "1.3.9"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
@@ -504,8 +502,7 @@
         },
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-client",
-                "io.mantisrx:mantis-server-worker-client"
+                "io.mantisrx:mantis-client"
             ],
             "project": true
         },
@@ -571,7 +568,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -596,6 +593,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
+        },
+        "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
+            "locked": "2.7.7"
         },
         "org.apache.mesos:mesos": {
             "firstLevelTransitive": [
@@ -641,14 +644,14 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.32"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "1.7.0"
+            "locked": "1.7.10"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [
@@ -680,7 +683,6 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-publish-core"
             ],
             "locked": "0.134.0"
@@ -780,7 +782,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
@@ -883,10 +885,10 @@
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-common",
+                "io.mantisrx:mantis-client",
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "0.134.0"
+            "locked": "1.3.9"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
@@ -969,8 +971,7 @@
         },
         "io.mantisrx:mantis-runtime": {
             "firstLevelTransitive": [
-                "io.mantisrx:mantis-client",
-                "io.mantisrx:mantis-server-worker-client"
+                "io.mantisrx:mantis-client"
             ],
             "project": true
         },
@@ -1036,7 +1037,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.11.2"
+            "locked": "2.12.0"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -1061,6 +1062,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.14.2"
+        },
+        "org.apache.hadoop:hadoop-common": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-client"
+            ],
+            "locked": "2.7.7"
         },
         "org.apache.mesos:mesos": {
             "firstLevelTransitive": [
@@ -1106,14 +1113,14 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.32"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "1.7.0"
+            "locked": "1.7.10"
         },
         "org.xerial.snappy:snappy-java": {
             "firstLevelTransitive": [

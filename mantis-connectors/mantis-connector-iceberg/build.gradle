@@ -53,9 +53,10 @@ dependencies {
 
     testImplementation project(":mantis-runtime").sourceSets.test.output
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
-    testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion"
+    testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion" 
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
+    testImplementation libraries.spectatorApi
     testImplementation libraries.slf4jLog4j12
 }
 

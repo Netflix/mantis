@@ -27,7 +27,9 @@ jobs:
       - name: Create PR Comment String
         run: |
           PR_STR=$(cat ${GITHUB_WORKSPACE}/build/versions.txt)
-          echo "PR_STR=${PR_STR}" >> $GITHUB_ENV
+          echo "PR_STR<<EOF" >> $GITHUB_ENV
+          echo ${PR_STR} >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
       - name: Upload
         uses: mshick/add-pr-comment@v1
         with:

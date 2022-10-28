@@ -24,19 +24,34 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.network.Endpoint;
-import io.mantisrx.runtime.*;
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.MantisJobDurationType;
+import io.mantisrx.runtime.MantisJobState;
+import io.mantisrx.runtime.StageConfig;
+import io.mantisrx.runtime.WorkerInfo;
+import io.mantisrx.runtime.WorkerMap;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.runtime.executor.*;
+import io.mantisrx.runtime.executor.PortSelector;
+import io.mantisrx.runtime.executor.StageExecutors;
+import io.mantisrx.runtime.executor.WorkerConsumer;
+import io.mantisrx.runtime.executor.WorkerConsumerRemoteObservable;
+import io.mantisrx.runtime.executor.WorkerPublisherRemoteObservable;
 import io.mantisrx.runtime.lifecycle.Lifecycle;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
+import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.Parameters;
-import io.mantisrx.server.core.*;
+import io.mantisrx.server.core.ExecuteStageRequest;
+import io.mantisrx.server.core.JobSchedulingInfo;
+import io.mantisrx.server.core.ServiceRegistry;
+import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
+import io.mantisrx.server.core.StatusPayloads;
+import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.worker.SinkSubscriptionStateHandler.Factory;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.config.WorkerConfiguration;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
 import io.mantisrx.server.worker.jobmaster.JobMasterService;
 import io.mantisrx.server.worker.jobmaster.JobMasterStageConfig;
@@ -48,8 +63,19 @@ import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -86,7 +112,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
-        Factory sinkSubscriptionStateHandlerFactory,
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
         Optional<String> hostname) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
@@ -95,13 +121,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
 
         String connectionsPerEndpointStr =
-                ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
+            ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
         if (connectionsPerEndpointStr != null && !connectionsPerEndpointStr.equals("2")) {
             connectionsPerEndpoint = Integer.parseInt(connectionsPerEndpointStr);
         }
 
         String locateSpectatorRegistry =
-                ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
+            ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
         lookupSpectatorRegistry = Boolean.valueOf(locateSpectatorRegistry);
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
         this.hostname = hostname;

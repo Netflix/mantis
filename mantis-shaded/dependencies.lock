@@ -35,7 +35,7 @@
             "locked": "2.12.7"
         },
         "com.fasterxml.jackson.core:jackson-databind": {
-            "locked": "2.12.7"
+            "locked": "2.12.7.1"
         },
         "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor": {
             "locked": "2.12.7"
