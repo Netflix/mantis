@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.worker.mesos;
 
-import io.mantisrx.server.worker.metrics.MetricsCollector;
-import io.mantisrx.server.worker.metrics.Usage;
+import io.mantisrx.runtime.loader.config.MetricsCollector;
+import io.mantisrx.runtime.loader.config.Usage;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.OperatorOnErrorResumeNextViaFunction;
 import java.nio.charset.Charset;

@@ -17,10 +17,13 @@
 dependencies {
     implementation libraries.asyncHttpClient
     implementation libraries.spotifyFutures
+    implementation libraries.hadoopCommon
     api project(":mantis-control-plane:mantis-control-plane-core")
 
     api project(":mantis-remote-observable")
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
+    testImplementation libraries.spectatorApi
+    testImplementation(testFixtures(project(":mantis-common")))
 }

@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker.mesos;
 
-import io.mantisrx.server.worker.metrics.Usage;
+import io.mantisrx.runtime.loader.config.Usage;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 

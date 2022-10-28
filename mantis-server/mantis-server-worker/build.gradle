@@ -25,17 +25,8 @@ ext {
 
 dependencies {
     api project(":mantis-runtime")
-    api project(":mantis-control-plane:mantis-control-plane-client")
-    api project(":mantis-control-plane:mantis-control-plane-core")
+    api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
-
-    api libraries.flinkRpcApi
-    implementation libraries.commonsIo
-    implementation libraries.hadoopCommon
-    implementation libraries.zip4j
-    implementation libraries.hadoopS3
-    implementation libraries.spotifyFutures
-    implementation libraries.flinkRpcImpl
 
     implementation "org.apache.mesos:mesos:$mesosVersion"
     implementation libraries.slf4jApi
@@ -48,6 +39,8 @@ dependencies {
     implementation "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
     implementation "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
     implementation "com.yahoo.datasketches:sketches-core:0.9.1"
+
+    implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
