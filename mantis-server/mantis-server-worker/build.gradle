@@ -24,23 +24,21 @@ ext {
 }
 
 dependencies {
-    compile project(":mantis-runtime")
-    compile project(":mantis-runtime-loader")
-    compile project(":mantis-control-plane:mantis-control-plane-client")
-    compile project(":mantis-control-plane:mantis-control-plane-core")
-    compile project(":mantis-server:mantis-server-worker-client")
+    api project(":mantis-runtime")
+    api project(":mantis-runtime-loader")
+    api project(":mantis-server:mantis-server-worker-client")
 
-    compile "org.apache.mesos:mesos:$mesosVersion"
-    compile libraries.slf4jApi
-    compile libraries.slf4jLog4j12
-    compile libraries.vavr
-    compile('nz.ac.waikato.cms.moa:moa:2017.06') {
+    implementation "org.apache.mesos:mesos:$mesosVersion"
+    implementation libraries.slf4jApi
+    implementation libraries.slf4jLog4j12
+    implementation libraries.vavr
+    implementation('nz.ac.waikato.cms.moa:moa:2017.06') {
         exclude group: 'com.github.spullara.cli-parser', module: 'cli-parser'
         exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
     }
-    compile "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
-    compile "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
-    compile "com.yahoo.datasketches:sketches-core:0.9.1"
+    implementation "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
+    implementation "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
+    implementation "com.yahoo.datasketches:sketches-core:0.9.1"
 
     implementation libraries.spectatorApi
 

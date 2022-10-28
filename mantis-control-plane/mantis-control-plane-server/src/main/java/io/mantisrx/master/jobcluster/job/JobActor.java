@@ -843,10 +843,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         if (LOGGER.isDebugEnabled()) {
             LOGGER.info("shutting down job with metadata {}", mantisJobMetaData);
         }
-        eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
+        try {
+            eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobStatusEvent(INFO,
                 "Killing job, reason: " + req.reason,
                 getJobId(), getJobState()));
-        try {
             JobState newState;
             if (req.jobCompletedReason.equals(JobCompletedReason.Error)
                     || req.jobCompletedReason.equals(JobCompletedReason.Lost)) {
@@ -868,6 +868,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             // take poison pill
             performFinalShutdown();
         } catch (Exception e) {
+            LOGGER.error("Failed to kill job {}", jobId, e);
             sender.tell(new JobClusterProto.KillJobResponse(req.requestId, SERVER_ERROR, getJobState(),
                     getJobId() + " Could not be terminated due to " + e.getMessage(), getJobId(),
                     this.mantisJobMetaData, req.user, req.requestor), getSelf());

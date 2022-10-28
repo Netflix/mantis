@@ -15,8 +15,8 @@
  */
 
 dependencies {
-    implementation project(":mantis-runtime-loader")
-    implementation project(":mantis-server:mantis-server-worker-client")
+    api project(":mantis-runtime-loader")
+    api project(":mantis-server:mantis-server-worker-client")
 
     compile libraries.vavr
 
@@ -24,7 +24,6 @@ dependencies {
     implementation libraries.commonsIo
     implementation libraries.hadoopCommon
     implementation libraries.spotifyFutures
-
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
 

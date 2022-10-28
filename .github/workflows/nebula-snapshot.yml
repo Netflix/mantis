@@ -1,9 +1,7 @@
 name: "Publish snapshot to NetflixOSS and Maven Central"
 
 on:
-  push:
-    branches:
-      - '**'
+  pull_request_target:
 
 jobs:
   build:
@@ -25,4 +23,17 @@ jobs:
           NETFLIX_OSS_REPO_USERNAME: ${{ secrets.ORG_NETFLIXOSS_USERNAME }}
           NETFLIX_OSS_REPO_PASSWORD: ${{ secrets.ORG_NETFLIXOSS_PASSWORD }}
         with:
-          arguments: build snapshot
+          arguments: --info --stacktrace build -x test snapshot
+      - name: Create PR Comment String
+        run: |
+          MY_STRING=$(cat ${GITHUB_WORKSPACE}/build/versions.txt)
+          echo "::set-output name=content::$MY_STRING"
+          id: my_string
+      - name: Upload
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            **Uploaded Artifacts**
+            "${{ steps.my_string.outputs.content }}"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          allow-repeats: false # This is the default

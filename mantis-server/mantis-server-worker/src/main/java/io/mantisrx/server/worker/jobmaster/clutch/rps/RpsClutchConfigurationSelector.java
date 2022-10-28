@@ -47,9 +47,9 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
         // before an action is taken.
         long deltaT = getCooldownSecs() / 30l;
 
-        double kp = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralScaler(), deltaT);
+        double kp = 1.0 / Math.max(setPoint, 1.0) / Math.max(getCumulativeIntegralDivisor(getIntegralScaler(), deltaT), 1.0);
         double ki = 0.0;
-        double kd = 1.0 / setPoint / getCumulativeIntegralDivisor(getIntegralScaler(), deltaT);
+        double kd = 1.0 / Math.max(setPoint, 1.0) / Math.max(getCumulativeIntegralDivisor(getIntegralScaler(), deltaT), 1.0);
 
         ClutchConfiguration config = com.netflix.control.clutch.ClutchConfiguration.builder()
                 .metric(Clutch.Metric.RPS)
