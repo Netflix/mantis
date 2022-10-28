@@ -29,7 +29,7 @@ ext {
 }
 
 dependencies {
-    compile project(':mantis-control-plane:mantis-control-plane-core')
+    api project(':mantis-control-plane:mantis-control-plane-core')
 
     api "com.typesafe.akka:akka-http_$scalaBinaryVersion:$akkaHttpVersion"
     api "com.typesafe.akka:akka-http-jackson_$scalaBinaryVersion:$akkaHttpVersion"
@@ -44,11 +44,11 @@ dependencies {
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
 
-    testCompile "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
-    testCompile "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"
-    testCompile libraries.junit4
-    testCompile libraries.mockitoCore3
-    testCompile "org.testng:testng:$testngVersion"
+    testImplementation "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
+    testImplementation "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"
+    testImplementation libraries.junit4
+    testImplementation libraries.mockitoCore3
+    testImplementation "org.testng:testng:$testngVersion"
     testImplementation testFixtures(project(":mantis-common"))
     testImplementation testFixtures(project(":mantis-control-plane:mantis-control-plane-core"))
     testImplementation libraries.commonsIo

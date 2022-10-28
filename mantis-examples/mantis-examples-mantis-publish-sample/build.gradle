@@ -54,7 +54,7 @@ ext {
 
 
 dependencies {
-    compile project(":mantis-publish:mantis-publish-netty-guice")
+    implementation project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation libraries.rxJava
     implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"

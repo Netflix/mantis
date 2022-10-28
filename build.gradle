@@ -23,7 +23,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:9.4.2'
+        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:10.6.0'
         classpath 'com.netflix.nebula:nebula-dependency-recommender:11.+'
         classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
         classpath "io.freefair.gradle:lombok-plugin:5.3.3.3"
@@ -90,6 +90,8 @@ allprojects {
     apply plugin: 'nebula.netflixoss'
 }
 
+def printAllReleasedArtifacts = project.tasks.create('printAllReleasedArtifacts')
+project.snapshot.configure { finalizedBy printAllReleasedArtifacts }
 subprojects {
     apply plugin: 'java-library'
 
@@ -141,6 +143,22 @@ subprojects {
 
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:deprecation"
+    }
+
+    project.plugins.withType(MavenPublishPlugin) {
+        def printReleasedArtifact = project.tasks.create('printReleasedArtifact')
+        printReleasedArtifact.doLast {
+            def file1 = file("${buildDir}/tmp/publishNebulaPublicationToNetflixOSSRepository/maven-metadata.xml")
+            def file2 = file("${buildDir}/tmp/publishNebulaPublicationToNetflixOSSRepository/snapshot-maven-metadata.xml")
+            def xmlText = file1.exists() ? file1.text : (file2.exists() ? file2.text : "file not found")
+            def xml = new XmlParser(false, false).parseText(xmlText)
+            def snapshotVersion = xml.versioning.snapshotVersions.snapshotVersion[0].'value'.text()
+            logger.lifecycle("${project.group}:${project.name}:${snapshotVersion}")
+            file("${project.rootProject.buildDir}/versions.txt").append("${project.group}:${project.name}:${snapshotVersion}\n")
+        }
+
+        printReleasedArtifact.dependsOn(project.rootProject.snapshot)
+        printAllReleasedArtifacts.dependsOn("${project.path}:printReleasedArtifact")
     }
 }
 
