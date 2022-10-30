@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.resourcecluster;
+package io.mantisrx.master.resourcecluster.resourceprovider;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,7 +25,6 @@ import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterEnvType;
 import io.mantisrx.master.resourcecluster.proto.MantisResourceClusterSpec;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
-import io.mantisrx.master.resourcecluster.resourceprovider.SimpleFileResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
@@ -34,17 +33,21 @@ import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+@Slf4j
 public class SimpleFileResourceStorageProviderTests {
     static ActorSystem system;
+
+    @Rule
+    public TemporaryFolder storageDirectory = new TemporaryFolder();
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -55,14 +58,13 @@ public class SimpleFileResourceStorageProviderTests {
                 "  test.single-expect-default = 300000 millis\n" +
                 "}\n");
         system = ActorSystem.create("FileResourceStorageProviderTests", config.withFallback(ConfigFactory.load()));
-        deleteFiles();
     }
 
     @Test
     public void testResourceClusterRules() throws ExecutionException, InterruptedException, IOException {
         final ClusterID clusterId = ClusterID.of("mantisRCMTest2");
         final ContainerSkuID smallSkuId = ContainerSkuID.of("small");
-        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system);
+        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory.newFolder("test"));
 
         ResourceClusterScaleSpec rule1 = ResourceClusterScaleSpec.builder()
             .clusterId(clusterId)
@@ -159,22 +161,21 @@ public class SimpleFileResourceStorageProviderTests {
                 .id(spec.getId())
                 .build();
 
-        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system);
+        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory.newFolder("test"));
 
         CompletionStage<ResourceClusterSpecWritable> updateFut = prov.registerAndUpdateClusterSpec(specWritable);
-        System.out.println("res: " + updateFut.toCompletableFuture().get());
+        log.info("res: " + updateFut.toCompletableFuture().get());
 
-        Path clusterFilePath = Paths.get(SimpleFileResourceClusterStorageProvider.SPOOL_DIR, "clusterspec-" + clusterId);
-        Path regFilePath = Paths.get(
-                SimpleFileResourceClusterStorageProvider.SPOOL_DIR, "mantisResourceClusterRegistrations");
-        assertTrue(Files.exists(regFilePath));
-        assertTrue(Files.exists(clusterFilePath));
+        File clusterFilePath = prov.getClusterSpecFilePath(clusterId);
+        File regFilePath = prov.getClusterListFilePath();
+        assertTrue(regFilePath.exists());
+        assertTrue(clusterFilePath.exists());
 
-        System.out.println(Files.readAllLines(clusterFilePath).stream().collect(Collectors.joining()));
+        System.out.println(Files.readAllLines(clusterFilePath.toPath()).stream().collect(Collectors.joining()));
 
         assertEquals("{\"clusters\":{\"mantisRCMTest2\":{\"clusterId\":{\"resourceID\":\"mantisRCMTest2\"},"
                 + "\"version\":\"v1\"}}}",
-                Files.readAllLines(regFilePath).stream().collect(Collectors.joining()));
+                Files.readAllLines(regFilePath.toPath()).stream().collect(Collectors.joining()));
 
         assertEquals(
                 "{\"version\":\"v1\",\"id\":{\"resourceID\":\"mantisRCMTest2\"},\"clusterSpec\":{\"name\":\"mantisRCMTest2\"," +
@@ -187,7 +188,7 @@ public class SimpleFileResourceStorageProviderTests {
                         + "\"sgKey\":\"sg-1,"
                         + " sg-2, sg-3, sg-4\"},\"memorySizeInMB\":16384,\"diskSizeInMB\":81920}],"
                         + "\"clusterMetadataFields\":{}}}",
-                Files.readAllLines(clusterFilePath).stream().collect(Collectors.joining()));
+                Files.readAllLines(clusterFilePath.toPath()).stream().collect(Collectors.joining()));
 
         //// Test register second cluster.
         String clusterId2 = "clusterApp2";
@@ -226,16 +227,16 @@ public class SimpleFileResourceStorageProviderTests {
                 .build();
 
         CompletionStage<ResourceClusterSpecWritable> updateFut2 = prov.registerAndUpdateClusterSpec(specWritable2);
-        System.out.println("res: " + updateFut2.toCompletableFuture().get());
+        log.info("res: " + updateFut2.toCompletableFuture().get());
 
-        Path clusterFilePath2 = Paths.get("/tmp/MantisSpool", "clusterspec-" + clusterId2);
-        assertTrue(Files.exists(regFilePath));
-        assertTrue(Files.exists(clusterFilePath2));
+        File clusterFilePath2 = prov.getClusterSpecFilePath(clusterId2);
+        assertTrue(regFilePath.exists());
+        assertTrue(clusterFilePath2.exists());
 
         assertEquals(
                 "{\"clusters\":{\"mantisRCMTest2\":{\"clusterId\":{\"resourceID\":\"mantisRCMTest2\"},\"version\":\"v1\"},"
                         + "\"clusterApp2\":{\"clusterId\":{\"resourceID\":\"clusterApp2\"},\"version\":\"v2\"}}}",
-                Files.readAllLines(regFilePath).stream().collect(Collectors.joining()));
+                Files.readAllLines(regFilePath.toPath()).stream().collect(Collectors.joining()));
 
         assertEquals(
                 "{\"version\":\"v2\",\"id\":{\"resourceID\":\"clusterApp2\"},\"clusterSpec\":{\"name\":\"clusterApp2\","
@@ -249,7 +250,7 @@ public class SimpleFileResourceStorageProviderTests {
                         + "{\"skuKey\":\"us-east-1\",\"sgKey\":\"sg-1, sg-2, sg-3, sg-4\"},"
                         + "\"memorySizeInMB\":54321,\"diskSizeInMB\":998877}],"
                         + "\"clusterMetadataFields\":{}}}",
-                Files.readAllLines(clusterFilePath2).stream().collect(Collectors.joining()));
+                Files.readAllLines(clusterFilePath2.toPath()).stream().collect(Collectors.joining()));
 
         RegisteredResourceClustersWritable clusters = prov.getRegisteredResourceClustersWritable()
                 .toCompletableFuture().get();
@@ -281,12 +282,5 @@ public class SimpleFileResourceStorageProviderTests {
 
         assertEquals(1, resClusters.getClusters().size());
         assertTrue(resClusters.getClusters().containsKey(clusterId));
-    }
-
-    private static void deleteFiles() throws IOException {
-        Path path = Paths.get(SimpleFileResourceClusterStorageProvider.SPOOL_DIR);
-        if (Files.exists(path)) {
-            Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-        }
     }
 }

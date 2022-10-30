@@ -17,7 +17,6 @@
 apply plugin: 'java-test-fixtures'
 
 ext {
-    jacksonVersion = '2.10.+'
     jctoolsVersion = '1.+'
     nettyVersion = '4.1.17.Final'
     snappyVersion = '1.1.+'
