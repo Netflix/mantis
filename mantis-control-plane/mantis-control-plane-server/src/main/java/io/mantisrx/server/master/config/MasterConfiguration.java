@@ -62,6 +62,15 @@ public interface MasterConfiguration extends CoreConfiguration {
     @DefaultNull
     String getMasterIP();
 
+
+    // ------------------------------------------------------------------------
+    //  Apache Mesos related configurations
+    // ------------------------------------------------------------------------
+
+    @Config("mesos.enabled")
+    @Default("true")
+    boolean isMesosEnabled();
+
     @Config("mesos.scheduler.driver.init.timeout.sec")
     @Default("2")
     int getMesosSchedulerDriverInitTimeoutSec();
@@ -73,6 +82,37 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mesos.worker.timeoutSecondsToReportStart")
     @Default("10")
     int getTimeoutSecondsToReportStart();
+
+    @Config("mesos.worker.executorscript")
+    @Default("startup.sh")
+    String getWorkerExecutorScript();
+
+    @Config("mesos.master.location")
+    @Default("localhost:5050")
+    String getMasterLocation();
+
+    @Config("mesos.worker.installDir")
+    String getWorkerInstallDir();
+
+    @Config("mesos.useSlaveFiltering")
+    @Default("false")
+    boolean getUseSlaveFiltering();
+
+    @Config("mesos.slaveFilter.attributeName")
+    @Default("EC2_AMI_ID")
+    String getSlaveFilterAttributeName();
+
+    @Config("mesos.task.reconciliation.interval.secs")
+    @Default("300")
+    long getMesosTaskReconciliationIntervalSecs();
+
+    @Config("mesos.lease.offer.expiry.secs")
+    @Default("300")
+    long getMesosLeaseOfferExpirySecs();
+
+    @Config("mesos.slave.attribute.zone.name")
+    @Default("AWSZone")
+    String getHostZoneAttributeName();
 
 
     @Config("mantis.master.leader.mismatch.retry.count")
@@ -86,17 +126,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.api.route.ask.timeout.millis")
     @Default("1000")
     long getMasterApiAskTimeoutMs();
-
-    @Config("mesos.master.location")
-    @Default("localhost:5050")
-    String getMasterLocation();
-
-    @Config("mesos.worker.installDir")
-    String getWorkerInstallDir();
-
-    @Config("mesos.worker.executorscript")
-    @Default("startup.sh")
-    String getWorkerExecutorScript();
 
     @Config("mantis.worker.machine.definition.maxCpuCores")
     @Default("8")
@@ -117,14 +146,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.worker.jvm.memory.scale.back.percent")
     @Default("10")
     int getWorkerJvmMemoryScaleBackPercentage();
-
-    @Config("mesos.useSlaveFiltering")
-    @Default("false")
-    boolean getUseSlaveFiltering();
-
-    @Config("mesos.slaveFilter.attributeName")
-    @Default("EC2_AMI_ID")
-    String getSlaveFilterAttributeName();
 
     @Config("mantis.master.active.slave.attribute.name")
     @Default("NETFLIX_AUTO_SCALE_GROUP")
@@ -222,14 +243,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
 
-    @Config("mesos.task.reconciliation.interval.secs")
-    @Default("300")
-    long getMesosTaskReconciliationIntervalSecs();
-
-    @Config("mesos.lease.offer.expiry.secs")
-    @Default("300")
-    long getMesosLeaseOfferExpirySecs();
-
     @Config("mantis.jobs.max.jars.per.named.job")
     @Default("10")
     int getMaximumNumberOfJarsPerJobName();
@@ -283,10 +296,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.max.archived.jobs.to.cache")
     @Default("1000")
     int getMaxArchivedJobsToCache();
-
-    @Config("mesos.slave.attribute.zone.name")
-    @Default("AWSZone")
-    String getHostZoneAttributeName();
 
     @Config("mantis.agent.cluster.autoscale.by.attribute.name")
     @Default("CLUSTER_NAME")
