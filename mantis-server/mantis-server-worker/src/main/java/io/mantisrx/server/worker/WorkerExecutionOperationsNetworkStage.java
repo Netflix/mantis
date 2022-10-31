@@ -105,15 +105,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private Action0 onSinkUnsubscribe = null;
     private final List<Closeable> closeables = new ArrayList<>();
     private final ScheduledExecutorService scheduledExecutorService;
-    private final Optional<String> hostname;
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
-        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
-        Optional<String> hostname) {
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
@@ -130,7 +128,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
         lookupSpectatorRegistry = Boolean.valueOf(locateSpectatorRegistry);
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
-        this.hostname = hostname;
     }
 
     /**
@@ -356,7 +353,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             rw.setContext(context);
             // setup heartbeats
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
-                    rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), hostname));
+                    rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), config.getTaskExecutorHostName()));
             final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
             Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(), networkMbps);
             closeables.add(heartbeatCloseable);

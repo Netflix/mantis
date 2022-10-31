@@ -27,6 +27,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,15 +44,15 @@ class Heartbeat {
     private final Optional<String> host;
 
     Heartbeat(String jobId, int stageNumber, int workerIndex, int workerNumber) {
-        this(jobId, stageNumber, workerIndex, workerNumber, Optional.empty());
+        this(jobId, stageNumber, workerIndex, workerNumber, null);
     }
 
-    Heartbeat(String jobId, int stageNumber, int workerIndex, int workerNumber, Optional<String> host) {
+    Heartbeat(String jobId, int stageNumber, int workerIndex, int workerNumber, @Nullable String host) {
         this.jobId = jobId;
         this.stageNumber = stageNumber;
         this.workerIndex = workerIndex;
         this.workerNumber = workerNumber;
-        this.host = host;
+        this.host = Optional.ofNullable(host);
         payloads = new ConcurrentHashMap<>();
     }
 

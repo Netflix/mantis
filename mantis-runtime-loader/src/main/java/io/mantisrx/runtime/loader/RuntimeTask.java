@@ -33,8 +33,7 @@ public interface RuntimeTask extends Service {
                     WorkerConfiguration config,
                     MantisMasterGateway masterMonitor,
                     UserCodeClassLoader userCodeClassLoader,
-                    Factory sinkSubscriptionStateHandlerFactory,
-                    Optional<String> hostname);
+                    Factory sinkSubscriptionStateHandlerFactory);
 
     Observable<Status> getStatus();
 

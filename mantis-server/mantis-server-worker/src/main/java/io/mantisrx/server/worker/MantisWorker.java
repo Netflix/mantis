@@ -151,9 +151,7 @@ public class MantisWorker extends BaseService {
                                     .Factory
                                     .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                                         gateway,
-                                        Clock.systemDefaultZone()),
-                                Optional.empty()
-                            );
+                                        Clock.systemDefaultZone()));
                             runtimeTaskImpl.setJob(jobToRun);
 
                             taskStatusUpdateSubscription =
