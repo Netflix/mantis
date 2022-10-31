@@ -25,7 +25,13 @@ import org.apache.flink.util.UserCodeClassLoader;
 public interface TaskFactory {
     RuntimeTask getRuntimeTaskInstance(ExecuteStageRequest request, ClassLoader cl);
 
-    UserCodeClassLoader getUserCodeClassLoader(
+    default UserCodeClassLoader getUserCodeClassLoader(
         ExecuteStageRequest request,
-        ClassLoaderHandle classLoaderHandle);
+        ClassLoaderHandle classLoaderHandle) {
+        try {
+            return classLoaderHandle.createUserCodeClassloader(request);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }
