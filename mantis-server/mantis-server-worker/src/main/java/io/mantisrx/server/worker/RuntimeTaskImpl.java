@@ -94,7 +94,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     }
 
     @Override
-    public void startUp() throws Exception {
+    protected void startUp() throws Exception {
         try {
             log.info("Starting current task {}", this);
             doRun();
@@ -104,7 +104,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         }
     }
 
-    public void doRun() throws Exception {
+    private void doRun() throws Exception {
         // shared state
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
 
@@ -142,7 +142,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     }
 
     @Override
-    public void shutDown() {
+    protected void shutDown() {
         log.info("Attempting to cancel task {}", this);
         for (Service service : mantisServices) {
             log.info("Stopping service: " + service.getClass().getName());
