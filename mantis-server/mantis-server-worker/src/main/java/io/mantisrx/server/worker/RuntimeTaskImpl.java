@@ -57,9 +57,6 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
 
     private final PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
 
-    // hostname from which the task is run from
-    private Optional<String> hostname = Optional.empty();
-
     private Optional<Job> mantisJob = Optional.empty();
 
     private ExecuteStageRequest executeStageRequest;
@@ -78,15 +75,13 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
                            WorkerConfiguration config,
                            MantisMasterGateway masterMonitor,
                            UserCodeClassLoader userCodeClassLoader,
-                           SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
-                           Optional<String> hostname) {
+                           SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
         this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
         this.config = config;
         this.masterMonitor = masterMonitor;
         this.userCodeClassLoader = userCodeClassLoader;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
-        this.hostname = hostname;
     }
 
     public void setJob(Optional<Job> job) {
@@ -120,8 +115,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
                 masterMonitor,
                 config,
                 workerMetricsClient,
-                sinkSubscriptionStateHandlerFactory,
-                hostname),
+                sinkSubscriptionStateHandlerFactory),
             getJobProviderClass(),
             userCodeClassLoader,
             mantisJob));

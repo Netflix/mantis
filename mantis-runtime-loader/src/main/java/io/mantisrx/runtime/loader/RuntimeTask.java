@@ -23,7 +23,6 @@ import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
-import java.util.Optional;
 import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 
@@ -33,8 +32,7 @@ public interface RuntimeTask extends Service {
                     WorkerConfiguration config,
                     MantisMasterGateway masterMonitor,
                     UserCodeClassLoader userCodeClassLoader,
-                    Factory sinkSubscriptionStateHandlerFactory,
-                    Optional<String> hostname);
+                    Factory sinkSubscriptionStateHandlerFactory);
 
     Observable<Status> getStatus();
 

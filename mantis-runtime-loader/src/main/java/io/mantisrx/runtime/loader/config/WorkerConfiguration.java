@@ -41,6 +41,10 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @DefaultNull
     String getTaskExecutorId();
 
+    default String getTaskExecutorHostName() {
+        return getExternalAddress();
+    }
+
     @Config("mantis.taskexecutor.cluster-id")
     @Default("DEFAULT_CLUSTER")
     String getClusterId();
