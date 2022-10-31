@@ -41,7 +41,7 @@ public class MetricsFactory {
         config.getMetricsPublisherFrequencyInSeconds(), getCommonTags(request));
   }
 
-  private static Map<String, String> getCommonTags(ExecuteStageRequest request) {
+  public static Map<String, String> getCommonTags(ExecuteStageRequest request) {
     // provide common tags to metrics publishing service
     Map<String, String> commonTags = new HashMap<>();
     commonTags.put(MetricStringConstants.MANTIS_WORKER_NUM, Integer.toString(request.getWorkerNumber()));
