@@ -27,6 +27,7 @@ jobs:
       - name: Create PR Comment String
         run: |
           PR_STR=$(cat ${GITHUB_WORKSPACE}/build/versions.txt)
+          echo ${PR_STR}
           echo "PR_STR<<EOF" >> $GITHUB_ENV
           echo ${PR_STR} >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
@@ -34,7 +35,7 @@ jobs:
         uses: mshick/add-pr-comment@v1
         with:
           message: |
-            **Uploaded Artifacts**
-            "${{ env.PR_STR }}"
+            # Uploaded Artifacts
+            ${{ env.PR_STR }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false # This is the default
