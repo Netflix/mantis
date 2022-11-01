@@ -66,8 +66,7 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
 
         nodeMonitor.start(true);
 
-        byte[] initialValue = nodeMonitor.getCurrentData().getData();
-        onMasterNodeUpdated(initialValue);
+        onMasterNodeUpdated(nodeMonitor.getCurrentData() == null ? null : nodeMonitor.getCurrentData().getData());
         logger.info("The ZK master monitor has started");
     }
 
