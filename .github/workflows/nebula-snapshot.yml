@@ -26,10 +26,8 @@ jobs:
           arguments: --info --stacktrace build -x test snapshot
       - name: Create PR Comment String
         run: |
-          PR_STR=$(cat ${GITHUB_WORKSPACE}/build/versions.txt)
-          echo ${PR_STR}
           echo "PR_STR<<EOF" >> $GITHUB_ENV
-          echo ${PR_STR} >> $GITHUB_ENV
+          cat ${GITHUB_WORKSPACE}/build/versions.txt >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
       - name: Upload
         uses: mshick/add-pr-comment@v1
