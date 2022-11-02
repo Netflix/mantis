@@ -156,7 +156,7 @@ subprojects {
             def xml = new XmlParser(false, false).parseText(xmlText)
             def snapshotVersion = xml.versioning.snapshotVersions.snapshotVersion[0].'value'.text()
             logger.lifecycle("${project.group}:${project.name}:${snapshotVersion}")
-            file("${project.rootProject.buildDir}/versions.txt").append("${project.group}:${project.name}:${snapshotVersion}\n")
+            file("${project.rootProject.buildDir}/versions.txt").append("${project.group}:${project.name}:${snapshotVersion}" + '\n')
         }
 
         printReleasedArtifact.dependsOn(project.rootProject.snapshot)
