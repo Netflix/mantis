@@ -439,14 +439,12 @@ public class DataFormatAdapter {
 
         // convert stages to new format
         List<IMantisStageMetadata> convertedStageList = new ArrayList<>();
-        for (MantisStageMetadata stageMeta : ((MantisJobMetadataWritable) archJob).getStageMetadata()) {
-            //  if this is an archived job then add workerIndex may fail as there maybe multiple workers related to a given index so skip adding workers to stage
-            boolean skipAddingWorkers = false;
-            if(isArchived) {
-               skipAddingWorkers = true;
-            }
+        for (MantisStageMetadata stageMeta : archJob.getStageMetadata()) {
+            // if this is an archived job then add workerIndex may fail as there maybe
+            // multiple workers related to a given index so skip adding workers to stage
+            boolean skipAddingWorkers = isArchived;
 
-            convertedStageList.add(convertMantisStageMetadataWriteableToMantisStageMetadata(stageMeta, eventPublisher,skipAddingWorkers));
+            convertedStageList.add(convertMantisStageMetadataWriteableToMantisStageMetadata(stageMeta, eventPublisher, skipAddingWorkers));
         }
 
         // generate SchedulingInfo
@@ -538,7 +536,7 @@ public class DataFormatAdapter {
 
         if(!skipAddingWorkerMetaData) {
             if(logger.isDebugEnabled()) {logger.debug("Skip adding workers to stage meta");}
-            stageMeta.getAllWorkers().stream()
+            stageMeta.getAllWorkers()
                     .forEach((mantisWorkerMetadata) -> {
                         ((MantisStageMetadataImpl) newStageMeta).addWorkerIndex(convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(mantisWorkerMetadata, eventPublisher));
                     });

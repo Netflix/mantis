@@ -16,173 +16,49 @@
 
 package io.mantisrx.server.master.store;
 
-import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
-import io.mantisrx.server.core.domain.ArtifactID;
-import io.mantisrx.server.core.domain.JobArtifact;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
-import rx.Observable;
-
+import java.util.Map;
 
 public class NoopStorageProvider implements MantisStorageProvider {
 
     @Override
-    public void storeNewJob(MantisJobMetadataWritable jobMetadata) throws JobAlreadyExistsException, IOException {
-    }
-
-    @Override
-    public void updateJob(MantisJobMetadataWritable jobMetadata) throws InvalidJobException, IOException {
-    }
-
-    @Override
-    public void deleteJob(String jobId) throws InvalidJobException, IOException {
-    }
-
-    @Override
-    public void archiveJob(String jobId) throws IOException {
-    }
-
-    @Override
-    public void storeMantisStage(MantisStageMetadataWritable msmd) throws IOException {
-    }
-
-    @Override
-    public void updateMantisStage(MantisStageMetadataWritable msmd) throws IOException {
-    }
-
-    @Override
-    public void storeWorker(MantisWorkerMetadataWritable workerMetadata) throws IOException {
-    }
-
-    @Override
-    public void storeWorkers(String jobId, List<MantisWorkerMetadataWritable> workers) throws IOException {
-    }
-
-    @Override
-    public void storeAndUpdateWorkers(MantisWorkerMetadataWritable worker1, MantisWorkerMetadataWritable worker2) throws InvalidJobException, IOException {
-    }
-
-    @Override
-    public void updateWorker(MantisWorkerMetadataWritable mwmd) throws IOException {
-    }
-
-    @Override
-    public List<MantisJobMetadataWritable> initJobs() throws IOException {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public Observable<MantisJobMetadata> initArchivedJobs() {
-        return Observable.empty();
-    }
-
-    @Override
-    public List<NamedJob> initNamedJobs() throws IOException {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public Observable<NamedJob.CompletedJob> initNamedJobCompletedJobs() throws IOException {
-        return Observable.empty();
-    }
-
-    @Override
-    public void archiveWorker(MantisWorkerMetadataWritable mwmd) throws IOException {
-    }
-
-    @Override
-    public List<MantisWorkerMetadataWritable> getArchivedWorkers(String jobid) throws IOException {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public void storeNewNamedJob(NamedJob namedJob) throws JobNameAlreadyExistsException, IOException {
-    }
-
-    @Override
-    public void updateNamedJob(NamedJob namedJob) throws InvalidNamedJobException, IOException {
-    }
-
-    @Override
-    public boolean deleteNamedJob(String name) throws IOException {
-        return true;
-    }
-
-    @Override
-    public void storeCompletedJobForNamedJob(String name, NamedJob.CompletedJob job) {
-        return;
-    }
-
-    @Override
-    public MantisJobMetadataWritable loadArchivedJob(String jobId) throws IOException {
+    public Map<String, Map<String, String>> getAllRows(String tableName) {
         return null;
     }
 
     @Override
-    public void removeCompledtedJobForNamedJob(String name, String jobId) throws IOException {
-        return;
-    }
-
-    @Override
-    public void setActiveVmAttributeValuesList(List<String> vmAttributesList) throws IOException {}
-
-    @Override
-    public List<String> initActiveVmAttributeValuesList() {
+    public List<String> getAllPartitionKeys(String tableName) {
         return null;
     }
 
     @Override
-    public void shutdown() {
-    }
-
-    @Override
-    public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
+    public String get(String tableName, String partitionKey, String secondaryKey) {
         return null;
     }
 
     @Override
-    public void storeNewTaskExecutor(TaskExecutorRegistration registration) {
-
+    public Map<String, String> getAll(String tableName, String partitionKey) {
+        return null;
     }
 
     @Override
-    public void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) {
-
-    }
-
-    @Override
-    public void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) {
-
-    }
-
-    @Override
-    public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) {
-        return ImmutableList.of();
-    }
-
-    @Override
-    public void addNewJobArtifact(JobArtifact jobArtifact) throws IOException {
-    }
-
-    @Override
-    public boolean jobArtifactExists(ArtifactID artifactID){
+    public boolean upsert(String tableName, String partitionKey, String secondaryKey, String data) {
         return false;
     }
 
     @Override
-    public List<String> listJobArtifactsByName(@Nullable String prefix) throws IOException {
-        return ImmutableList.of();
+    public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all) {
+        return false;
     }
 
     @Override
-    public List<JobArtifact> listJobArtifacts(String name, @Nullable String version) throws IOException {
-        return ImmutableList.of();
+    public boolean delete(String tableName, String partitionKey, String secondaryKey) {
+        return false;
+    }
+
+    @Override
+    public boolean deleteAll(String tableName, String partitionKey) {
+        return false;
     }
 
 }

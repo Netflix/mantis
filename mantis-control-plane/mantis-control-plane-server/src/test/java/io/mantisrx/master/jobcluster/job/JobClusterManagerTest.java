@@ -121,7 +121,6 @@ import rx.subjects.BehaviorSubject;
 
 public class JobClusterManagerTest {
     static ActorSystem system;
-
     private MantisJobStore jobStoreMock;
     private ActorRef jobClusterManagerActor;
     private MantisSchedulerFactory schedulerMockFactory;

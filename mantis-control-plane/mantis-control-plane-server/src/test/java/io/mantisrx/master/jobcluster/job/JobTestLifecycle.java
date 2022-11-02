@@ -76,14 +76,11 @@ import org.mockito.Mockito;
 public class JobTestLifecycle {
 
 	static ActorSystem system;
-
-
 	private static MantisJobStore jobStore;
 	private static IMantisStorageProvider storageProvider;
 	private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
 	private static final String user = "mantis";
-
 
 	@BeforeClass
 	public static void setup() {

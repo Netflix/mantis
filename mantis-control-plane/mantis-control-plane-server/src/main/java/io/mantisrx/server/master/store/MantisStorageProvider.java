@@ -16,172 +16,85 @@
 
 package io.mantisrx.server.master.store;
 
-import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
-import io.mantisrx.server.core.domain.ArtifactID;
-import io.mantisrx.server.core.domain.JobArtifact;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
-import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
 import java.util.List;
-import javax.annotation.Nullable;
-import rx.Observable;
-
+import java.util.Map;
 
 public interface MantisStorageProvider {
 
     /**
-     * Store to persistence newly created job with given metadata object. This is expected to fail if job with the same
-     * jobId as given in the <code>jobMetadata</code> object already exists in persistence store.
+     * Gets all rows from the table
      *
-     * @param jobMetadata
-     * @throws JobAlreadyExistsException If a job with same id as in the given metadata object already exists
-     * @throws IOException
+     * @param tableName the tableName/table to read from
+     * @return map partition key to map of secondary keys to actual data
      */
-    void storeNewJob(MantisJobMetadataWritable jobMetadata)
-        throws JobAlreadyExistsException, IOException;
-
-    void updateJob(MantisJobMetadataWritable jobMetadata)
-        throws InvalidJobException, IOException;
+    Map<String, Map<String, String>> getAllRows(String tableName) throws IOException;
 
     /**
-     * Mark the job as not active and move it to an inactive archived collection of jobs.
+     * Gets all partition keys from the table.
+     * This could be beneficial to call instead of getAllRows
+     * if the data volume in the table is large and you want
+     * to process rows iteratively.
      *
-     * @param jobId The Job Id of the job to archive
-     * @throws IOException upon errors with storage invocation
+     * It iterates on partitionKey instead of primaryKey to
+     * prevent keys from the same partition coming out of order.
+     *
+     * @param tableName the table to read from
+     * @return list of all partition keys
      */
-    void archiveJob(String jobId) throws IOException;
+    List<String> getAllPartitionKeys(String tableName) throws IOException;
 
     /**
-     * Delete the job metadata permanently.
-     *
-     * @param jobId The Job Id of the job to delete
-     * @throws InvalidJobException If there is no such job to delete
-     * @throws IOException         Upon errors with storage invocation
+     * Gets the row corresponding to primary key (partitionKey, secondaryKey)
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @param secondaryKey secondaryKey for the record
+     * @return data
      */
-    void deleteJob(String jobId) throws InvalidJobException, IOException;
-
-    void storeMantisStage(MantisStageMetadataWritable msmd)
-        throws IOException;
-
-    void updateMantisStage(MantisStageMetadataWritable msmd) throws IOException;
+    String get(String tableName, String partitionKey, String secondaryKey) throws IOException;
 
     /**
-     * Store a new worker for the given job and stage number. This will be called only once for a given
-     * worker. However, it is possible that concurrent calls can be made on a <code>jobId</code>, each with a
-     * different worker.
-     *
-     * @param workerMetadata The worker metadata to store.
-     * @throws IOException
+     * Gets all rows corresponding to partition key
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @return all records corresponding to partitionKey as a map of secondaryKey -> data
      */
-    void storeWorker(MantisWorkerMetadataWritable workerMetadata)
-        throws IOException;
+    Map<String, String> getAll(String tableName, String partitionKey) throws IOException;
 
     /**
-     * Store multiple new workers for the give job. This is called only once for a given worker. This method enables
-     * optimization by calling storage once for multiple workers.
-     *
-     * @param jobId   The Job ID.
-     * @param workers The list of workers to store.
-     * @throws IOException if there were errors storing the workers.
+     * Adds a row corresponding to primary key (partitionKey, secondaryKey)
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @param secondaryKey secondaryKey for the record
+     * @param data the actual data
+     * @return boolean if the data was saved
      */
-    void storeWorkers(String jobId, List<MantisWorkerMetadataWritable> workers)
-        throws IOException;
+    boolean upsert(String tableName, String partitionKey, String secondaryKey, String data) throws IOException;
 
     /**
-     * Store a new worker and update existing worker of a job atomically. Either both are stored or none is.
-     *
-     * @param worker1 Existing worker to update.
-     * @param worker2 New worker to store.
-     * @throws IOException
-     * @throws InvalidJobException If workers don't have the same JobId.
+     * Adds all row corresponding to partition key.
+     * The rows are passed as a map of secondaryKey -> data
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @param all map of rows
+     * @return boolean if the data was saved
      */
-    void storeAndUpdateWorkers(MantisWorkerMetadataWritable worker1, MantisWorkerMetadataWritable worker2)
-        throws InvalidJobException, IOException;
+    boolean upsertAll(String tableName, String partitionKey, Map<String, String> all) throws IOException;
 
     /**
-     * Update (overwrite) existing worker metadata with the given metadata.
-     *
-     * @param mwmd Worker metadata to update
-     * @throws IOException
+     * Deletes a row corresponding to the primary key (partitionKey, secondaryKey)
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @param secondaryKey secondaryKey for the record
+     * @return boolean if row was deleted
      */
-    void updateWorker(MantisWorkerMetadataWritable mwmd)
-        throws IOException;
+    boolean delete(String tableName, String partitionKey, String secondaryKey) throws IOException;
 
     /**
-     * Initialize and return all existing jobs from persistence, including all corresponding job stages and workers.
-     *
-     * @return List of job metadata objects
-     * @throws IOException
+     * Deletes all rows corresponding to a partition key
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @return boolean if the rows were deleted
      */
-    List<MantisJobMetadataWritable> initJobs()
-        throws IOException;
-
-    Observable<MantisJobMetadata> initArchivedJobs();
-
-    /**
-     * Initialize and return all existing NamedJobs from persistence.
-     *
-     * @return List of {@link NamedJob} objects.
-     * @throws IOException Upon error connecting to or reading from persistence.
-     */
-    List<NamedJob> initNamedJobs() throws IOException;
-
-    /**
-     * Initialize and return completed jobs of all NamedJobs in the system.
-     *
-     * @return An Observable of all completed jobs for all NamedJobs.
-     * @throws IOException Upon error connecting to or reading from persistence.
-     */
-    Observable<NamedJob.CompletedJob> initNamedJobCompletedJobs() throws IOException;
-
-    /**
-     * Archives worker. This is usually called when a worker enters error state. It is expected that archived workers
-     * are moved out from regular store elsewhere so when jobs are loaded they do not contain archived workers.
-     *
-     * @param mwmd Worker metadata to archive
-     * @throws IOException
-     */
-    void archiveWorker(MantisWorkerMetadataWritable mwmd)
-        throws IOException;
-
-    List<MantisWorkerMetadataWritable> getArchivedWorkers(String jobid)
-        throws IOException;
-
-    void storeNewNamedJob(NamedJob namedJob) throws JobNameAlreadyExistsException, IOException;
-
-    void updateNamedJob(NamedJob namedJob) throws InvalidNamedJobException, IOException;
-
-    boolean deleteNamedJob(String name) throws IOException;
-
-    void storeCompletedJobForNamedJob(String name, NamedJob.CompletedJob job) throws IOException;
-
-    void removeCompledtedJobForNamedJob(String name, String jobId) throws IOException;
-
-    MantisJobMetadataWritable loadArchivedJob(String jobId) throws IOException;
-
-    void shutdown();
-
-    List<String> initActiveVmAttributeValuesList() throws IOException;
-
-    void setActiveVmAttributeValuesList(List<String> vmAttributesList) throws IOException;
-
-    TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException;
-
-    void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException;
-
-    void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
-
-    void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
-
-    List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException;
-
-    void addNewJobArtifact(JobArtifact jobArtifact) throws IOException;
-
-    boolean jobArtifactExists(ArtifactID artifactID);
-
-    // Note: returns list of job artifact names only for performance reasons
-    List<String> listJobArtifactsByName(@Nullable String prefix) throws IOException;
-
-    List<JobArtifact> listJobArtifacts(String name, @Nullable String version) throws IOException;
+    boolean deleteAll(String tableName, String partitionKey) throws IOException;
 }

@@ -27,6 +27,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import rx.Observable;
@@ -63,8 +64,9 @@ public interface IMantisStorageProvider {
      *
      * @throws IOException
      */
-    void storeWorker(final IMantisWorkerMetadata workerMetadata)
-            throws IOException;
+    default void storeWorker(final IMantisWorkerMetadata workerMetadata) throws IOException {
+        storeWorkers(Collections.singletonList(workerMetadata));
+    }
 
     /**
      * Store multiple new workers for the give job. This is called only once for a given worker. This method enables
@@ -75,9 +77,11 @@ public interface IMantisStorageProvider {
      *
      * @throws IOException if there were errors storing the workers.
      */
-    void storeWorkers(final String jobId, final List<IMantisWorkerMetadata> workers)
-            throws IOException;
+    default void storeWorkers(final String jobId, final List<IMantisWorkerMetadata> workers) throws IOException {
+        storeWorkers(workers);
+    }
 
+    void storeWorkers(final List<IMantisWorkerMetadata> workers) throws IOException;
 
     /**
      * Store a new worker and update existing worker of a job atomically. Either both are stored or none is.

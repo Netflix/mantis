@@ -225,6 +225,11 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
     @Override
     public void storeWorkers(String jobId, List<IMantisWorkerMetadata> workers)
             throws IOException {
+        storeWorkers(workers);
+    }
+
+    @Override
+    public void storeWorkers(List<IMantisWorkerMetadata> workers) throws IOException {
         for (IMantisWorkerMetadata w : workers)
             storeWorker(w);
     }
@@ -370,11 +375,6 @@ public class SimpleCachedFileStorageProvider implements IMantisStorageProvider {
         return completedJobs;
     }
 
-    //    @Override
-    //    public void shutdown() {
-    //        // no clean up needed
-    //    }
-    //
     private void storeWorker(JobId jobId, IMantisWorkerMetadata workerMetadata, boolean rewrite)
             throws IOException {
         logger.info("Storing worker {}", workerMetadata);
