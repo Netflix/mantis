@@ -44,8 +44,9 @@ dependencies {
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
 
-    // todo: separate worker entrypoint and move this to testImplementation instead. 
+    // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi
+    implementation libraries.spotifyFutures
 
     testImplementation "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
     testImplementation "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"

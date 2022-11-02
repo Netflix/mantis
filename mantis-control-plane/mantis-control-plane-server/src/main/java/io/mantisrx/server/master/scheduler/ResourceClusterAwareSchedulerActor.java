@@ -22,6 +22,8 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.Tag;
+import com.spotify.futures.CompletableFutures;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -37,6 +39,8 @@ import io.mantisrx.shaded.com.google.common.base.Throwables;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -226,14 +230,25 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         } else {
             resourceCluster
                 .getRegisteredTaskExecutors()
-                .thenApply(taskExecutorIDS ->
-                    taskExecutorIDS
-                        .stream()
-                        .map(taskExecutorID ->
-                            resourceCluster
-                                .getTaskExecutorGateway(taskExecutorID)
-                                .thenCompose(gateway -> gateway.cancelTask(event.getWorkerId())))
-                        .collect(Collectors.toList()));
+                .thenAccept(taskExecutorIDS -> {
+                    List<CompletableFuture<Ack>> acks =
+                        taskExecutorIDS
+                            .stream()
+                            .map(taskExecutorID ->
+                                resourceCluster
+                                    .getTaskExecutorGateway(taskExecutorID)
+                                    .thenCompose(
+                                        gateway -> gateway.cancelTask(event.getWorkerId())))
+                            .collect(Collectors.toList());
+
+                    List<Ack> completedAcks =
+                        CompletableFutures.successfulAsList(acks, throwable -> null).join();
+                    long successfulAcks =
+                        completedAcks.stream().filter(Objects::nonNull).count();
+                    if (successfulAcks != 1) {
+                        log.error("Cancellation request for WorkerID {} without hostname was acknowledged {} number of times unexpectedly", event.getWorkerId(), successfulAcks);
+                    }
+                });
         }
     }
 
