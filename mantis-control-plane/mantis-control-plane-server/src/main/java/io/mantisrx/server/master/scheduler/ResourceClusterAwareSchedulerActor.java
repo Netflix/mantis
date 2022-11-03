@@ -332,13 +332,11 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     static class CancelRequestEvent {
 
         WorkerId workerId;
-        @Nullable
-        String hostName;
         int attempt;
         Throwable previousFailure;
 
-        static CancelRequestEvent of(WorkerId workerId, @Nullable String hostName) {
-            return new CancelRequestEvent(workerId, hostName, 1, null);
+        static CancelRequestEvent of(WorkerId workerId) {
+            return new CancelRequestEvent(workerId, 1, null);
         }
 
         RetryCancelRequestEvent onFailure(Throwable throwable) {
@@ -353,7 +351,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         Throwable currentFailure;
 
         CancelRequestEvent onRetry() {
-            return new CancelRequestEvent(actualEvent.getWorkerId(), actualEvent.getHostName(),
+            return new CancelRequestEvent(actualEvent.getWorkerId(),
                 actualEvent.getAttempt() + 1, currentFailure);
         }
     }

@@ -50,7 +50,7 @@ public class ResourceClusterAwareScheduler implements MantisScheduler {
     @Override
     public void unscheduleAndTerminateWorker(WorkerId workerId,
                                              Optional<String> hostname) {
-        schedulerActor.tell(CancelRequestEvent.of(workerId, hostname.orElse(null)), null);
+        schedulerActor.tell(CancelRequestEvent.of(workerId),null);
 
         if (!hostname.isPresent()) {
             log.error("Request for cancelling worker {} without hostname", workerId, new Exception());

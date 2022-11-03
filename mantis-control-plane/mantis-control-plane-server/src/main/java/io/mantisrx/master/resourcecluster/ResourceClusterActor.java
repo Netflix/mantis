@@ -135,7 +135,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             onNewDisableTaskExecutorsRequest(request);
         }
 
-        timers().startPeriodicTimer(
+        timers().startTimerWithFixedDelay(
             String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
             new CheckDisabledTaskExecutors("periodic"),
             disabledTaskExecutorsCheckInterval);
