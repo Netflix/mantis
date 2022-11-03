@@ -26,14 +26,22 @@ jobs:
           arguments: --info --stacktrace build -x test snapshot
       - name: Create PR Comment String
         run: |
+          src=${GITHUB_WORKSPACE}/build/versions.txt
+          dest=${GITHUB_WORKSPACE}/build/versions2.txt
+          echo 'resolutionStrategy {' > $dest
+          awk '{print "    force \"" $0 "\""}' $src >> $dest
+          echo '}' >> $dest
           echo "PR_STR<<EOF" >> $GITHUB_ENV
-          cat ${GITHUB_WORKSPACE}/build/versions.txt >> $GITHUB_ENV
+          cat ${dest} >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
       - name: Upload
         uses: mshick/add-pr-comment@v1
         with:
           message: |
-            # Uploaded Artifacts
+            ## Uploaded Artifacts
+            To use these artifacts in your Gradle project, paste the following lines in your build.gradle.
+            ```
             ${{ env.PR_STR }}
+            ```
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false # This is the default
