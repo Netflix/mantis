@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Status {
 
     @JsonIgnore
-    private final JsonSerializer jsonSerializer = new JsonSerializer();
+    private static final JsonSerializer jsonSerializer = new JsonSerializer();
     @JsonIgnore
     private final Optional<WorkerId> workerId;
     private final String jobId;

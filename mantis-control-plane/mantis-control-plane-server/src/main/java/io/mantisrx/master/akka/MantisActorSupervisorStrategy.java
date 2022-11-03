@@ -59,7 +59,7 @@ public class MantisActorSupervisorStrategy implements SupervisorStrategyConfigur
                 return SupervisorStrategy.stop();
             })
             .match(Exception.class, e -> {
-                LOGGER.info("resuming actor on exception {}", e.getMessage(), e);
+                LOGGER.error("resuming actor on exception {}", e.getMessage(), e);
                 ActorSystemMetrics.getInstance().incrementActorResumeCount();
                 return SupervisorStrategy.resume();
             })
