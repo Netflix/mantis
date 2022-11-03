@@ -16,42 +16,34 @@
 
 package io.mantisrx.server.core;
 
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
-import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
-//import io.mantisrx.server.master.domain.WorkerId;
-
-
+@Slf4j
 public class Status {
 
-    private static final ObjectMapper mapper;
-
-    static {
-        mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
-
+    @JsonIgnore
+    private static final JsonSerializer jsonSerializer = new JsonSerializer();
     @JsonIgnore
     private final Optional<WorkerId> workerId;
-    private String jobId;
+    private final String jobId;
     private int stageNum;
     private int workerIndex;
-    private int workerNumber;
+    private final int workerNumber;
     private String hostname = null;
-    private TYPE type;
-    private String message;
-    private long timestamp;
-    private MantisJobState state;
+    private final TYPE type;
+    private final String message;
+    private final long timestamp;
+    private final MantisJobState state;
     private JobCompletedReason reason = JobCompletedReason.Normal;
     private List<Payload> payloads;
     @JsonCreator
@@ -151,8 +143,9 @@ public class Status {
     @Override
     public String toString() {
         try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
+            return jsonSerializer.toJson(this);
+        } catch (Exception e) {
+            log.error("Failed to serialize status", e);
             return "Error getting string for status on job " + jobId;
         }
     }

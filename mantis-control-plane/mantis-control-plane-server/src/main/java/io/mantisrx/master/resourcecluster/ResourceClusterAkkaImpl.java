@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
@@ -137,6 +138,15 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
         return
             Patterns
                 .ask(resourceClusterManagerActor, new TaskExecutorAssignmentRequest(machineDefinition, workerId, clusterID), askTimeout)
+                .thenApply(TaskExecutorID.class::cast)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<TaskExecutorID> getTaskExecutorAssignedFor(WorkerId workerId) {
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, new GetAssignedTaskExecutorRequest(workerId, clusterID), askTimeout)
                 .thenApply(TaskExecutorID.class::cast)
                 .toCompletableFuture();
     }

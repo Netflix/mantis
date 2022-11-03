@@ -40,7 +40,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -163,8 +162,10 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             log.error("Failed to submit the request {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
         } else {
             log.error("Failed to submit the request {}; Retrying in {} because of ", event.getScheduleRequestEvent(), event.getThrowable());
-            getTimers()
-                .startSingleTimer("Retry-Schedule-Request-For" + event.getScheduleRequestEvent().getRequest().getWorkerId(), event.onRetry(), intervalBetweenRetries);
+            getTimers().startSingleTimer(
+                getSchedulingQueueKeyFor(event.getScheduleRequestEvent().getRequest().getWorkerId()),
+                event.onRetry(),
+                intervalBetweenRetries);
         }
     }
 
@@ -201,9 +202,10 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     }
 
     private void onCancelRequestEvent(CancelRequestEvent event) {
-        if (event.getHostName() != null) {
+        try {
+            getTimers().cancel(getSchedulingQueueKeyFor(event.getWorkerId()));
             final TaskExecutorID taskExecutorID =
-                resourceCluster.getTaskExecutorInfo(event.getHostName()).join().getTaskExecutorID();
+                resourceCluster.getTaskExecutorAssignedFor(event.getWorkerId()).join();
             final TaskExecutorGateway gateway =
                 resourceCluster.getTaskExecutorGateway(taskExecutorID).join();
 
@@ -213,7 +215,8 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                     .<Object>thenApply(dontCare -> Noop.getInstance())
                     .exceptionally(exception -> {
                         Throwable actual =
-                            ExceptionUtils.stripCompletionException(ExceptionUtils.stripExecutionException(exception));
+                            ExceptionUtils.stripCompletionException(
+                                ExceptionUtils.stripExecutionException(exception));
                         // no need to retry if the TaskExecutor does not know about the task anymore.
                         if (actual instanceof TaskNotFoundException) {
                             return Noop.getInstance();
@@ -223,17 +226,16 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
                     });
 
             pipe(cancelFuture, context().dispatcher()).to(self());
-        } else {
-            resourceCluster
-                .getRegisteredTaskExecutors()
-                .thenApply(taskExecutorIDS ->
-                    taskExecutorIDS
-                        .stream()
-                        .map(taskExecutorID ->
-                            resourceCluster
-                                .getTaskExecutorGateway(taskExecutorID)
-                                .thenCompose(gateway -> gateway.cancelTask(event.getWorkerId())))
-                        .collect(Collectors.toList()));
+        } catch (Exception e) {
+            Throwable throwable =
+                ExceptionUtils.stripCompletionException(ExceptionUtils.stripExecutionException(e));
+            if (!(throwable instanceof TaskNotFoundException)) {
+                // something failed and its not TaskNotFoundException
+                // which implies this is still a valid request
+                self().tell(event.onFailure(throwable), self());
+            } else {
+                log.info("Failed to cancel task {} as no matching executor could be found", event.getWorkerId());
+            }
         }
     }
 
@@ -330,13 +332,11 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     static class CancelRequestEvent {
 
         WorkerId workerId;
-        @Nullable
-        String hostName;
         int attempt;
         Throwable previousFailure;
 
-        static CancelRequestEvent of(WorkerId workerId, @Nullable String hostName) {
-            return new CancelRequestEvent(workerId, hostName, 1, null);
+        static CancelRequestEvent of(WorkerId workerId) {
+            return new CancelRequestEvent(workerId, 1, null);
         }
 
         RetryCancelRequestEvent onFailure(Throwable throwable) {
@@ -351,7 +351,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         Throwable currentFailure;
 
         CancelRequestEvent onRetry() {
-            return new CancelRequestEvent(actualEvent.getWorkerId(), actualEvent.getHostName(),
+            return new CancelRequestEvent(actualEvent.getWorkerId(),
                 actualEvent.getAttempt() + 1, currentFailure);
         }
     }
@@ -359,5 +359,9 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     @Value(staticConstructor = "getInstance")
     private static class Noop {
 
+    }
+
+    private String getSchedulingQueueKeyFor(WorkerId workerId) {
+        return "Retry-Schedule-Request-For" + workerId.toString();
     }
 }

@@ -49,10 +49,12 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Clock;
@@ -64,6 +66,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.apache.flink.util.ExceptionUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -223,6 +226,9 @@ public class ResourceClusterActorTest {
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).get());
+        assertEquals(
+            TASK_EXECUTOR_ID,
+            resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getRegisteredTaskExecutors().get());
     }
@@ -573,5 +579,29 @@ public class ResourceClusterActorTest {
         WorkerEvent actualWorkerEvent = workerEventCaptor.getValue();
         assertTrue(actualWorkerEvent instanceof WorkerOnDisabledVM);
         assertEquals(WORKER_ID, actualWorkerEvent.getWorkerId());
+    }
+
+    @Test(expected = TaskNotFoundException.class)
+    public void testGetAssignedTaskExecutorAfterTaskCompletes() throws Throwable {
+        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).join());
+        assertEquals(
+            Ack.getInstance(),
+            resourceCluster.heartBeatFromTaskExecutor(
+                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
+
+        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).join());
+        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join());
+        assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).join());
+
+        assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
+            new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
+
+        try {
+            TaskExecutorID result = resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join();
+
+        } catch (Exception e) {
+            throw ExceptionUtils.stripCompletionException(e);
+        }
     }
 }

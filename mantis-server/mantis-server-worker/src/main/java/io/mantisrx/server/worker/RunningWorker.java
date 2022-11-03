@@ -53,19 +53,19 @@ public class RunningWorker {
     private StageConfig stage;
     private Observer<Status> jobStatus;
     private String jobId;
-    private int stageNum;
-    private int workerNum;
-    private int workerIndex;
-    private String jobName;
-    private int totalStages;
-    private int metricsPort;
-    private Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
-    private Observable<Integer> stageTotalWorkersObservable;
-    private Observable<JobSchedulingInfo> jobSchedulingInfoObservable;
-    private Iterator<Integer> ports;
-    private PublishSubject<Boolean> requestSubject;
+    private final int stageNum;
+    private final int workerNum;
+    private final int workerIndex;
+    private final String jobName;
+    private final int totalStages;
+    private final int metricsPort;
+    private final Observer<VirtualMachineTaskStatus> vmTaskStatusObserver;
+    private final Observable<Integer> stageTotalWorkersObservable;
+    private final Observable<JobSchedulingInfo> jobSchedulingInfoObservable;
+    private final Iterator<Integer> ports;
+    private final PublishSubject<Boolean> requestSubject;
     private Context context;
-    private WorkerInfo workerInfo;
+    private final WorkerInfo workerInfo;
 
     public RunningWorker(Builder builder) {
 
