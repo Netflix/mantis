@@ -17,6 +17,8 @@
 package io.mantisrx.server.master.store;
 
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.ArtifactID;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -24,6 +26,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import rx.Observable;
 
 
@@ -162,4 +165,24 @@ public class NoopStorageProvider implements MantisStorageProvider {
     public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) {
         return ImmutableList.of();
     }
+
+    @Override
+    public void addNewJobArtifact(JobArtifact jobArtifact) throws IOException {
+    }
+
+    @Override
+    public boolean jobArtifactExists(ArtifactID artifactID){
+        return false;
+    }
+
+    @Override
+    public List<String> listJobArtifactsByName(@Nullable String prefix) throws IOException {
+        return ImmutableList.of();
+    }
+
+    @Override
+    public List<JobArtifact> listJobArtifacts(String name, @Nullable String version) throws IOException {
+        return ImmutableList.of();
+    }
+
 }

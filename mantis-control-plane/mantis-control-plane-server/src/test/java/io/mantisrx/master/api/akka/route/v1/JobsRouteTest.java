@@ -37,6 +37,8 @@ import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandlerImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
@@ -66,6 +68,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
+import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -114,6 +117,7 @@ public class JobsRouteTest extends RouteTestBase {
                         new MantisJobStore(new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(
                                 true)), lifecycleEventPublisher), "jobClustersManager");
 
+                SimpleCachedFileStorageProvider simpleCachedFileStorageProvider = new SimpleCachedFileStorageProvider();
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
@@ -123,6 +127,7 @@ public class JobsRouteTest extends RouteTestBase {
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
+                final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(simpleCachedFileStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
 
@@ -166,8 +171,10 @@ public class JobsRouteTest extends RouteTestBase {
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
+
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
                         jobClusterRouteHandler, system);
+                final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
                 final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(
                         mockAgentClusterOps);
                 final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(
@@ -196,6 +203,7 @@ public class JobsRouteTest extends RouteTestBase {
                         v0AgentClusterRoute,
                         v1JobClusterRoute,
                         v1JobsRoute,
+                        v1JobArtifactsRoute,
                         v1AdminMasterRoute,
                         v1AgentClustersRoute,
                         v1JobDiscoveryStreamRoute,

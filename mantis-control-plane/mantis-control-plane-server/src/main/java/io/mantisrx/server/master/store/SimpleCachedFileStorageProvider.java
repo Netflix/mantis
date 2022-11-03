@@ -18,6 +18,8 @@ package io.mantisrx.server.master.store;
 
 import com.netflix.fenzo.functions.Action1;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.ArtifactID;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -32,11 +34,14 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -56,6 +61,7 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     private final File archiveDir;
     private final File namedJobsDir;
     private final File resourceClustersDir;
+    private final File jobArtifactsDir;
     private final ObjectMapper mapper;
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
@@ -78,6 +84,9 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
         this.resourceClustersDir = new File(spoolDir, "resourceClusters");
         createDir(resourceClustersDir);
+
+        this.jobArtifactsDir = new File(rootDir, "jobArtifacts");
+        createDir(jobArtifactsDir);
 
         this.mapper = new ObjectMapper().registerModule(new Jdk8Module()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -599,5 +608,53 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
     public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException {
         File output = getDisableTaskExecutorsRequestFile(clusterID);
         return mapper.readValue(output, new TypeReference<List<DisableTaskExecutorsRequest>>() {});
+    }
+
+    @Override
+    public void addNewJobArtifact(JobArtifact jobArtifact) throws IOException {
+        File tmpFile = new File(jobArtifactsDir, jobArtifact.getArtifactID().getResourceID() + ".job");
+        logger.info("Storing job artifact " + jobArtifact.getArtifactID().getResourceID() + " to file " + tmpFile.getAbsolutePath());
+        try (PrintWriter pwrtr = new PrintWriter(tmpFile)) {
+            mapper.writeValue(pwrtr, jobArtifact);
+        }
+    }
+
+    @Override
+    public boolean jobArtifactExists(ArtifactID artifactID) {
+        return Arrays.stream(Objects.requireNonNull(jobArtifactsDir.listFiles()))
+            .map(file -> {
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    JobArtifact jobArtifact = mapper.readValue(fis, JobArtifact.class);
+                    return jobArtifact.getArtifactID().equals(artifactID);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return false;
+            })
+            .anyMatch(x -> x.equals(true));
+    }
+
+    @Override
+    public List<String> listJobArtifactsByName(@Nullable String prefix) throws IOException {
+        return getJobArtifacts().stream().map(JobArtifact::getName).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<JobArtifact> listJobArtifacts(String name, @Nullable String version) throws IOException {
+        return getJobArtifacts();
+    }
+
+    private List<JobArtifact> getJobArtifacts() {
+        return Arrays.stream(Objects.requireNonNull(jobArtifactsDir.listFiles()))
+            .map(file -> {
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    return mapper.readValue(fis, JobArtifact.class);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     }
 }
