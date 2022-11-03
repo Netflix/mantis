@@ -48,6 +48,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.time.Clock;
@@ -155,6 +156,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetClusterUsageRequest.class, req -> sender().tell(getClusterUsage(req), self()))
                 .match(GetClusterIdleInstancesRequest.class,
                     req -> sender().tell(onGetClusterIdleInstancesRequest(req), self()))
+                .match(GetAssignedTaskExecutorRequest.class, this::onAssignedTaskExecutorRequest)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
 
                 .match(TaskExecutorAssignmentTimeout.class, this::onTaskExecutorAssignmentTimeout)
@@ -320,6 +322,23 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } else {
                 sender().tell(new Status.Failure(new Exception(String.format("Unknown task executor for hostname %s", request.getHostName()))), self());
             }
+        }
+    }
+
+    private void onAssignedTaskExecutorRequest(GetAssignedTaskExecutorRequest request) {
+        Optional<TaskExecutorID> matchedTaskExecutor =
+            taskExecutorStateMap
+                .entrySet()
+                .stream()
+                .filter(e -> e.getValue().isRunningOrAssigned(request.getWorkerId()))
+                .map(e -> e.getKey())
+                .findFirst();
+
+        if (matchedTaskExecutor.isPresent()) {
+            sender().tell(matchedTaskExecutor.get(), self());
+        } else {
+            sender().tell(new Status.Failure(new TaskNotFoundException(request.getWorkerId())),
+                self());
         }
     }
 
@@ -669,6 +688,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         @Nullable
         String hostName;
+
+        ClusterID clusterID;
+    }
+
+    @Value
+    static class GetAssignedTaskExecutorRequest {
+        WorkerId workerId;
 
         ClusterID clusterID;
     }
@@ -1072,6 +1098,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         boolean isAssigned() {
             return this.availabilityState instanceof Assigned;
+        }
+
+        boolean isRunningOrAssigned(WorkerId workerId) {
+            return this.getWorkerId() != null && this.getWorkerId().equals(workerId);
         }
 
         // Captures the last interaction from the task executor. Any interactions

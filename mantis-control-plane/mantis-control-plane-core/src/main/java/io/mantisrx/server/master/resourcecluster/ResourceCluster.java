@@ -78,6 +78,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(String hostName);
 
+    CompletableFuture<TaskExecutorID> getTaskExecutorAssignedFor(WorkerId workerId);
+
     CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(TaskExecutorID taskExecutorID);
 
     CompletableFuture<TaskExecutorStatus> getTaskExecutorState(TaskExecutorID taskExecutorID);

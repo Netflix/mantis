@@ -28,10 +28,10 @@ import java.time.Instant;
  */
 public class WorkerHeartbeat implements WorkerEvent {
 
-    private WorkerId workerId;
-    private Status heartBeat;
-    private WorkerState workerState;
-    private long time;
+    private final WorkerId workerId;
+    private final Status heartBeat;
+    private final WorkerState workerState;
+    private final long time;
 
     /**
      * Creates an instance of this class from a {@link Status} object.
@@ -49,11 +49,8 @@ public class WorkerHeartbeat implements WorkerEvent {
      */
     public WorkerHeartbeat(Status hb, Instant time) {
         this.heartBeat = hb;
-        String jobId = heartBeat.getJobId();
-        int index = heartBeat.getWorkerIndex();
-        int number = heartBeat.getWorkerNumber();
         this.time = time.toEpochMilli();
-        workerId = new WorkerId(jobId, index, number);
+        workerId = hb.getWorkerId().get();
         workerState = setWorkerState(heartBeat.getState());
     }
 
