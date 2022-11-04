@@ -53,12 +53,12 @@ ext.libraries = [
         asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
         commonsIo      : "commons-io:commons-io:2.11.0",
         commonsLang3   : 'org.apache.commons:commons-lang3:3.5',
+        flinkCore      : "org.apache.flink:flink-core:${versions.flink}",
         flinkRpcApi    : [
                 "org.apache.flink:flink-rpc-core:${versions.flink}",
         ],
         flinkRpcImpl   : [
                 "org.apache.flink:flink-rpc-akka:${versions.flink}",
-                "org.apache.flink:flink-rpc-akka-loader:${versions.flink}",
         ],
         junit4         : [
                 "junit:junit:${versions.junit4}",
