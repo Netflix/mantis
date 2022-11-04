@@ -46,7 +46,6 @@ dependencies {
 
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi
-    implementation libraries.spotifyFutures
 
     testImplementation "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
     testImplementation "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"
