@@ -1,15 +1,15 @@
 name: "Publish snapshot to NetflixOSS and Maven Central"
 
-on:
-  pull_request_target:
+on: [pull_request_target]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout PR
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Setup jdk
         uses: actions/setup-java@v2
         with:
