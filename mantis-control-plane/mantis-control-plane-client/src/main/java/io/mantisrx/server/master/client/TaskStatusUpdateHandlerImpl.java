@@ -20,34 +20,24 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.Status;
-import java.net.SocketTimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.ConnectionPoolTimeoutException;
 
 @Slf4j
 public class TaskStatusUpdateHandlerImpl implements TaskStatusUpdateHandler {
 
-    private final Counter hbConnectionTimeoutCounter;
-    private final Counter hbConnectionRequestTimeoutCounter;
-    private final Counter hbSocketTimeoutCounter;
+    private final Counter failureCounter;
     private final Counter workerSentHeartbeats;
     private final MantisMasterGateway masterMonitor;
 
     TaskStatusUpdateHandlerImpl(MantisMasterGateway masterGateway) {
         final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
                 .name("ReportStatusServiceHttpImpl")
-                .addCounter("hbConnectionTimeoutCounter")
-                .addCounter("hbConnectionRequestTimeoutCounter")
-                .addCounter("hbSocketTimeoutCounter")
+                .addCounter("failureCounter")
                 .addCounter("workerSentHeartbeats")
                 .build());
 
-        this.hbConnectionTimeoutCounter = metrics.getCounter("hbConnectionTimeoutCounter");
-        this.hbConnectionRequestTimeoutCounter = metrics.getCounter(
-                "hbConnectionRequestTimeoutCounter");
-        this.hbSocketTimeoutCounter = metrics.getCounter("hbSocketTimeoutCounter");
+        this.failureCounter = metrics.getCounter("failureCounter");
         this.workerSentHeartbeats = metrics.getCounter("workerSentHeartbeats");
         this.masterMonitor = masterGateway;
     }
@@ -61,18 +51,8 @@ public class TaskStatusUpdateHandlerImpl implements TaskStatusUpdateHandler {
                         workerSentHeartbeats.increment();
                     } else {
                         Throwable cleaned = ExceptionUtils.stripExecutionException(throwable);
-                        if (cleaned instanceof SocketTimeoutException) {
-                            log.warn("SocketTimeoutException: Failed to send status update", cleaned);
-                            hbSocketTimeoutCounter.increment();
-                        } else if (cleaned instanceof ConnectionPoolTimeoutException) {
-                            log.warn("ConnectionPoolTimeoutException: Failed to send status update", cleaned);
-                            hbConnectionRequestTimeoutCounter.increment();
-                        } else if (cleaned instanceof ConnectTimeoutException) {
-                            log.warn("ConnectTimeoutException: Failed to send status update", cleaned);
-                            hbConnectionTimeoutCounter.increment();
-                        } else {
-                            log.error("Failed to send status update", cleaned);
-                        }
+                        failureCounter.increment();
+                        log.error("Failed to send status update", cleaned);
                     }
                 });
     }
