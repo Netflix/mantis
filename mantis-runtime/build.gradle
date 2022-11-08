@@ -23,6 +23,7 @@ dependencies {
     api project(':mantis-remote-observable')
     api project(':mantis-network')
     api project(':mantis-common')
+    implementation group: 'org.apache.flink', name: 'flink-shaded-guava', version: '30.1.1-jre-14.0'
     api libraries.slf4jApi
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
