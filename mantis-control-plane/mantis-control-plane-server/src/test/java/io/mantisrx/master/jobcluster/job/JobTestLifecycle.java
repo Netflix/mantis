@@ -56,8 +56,8 @@ import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
@@ -87,7 +87,7 @@ public class JobTestLifecycle {
 		system = ActorSystem.create();
 
 		TestHelpers.setupMasterConfig();
-		storageProvider = new MantisStorageProviderAdapter(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(), eventPublisher);
+		storageProvider = new KeyValueAwareMantisStorageProvider(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(), eventPublisher);
 		jobStore = new MantisJobStore(storageProvider);
 	}
 

@@ -85,11 +85,10 @@ import io.mantisrx.server.master.AgentClustersAutoScaler;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
-import io.mantisrx.server.master.store.MantisStorageProvider;
 import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import java.time.Duration;
 import java.util.Collections;
@@ -172,9 +171,8 @@ public class MantisMasterAPI extends AllDirectives {
                 new StatusEventSubscriberLoggingImpl(),
                 new WorkerEventSubscriberLoggingImpl());
 
-        final MantisStorageProvider actualStorageProvider = new SimpleCachedFileStorageProvider();
-        IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(
-                actualStorageProvider,
+        IMantisStorageProvider storageProvider = new KeyValueAwareMantisStorageProvider(
+                new SimpleCachedFileStorageProvider(),
                 lifecycleEventPublisher);
         ActorRef jobClustersManager = system.actorOf(
                 JobClustersManagerActor.props(
@@ -193,7 +191,7 @@ public class MantisMasterAPI extends AllDirectives {
         setupDummyAgentClusterAutoScaler();
         final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                 jobClustersManager);
-        final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(actualStorageProvider);
+        final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(storageProvider);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManager);
 
         MasterDescription masterDescription = new MasterDescription(

@@ -115,8 +115,8 @@ import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.*;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -186,7 +186,7 @@ public class JobClusterTest {
 
     @Before
     public void setupStorageProvider() {
-        storageProvider = new MantisStorageProviderAdapter(
+        storageProvider = new KeyValueAwareMantisStorageProvider(
             new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(rootDir.getRoot()),
             eventPublisher);
         jobStore = new MantisJobStore(storageProvider);

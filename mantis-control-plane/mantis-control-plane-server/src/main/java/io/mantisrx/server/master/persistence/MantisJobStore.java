@@ -31,6 +31,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -217,7 +218,7 @@ public class MantisJobStore {
 
     public void archiveWorker(IMantisWorkerMetadata worker) throws IOException {
         storageProvider.archiveWorker(worker);
-        ConcurrentMap<Integer, IMantisWorkerMetadata> workersMap = null;
+        ConcurrentMap<Integer, IMantisWorkerMetadata> workersMap;
         try {
             workersMap = archivedWorkersCache.getArchivedWorkerMap(worker.getJobId());
             workersMap.putIfAbsent(worker.getWorkerNumber(), worker);
@@ -260,7 +261,7 @@ public class MantisJobStore {
     }
 
     public List<IMantisWorkerMetadata> getArchivedWorkers(String jobId) throws Exception {
-        return new ArrayList<>(archivedWorkersCache.getArchivedWorkerMap(jobId).values());
+        return ImmutableList.copyOf(archivedWorkersCache.getArchivedWorkerMap(jobId).values());
     }
 
     private static class TerminatedJob implements Comparable<TerminatedJob> {

@@ -64,6 +64,7 @@ import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
+import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -117,7 +118,7 @@ public class JobsRouteTest extends RouteTestBase {
                         new MantisJobStore(new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(
                                 true)), lifecycleEventPublisher), "jobClustersManager");
 
-                SimpleCachedFileStorageProvider simpleCachedFileStorageProvider = new SimpleCachedFileStorageProvider();
+                IMantisStorageProvider simpleCachedFileStorageProvider = new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(new SimpleCachedFileStorageProvider());
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);

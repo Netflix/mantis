@@ -19,10 +19,10 @@ package io.mantisrx.server.master.store;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,19 +32,20 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.flink.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
  * Simple File based storage provider. Intended mainly as a sample implementation for
- * {@link MantisStorageProvider} interface. This implementation is complete in its functionality, but, isn't
+ * {@link KeyValueStorageProvider} interface. This implementation is complete in its functionality, but, isn't
  * expected to be scalable or performant for production loads.
  * <P>This implementation uses <code>/tmp/MantisSpool/</code> as the spool directory. The directory is created
  * if not present already. It will fail only if either a file with that name exists or if a directory with that
  * name exists but isn't writable.</P>
  */
-public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
+public class SimpleCachedFileStorageProvider implements KeyValueStorageProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
     private final File rootDir;
@@ -71,6 +72,14 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
         return Paths.get(rootDir.getPath(), dir, fileName);
     }
 
+    public void reset() {
+        try {
+            FileUtils.deleteDirectory(Paths.get(rootDir.getPath()).toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
     @Override
     public Map<String, Map<String, String>> getAllRows(String tableName) throws IOException {
         return getAllPartitionKeys(tableName).stream().map(partitionKey -> {
@@ -129,6 +138,11 @@ public class SimpleCachedFileStorageProvider implements MantisStorageProvider {
 
     @Override
     public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all) throws IOException {
+        return upsertAll(tableName, partitionKey, all, null);
+    }
+
+    @Override
+    public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException {
         final Path filePath = makePath(tableName, partitionKey);
         final List<String> lines = all.entrySet().stream()
             .map(e -> e.getKey() + "," + e.getValue())

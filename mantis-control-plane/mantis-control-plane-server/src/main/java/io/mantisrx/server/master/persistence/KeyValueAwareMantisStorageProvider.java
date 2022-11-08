@@ -23,16 +23,17 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.store.InvalidJobException;
+import io.mantisrx.server.master.store.KeyValueStorageProvider;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
-import io.mantisrx.server.master.store.MantisStorageProvider;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,6 +45,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,6 +54,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -63,9 +68,24 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 
-public class MantisStorageProviderAdapter implements IMantisStorageProvider {
+/**
+ * Provide a key-value aware implementation of IMantisStorageProvider.
+ * This has all the table-models and mantis specific logic for how
+ * mantis master should store job, cluster and related metadata
+ * assuming the underlying storage provides key based lookups.
+ *
+ * The instance of this class needs an actual key-value storage
+ * implementation (implements KeyValueStorageProvider) to function.
+ *
+ * Look at {@code io.mantisrx.server.master.store.KeyValueStorageProvider}
+ * to see the features needed from the storage.
+ *   Effectively, an apache-cassandra like storage with primary key made
+ *   up of partition key and composite key and a way to iterate over all
+ *   partition keys in the table.
+ */
+public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(MantisStorageProviderAdapter.class);
+    private static final Logger logger = LoggerFactory.getLogger(KeyValueAwareMantisStorageProvider.class);
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String JOB_STAGEDATA_NS = "MantisJobStageData";
     private static final String ARCHIVED_JOB_STAGEDATA_NS = "MantisArchivedJobStageData";
@@ -77,9 +97,16 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
     private static final String TASK_EXECUTOR_REGISTRATION = "TaskExecutorRegistration";
     private static final String DISABLE_TASK_EXECUTOR_REQUESTS = "MantisDisableTaskExecutorRequests";
     private static final String CONTROLPLANE_NS = "mantis_controlplane";
+    private static final String JOB_ARTIFACTS_NS = "mantis_global_job_artifacts";
+
+    private static final String JOB_METADATA_SECONDARY_KEY = "jobMetadata";
+    private static final String JOB_STAGE_METADATA_SECONDARY_KEY_PREFIX = "stageMetadata";
     private static final String NAMED_JOB_SECONDARY_KEY = "jobNameInfo";
+    private static final String JOB_ARTIFACTS_BY_NAME_PARTITION_KEY = "JobArtifactsByName";
+
     private static final int WORKER_BATCH_SIZE = 1000;
     private static final int WORKER_MAX_INDEX = 30000;
+    private static final long TTL_IN_MS = TimeUnit.DAYS.toMillis(7);
 
     static {
         mapper
@@ -88,10 +115,10 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
             .registerModule(new JavaTimeModule());
     }
 
-    private final MantisStorageProvider sProvider;
+    private final KeyValueStorageProvider sProvider;
     private final LifecycleEventPublisher eventPublisher;
 
-    public MantisStorageProviderAdapter(MantisStorageProvider actualStorageProvider, LifecycleEventPublisher eventPublisher) {
+    public KeyValueAwareMantisStorageProvider(KeyValueStorageProvider actualStorageProvider, LifecycleEventPublisher eventPublisher) {
         this.sProvider = actualStorageProvider;
         this.eventPublisher = eventPublisher;
     }
@@ -101,15 +128,27 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
     }
 
     protected String getJobMetadataFieldName() {
-        return "jobMetadata";
+        return JOB_METADATA_SECONDARY_KEY;
     }
 
     protected String getStageMetadataFieldPrefix() {
-        return "stageMetadata";
+        return JOB_STAGE_METADATA_SECONDARY_KEY_PREFIX;
+    }
+
+    protected String getJobArtifactsByNamePartitionKey() {
+        return JOB_ARTIFACTS_BY_NAME_PARTITION_KEY;
+    }
+
+    protected Duration getArchiveDataTtlInMs() {
+        return Duration.ofMillis(TTL_IN_MS);
     }
 
     protected String getJobStageFieldName(int stageNum) {
         return String.format("%s-%d", getStageMetadataFieldPrefix(), stageNum);
+    }
+
+    protected String getJobClusterFieldName() {
+        return NAMED_JOB_SECONDARY_KEY;
     }
 
     private boolean jobIsValid(MantisJobMetadataWritable job) {
@@ -193,13 +232,13 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
     public void archiveJob(String jobId) throws IOException {
         Map<String, String> all = sProvider.getAll(getNamespace(JOB_STAGEDATA_NS), jobId);
         int workerMaxPartitionKey = workerMaxPartitionKey(readJobStageData(jobId, all));
-        sProvider.upsertAll(getNamespace(ARCHIVED_JOB_STAGEDATA_NS), jobId, all);
+        sProvider.upsertAll(getNamespace(ARCHIVED_JOB_STAGEDATA_NS), jobId, all, getArchiveDataTtlInMs());
         sProvider.deleteAll(getNamespace(JOB_STAGEDATA_NS), jobId);
 
         for (int i = 0; i < workerMaxPartitionKey; i += WORKER_BATCH_SIZE) {
             String pkey = makeBucketizedPartitionKey(jobId, i);
             Map<String, String> workersData = sProvider.getAll(getNamespace(WORKERS_NS), pkey);
-            sProvider.upsertAll(getNamespace(ARCHIVED_WORKERS_NS), pkey, workersData);
+            sProvider.upsertAll(getNamespace(ARCHIVED_WORKERS_NS), pkey, workersData, getArchiveDataTtlInMs());
             sProvider.deleteAll(getNamespace(WORKERS_NS), pkey);
         }
     }
@@ -366,9 +405,11 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
         AtomicInteger failedCount = new AtomicInteger();
         AtomicInteger successCount = new AtomicInteger();
         final List<IJobClusterMetadata> jobClusters = Lists.newArrayList();
-        for (String name : sProvider.getAllPartitionKeys(getNamespace(NAMED_JOBS_NS))) {
+        for (Map.Entry<String, Map<String, String>> rows : sProvider.getAllRows(getNamespace(NAMED_JOBS_NS)).entrySet()) {
+            String name = rows.getKey();
             try {
-                final NamedJob jobCluster = getJobCluster(getNamespace(NAMED_JOBS_NS), name);
+                String data = rows.getValue().get(getJobClusterFieldName());
+                final NamedJob jobCluster = getJobCluster(getNamespace(NAMED_JOBS_NS), name, data);
                 jobClusters.add(DataFormatAdapter.convertNamedJobToJobClusterMetadata(jobCluster));
                 successCount.getAndIncrement();
             } catch (Exception e) {
@@ -378,7 +419,6 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
         }
         return jobClusters;
     }
-
 
     @Override
     public List<CompletedJob> loadAllCompletedJobs() throws IOException {
@@ -413,7 +453,7 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
         String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
         String skey = makeBucketizedSecondaryKey(worker.getStageNum(), worker.getWorkerIndex(), worker.getStageNum());
         sProvider.delete(getNamespace(WORKERS_NS), pkey, skey);
-        sProvider.upsert(getNamespace(ARCHIVED_WORKERS_NS), pkey, skey, mapper.writeValueAsString(worker));
+        sProvider.upsert(getNamespace(ARCHIVED_WORKERS_NS), pkey, skey, mapper.writeValueAsString(worker), getArchiveDataTtlInMs());
     }
 
     @Override
@@ -462,7 +502,7 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
         sProvider.upsert(
             getNamespace(NAMED_JOBS_NS),
             jobCluster.getJobClusterDefinition().getName(),
-            NAMED_JOB_SECONDARY_KEY,
+            getJobClusterFieldName(),
             mapper.writeValueAsString(DataFormatAdapter.convertJobClusterMetadataToNamedJob(jobCluster)));
     }
 
@@ -480,8 +520,13 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
             });
     }
 
+
     private NamedJob getJobCluster(String namespace, String name) throws Exception {
-        String data = sProvider.get(namespace, name, NAMED_JOB_SECONDARY_KEY);
+        return getJobCluster(namespace, name, sProvider.get(namespace, name, getJobClusterFieldName()));
+
+    }
+
+    private NamedJob getJobCluster(String namespace, String name, String data) throws Exception {
         return mapper.readValue(data, NamedJob.class);
     }
 
@@ -602,5 +647,75 @@ public class MantisStorageProviderAdapter implements IMantisStorageProvider {
                     }
                 })
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isArtifactExists(String resourceId) throws IOException {
+        return sProvider.isRowExists(getNamespace(JOB_ARTIFACTS_NS), resourceId, resourceId);
+    }
+
+    @Override
+    public JobArtifact getArtifactById(String resourceId) throws IOException {
+        String data = sProvider.get(getNamespace(JOB_ARTIFACTS_NS), resourceId, resourceId);
+        return mapper.readValue(data, JobArtifact.class);
+    }
+
+    @Override
+    public List<JobArtifact> listJobArtifacts(String name, String version) throws IOException {
+        return sProvider.getAll(getNamespace(JOB_ARTIFACTS_NS), name)
+            .entrySet().stream()
+            .filter(e -> version == null || StringUtils.equalsIgnoreCase(e.getKey(), version))
+            .map(e -> {
+                try {
+                    return mapper.readValue(e.getValue(), JobArtifact.class);
+                } catch (JsonProcessingException ex) {
+                    logger.warn("Failed to deserialize job artifact metadata for {} (data={})", e.getKey(), e.getValue(), ex);
+                    return null;
+                }
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> listJobArtifactsByName(String prefix) throws IOException {
+        final String pr = StringUtils.defaultIfBlank(prefix, "");
+        return sProvider.getAll(getNamespace(JOB_ARTIFACTS_NS), getJobArtifactsByNamePartitionKey())
+            .keySet().stream()
+            .filter(Objects::nonNull)
+            .filter(x -> StringUtils.startsWith(x, pr))
+            .collect(Collectors.toList());
+    }
+
+    private void addNewJobArtifact(String partitionKey, String secondaryKey, JobArtifact jobArtifact) {
+        try {
+            final String data = mapper.writeValueAsString(jobArtifact);
+            sProvider.upsert(getNamespace(JOB_ARTIFACTS_NS), partitionKey, secondaryKey, data);
+        } catch (IOException e) {
+            logger.error("Error while storing keyId {} for artifact {}", partitionKey, jobArtifact, e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void addNewJobArtifact(JobArtifact jobArtifact) throws IOException {
+        try {
+            CompletableFuture.runAsync(
+                    () -> addNewJobArtifact(getJobArtifactsByNamePartitionKey(), jobArtifact.getName(), jobArtifact))
+                .thenRunAsync(
+                    () -> addNewJobArtifact(jobArtifact.getName(), jobArtifact.getVersion(), jobArtifact))
+                // Given the lack of transactions in key-value stores we want to make sure that if one of these
+                // writes fail, we don't leave the metadata store with partial information.
+                // Storing artifactID in the last call should do the trick because the artifact discovery
+                // service will eventually retry on missing artifactIDs.
+                .thenRunAsync(
+                    () ->
+                        addNewJobArtifact(
+                            jobArtifact.getArtifactID().getResourceID(),
+                            jobArtifact.getArtifactID().getResourceID(),
+                            jobArtifact))
+                .get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error while storing job artifact {} to Cassandra Storage Provider.", jobArtifact, e);
+            throw new IOException(e);
+        }
     }
 }

@@ -21,7 +21,7 @@ import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCC
 
 import io.mantisrx.master.jobcluster.proto.JobArtifactProto;
 import io.mantisrx.server.core.domain.JobArtifact;
-import io.mantisrx.server.master.store.MantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -31,9 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JobArtifactRouteHandlerImpl implements JobArtifactRouteHandler {
-    private final MantisStorageProvider mantisStorageProvider;
+    private final IMantisStorageProvider mantisStorageProvider;
 
-    public JobArtifactRouteHandlerImpl(MantisStorageProvider mantisStorageProvider) {
+    public JobArtifactRouteHandlerImpl(IMantisStorageProvider mantisStorageProvider) {
         this.mantisStorageProvider = mantisStorageProvider;
     }
 

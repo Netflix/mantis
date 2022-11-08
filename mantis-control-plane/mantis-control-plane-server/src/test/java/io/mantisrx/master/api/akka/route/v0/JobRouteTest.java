@@ -87,6 +87,8 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
+import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -185,7 +187,7 @@ public class JobRouteTest {
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
 
-                SimpleCachedFileStorageProvider simpleCachedFileStorageProvider = new SimpleCachedFileStorageProvider();
+
 //                new File("/tmp/MantisSpool/namedJobs").mkdirs();
 //                IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(simpleCachedFileStorageProvider);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(
@@ -193,6 +195,7 @@ public class JobRouteTest {
                         new StatusEventSubscriberLoggingImpl(),
                         new WorkerEventSubscriberLoggingImpl());
 
+                IMantisStorageProvider mantisStorageProvider = new KeyValueAwareMantisStorageProvider(new SimpleCachedFileStorageProvider(), lifecycleEventPublisher);
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(
                                 true)), lifecycleEventPublisher), "jobClustersManager");
@@ -206,7 +209,7 @@ public class JobRouteTest {
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
-                final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(simpleCachedFileStorageProvider);
+                final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(mantisStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
 

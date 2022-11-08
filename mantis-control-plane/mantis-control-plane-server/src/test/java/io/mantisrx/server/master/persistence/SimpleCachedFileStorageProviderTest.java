@@ -22,7 +22,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.mantisrx.common.Label;
-import io.mantisrx.master.events.*;
+import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.events.LifecycleEventPublisherImpl;
+import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterMetadataImpl;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
@@ -42,9 +47,9 @@ import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.persistence.exceptions.JobClusterAlreadyExistsException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.shaded.com.google.common.collect.Maps;
 import java.io.File;
@@ -55,26 +60,18 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
 import org.junit.Test;
 
 public class SimpleCachedFileStorageProviderTest {
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
-    @BeforeClass
-    public static void setup() {
+    private final io.mantisrx.server.master.store.SimpleCachedFileStorageProvider fileProvider = new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider();
 
-
-    //  jobStore = new MantisJobStore(storageProvider);
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider();
-        sProvider.deleteAllFiles();
-
+    @After
+    public void tearDown() {
+        fileProvider.reset();
     }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(String clusterName, List<Label> labels)  {
@@ -102,7 +99,7 @@ public class SimpleCachedFileStorageProviderTest {
    @Test
     public void testCreateJob() {
         String clusterName = "testCreateJob";
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider();
+        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
         JobDefinition jobDefinition;
         try {
@@ -140,7 +137,8 @@ public class SimpleCachedFileStorageProviderTest {
                             .withJobId(jobId)
                             .withWorkerIndex(w)
                             .withWorkerNumber(1)
-                            .withNumberOfPorts(stage.getMachineDefinition().getNumPorts() + MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
+                            .withNumberOfPorts(1 + MANTIS_SYSTEM_ALLOCATED_NUM_PORTS)
+                            .withWorkerPorts(new WorkerPorts(ImmutableList.of(9091, 9092, 9093, 9094, 9095)))
                             .withStageNum(w+1)
                             .withLifecycleEventsPublisher(eventPublisher)
                             .build();
@@ -210,7 +208,7 @@ public class SimpleCachedFileStorageProviderTest {
 
     @Test
     public void testCreateAndGetJobCluster() {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider();
+        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
         String clusterName = "testCreateClusterClueter";
 
         JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterName, Lists.newArrayList());
@@ -218,8 +216,8 @@ public class SimpleCachedFileStorageProviderTest {
         IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
         try {
             sProvider.createJobCluster(jobCluster);
-
-            Optional<IJobClusterMetadata> readDataOp = sProvider.loadJobCluster(clusterName);
+            Optional<IJobClusterMetadata> readDataOp = sProvider.loadAllJobClusters().stream()
+                .filter(jc -> clusterName.equals(jc.getJobClusterDefinition().getName())).findFirst();
             if(readDataOp.isPresent()) {
                 assertEquals(clusterName, readDataOp.get().getJobClusterDefinition().getName());
             } else {
@@ -233,7 +231,7 @@ public class SimpleCachedFileStorageProviderTest {
     }
     @Test
     public void testUpdateJobCluster() {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider();
+        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
         String clusterName = "testUpdateJobCluster";
 
         JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterName, Lists.newArrayList());
@@ -241,7 +239,8 @@ public class SimpleCachedFileStorageProviderTest {
         IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
         try {
             sProvider.createJobCluster(jobCluster);
-            Optional<IJobClusterMetadata> readDataOp = sProvider.loadJobCluster(clusterName);
+            Optional<IJobClusterMetadata> readDataOp = sProvider.loadAllJobClusters().stream()
+                .filter(jc -> clusterName.equals(jc.getJobClusterDefinition().getName())).findFirst();
             if(readDataOp.isPresent()) {
                 assertEquals(clusterName, readDataOp.get().getJobClusterDefinition().getName());
                 assertEquals(0, readDataOp.get().getJobClusterDefinition().getLabels().size());
@@ -255,7 +254,8 @@ public class SimpleCachedFileStorageProviderTest {
             IJobClusterMetadata jobClusterUpdated = new JobClusterMetadataImpl.Builder().withLastJobCount(0).withJobClusterDefinition(jobClusterDefn).build();
             sProvider.updateJobCluster(jobClusterUpdated);
 
-            readDataOp = sProvider.loadJobCluster(clusterName);
+            readDataOp = sProvider.loadAllJobClusters().stream()
+                .filter(jc -> clusterName.equals(jc.getJobClusterDefinition().getName())).findFirst();
             if(readDataOp.isPresent()) {
                 assertEquals(clusterName, readDataOp.get().getJobClusterDefinition().getName());
                 assertEquals(1, readDataOp.get().getJobClusterDefinition().getLabels().size());
@@ -270,8 +270,8 @@ public class SimpleCachedFileStorageProviderTest {
 
     }
     @Test
-    public void testGetAllJobClusters() throws IOException, JobClusterAlreadyExistsException {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider();
+    public void testGetAllJobClusters() throws Exception {
+        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
         String clusterPrefix = "testGetAllJobClustersCluster";
         for(int i=0; i<5; i++) {
             JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterPrefix + "_" + i, Lists.newArrayList());

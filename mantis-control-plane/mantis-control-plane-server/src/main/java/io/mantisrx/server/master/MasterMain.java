@@ -66,14 +66,13 @@ import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
 import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
 import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
-import io.mantisrx.server.master.store.MantisStorageProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import java.io.File;
@@ -107,6 +106,7 @@ public class MasterMain implements Service {
     private static String propFile = "master.properties";
     private final ServiceLifecycle mantisServices = new ServiceLifecycle();
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
+    private KeyValueAwareMantisStorageProvider storageProvider;
     private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
     private volatile CuratorService curatorService = null;
     private volatile AgentClusterOperationsImpl agentClusterOps = null;
@@ -141,7 +141,6 @@ public class MasterMain implements Service {
             // log dead letter messages
             final ActorRef actor = system.actorOf(Props.create(DeadLetterActor.class), "MantisDeadLetter");
             system.eventStream().subscribe(actor, DeadLetter.class);
-            //final IMantisStorageProvider mantisStorageProvider = new SimpleCachedFileStorageProvider(false);
 
             ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props(), "AgentsErrorMonitor");
             ActorRef statusEventBrokerActor = system.actorOf(StatusEventBrokerActor.props(agentsErrorMonitorActor), "StatusEventBroker");
@@ -152,10 +151,7 @@ public class MasterMain implements Service {
 
             // TODO who watches actors created at this level?
             final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber, workerEventSubscriber);
-
-
-            final MantisStorageProvider actualStorageProvider = this.config.getStorageProvider();
-            IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(actualStorageProvider, lifecycleEventPublisher);
+            storageProvider = new KeyValueAwareMantisStorageProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
@@ -228,13 +224,13 @@ public class MasterMain implements Service {
             if (this.config.isLocalMode()) {
                 leadershipManager.becomeLeader();
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), actualStorageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             } else {
                 curatorService = new CuratorService(this.config);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), actualStorageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             }
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {
@@ -420,5 +416,9 @@ public class MasterMain implements Service {
 
     public boolean isLeader() {
         return leadershipManager.isLeader();
+    }
+
+    public IMantisStorageProvider getStorageProvider() {
+        return storageProvider;
     }
 }

@@ -21,6 +21,7 @@ import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -152,4 +153,14 @@ public interface IMantisStorageProvider {
     void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
 
     List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException;
+
+    boolean isArtifactExists(String resourceId) throws IOException;
+
+    JobArtifact getArtifactById(String resourceId) throws IOException;
+
+    List<JobArtifact> listJobArtifacts(String name, String version) throws IOException;
+
+    List<String> listJobArtifactsByName(String prefix) throws IOException;
+
+    void addNewJobArtifact(JobArtifact jobArtifact) throws IOException;
 }
