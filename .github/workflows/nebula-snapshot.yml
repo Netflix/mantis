@@ -11,7 +11,7 @@ jobs:
   build: # Second step
     runs-on: ubuntu-latest
     needs: [ approve ] # Require the first step to finish
-      environment:
+    environment:
         name: Integrate Pull Request # Our protected environment variable
     steps:
       - name: Checkout PR
