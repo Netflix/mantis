@@ -131,7 +131,7 @@ public class Jackson {
                            });
     }
 
-    private static String toJSON(
+    public static String toJSON(
             ObjectMapper mapper,
             FilterProvider filters,
             Object object) throws JsonProcessingException {

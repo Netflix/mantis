@@ -40,6 +40,8 @@ import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandlerImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
@@ -57,6 +59,7 @@ import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
 import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
+import io.mantisrx.master.api.akka.route.v1.JobArtifactsRoute;
 import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
@@ -86,6 +89,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.MantisStorageProviderAdapter;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
+import io.mantisrx.server.master.store.MantisStorageProvider;
 import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import java.time.Duration;
 import java.util.Collections;
@@ -168,8 +172,9 @@ public class MantisMasterAPI extends AllDirectives {
                 new StatusEventSubscriberLoggingImpl(),
                 new WorkerEventSubscriberLoggingImpl());
 
+        final MantisStorageProvider actualStorageProvider = new SimpleCachedFileStorageProvider();
         IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(
-                new SimpleCachedFileStorageProvider(),
+                actualStorageProvider,
                 lifecycleEventPublisher);
         ActorRef jobClustersManager = system.actorOf(
                 JobClustersManagerActor.props(
@@ -188,6 +193,7 @@ public class MantisMasterAPI extends AllDirectives {
         setupDummyAgentClusterAutoScaler();
         final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                 jobClustersManager);
+        final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(actualStorageProvider);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManager);
 
         MasterDescription masterDescription = new MasterDescription(
@@ -241,6 +247,7 @@ public class MantisMasterAPI extends AllDirectives {
 
         final JobClustersRoute v1JobClustersRoute = new JobClustersRoute(jobClusterRouteHandler, system);
         final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, system);
+        final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
         final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
         final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(agentClusterOperations);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
@@ -266,6 +273,7 @@ public class MantisMasterAPI extends AllDirectives {
                 v0AgentClusterRoute,
                 v1JobClustersRoute,
                 v1JobsRoute,
+                v1JobArtifactsRoute,
                 v1AdminMasterRoute,
                 v1AgentClustersRoute,
                 v1JobDiscoveryStreamRoute,

@@ -30,6 +30,8 @@ import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandlerImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
@@ -48,6 +50,7 @@ import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
 import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
+import io.mantisrx.master.api.akka.route.v1.JobArtifactsRoute;
 import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
@@ -60,9 +63,9 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
+import io.mantisrx.server.master.store.MantisStorageProvider;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -83,7 +86,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ResourceClusters resourceClusters;
     private final ActorRef statusEventBrokerActor;
     private final int port;
-    private final IMantisStorageProvider storageProvider;
+    private final MantisStorageProvider storageProvider;
     private final MantisScheduler scheduler;
     private final LifecycleEventPublisher lifecycleEventPublisher;
     private final MantisMasterRoute mantisMasterRoute;
@@ -100,7 +103,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final ResourceClusters resourceClusters,
                                 final ActorRef resourceClustersHostManagerActor,
                                 final int serverPort,
-                                final IMantisStorageProvider mantisStorageProvider,
+                                final MantisStorageProvider mantisStorageProvider,
                                 final MantisScheduler scheduler,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
@@ -170,6 +173,9 @@ public class MasterApiAkkaService extends BaseService {
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
         final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(jobStatusRouteHandler);
 
+        final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(storageProvider);
+        final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
+
         final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
         final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
             resourceClustersHostManagerActor);
@@ -184,6 +190,7 @@ public class MasterApiAkkaService extends BaseService {
             v0AgentClusterRoute,
             v1JobClusterRoute,
             v1JobsRoute,
+            v1JobArtifactsRoute,
             v1AdminMasterRoute,
             v1AgentClustersRoute,
             v1JobDiscoveryStreamRoute,

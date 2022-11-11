@@ -28,6 +28,7 @@ import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
 import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
+import io.mantisrx.master.api.akka.route.v1.JobArtifactsRoute;
 import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
@@ -52,6 +53,7 @@ public class MantisMasterRoute extends AllDirectives {
 
     private final JobClustersRoute v1JobClusterRoute;
     private final JobsRoute v1JobsRoute;
+    private final JobArtifactsRoute v1JobArtifactsRoute;
     private final AdminMasterRoute v1MasterRoute;
     private final AgentClustersRoute v1AgentClustersRoute;
     private final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute;
@@ -71,6 +73,7 @@ public class MantisMasterRoute extends AllDirectives {
         final AgentClusterRoute v0AgentClusterRoute,
         final JobClustersRoute v1JobClusterRoute,
         final JobsRoute v1JobsRoute,
+        final JobArtifactsRoute v1JobArtifactsRoute,
         final AdminMasterRoute v1MasterRoute,
         final AgentClustersRoute v1AgentClustersRoute,
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute,
@@ -88,6 +91,7 @@ public class MantisMasterRoute extends AllDirectives {
 
         this.v1JobClusterRoute = v1JobClusterRoute;
         this.v1JobsRoute = v1JobsRoute;
+        this.v1JobArtifactsRoute = v1JobArtifactsRoute;
         this.v1MasterRoute = v1MasterRoute;
         this.v1AgentClustersRoute = v1AgentClustersRoute;
         this.v1JobDiscoveryStreamRoute = v1JobDiscoveryStreamRoute;
@@ -108,6 +112,7 @@ public class MantisMasterRoute extends AllDirectives {
                 v0AgentClusterRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1JobClusterRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1JobsRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
+                v1JobArtifactsRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1MasterRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1AgentClustersRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),
                 v1JobDiscoveryStreamRoute.createRoute(leaderRedirectionFilter::redirectIfNotLeader),

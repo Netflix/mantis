@@ -33,6 +33,8 @@ public class HttpRequestMetrics {
     }
 
     public static class Endpoints {
+        public static final String JOB_ARTIFACTS = "api.v1.jobArtifacts";
+        public static final String JOB_ARTIFACTS_NAMES = "api.v1.jobArtifacts.names";
         public static final String JOB_CLUSTERS = "api.v1.jobClusters";
         public static final String JOB_CLUSTER_INSTANCE = "api.v1.jobClusters.instance";
         public static final String JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO = "api.v1.jobClusters.instance.latestJobDiscoveryInfo";
@@ -64,6 +66,8 @@ public class HttpRequestMetrics {
         public static final String RESOURCE_CLUSTERS = "api.v1.resourceClusters";
 
         private static String[] endpoints = new String[]{
+                JOB_ARTIFACTS,
+                JOB_ARTIFACTS_NAMES,
                 JOB_CLUSTERS,
                 JOB_CLUSTER_INSTANCE,
                 JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO,

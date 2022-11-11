@@ -48,6 +48,8 @@ import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
+import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandlerImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
@@ -59,6 +61,7 @@ import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.api.akka.route.v1.AdminMasterRoute;
 import io.mantisrx.master.api.akka.route.v1.AgentClustersRoute;
+import io.mantisrx.master.api.akka.route.v1.JobArtifactsRoute;
 import io.mantisrx.master.api.akka.route.v1.JobClustersRoute;
 import io.mantisrx.master.api.akka.route.v1.JobDiscoveryStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
@@ -90,6 +93,7 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
+import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.time.Duration;
@@ -181,7 +185,7 @@ public class JobRouteTest {
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
 
-//                SimpleCachedFileStorageProvider simpleCachedFileStorageProvider = new SimpleCachedFileStorageProvider();
+                SimpleCachedFileStorageProvider simpleCachedFileStorageProvider = new SimpleCachedFileStorageProvider();
 //                new File("/tmp/MantisSpool/namedJobs").mkdirs();
 //                IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(simpleCachedFileStorageProvider);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(
@@ -202,6 +206,7 @@ public class JobRouteTest {
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
+                final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(simpleCachedFileStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
 
@@ -238,6 +243,7 @@ public class JobRouteTest {
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
+                final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
                 final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
 
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);
@@ -272,6 +278,7 @@ public class JobRouteTest {
                         v0AgentClusterRoute,
                         v1JobClusterRoute,
                         v1JobsRoute,
+                        v1JobArtifactsRoute,
                         v1AdminMasterRoute,
                         v1AgentClusterRoute,
                         v1JobDiscoveryStreamRoute,
