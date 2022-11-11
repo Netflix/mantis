@@ -51,5 +51,6 @@ jobs:
             ```
             ${{ env.PR_STR }}
             ```
+          message-id: ${{ github.event.number }} # For sticky messages
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false # This is the default
