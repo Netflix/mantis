@@ -43,7 +43,7 @@ jobs:
           cat ${dest} >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
       - name: Upload
-        uses: mshick/add-pr-comment@v1
+        uses: mshick/add-pr-comment@v2
         with:
           message: |
             ## Uploaded Artifacts
