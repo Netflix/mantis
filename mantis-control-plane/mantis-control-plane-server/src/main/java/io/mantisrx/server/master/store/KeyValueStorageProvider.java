@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -158,6 +160,21 @@ public interface KeyValueStorageProvider {
     default boolean isRowExists(String tableName, String partitionKey, String secondaryKey) throws IOException {
         Map<String, String> items = getAll(tableName, partitionKey);
         return items != null && items.containsKey(secondaryKey);
+    }
+
+    /**
+     * Allows searching for all rows that share the prefix (in secondary keys) for partitionKey
+     * @param tableName the tableName/table to read from
+     * @param partitionKey partitionKey for the record
+     * @param prefix secondaryKey for the record; null or blank values are default-ed to empty string
+     * @return
+     */
+    default Map<String, String> getAllWithPrefix(String tableName, String partitionKey, String prefix) throws IOException {
+        String pr = StringUtils.defaultIfBlank(prefix, "");
+        return getAll(tableName, partitionKey).entrySet()
+            .stream().filter(x -> StringUtils.startsWith(x.getKey(), pr))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
     }
 
     class NoopStorageProvider implements KeyValueStorageProvider {

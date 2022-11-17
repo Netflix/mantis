@@ -46,6 +46,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -662,14 +663,18 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public List<JobArtifact> listJobArtifacts(String name, String version) throws IOException {
-        return sProvider.getAll(getNamespace(JOB_ARTIFACTS_NS), name)
-            .entrySet().stream()
-            .filter(e -> version == null || StringUtils.equalsIgnoreCase(e.getKey(), version))
+        final Collection<String> artifacts;
+        if (version == null) {
+            artifacts = sProvider.getAll(getNamespace(JOB_ARTIFACTS_NS), name).values();
+        } else {
+            artifacts = ImmutableList.of(sProvider.get(getNamespace(JOB_ARTIFACTS_NS), name, version));
+        }
+        return artifacts.stream()
             .map(e -> {
                 try {
-                    return mapper.readValue(e.getValue(), JobArtifact.class);
+                    return mapper.readValue(e, JobArtifact.class);
                 } catch (JsonProcessingException ex) {
-                    logger.warn("Failed to deserialize job artifact metadata for {} (data={})", e.getKey(), e.getValue(), ex);
+                    logger.warn("Failed to deserialize job artifact metadata for {} (data={})", name, e, ex);
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList());
@@ -677,12 +682,8 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public List<String> listJobArtifactsByName(String prefix) throws IOException {
-        final String pr = StringUtils.defaultIfBlank(prefix, "");
-        return sProvider.getAll(getNamespace(JOB_ARTIFACTS_NS), getJobArtifactsByNamePartitionKey())
-            .keySet().stream()
-            .filter(Objects::nonNull)
-            .filter(x -> StringUtils.startsWith(x, pr))
-            .collect(Collectors.toList());
+        Map<String, String> items = sProvider.getAllWithPrefix(getNamespace(JOB_ARTIFACTS_NS), getJobArtifactsByNamePartitionKey(), prefix);
+        return new ArrayList<>(items.keySet());
     }
 
     private void addNewJobArtifact(String partitionKey, String secondaryKey, JobArtifact jobArtifact) {
