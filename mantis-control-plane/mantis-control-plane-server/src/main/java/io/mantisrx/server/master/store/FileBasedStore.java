@@ -137,11 +137,6 @@ public class FileBasedStore implements KeyValueStore {
     }
 
     @Override
-    public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all) throws IOException {
-        return upsertAll(tableName, partitionKey, all, null);
-    }
-
-    @Override
     public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException {
         final Path filePath = makePath(tableName, partitionKey);
         final List<String> lines = all.entrySet().stream()

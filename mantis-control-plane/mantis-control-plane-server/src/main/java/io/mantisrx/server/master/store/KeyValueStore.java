@@ -119,7 +119,7 @@ public interface KeyValueStore {
      * @return boolean if the data was saved
      */
     default boolean upsertAll(String tableName, String partitionKey, Map<String, String> all) throws IOException {
-        return upsertAll(tableName, partitionKey, all, null);
+        return upsertAll(tableName, partitionKey, all, Duration.ZERO);
     }
 
     /**
@@ -128,7 +128,7 @@ public interface KeyValueStore {
      * @param tableName the tableName/table to read from
      * @param partitionKey partitionKey for the record
      * @param all map of rows
-     * @param ttl ttl for the record in millis
+     * @param ttl ttl for the record in millis (use null or Duration.ZERO for no expiry)
      * @return boolean if the data was saved
      */
     boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException;
@@ -200,7 +200,7 @@ public interface KeyValueStore {
         }
 
         @Override
-        public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) throws IOException {
+        public boolean upsertAll(String tableName, String partitionKey, Map<String, String> all, Duration ttl) {
             return false;
         }
 
