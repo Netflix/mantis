@@ -16,7 +16,38 @@
 
 package io.mantisrx.master.events;
 
+import io.mantisrx.master.events.LifecycleEventsProto.JobStatusEvent;
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerListChangedEvent;
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.util.Collection;
+
 public interface WorkerEventSubscriber {
     void process(final LifecycleEventsProto.WorkerListChangedEvent event);
-    void process(LifecycleEventsProto.JobStatusEvent statusEvent);
+    void process(final LifecycleEventsProto.JobStatusEvent statusEvent);
+
+    void process(final LifecycleEventsProto.WorkerStatusEvent workerStatusEvent);
+
+    default WorkerEventSubscriber and(WorkerEventSubscriber other) {
+        return allOf(ImmutableList.of(this, other));
+    }
+
+    static WorkerEventSubscriber allOf(Collection<WorkerEventSubscriber> subscriberList) {
+        return new WorkerEventSubscriber() {
+            @Override
+            public void process(WorkerListChangedEvent event) {
+                subscriberList.forEach(subscriber -> subscriber.process(event));
+            }
+
+            @Override
+            public void process(JobStatusEvent statusEvent) {
+                subscriberList.forEach(subscriber -> subscriber.process(statusEvent));
+            }
+
+            @Override
+            public void process(WorkerStatusEvent workerStatusEvent) {
+                subscriberList.forEach(subscriber -> subscriber.process(workerStatusEvent));
+            }
+        };
+    }
 }

@@ -29,6 +29,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -410,6 +411,11 @@ public class WorkerRegistryV2Test {
         public void process(LifecycleEventsProto.JobStatusEvent statusEvent) {
             workerRegistry.process(statusEvent);
         }
+
+        @Override
+        public void process(WorkerStatusEvent workerStatusEvent) {
+            workerRegistry.process(workerStatusEvent);
+        }
     }
 
     class NoOpWorkerEventSubscriberImpl implements  WorkerEventSubscriber {
@@ -421,6 +427,11 @@ public class WorkerRegistryV2Test {
 
         @Override
         public void process(LifecycleEventsProto.JobStatusEvent statusEvent) {
+
+        }
+
+        @Override
+        public void process(WorkerStatusEvent workerStatusEvent) {
 
         }
     }

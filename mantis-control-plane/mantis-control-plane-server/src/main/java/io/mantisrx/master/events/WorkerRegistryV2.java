@@ -19,6 +19,7 @@ package io.mantisrx.master.events;
 import static java.util.stream.Collectors.toMap;
 
 import akka.actor.Props;
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
@@ -51,13 +52,6 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
 
      WorkerRegistryV2() {
         logger.info("WorkerRegistryV2 created");
-    }
-
-    /**
-     * For Testing
-     */
-    public void clearState() {
-        jobToWorkerInfoMap.clear();
     }
 
 
@@ -129,7 +123,6 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
             return false;
         }
         List<IMantisWorkerMetadata> mantisWorkerMetadataList = jobToWorkerInfoMap.get(jIdOp.get());
-      //  logger.info("Current Map {}", jobToWorkerInfoMap);
         boolean isValid = false;
         if(mantisWorkerMetadataList != null) {
 
@@ -189,15 +182,13 @@ public class WorkerRegistryV2 implements WorkerRegistry, WorkerEventSubscriber {
         if(logger.isDebugEnabled()) {  logger.debug("In JobStatusEvent {}", statusEvent); }
         JobState jobState = statusEvent.getJobState();
         if(JobState.isTerminalState(jobState)) {
-            String jobId = statusEvent.getJobId();
-            Optional<JobId> optionalJobId = JobId.fromId(jobId);
-            if(optionalJobId.isPresent()) {
-                deregisterJob(optionalJobId.get());
-            } else {
-                logger.warn("Invalid Job id {} Ignoring terminate event", jobId);
-            }
+            final JobId jobId = statusEvent.getJobId();
+            deregisterJob(jobId);
         }
     }
 
+    @Override
+    public void process(WorkerStatusEvent workerStatusEvent) {
 
+    }
 }

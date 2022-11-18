@@ -180,6 +180,7 @@ public class LifecycleEventsProto {
     }
 
     @ToString
+    @Getter
     public static final class JobStatusEvent extends StatusEvent {
         private final JobId jobId;
         private final JobState jobState;
@@ -191,14 +192,6 @@ public class LifecycleEventsProto {
             super(type, message);
             this.jobId = jobId;
             this.jobState = jobState;
-        }
-
-        public String getJobId() {
-            return jobId.getId();
-        }
-
-        public JobState getJobState() {
-            return jobState;
         }
     }
 

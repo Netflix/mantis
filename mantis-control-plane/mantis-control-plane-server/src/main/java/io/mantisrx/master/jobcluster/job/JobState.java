@@ -144,6 +144,10 @@ public enum JobState {
         }
     }
 
+    public boolean isTerminal() {
+        return isTerminalState(this);
+    }
+
     /**
      * Returns true if the current state is abnormal.
      *

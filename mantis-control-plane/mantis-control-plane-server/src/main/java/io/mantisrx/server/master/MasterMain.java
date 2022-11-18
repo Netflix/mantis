@@ -43,6 +43,7 @@ import io.mantisrx.master.events.StatusEventBrokerActor;
 import io.mantisrx.master.events.StatusEventSubscriber;
 import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
+import io.mantisrx.master.events.WorkerMetricsCollector;
 import io.mantisrx.master.events.WorkerRegistryV2;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
@@ -80,6 +81,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -148,9 +151,16 @@ public class MasterMain implements Service {
             final StatusEventSubscriber statusEventSubscriber = new StatusEventSubscriberAkkaImpl(statusEventBrokerActor);
             final AuditEventSubscriber auditEventSubscriberAkka = new AuditEventSubscriberAkkaImpl(auditEventBrokerActor);
             final WorkerEventSubscriber workerEventSubscriber = WorkerRegistryV2.INSTANCE;
+            final WorkerMetricsCollector workerMetricsCollector = new WorkerMetricsCollector(
+                Duration.ofMinutes(5), // cleanup jobs after 5 minutes
+                Duration.ofMinutes(1), // check every 1 minute for jobs to be cleaned up
+                Clock.systemDefaultZone());
 
             // TODO who watches actors created at this level?
-            final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber, workerEventSubscriber);
+            final LifecycleEventPublisher lifecycleEventPublisher =
+                new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber,
+                    workerEventSubscriber.and(workerMetricsCollector));
+
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");

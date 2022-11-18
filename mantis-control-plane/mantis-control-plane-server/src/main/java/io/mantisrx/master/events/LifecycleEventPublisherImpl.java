@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.events;
 
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,6 +46,8 @@ public class LifecycleEventPublisherImpl implements LifecycleEventPublisher {
             if (statusEvent instanceof LifecycleEventsProto.JobStatusEvent) {
                 LifecycleEventsProto.JobStatusEvent jobStatusEvent = (LifecycleEventsProto.JobStatusEvent) statusEvent;
                 workerEventSubscriber.process(jobStatusEvent);
+            } else if (statusEvent instanceof WorkerStatusEvent) {
+                workerEventSubscriber.process((WorkerStatusEvent) statusEvent);
             }
         } catch (Exception e) {
             log.error("Failed to publish the event={}; Ignoring the failure as this is just a listener interface", statusEvent, e);
