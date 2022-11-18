@@ -47,6 +47,7 @@ import io.mantisrx.server.master.domain.JobClusterConfig;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -63,11 +64,11 @@ import java.util.Optional;
 import org.junit.After;
 import org.junit.Test;
 
-public class SimpleCachedFileStorageProviderTest {
+public class FileBasedStoreTest {
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
-    private final io.mantisrx.server.master.store.SimpleCachedFileStorageProvider fileProvider = new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider();
+    private final FileBasedStore fileProvider = new FileBasedStore();
 
     @After
     public void tearDown() {
@@ -99,7 +100,7 @@ public class SimpleCachedFileStorageProviderTest {
    @Test
     public void testCreateJob() {
         String clusterName = "testCreateJob";
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
+        FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
         JobDefinition jobDefinition;
         try {
@@ -208,7 +209,7 @@ public class SimpleCachedFileStorageProviderTest {
 
     @Test
     public void testCreateAndGetJobCluster() {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
+        FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         String clusterName = "testCreateClusterClueter";
 
         JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterName, Lists.newArrayList());
@@ -231,7 +232,7 @@ public class SimpleCachedFileStorageProviderTest {
     }
     @Test
     public void testUpdateJobCluster() {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
+        FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         String clusterName = "testUpdateJobCluster";
 
         JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterName, Lists.newArrayList());
@@ -271,7 +272,7 @@ public class SimpleCachedFileStorageProviderTest {
     }
     @Test
     public void testGetAllJobClusters() throws Exception {
-        SimpleCachedFileStorageProvider sProvider = new SimpleCachedFileStorageProvider(fileProvider, eventPublisher);
+        FileBasedPersistenceProvider sProvider = new FileBasedPersistenceProvider(fileProvider, eventPublisher);
         String clusterPrefix = "testGetAllJobClustersCluster";
         for(int i=0; i<5; i++) {
             JobClusterDefinitionImpl jobClusterDefn = createFakeJobClusterDefn(clusterPrefix + "_" + i, Lists.newArrayList());

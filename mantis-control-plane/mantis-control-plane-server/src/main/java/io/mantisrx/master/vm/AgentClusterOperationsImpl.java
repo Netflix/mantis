@@ -29,7 +29,7 @@ import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.AgentClustersAutoScaler;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
@@ -69,7 +69,7 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     }
 
     private static final Logger logger = LoggerFactory.getLogger(AgentClusterOperationsImpl.class);
-    private final IMantisStorageProvider storageProvider;
+    private final IMantisPersistenceProvider storageProvider;
     private final JobMessageRouter jobMessageRouter;
     private final MantisScheduler scheduler;
     private final LifecycleEventPublisher lifecycleEventPublisher;
@@ -79,7 +79,7 @@ public class AgentClusterOperationsImpl extends BaseService implements AgentClus
     private final String attrName;
     private final Counter listJobsOnVMsCount;
 
-    public AgentClusterOperationsImpl(final IMantisStorageProvider storageProvider,
+    public AgentClusterOperationsImpl(final IMantisPersistenceProvider storageProvider,
                                       final JobMessageRouter jobMessageRouter,
                                       final MantisScheduler scheduler,
                                       final LifecycleEventPublisher lifecycleEventPublisher,

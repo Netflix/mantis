@@ -20,7 +20,8 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
-import io.mantisrx.server.master.store.KeyValueStorageProvider;
+import io.mantisrx.server.master.store.FileBasedStore;
+import io.mantisrx.server.master.store.KeyValueStore;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -30,14 +31,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Simple File based storage provider. Intended mainly as a sample implementation for
- * {@link IMantisStorageProvider} interface. This implementation is complete in its functionality, but, isn't
+ * {@link IMantisPersistenceProvider} interface. This implementation is complete in its functionality, but, isn't
  * expected to be scalable or performant for production loads.
  * <P>This implementation uses <code>/tmp/MantisSpool/</code> as the spool directory. The directory is created
  * if not present already. It will fail only if either a file with that name exists or if a directory with that
  * name exists but isn't writable.</P>
  */
-public class SimpleCachedFileStorageProvider extends KeyValueAwareMantisStorageProvider {
-    private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
+public class FileBasedPersistenceProvider extends KeyValueBasedPersistenceProvider {
+    private static final Logger logger = LoggerFactory.getLogger(FileBasedPersistenceProvider.class);
     private static final LifecycleEventPublisher noopEventPublisher = new LifecycleEventPublisher() {
         @Override
         public void publishAuditEvent(LifecycleEventsProto.AuditEvent auditEvent) {
@@ -52,21 +53,21 @@ public class SimpleCachedFileStorageProvider extends KeyValueAwareMantisStorageP
         }
     };
 
-    public SimpleCachedFileStorageProvider(boolean actualStorageProvider) {
-        this((actualStorageProvider) ? new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider() : KeyValueStorageProvider.NO_OP,
+    public FileBasedPersistenceProvider(boolean actualStorageProvider) {
+        this((actualStorageProvider) ? new FileBasedStore() : KeyValueStore.NO_OP,
             noopEventPublisher);
     }
 
-    public SimpleCachedFileStorageProvider(KeyValueStorageProvider sprovider, LifecycleEventPublisher publisher) {
+    public FileBasedPersistenceProvider(KeyValueStore sprovider, LifecycleEventPublisher publisher) {
         super(sprovider, publisher);
     }
 
-    public SimpleCachedFileStorageProvider(io.mantisrx.server.master.store.SimpleCachedFileStorageProvider sprovider) {
+    public FileBasedPersistenceProvider(FileBasedStore sprovider) {
         this(sprovider, noopEventPublisher);
     }
 
-    public SimpleCachedFileStorageProvider(File stateDirectory, boolean eventPublisher) {
-        this(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(stateDirectory), noopEventPublisher);
+    public FileBasedPersistenceProvider(File stateDirectory, boolean eventPublisher) {
+        this(new FileBasedStore(stateDirectory), noopEventPublisher);
     }
 
     Optional<IJobClusterMetadata> loadJobCluster(String clusterName) throws IOException {

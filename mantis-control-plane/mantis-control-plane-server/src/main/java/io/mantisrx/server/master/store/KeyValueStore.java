@@ -29,13 +29,13 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * An abstraction for storage api that behaves like a key-value storage
  * like apache-cassandra.
- * See {@code io.mantisrx.server.master.store.SimpleCachedFileStorageProvider}
+ * See {@link FileBasedStore}
  * for implementation using files.
  * TODO(hmittal): Add an implementation using SQL, apache-cassandra
  */
-public interface KeyValueStorageProvider {
+public interface KeyValueStore {
 
-    KeyValueStorageProvider NO_OP = new KeyValueStorageProvider.NoopStorageProvider();
+    KeyValueStore NO_OP = new NoopStore();
 
     /**
      * Gets all rows from the table
@@ -177,7 +177,7 @@ public interface KeyValueStorageProvider {
 
     }
 
-    class NoopStorageProvider implements KeyValueStorageProvider {
+    class NoopStore implements KeyValueStore {
 
         @Override
         public Map<String, Map<String, String>> getAllRows(String tableName) {

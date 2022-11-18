@@ -49,14 +49,14 @@ import rx.schedulers.Schedulers;
 public class MantisJobStore {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobStore.class);
-    private final IMantisStorageProvider storageProvider;
+    private final IMantisPersistenceProvider storageProvider;
 
     private final ConcurrentMap<String, String> archivedJobIds;
     private final ArchivedJobsMetadataCache archivedJobsMetadataCache;
     private final ArchivedWorkersCache archivedWorkersCache;
     private final PriorityBlockingQueue<TerminatedJob> terminatedJobsToDelete;
 
-    public MantisJobStore(IMantisStorageProvider storageProvider) {
+    public MantisJobStore(IMantisPersistenceProvider storageProvider) {
         this.storageProvider = storageProvider;
 
         archivedJobIds = new ConcurrentHashMap<>();

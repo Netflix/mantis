@@ -46,8 +46,8 @@ import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
+import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
@@ -98,7 +98,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
                 ActorRef jobClustersManagerActor = system.actorOf(
                         JobClustersManagerActor.props(
-                                new MantisJobStore(new SimpleCachedFileStorageProvider(stateDirectory, true)),
+                                new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true)),
                                 lifecycleEventPublisher),
                         "jobClustersManager");
                 MantisSchedulerFactory mantisSchedulerFactory = mock(MantisSchedulerFactory.class);

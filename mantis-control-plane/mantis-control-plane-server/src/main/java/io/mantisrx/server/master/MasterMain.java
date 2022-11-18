@@ -65,8 +65,8 @@ import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
 import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
-import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
@@ -106,7 +106,7 @@ public class MasterMain implements Service {
     private static String propFile = "master.properties";
     private final ServiceLifecycle mantisServices = new ServiceLifecycle();
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
-    private KeyValueAwareMantisStorageProvider storageProvider;
+    private KeyValueBasedPersistenceProvider storageProvider;
     private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
     private volatile CuratorService curatorService = null;
     private volatile AgentClusterOperationsImpl agentClusterOps = null;
@@ -151,7 +151,7 @@ public class MasterMain implements Service {
 
             // TODO who watches actors created at this level?
             final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber, workerEventSubscriber);
-            storageProvider = new KeyValueAwareMantisStorageProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
+            storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
@@ -418,7 +418,7 @@ public class MasterMain implements Service {
         return leadershipManager.isLeader();
     }
 
-    public IMantisStorageProvider getStorageProvider() {
+    public IMantisPersistenceProvider getStorageProvider() {
         return storageProvider;
     }
 }

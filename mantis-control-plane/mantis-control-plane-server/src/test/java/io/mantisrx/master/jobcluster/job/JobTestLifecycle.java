@@ -55,11 +55,12 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
-import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
+import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URL;
@@ -77,7 +78,7 @@ public class JobTestLifecycle {
 
 	static ActorSystem system;
 	private static MantisJobStore jobStore;
-	private static IMantisStorageProvider storageProvider;
+	private static IMantisPersistenceProvider storageProvider;
 	private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
 	private static final String user = "mantis";
@@ -87,7 +88,7 @@ public class JobTestLifecycle {
 		system = ActorSystem.create();
 
 		TestHelpers.setupMasterConfig();
-		storageProvider = new KeyValueAwareMantisStorageProvider(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(), eventPublisher);
+		storageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), eventPublisher);
 		jobStore = new MantisJobStore(storageProvider);
 	}
 

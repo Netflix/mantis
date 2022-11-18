@@ -34,7 +34,12 @@ import java.util.Optional;
 import rx.Observable;
 
 
-public interface IMantisStorageProvider {
+/**
+ * A way to persist mantis master related metadata to a durable storage.
+ * See {@link KeyValueBasedPersistenceProvider} for how mantis job cluster,
+ * mantis job info is persisted to a key-value based storage (like cassandra)
+ */
+public interface IMantisPersistenceProvider {
 
 
     void storeNewJob(IMantisJobMetadata jobMetadata) throws Exception;

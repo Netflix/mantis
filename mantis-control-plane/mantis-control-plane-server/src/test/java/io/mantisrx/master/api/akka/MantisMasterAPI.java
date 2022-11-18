@@ -84,12 +84,12 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.AgentClustersAutoScaler;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
-import io.mantisrx.server.master.persistence.KeyValueAwareMantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
-import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
+import io.mantisrx.server.master.store.FileBasedStore;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
@@ -171,8 +171,8 @@ public class MantisMasterAPI extends AllDirectives {
                 new StatusEventSubscriberLoggingImpl(),
                 new WorkerEventSubscriberLoggingImpl());
 
-        IMantisStorageProvider storageProvider = new KeyValueAwareMantisStorageProvider(
-                new SimpleCachedFileStorageProvider(),
+        IMantisPersistenceProvider storageProvider = new KeyValueBasedPersistenceProvider(
+                new FileBasedStore(),
                 lifecycleEventPublisher);
         ActorRef jobClustersManager = system.actorOf(
                 JobClustersManagerActor.props(

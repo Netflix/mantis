@@ -63,7 +63,7 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import java.util.concurrent.CompletionStage;
@@ -86,7 +86,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ResourceClusters resourceClusters;
     private final ActorRef statusEventBrokerActor;
     private final int port;
-    private final IMantisStorageProvider storageProvider;
+    private final IMantisPersistenceProvider storageProvider;
     private final MantisScheduler scheduler;
     private final LifecycleEventPublisher lifecycleEventPublisher;
     private final MantisMasterRoute mantisMasterRoute;
@@ -103,7 +103,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final ResourceClusters resourceClusters,
                                 final ActorRef resourceClustersHostManagerActor,
                                 final int serverPort,
-                                final IMantisStorageProvider mantisStorageProvider,
+                                final IMantisPersistenceProvider mantisStorageProvider,
                                 final MantisScheduler scheduler,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,

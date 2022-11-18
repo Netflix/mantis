@@ -39,23 +39,23 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Simple File based storage provider. Intended mainly as a sample implementation for
- * {@link KeyValueStorageProvider} interface. This implementation is complete in its functionality, but, isn't
+ * {@link KeyValueStore} interface. This implementation is complete in its functionality, but, isn't
  * expected to be scalable or performant for production loads.
  * <P>This implementation uses <code>/tmp/MantisSpool/</code> as the spool directory. The directory is created
  * if not present already. It will fail only if either a file with that name exists or if a directory with that
  * name exists but isn't writable.</P>
  */
-public class SimpleCachedFileStorageProvider implements KeyValueStorageProvider {
+public class FileBasedStore implements KeyValueStore {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimpleCachedFileStorageProvider.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileBasedStore.class);
     private final File rootDir;
     private final ReentrantLock fileLock = new ReentrantLock();
 
-    public SimpleCachedFileStorageProvider() {
+    public FileBasedStore() {
         this(new File("/tmp/mantis_storage"));
     }
 
-    public SimpleCachedFileStorageProvider(File rootDir) {
+    public FileBasedStore(File rootDir) {
         this.rootDir = rootDir;
         final Path rootDirPath = Paths.get(rootDir.getPath());
         try {

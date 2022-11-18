@@ -52,9 +52,9 @@ import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
 import io.mantisrx.server.master.AgentClustersAutoScaler;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
-import io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
@@ -120,7 +120,7 @@ public class AgentClusterRouteTest {
                 TestHelpers.setupMasterConfig();
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
-                IMantisStorageProvider storageProvider = new SimpleCachedFileStorageProvider(true);
+                IMantisPersistenceProvider storageProvider = new FileBasedPersistenceProvider(true);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
                 ActorRef jobClustersManagerActor = system.actorOf(

@@ -30,7 +30,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.store.InvalidJobException;
-import io.mantisrx.server.master.store.KeyValueStorageProvider;
+import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStageMetadata;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
@@ -84,9 +84,9 @@ import rx.Observable;
  *   up of partition key and composite key and a way to iterate over all
  *   partition keys in the table.
  */
-public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvider {
+public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(KeyValueAwareMantisStorageProvider.class);
+    private static final Logger logger = LoggerFactory.getLogger(KeyValueBasedPersistenceProvider.class);
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String JOB_STAGEDATA_NS = "MantisJobStageData";
     private static final String ARCHIVED_JOB_STAGEDATA_NS = "MantisArchivedJobStageData";
@@ -116,16 +116,12 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
             .registerModule(new JavaTimeModule());
     }
 
-    private final KeyValueStorageProvider sProvider;
+    private final KeyValueStore kvStore;
     private final LifecycleEventPublisher eventPublisher;
 
-    public KeyValueAwareMantisStorageProvider(KeyValueStorageProvider actualStorageProvider, LifecycleEventPublisher eventPublisher) {
-        this.sProvider = actualStorageProvider;
+    public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
+        this.kvStore = kvStore;
         this.eventPublisher = eventPublisher;
-    }
-
-    protected String getNamespace(final String namespace) {
-        return namespace;
     }
 
     protected String getJobMetadataFieldName() {
@@ -169,7 +165,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     private MantisJobMetadataWritable readJobStageData(final String namespace, final String jobId)
         throws IOException {
-        return readJobStageData(jobId, sProvider.getAll(getNamespace(namespace), jobId));
+        return readJobStageData(jobId, kvStore.getAll(namespace, jobId));
     }
 
     private MantisJobMetadataWritable readJobStageData(final String jobId, final Map<String, String> items) throws IOException {
@@ -217,7 +213,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     public void storeNewJob(IMantisJobMetadata jobMetadata) throws Exception {
         MantisJobMetadataWritable mjmw = DataFormatAdapter.convertMantisJobMetadataToMantisJobMetadataWriteable(jobMetadata);
         try {
-            sProvider.upsert(getNamespace(JOB_STAGEDATA_NS), jobMetadata.getJobId().toString(), getJobMetadataFieldName(), mapper.writeValueAsString(mjmw));
+            kvStore.upsert(JOB_STAGEDATA_NS, jobMetadata.getJobId().toString(), getJobMetadataFieldName(), mapper.writeValueAsString(mjmw));
         } catch (IOException e) {
             throw new Exception(e);
         }
@@ -226,43 +222,43 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     @Override
     public void updateJob(IMantisJobMetadata jobMetadata) throws Exception {
         MantisJobMetadataWritable mjmw = DataFormatAdapter.convertMantisJobMetadataToMantisJobMetadataWriteable(jobMetadata);
-        sProvider.upsert(getNamespace(JOB_STAGEDATA_NS), jobMetadata.getJobId().toString(), getJobMetadataFieldName(), mapper.writeValueAsString(mjmw));
+        kvStore.upsert(JOB_STAGEDATA_NS, jobMetadata.getJobId().toString(), getJobMetadataFieldName(), mapper.writeValueAsString(mjmw));
     }
 
     @Override
     public void archiveJob(String jobId) throws IOException {
-        Map<String, String> all = sProvider.getAll(getNamespace(JOB_STAGEDATA_NS), jobId);
+        Map<String, String> all = kvStore.getAll(JOB_STAGEDATA_NS, jobId);
         int workerMaxPartitionKey = workerMaxPartitionKey(readJobStageData(jobId, all));
-        sProvider.upsertAll(getNamespace(ARCHIVED_JOB_STAGEDATA_NS), jobId, all, getArchiveDataTtlInMs());
-        sProvider.deleteAll(getNamespace(JOB_STAGEDATA_NS), jobId);
+        kvStore.upsertAll(ARCHIVED_JOB_STAGEDATA_NS, jobId, all, getArchiveDataTtlInMs());
+        kvStore.deleteAll(JOB_STAGEDATA_NS, jobId);
 
         for (int i = 0; i < workerMaxPartitionKey; i += WORKER_BATCH_SIZE) {
             String pkey = makeBucketizedPartitionKey(jobId, i);
-            Map<String, String> workersData = sProvider.getAll(getNamespace(WORKERS_NS), pkey);
-            sProvider.upsertAll(getNamespace(ARCHIVED_WORKERS_NS), pkey, workersData, getArchiveDataTtlInMs());
-            sProvider.deleteAll(getNamespace(WORKERS_NS), pkey);
+            Map<String, String> workersData = kvStore.getAll(WORKERS_NS, pkey);
+            kvStore.upsertAll(ARCHIVED_WORKERS_NS, pkey, workersData, getArchiveDataTtlInMs());
+            kvStore.deleteAll(WORKERS_NS, pkey);
         }
     }
 
     @Override
     public void deleteJob(String jobId) throws Exception {
-        MantisJobMetadataWritable jobMeta = readJobStageData(getNamespace(JOB_STAGEDATA_NS), jobId);
+        MantisJobMetadataWritable jobMeta = readJobStageData(JOB_STAGEDATA_NS, jobId);
         int workerMaxPartitionKey = workerMaxPartitionKey(jobMeta);
 
-        sProvider.deleteAll(getNamespace(JOB_STAGEDATA_NS), jobId);
+        kvStore.deleteAll(JOB_STAGEDATA_NS, jobId);
         rangeOperation(workerMaxPartitionKey, idx -> {
             try {
-                sProvider.deleteAll(getNamespace(WORKERS_NS), makeBucketizedPartitionKey(jobId, idx));
+                kvStore.deleteAll(WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
             } catch (IOException e) {
                 logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
             }
         });
 
         // delete from archive as well
-        sProvider.deleteAll(getNamespace(ARCHIVED_JOB_STAGEDATA_NS), jobId);
+        kvStore.deleteAll(ARCHIVED_JOB_STAGEDATA_NS, jobId);
         rangeOperation(workerMaxPartitionKey, idx -> {
             try {
-                sProvider.deleteAll(getNamespace(ARCHIVED_WORKERS_NS), makeBucketizedPartitionKey(jobId, idx));
+                kvStore.deleteAll(ARCHIVED_WORKERS_NS, makeBucketizedPartitionKey(jobId, idx));
             } catch (IOException e) {
                 logger.warn("failed to delete worker for jobId {} with index {}", jobId, idx, e);
             }
@@ -272,7 +268,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     @Override
     public void storeMantisStage(IMantisStageMetadata msmd) throws IOException {
         MantisStageMetadataWritable msmw = DataFormatAdapter.convertMantisStageMetadataToMantisStageMetadataWriteable(msmd);
-        sProvider.upsert(getNamespace(JOB_STAGEDATA_NS), msmd.getJobId().toString(), getJobStageFieldName(msmd.getStageNum()), mapper.writeValueAsString(msmw));
+        kvStore.upsert(JOB_STAGEDATA_NS, msmd.getJobId().toString(), getJobStageFieldName(msmd.getStageNum()), mapper.writeValueAsString(msmw));
     }
 
     @Override
@@ -320,7 +316,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
             final MantisWorkerMetadataWritable mwmw = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(worker);
             final String pkey = makeBucketizedPartitionKey(mwmw.getJobId(), mwmw.getWorkerNumber());
             final String skey = makeBucketizedSecondaryKey(mwmw.getStageNum(), mwmw.getWorkerIndex(), mwmw.getWorkerNumber());
-            sProvider.upsert(getNamespace(WORKERS_NS), pkey, skey, mapper.writeValueAsString(mwmw));
+            kvStore.upsert(WORKERS_NS, pkey, skey, mapper.writeValueAsString(mwmw));
         }
     }
 
@@ -336,7 +332,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     private Map<String, List<MantisWorkerMetadataWritable>> getAllWorkersByJobId(final String namespace) throws IOException {
         Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = new HashMap<>();
-        for (Map.Entry<String, Map<String, String>> worker : sProvider.getAllRows(namespace).entrySet()) {
+        for (Map.Entry<String, Map<String, String>> worker : kvStore.getAllRows(namespace).entrySet()) {
             if (worker.getValue().values().size() <= 0) {
                 continue;
             }
@@ -361,9 +357,9 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     @Override
     public List<IMantisJobMetadata> loadAllJobs() throws IOException {
         logger.info("MantisStorageProviderAdapter:Enter loadAllJobs");
-        final Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = getAllWorkersByJobId(getNamespace(WORKERS_NS));
+        final Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = getAllWorkersByJobId(WORKERS_NS);
         final List<IMantisJobMetadata> jobMetas = Lists.newArrayList();
-        final Map<String, Map<String, String>> allRows = sProvider.getAllRows(getNamespace(JOB_STAGEDATA_NS));
+        final Map<String, Map<String, String>> allRows = kvStore.getAllRows(JOB_STAGEDATA_NS);
         for (Map.Entry<String, Map<String, String>> jobInfo : allRows.entrySet()) {
             final String jobId = jobInfo.getKey();
             try {
@@ -390,7 +386,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
         return Observable.create(
             subscriber -> {
                 try {
-                    for (String pkey : sProvider.getAllPartitionKeys(getNamespace(ARCHIVED_JOB_STAGEDATA_NS))) {
+                    for (String pkey : kvStore.getAllPartitionKeys(ARCHIVED_JOB_STAGEDATA_NS)) {
                         Optional<IMantisJobMetadata> jobMetaOpt = loadArchivedJob(pkey);
                         jobMetaOpt.ifPresent(subscriber::onNext);
                     }
@@ -406,11 +402,11 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
         AtomicInteger failedCount = new AtomicInteger();
         AtomicInteger successCount = new AtomicInteger();
         final List<IJobClusterMetadata> jobClusters = Lists.newArrayList();
-        for (Map.Entry<String, Map<String, String>> rows : sProvider.getAllRows(getNamespace(NAMED_JOBS_NS)).entrySet()) {
+        for (Map.Entry<String, Map<String, String>> rows : kvStore.getAllRows(NAMED_JOBS_NS).entrySet()) {
             String name = rows.getKey();
             try {
                 String data = rows.getValue().get(getJobClusterFieldName());
-                final NamedJob jobCluster = getJobCluster(getNamespace(NAMED_JOBS_NS), name, data);
+                final NamedJob jobCluster = getJobCluster(NAMED_JOBS_NS, name, data);
                 jobClusters.add(DataFormatAdapter.convertNamedJobToJobClusterMetadata(jobCluster));
                 successCount.getAndIncrement();
             } catch (Exception e) {
@@ -427,9 +423,9 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
         AtomicInteger successCount = new AtomicInteger();
 
         final List<CompletedJob> completedJobsList = Lists.newArrayList();
-        final String namespace = getNamespace(NAMED_COMPLETEDJOBS_NS);
-        for (String pkey : sProvider.getAllPartitionKeys(namespace)) {
-            sProvider.getAll(namespace, pkey).values()
+        final String namespace = NAMED_COMPLETEDJOBS_NS;
+        for (String pkey : kvStore.getAllPartitionKeys(namespace)) {
+            kvStore.getAll(namespace, pkey).values()
                 .forEach(data -> {
                     try {
                         NamedJob.CompletedJob cj = mapper.readValue(data, NamedJob.CompletedJob.class);
@@ -453,8 +449,8 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
         MantisWorkerMetadataWritable worker = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(mwmd);
         String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
         String skey = makeBucketizedSecondaryKey(worker.getStageNum(), worker.getWorkerIndex(), worker.getStageNum());
-        sProvider.delete(getNamespace(WORKERS_NS), pkey, skey);
-        sProvider.upsert(getNamespace(ARCHIVED_WORKERS_NS), pkey, skey, mapper.writeValueAsString(worker), getArchiveDataTtlInMs());
+        kvStore.delete(WORKERS_NS, pkey, skey);
+        kvStore.upsert(ARCHIVED_WORKERS_NS, pkey, skey, mapper.writeValueAsString(worker), getArchiveDataTtlInMs());
     }
 
     @Override
@@ -462,9 +458,9 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
         // try loading the active job first and then the archived job
         MantisJobMetadataWritable jobInfo;
         try {
-            jobInfo = readJobStageData(getNamespace(JOB_STAGEDATA_NS), jobId);
+            jobInfo = readJobStageData(JOB_STAGEDATA_NS, jobId);
         } catch (Exception e) {
-            jobInfo = readJobStageData(getNamespace(ARCHIVED_JOB_STAGEDATA_NS), jobId);
+            jobInfo = readJobStageData(ARCHIVED_JOB_STAGEDATA_NS, jobId);
         }
         if (jobInfo == null) {
             return Collections.emptyList();
@@ -475,7 +471,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
             String pkey = makeBucketizedPartitionKey(jobId, idx);
             final Map<String, String> items;
             try {
-                items = sProvider.getAll(getNamespace(ARCHIVED_WORKERS_NS), pkey);
+                items = kvStore.getAll(ARCHIVED_WORKERS_NS, pkey);
                 for (Map.Entry<String, String> entry : items.entrySet()) {
                     try {
                         final JobWorker jobWorker = DataFormatAdapter.convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
@@ -500,8 +496,8 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public void updateJobCluster(IJobClusterMetadata jobCluster) throws Exception {
-        sProvider.upsert(
-            getNamespace(NAMED_JOBS_NS),
+        kvStore.upsert(
+            NAMED_JOBS_NS,
             jobCluster.getJobClusterDefinition().getName(),
             getJobClusterFieldName(),
             mapper.writeValueAsString(DataFormatAdapter.convertJobClusterMetadataToNamedJob(jobCluster)));
@@ -509,12 +505,12 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public void deleteJobCluster(String name) throws Exception {
-        NamedJob namedJob = getJobCluster(getNamespace(NAMED_JOBS_NS), name);
-        sProvider.deleteAll(getNamespace(NAMED_JOBS_NS), name);
+        NamedJob namedJob = getJobCluster(NAMED_JOBS_NS, name);
+        kvStore.deleteAll(NAMED_JOBS_NS, name);
         rangeOperation((int) namedJob.getNextJobNumber(),
             idx -> {
                 try {
-                    sProvider.deleteAll(getNamespace(NAMED_COMPLETEDJOBS_NS), makeBucketizedPartitionKey(name, idx));
+                    kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS, makeBucketizedPartitionKey(name, idx));
                 } catch (IOException e) {
                     logger.warn("failed to completed job for named job {} with index {}", name, idx, e);
                 }
@@ -523,7 +519,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
 
     private NamedJob getJobCluster(String namespace, String name) throws Exception {
-        return getJobCluster(namespace, name, sProvider.get(namespace, name, getJobClusterFieldName()));
+        return getJobCluster(namespace, name, kvStore.get(namespace, name, getJobClusterFieldName()));
 
     }
 
@@ -539,7 +535,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     public void storeCompletedJobForCluster(String name, CompletedJob job) throws IOException {
         int jobIdx = parseJobId(job.getJobId());
         NamedJob.CompletedJob completedJob = DataFormatAdapter.convertCompletedJobToNamedJobCompletedJob(job);
-        sProvider.upsert(getNamespace(NAMED_COMPLETEDJOBS_NS),
+        kvStore.upsert(NAMED_COMPLETEDJOBS_NS,
             makeBucketizedPartitionKey(name, jobIdx),
             String.valueOf(jobIdx),
             mapper.writeValueAsString(completedJob));
@@ -548,14 +544,14 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     @Override
     public void removeCompletedJobForCluster(String name, String jobId) throws IOException {
         int jobIdx = parseJobId(jobId);
-        sProvider.deleteAll(getNamespace(NAMED_COMPLETEDJOBS_NS),
+        kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS,
             makeBucketizedPartitionKey(name, jobIdx));
     }
 
     @Override
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {
         try {
-            MantisJobMetadataWritable jmw = readJobStageData(getNamespace(ARCHIVED_JOB_STAGEDATA_NS), jobId);
+            MantisJobMetadataWritable jmw = readJobStageData(ARCHIVED_JOB_STAGEDATA_NS, jobId);
 
             final List<IMantisWorkerMetadata> archivedWorkers = getArchivedWorkers(jmw.getJobId());
             if (CollectionUtils.isNotEmpty(archivedWorkers)) {
@@ -579,7 +575,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public List<String> initActiveVmAttributeValuesList() throws IOException {
-        final String data = sProvider.get(getNamespace(ACTIVE_ASGS_NS),
+        final String data = kvStore.get(ACTIVE_ASGS_NS,
             "activeASGs", "thelist");
         logger.info("read active VMs data {} from Cass", data);
         if (StringUtils.isBlank(data)) {
@@ -591,7 +587,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     @Override
     public void setActiveVmAttributeValuesList(List<String> vmAttributesList) throws IOException {
         logger.info("Setting active ASGs {}", vmAttributesList);
-        sProvider.upsert(getNamespace(ACTIVE_ASGS_NS),
+        kvStore.upsert(ACTIVE_ASGS_NS,
             "activeASGs", "thelist",
             mapper.writeValueAsString(vmAttributesList));
     }
@@ -600,7 +596,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     public TaskExecutorRegistration getTaskExecutorFor(TaskExecutorID taskExecutorID) throws IOException {
         try {
             final String value =
-                sProvider.get(getNamespace(CONTROLPLANE_NS),
+                kvStore.get(CONTROLPLANE_NS,
                         TASK_EXECUTOR_REGISTRATION + "-" + taskExecutorID.getResourceId(),
                     taskExecutorID.getResourceId());
             return mapper.readValue(value, TaskExecutorRegistration.class);
@@ -613,23 +609,23 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     public void storeNewTaskExecutor(TaskExecutorRegistration registration) throws IOException {
         final String resourceId = registration.getTaskExecutorID().getResourceId();
         final String keyId = String.format("%s-%s", TASK_EXECUTOR_REGISTRATION, resourceId);
-        sProvider.upsert(getNamespace(CONTROLPLANE_NS), keyId, resourceId,
+        kvStore.upsert(CONTROLPLANE_NS, keyId, resourceId,
             mapper.writeValueAsString(registration));
     }
 
     @Override
     public void storeNewDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException {
         String data = mapper.writeValueAsString(request);
-        sProvider.upsert(
-            getNamespace(DISABLE_TASK_EXECUTOR_REQUESTS),
+        kvStore.upsert(
+            DISABLE_TASK_EXECUTOR_REQUESTS,
             request.getClusterID().getResourceID(),
             request.getHash(), data);
     }
 
     @Override
     public void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException {
-        sProvider.delete(
-            getNamespace(DISABLE_TASK_EXECUTOR_REQUESTS),
+        kvStore.delete(
+            DISABLE_TASK_EXECUTOR_REQUESTS,
             request.getClusterID().getResourceID(),
             request.getHash());
     }
@@ -637,7 +633,7 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     @Override
     public List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException {
 
-        return sProvider.getAll(getNamespace(DISABLE_TASK_EXECUTOR_REQUESTS), clusterID.getResourceID())
+        return kvStore.getAll(DISABLE_TASK_EXECUTOR_REQUESTS, clusterID.getResourceID())
             .values().stream()
             .map(
                 value -> {
@@ -652,12 +648,12 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public boolean isArtifactExists(String resourceId) throws IOException {
-        return sProvider.isRowExists(getNamespace(JOB_ARTIFACTS_NS), resourceId, resourceId);
+        return kvStore.isRowExists(JOB_ARTIFACTS_NS, resourceId, resourceId);
     }
 
     @Override
     public JobArtifact getArtifactById(String resourceId) throws IOException {
-        String data = sProvider.get(getNamespace(JOB_ARTIFACTS_NS), resourceId, resourceId);
+        String data = kvStore.get(JOB_ARTIFACTS_NS, resourceId, resourceId);
         return mapper.readValue(data, JobArtifact.class);
     }
 
@@ -665,9 +661,9 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
     public List<JobArtifact> listJobArtifacts(String name, String version) throws IOException {
         final Collection<String> artifacts;
         if (version == null) {
-            artifacts = sProvider.getAll(getNamespace(JOB_ARTIFACTS_NS), name).values();
+            artifacts = kvStore.getAll(JOB_ARTIFACTS_NS, name).values();
         } else {
-            artifacts = ImmutableList.of(sProvider.get(getNamespace(JOB_ARTIFACTS_NS), name, version));
+            artifacts = ImmutableList.of(kvStore.get(JOB_ARTIFACTS_NS, name, version));
         }
         return artifacts.stream()
             .map(e -> {
@@ -682,14 +678,14 @@ public class KeyValueAwareMantisStorageProvider implements IMantisStorageProvide
 
     @Override
     public List<String> listJobArtifactsByName(String prefix) throws IOException {
-        Map<String, String> items = sProvider.getAllWithPrefix(getNamespace(JOB_ARTIFACTS_NS), getJobArtifactsByNamePartitionKey(), prefix);
+        Map<String, String> items = kvStore.getAllWithPrefix(JOB_ARTIFACTS_NS, getJobArtifactsByNamePartitionKey(), prefix);
         return new ArrayList<>(items.keySet());
     }
 
     private void addNewJobArtifact(String partitionKey, String secondaryKey, JobArtifact jobArtifact) {
         try {
             final String data = mapper.writeValueAsString(jobArtifact);
-            sProvider.upsert(getNamespace(JOB_ARTIFACTS_NS), partitionKey, secondaryKey, data);
+            kvStore.upsert(JOB_ARTIFACTS_NS, partitionKey, secondaryKey, data);
         } catch (IOException e) {
             logger.error("Error while storing keyId {} for artifact {}", partitionKey, jobArtifact, e);
             throw new RuntimeException(e);
