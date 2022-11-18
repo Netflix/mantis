@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import rx.Scheduler;
 import rx.Subscription;
@@ -37,12 +38,17 @@ import rx.schedulers.Schedulers;
  */
 @Slf4j
 public class HighAvailabilityServicesUtil {
+  private static AtomicReference<HighAvailabilityServices> HAServiceInstanceRef = new AtomicReference<>();
 
   public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
     if (configuration.isLocalMode()) {
       throw new UnsupportedOperationException();
     } else {
-      return new ZkHighAvailabilityServices(configuration);
+      if (HAServiceInstanceRef.get() == null) {
+          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
+      }
+
+      return HAServiceInstanceRef.get();
     }
   }
 
