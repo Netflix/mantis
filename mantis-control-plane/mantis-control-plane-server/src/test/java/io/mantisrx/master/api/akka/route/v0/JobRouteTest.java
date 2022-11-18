@@ -87,13 +87,16 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
+import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
+import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
-import io.mantisrx.server.master.store.SimpleCachedFileStorageProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.time.Duration;
@@ -185,7 +188,7 @@ public class JobRouteTest {
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
 
-                SimpleCachedFileStorageProvider simpleCachedFileStorageProvider = new SimpleCachedFileStorageProvider();
+
 //                new File("/tmp/MantisSpool/namedJobs").mkdirs();
 //                IMantisStorageProvider storageProvider = new MantisStorageProviderAdapter(simpleCachedFileStorageProvider);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(
@@ -193,8 +196,9 @@ public class JobRouteTest {
                         new StatusEventSubscriberLoggingImpl(),
                         new WorkerEventSubscriberLoggingImpl());
 
+                IMantisPersistenceProvider mantisStorageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), lifecycleEventPublisher);
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                        new MantisJobStore(new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(
+                        new MantisJobStore(new FileBasedPersistenceProvider(
                                 true)), lifecycleEventPublisher), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
@@ -206,7 +210,7 @@ public class JobRouteTest {
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
-                final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(simpleCachedFileStorageProvider);
+                final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(mantisStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
                         jobClustersManagerActor);
 

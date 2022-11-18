@@ -21,18 +21,25 @@ import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import rx.Observable;
 
 
-public interface IMantisStorageProvider {
+/**
+ * A way to persist mantis master related metadata to a durable storage.
+ * See {@link KeyValueBasedPersistenceProvider} for how mantis job cluster,
+ * mantis job info is persisted to a key-value based storage (like cassandra)
+ */
+public interface IMantisPersistenceProvider {
 
 
     void storeNewJob(IMantisJobMetadata jobMetadata) throws Exception;
@@ -63,8 +70,9 @@ public interface IMantisStorageProvider {
      *
      * @throws IOException
      */
-    void storeWorker(final IMantisWorkerMetadata workerMetadata)
-            throws IOException;
+    default void storeWorker(final IMantisWorkerMetadata workerMetadata) throws IOException {
+        storeWorkers(Collections.singletonList(workerMetadata));
+    }
 
     /**
      * Store multiple new workers for the give job. This is called only once for a given worker. This method enables
@@ -75,9 +83,11 @@ public interface IMantisStorageProvider {
      *
      * @throws IOException if there were errors storing the workers.
      */
-    void storeWorkers(final String jobId, final List<IMantisWorkerMetadata> workers)
-            throws IOException;
+    default void storeWorkers(final String jobId, final List<IMantisWorkerMetadata> workers) throws IOException {
+        storeWorkers(workers);
+    }
 
+    void storeWorkers(final List<IMantisWorkerMetadata> workers) throws IOException;
 
     /**
      * Store a new worker and update existing worker of a job atomically. Either both are stored or none is.
@@ -148,4 +158,14 @@ public interface IMantisStorageProvider {
     void deleteExpiredDisableTaskExecutorRequest(DisableTaskExecutorsRequest request) throws IOException;
 
     List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException;
+
+    boolean isArtifactExists(String resourceId) throws IOException;
+
+    JobArtifact getArtifactById(String resourceId) throws IOException;
+
+    List<JobArtifact> listJobArtifacts(String name, String version) throws IOException;
+
+    List<String> listJobArtifactsByName(String prefix) throws IOException;
+
+    void addNewJobArtifact(JobArtifact jobArtifact) throws IOException;
 }

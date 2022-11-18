@@ -44,7 +44,7 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
-import io.mantisrx.server.master.persistence.IMantisStorageProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -62,7 +62,7 @@ public class WorkerRegistryV2Test {
     private static TestKit probe;
 
     private static MantisJobStore jobStore;
-    private static IMantisStorageProvider storageProvider;
+    private static IMantisPersistenceProvider storageProvider;
 
     private static final String user = "mantis";
 

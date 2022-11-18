@@ -26,6 +26,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -62,9 +63,9 @@ public class ExecuteStageRequest implements Serializable {
     private final int stage;
     private final int totalNumStages;
     private final int metricsPort;
-    private final List<Integer> ports = new LinkedList<Integer>();
+    private final List<Integer> ports = new ArrayList<>();
     private final long timeoutToReportStart;
-    private List<Parameter> parameters = new LinkedList<Parameter>();
+    private final List<Parameter> parameters;
     private final SchedulingInfo schedulingInfo;
     private final MantisJobDurationType durationType;
     // class name that provides the job provider.

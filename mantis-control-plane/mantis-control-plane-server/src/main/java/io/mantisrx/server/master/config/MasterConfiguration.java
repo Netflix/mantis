@@ -18,7 +18,7 @@ package io.mantisrx.server.master.config;
 
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.core.CoreConfiguration;
-import io.mantisrx.server.master.store.MantisStorageProvider;
+import io.mantisrx.server.master.store.KeyValueStore;
 import java.time.Duration;
 import org.skife.config.Config;
 import org.skife.config.Default;
@@ -46,7 +46,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     String getApiStatusUri();
 
     @Config("mantis.master.storageProvider")
-    MantisStorageProvider getStorageProvider();
+    KeyValueStore getStorageProvider();
 
     @Config("mantis.master.resourceClusterStorageProvider")
     ResourceClusterStorageProvider getResourceClusterStorageProvider();

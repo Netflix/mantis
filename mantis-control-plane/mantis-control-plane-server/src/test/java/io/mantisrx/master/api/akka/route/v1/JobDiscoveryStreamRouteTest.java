@@ -44,6 +44,7 @@ import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
+import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
@@ -86,7 +87,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
 
                 TestHelpers.setupMasterConfig();
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                    new MantisJobStore(new io.mantisrx.server.master.persistence.SimpleCachedFileStorageProvider(true)), lifecycleEventPublisher), "jobClustersManager");
+                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
