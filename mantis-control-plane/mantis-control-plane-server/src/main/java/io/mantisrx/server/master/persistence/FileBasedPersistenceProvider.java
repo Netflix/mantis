@@ -33,9 +33,7 @@ import org.slf4j.LoggerFactory;
  * Simple File based storage provider. Intended mainly as a sample implementation for
  * {@link IMantisPersistenceProvider} interface. This implementation is complete in its functionality, but, isn't
  * expected to be scalable or performant for production loads.
- * <P>This implementation uses <code>/tmp/MantisSpool/</code> as the spool directory. The directory is created
- * if not present already. It will fail only if either a file with that name exists or if a directory with that
- * name exists but isn't writable.</P>
+ * <p>This implementation is mainly for testing.</p>
  */
 public class FileBasedPersistenceProvider extends KeyValueBasedPersistenceProvider {
     private static final Logger logger = LoggerFactory.getLogger(FileBasedPersistenceProvider.class);
