@@ -34,6 +34,6 @@ public class WorkerEventSubscriberLoggingImpl implements WorkerEventSubscriber {
 
     @Override
     public void process(WorkerStatusEvent workerStatusEvent) {
-        logger.info("Received worker status event {}", workerStatusEvent);
+        logger.debug("Received worker status event {}", workerStatusEvent);
     }
 }

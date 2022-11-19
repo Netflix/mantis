@@ -30,13 +30,13 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.base.Preconditions;
+import io.netty.util.internal.ConcurrentSet;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -61,25 +61,22 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
         new ConcurrentHashMap<>();
     private final ConcurrentMap<String, WorkerMetrics> clusterWorkersMetrics =
         new ConcurrentHashMap<>();
-    private final Set<CleanupJobEvent> jobsToBeCleaned = new HashSet<>();
+    private final ConcurrentSet<CleanupJobEvent> jobsToBeCleaned = new ConcurrentSet<>();
     private final Duration cleanupInterval;
 
     private final Duration epochDuration;
     private final Clock clock;
 
     @Override
-    protected void runOneIteration() throws Exception {
+    protected void runOneIteration() {
         Instant expiry = clock.instant().minus(cleanupInterval);
-        Set<CleanupJobEvent> toBeRemoved = new HashSet<>();
-
-        synchronized (jobsToBeCleaned) {
-            jobsToBeCleaned.forEach(event -> {
-                if (event.isAfter(expiry)) {
-                    jobWorkers.remove(event.getJobId());
-                    toBeRemoved.add(event);
-                }
-            });
-            jobsToBeCleaned.removeAll(toBeRemoved);
+        Iterator<CleanupJobEvent> iterator = jobsToBeCleaned.iterator();
+        while (iterator.hasNext()) {
+            CleanupJobEvent event = iterator.next();
+            if (event.isAfter(expiry)) {
+                jobWorkers.remove(event.getJobId());
+                iterator.remove();
+            }
         }
     }
 
@@ -122,7 +119,8 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
             Preconditions.checkNotNull(jobWorkers.get(jobId));
             final IMantisWorkerMetadata metadata = jobWorkers.get(jobId).get(workerId);
             Preconditions.checkNotNull(metadata);
-            final WorkerMetrics workerMetrics = getWorkerMetrics(metadata.getCluster().orElse("unknown"));
+            final WorkerMetrics workerMetrics = getWorkerMetrics(
+                metadata.getCluster().orElse("unknown"));
 
             switch (workerState) {
                 case Accepted:
@@ -158,20 +156,16 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
     }
 
     private void cleanUp(JobId jobId) {
-        synchronized (jobsToBeCleaned) {
-            jobsToBeCleaned.add(new CleanupJobEvent(jobId, clock.instant()));
-        }
+        jobsToBeCleaned.add(new CleanupJobEvent(jobId, clock.instant()));
     }
 
-    private class WorkerMetrics {
+    private static class WorkerMetrics {
 
-        private final String clusterName;
         private final Timer schedulingDuration;
         private final Timer preparationDuration;
         private final Timer runningDuration;
 
         public WorkerMetrics(final String clusterName) {
-            this.clusterName = clusterName;
             MetricGroupId metricGroupId =
                 new MetricGroupId("WorkerMetricsCollector", Tag.of("cluster", clusterName));
             Metrics m = new Metrics.Builder()
