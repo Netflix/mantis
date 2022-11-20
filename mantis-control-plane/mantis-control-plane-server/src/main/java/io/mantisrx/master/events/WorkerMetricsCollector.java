@@ -17,6 +17,7 @@
 package io.mantisrx.master.events;
 
 import com.netflix.spectator.api.Tag;
+import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.Timer;
@@ -54,9 +55,6 @@ import lombok.extern.slf4j.Slf4j;
 public class WorkerMetricsCollector extends AbstractScheduledService implements
     WorkerEventSubscriber {
 
-    public static final String SCHEDULING_DURATION = "schedulingDuration";
-    public static final String PREPARATION_DURATION = "preparationDuration";
-    public static final String RUNNING_DURATION = "runningDuration";
     private final ConcurrentMap<JobId, Map<WorkerId, IMantisWorkerMetadata>> jobWorkers =
         new ConcurrentHashMap<>();
     private final ConcurrentMap<String, WorkerMetrics> clusterWorkersMetrics =
@@ -66,6 +64,8 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
     private final Duration epochDuration;
     private final Clock clock;
+
+    private final WorkerMetricsCollectorMetrics workerMetricsCollectorMetrics = new WorkerMetricsCollectorMetrics();
 
     @Override
     protected void runOneIteration() {
@@ -78,6 +78,7 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
                 iterator.remove();
             }
         }
+        workerMetricsCollectorMetrics.reportJobWorkersSize(jobWorkers.size());
     }
 
     @Override
@@ -95,6 +96,7 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
             event.getWorkerInfoListHolder().getWorkerMetadataList();
         jobWorkers.put(jobId,
             workers.stream().collect(Collectors.toMap(IMantisWorkerMetadata::getWorkerId, m -> m)));
+        workerMetricsCollectorMetrics.reportJobWorkersSize(jobWorkers.size());
     }
 
     @Override
@@ -161,6 +163,9 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
     private static class WorkerMetrics {
 
+        public static final String SCHEDULING_DURATION = "schedulingDuration";
+        public static final String PREPARATION_DURATION = "preparationDuration";
+        public static final String RUNNING_DURATION = "runningDuration";
         private final Timer schedulingDuration;
         private final Timer preparationDuration;
         private final Timer runningDuration;
@@ -191,6 +196,27 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
         private void reportRunningDuration(long durationInMillis) {
             this.runningDuration.record(durationInMillis, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private static class WorkerMetricsCollectorMetrics {
+
+        public static final String JOB_WORKERS_MAP_SIZE = "jobWorkersMapSize";
+        private final Gauge jobWorkersMapSize;
+
+        public WorkerMetricsCollectorMetrics() {
+            MetricGroupId metricGroupId = new MetricGroupId("WorkerMetricsCollector");
+
+            Metrics m = new Metrics.Builder()
+                .id(metricGroupId)
+                .addGauge(JOB_WORKERS_MAP_SIZE)
+                .build();
+
+            this.jobWorkersMapSize = m.getGauge(JOB_WORKERS_MAP_SIZE);
+        }
+
+        private void reportJobWorkersSize(int size) {
+            jobWorkersMapSize.set(size);
         }
     }
 

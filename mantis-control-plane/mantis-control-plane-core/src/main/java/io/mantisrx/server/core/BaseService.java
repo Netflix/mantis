@@ -152,4 +152,25 @@ public abstract class BaseService implements Service {
             }
         }
     }
+
+    public static BaseService wrap(io.mantisrx.shaded.com.google.common.util.concurrent.Service service) {
+        return new BaseService() {
+            @Override
+            public void start() {
+
+            }
+
+            @Override
+            public void enterActiveMode() {
+                service.startAsync().awaitRunning();
+                super.enterActiveMode();
+            }
+
+            @Override
+            public void shutdown() {
+                service.stopAsync().awaitTerminated();
+                super.shutdown();
+            }
+        };
+    }
 }

@@ -52,6 +52,7 @@ import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
 import io.mantisrx.master.zk.LeaderElector;
+import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.json.DefaultObjectMapper;
@@ -155,6 +156,7 @@ public class MasterMain implements Service {
                 Duration.ofMinutes(5), // cleanup jobs after 5 minutes
                 Duration.ofMinutes(1), // check every 1 minute for jobs to be cleaned up
                 Clock.systemDefaultZone());
+            mantisServices.addService(BaseService.wrap(workerMetricsCollector));
 
             // TODO who watches actors created at this level?
             final LifecycleEventPublisher lifecycleEventPublisher =
