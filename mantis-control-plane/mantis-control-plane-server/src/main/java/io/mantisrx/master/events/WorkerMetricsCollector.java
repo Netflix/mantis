@@ -69,11 +69,11 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
     @Override
     protected void runOneIteration() {
-        Instant expiry = clock.instant().minus(cleanupInterval);
+        Instant current = clock.instant();
         Iterator<CleanupJobEvent> iterator = jobsToBeCleaned.iterator();
         while (iterator.hasNext()) {
             CleanupJobEvent event = iterator.next();
-            if (event.isAfter(expiry)) {
+            if (current.isAfter(event.getExpiry())) {
                 jobWorkers.remove(event.getJobId());
                 iterator.remove();
             }
@@ -158,7 +158,7 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
     }
 
     private void cleanUp(JobId jobId) {
-        jobsToBeCleaned.add(new CleanupJobEvent(jobId, clock.instant()));
+        jobsToBeCleaned.add(new CleanupJobEvent(jobId, clock.instant().plus(cleanupInterval)));
     }
 
     private static class WorkerMetrics {
@@ -224,10 +224,6 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
     private static class CleanupJobEvent {
 
         JobId jobId;
-        Instant eventTimestamp;
-
-        boolean isAfter(Instant expiry) {
-            return eventTimestamp.isAfter(expiry);
-        }
+        Instant expiry;
     }
 }
