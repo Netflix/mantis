@@ -711,7 +711,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             jobStore.archiveJob(jobMeta);
                         }
                     } catch (Exception e) {
-                        logger.error("Exception {} archiving job {} during init ",e.getMessage(), jobMeta.getJobId());
+                        logger.error("Exception {} archiving job {} during init ",e.getMessage(), jobMeta.getJobId(), e);
                     }
                 }
 
@@ -777,7 +777,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 jobManager.addCompletedJobsToCache(initReq.completedJobsList);
             } catch(Exception e) {
-                logger.warn("Exception initializing completed jobs " + e.getMessage());
+                logger.warn("Exception initializing completed jobs " + e.getMessage(), e);
 
             }
         }
@@ -1791,7 +1791,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                 }
                             } catch (Exception e) {
                                 // should not get here
-                                logger.warn("Exception {} loading completed Job {} to enforce SLA due", e.getMessage(), completedJob.get().getJobId());
+                                logger.warn("Exception {} loading completed Job {} to enforce SLA due", e.getMessage(), completedJob.get().getJobId(), e);
                             }
                         }
 
@@ -1847,7 +1847,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         response = new GetJobDetailsResponse(req.requestId, CLIENT_ERROR_NOT_FOUND, "Job " + req.getJobId() + "  not found", empty());
                     }
                 } catch (Exception e) {
-                    logger.warn("Exception {} reading Job {} from Storage ", e.getMessage(), req.getJobId());
+                    logger.warn("Exception {} reading Job {} from Storage ", e.getMessage(), req.getJobId(), e);
                     response = new GetJobDetailsResponse(req.requestId, CLIENT_ERROR, "Exception reading Job " + req.getJobId() + "  " + e.getMessage(), empty());
 
                 }
@@ -2017,7 +2017,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                                                                     .build();
             return of(clonedJobDefn);
         } catch (Exception e) {
-            logger.warn("Could not clone JobDefinition {} due to {}", jobDefinition, e.getMessage());
+            logger.warn("Could not clone JobDefinition {} due to {}", jobDefinition, e.getMessage(), e);
             e.printStackTrace();
         }
         // should not get here
@@ -3202,7 +3202,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     // add to local cache and store table
                     addToCacheAndSaveCompletedJobToStore(completedJob, jobMetadata, jobStore);
                 } catch (Exception e) {
-                    logger.warn("Unable to save {} to completed jobs table due to {}", completedJob, e.getMessage());
+                    logger.warn("Unable to save {} to completed jobs table due to {}", completedJob, e.getMessage(), e);
                 }
                 return of(completedJob);
             } else {
@@ -3241,7 +3241,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                         }
 
                     } catch (Exception e) {
-                        logger.warn("Unable to purge job {} due to {}", completedJob, e.getMessage());
+                        logger.warn("Unable to purge job {} due to {}", completedJob, e);
                     }
                     numDeleted++;
                 } else {
@@ -3275,7 +3275,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             labelsCache.removeJobIdFromLabelCache(jobId.get());
                         }
                     } catch (Exception e) {
-                        logger.warn("Unable to purge job {} due to {}", completedJob, e.getMessage());
+                        logger.warn("Unable to purge job {} due to {}", completedJob, e);
                     }
 
             }
@@ -3295,7 +3295,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 // normally archiving is done by job actor, but these are jobs in active table that weren't archived
                 jobStore.archiveJob(jobMeta);
             } catch (Exception e) {
-                logger.warn("Unable to save completed job {} to store due to {}", jobMeta, e.getMessage());
+                logger.warn("Unable to save completed job {} to store due to {}", jobMeta, e);
             }
 
 
@@ -3354,7 +3354,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 triggerOperator.initialize();
             } catch (SchedulerException e) {
-                logger.error("Unexpected: " + e.getMessage(), e);
+                logger.error("Unexpected: {}", e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         }
