@@ -300,7 +300,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private void rangeOperation(int nextJobNumber, Consumer<Integer> fn) {
         int maxIndex = bucketizePartitionKey(nextJobNumber);
-        for (int i = 0; i <= maxIndex; i += WORKER_BATCH_SIZE) {
+        for (int i = WORKER_BATCH_SIZE; i <= maxIndex; i += WORKER_BATCH_SIZE) {
             fn.accept(i);
         }
     }
@@ -528,7 +528,8 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     private int parseJobId(String jobId) {
-        return Integer.parseInt(jobId.split("-")[1]);
+        final int idx = jobId.lastIndexOf("-");
+        return Integer.parseInt(jobId.substring(idx + 1));
     }
 
     @Override
