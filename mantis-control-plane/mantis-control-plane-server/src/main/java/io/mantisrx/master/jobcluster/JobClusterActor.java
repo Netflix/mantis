@@ -722,7 +722,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     String.format("JobCluster %s initialized successfully. But is currently disabled",
                             initReq.jobClusterDefinition.getName()),initReq.jobClusterDefinition.getName(),
                     initReq.requestor), getSelf());
-            logger.info("Job expiry check frquency set to {}", expireFrequency);
+            logger.info("Job expiry check frequency set to {}", expireFrequency);
             setExpiredJobsTimer(expireFrequency);
 
             getContext().become(disabledBehavior);
@@ -767,13 +767,13 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 cronManager = new CronManager(name, getSelf(), jobClusterMetadata.getJobClusterDefinition().getSLA());
             } catch (Exception e) {
-                logger.warn("Exception initializing cron {}", e);
+                logger.warn("Exception initializing cron", e);
             }
             initRunningJobs(initReq, sender);
 
             setExpiredJobsTimer(expireFrequency);
 
-            logger.info("Job expiry check frquency set to {}", expireFrequency);
+            logger.info("Job expiry check frequency set to {}", expireFrequency);
             try {
                 jobManager.addCompletedJobsToCache(initReq.completedJobsList);
             } catch(Exception e) {
