@@ -286,6 +286,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     private int bucketizePartitionKey(int num) {
+        num = Math.max(1, num);
         return (int) (WORKER_BATCH_SIZE * Math.ceil(1.0 * num / WORKER_BATCH_SIZE));
     }
 

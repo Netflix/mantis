@@ -328,16 +328,12 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 List<IMantisJobMetadata> activeJobs = jobStore.loadAllActiveJobs();
                 logger.info("Read {} jobs from storage", activeJobs.size());
 
-                List<CompletedJob> completedJobs = jobStore.loadAllCompletedJobs();
-                logger.info("Read {} completed jobs from storage", completedJobs.size());
-
                 for (IJobClusterMetadata jobClusterMeta : jobClusters) {
                     String clusterName = jobClusterMeta.getJobClusterDefinition().getName();
                     jobClusterMap.put(clusterName, jobClusterMeta);
                 }
 
                 Map<String, List<IMantisJobMetadata>> clusterToJobMap = new HashMap<>();
-                Map<String, List<CompletedJob>> clusterToCompletedJobMap = new HashMap<>();
 
                 // group jobs by cluster
                 for (IMantisJobMetadata jobMeta : activeJobs) {
@@ -345,10 +341,6 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                     clusterToJobMap.computeIfAbsent(clusterName, k -> new ArrayList<>()).add(jobMeta);
                 }
 
-                for (CompletedJob jobMeta : completedJobs) {
-                    String clusterName = jobMeta.getName();
-                    clusterToCompletedJobMap.computeIfAbsent(clusterName, k -> new ArrayList<>()).add(jobMeta);
-                }
                 long masterInitTimeoutSecs = ConfigurationProvider.getConfig().getMasterInitTimeoutSecs();
                 long timeout = ((masterInitTimeoutSecs - 60)) > 0 ? (masterInitTimeoutSecs - 60) : masterInitTimeoutSecs;
                 Observable.from(jobClusterMap.values())
@@ -368,10 +360,6 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                             }
 
                             List<CompletedJob> completedJobsList = Lists.newArrayList();
-                            List<CompletedJob> cList = clusterToCompletedJobMap.get(jobClusterMeta.getJobClusterDefinition().getName());
-                            if (cList != null) {
-                                completedJobsList.addAll(cList);
-                            }
                             JobClusterProto.InitializeJobClusterRequest req = new JobClusterProto.InitializeJobClusterRequest((JobClusterDefinitionImpl) jobClusterMeta.getJobClusterDefinition(),
                                 jobClusterMeta.isDisabled(), jobClusterMeta.getLastJobCount(), jobList, completedJobsList, "system", getSelf(), false);
                             return jobClusterInfoManager.initializeCluster(jobClusterInfo, req, t);
@@ -400,8 +388,6 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 // kick off loading of archived jobs
                 logger.info("Kicking off archived job load asynchronously");
                 jobStore.loadAllArchivedJobsAsync();
-
-
             }
 
         } catch(Exception e) {

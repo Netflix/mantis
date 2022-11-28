@@ -103,9 +103,7 @@ public class MantisJobStore {
     }
 
     public List<CompletedJob> loadAllCompletedJobs() throws IOException {
-        List<CompletedJob> completedJobs = storageProvider.loadAllCompletedJobs();
-        logger.info("Loaded {} completed jobs", completedJobs.size());
-        return completedJobs;
+        return storageProvider.loadAllCompletedJobs();
     }
 
     public void createJobCluster(IJobClusterMetadata jobCluster) throws Exception {
