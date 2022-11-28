@@ -585,6 +585,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private TaskExecutorStatus getTaskExecutorStatus(TaskExecutorID taskExecutorID) {
         final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+        if (state == null) {
+            log.warn("Unknown executorID: {}", taskExecutorID);
+            return null;
+        }
+
         return new TaskExecutorStatus(
             state.getRegistration(),
             state.isRegistered(),
