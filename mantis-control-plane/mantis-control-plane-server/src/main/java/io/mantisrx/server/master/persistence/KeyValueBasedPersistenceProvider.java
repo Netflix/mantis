@@ -286,6 +286,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     private int bucketizePartitionKey(int num) {
+        num = Math.max(1, num);
         return (int) (WORKER_BATCH_SIZE * Math.ceil(1.0 * num / WORKER_BATCH_SIZE));
     }
 
@@ -421,23 +422,23 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     public List<CompletedJob> loadAllCompletedJobs() throws IOException {
         AtomicInteger failedCount = new AtomicInteger();
         AtomicInteger successCount = new AtomicInteger();
-
-        final List<CompletedJob> completedJobsList = Lists.newArrayList();
-        final String namespace = NAMED_COMPLETEDJOBS_NS;
-        for (String pkey : kvStore.getAllPartitionKeys(namespace)) {
-            kvStore.getAll(namespace, pkey).values()
-                .forEach(data -> {
-                    try {
-                        NamedJob.CompletedJob cj = mapper.readValue(data, NamedJob.CompletedJob.class);
-                        CompletedJob completedJob = DataFormatAdapter.convertNamedJobCompletedJobToCompletedJob(cj);
-                        completedJobsList.add(completedJob);
-                        successCount.getAndIncrement();
-                    } catch (JsonProcessingException e) {
-                        logger.warn("failed to parse CompletedJob from {} {}", pkey, data, e);
-                        failedCount.getAndIncrement();
-                    }
-                });
-        }
+        final List<CompletedJob> completedJobsList = kvStore.getAllRows(NAMED_COMPLETEDJOBS_NS)
+            .values().stream()
+            .flatMap(x -> x.values().stream())
+            .map(data -> {
+                try {
+                    NamedJob.CompletedJob cj = mapper.readValue(data, NamedJob.CompletedJob.class);
+                    CompletedJob completedJob = DataFormatAdapter.convertNamedJobCompletedJobToCompletedJob(cj);
+                    successCount.getAndIncrement();
+                    return completedJob;
+                } catch (JsonProcessingException e) {
+                    logger.warn("failed to parse CompletedJob from {}", data, e);
+                    failedCount.getAndIncrement();
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
         logger.info("Read and converted job clusters. Successful - {}, Failed - {}", successCount.get(), failedCount.get());
         return completedJobsList;
@@ -510,7 +511,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         rangeOperation((int) namedJob.getNextJobNumber(),
             idx -> {
                 try {
-                    kvStore.deleteAll(NAMED_COMPLETEDJOBS_NS, makeBucketizedPartitionKey(name, idx));
+                    removeCompletedJobForCluster(name, makeBucketizedPartitionKey(name, idx));
                 } catch (IOException e) {
                     logger.warn("failed to completed job for named job {} with index {}", name, idx, e);
                 }
