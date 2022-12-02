@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
 public class MantisJobMetadataView {
     @JsonIgnore
     private static final ObjectMapper mapper = new ObjectMapper();
+    @JsonIgnore
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataView.class);
 
     private FilterableMantisJobMetadataWritable jobMetadata;
-    @JsonIgnore
     private long terminatedAt = -1;
 
     private List<FilterableMantisStageMetadataWritable> stageMetadataList = Lists.newArrayList();
@@ -178,12 +178,8 @@ public class MantisJobMetadataView {
         return workerMetadataList;
     }
 
-    public String getTerminatedAt() {
-        if(terminatedAt == -1) {
-            return "";
-        } else {
-            return String.valueOf(this.terminatedAt);
-        }
+    public long getTerminatedAt() {
+        return terminatedAt;
     }
 
     public String getVersion() {
