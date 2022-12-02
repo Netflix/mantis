@@ -16,6 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.proto;
 
+import io.mantisrx.common.Label;
+import io.mantisrx.master.jobcluster.LabelManager.SystemLabels;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
@@ -27,7 +29,13 @@ import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.runtime.command.InvalidJobException;
-import io.mantisrx.server.master.domain.*;
+import io.mantisrx.server.master.domain.DataFormatAdapter;
+import io.mantisrx.server.master.domain.IJobClusterDefinition;
+import io.mantisrx.server.master.domain.JobClusterConfig;
+import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
+import io.mantisrx.server.master.domain.JobDefinition;
+import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
 import io.mantisrx.server.master.http.api.JobClusterInfo;
 import io.mantisrx.server.master.store.MantisJobMetadata;
@@ -36,6 +44,9 @@ import io.mantisrx.server.master.store.MantisWorkerMetadata;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.mantisrx.shaded.com.google.common.base.Strings;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList.Builder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +79,7 @@ public class JobClusterProtoAdapter {
                 jd.getMigrationConfig(),
                 jd.getIsReadyForJobMaster(),
                 jd.getParameters(),
-                jd.getLabels()
+                processLabels(jd)
         )
 
         , "user"
@@ -187,7 +198,7 @@ public class JobClusterProtoAdapter {
                 jd.getMigrationConfig(),
                 jd.getIsReadyForJobMaster(),
                 jd.getParameters(),
-                jd.getLabels()
+                processLabels(jd)
         ),
 
         "user");
@@ -235,7 +246,7 @@ public class JobClusterProtoAdapter {
                     jd.getSubscriptionTimeoutSecs(),
                     jd.getSchedulingInfo(),
                     jd.getSchedulingInfo() == null ? -1 : jd.getSchedulingInfo().getStages().size(),
-                    jd.getLabels(),
+                    processLabels(jd),
                     jd.getDeploymentStrategy())
             ));
 
@@ -254,6 +265,19 @@ public class JobClusterProtoAdapter {
                 jobClusterMetadataView.getLabels());
 
         return jobClusterInfo;
+    }
+
+    protected static List<Label> processLabels(MantisJobDefinition jd) {
+        Builder<Label> labelBuilder = ImmutableList.<Label>builder().addAll(jd.getLabels());
+        if (jd.getDeploymentStrategy() != null &&
+            !Strings.isNullOrEmpty(jd.getDeploymentStrategy().getResourceClusterId())) {
+            labelBuilder.add(
+                new Label(
+                    SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
+                    jd.getDeploymentStrategy().getResourceClusterId()));
+        }
+
+        return labelBuilder.build();
     }
 
     public static class JobIdInfo {

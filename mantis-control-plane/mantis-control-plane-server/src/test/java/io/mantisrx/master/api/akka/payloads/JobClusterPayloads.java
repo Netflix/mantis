@@ -26,6 +26,16 @@ public class JobClusterPayloads {
         "\"migrationConfig\":{\"strategy\":\"PERCENTAGE\",\"configString\":\"{\\\"percentToMove\\\":25,\\\"intervalMs\\\":60000}\"},\"slaMin\":\"0\",\"slaMax\":\"0\",\"cronSpec\":null,\"cronPolicy\":\"KEEP_EXISTING\",\"isReadyForJobMaster\":true}," +
         "\"owner\":{\"contactEmail\":\"nmahilani@netflix.com\",\"description\":\"\",\"name\":\"Nick Mahilani\",\"repo\":\"\",\"teamName\":\"\"}}";
 
+    public static final String JOB_CLUSTER_CREATE_RC = "{\"jobDefinition\":{\"name\":\"sine-function-rc\","
+        + "\"user\":\"nmahilani\",\"jobJarFileLocation\":\"https://mantis.staging.us-east-1.prod.netflix.net/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip\"," +
+        "\"version\":\"0.2.9 2018-05-29 16:12:56\",\"schedulingInfo\":{\"stages\":{" +
+        "\"1\":{\"numberOfInstances\":\"1\",\"machineDefinition\":{\"cpuCores\":\"1\",\"memoryMB\":\"1024\",\"diskMB\":\"1024\",\"networkMbps\":\"128\",\"numPorts\":\"1\"},\"scalable\":true," +
+        "\"scalingPolicy\":{\"stage\":1,\"min\":\"1\",\"max\":\"10\",\"increment\":\"2\",\"decrement\":\"1\",\"coolDownSecs\":\"600\"," +
+        "\"strategies\":{\"CPU\":{\"reason\":\"CPU\",\"scaleDownBelowPct\":\"15\",\"scaleUpAbovePct\":\"75\",\"rollingCount\":{\"count\":\"12\",\"of\":\"20\"}}},\"enabled\":true},\"softConstraints\":[],\"hardConstraints\":[]}}}," +
+        "\"parameters\":[],\"labels\":[{\"name\":\"_mantis.user\",\"value\":\"nmahilani\"},{\"name\":\"_mantis.ownerEmail\",\"value\":\"nmahilani@netflix.com\"},{\"name\":\"_mantis.jobType\",\"value\":\"other\"},{\"name\":\"_mantis.criticality\",\"value\":\"low\"},{\"name\":\"_mantis.artifact.version\",\"value\":\"0.2.9\"}]," +
+        "\"migrationConfig\":{\"strategy\":\"PERCENTAGE\",\"configString\":\"{\\\"percentToMove\\\":25,\\\"intervalMs\\\":60000}\"},\"slaMin\":\"0\",\"slaMax\":\"0\",\"deploymentStrategy\":{\"resourceClusterId\":\"mantisagent\"},\"cronSpec\":null,\"cronPolicy\":\"KEEP_EXISTING\",\"isReadyForJobMaster\":true}," +
+        "\"owner\":{\"contactEmail\":\"nmahilani@netflix.com\",\"description\":\"\",\"name\":\"Nick Mahilani\",\"repo\":\"\",\"teamName\":\"\"}}";
+
     public static final String JOB_CLUSTER_VALID_UPDATE = "{\"jobDefinition\":{\"name\":\"sine-function\",\"user\":\"nmahilani\",\"jobJarFileLocation\":\"https://mantis.staging.us-east-1.prod.netflix.net/mantis-artifacts/mantis-examples-sine-function-0.2.9.zip\"," +
                                                     "\"version\":\"0.2.9 2018-05-29 new version\",\"schedulingInfo\":{\"stages\":{" +
                                                     "\"1\":{\"numberOfInstances\":\"1\",\"machineDefinition\":{\"cpuCores\":\"1\",\"memoryMB\":\"1024\",\"diskMB\":\"1024\",\"networkMbps\":\"128\",\"numPorts\":\"1\"},\"scalable\":true," +
