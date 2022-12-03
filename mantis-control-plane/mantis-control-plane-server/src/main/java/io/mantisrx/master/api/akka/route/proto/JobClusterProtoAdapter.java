@@ -46,7 +46,6 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableList.Builder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -268,16 +267,17 @@ public class JobClusterProtoAdapter {
     }
 
     protected static List<Label> processLabels(MantisJobDefinition jd) {
-        Builder<Label> labelBuilder = ImmutableList.<Label>builder().addAll(jd.getLabels());
+        Map<String, Label> labelMap = new HashMap<>();
+        jd.getLabels().forEach(l -> labelMap.put(l.getName(), l));
         if (jd.getDeploymentStrategy() != null &&
             !Strings.isNullOrEmpty(jd.getDeploymentStrategy().getResourceClusterId())) {
-            labelBuilder.add(
-                new Label(
-                    SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
-                    jd.getDeploymentStrategy().getResourceClusterId()));
+            Label rcLabel = new Label(
+                SystemLabels.MANTIS_RESOURCE_CLUSTER_NAME_LABEL.label,
+                jd.getDeploymentStrategy().getResourceClusterId());
+            labelMap.put(rcLabel.getName(), rcLabel);
         }
 
-        return labelBuilder.build();
+        return ImmutableList.copyOf(labelMap.values());
     }
 
     public static class JobIdInfo {
