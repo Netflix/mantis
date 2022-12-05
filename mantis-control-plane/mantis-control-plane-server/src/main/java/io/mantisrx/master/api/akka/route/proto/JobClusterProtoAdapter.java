@@ -407,21 +407,6 @@ public class JobClusterProtoAdapter {
         }
     }
 
-    public static final JobIdInfo toJobIdInfo(final MantisJobMetadataView view) {
-        MantisJobMetadata jm = view.getJobMetadata();
-
-        return new JobIdInfo(
-            jm.getJobId(),
-            view.getVersion(),
-            jm.getState(),
-            String.valueOf(jm.getSubmittedAt()),
-            view.getTerminatedAt(),
-            jm.getUser()
-        );
-    }
-
-
-
     public static final CompactJobInfo toCompactJobInfo(final MantisJobMetadataView view) {
         MantisJobMetadata jm = view.getJobMetadata();
 
@@ -449,6 +434,7 @@ public class JobClusterProtoAdapter {
             jm.getJobId(),
             (jm.getJarUrl() != null) ? jm.getJarUrl().toString() : "",
             jm.getSubmittedAt(),
+            view.getTerminatedAt(),
             jm.getUser(),
             jm.getState(),
             jm.getSla() != null ? jm.getSla().getDurationType() : MantisJobDurationType.Transient,

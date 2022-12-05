@@ -19,13 +19,9 @@ package io.mantisrx.server.master.http.api;
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.server.master.store.MantisJobMetadata;
-import io.mantisrx.server.master.store.MantisStageMetadata;
-import io.mantisrx.server.master.store.MantisWorkerMetadata;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +30,7 @@ public class CompactJobInfo {
 
     private final String jobId;
     private final long submittedAt;
+    private final long terminatedAt;
     private final String user;
     private final String jarUrl;
     private final MantisJobState state;
@@ -50,6 +47,7 @@ public class CompactJobInfo {
             @JsonProperty("jobID") String jobId,
             @JsonProperty("jarUrl") String jarUrl,
             @JsonProperty("submittedAt") long submittedAt,
+            @JsonProperty("terminatedAt") long terminatedAt,
             @JsonProperty("user") String user,
             @JsonProperty("state") MantisJobState state,
             @JsonProperty("type") MantisJobDurationType type,
@@ -63,6 +61,7 @@ public class CompactJobInfo {
         this.jobId = jobId;
         this.jarUrl = jarUrl;
         this.submittedAt = submittedAt;
+        this.terminatedAt = terminatedAt;
         this.user = user;
         this.state = state;
         this.type = type;
@@ -74,38 +73,16 @@ public class CompactJobInfo {
         this.labels = labels;
     }
 
-    static CompactJobInfo fromJob(MantisJobMetadata job) {
-        if (job == null)
-            return null;
-        int workers = 0;
-        double totCPUs = 0.0;
-        double totMem = 0.0;
-        Map<String, Integer> stSmry = new HashMap<>();
-        for (MantisStageMetadata s : job.getStageMetadata()) {
-            workers += s.getNumWorkers();
-            totCPUs += s.getNumWorkers() * s.getMachineDefinition().getCpuCores();
-            totMem += s.getNumWorkers() * s.getMachineDefinition().getMemoryMB();
-            for (MantisWorkerMetadata w : s.getWorkerByIndexMetadataSet()) {
-                final Integer prevVal = stSmry.get(w.getState() + "");
-                if (prevVal == null)
-                    stSmry.put(w.getState() + "", 1);
-                else
-                    stSmry.put(w.getState() + "", prevVal + 1);
-            }
-        }
-        String artifact = job.getJarUrl().toString();
-        return new CompactJobInfo(
-                job.getJobId(), artifact, job.getSubmittedAt(), job.getUser(), job.getState(),
-                job.getSla().getDurationType(), job.getNumStages(), workers, totCPUs, totMem, stSmry, job.getLabels()
-        );
-    }
-
     public String getJobId() {
         return jobId;
     }
 
     public long getSubmittedAt() {
         return submittedAt;
+    }
+
+    public long getTerminatedAt() {
+        return terminatedAt;
     }
 
     public String getUser() {
