@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.master.scheduler;
 
-
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -25,13 +24,16 @@ import io.mantisrx.server.master.SchedulingService;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
-import java.util.HashMap;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
+@Slf4j
 public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final ActorSystem actorSystem;
     private final ResourceClusters resourceClusters;
@@ -40,29 +42,31 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final SchedulingService mesosSchedulingService;
     private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
-    private final Map<ClusterID, ActorRef> actorRefMap = new HashMap<>();
+    private final Map<ClusterID, ActorRef> actorRefMap = new ConcurrentHashMap<>();
 
     @Override
     public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
         Optional<ClusterID> clusterIDOptional = Optional.ofNullable(clusterID);
         if (clusterIDOptional.isPresent()) {
+            if (Strings.isNullOrEmpty(clusterIDOptional.get().getResourceID())) {
+                log.error("Received empty resource id: {}", clusterIDOptional.get());
+                throw new RuntimeException("Empty resourceID in clusterID for MantisScheduler");
+            }
+
             ActorRef resourceClusterAwareSchedulerActor =
-                actorRefMap.compute(clusterIDOptional.get(), (dontCare, oldRef) -> {
-                    if (oldRef != null) {
-                        return oldRef;
-                    } else {
-                        return actorSystem.actorOf(
-                            ResourceClusterAwareSchedulerActor.props(
-                                masterConfiguration.getSchedulerMaxRetries(),
-                                masterConfiguration.getSchedulerMaxRetries(),
-                                masterConfiguration.getSchedulerIntervalBetweenRetries(),
-                                resourceClusters.getClusterFor(clusterIDOptional.get()),
-                                executeStageRequestFactory,
-                                jobMessageRouter,
-                                metricsRegistry),
-                            "scheduler-for-" + clusterIDOptional.get().getResourceID());
-                    }
-                });
+                actorRefMap.computeIfAbsent(
+                    clusterID,
+                    (cid) -> actorSystem.actorOf(
+                        ResourceClusterAwareSchedulerActor.props(
+                            masterConfiguration.getSchedulerMaxRetries(),
+                            masterConfiguration.getSchedulerMaxRetries(),
+                            masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                            resourceClusters.getClusterFor(cid),
+                            executeStageRequestFactory,
+                            jobMessageRouter,
+                            metricsRegistry),
+                        "scheduler-for-" + cid.getResourceID()));
+            log.info("Created scheduler actor for cluster: {}", clusterIDOptional.get().getResourceID());
             return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);
         } else {
             return mesosSchedulingService;
