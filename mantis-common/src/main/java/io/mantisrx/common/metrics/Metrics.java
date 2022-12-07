@@ -208,7 +208,7 @@ public class Metrics {
 
         public Builder id(final MetricGroupId metricGroup) {
             this.metricGroup = new MetricGroupId(
-                metricGroup.id(),
+                metricGroup.name(),
                 ImmutableList.<Tag>builder().addAll(metricGroup.tags()).addAll(CommonTags).build());
             return this;
         }

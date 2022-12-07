@@ -40,6 +40,7 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import io.mantisrx.common.Label;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -68,6 +69,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -178,6 +180,8 @@ public class JobClusterRouteTest {
         testJobClusterGetAllJobIds();
         testJobClusterDisable2();
         testJobClusterDelete();
+        testJobClusterCreateOnRC();
+        testJobClusterRCGetDetail();
     }
 
     private void testJobClusterCreate() throws InterruptedException {
@@ -193,6 +197,24 @@ public class JobClusterRouteTest {
                 String responseMessage = getResponseMessage(r, t);
                 logger.info("got response {}", responseMessage);
                 assertEquals("sine-function created", responseMessage);
+                latch.countDown();
+            });
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
+
+    private void testJobClusterCreateOnRC() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
+            HttpRequest.POST(namedJobAPIEndpoint("create"))
+                .withMethod(HttpMethods.POST)
+                .withEntity(ContentTypes.create(MediaTypes.APPLICATION_X_WWW_FORM_URLENCODED), JobClusterPayloads.JOB_CLUSTER_CREATE_RC));
+
+        responseFuture
+            .thenCompose(r -> processRespFut(r, 200))
+            .whenComplete((r, t) -> {
+                String responseMessage = getResponseMessage(r, t);
+                logger.info("got response {}", responseMessage);
+                assertEquals("sine-function-rc created", responseMessage);
                 latch.countDown();
             });
         assertTrue(latch.await(3, TimeUnit.SECONDS));
@@ -390,6 +412,34 @@ public class JobClusterRouteTest {
                 latch.countDown();
             });
         assertTrue(latch.await(2, TimeUnit.SECONDS));
+    }
+
+    private void testJobClusterRCGetDetail() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
+            HttpRequest.GET(namedJobAPIEndpoint("list/sine-function-rc")));
+        responseFuture
+            .thenCompose(r -> processRespFut(r, 200))
+            .whenComplete((msg, t) -> {
+                String responseMessage = getResponseMessage(msg, t);
+                logger.info("got response {}", responseMessage);
+                try {
+                    List<MantisJobClusterMetadataView> jobClusters = Jackson.fromJSON(responseMessage, new TypeReference<List<MantisJobClusterMetadataView>>() {});
+                    assertEquals(1, jobClusters.size());
+                    MantisJobClusterMetadataView jc = jobClusters.get(0);
+                    assertEquals("sine-function-rc", jc.getName());
+                    assertEquals(6, jc.getLabels().size());
+                    List<Label> rcLabels = jc.getLabels().stream()
+                        .filter(l -> l.getName().equals("_mantis.resourceCluster") && l.getValue().equals(
+                            "mantisagent")).collect(Collectors.toList());
+                    assertEquals(1, rcLabels.size());
+                } catch (Exception e) {
+                    logger.error("failed to deser json {}", responseMessage, e);
+                    fail("failed to deser json "+responseMessage);
+                }
+                latch.countDown();
+            });
+        assertTrue(latch.await(4, TimeUnit.SECONDS));
     }
 
     private void testJobClusterGetJobIds() throws InterruptedException {
