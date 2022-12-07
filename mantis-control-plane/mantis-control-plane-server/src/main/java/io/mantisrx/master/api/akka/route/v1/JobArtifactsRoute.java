@@ -136,7 +136,7 @@ public class JobArtifactsRoute extends BaseRoute {
     private Route listJobArtifactsByNameRoute() {
         logger.trace("GET /api/v1/jobArtifacts/names called");
         return parameterMap(param -> completeAsync(
-            jobArtifactRouteHandler.listArtifactsByName(new JobArtifactProto.ListJobArtifactsByNameRequest(param.getOrDefault("prefix", ""))),
+            jobArtifactRouteHandler.listArtifactsByName(new JobArtifactProto.ListJobArtifactsByNameRequest(param.getOrDefault("prefix", ""), param.getOrDefault("contains", ""))),
             resp -> completeOK(
                 resp.getNames(),
                 Jackson.marshaller(JAVA_TIME_COMPATIBLE_MAPPER)),

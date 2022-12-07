@@ -52,9 +52,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -679,9 +681,18 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
-    public List<String> listJobArtifactsByName(String prefix) throws IOException {
-        Map<String, String> items = kvStore.getAllWithPrefix(JOB_ARTIFACTS_NS, getJobArtifactsByNamePartitionKey(), prefix);
-        return new ArrayList<>(items.keySet());
+    public List<String> listJobArtifactsByName(String prefix, String contains) throws IOException {
+        Set<String> artifactNames;
+        if (prefix.isEmpty()) {
+            artifactNames = kvStore.getAll(JOB_ARTIFACTS_NS, getJobArtifactsByNamePartitionKey()).keySet();
+        } else {
+            artifactNames = kvStore.getAllWithPrefix(JOB_ARTIFACTS_NS, getJobArtifactsByNamePartitionKey(), prefix).keySet();
+        }
+
+        if (!contains.isEmpty()) {
+            return artifactNames.stream().filter(artifact -> artifact.toLowerCase().contains(contains.toLowerCase())).distinct().collect(Collectors.toList());
+        }
+        return new ArrayList<>(artifactNames);
     }
 
     private void addNewJobArtifact(String partitionKey, String secondaryKey, JobArtifact jobArtifact) {

@@ -165,7 +165,7 @@ public interface IMantisPersistenceProvider {
 
     List<JobArtifact> listJobArtifacts(String name, String version) throws IOException;
 
-    List<String> listJobArtifactsByName(String prefix) throws IOException;
+    List<String> listJobArtifactsByName(String prefix, String contains) throws IOException;
 
     void addNewJobArtifact(JobArtifact jobArtifact) throws IOException;
 }
