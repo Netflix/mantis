@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.events;
 
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,5 +30,10 @@ public class WorkerEventSubscriberLoggingImpl implements WorkerEventSubscriber {
     @Override
     public void process(LifecycleEventsProto.JobStatusEvent statusEvent) {
         logger.info("Received status event {}", statusEvent);
+    }
+
+    @Override
+    public void process(WorkerStatusEvent workerStatusEvent) {
+        logger.debug("Received worker status event {}", workerStatusEvent);
     }
 }

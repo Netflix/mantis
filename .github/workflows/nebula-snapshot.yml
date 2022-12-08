@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ approve ] # Require the first step to finish
     environment:
-        name: Integrate Pull Request # Our protected environment variable
+      name: Integrate Pull Request # Our protected environment variable
     steps:
       - name: Checkout PR
         uses: actions/checkout@v3
