@@ -450,7 +450,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     public void archiveWorker(IMantisWorkerMetadata mwmd) throws IOException {
         MantisWorkerMetadataWritable worker = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(mwmd);
         String pkey = makeBucketizedPartitionKey(worker.getJobId(), worker.getWorkerNumber());
-        String skey = makeBucketizedSecondaryKey(worker.getStageNum(), worker.getWorkerIndex(), worker.getStageNum());
+        String skey = makeBucketizedSecondaryKey(worker.getStageNum(), worker.getWorkerIndex(), worker.getWorkerNumber());
         kvStore.delete(WORKERS_NS, pkey, skey);
         kvStore.upsert(ARCHIVED_WORKERS_NS, pkey, skey, mapper.writeValueAsString(worker), getArchiveDataTtlInMs());
     }

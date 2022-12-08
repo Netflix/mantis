@@ -63,6 +63,7 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -77,7 +78,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JobClusterRouteTest {
-    private final static Logger logger = LoggerFactory.getLogger(JobClusterRouteTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(JobClusterRouteTest.class);
+    private static final Duration latchTimeout = Duration.ofSeconds(10);
     private final ActorMaterializer materializer = ActorMaterializer.create(system);
     private final Http http = Http.get(system);
     private static Thread t;
@@ -253,7 +255,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function disabled", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterEnable() throws InterruptedException {
@@ -271,7 +273,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function enabled", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterUpdateArtifact() throws InterruptedException {
@@ -287,7 +289,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function artifact updated", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterUpdateSLA() throws InterruptedException {
@@ -303,7 +305,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function SLA updated", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterUpdateLabels() throws InterruptedException {
@@ -319,7 +321,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function labels updated", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterUpdateMigrateStrategy() throws InterruptedException {
@@ -335,7 +337,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function worker migration config updated", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterQuickSubmit() throws InterruptedException {
@@ -351,7 +353,7 @@ public class JobClusterRouteTest {
                 assertTrue(responseMessage.contains("sine-function-1"));
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClustersList() throws InterruptedException {
@@ -477,7 +479,7 @@ public class JobClusterRouteTest {
                 assertEquals("Specify the Job cluster name '/api/namedjob/listJobIds/<JobClusterName>' to list the job Ids", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterDisable2() throws InterruptedException {
@@ -496,7 +498,7 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function disabled", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 
     private void testJobClusterDelete() throws InterruptedException {
@@ -512,6 +514,6 @@ public class JobClusterRouteTest {
                 assertEquals("sine-function deleted", responseMessage);
                 latch.countDown();
             });
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(latchTimeout.getSeconds(), TimeUnit.SECONDS));
     }
 }
