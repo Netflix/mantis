@@ -59,10 +59,12 @@ public class JobArtifactProto {
     @Value
     public static class ListJobArtifactsByNameRequest extends BaseRequest {
         String prefix;
+        String contains;
 
-        public ListJobArtifactsByNameRequest(String prefix) {
+        public ListJobArtifactsByNameRequest(String prefix, String contains) {
             super();
             this.prefix = prefix;
+            this.contains = contains;
         }
     }
 

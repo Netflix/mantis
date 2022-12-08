@@ -54,7 +54,7 @@ public class JobArtifactRouteHandlerImpl implements JobArtifactRouteHandler {
     public CompletionStage<JobArtifactProto.ListJobArtifactsByNameResponse> listArtifactsByName(JobArtifactProto.ListJobArtifactsByNameRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                final List<String> artifactNames = mantisStorageProvider.listJobArtifactsByName(request.getPrefix());
+                final List<String> artifactNames = mantisStorageProvider.listJobArtifactsByName(request.getPrefix(), request.getContains());
                 return new JobArtifactProto.ListJobArtifactsByNameResponse(request.requestId, SUCCESS, "", artifactNames);
             } catch (IOException e) {
                 log.warn("Error while searching job artifact names. Traceback: {}", e.getMessage(), e);
