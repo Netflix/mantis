@@ -19,9 +19,10 @@ apply plugin: 'mantis'
 
 ext {
     hadoopVersion = '2.7.3'
-    icebergVersion = '0.9.+'
     junitVersion = '5.4.+'
     mockitoVersion = '2.18.+'
+    icebergVersion = '0.14.+'
+    avroVersion = '1.10.2'
     parquetVersion = '1.12.0'
 }
 
@@ -48,6 +49,8 @@ dependencies {
     shadow "org.apache.iceberg:iceberg-core:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
+    shadow "org.apache.avro:avro:$avroVersion"
+    shadow "org.apache.parquet:parquet-hadoop:${parquetVersion}"
 
     implementation "org.slf4j:slf4j-api:$slf4jVersion"
     // We only need this for local mains(). Users bring their own implementation.
