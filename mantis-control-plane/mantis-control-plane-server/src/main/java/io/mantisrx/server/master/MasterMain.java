@@ -142,6 +142,9 @@ public class MasterMain implements Service {
             PublishSubject<String> vmLeaseRescindedSubject = PublishSubject.create();
 
             final ActorSystem system = ActorSystem.create("MantisMaster");
+            // log the configuration of the actor system
+            system.logConfiguration();
+
             // log dead letter messages
             final ActorRef actor = system.actorOf(Props.create(DeadLetterActor.class), "MantisDeadLetter");
             system.eventStream().subscribe(actor, DeadLetter.class);
