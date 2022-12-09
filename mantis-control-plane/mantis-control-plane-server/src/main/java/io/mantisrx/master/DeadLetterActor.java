@@ -18,27 +18,26 @@ package io.mantisrx.master;
 
 import akka.actor.AbstractActor;
 import akka.actor.DeadLetter;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 public class DeadLetterActor extends AbstractActor {
 
-    private final Logger log = LoggerFactory.getLogger(DeadLetterActor.class);
-
-    private final Metrics metrics;
     private final Counter numDeadLetterMsgs;
+    private final JsonSerializer serializer;
 
     public DeadLetterActor() {
         Metrics m = new Metrics.Builder()
                 .id("DeadLetterActor")
                 .addCounter("numDeadLetterMsgs")
                 .build();
-        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
+        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
         this.numDeadLetterMsgs = metrics.getCounter("numDeadLetterMsgs");
+        this.serializer = new JsonSerializer();
     }
 
     @Override
@@ -46,10 +45,19 @@ public class DeadLetterActor extends AbstractActor {
         return receiveBuilder()
                 .match(DeadLetter.class, msg -> {
                     this.numDeadLetterMsgs.increment();
-                    String m = msg.message().toString();
-                    log.info("Dead Letter from {} to {} msg:{}", msg.sender(), msg.recipient(),
+                    String m = toString(msg.message());
+                    log.error("Dead Letter from {} to {} msg:{}", msg.sender(), msg.recipient(),
                             m.substring(0, Math.min(250, m.length() - 1)));
                 })
                 .build();
+    }
+
+    private String toString(Object o) {
+        try {
+            return serializer.toJson(o);
+        } catch (Exception e) {
+            log.error("Failed to serialize {}", o, e);
+            return o.toString();
+        }
     }
 }
