@@ -104,13 +104,13 @@
     },
     "baseline-exact-dependencies-test": {
         "com.netflix.spectator:spectator-api": {
-            "locked": "1.3.9"
+            "locked": "1.3.10"
         },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.3"
         },
         "org.apache.iceberg:iceberg-data": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.junit.jupiter:junit-jupiter-api": {
             "locked": "5.4.2"
@@ -200,20 +200,26 @@
             ],
             "locked": "1.3.8"
         },
+        "org.apache.avro:avro": {
+            "locked": "1.10.2"
+        },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.3"
         },
         "org.apache.iceberg:iceberg-api": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-core": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-data": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-parquet": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
+        },
+        "org.apache.parquet:parquet-hadoop": {
+            "locked": "1.12.0"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -229,7 +235,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.25"
+            "locked": "1.7.30"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -382,20 +388,26 @@
         }
     },
     "shadow": {
+        "org.apache.avro:avro": {
+            "locked": "1.10.2"
+        },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.3"
         },
         "org.apache.iceberg:iceberg-api": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-core": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-data": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-parquet": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
+        },
+        "org.apache.parquet:parquet-hadoop": {
+            "locked": "1.12.0"
         },
         "org.slf4j:slf4j-log4j12": {
             "locked": "1.7.10"
@@ -408,7 +420,7 @@
     },
     "testCompileClasspath": {
         "com.netflix.spectator:spectator-api": {
-            "locked": "1.3.9"
+            "locked": "1.3.10"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -481,20 +493,26 @@
             ],
             "locked": "1.3.8"
         },
+        "org.apache.avro:avro": {
+            "locked": "1.10.2"
+        },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.3"
         },
         "org.apache.iceberg:iceberg-api": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-core": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-data": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-parquet": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
+        },
+        "org.apache.parquet:parquet-hadoop": {
+            "locked": "1.12.0"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -522,7 +540,7 @@
                 "io.mantisrx:mantis-common",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.25"
+            "locked": "1.7.30"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -545,7 +563,7 @@
             "locked": "0.20.6"
         },
         "com.netflix.spectator:spectator-api": {
-            "locked": "1.3.9"
+            "locked": "1.3.10"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -644,20 +662,26 @@
             ],
             "locked": "1.0"
         },
+        "org.apache.avro:avro": {
+            "locked": "1.10.2"
+        },
         "org.apache.hadoop:hadoop-common": {
             "locked": "2.7.3"
         },
         "org.apache.iceberg:iceberg-api": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-core": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-data": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
         },
         "org.apache.iceberg:iceberg-parquet": {
-            "locked": "0.9.1"
+            "locked": "0.14.1"
+        },
+        "org.apache.parquet:parquet-hadoop": {
+            "locked": "1.12.0"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
