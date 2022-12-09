@@ -361,7 +361,7 @@ class IcebergWriterStageTest {
 
     private static class FakeIcebergWriter implements IcebergWriter {
 
-        private static final DataFile DATA_FILE = new DataFiles.Builder()
+        private static final DataFile DATA_FILE = new DataFiles.Builder(PartitionSpec.unpartitioned())
                 .withPath("/datafile.parquet")
                 .withFileSizeInBytes(1L)
                 .withRecordCount(1L)
