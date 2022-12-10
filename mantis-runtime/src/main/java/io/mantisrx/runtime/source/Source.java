@@ -19,6 +19,7 @@ package io.mantisrx.runtime.source;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import rx.Observable;
@@ -32,6 +33,9 @@ public interface Source<T> extends Func2<Context, Index, Observable<Observable<T
     }
 
     default void init(Context context, Index index) {
+    }
 
+    @Override
+    default void close() throws IOException {
     }
 }
