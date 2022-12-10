@@ -153,7 +153,7 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
                     break;
             }
         } catch (Exception e) {
-            log.error("Failed to process worker status event {}", workerStatusEvent);
+            log.error("Failed to process worker status event {}", workerStatusEvent, e);
         }
     }
 
