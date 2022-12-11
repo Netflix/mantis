@@ -20,6 +20,7 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import rx.Observable;
@@ -27,8 +28,14 @@ import rx.functions.Action3;
 
 public interface Sink<T> extends Action3<Context, PortRequest, Observable<T>>, Closeable {
 
-    default void init(Context context) {}
+    default void init(Context context) {
+    }
+
     default List<ParameterDefinition<?>> getParameters() {
         return Collections.emptyList();
+    }
+
+    @Override
+    default void close() throws IOException {
     }
 }
