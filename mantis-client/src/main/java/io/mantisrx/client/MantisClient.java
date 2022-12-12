@@ -102,7 +102,16 @@ public class MantisClient {
             HighAvailabilityServicesUtil.createHAServices(
                 Configurations.frmProperties(properties, CoreConfiguration.class));
         clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
-        this.disablePingFiltering = Boolean.valueOf(properties.getProperty(ENABLE_PINGS_KEY));
+        this.disablePingFiltering = Boolean.parseBoolean(properties.getProperty(ENABLE_PINGS_KEY));
+    }
+
+    public MantisClient(MasterClientWrapper clientWrapper, boolean disablePingFiltering) {
+        this.disablePingFiltering = disablePingFiltering;
+        this.clientWrapper = clientWrapper;
+    }
+
+    public MantisClient(MasterClientWrapper clientWrapper) {
+        this(clientWrapper, false);
     }
 
     public JobSinkLocator getSinkLocator() {
