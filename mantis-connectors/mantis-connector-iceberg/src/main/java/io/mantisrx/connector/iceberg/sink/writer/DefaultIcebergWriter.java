@@ -16,10 +16,14 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
+import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION;
+
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.runtime.WorkerInfo;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DataFile;
@@ -35,6 +39,7 @@ import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +56,8 @@ import org.slf4j.LoggerFactory;
 public class DefaultIcebergWriter implements IcebergWriter {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultIcebergWriter.class);
+
+    private final Map<String, String> tableProperties = new HashMap<>();
 
     private final WriterConfig config;
     private final WorkerInfo workerInfo;
@@ -80,6 +87,12 @@ public class DefaultIcebergWriter implements IcebergWriter {
         this.format = FileFormat.valueOf(config.getWriterFileFormat());
 
         this.locationProvider = locationProvider;
+
+        this.tableProperties.putAll(table.properties());
+        if (!this.tableProperties.containsKey(PARQUET_COMPRESSION)) {
+            // ZSTD is the recommended default compression
+            tableProperties.put(PARQUET_COMPRESSION, CompressionCodecName.ZSTD.name());
+        }
     }
 
     /**
@@ -115,7 +128,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
                 appender = Parquet.write(file)
                         .schema(table.schema())
                         .createWriterFunc(GenericParquetWriter::buildWriter)
-                        .setAll(table.properties())
+                        .setAll(tableProperties)
                         .overwrite()
                         .build();
                 break;
@@ -204,7 +217,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
                                 workerInfo.getStageNumber(),
                                 workerInfo.getWorkerIndex(),
                                 workerInfo.getWorkerNumber(),
-                                UUID.randomUUID().toString()))));
+                                UUID.randomUUID()))));
     }
 
     private String generateDataPath(String partitionPath) {
@@ -212,7 +225,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
     }
 
     private String generatePartitionPath(String filename) {
-        if (spec.fields().isEmpty()) {
+        if (spec.isUnpartitioned()) {
             return filename;
         }
 
