@@ -120,7 +120,11 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
             final WorkerId workerId = workerStatusEvent.getWorkerId();
             Preconditions.checkNotNull(jobWorkers.get(jobId));
             final IMantisWorkerMetadata metadata = jobWorkers.get(jobId).get(workerId);
-            Preconditions.checkNotNull(metadata);
+            if (metadata == null) {
+                log.warn("Unknown workerId: {} for metrics collector in job: {}", workerId, jobId);
+                return;
+            }
+
             final WorkerMetrics workerMetrics = getWorkerMetrics(
                 metadata.getCluster().orElse("unknown"));
 
