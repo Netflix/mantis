@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.core.functions;
+package io.mantisrx.runtime.core.sinks;
 
-public interface MantisFunction<IN, OUT> extends AutoCloseable {
+import io.mantisrx.runtime.sink.SelfDocumentingSink;
+import lombok.Getter;
 
-    MantisFunction EMPTY = new MantisFunction() {};
+public class ObservableSinkImpl<T> extends SinkFunction<T> {
+    @Getter
+    private SelfDocumentingSink<T> sink;
 
-    static <IN> MantisFunction<IN, IN> empty() {
-        return (MantisFunction<IN, IN>) EMPTY;
-    }
-
-    default void init() {
-    }
-
-    @Override
-    default void close() throws Exception {
+    public ObservableSinkImpl(SelfDocumentingSink<T> sink) {
+        this.sink = sink;
     }
 }

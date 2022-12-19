@@ -16,18 +16,15 @@
 
 package io.mantisrx.runtime.core.functions;
 
-public interface MantisFunction<IN, OUT> extends AutoCloseable {
+import io.mantisrx.runtime.core.MantisStream;
+import lombok.Getter;
 
-    MantisFunction EMPTY = new MantisFunction() {};
+public class WindowFunction<IN> implements MantisFunction<IN, IN> {
 
-    static <IN> MantisFunction<IN, IN> empty() {
-        return (MantisFunction<IN, IN>) EMPTY;
-    }
+    @Getter
+    private final MantisStream.WindowSpec spec;
 
-    default void init() {
-    }
-
-    @Override
-    default void close() throws Exception {
+    public WindowFunction(MantisStream.WindowSpec spec) {
+        this.spec = spec;
     }
 }

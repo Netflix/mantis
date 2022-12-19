@@ -18,17 +18,19 @@ package io.mantisrx.runtime.core.sources;
 
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.source.Index;
-import io.mantisrx.runtime.source.SelfDocumentingSource;
+import io.mantisrx.runtime.source.Source;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.Getter;
 import rx.Subscription;
 
 public class ObservableSourceImpl<R> implements SourceFunction<R> {
-    private final SelfDocumentingSource<R> source;
+    @Getter
+    private final Source<R> source;
     private final AtomicReference<R> elemContainer = new AtomicReference<>();
     private Subscription subscription;
 
-    public ObservableSourceImpl(SelfDocumentingSource<R> source) {
+    public ObservableSourceImpl(Source<R> source) {
         this.source = source;
     }
 

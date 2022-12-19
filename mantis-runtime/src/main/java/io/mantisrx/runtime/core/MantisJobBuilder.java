@@ -16,160 +16,119 @@
 
 package io.mantisrx.runtime.core;
 
-import io.mantisrx.runtime.*;
-import io.mantisrx.runtime.computation.*;
+import io.mantisrx.common.codec.Codec;
+import io.mantisrx.runtime.Config;
+import io.mantisrx.runtime.GroupToGroup;
+import io.mantisrx.runtime.GroupToScalar;
+import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.KeyToKey;
+import io.mantisrx.runtime.KeyToScalar;
+import io.mantisrx.runtime.KeyedStages;
+import io.mantisrx.runtime.MantisJob;
+import io.mantisrx.runtime.ScalarStages;
+import io.mantisrx.runtime.ScalarToGroup;
+import io.mantisrx.runtime.ScalarToKey;
+import io.mantisrx.runtime.ScalarToScalar;
+import io.mantisrx.runtime.SourceHolder;
+import io.mantisrx.runtime.Stages;
+import io.mantisrx.runtime.computation.Computation;
+import io.mantisrx.runtime.computation.GroupComputation;
+import io.mantisrx.runtime.computation.GroupToScalarComputation;
+import io.mantisrx.runtime.computation.KeyComputation;
+import io.mantisrx.runtime.computation.ScalarComputation;
+import io.mantisrx.runtime.computation.ToGroupComputation;
+import io.mantisrx.runtime.computation.ToKeyComputation;
+import io.mantisrx.runtime.computation.ToScalarComputation;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.sink.SelfDocumentingSink;
 import io.mantisrx.runtime.sink.Sink;
-import io.mantisrx.runtime.sink.Sinks;
 import io.mantisrx.runtime.source.Source;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import rx.Observable;
 
 @Slf4j
 public class MantisJobBuilder {
-  private SourceHolder sourceHolder;
-  private Stages currentStage;
-  private Config jobConfig;
-  private CompositeScalarFunction compositeScalarFn;
+  private SourceHolder<?> sourceHolder;
+  private Stages<?> currentStage;
+  private Config<?> jobConfig;
 
   MantisJobBuilder() {}
 
-  Job buildJob() {
-    ScalarStages<Object> stage = ((ScalarStages) currentStage);
-      Config<Object> jobConfig = stage.sink(Sinks.eagerSubscribe(new SelfDocumentingSink<Object>() {
-          @Override
-          public Metadata metadata() {
-              return new Metadata.Builder().description("eager print sink").build();
-          }
-
-          @Override
-          public void close() {
-          }
-
-          @Override
-          public void call(Context context, PortRequest portRequest, Observable<Object> objectObservable) {
-              objectObservable.subscribe(o -> log.info("sink output {}", o));
-          }
-      }));
-    return jobConfig.create();
+  Job<?> buildJob() {
+      if (jobConfig != null) {
+          return jobConfig.create();
+      }
+      throw new IllegalStateException("Need to configure a sink for the stream");
   }
-  public MantisJobBuilder addStage(Source source) {
+
+  public MantisJobBuilder addStage(Source<?> source) {
     this.sourceHolder = MantisJob.source(source);
     return this;
   }
 
-  public MantisJobBuilder addStage(Computation compFn, Object config) {
+  public MantisJobBuilder addStage(Computation compFn, Codec<?> codec) {
+      if (compFn == null) {
+          return null;
+      }
+      return this.addStage(compFn, codec, null);
+  }
+
+  public MantisJobBuilder addStage(Computation compFn, Codec<?> codec, Codec<?> keyCodec) {
     if (this.sourceHolder == null) {
       throw new IllegalArgumentException(
               "SourceHolder not currently set. Uninitialized MantisJob configuration");
     }
-    if (config instanceof ScalarToScalar.Config) {
-      if (compositeScalarFn == null) {
-        compositeScalarFn = new CompositeScalarFunction<>();
-      }
-      compositeScalarFn.addScalarFn((ScalarComputation) compFn, ((ScalarToScalar.Config<?, ?>) config));
+    if (currentStage == null) {
+        this.currentStage = addInitStage(compFn, codec, keyCodec);
     } else {
-      if (compositeScalarFn != null && compositeScalarFn.size() > 0) {
-        if (currentStage == null) {
-          this.currentStage = addInitStage(compositeScalarFn, compositeScalarFn.getConfig());
-        } else {
-          this.currentStage = addMoreStages(compositeScalarFn, compositeScalarFn.getConfig());
-        }
-        this.compositeScalarFn = null;
+        this.currentStage = addMoreStages(compFn, codec, keyCodec);
+    }
+    return this;
+  }
+
+  public MantisJobBuilder addStage(Sink<?> sink) {
+    ScalarStages scalarStages = (ScalarStages) this.currentStage;
+    this.jobConfig = scalarStages.sink(sink);
+    return this;
+  }
+
+  public MantisJobBuilder addStage(SelfDocumentingSink<?> sink) {
+    ScalarStages scalarStages = (ScalarStages) this.currentStage;
+    this.jobConfig = scalarStages.sink(sink);
+    return this;
+  }
+
+  private Stages<?> addInitStage(Computation compFn, Codec<?> codec, Codec<?> keyCodec) {
+      if (compFn instanceof ScalarComputation) {
+          return this.sourceHolder.stage((ScalarComputation) compFn, new ScalarToScalar.Config().codec(codec));
+      } else if (compFn instanceof ToGroupComputation) {
+          return this.sourceHolder.stage((ToGroupComputation) compFn, new ScalarToGroup.Config().codec(codec).keyCodec(keyCodec));
       }
-      this.currentStage = addMoreStages(compFn, config);
-    }
-    return this;
+      return this.sourceHolder.stage((ToKeyComputation) compFn, new ScalarToKey.Config().codec(codec).keyCodec(keyCodec));
   }
 
-  public MantisJobBuilder addStage(Sink sink) {
-    ScalarStages scalarStages = (ScalarStages) this.currentStage;
-    this.jobConfig = scalarStages.sink(sink);
-    return this;
-  }
-
-  public MantisJobBuilder addStage(SelfDocumentingSink sink) {
-    ScalarStages scalarStages = (ScalarStages) this.currentStage;
-    this.jobConfig = scalarStages.sink(sink);
-    return this;
-  }
-
-  private Stages addInitStage(Computation compFn, Object config) {
-    if (config instanceof ScalarToScalar.Config) {
-      return this.sourceHolder.stage((ScalarComputation) compFn, (ScalarToScalar.Config) config);
-    } else if (config instanceof ScalarToKey.Config) {
-      return this.sourceHolder.stage((ToKeyComputation) compFn, (ScalarToKey.Config) config);
-    }
-    return this.sourceHolder.stage((ToGroupComputation) compFn, (ScalarToGroup.Config) config);
-  }
-
-  private Stages addMoreStages(Computation compFn, Object config) {
+  private Stages<?> addMoreStages(Computation compFn, Codec<?> codec, Codec<?> keyCodec) {
     if (this.currentStage instanceof ScalarStages) {
       ScalarStages scalarStages = (ScalarStages) this.currentStage;
-      if (config instanceof ScalarToScalar.Config) {
-        ScalarComputation scalarFn = (ScalarComputation) compFn;
-        return scalarStages.stage(scalarFn, (ScalarToScalar.Config) config);
-      } else if (config instanceof ScalarToKey.Config) {
-        return scalarStages.stage((ToKeyComputation) compFn, (ScalarToKey.Config) config);
+      if (compFn instanceof ScalarComputation) {
+        return scalarStages.stage((ScalarComputation) compFn, new ScalarToScalar.Config().codec(codec));
+      } else if (compFn instanceof ToKeyComputation) {
+        return scalarStages.stage((ToKeyComputation) compFn, new ScalarToKey.Config().codec(codec).keyCodec(keyCodec));
       }
-      return scalarStages.stage((ToGroupComputation) compFn, (ScalarToGroup.Config) config);
+      return scalarStages.stage((ToGroupComputation) compFn, new ScalarToGroup.Config().codec(codec).keyCodec(keyCodec));
     }
     KeyedStages keyedStages = (KeyedStages) this.currentStage;
-    if (config instanceof KeyToScalar.Config) {
-      return keyedStages.stage((ToScalarComputation) compFn, (KeyToScalar.Config) config);
-    } else if (config instanceof GroupToScalar.Config) {
-      return keyedStages.stage((GroupToScalarComputation) compFn, (GroupToScalar.Config) config);
-    } else if (config instanceof KeyToKey.Config) {
-      return keyedStages.stage((KeyComputation) compFn, (KeyToKey.Config) config);
+    if (compFn instanceof ToScalarComputation) {
+      return keyedStages.stage((ToScalarComputation) compFn, new KeyToScalar.Config().codec(codec));
+    } else if (compFn instanceof GroupToScalarComputation) {
+      return keyedStages.stage((GroupToScalarComputation) compFn, new GroupToScalar.Config().codec(codec));
+    } else if (compFn instanceof KeyComputation) {
+      return keyedStages.stage((KeyComputation) compFn, new KeyToKey.Config().codec(codec).keyCodec(keyCodec));
     }
-    return keyedStages.stage((GroupComputation) compFn, (GroupToGroup.Config) config);
+    return keyedStages.stage((GroupComputation) compFn, new GroupToGroup.Config().codec(codec).keyCodec(keyCodec));
   }
 
-  private static class CompositeScalarFunction<T> extends BeamScalarComputation<T, T> {
-    public final List<ScalarComputation<T, T>> scalarFns = new ArrayList<>();
-    public ScalarToScalar.Config<T,T> config;
-
-    public CompositeScalarFunction() {
-      super(null);
+    public MantisJobBuilder addParameters(Iterable<ParameterDefinition<?>> params) {
+        params.forEach(p -> this.jobConfig = this.jobConfig.parameterDefinition(p));
+        return this;
     }
-
-    public void addScalarFn(ScalarComputation<T, T> fn, ScalarToScalar.Config<T, T> config) {
-      this.scalarFns.add(fn);
-      this.config = config;
-    }
-
-    @Override
-    public String stringifyTransform() {
-      return scalarFns.stream()
-              .map(fn -> (fn instanceof BeamScalarComputation)
-               ? ((BeamScalarComputation<T, T>) fn).stringifyTransform() :
-                String.format("scalarfn.class.%s",fn.getClass().getName()))
-              .collect(Collectors.joining("\n"));
-    }
-
-    @Override
-    public void init(Context context) {
-      this.scalarFns.forEach(x -> x.init(context));
-    }
-
-    @Override
-    public Observable<T> call(Context context, Observable<T> tObservable) {
-      Observable<T> result = tObservable;
-      for (ScalarComputation<T,T> fn : this.scalarFns) {
-        result = fn.call(context, result);
-      }
-      return result;
-    }
-
-    public int size() {
-      return scalarFns.size();
-    }
-
-    public ScalarToScalar.Config<T,T> getConfig() {
-      return config.description(String.format("scalar stage for beam composite %s", stringifyTransform()));
-    }
-  }
 }

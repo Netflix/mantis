@@ -17,50 +17,63 @@
 package io.mantisrx.runtime.core;
 
 import io.mantisrx.common.MantisGroup;
+import io.mantisrx.common.codec.Codec;
+import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.MantisJob;
-import io.mantisrx.runtime.ScalarToGroup;
-import io.mantisrx.runtime.ScalarToScalar;
-import io.mantisrx.runtime.computation.CompositeScalarComputation;
-import io.mantisrx.runtime.computation.GroupToScalarComputation;
+import io.mantisrx.runtime.Job;
+import io.mantisrx.runtime.computation.Computation;
+import io.mantisrx.runtime.computation.ToGroupComputation;
 import io.mantisrx.runtime.core.functions.FilterFunction;
 import io.mantisrx.runtime.core.functions.FlatMapFunction;
+import io.mantisrx.runtime.core.functions.FunctionCombinator;
 import io.mantisrx.runtime.core.functions.KeyByFunction;
 import io.mantisrx.runtime.core.functions.MantisFunction;
 import io.mantisrx.runtime.core.functions.MapFunction;
 import io.mantisrx.runtime.core.functions.ReduceFunction;
+import io.mantisrx.runtime.core.functions.WindowFunction;
+import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
+import io.mantisrx.runtime.core.sinks.SinkFunction;
+import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.core.sources.SourceFunction;
-import java.time.Duration;
+import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
+import io.mantisrx.runtime.parameter.ParameterDefinition;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.shaded.guava30.com.google.common.graph.ImmutableValueGraph;
 import org.apache.flink.shaded.guava30.com.google.common.graph.MutableValueGraph;
 import org.apache.flink.shaded.guava30.com.google.common.graph.ValueGraphBuilder;
 import rx.Observable;
 
+@Slf4j
 public class MantisStreamImpl<T> implements MantisStream<T> {
 
     final OperandNode<T> currNode;
     final MantisGraph graph;
-    private MantisJob<?> mantisJob = new MantisJob<>();
-    private CompositeScalarComputation<T, ?> scalarComputations;
-    private ScalarToScalar<?, ?> stage;
-    private SourceFunction<T> source;
-
-    private <K> MantisStreamImpl(Object source, ScalarToGroup<T, K, T> stage, ScalarToGroup<T, K, T> stage1) {
-    }
+    final Iterable<ParameterDefinition<?>> params;
 
     public MantisStreamImpl(OperandNode<T> newNode, MantisGraph graph) {
-        this.currNode = newNode;
-        this.graph = graph;
+        this(newNode, graph, ImmutableList.of());
     }
 
-    public MantisStreamImpl(SourceFunction<T> source, ScalarToScalar<?, ?> stage, ScalarToScalar<?, ?> stage1) {
-
+    public MantisStreamImpl(OperandNode<T> node, MantisGraph graph, Iterable<ParameterDefinition<?>> params) {
+        this.currNode = node;
+        this.graph = graph;
+        this.params = params;
     }
 
     public static <T> MantisStream<T> init() {
-        OperandNode<T> node = new OperandNode<>(0);
+        OperandNode<T> node = new OperandNode<>(0, "init");
         return new MantisStreamImpl<>(node, new MantisGraph().addNode(node));
     }
 
@@ -69,15 +82,20 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
         return MantisStreamImpl.init();
     }
 
-    public MantisStream<T> source(SourceFunction<T> source) {
+    public <OUT> MantisStream<OUT> source(SourceFunction<OUT> source) {
         // Preconditions.checkState(currNode == null, "Supports only 1 source which must be the first call");
         return updateGraph(source);
 
     }
 
-    <OUT> MantisStream<OUT> updateGraph(MantisFunction<?, OUT> source) {
-        OperandNode<OUT> node = OperandNode.create(graph);
-        graph.putEdge(currNode, node, source);
+    @Override
+    public MantisStream<Void> sink(SinkFunction<T> sink) {
+        return updateGraph(sink);
+    }
+
+    <OUT> MantisStream<OUT> updateGraph(MantisFunction<?, OUT> mantisFn) {
+        OperandNode<OUT> node = OperandNode.create(graph, mantisFn.getClass().getName() + "OUT");
+        graph.putEdge(currNode, node, mantisFn);
         return new MantisStreamImpl<>(node, graph);
     }
 
@@ -94,30 +112,6 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
     @Override
     public <OUT> MantisStream<OUT> flatMap(FlatMapFunction<T, OUT> flatMapFn) {
         return updateGraph(flatMapFn);
-        /*return new MantisStreamImpl<>(node, graph);
-        getScalarComputations()
-            .add(new ScalarComputation<T, OUT>() {
-                @Override
-                public void init(Context context) {
-                    flatMapFn.init();
-                }
-
-                @Override
-                public Observable<OUT> call(Context context, Observable<T> tObservable) {
-                    final Collector<OUT> collector = new Collector<>();
-                    tObservable.doOnNext(x -> flatMapFn.apply(x, collector)).subscribe();
-                    return Observable.from(collector.iterable()).map(x -> x.orElse(null));
-                }
-            });
-        return (MantisStream<OUT>) this;
-         */
-    }
-
-    private CompositeScalarComputation<?, ?> getScalarComputations() {
-        if (scalarComputations == null) {
-            scalarComputations = new CompositeScalarComputation<>();
-        }
-        return scalarComputations;
     }
 
     @Override
@@ -128,54 +122,124 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
     private MantisStreamImpl<T> materializeInternal() {
         graph.putEdge(currNode, currNode, MantisFunction.empty());
         return new MantisStreamImpl<>(currNode, graph);
-        /*ScalarComputation<?, ?> scalars = getScalarComputations();
-        if (scalars != null) {
-            this.stage = new ScalarToScalar<>(scalarComputations, new ScalarToScalar.Config<>(), Codecs.javaSerializer());
-        }
-        return this;
-         */
     }
 
     private <K> KeyedMantisStreamImpl<K, T> keyByInternal(KeyByFunction<K, T> keyFn) {
-        OperandNode<T> node = OperandNode.create(graph);
+        OperandNode<T> node = OperandNode.create(graph, "keyByOut");
         graph.putEdge(currNode, node, keyFn);
-        return new KeyedMantisStreamImpl<K, T>(node, graph);
+        return new KeyedMantisStreamImpl<>(node, graph);
     }
 
     @Override
     public <K> KeyedMantisStream<K, T> keyBy(KeyByFunction<K, T> keyFn) {
         return this.materializeInternal()
             .keyByInternal(keyFn);
+    }
 
-        /*
-        MantisStream<T> stream = materialize();
+    @Override
+    public MantisStream<T> parameters(ParameterDefinition<?>... params) {
+        return new MantisStreamImpl<>(currNode, graph, Arrays.stream(params).collect(Collectors.toList()));
+    }
 
-        ToGroupComputation<T, K, T> groupFn = new ToGroupComputation<T, K, T>() {
+    @Override
+    public void execute() {
+        // traverse the graph and build MantisJob
+        // graph traversal using top-sort
+        // return an instance of mantis job (or break it into two functions)
+        ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graphDag = this.graph.immutable();
+        Iterable<OperandNode<?>> operandNodes = topSortTraversal(graphDag);
+        Job job = makeMantisJob(graphDag, operandNodes);
+        LocalJobExecutorNetworked.execute(job);
+    }
+
+    private Job makeMantisJob(ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graphDag, Iterable<OperandNode<?>> operandNodes) {
+        MantisJobBuilder jobBuilder = new MantisJobBuilder();
+        final AtomicReference<FunctionCombinator<?, ?>> composite = new AtomicReference<>(new FunctionCombinator<>(false));
+        for (OperandNode<?> n : operandNodes) {
+            Set<OperandNode<?>> nbrs = graphDag.successors(n);
+            if (nbrs.size() == 0) {
+                continue;
+            }
+            // remove self-loop
+            Optional<MantisFunction<?, ?>> selfEdge = graphDag.edgeValue(n, n);
+            Integer numSelfEdges = selfEdge.map(x -> 1).orElse(0);
+            selfEdge.ifPresent(mantisFn -> {
+                if (MantisFunction.empty().equals(mantisFn)) {
+                    jobBuilder.addStage(composite.get().makeStage(), n.getCodec(), n.getKeyCodec());
+                    composite.set(new FunctionCombinator<>(false));
+                } else if (mantisFn instanceof WindowFunction) {
+                    composite.set(composite.get().add(mantisFn));
+                }
+                // No other types of self-edges are possible
+            });
+            if (nbrs.size() - numSelfEdges > 1) {
+                log.warn("Found multi-output node {} with nbrs {}. Not supported yet!", n, nbrs);
+            }
+            for (OperandNode<?> nbr : nbrs) {
+                if (nbr == n) {
+                    continue;
+                }
+                graphDag.edgeValue(n, nbr).ifPresent(mantisFn -> {
+                    if (mantisFn instanceof SourceFunction) {
+                        if (mantisFn instanceof ObservableSourceImpl) {
+                            jobBuilder.addStage(((ObservableSourceImpl) mantisFn).getSource());
+                        }
+                    } else if (mantisFn instanceof KeyByFunction) {
+                        // ensure that the existing composite is empty here
+                        if (composite.get().size() > 0) {
+                            log.warn("Unempty composite found for KeyByFunction {}", composite.get());
+                        }
+                        jobBuilder.addStage(makeGroupComputation((KeyByFunction) mantisFn), n.getCodec(), n.getKeyCodec());
+                        composite.set(new FunctionCombinator<>(true));
+                    } else if (mantisFn instanceof SinkFunction) {
+                        // materialize all composite functions into a scalar stage
+                        // it can't be a keyed stage because we didn't encounter a reduce function!
+                        jobBuilder.addStage(composite.get().makeStage(), n.getCodec());
+                        if (mantisFn instanceof ObservableSinkImpl) {
+                            jobBuilder.addStage(((ObservableSinkImpl) mantisFn).getSink());
+                        }
+                    } else {
+                        composite.set(composite.get().add(mantisFn));
+                    }
+                });
+            }
+        }
+        jobBuilder.addParameters(params);
+        return jobBuilder.buildJob();
+    }
+
+    private <A, K> Computation makeGroupComputation(KeyByFunction<K, A> keyFn) {
+        return new ToGroupComputation<A, K, A>() {
             @Override
-            public void init(Context context) {
+            public void init(Context ctx) {
                 keyFn.init();
             }
 
             @Override
-            public Observable<MantisGroup<K, T>> call(Context ctx, Observable<T> rx) {
-                return rx.map(i -> new MantisGroup<>(keyFn.getKey(i), i));
+            public Observable<MantisGroup<K, A>> call(Context ctx, Observable<A> obs) {
+                return obs.map(e -> new MantisGroup<>(keyFn.getKey(e), e));
             }
         };
-        ScalarToGroup.Config<T, K, T> stogConfig = new ScalarToGroup.Config<T, K, T>()
-            .codec(Codecs.javaSerializer())
-            .keyCodec(Codecs.javaSerializer());
-        ScalarToGroup<T, K, T> stage = new ScalarToGroup<>(groupFn, stogConfig, Codecs.javaSerializer());
-        return new KeyedMantisStreamImpl<>(source, stream, stage);
-         */
     }
 
-    public void execute() {
-        // parse the graph
-        // and build MantisJob
-        // using a top-sort so that this part
-        // won't change
-        // return an instance of mantis job (or break it into two functions)
+    private Iterable<OperandNode<?>> topSortTraversal(ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graphDag) {
+        Set<OperandNode<?>> nodes = graphDag.nodes();
+        Map<OperandNode<?>, AtomicInteger> inDegreeMap = nodes.stream().collect(Collectors.toMap(x -> x, x -> new AtomicInteger(graphDag.inDegree(x) - (graphDag.hasEdgeConnecting(x, x) ? 1 : 0))));
+        List<OperandNode<?>> nodeOrder = new ArrayList<>();
+        final Set<OperandNode<?>> visited = new HashSet<>();
+        while (true) {
+            Set<OperandNode<?>> starts = inDegreeMap.keySet().stream()
+                .filter(x -> !visited.contains(x) && inDegreeMap.get(x).get() == 0)
+                .collect(Collectors.toSet());
 
+            starts.forEach(x -> graphDag.successors(x).forEach(nbr -> inDegreeMap.get(nbr).decrementAndGet()));
+            if (starts.isEmpty()) {
+                break;
+            }
+            visited.addAll(starts);
+            nodeOrder.addAll(starts);
+        }
+        return nodeOrder;
     }
 
     private static class KeyedMantisStreamImpl<K, T> implements KeyedMantisStream<K, T> {
@@ -187,9 +251,9 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
             this.graph = graph;
         }
 
-        <OUT> KeyedMantisStream<K, OUT> updateGraph(MantisFunction<?, OUT> source) {
-            OperandNode<OUT> node = OperandNode.create(graph);
-            graph.putEdge(currNode, node, source);
+        <OUT> KeyedMantisStream<K, OUT> updateGraph(MantisFunction<?, OUT> mantisFn) {
+            OperandNode<OUT> node = OperandNode.create(graph, mantisFn.getClass().getName() + "OUT");
+            graph.putEdge(currNode, node, mantisFn);
             return new KeyedMantisStreamImpl<>(node, graph);
         }
 
@@ -210,112 +274,42 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
         }
 
         public KeyedMantisStream<K, T> window(WindowSpec spec) {
-            this.graph.putEdge(currNode, currNode, new MantisFunction<Void, Void>() {
-                public final WindowSpec windowSpec = spec;
-            });
+            this.graph.putEdge(currNode, currNode, new WindowFunction<>(spec));
             return new KeyedMantisStreamImpl<>(currNode, graph);
         }
 
         @Override
-        public <OUT> MantisStream<OUT> reduce(ReduceFunction<K, T, OUT> reduceFn) {
-            OperandNode<OUT> node = OperandNode.create(graph);
+        public <OUT> MantisStream<OUT> reduce(ReduceFunction<T, OUT> reduceFn) {
+            OperandNode<OUT> node = OperandNode.create(graph, "reduceFunctionOut");
             this.graph.putEdge(currNode, node, reduceFn);
+            this.graph.putEdge(node, node, MantisFunction.empty());
             return new MantisStreamImpl<>(node, graph);
-            /*
-            MantisStreamImpl<OUT> outStream = (MantisStreamImpl<OUT>) new MantisStreamImpl<>(source, stage, stage);
-            CompositeScalarComputation<?, ?> scalar = outStream.getScalarComputations();
-
-            scalar.add(new GroupToScalarComputation<K, T, OUT>() {
-                @Override
-                public Observable<OUT> call(Context context, Observable<MantisGroup<K, T>> gobs) {
-                    return gobs.groupBy(MantisGroup::getKeyValue)
-                        .flatMap(go -> {
-                            final Observable<Observable<MantisGroup<K, T>>> windowed;
-                            if (spec == null) {
-                                windowed = go.window(Integer.MAX_VALUE);
-                            } else if (spec.type == WindowType.ELEMENT || spec.type == WindowType.ELEMENT_SLIDING) {
-                                windowed = go.window(spec.numElements, spec.elementOffset);
-                            } else {
-                                windowed = go.window(spec.windowLength.toMillis(), spec.windowOffset.toMillis(), TimeUnit.MILLISECONDS);
-                            }
-                            return windowed.map(x -> x
-                                .collect(() -> new ConcurrentLinkedQueue<T>(), (q, i) -> q.add(i.getValue()))
-                                .map(y -> reduceFn.apply(go.getKey(), y)))
-                                .flatMap(x -> x);
-                            }
-                        );
-                }
-
-                @Override
-                public void init(Context context) {
-                    reduceFn.init();
-                }
-
-            });
-            return outStream;
-             */
         }
     }
 
-    public enum WindowType {
-        TUMBLING,
-        SLIDING,
-        ELEMENT,
-        ELEMENT_SLIDING
-    }
-
-    private static class WindowSpec {
-        private final WindowType type;
-        private int numElements;
-        private int elementOffset;
-        private Duration windowLength;
-        private Duration windowOffset;
-
-        public WindowSpec(WindowType type, Duration windowLength, Duration windowOffset) {
-            this.type = type;
-            this.windowLength = windowLength;
-            this.windowOffset = windowOffset;
-        }
-
-        public WindowSpec(WindowType type, int numElements, int elementOffset) {
-            this.type = type;
-            this.numElements = numElements;
-            this.elementOffset = elementOffset;
-        }
-
-        static WindowSpec timeTumbling(Duration windowLength) {
-            return new WindowSpec(WindowType.TUMBLING, windowLength, windowLength);
-        }
-
-        static WindowSpec timeSliding(Duration windowLength, Duration windowOffset) {
-            return new WindowSpec(WindowType.SLIDING, windowLength, windowOffset);
-        }
-
-        static WindowSpec countTumbling(int numElements) {
-            return new WindowSpec(WindowType.ELEMENT, numElements, numElements);
-
-        }
-        static WindowSpec countSliding(int numElements, int elementOffset) {
-            return new WindowSpec(WindowType.ELEMENT_SLIDING, numElements, elementOffset);
-        }
-    }
-
+    @Getter
     private static class OperandNode<T> {
         private final int nodeIdx;
-        private final MantisFunction<?, T> nodeFunction;
+        private final String description;
+        private final Codec<T> codec;
 
-        public OperandNode(int i) {
+        public OperandNode(int i, String description) {
             this.nodeIdx = i;
-            this.nodeFunction = null;
+            this.description = description;
+            this.codec = Codecs.javaSerializer();
         }
 
-        public OperandNode(int i, MantisFunction<?, T> source) {
-            this.nodeIdx = i;
-            this.nodeFunction = source;
+        public static <T> OperandNode<T> create(MantisGraph graph, String description) {
+            return new OperandNode<>(graph.nodes().size(), description);
         }
 
-        public static <T> OperandNode<T> create(MantisGraph graph) {
-            return new OperandNode<>(graph.nodes().size() + 1);
+        @Override
+        public String toString() {
+            return String.format("%d (%s)", nodeIdx, description);
+        }
+
+        public <K> Codec<K> getKeyCodec() {
+            return Codecs.javaSerializer();
         }
     }
 
@@ -344,6 +338,10 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
             this.graph.addNode(to);
             this.graph.putEdgeValue(from, to, edge);
             return this;
+        }
+
+        public ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> immutable() {
+            return ImmutableValueGraph.copyOf(this.graph);
         }
     }
 }

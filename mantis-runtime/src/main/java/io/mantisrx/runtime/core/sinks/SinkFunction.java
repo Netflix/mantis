@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.core.functions;
+package io.mantisrx.runtime.core.sinks;
 
-public interface MantisFunction<IN, OUT> extends AutoCloseable {
+import io.mantisrx.runtime.core.functions.MantisFunction;
 
-    MantisFunction EMPTY = new MantisFunction() {};
-
-    static <IN> MantisFunction<IN, IN> empty() {
-        return (MantisFunction<IN, IN>) EMPTY;
-    }
-
-    default void init() {
-    }
-
-    @Override
-    default void close() throws Exception {
-    }
+public class SinkFunction<IN> implements MantisFunction<IN, Void> {
 }

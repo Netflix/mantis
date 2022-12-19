@@ -16,18 +16,23 @@
 
 package io.mantisrx.runtime.core.functions;
 
-public interface MantisFunction<IN, OUT> extends AutoCloseable {
-
-    MantisFunction EMPTY = new MantisFunction() {};
-
-    static <IN> MantisFunction<IN, IN> empty() {
-        return (MantisFunction<IN, IN>) EMPTY;
-    }
-
-    default void init() {
-    }
+@FunctionalInterface
+public interface ReduceFunctionImpl<IN> extends ReduceFunction<IN, IN> {
+    Object EMPTY = new Object();
 
     @Override
-    default void close() throws Exception {
+    default IN initialValue() {
+        return (IN) EMPTY;
+    }
+
+    IN apply(IN acc, IN item);
+
+    @Override
+    default IN reduce(IN acc, IN item) {
+        if (acc == EMPTY) {
+            return item;
+        } else {
+            return apply(acc, item);
+        }
     }
 }

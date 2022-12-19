@@ -16,6 +16,10 @@
 
 package io.mantisrx.runtime.core.functions;
 
-public interface ReduceFunction<K, IN, OUT> extends MantisFunction<Iterable<IN>, OUT> {
-    OUT apply(K key, Iterable<IN> in);
+public interface ReduceFunction<IN, OUT> extends MantisFunction<IN, OUT> {
+
+    OUT initialValue();
+
+    OUT reduce(OUT acc, IN in);
+
 }
