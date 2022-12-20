@@ -59,7 +59,7 @@ public class SineFunctionJob extends MantisJobProvider<Point> {
      * The SSE sink sets up an SSE server that can be connected to using SSE clients(curl etc.) to see
      * a real-time stream of (x, y) tuples on a sine curve.
      */
-    private final SelfDocumentingSink<Point> sseSink = new ServerSentEventsSink.Builder<Point>()
+    public static final SelfDocumentingSink<Point> sseSink = new ServerSentEventsSink.Builder<Point>()
             .withEncoder(point -> String.format("{\"x\": %f, \"y\": %f}", point.getX(), point.getY()))
             .withPredicate(new Predicate<>(
                     "filter=even, returns even x parameters; filter=odd, returns odd x parameters.",
@@ -176,7 +176,7 @@ public class SineFunctionJob extends MantisJobProvider<Point> {
      * This source generates a monotonically increasingly value per tick as per INTERVAL_SEC Job parameter.
      * If USE_RANDOM_FLAG is set, the source generates a random value per tick.
      */
-    class TimerSource implements Source<Integer> {
+    static class TimerSource implements Source<Integer> {
 
         @Override
         public Observable<Observable<Integer>> call(Context context, Index index) {
