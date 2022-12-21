@@ -50,7 +50,8 @@ public class SineFunction {
             .reduce((ReduceFunctionImpl<Point>) (acc, i) -> {
                 Point point = new Point(acc.getX() + i.getX(), i.getY());
                 log.info("received point ({}, {}) -> ({}, {})", i.getX(), i.getY(), point.getX(), point.getY());
-                return point;})
+                return point;
+            })
             .sink(new ObservableSinkImpl<>(SineFunctionJob.sseSink))
             .parameters(
             new BooleanParameter()

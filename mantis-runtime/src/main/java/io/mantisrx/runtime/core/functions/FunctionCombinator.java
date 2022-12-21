@@ -108,7 +108,6 @@ public class FunctionCombinator<T, R> {
                                 .flatMap(x -> x);
                         }
                     }
-                    current.doOnNext(t -> System.out.printf("hmittal point reduce (%s, %s)%n", key, t));
                     return current;
                 });
                 return (Observable<V>) observable;

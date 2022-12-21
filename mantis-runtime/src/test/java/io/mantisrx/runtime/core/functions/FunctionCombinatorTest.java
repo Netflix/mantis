@@ -71,37 +71,6 @@ public class FunctionCombinatorTest {
     }
 
     @Test
-    public void testKeyedFunctionWithReduce() {
-        FunctionCombinator<Integer, Integer> fns = new FunctionCombinator<Integer, Void>(true)
-            .add((MapFunction<Integer, Long>) e -> e + 1L)
-            .add((FilterFunction<Long>) e -> e % 2 == 0)
-            .add((MapFunction<Long, Long>) e -> e * e)
-            .add((MapFunction<Long, String>) e -> e + "1")
-            .add((MapFunction<String, Integer>) Integer::parseInt)
-            .add(new ReduceFunction<Integer, Integer>() {
-                @Override
-                public Integer initialValue() {
-                    return 0;
-                }
-
-                @Override
-                public Integer reduce(Integer acc, Integer elem) {
-                    return acc + elem;
-                }
-        });
-        GroupToScalarComputation<String, Integer, Integer> scalar = fns.makeGroupToScalarStage();
-        List<Integer> elems = ImmutableList.of(0, 1, 2, 3, 4, 5, 6);
-        List<MantisGroup<String, Integer>> build = ImmutableList.<MantisGroup<String, Integer>>builder()
-            .addAll(elems.stream().map(x -> new MantisGroup<>("k1", x)).collect(Collectors.toList()))
-            .addAll(elems.stream().map(x -> new MantisGroup<>("k2", x + 10)).collect(Collectors.toList()))
-            .build();
-        Observable<Integer> result = scalar.call(new Context(), Observable.from(build));
-        List<Integer> collect = new ArrayList<>();
-        result.forEach(collect::add);
-        assertEquals(ImmutableList.of(563, 5963), collect);
-    }
-
-    @Test
     public void testKeyedWindowWithReduce() {
         FunctionCombinator<Integer, Integer> fns = new FunctionCombinator<Integer, Void>(true)
             .add((MapFunction<Integer, Long>) e -> e + 1L)
