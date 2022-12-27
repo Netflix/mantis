@@ -26,6 +26,7 @@ dependencies {
     implementation project(":mantis-control-plane:mantis-control-plane-core")
     implementation project(":mantis-publish:mantis-publish-core")
 
+    implementation libraries.cli
     implementation "com.google.code.gson:gson:$gsonVersion"
     implementation libraries.vavr
 }

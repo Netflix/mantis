@@ -29,9 +29,10 @@ ext {
 
 dependencies {
 
+    api libraries.config
     api project(":mantis-common")
 
-    api "org.skife.config:config-magic:$configMagicVersion"
+    api libraries.oldConfig
     api libraries.flinkRpcApi
     api libraries.flinkRpcImpl
     api libraries.flinkCore
@@ -39,10 +40,10 @@ dependencies {
     api "org.apache.mesos:mesos:$mesosVersion"
     api "org.json:json:$jsonVersion"
     api "org.hdrhistogram:HdrHistogram:$hdrHistogramVersion"
-    api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "joda-time:joda-time:$jodaTimeVersion"
 
 
+    testImplementation libraries.cli
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
 }

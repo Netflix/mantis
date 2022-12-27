@@ -19,6 +19,7 @@ dependencies {
     implementation project(":mantis-control-plane:mantis-control-plane-client")
     implementation project(':mantis-server:mantis-server-worker-client')
 
+    implementation libraries.cli
     implementation libraries.slf4jApi
     implementation libraries.spectatorApi
     testImplementation libraries.junit4

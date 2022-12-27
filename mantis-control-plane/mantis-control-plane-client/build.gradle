@@ -15,14 +15,19 @@
  */
 
 dependencies {
+    api project(":mantis-control-plane:mantis-control-plane-core")
+    api project(":mantis-common")
+    api project(":mantis-remote-observable")
+
+    compileOnly libraries.jsr
     implementation libraries.asyncHttpClient
     implementation libraries.spotifyFutures
-    api project(":mantis-control-plane:mantis-control-plane-core")
-
-    api project(":mantis-remote-observable")
+    api libraries.config
+    api libraries.oldConfig
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
     testImplementation libraries.spectatorApi
+    testImplementation libraries.cli
     testImplementation(testFixtures(project(":mantis-common")))
 }
