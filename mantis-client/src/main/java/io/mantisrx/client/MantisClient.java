@@ -23,7 +23,7 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.Configurations;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityClientServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
@@ -98,7 +98,7 @@ public class MantisClient {
      * @param properties
      */
     public MantisClient(Properties properties) {
-        HighAvailabilityServices haServices =
+        HighAvailabilityClientServices haServices =
             HighAvailabilityServicesUtil.createHAServices(
                 Configurations.frmProperties(properties, CoreConfiguration.class));
         clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());

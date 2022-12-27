@@ -22,7 +22,7 @@ import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityClientServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
@@ -52,7 +52,7 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 @Slf4j
 public class TaskExecutorStarter extends AbstractIdleService {
     private final TaskExecutor taskExecutor;
-    private final HighAvailabilityServices highAvailabilityServices;
+    private final HighAvailabilityClientServices highAvailabilityServices;
 
     @Override
     protected void startUp() {
@@ -85,7 +85,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private RpcService rpcService;
         @Nullable
         private ClassLoaderHandle classLoaderHandle;
-        private final HighAvailabilityServices highAvailabilityServices;
+        private final HighAvailabilityClientServices highAvailabilityServices;
         @Nullable
         private SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory;
         @Nullable

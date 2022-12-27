@@ -26,7 +26,7 @@ import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityClientServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
@@ -76,7 +76,7 @@ public class MantisWorker extends BaseService {
         System.setProperty("rx.ring-buffer.size", "1024");
 
         WorkerConfiguration config = configFactory.getConfig();
-        final HighAvailabilityServices highAvailabilityServices =
+        final HighAvailabilityClientServices highAvailabilityServices =
             HighAvailabilityServicesUtil.createHAServices(config);
         mantisServices.add(new Service() {
             @Override

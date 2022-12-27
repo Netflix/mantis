@@ -52,7 +52,7 @@ public class MasterClientWrapperTest {
 
     //@Before
     public void init() {
-      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+      HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
           Configurations.frmProperties(zkProps, CoreConfiguration.class));
       clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
     }
@@ -163,7 +163,7 @@ public class MasterClientWrapperTest {
 
     //	@Test
     public void testJobStatusEndpoint() {
-      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+      HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
           Configurations.frmProperties(zkProps, CoreConfiguration.class));
       MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         String jobId = "PriamRequestSource-45";
@@ -188,7 +188,7 @@ public class MasterClientWrapperTest {
     @Test
     public void testNamedJobExists() {
 
-      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+      HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
           Configurations.frmProperties(zkProps, CoreConfiguration.class));
       MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
 

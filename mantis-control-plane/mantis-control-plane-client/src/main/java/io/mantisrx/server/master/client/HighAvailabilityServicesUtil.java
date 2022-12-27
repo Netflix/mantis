@@ -38,14 +38,14 @@ import rx.schedulers.Schedulers;
  */
 @Slf4j
 public class HighAvailabilityServicesUtil {
-  private final static AtomicReference<HighAvailabilityServices> HAServiceInstanceRef = new AtomicReference<>();
+  private final static AtomicReference<HighAvailabilityClientServices> HAServiceInstanceRef = new AtomicReference<>();
 
-  public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
+  public static HighAvailabilityClientServices createHAServices(CoreConfiguration configuration) {
     if (configuration.isLocalMode()) {
       throw new UnsupportedOperationException();
     } else {
       if (HAServiceInstanceRef.get() == null) {
-          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
+          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityClientServices(configuration));
       }
 
       return HAServiceInstanceRef.get();
@@ -56,13 +56,13 @@ public class HighAvailabilityServicesUtil {
    * Zookeeper based implementation of HighAvailabilityServices that finds the various leader instances
    * through metadata stored on zookeeper.
    */
-  private static class ZkHighAvailabilityServices extends AbstractIdleService implements
-      HighAvailabilityServices {
+  private static class ZkHighAvailabilityClientServices extends AbstractIdleService implements
+      HighAvailabilityClientServices {
 
     private final CuratorService curatorService;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
 
-    public ZkHighAvailabilityServices(CoreConfiguration configuration) {
+    public ZkHighAvailabilityClientServices(CoreConfiguration configuration) {
       curatorService = new CuratorService(configuration);
     }
 

@@ -31,7 +31,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
  * <p>
  * These services can be obtained from the HighAvailabilityServices implementation.
  */
-public interface HighAvailabilityServices extends Service {
+public interface HighAvailabilityClientServices extends Service {
     MantisMasterGateway getMasterClientApi();
 
     MasterMonitor getMasterMonitor();

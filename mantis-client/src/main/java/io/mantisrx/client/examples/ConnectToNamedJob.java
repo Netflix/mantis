@@ -26,7 +26,7 @@ import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityClientServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
@@ -78,7 +78,7 @@ public class ConnectToNamedJob {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
+        HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
             Configurations.frmProperties(properties, CoreConfiguration.class));
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
