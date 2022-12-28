@@ -20,7 +20,6 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
-import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
@@ -49,7 +48,7 @@ public class CuratorService extends BaseService {
     private final ZookeeperMasterMonitor masterMonitor;
     private final Gauge isConnectedGauge;
 
-    public CuratorService(CoreConfiguration configs) {
+    public CuratorService(ZookeeperSettings settings) {
         super(false);
         Metrics m = new Metrics.Builder()
                 .name(CuratorService.class.getCanonicalName())
@@ -60,14 +59,14 @@ public class CuratorService extends BaseService {
 
         curator = CuratorFrameworkFactory.builder()
                 .compressionProvider(new GzipCompressionProvider())
-                .connectionTimeoutMs(configs.getZkConnectionTimeoutMs())
-                .retryPolicy(new ExponentialBackoffRetry(configs.getZkConnectionRetrySleepMs(), configs.getZkConnectionMaxRetries()))
-                .connectString(configs.getZkConnectionString())
+                .connectionTimeoutMs((int) settings.getConnectionTimeout().toMillis())
+                .retryPolicy(new ExponentialBackoffRetry((int) settings.getConnectionRetrySleepTime().toMillis(), settings.getConnectionRetryCount()))
+                .connectString(settings.getConnectString())
                 .build();
 
         masterMonitor = new ZookeeperMasterMonitor(
                 curator,
-                ZKPaths.makePath(configs.getZkRoot(), configs.getLeaderAnnouncementPath()));
+                ZKPaths.makePath(settings.getRootPath(), settings.getLeaderAnnouncementPath()));
     }
 
     private void setupCuratorListener() {

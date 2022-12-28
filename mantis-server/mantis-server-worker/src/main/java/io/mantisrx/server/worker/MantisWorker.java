@@ -18,6 +18,7 @@ package io.mantisrx.server.worker;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
@@ -76,8 +77,9 @@ public class MantisWorker extends BaseService {
         System.setProperty("rx.ring-buffer.size", "1024");
 
         WorkerConfiguration config = configFactory.getConfig();
+        // TODO(sundaram): Fix this
         final HighAvailabilityClientServices highAvailabilityServices =
-            HighAvailabilityServicesUtil.createHAServices(config);
+            HighAvailabilityServicesUtil.createHAServices(ConfigFactory.load());
         mantisServices.add(new Service() {
             @Override
             public void start() {

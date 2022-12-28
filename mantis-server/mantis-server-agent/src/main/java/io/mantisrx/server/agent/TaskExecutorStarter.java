@@ -17,6 +17,7 @@
 package io.mantisrx.server.agent;
 
 import com.mantisrx.common.utils.Services;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
@@ -96,7 +97,8 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
             this.workerConfiguration = workerConfiguration;
             this.configuration = new Configuration();
-            this.highAvailabilityServices = HighAvailabilityServicesUtil.createHAServices(workerConfiguration);
+            // todo (sundaram): Fix this.
+            this.highAvailabilityServices = HighAvailabilityServicesUtil.createHAServices(ConfigFactory.load());
         }
 
         public TaskExecutorStarterBuilder configuration(Configuration configuration) {

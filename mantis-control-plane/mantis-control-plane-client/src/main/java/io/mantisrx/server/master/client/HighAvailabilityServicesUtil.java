@@ -15,9 +15,10 @@
  */
 package io.mantisrx.server.master.client;
 
-import io.mantisrx.server.core.CoreConfiguration;
+import com.typesafe.config.Config;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
@@ -40,15 +41,18 @@ import rx.schedulers.Schedulers;
 public class HighAvailabilityServicesUtil {
   private final static AtomicReference<HighAvailabilityClientServices> HAServiceInstanceRef = new AtomicReference<>();
 
-  public static HighAvailabilityClientServices createHAServices(CoreConfiguration configuration) {
-    if (configuration.isLocalMode()) {
+  public static HighAvailabilityClientServices createHAServices(Config config) {
+    String mode = config.getString("mantis.highAvailability.mode");
+    if (mode.equals("local")) {
       throw new UnsupportedOperationException();
-    } else {
+    } else if (mode.equalsIgnoreCase("zookeeper")) {
       if (HAServiceInstanceRef.get() == null) {
-          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityClientServices(configuration));
+          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityClientServices(config.getConfig("mantis.highAvailability.zookeeper")));
       }
 
       return HAServiceInstanceRef.get();
+    } else {
+        throw new UnsupportedOperationException();
     }
   }
 
@@ -62,8 +66,8 @@ public class HighAvailabilityServicesUtil {
     private final CuratorService curatorService;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
 
-    public ZkHighAvailabilityClientServices(CoreConfiguration configuration) {
-      curatorService = new CuratorService(configuration);
+    public ZkHighAvailabilityClientServices(Config config) {
+      curatorService = new CuratorService(new ZookeeperSettings(config));
     }
 
     @Override

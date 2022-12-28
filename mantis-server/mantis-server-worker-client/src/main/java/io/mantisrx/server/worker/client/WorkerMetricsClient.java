@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.worker.client;
 
-import io.mantisrx.server.core.Configurations;
-import io.mantisrx.server.core.CoreConfiguration;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.server.master.client.HighAvailabilityClientServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
@@ -84,12 +84,12 @@ public class WorkerMetricsClient {
      * @param properties
      */
     public WorkerMetricsClient(Properties properties) {
-        this(Configurations.frmProperties(properties, CoreConfiguration.class));
+        this(ConfigFactory.parseProperties(properties));
     }
 
-    public WorkerMetricsClient(CoreConfiguration configuration) {
+    public WorkerMetricsClient(Config config) {
         HighAvailabilityClientServices haServices =
-            HighAvailabilityServicesUtil.createHAServices(configuration);
+            HighAvailabilityServicesUtil.createHAServices(config);
         clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
     }
 

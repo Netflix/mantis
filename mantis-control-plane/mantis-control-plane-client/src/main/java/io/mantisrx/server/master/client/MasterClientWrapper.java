@@ -22,8 +22,6 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.runtime.MantisJobState;
-import io.mantisrx.server.core.Configurations;
-import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
@@ -33,7 +31,6 @@ import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -72,34 +69,6 @@ public class MasterClientWrapper {
         if (i < 0)
             return wrappedHost;
         return wrappedHost.substring(0, i);
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        Properties zkProps = new Properties();
-        zkProps.put("mantis.zookeeper.connectString", "ec2-50-19-255-1.compute-1.amazonaws.com:2181,ec2-54-235-159-245.compute-1.amazonaws.com:2181,ec2-50-19-255-97.compute-1.amazonaws.com:2181,ec2-184-73-152-248.compute-1.amazonaws.com:2181,ec2-50-17-247-179.compute-1.amazonaws.com:2181");
-        zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
-        zkProps.put("mantis.zookeeper.root", "/mantis/master");
-        String jobId = "GroupByIPNJ-12";
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class)).getMasterClientApi());
-        clientWrapper.getMasterClientApi()
-                .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
-                    @Override
-                    public Observable<EndpointChange> call(MantisMasterGateway mantisMasterClientApi) {
-                        Integer sinkStage = null;
-                        return mantisMasterClientApi.getSinkStageNum(jobId)
-                                .take(1) // only need to figure out sink stage number once
-                                .flatMap(new Func1<Integer, Observable<EndpointChange>>() {
-                                    @Override
-                                    public Observable<EndpointChange> call(Integer integer) {
-                                        logger.info("Getting sink locations for " + jobId);
-                                        return clientWrapper.getSinkLocations(jobId, integer, 0, 0);
-                                    }
-                                });
-                    }
-                }).toBlocking().subscribe((ep) -> {
-            System.out.println("Endpoint Change -> " + ep);
-        });
-        Thread.sleep(50000);
     }
 
     public void addNumSinkWorkersObserver(Observer<JobSinkNumWorkers> numSinkWorkersObserver) {

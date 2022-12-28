@@ -18,11 +18,10 @@ package io.mantisrx.client.examples;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.server.core.Configurations;
-import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
@@ -78,8 +77,9 @@ public class ConnectToNamedJob {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        // todo(sundaram): Fix this
         HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
-            Configurations.frmProperties(properties, CoreConfiguration.class));
+            ConfigFactory.parseProperties(properties));
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
                 .doOnNext(new Action1<MantisMasterGateway>() {

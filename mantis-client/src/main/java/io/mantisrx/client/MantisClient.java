@@ -16,12 +16,11 @@
 
 package io.mantisrx.client;
 
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
-import io.mantisrx.server.core.Configurations;
-import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.client.HighAvailabilityClientServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
@@ -100,7 +99,7 @@ public class MantisClient {
     public MantisClient(Properties properties) {
         HighAvailabilityClientServices haServices =
             HighAvailabilityServicesUtil.createHAServices(
-                Configurations.frmProperties(properties, CoreConfiguration.class));
+                ConfigFactory.parseProperties(properties));
         clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         this.disablePingFiltering = Boolean.parseBoolean(properties.getProperty(ENABLE_PINGS_KEY));
     }

@@ -27,6 +27,7 @@ import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.DeadLetterActor;
@@ -61,6 +62,7 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.zookeeper.CuratorService;
+import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -241,7 +243,8 @@ public class MasterMain implements Service {
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             } else {
-                curatorService = new CuratorService(this.config);
+                // todo(sundaram): fix this
+                curatorService = new CuratorService(new ZookeeperSettings(ConfigFactory.load()));
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
