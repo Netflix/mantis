@@ -27,8 +27,8 @@ import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
-import io.mantisrx.server.master.client.HighAvailabilityClientServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.ClientServices;
+import io.mantisrx.server.master.client.ClientServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
@@ -78,29 +78,9 @@ public class MantisWorker extends BaseService {
 
         WorkerConfiguration config = configFactory.getConfig();
         // TODO(sundaram): Fix this
-        final HighAvailabilityClientServices highAvailabilityServices =
-            HighAvailabilityServicesUtil.createHAServices(ConfigFactory.load());
-        mantisServices.add(new Service() {
-            @Override
-            public void start() {
-                highAvailabilityServices.startAsync().awaitRunning();
-            }
-
-            @Override
-            public void shutdown() {
-                highAvailabilityServices.stopAsync().awaitTerminated();
-            }
-
-            @Override
-            public void enterActiveMode() {
-
-            }
-
-            @Override
-            public String toString() {
-                return "HighAvailabilityServices Service";
-            }
-        });
+        final ClientServices highAvailabilityServices =
+            ClientServicesUtil.createClientServices(ConfigFactory.load());
+        mantisServices.add(BaseService.wrapCloseable(highAvailabilityServices));
         final MantisMasterGateway gateway =
             highAvailabilityServices.getMasterClientApi();
         // shutdown hook

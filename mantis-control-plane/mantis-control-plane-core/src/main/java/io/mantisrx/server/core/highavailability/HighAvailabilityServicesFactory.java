@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.core.master;
+package io.mantisrx.server.core.highavailability;
 
-import java.io.Closeable;
-import javax.annotation.Nullable;
-import rx.Observable;
+import com.typesafe.config.Config;
 
-
-public interface MasterMonitor extends Closeable {
-
-    Observable<MasterDescription> getMasterObservable();
-
-    /**
-     * Returns the latest master if there's one. If there has been no master in recent history,
-     * then this return null.
-     *
-     * @return Latest description of the master
-     */
-    @Nullable
-    MasterDescription getLatestMaster();
+public interface HighAvailabilityServicesFactory {
+    HighAvailabilityServices getHighAvailabilityServices(Config config);
 }

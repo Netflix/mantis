@@ -59,9 +59,9 @@ import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.BaseService;
+import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
@@ -90,11 +90,12 @@ public class MasterApiAkkaService extends BaseService {
     private final MantisScheduler scheduler;
     private final LifecycleEventPublisher lifecycleEventPublisher;
     private final MantisMasterRoute mantisMasterRoute;
-    private final ILeadershipManager leadershipManager;
+    private final LeaderElectorService leaderElectorService;
     private final ActorSystem system;
     private final Materializer materializer;
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
+    private volatile boolean isReady = false;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -106,7 +107,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final IMantisPersistenceProvider mantisStorageProvider,
                                 final MantisScheduler scheduler,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
-                                final ILeadershipManager leadershipManager,
+                                final LeaderElectorService leaderElectorService,
                                 final AgentClusterOperations agentClusterOperations) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
@@ -116,7 +117,7 @@ public class MasterApiAkkaService extends BaseService {
         Preconditions.checkNotNull(mantisStorageProvider, "mantisStorageProvider");
         Preconditions.checkNotNull(scheduler, "scheduler");
         Preconditions.checkNotNull(lifecycleEventPublisher, "lifecycleEventPublisher");
-        Preconditions.checkNotNull(leadershipManager, "leadershipManager");
+        Preconditions.checkNotNull(leaderElectorService, "leaderElectorService");
         Preconditions.checkNotNull(agentClusterOperations, "agentClusterOperations");
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
@@ -128,7 +129,7 @@ public class MasterApiAkkaService extends BaseService {
         this.storageProvider = mantisStorageProvider;
         this.scheduler = scheduler;
         this.lifecycleEventPublisher = lifecycleEventPublisher;
-        this.leadershipManager = leadershipManager;
+        this.leaderElectorService = leaderElectorService;
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system, agentClusterOperations);
@@ -176,7 +177,7 @@ public class MasterApiAkkaService extends BaseService {
         final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(storageProvider);
         final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
 
-        final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
+        final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leaderElectorService.getContender(), this::isReady);
         final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
             resourceClustersHostManagerActor);
         return new MantisMasterRoute(
@@ -247,8 +248,12 @@ public class MasterApiAkkaService extends BaseService {
     public void start() {
         super.awaitActiveModeAndStart(() -> {
             logger.info("marking leader READY");
-            leadershipManager.setLeaderReady();
+            isReady = true;
         });
+    }
+
+    public boolean isReady() {
+        return isReady;
     }
 
     @Override

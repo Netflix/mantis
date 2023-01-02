@@ -82,10 +82,10 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.core.highavailability.LeaderElectorService.Contender;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
@@ -265,12 +265,12 @@ public class JobRouteTest {
                 final ResourceClusters resourceClusters = mock(ResourceClusters.class);
 
                 LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
-                LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(
-                        masterDescription);
-                leadershipMgr.setLeaderReady();
+                Contender contender = mock(Contender.class);
+                when(contender.hasLeadership()).thenReturn(true);
                 LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(
                         localMasterMonitor,
-                        leadershipMgr);
+                        contender,
+                        () -> true);
                 final MantisMasterRoute app = new MantisMasterRoute(
                         system,
                         leaderRedirectionFilter,

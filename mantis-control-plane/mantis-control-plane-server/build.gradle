@@ -29,7 +29,7 @@ ext {
 }
 
 dependencies {
-    api project(':mantis-control-plane:mantis-control-plane-core')
+    api project(':mantis-control-plane:mantis-control-plane-client')
 
     api "com.typesafe.akka:akka-http_$scalaBinaryVersion:$akkaHttpVersion"
     api "com.typesafe.akka:akka-http-jackson_$scalaBinaryVersion:$akkaHttpVersion"

@@ -52,7 +52,7 @@ public class MasterClientWrapperTest {
 
     //@Before
     public void init() {
-      HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
+      ClientServices haServices = ClientServicesUtil.createClientServices(
           ConfigFactory.parseProperties(zkProps));
       clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
     }
@@ -163,7 +163,7 @@ public class MasterClientWrapperTest {
 
     //	@Test
     public void testJobStatusEndpoint() {
-      HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
+      ClientServices haServices = ClientServicesUtil.createClientServices(
           ConfigFactory.parseProperties(zkProps));
       MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         String jobId = "PriamRequestSource-45";
@@ -188,7 +188,7 @@ public class MasterClientWrapperTest {
     @Test
     public void testNamedJobExists() {
 
-      HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
+      ClientServices haServices = ClientServicesUtil.createClientServices(
           ConfigFactory.parseProperties(zkProps));
       MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
 
@@ -212,7 +212,7 @@ public class MasterClientWrapperTest {
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
         String jobId = "GroupByIPNJ-12";
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(HighAvailabilityServicesUtil.createHAServices(ConfigFactory.parseProperties(zkProps)).getMasterClientApi());
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(ClientServicesUtil.createClientServices(ConfigFactory.parseProperties(zkProps)).getMasterClientApi());
         clientWrapper.getMasterClientApi()
             .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
                 @Override

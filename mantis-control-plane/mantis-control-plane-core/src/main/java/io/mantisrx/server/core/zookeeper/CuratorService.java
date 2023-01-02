@@ -19,10 +19,8 @@ package io.mantisrx.server.core.zookeeper;
 import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
-import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.master.ZookeeperMasterMonitor;
+import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
@@ -30,26 +28,21 @@ import io.mantisrx.shaded.org.apache.curator.framework.imps.GzipCompressionProvi
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
 import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
-import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * This {@link Service} implementation is responsible for managing the lifecycle of a {@link io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework}
  * instance.
  */
-public class CuratorService extends BaseService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(CuratorService.class);
+@Slf4j
+class CuratorService extends AbstractIdleService {
     private static final String isConnectedGaugeName = "isConnected";
 
     private final CuratorFramework curator;
-    private final ZookeeperMasterMonitor masterMonitor;
     private final Gauge isConnectedGauge;
 
     public CuratorService(ZookeeperSettings settings) {
-        super(false);
         Metrics m = new Metrics.Builder()
                 .name(CuratorService.class.getCanonicalName())
                 .addGauge(isConnectedGaugeName)
@@ -63,23 +56,19 @@ public class CuratorService extends BaseService {
                 .retryPolicy(new ExponentialBackoffRetry((int) settings.getConnectionRetrySleepTime().toMillis(), settings.getConnectionRetryCount()))
                 .connectString(settings.getConnectString())
                 .build();
-
-        masterMonitor = new ZookeeperMasterMonitor(
-                curator,
-                ZKPaths.makePath(settings.getRootPath(), settings.getLeaderAnnouncementPath()));
     }
 
     private void setupCuratorListener() {
-        LOG.info("Setting up curator state change listener");
+        log.info("Setting up curator state change listener");
         curator.getConnectionStateListenable().addListener(new ConnectionStateListener() {
             @Override
             public void stateChanged(CuratorFramework client, ConnectionState newState) {
                 if (newState.isConnected()) {
-                    LOG.info("Curator connected");
+                    log.info("Curator connected");
                     isConnectedGauge.set(1L);
                 } else {
                     // ToDo: determine if it is safe to restart our service instead of committing suicide
-                    LOG.error("Curator connection lost");
+                    log.error("Curator connection lost");
                     isConnectedGauge.set(0L);
                 }
             }
@@ -87,34 +76,28 @@ public class CuratorService extends BaseService {
     }
 
     @Override
-    public void start() {
+    public void startUp() {
         try {
             isConnectedGauge.set(0L);
             setupCuratorListener();
             curator.start();
-            masterMonitor.startAsync().awaitRunning();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void shutdown() {
+    public void shutDown() {
         try {
-            masterMonitor.stopAsync().awaitTerminated();
             curator.close();
         } catch (Exception e) {
             // A shutdown failure should not affect the subsequent shutdowns, so
             // we just warn here
-            LOG.warn("Failed to shut down the curator service: " + e.getMessage(), e);
+            log.warn("Failed to shut down the curator service: " + e.getMessage(), e);
         }
     }
 
     public CuratorFramework getCurator() {
         return curator;
-    }
-
-    public MasterMonitor getMasterMonitor() {
-        return masterMonitor;
     }
 }

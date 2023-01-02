@@ -18,27 +18,25 @@ package io.mantisrx.server.master.client;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
-import io.mantisrx.server.core.CoreConfiguration;
-import io.mantisrx.server.core.master.MasterDescription;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.core.zookeeper.CuratorService;
-import io.mantisrx.server.master.client.config.StaticPropertiesConfigurationFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import rx.functions.Action1;
-import rx.functions.Func1;
+import lombok.extern.slf4j.Slf4j;
 
 
+@Slf4j
 public class TestGetMasterMonitor {
 
     @Argument(alias = "p", description = "Specify a configuration file", required = true)
     private static String propFile = "";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         try {
             Args.parse(TestGetMasterMonitor.class, args);
         } catch (IllegalArgumentException e) {
@@ -54,30 +52,23 @@ public class TestGetMasterMonitor {
         }
         final AtomicInteger counter = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(5);
-        StaticPropertiesConfigurationFactory configurationFactory = new StaticPropertiesConfigurationFactory(properties);
-        CoreConfiguration config = configurationFactory.getConfig();
-        final CuratorService curatorService = new CuratorService(config);
-        MasterMonitor masterMonitor = curatorService.getMasterMonitor();
-        masterMonitor.getMasterObservable()
-                .filter(new Func1<MasterDescription, Boolean>() {
-                    @Override
-                    public Boolean call(MasterDescription masterDescription) {
-                        return masterDescription != null;
-                    }
-                })
-                .doOnNext(new Action1<MasterDescription>() {
-                    @Override
-                    public void call(MasterDescription masterDescription) {
-                        System.out.println(counter.incrementAndGet() + ": Got new master: " + masterDescription.toString());
-                        latch.countDown();
-                    }
+        final Config config = ConfigFactory.parseProperties(properties);
+        MasterMonitor masterMonitor;
+        try (ClientServices clientServices = ClientServicesUtil.createClientServices(config)) {
+            masterMonitor = clientServices.getMasterMonitor();
+            masterMonitor.getMasterObservable()
+                .filter(masterDescription -> masterDescription != null)
+                .doOnNext(masterDescription -> {
+                    log.info(counter.incrementAndGet() + ": Got new master: " + masterDescription.toString());
+                    latch.countDown();
                 })
                 .subscribe();
-        curatorService.start();
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                log.error("Failed to finish", e);
+            }
         }
     }
 }

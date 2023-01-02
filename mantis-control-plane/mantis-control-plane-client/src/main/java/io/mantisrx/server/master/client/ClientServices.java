@@ -18,7 +18,7 @@ package io.mantisrx.server.master.client;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
-import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
+import java.io.Closeable;
 
 /**
  * HighAvailabilityServices is a container for a group of services which are considered to be highly available because
@@ -31,7 +31,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
  * <p>
  * These services can be obtained from the HighAvailabilityServices implementation.
  */
-public interface HighAvailabilityClientServices extends Service {
+public interface ClientServices extends Closeable {
     MantisMasterGateway getMasterClientApi();
 
     MasterMonitor getMasterMonitor();

@@ -53,17 +53,21 @@ import io.mantisrx.master.api.akka.route.v0.JobDiscoveryRoute;
 import io.mantisrx.master.api.akka.route.v0.JobRoute;
 import io.mantisrx.master.api.akka.route.v0.JobStatusRoute;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
-import io.mantisrx.master.events.*;
+import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.events.LifecycleEventPublisherImpl;
+import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
+import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.core.highavailability.LeaderElectorService.Contender;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -188,12 +192,12 @@ public class JobsRouteTest extends RouteTestBase {
                         jobDiscoveryRouteHandler);
 
                 LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
-                LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(
-                        masterDescription);
-                leadershipMgr.setLeaderReady();
+                Contender contender = mock(Contender.class);
+                when(contender.hasLeadership()).thenReturn(true);
                 LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(
-                        localMasterMonitor,
-                        leadershipMgr);
+                    localMasterMonitor,
+                    contender,
+                    () -> true);
                 final MantisMasterRoute app = new MantisMasterRoute(
                         system,
                         leaderRedirectionFilter,

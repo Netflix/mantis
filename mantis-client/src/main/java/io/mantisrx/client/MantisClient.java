@@ -22,8 +22,8 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.master.client.HighAvailabilityClientServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.ClientServices;
+import io.mantisrx.server.master.client.ClientServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import io.reactivex.mantis.remote.observable.EndpointChange;
@@ -97,8 +97,8 @@ public class MantisClient {
      * @param properties
      */
     public MantisClient(Properties properties) {
-        HighAvailabilityClientServices haServices =
-            HighAvailabilityServicesUtil.createHAServices(
+        ClientServices haServices =
+            ClientServicesUtil.createClientServices(
                 ConfigFactory.parseProperties(properties));
         clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         this.disablePingFiltering = Boolean.parseBoolean(properties.getProperty(ENABLE_PINGS_KEY));

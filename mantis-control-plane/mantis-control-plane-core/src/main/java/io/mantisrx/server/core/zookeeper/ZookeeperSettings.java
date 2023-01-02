@@ -22,7 +22,6 @@ import lombok.Value;
 
 @Value
 public class ZookeeperSettings {
-    Config config;
     Duration connectionTimeout;
     Duration connectionRetrySleepTime;
     int connectionRetryCount;
@@ -30,13 +29,16 @@ public class ZookeeperSettings {
     String rootPath;
     String leaderAnnouncementPath;
 
-    public ZookeeperSettings(Config config) {
-        this.config = config;
-        this.connectionTimeout = config.getDuration("connectionTimeout");
-        this.connectionRetrySleepTime = config.getDuration("connectionRetrySleepTime");
-        this.connectionRetryCount = config.getInt("connectionRetryCount");
-        this.connectString = config.getString("connectString");
-        this.rootPath = config.getString("rootPath");
-        this.leaderAnnouncementPath = config.getString("leaderAnnouncementPath");
+    String leaderElectionPath;
+
+    public static ZookeeperSettings fromConfig(Config config) {
+        return new ZookeeperSettings(
+            config.getDuration("connectionTimeout"),
+            config.getDuration("connectionRetrySleepTime"),
+            config.getInt("connectionRetryCount"),
+            config.getString("connectString"),
+            config.getString("rootPath"),
+            config.getString("leaderAnnouncementPath"),
+            config.getString("leaderElectionPath"));
     }
 }

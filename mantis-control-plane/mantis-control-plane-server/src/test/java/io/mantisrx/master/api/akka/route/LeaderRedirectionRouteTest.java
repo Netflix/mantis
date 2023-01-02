@@ -19,6 +19,8 @@ package io.mantisrx.master.api.akka.route;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import akka.NotUsed;
 import akka.actor.ActorSystem;
@@ -34,12 +36,11 @@ import akka.util.ByteString;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
+import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -97,7 +98,8 @@ public class LeaderRedirectionRouteTest {
     private static ActorSystem system = ActorSystem.create("MasterDescriptionRouteTest");
 
     private static final MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
-    private static final ILeadershipManager leadershipMgr = new LeadershipManagerLocalImpl(fakeMasterDesc);
+    private static final LeaderElectorService.Contender contender = mock(LeaderElectorService.Contender.class);
+    private static volatile boolean isReady = false;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -113,7 +115,7 @@ public class LeaderRedirectionRouteTest {
 
                 TestHelpers.setupMasterConfig();
                 final MasterDescriptionRoute app = new MasterDescriptionRoute(fakeMasterDesc);
-                final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipMgr);
+                final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, contender, () -> isReady);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(leaderRedirectionFilter::redirectIfNotLeader).flow(system, materializer);
                 logger.info("starting test server on port {}", serverPort);
@@ -165,7 +167,8 @@ public class LeaderRedirectionRouteTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
 
         // mark the leader as bootstrapped and ready
-        leadershipMgr.setLeaderReady();
+        when(contender.hasLeadership()).thenReturn(true);
+        isReady = true;
         final CountDownLatch latch2 = new CountDownLatch(1);
         final CompletionStage<HttpResponse> respF = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
@@ -186,7 +189,7 @@ public class LeaderRedirectionRouteTest {
             });
         assertTrue(latch2.await(2, TimeUnit.SECONDS));
 
-        leadershipMgr.stopBeingLeader();
+        when(contender.hasLeadership()).thenReturn(false);
         responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
         try {
@@ -220,6 +223,5 @@ public class LeaderRedirectionRouteTest {
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
         }
-        leadershipMgr.becomeLeader();
     }
 }

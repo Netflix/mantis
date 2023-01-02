@@ -79,11 +79,11 @@ import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
+import io.mantisrx.server.core.highavailability.LeaderElectorService.Contender;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.AgentClustersAutoScaler;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -255,11 +255,12 @@ public class MantisMasterAPI extends AllDirectives {
         final ResourceClusterRouteHandler resourceClusterRouteHandler = mock(ResourceClusterRouteHandler.class);
 
         LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
-        LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(masterDescription);
-        leadershipMgr.setLeaderReady();
+        Contender contender = mock(Contender.class);
+        when(contender.hasLeadership()).thenReturn(true);
         LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(
                 localMasterMonitor,
-                leadershipMgr);
+                contender,
+                () -> true);
         final MantisMasterRoute app = new MantisMasterRoute(
                 system,
                 leaderRedirectionFilter,

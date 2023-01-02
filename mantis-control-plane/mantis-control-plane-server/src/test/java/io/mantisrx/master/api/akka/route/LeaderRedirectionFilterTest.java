@@ -18,18 +18,21 @@ package io.mantisrx.master.api.akka.route;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
+import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import org.junit.Test;
 
 public class LeaderRedirectionFilterTest extends AllDirectives {
+    private final LeaderElectorService.Contender contender = mock(LeaderElectorService.Contender.class);
+    private volatile boolean isReady = false;
 
     @Test
     public void testRouteUnchangedIfLeader() {
@@ -43,15 +46,14 @@ public class LeaderRedirectionFilterTest extends AllDirectives {
             8100 + 6,
             System.currentTimeMillis());
         MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
-        ILeadershipManager leadershipManager = new LeadershipManagerLocalImpl(fakeMasterDesc);
-        leadershipManager.becomeLeader();
-        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
+        when(contender.hasLeadership()).thenReturn(true);
+        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, contender, () -> isReady);
         Route testRoute = route(path("test", () -> complete("done")));
         Route route = filter.redirectIfNotLeader(testRoute);
         // leader is not ready by default
         assertNotEquals(testRoute, route);
         // mark leader ready
-        leadershipManager.setLeaderReady();
+        isReady = true;
         Route route2 = filter.redirectIfNotLeader(testRoute);
         // leader is not ready by default
         assertEquals(testRoute, route2);
@@ -68,10 +70,9 @@ public class LeaderRedirectionFilterTest extends AllDirectives {
             8100 + 6,
             System.currentTimeMillis());
         MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
-        ILeadershipManager leadershipManager = new LeadershipManagerLocalImpl(fakeMasterDesc);
         // Stop being leader, the filter should redirect so the returned Route is different from the input Route
-        leadershipManager.stopBeingLeader();
-        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
+        when(contender.hasLeadership()).thenReturn(false);
+        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, contender, () -> isReady);
         Route testRoute = route(path("test", () -> complete("done")));
         Route route = filter.redirectIfNotLeader(testRoute);
         // filter should return input Route if we are current leader

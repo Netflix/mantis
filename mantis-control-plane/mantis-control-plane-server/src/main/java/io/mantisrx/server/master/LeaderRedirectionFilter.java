@@ -22,10 +22,10 @@ import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,13 +34,17 @@ public class LeaderRedirectionFilter extends AllDirectives {
 
     public static final Logger logger = LoggerFactory.getLogger(LeaderRedirectionFilter.class);
     private final MasterMonitor masterMonitor;
-    private final ILeadershipManager leadershipManager;
+    private final LeaderElectorService.Contender contender;
+    private final Supplier<Boolean> isReady;
     private final Counter api503MasterNotReady;
     private final Counter apiRedirectsToLeader;
 
-    public LeaderRedirectionFilter(final MasterMonitor masterMonitor, final ILeadershipManager leadershipManager) {
+    public LeaderRedirectionFilter(
+        final MasterMonitor masterMonitor,
+        LeaderElectorService.Contender contender,
+        Supplier<Boolean> isReady) {
         this.masterMonitor = masterMonitor;
-        this.leadershipManager = leadershipManager;
+        this.isReady = isReady;
         Metrics m = new Metrics.Builder()
                 .id("LeaderRedirectionFilter")
                 .addCounter("api503MasterNotReady")
@@ -48,28 +52,13 @@ public class LeaderRedirectionFilter extends AllDirectives {
                 .build();
         this.api503MasterNotReady = m.getCounter("api503MasterNotReady");
         this.apiRedirectsToLeader = m.getCounter("apiRedirectsToLeader");
-    }
-
-    private boolean isLocalHost(MasterDescription master) {
-        try {
-            InetAddress localHost = InetAddress.getLocalHost();
-            for (InetAddress addr : InetAddress.getAllByName(master.getHostname())) {
-                if (addr.equals(localHost)) {
-                    return true;
-                }
-            }
-        } catch (UnknownHostException e) {
-            //logger.warn("Failed to compare if given master {} is local host: {}", master, e);
-            return false;
-        }
-
-        return false;
+        this.contender = contender;
     }
 
     public Route redirectIfNotLeader(final Route leaderRoute) {
         MasterDescription latestMaster = masterMonitor.getLatestMaster();
-        if (leadershipManager.isLeader() || isLocalHost(latestMaster)) {
-            if (leadershipManager.isReady()) {
+        if (contender.hasLeadership()) {
+            if (isReady.get()) {
                 return leaderRoute;
             } else {
                 return extractUri(uri -> {
@@ -91,14 +80,13 @@ public class LeaderRedirectionFilter extends AllDirectives {
     }
 
     public Route rejectIfNotLeader(final Route leaderRoute) {
-        MasterDescription latestMaster = masterMonitor.getLatestMaster();
-        if (!leadershipManager.isLeader() && !isLocalHost(latestMaster)) {
+        if (!contender.hasLeadership()) {
             return extractUri(uri -> {
                 logger.info("not leader, returning 500 for {}", uri);
                 return complete(StatusCodes.INTERNAL_SERVER_ERROR, "this node is not leader");
             });
         } else {
-            if (leadershipManager.isReady()) {
+            if (isReady.get()) {
                 return leaderRoute;
             } else {
                 return extractUri(uri -> {

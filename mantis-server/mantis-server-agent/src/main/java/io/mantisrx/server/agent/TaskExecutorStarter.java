@@ -16,24 +16,24 @@
 
 package io.mantisrx.server.agent;
 
-import com.mantisrx.common.utils.Services;
+import com.spotify.futures.CompletableFutures;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
-import io.mantisrx.server.master.client.HighAvailabilityClientServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.ClientServices;
+import io.mantisrx.server.master.client.ClientServicesUtil;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
-import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 import lombok.AccessLevel;
@@ -53,12 +53,10 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 @Slf4j
 public class TaskExecutorStarter extends AbstractIdleService {
     private final TaskExecutor taskExecutor;
-    private final HighAvailabilityClientServices highAvailabilityServices;
+    private final ClientServices clientServices;
 
     @Override
     protected void startUp() {
-        highAvailabilityServices.startAsync().awaitRunning();
-
         taskExecutor.start();
     }
 
@@ -67,8 +65,14 @@ public class TaskExecutorStarter extends AbstractIdleService {
         taskExecutor
             .closeAsync()
             .exceptionally(throwable -> null)
-            .thenCompose(dontCare -> Services.stopAsync(highAvailabilityServices,
-                MoreExecutors.directExecutor()))
+            .thenCompose(dontCare -> {
+                try {
+                    clientServices.close();
+                    return CompletableFuture.completedFuture(null);
+                } catch (Exception e) {
+                    return CompletableFutures.exceptionallyCompletedFuture(e);
+                }
+            })
             .get();
     }
 
@@ -86,7 +90,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private RpcService rpcService;
         @Nullable
         private ClassLoaderHandle classLoaderHandle;
-        private final HighAvailabilityClientServices highAvailabilityServices;
+        private final ClientServices highAvailabilityServices;
         @Nullable
         private SinkSubscriptionStateHandler.Factory sinkSubscriptionHandlerFactory;
         @Nullable
@@ -98,7 +102,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
             this.workerConfiguration = workerConfiguration;
             this.configuration = new Configuration();
             // todo (sundaram): Fix this.
-            this.highAvailabilityServices = HighAvailabilityServicesUtil.createHAServices(ConfigFactory.load());
+            this.highAvailabilityServices = ClientServicesUtil.createClientServices(ConfigFactory.load());
         }
 
         public TaskExecutorStarterBuilder configuration(Configuration configuration) {

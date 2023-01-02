@@ -25,8 +25,8 @@ import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import io.mantisrx.server.master.client.HighAvailabilityClientServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.ClientServices;
+import io.mantisrx.server.master.client.ClientServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import java.io.FileInputStream;
@@ -78,7 +78,7 @@ public class ConnectToNamedJob {
             e.printStackTrace();
         }
         // todo(sundaram): Fix this
-        HighAvailabilityClientServices haServices = HighAvailabilityServicesUtil.createHAServices(
+        ClientServices haServices = ClientServicesUtil.createClientServices(
             ConfigFactory.parseProperties(properties));
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()

@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.core.master;
 
+import java.io.IOException;
 import rx.Observable;
 
 
@@ -40,5 +41,10 @@ public class LocalMasterMonitor implements MasterMonitor {
     @Override
     public MasterDescription getLatestMaster() {
         return master;
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 }

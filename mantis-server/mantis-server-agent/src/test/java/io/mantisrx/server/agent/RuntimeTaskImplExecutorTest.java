@@ -49,7 +49,7 @@ import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.HighAvailabilityClientServices;
+import io.mantisrx.server.master.client.ClientServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -91,7 +91,7 @@ public class RuntimeTaskImplExecutorTest {
     private WorkerConfiguration workerConfiguration;
     private RpcService rpcService;
     private MantisMasterGateway masterMonitor;
-    private HighAvailabilityClientServices highAvailabilityServices;
+    private ClientServices highAvailabilityServices;
     private ClassLoaderHandle classLoaderHandle;
     private TaskExecutor taskExecutor;
     private CountDownLatch startedSignal;
@@ -125,7 +125,7 @@ public class RuntimeTaskImplExecutorTest {
         classLoaderHandle = ClassLoaderHandle.fixed(getClass().getClassLoader());
         resourceManagerGateway = getHealthyGateway("gateway 1");
         resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
-        highAvailabilityServices = mock(HighAvailabilityClientServices.class);
+        highAvailabilityServices = mock(ClientServices.class);
         when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterMonitor);
         when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
     }
@@ -382,7 +382,7 @@ public class RuntimeTaskImplExecutorTest {
 
         public TestingTaskExecutor(RpcService rpcService,
                                    WorkerConfiguration workerConfiguration,
-                                   HighAvailabilityClientServices highAvailabilityServices,
+                                   ClientServices highAvailabilityServices,
                                    ClassLoaderHandle classLoaderHandle,
                                    SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
                                    Consumer<Status> consumer) {
