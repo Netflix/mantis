@@ -72,6 +72,7 @@ import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
+import io.mantisrx.server.master.mesos.MesosSettings;
 import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
@@ -214,18 +215,19 @@ public class MasterMain implements Service {
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
 
-            final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, vmLeaseRescindedSubject,
+            MesosSettings mesosSettings = MesosSettings.fromConfig(typesafeConfig);
+            final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, mesosSettings, vmLeaseRescindedSubject,
                 jobMessageRouter,
                 workerRegistry);
             final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
                 this.config,
                 new String(leadershipManager.getContenderMetadata()),
                 mesosDriverSupplier,
-                ZookeeperSettings.fromConfig(typesafeConfig));
-            schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
+                ZookeeperSettings.fromConfig(typesafeConfig), mesosSettings);
+            schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService, mesosSettings);
 
             final MantisSchedulerFactory mantisSchedulerFactory =
-                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance());
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(mesosSettings), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance());
             mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
 
             // initialize agents error monitor

@@ -17,7 +17,7 @@
 package io.mantisrx.server.master;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
-import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.mesos.MesosSettings;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import java.util.Optional;
@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class ExecuteStageRequestFactory {
-  private final MasterConfiguration masterConfiguration;
+    private final MesosSettings mesosSettings;
 
   public ExecuteStageRequest of(
       ScheduleRequest scheduleRequest,
@@ -39,7 +39,7 @@ public class ExecuteStageRequestFactory {
         scheduleRequest.getStageNum(),
         scheduleRequest.getJobMetadata().getTotalStages(),
         matchedTaskExecutorInfo.getWorkerPorts().getPorts(),
-        masterConfiguration.getTimeoutSecondsToReportStart(),
+        mesosSettings.getWorkerTimeoutToReportStart().getSeconds(),
         matchedTaskExecutorInfo.getWorkerPorts().getMetricsPort(),
         scheduleRequest.getJobMetadata().getParameters(),
         scheduleRequest.getJobMetadata().getSchedulingInfo(),

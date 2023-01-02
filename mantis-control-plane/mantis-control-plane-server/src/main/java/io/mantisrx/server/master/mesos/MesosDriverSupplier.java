@@ -44,6 +44,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     private static final Logger logger = LoggerFactory.getLogger(MesosDriverSupplier.class);
 
     private final MasterConfiguration masterConfig;
+    private final MesosSettings mesosSettings;
     private final Observer<String> vmLeaseRescindedObserver;
     private final JobMessageRouter jobMessageRouter;
     private final WorkerRegistry workerRegistry;
@@ -53,10 +54,12 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     private final AtomicInteger numAttemptsToInit = new AtomicInteger(0);
 
     public MesosDriverSupplier(final MasterConfiguration masterConfig,
+                               final MesosSettings mesosSettings,
                                final Observer<String> vmLeaseRescindedObserver,
                                final JobMessageRouter jobMessageRouter,
                                final WorkerRegistry workerRegistry) {
         this.masterConfig = masterConfig;
+        this.mesosSettings = mesosSettings;
         this.vmLeaseRescindedObserver = vmLeaseRescindedObserver;
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
@@ -65,7 +68,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     Optional<MesosSchedulerDriver> initMesosSchedulerDriverWithTimeout(MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler,
                                                                        Protos.FrameworkInfo framework) {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        int mesosSchedulerDriverInitTimeoutSec = masterConfig.getMesosSchedulerDriverInitTimeoutSec();
+        long mesosSchedulerDriverInitTimeoutSec = mesosSettings.getSchedulerDriverInitTimeout().getSeconds();
         logger.info("initializing mesos scheduler driver with timeout of {} sec", mesosSchedulerDriverInitTimeoutSec);
         Optional<MesosSchedulerDriver> mesosSchedulerDriverO = Optional.empty();
         try {
@@ -88,14 +91,14 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         }
 
         if (isInitialized.compareAndSet(false, true)) {
-            if (numAttemptsToInit.incrementAndGet() > masterConfig.getMesosSchedulerDriverInitMaxAttempts()) {
+            if (numAttemptsToInit.incrementAndGet() > mesosSettings.getSchedulerDriverInitMaxAttempts()) {
                 logger.error("Failed to initialize Mesos scheduler driver after {} attempts, will terminate master",
                     numAttemptsToInit.get() - 1);
                 System.exit(2);
             }
             logger.info("initializing mesos scheduler callback handler");
             final MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler =
-                    new MesosSchedulerCallbackHandler(addVMLeaseAction, vmLeaseRescindedObserver, jobMessageRouter,
+                    new MesosSchedulerCallbackHandler(addVMLeaseAction, mesosSettings, vmLeaseRescindedObserver, jobMessageRouter,
                             workerRegistry);
             final Protos.FrameworkInfo framework = Protos.FrameworkInfo.newBuilder()
                     .setUser(masterConfig.getMantisFrameworkUserName())
@@ -115,8 +118,8 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             logger.info("initialized mesos scheduler driver {}", result);
         } else {
             int sleepIntervalMillis = 1000;
-            int maxTimeToWaitMillis =
-                masterConfig.getMesosSchedulerDriverInitMaxAttempts() * masterConfig.getMesosSchedulerDriverInitTimeoutSec() * 1000;
+            long maxTimeToWaitMillis =
+                mesosSettings.getSchedulerDriverInitMaxAttempts() * mesosSettings.getSchedulerDriverInitTimeout().toMillis();
             // block maxTimeToWaitMillis till mesosDriver is not null
             while (mesosDriverRef.get() == null) {
                 if (maxTimeToWaitMillis <= 0) {

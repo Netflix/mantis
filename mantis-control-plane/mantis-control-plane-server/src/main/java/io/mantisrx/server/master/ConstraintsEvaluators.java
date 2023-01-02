@@ -25,6 +25,7 @@ import com.netflix.fenzo.plugins.ExclusiveHostConstraint;
 import com.netflix.fenzo.plugins.UniqueHostAttrConstraint;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.mesos.MesosSettings;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +75,10 @@ public class ConstraintsEvaluators {
     }
 
     public static String zoneAttributeName() {
-        return ConfigurationProvider.getConfig().getHostZoneAttributeName();
+        return
+            MesosSettings
+                .fromConfig(ConfigurationProvider.getTypeSafeConfig())
+                .getSchedulerBalancedHostAttrName();
     }
 
     public static VMTaskFitnessCalculator softConstraint(JobConstraints constraint, final Set<String> coTasks) {

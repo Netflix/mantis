@@ -69,18 +69,20 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     private volatile int workerJvmMemoryScaleBackPct;
     private final MasterConfiguration masterConfig;
     private final ZookeeperSettings zkSettings;
+    private final MesosSettings mesosSettings;
     private ExecutorService executor;
     private final JsonSerializer jsonSerializer = new JsonSerializer();
 
     public VirtualMachineMasterServiceMesosImpl(
         final MasterConfiguration masterConfig,
         final String masterDescriptionJson,
-        final MesosDriverSupplier mesosSchedulerDriverSupplier, ZookeeperSettings zkSettings) {
+        final MesosDriverSupplier mesosSchedulerDriverSupplier, ZookeeperSettings zkSettings, MesosSettings mesosSettings) {
         super(true);
         this.masterConfig = masterConfig;
         this.masterDescriptionJson = masterDescriptionJson;
         this.mesosDriver = mesosSchedulerDriverSupplier;
         this.zkSettings = zkSettings;
+        this.mesosSettings = mesosSettings;
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -450,7 +452,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     public String getWorkerInstallDir() {
-        return masterConfig.getWorkerInstallDir();
+        return mesosSettings.getWorkerInstallDir();
     }
 
     public String getWorkerLibDir() {
@@ -458,15 +460,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     private String getWorkerExecutorScript() {
-        return masterConfig.getWorkerExecutorScript();
-    }
-
-    private boolean getUseSlaveFiltering() {
-        return masterConfig.getUseSlaveFiltering();
-    }
-
-    private String getSlaveFilterAttributeName() {
-        return masterConfig.getSlaveFilterAttributeName();
+        return mesosSettings.getWorkerExecutorScript();
     }
 
     public String getWorkerBinDir() {
@@ -486,7 +480,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     public long getTimeoutSecsToReportStart() {
-        return masterConfig.getTimeoutSecondsToReportStart();
+        return mesosSettings.getWorkerTimeoutToReportStart().getSeconds();
     }
 
     private double getMesosFailoverTimeoutSecs() {

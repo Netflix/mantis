@@ -1,0 +1,54 @@
+/*
+ * Copyright 2023 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.mantisrx.server.master.mesos;
+
+import com.typesafe.config.Config;
+import java.time.Duration;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+public class MesosSettings {
+    Duration schedulerDriverInitTimeout;
+    int schedulerDriverInitMaxAttempts;
+    Duration workerTimeoutToReportStart;
+    String workerExecutorScript;
+    String workerInstallDir;
+
+    boolean schedulerSlaveFilteringEnabled;
+    String schedulerSlaveFilteringAttrName;
+    String schedulerBalancedHostAttrName;
+    Duration schedulerLeaseOfferExpiry;
+
+    Duration reconcilerInterval;
+
+    public static MesosSettings fromConfig(Config config) {
+        return MesosSettings.builder()
+            .schedulerDriverInitTimeout(config.getDuration("schedulerDriver.initTimeout"))
+            .schedulerDriverInitMaxAttempts(config.getInt("schedulerDriver.maxAttempts"))
+            .workerTimeoutToReportStart(config.getDuration("worker.timeoutToReportStart"))
+            .workerExecutorScript(config.getString("worker.executorScript"))
+            .workerInstallDir(config.getString("worker.installDir"))
+            .schedulerSlaveFilteringEnabled(config.getBoolean("scheduler.slaveFiltering.enabled"))
+            .schedulerSlaveFilteringAttrName(config.getString("scheduler.slaveFiltering.attributeName"))
+            .schedulerLeaseOfferExpiry(config.getDuration("scheduler.leaseOfferExpiry"))
+            .schedulerBalancedHostAttrName(config.getString("scheduler.balancedHostAttrName"))
+            .reconcilerInterval(config.getDuration("reconcilerInterval"))
+            .build();
+    }
+}

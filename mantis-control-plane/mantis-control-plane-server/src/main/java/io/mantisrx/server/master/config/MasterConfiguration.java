@@ -40,61 +40,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     //  Apache Mesos related configurations
     // ------------------------------------------------------------------------
 
-    @Config("mesos.enabled")
-    @Default("true")
-    boolean isMesosEnabled();
-
-    @Config("mesos.scheduler.driver.init.timeout.sec")
-    @Default("2")
-    int getMesosSchedulerDriverInitTimeoutSec();
-
-    @Config("mesos.scheduler.driver.init.max.attempts")
-    @Default("3")
-    int getMesosSchedulerDriverInitMaxAttempts();
-
-    @Config("mesos.worker.timeoutSecondsToReportStart")
-    @Default("10")
-    int getTimeoutSecondsToReportStart();
-
-    @Config("mesos.worker.executorscript")
-    @Default("startup.sh")
-    String getWorkerExecutorScript();
-
     @Config("mesos.master.location")
     @Default("localhost:5050")
     String getMasterLocation();
 
-    @Config("mesos.worker.installDir")
-    String getWorkerInstallDir();
-
-    @Config("mesos.useSlaveFiltering")
-    @Default("false")
-    boolean getUseSlaveFiltering();
-
-    @Config("mesos.slaveFilter.attributeName")
-    @Default("EC2_AMI_ID")
-    String getSlaveFilterAttributeName();
-
-    @Config("mesos.task.reconciliation.interval.secs")
-    @Default("300")
-    long getMesosTaskReconciliationIntervalSecs();
-
-    @Config("mesos.lease.offer.expiry.secs")
-    @Default("300")
-    long getMesosLeaseOfferExpirySecs();
-
-    @Config("mesos.slave.attribute.zone.name")
-    @Default("AWSZone")
-    String getHostZoneAttributeName();
-
-
-    @Config("mantis.master.leader.mismatch.retry.count")
-    @Default("5")
-    int getMasterLeaderMismatchRetryCount();
-
-    @Config("master.shutdown.curator.service.enabled")
-    @Default("true")
-    boolean getShutdownCuratorServiceEnabled();
 
     @Config("mantis.master.api.route.ask.timeout.millis")
     @Default("1000")

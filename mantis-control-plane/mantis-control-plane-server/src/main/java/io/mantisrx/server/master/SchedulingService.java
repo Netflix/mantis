@@ -43,6 +43,7 @@ import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.mesos.MesosSettings;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -84,6 +85,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private final WorkerRegistry workerRegistry;
     private final TaskScheduler taskScheduler;
     private final TaskSchedulingService taskSchedulingService;
+    private final MesosSettings mesosSettings;
     private final TieredQueue taskQueue;
     private final Counter numWorkersLaunched;
     private final Counter numResourceOffersReceived;
@@ -127,8 +129,10 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     public SchedulingService(final JobMessageRouter jobMessageRouter,
                              final WorkerRegistry workerRegistry,
                              final Observable<String> vmLeaseRescindedObservable,
-                             final VirtualMachineMasterService virtualMachineService) {
+                             final VirtualMachineMasterService virtualMachineService,
+                             MesosSettings mesosSettings) {
         super(true);
+        this.mesosSettings = mesosSettings;
         this.schedulingState = new SchedulingStateManager();
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
@@ -138,7 +142,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator();
         TaskScheduler.Builder schedulerBuilder = new TaskScheduler.Builder()
                 .withLeaseRejectAction(virtualMachineService::rejectLease)
-                .withLeaseOfferExpirySecs(ConfigurationProvider.getConfig().getMesosLeaseOfferExpirySecs())
+                .withLeaseOfferExpirySecs(mesosSettings.getSchedulerLeaseOfferExpiry().getSeconds())
                 .withFitnessCalculator(agentFitnessCalculator)
                 .withFitnessGoodEnoughFunction(agentFitnessCalculator.getFitnessGoodEnoughFunc())
                 .withAutoScaleByAttributeName(ConfigurationProvider.getConfig().getAutoscaleByAttributeName()); // set this always
@@ -223,7 +227,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                                                           TaskScheduler.Builder schedulerBuilder) {
         int minMinIdle = 4;
         schedulerBuilder = schedulerBuilder
-                .withAutoScaleDownBalancedByAttributeName(ConfigurationProvider.getConfig().getHostZoneAttributeName())
+                .withAutoScaleDownBalancedByAttributeName(mesosSettings.getSchedulerBalancedHostAttrName())
                 .withAutoScalerMapHostnameAttributeName(ConfigurationProvider.getConfig().getAutoScalerMapHostnameAttributeName());
         final AgentClustersAutoScaler agentClustersAutoScaler = AgentClustersAutoScaler.get();
         try {
