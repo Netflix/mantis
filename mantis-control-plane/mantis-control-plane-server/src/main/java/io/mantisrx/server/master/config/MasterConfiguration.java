@@ -22,28 +22,15 @@ import io.mantisrx.server.master.store.KeyValueStore;
 import java.time.Duration;
 import org.skife.config.Config;
 import org.skife.config.Default;
-import org.skife.config.DefaultNull;
 
 
 public interface MasterConfiguration extends CoreConfiguration {
 
-    @Config("mantis.master.consoleport")
-    int getConsolePort();
-
     @Config("mantis.master.apiport")
     int getApiPort();
 
-    @Config("mantis.master.schedInfoPort")
-    int getSchedInfoPort();
-
-    @Config("mantis.master.apiportv2")
-    int getApiPortV2();
-
     @Config("mantis.master.metrics.port")
     int getMasterMetricsPort();
-
-    @Config("mantis.master.api.status.path")
-    String getApiStatusUri();
 
     @Config("mantis.master.storageProvider")
     KeyValueStore getStorageProvider();
@@ -53,14 +40,6 @@ public interface MasterConfiguration extends CoreConfiguration {
 
     @Config("mantis.master.resourceClusterProvider")
     String getResourceClusterProvider();
-
-    @Config("mantis.master.host")
-    @DefaultNull
-    String getMasterHost();
-
-    @Config("mantis.master.ip")
-    @DefaultNull
-    String getMasterIP();
 
 
     // ------------------------------------------------------------------------

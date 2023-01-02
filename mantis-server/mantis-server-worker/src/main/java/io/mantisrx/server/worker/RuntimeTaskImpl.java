@@ -103,7 +103,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         // shared state
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
 
-        mantisServices.add(MetricsFactory.newMetricsServer(config, executeStageRequest));
+        mantisServices.add(MetricsFactory.newMetricsServer(executeStageRequest));
 
         // [TODO:andyz] disable noOp publisher for now. Need to fix the full publisher injection.
         // mantisServices.add(MetricsFactory.newMetricsPublisher(config, executeStageRequest));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package io.mantisrx.common.metrics;
 
-import java.util.Collection;
+import com.typesafe.config.Config;
 
-class MetricsPublisherNoOp extends MetricsPublisher {
+public class MetricsPublisherUtil {
 
-    public MetricsPublisherNoOp() {
-        super();
+    public static MetricsPublisher createMetricsPublisher(Config config) throws Exception {
+        final String clazz = config.getString("mantis.metricsPublisher.class");
+        MetricsPublisherFactory factory = (MetricsPublisherFactory) Class.forName(clazz).newInstance();
+        return factory.createMetricsPublisher(config);
     }
-
-    @Override
-    public void publishMetrics(long timestamp,
-                               Collection<Metrics> currentMetricsRegistered) {}
-
 }

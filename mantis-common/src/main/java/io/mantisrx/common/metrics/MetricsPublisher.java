@@ -19,7 +19,6 @@ package io.mantisrx.common.metrics;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.Subscription;
@@ -29,15 +28,9 @@ import rx.functions.Action1;
 public abstract class MetricsPublisher {
 
     protected Map<String, String> commonTags = new HashMap<>();
-    private Properties properties;
     private Subscription subscription;
 
-    public MetricsPublisher(Properties properties) {
-        this.properties = properties;
-    }
-
-    protected Properties getPropertis() {
-        return properties;
+    public MetricsPublisher() {
     }
 
     public void start(int pollMetricsRegistryFrequencyInSeconds, final Map<String, String> commonTags) {

@@ -30,6 +30,7 @@ import com.sampullara.cli.Argument;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsPublisherUtil;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
@@ -63,6 +64,7 @@ import io.mantisrx.server.core.highavailability.NodeSettings;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.zookeeper.HighAvailabilityServicesUtil;
+import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.client.ClientServices;
 import io.mantisrx.server.master.client.ClientServicesImpl;
 import io.mantisrx.server.master.config.ConfigurationFactory;
@@ -218,7 +220,8 @@ public class MasterMain implements Service {
             final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
                 this.config,
                 new String(leadershipManager.getContenderMetadata()),
-                mesosDriverSupplier);
+                mesosDriverSupplier,
+                ZookeeperSettings.fromConfig(typesafeConfig));
             schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
 
             final MantisSchedulerFactory mantisSchedulerFactory =
@@ -241,7 +244,9 @@ public class MasterMain implements Service {
             if (config.getMasterMetricsPort() > 0) {
                 new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap()).start();
             }
-            new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
+            new MetricsPublisherService(
+                MetricsPublisherUtil.createMetricsPublisher(typesafeConfig),
+                (int) typesafeConfig.getDuration("mantis.metricsPublisher.publishFrequency").getSeconds(),
                 new HashMap<>()).start();
 
             // services

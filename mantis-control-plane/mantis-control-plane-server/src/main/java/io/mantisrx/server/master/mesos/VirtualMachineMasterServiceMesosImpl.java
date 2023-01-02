@@ -26,6 +26,7 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.WorkerTopologyInfo;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.LaunchTaskException;
 import io.mantisrx.server.master.VirtualMachineMasterService;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -66,18 +67,20 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     private final MesosDriverSupplier mesosDriver;
     private final AtomicBoolean initializationDone = new AtomicBoolean(false);
     private volatile int workerJvmMemoryScaleBackPct;
-    private MasterConfiguration masterConfig;
+    private final MasterConfiguration masterConfig;
+    private final ZookeeperSettings zkSettings;
     private ExecutorService executor;
     private final JsonSerializer jsonSerializer = new JsonSerializer();
 
     public VirtualMachineMasterServiceMesosImpl(
-            final MasterConfiguration masterConfig,
-            final String masterDescriptionJson,
-            final MesosDriverSupplier mesosSchedulerDriverSupplier) {
+        final MasterConfiguration masterConfig,
+        final String masterDescriptionJson,
+        final MesosDriverSupplier mesosSchedulerDriverSupplier, ZookeeperSettings zkSettings) {
         super(true);
         this.masterConfig = masterConfig;
         this.masterDescriptionJson = masterDescriptionJson;
         this.mesosDriver = mesosSchedulerDriverSupplier;
+        this.zkSettings = zkSettings;
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -350,17 +353,17 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("mantis.zookeeper.connectString")
-                                .setValue(masterConfig.getZkConnectionString())
+                                .setValue(zkSettings.getConnectString())
                 )
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("mantis.zookeeper.root")
-                                .setValue(masterConfig.getZkRoot())
+                                .setValue(zkSettings.getRootPath())
                 )
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("mantis.zookeeper.leader.announcement.path")
-                                .setValue(masterConfig.getLeaderAnnouncementPath())
+                                .setValue(zkSettings.getLeaderAnnouncementPath())
                 )
 
                 .addVariables(
