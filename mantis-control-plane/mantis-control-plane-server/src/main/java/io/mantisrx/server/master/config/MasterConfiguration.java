@@ -26,12 +26,6 @@ import org.skife.config.Default;
 
 public interface MasterConfiguration extends CoreConfiguration {
 
-    @Config("mantis.master.apiport")
-    int getApiPort();
-
-    @Config("mantis.master.metrics.port")
-    int getMasterMetricsPort();
-
     @Config("mantis.master.storageProvider")
     KeyValueStore getStorageProvider();
 

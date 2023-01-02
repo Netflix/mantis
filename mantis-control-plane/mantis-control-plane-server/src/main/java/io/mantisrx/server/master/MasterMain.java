@@ -241,8 +241,8 @@ public class MasterMain implements Service {
                 ConfigurationProvider.getConfig().getActiveSlaveAttributeName());
 
             // start serving metrics
-            if (config.getMasterMetricsPort() > 0) {
-                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap()).start();
+            if (nodeSettings.getMetricsPort() > 0) {
+                new MetricsServerService(nodeSettings.getMetricsPort(), 1, Collections.emptyMap()).start();
             }
             new MetricsPublisherService(
                 MetricsPublisherUtil.createMetricsPublisher(typesafeConfig),
@@ -261,7 +261,7 @@ public class MasterMain implements Service {
                 statusEventBrokerActor,
                 resourceClusters,
                 resourceClustersHostActor,
-                config.getApiPort(),
+                nodeSettings.getApiPort(),
                 storageProvider,
                 schedulingService,
                 lifecycleEventPublisher,

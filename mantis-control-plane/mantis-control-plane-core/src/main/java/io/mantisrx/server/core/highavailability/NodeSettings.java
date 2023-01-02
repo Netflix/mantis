@@ -20,11 +20,14 @@ import com.typesafe.config.Config;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Value
+@Builder
 public class NodeSettings {
     String host;
     String ip;
@@ -33,19 +36,21 @@ public class NodeSettings {
     int apiPort;
     int scheduleInfoPort;
     int apiPortV2;
+    int metricsPort;
     String apiStatusURI;
 
     public static NodeSettings fromConfig(Config config) {
         try {
-            return new NodeSettings(
-                config.hasPath("host") ? config.getString("host") : InetAddress.getLocalHost().getHostName(),
-                config.hasPath("ip") ? config.getString("host") : InetAddress.getLocalHost().getHostAddress(),
-
-                config.getInt("consoleport"),
-                config.getInt("apiport"),
-                config.getInt("schedInfoPort"),
-                config.getInt("apiportv2"),
-                config.getString("apiStatusURI"));
+            return NodeSettings.builder()
+                .host(config.hasPath("host") ? config.getString("host") : InetAddress.getLocalHost().getHostName())
+                .ip(config.hasPath("ip") ? config.getString("host") : InetAddress.getLocalHost().getHostAddress())
+                .consolePort(config.getInt("consolePort"))
+                .apiPort(config.getInt("apiPort"))
+                .scheduleInfoPort(config.getInt("schedInfoPort"))
+                .apiPortV2(config.getInt("apiPortV2"))
+                .apiStatusURI(config.getString("apiStatusURI"))
+                .metricsPort(config.getInt("metricsPort"))
+                .build();
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
