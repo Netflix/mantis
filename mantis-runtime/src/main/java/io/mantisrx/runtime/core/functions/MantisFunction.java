@@ -16,12 +16,12 @@
 
 package io.mantisrx.runtime.core.functions;
 
-public interface MantisFunction<IN, OUT> extends AutoCloseable {
+public interface MantisFunction extends AutoCloseable {
 
     MantisFunction EMPTY = new MantisFunction() {};
 
-    static <IN> MantisFunction<IN, IN> empty() {
-        return (MantisFunction<IN, IN>) EMPTY;
+    static MantisFunction empty() {
+        return EMPTY;
     }
 
     default void init() {

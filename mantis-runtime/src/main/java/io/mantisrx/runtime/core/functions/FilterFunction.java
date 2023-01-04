@@ -17,6 +17,6 @@
 package io.mantisrx.runtime.core.functions;
 
 @FunctionalInterface
-public interface FilterFunction<IN> extends MantisFunction<IN, IN> {
+public interface FilterFunction<IN> extends MantisFunction {
     boolean apply(IN in);
 }

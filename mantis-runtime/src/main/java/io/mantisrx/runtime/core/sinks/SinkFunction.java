@@ -18,5 +18,5 @@ package io.mantisrx.runtime.core.sinks;
 
 import io.mantisrx.runtime.core.functions.MantisFunction;
 
-public class SinkFunction<IN> implements MantisFunction<IN, Void> {
+public class SinkFunction<IN> implements MantisFunction {
 }

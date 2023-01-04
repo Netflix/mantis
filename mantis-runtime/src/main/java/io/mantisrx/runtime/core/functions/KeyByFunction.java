@@ -16,6 +16,6 @@
 
 package io.mantisrx.runtime.core.functions;
 
-public interface KeyByFunction<K, IN> extends MantisFunction<IN, IN> {
+public interface KeyByFunction<K, IN> extends MantisFunction {
     K getKey(IN in);
 }

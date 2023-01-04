@@ -17,6 +17,6 @@
 package io.mantisrx.runtime.core.functions;
 
 @FunctionalInterface
-public interface FlatMapFunction<IN, OUT> extends MantisFunction<IN, OUT> {
+public interface FlatMapFunction<IN, OUT> extends MantisFunction {
     Iterable<OUT> apply(IN in);
 }

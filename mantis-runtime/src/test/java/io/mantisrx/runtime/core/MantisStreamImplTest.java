@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime.core;
 
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.Set;
 import junit.framework.TestCase;
 import org.apache.flink.shaded.guava30.com.google.common.graph.ImmutableValueGraph;
@@ -41,6 +42,28 @@ public class MantisStreamImplTest extends TestCase {
             graph.successors(a).forEach(nbr -> System.out.printf("edge for %s -> %s ::: %s\n", a, nbr, graph.edgeValue(a, nbr)));
         }
         System.out.println("done!");
+    }
+
+    @Test
+    public void testTopSort() {
+        /**
+         * For the following graph,
+         *            c
+         *            ^
+         * a^ -> d -> b
+         * |          ^
+         * + -------- |
+         */
+        ImmutableValueGraph.Builder<String, Integer> graphBuilder = ValueGraphBuilder.directed().allowsSelfLoops(true).immutable();
+        graphBuilder.putEdgeValue("a", "b", 10);
+        graphBuilder.putEdgeValue("a", "a", 10);
+        graphBuilder.putEdgeValue("a", "d", 10);
+        graphBuilder.putEdgeValue("b", "c", 20);
+        graphBuilder.putEdgeValue("d", "b", 10);
+
+        ImmutableValueGraph<String, Integer> graph = graphBuilder.build();
+        Iterable<String> nodes = MantisStreamImpl.topSortTraversal(graph);
+        assertEquals(ImmutableList.of("a", "d", "b", "c"), nodes);
     }
 
 }

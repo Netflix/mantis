@@ -17,13 +17,18 @@
 package io.mantisrx.runtime.core.sinks;
 
 import io.mantisrx.runtime.sink.SelfDocumentingSink;
+import io.mantisrx.runtime.sink.Sink;
 import lombok.Getter;
 
 public class ObservableSinkImpl<T> extends SinkFunction<T> {
     @Getter
-    private SelfDocumentingSink<T> sink;
+    private Sink<T> sink;
 
     public ObservableSinkImpl(SelfDocumentingSink<T> sink) {
+        this.sink = sink;
+    }
+
+    public ObservableSinkImpl(Sink<T> sink) {
         this.sink = sink;
     }
 }

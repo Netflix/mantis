@@ -23,6 +23,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -117,7 +118,7 @@ public class Codecs {
         };
     }
 
-    public static <T> Codec<T> javaSerializer() {
+    public static <T extends Serializable> Codec<T> javaSerializer() {
         return new Codec<T>() {
             @Override
             public T decode(byte[] bytes) {

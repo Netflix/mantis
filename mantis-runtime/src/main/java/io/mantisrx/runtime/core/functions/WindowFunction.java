@@ -16,15 +16,15 @@
 
 package io.mantisrx.runtime.core.functions;
 
-import io.mantisrx.runtime.core.MantisStream;
+import io.mantisrx.runtime.core.WindowSpec;
 import lombok.Getter;
 
-public class WindowFunction<IN> implements MantisFunction<IN, IN> {
+public class WindowFunction<IN> implements MantisFunction {
 
     @Getter
-    private final MantisStream.WindowSpec spec;
+    private final WindowSpec spec;
 
-    public WindowFunction(MantisStream.WindowSpec spec) {
+    public WindowFunction(WindowSpec spec) {
         this.spec = spec;
     }
 }

@@ -17,6 +17,6 @@
 package io.mantisrx.runtime.core.functions;
 
 @FunctionalInterface
-public interface MapFunction<IN, OUT> extends MantisFunction<IN, OUT> {
+public interface MapFunction<IN, OUT> extends MantisFunction {
     OUT apply(IN in);
 }

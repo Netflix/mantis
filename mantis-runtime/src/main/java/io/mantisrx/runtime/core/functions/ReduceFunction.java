@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.core.functions;
 
-public interface ReduceFunction<IN, OUT> extends MantisFunction<IN, OUT> {
+public interface ReduceFunction<IN, OUT> extends MantisFunction {
 
     OUT initialValue();
 

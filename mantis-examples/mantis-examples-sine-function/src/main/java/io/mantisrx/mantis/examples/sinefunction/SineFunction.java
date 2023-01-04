@@ -23,11 +23,14 @@ import static io.mantisrx.mantis.examples.sinefunction.SineFunctionJob.RANGE_MIN
 import static io.mantisrx.mantis.examples.sinefunction.SineFunctionJob.USE_RANDOM_FLAG;
 
 import io.mantisrx.mantis.examples.sinefunction.core.Point;
+import io.mantisrx.runtime.Config;
+import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.core.MantisStream;
-import io.mantisrx.runtime.core.MantisStreamImpl;
+import io.mantisrx.runtime.core.WindowSpec;
 import io.mantisrx.runtime.core.functions.ReduceFunctionImpl;
 import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
 import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
+import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
 import io.mantisrx.runtime.parameter.type.DoubleParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
@@ -41,51 +44,52 @@ public class SineFunction {
         final double frequency = 1;
         final double phase = 0.0;
 
-        MantisStreamImpl.init()
+        Config<Point> jobConfig = MantisStream.create(null)
             .source(new ObservableSourceImpl<>(new SineFunctionJob.TimerSource()))
             .filter(x -> x % 2 == 0)
             .map(x -> new Point(x, amplitude * Math.sin((frequency * x) + phase)))
             .keyBy(x -> x.getX() % 10)
-            .window(MantisStream.WindowSpec.count(2))
+            .window(WindowSpec.count(2))
             .reduce((ReduceFunctionImpl<Point>) (acc, i) -> {
                 Point point = new Point(acc.getX() + i.getX(), i.getY());
                 log.info("received point ({}, {}) -> ({}, {})", i.getX(), i.getY(), point.getX(), point.getY());
                 return point;
             })
-            .sink(new ObservableSinkImpl<>(SineFunctionJob.sseSink))
-            .parameters(
+            .sink(new ObservableSinkImpl<>(SineFunctionJob.sseSink));
+
+        Job<Point> pointJob = jobConfig.parameterDefinition(
             new BooleanParameter()
                 .name(USE_RANDOM_FLAG)
                 .defaultValue(false)
                 .description("If true, produce a random sequence of integers.  If false,"
                     + " produce a sequence of integers starting at 0 and increasing by 1.")
                 .build()
-            , new DoubleParameter()
-                .name(RANDOM_RATE)
-                .defaultValue(1.0)
-                .description("The chance a random integer is generated, for the given period")
-                .validator(Validators.range(0, 1))
-                .build()
-            , new IntParameter()
-                .name(INTERVAL_SEC)
-                .defaultValue(1)
-                .description("Period at which to generate a random integer value to send to sine function")
-                .validator(Validators.range(1, 60))
-                .build()
-            , new IntParameter()
-                .name(RANGE_MIN)
-                .defaultValue(0)
-                .description("Minimun of random integer value")
-                .validator(Validators.range(0, 100))
-                .build()
-            , new IntParameter()
-                .name(RANGE_MAX)
-                .defaultValue(100)
-                .description("Maximum of random integer value")
-                .validator(Validators.range(1, 100))
-                .build()
+        ).parameterDefinition(new DoubleParameter()
+            .name(RANDOM_RATE)
+            .defaultValue(1.0)
+            .description("The chance a random integer is generated, for the given period")
+            .validator(Validators.range(0, 1))
+            .build()
+        ).parameterDefinition(new IntParameter()
+            .name(INTERVAL_SEC)
+            .defaultValue(1)
+            .description("Period at which to generate a random integer value to send to sine function")
+            .validator(Validators.range(1, 60))
+            .build()
+        ).parameterDefinition(new IntParameter()
+            .name(RANGE_MIN)
+            .defaultValue(0)
+            .description("Minimun of random integer value")
+            .validator(Validators.range(0, 100))
+            .build()
+        ).parameterDefinition(new IntParameter()
+            .name(RANGE_MAX)
+            .defaultValue(100)
+            .description("Maximum of random integer value")
+            .validator(Validators.range(1, 100))
+            .build()
+        ).create();
 
-            )
-            .execute();
+        LocalJobExecutorNetworked.execute(pointJob);
     }
 }

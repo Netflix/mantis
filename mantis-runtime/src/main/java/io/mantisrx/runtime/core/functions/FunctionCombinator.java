@@ -21,7 +21,7 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.computation.Computation;
 import io.mantisrx.runtime.computation.GroupToScalarComputation;
 import io.mantisrx.runtime.computation.ScalarComputation;
-import io.mantisrx.runtime.core.MantisStream;
+import io.mantisrx.runtime.core.WindowSpec;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.Arrays;
@@ -45,7 +45,7 @@ public class FunctionCombinator<T, R> {
         this.functions = functions;
     }
 
-    public <IN, OUT> FunctionCombinator<T, OUT> add(MantisFunction<IN, OUT> fn) {
+    public <IN, OUT> FunctionCombinator<T, OUT> add(MantisFunction fn) {
         ImmutableList<MantisFunction> functions = ImmutableList.<MantisFunction>builder().addAll(this.functions).add(fn).build();
         return new FunctionCombinator<>(this.isKeyed, functions);
     }
@@ -65,7 +65,7 @@ public class FunctionCombinator<T, R> {
             @Override
             public Observable<V> call(Context context, Observable<U> uObservable) {
                 Observable<?> current = uObservable;
-                for (MantisFunction<?, ?> fn : functions) {
+                for (MantisFunction fn : functions) {
                     if (fn instanceof FilterFunction) {
                         current = current.filter(((FilterFunction) fn)::apply);
                     } else if (fn instanceof MapFunction) {
@@ -92,7 +92,7 @@ public class FunctionCombinator<T, R> {
                 Observable<?> observable = gobs.groupBy(MantisGroup::getKeyValue).flatMap(gob -> {
                     Observable<?> current = gob.map(MantisGroup::getValue);
                     K key = gob.getKey();
-                    for (MantisFunction<?, ?> fn : functions) {
+                    for (MantisFunction fn : functions) {
                         if (fn instanceof FilterFunction) {
                             current = current.filter(((FilterFunction) fn)::apply);
                         } else if (fn instanceof MapFunction) {
@@ -105,7 +105,8 @@ public class FunctionCombinator<T, R> {
                             ReduceFunction reduceFn = (ReduceFunction) fn;
                             current = ((Observable<Observable<?>>) current)
                                 .map(obs -> obs.reduce(reduceFn.initialValue(), (acc, e) -> reduceFn.reduce(acc, e)))
-                                .flatMap(x -> x);
+                                .flatMap(x -> x)
+                                .filter(x -> x != ReduceFunctionImpl.EMPTY);
                         }
                     }
                     return current;
@@ -116,7 +117,7 @@ public class FunctionCombinator<T, R> {
     }
 
     private Observable<? extends Observable<?>> handleWindows(Observable<?> obs, WindowFunction<?> windowFn) {
-        MantisStream.WindowSpec spec = windowFn.getSpec();
+        WindowSpec spec = windowFn.getSpec();
         switch (spec.getType()) {
             case ELEMENT:
             case ELEMENT_SLIDING:
@@ -125,7 +126,7 @@ public class FunctionCombinator<T, R> {
             case SLIDING:
                 return obs.window(spec.getWindowLength().toMillis(), spec.getWindowOffset().toMillis(), TimeUnit.MILLISECONDS);
         }
-        throw new UnsupportedOperationException("Unknown WindowSpec must be one of " + Arrays.toString(MantisStream.WindowType.values()));
+        throw new UnsupportedOperationException("Unknown WindowSpec must be one of " + Arrays.toString(WindowSpec.WindowType.values()));
     }
 
     public Computation makeStage() {

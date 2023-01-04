@@ -18,7 +18,7 @@ package io.mantisrx.runtime.core.sources;
 
 import io.mantisrx.runtime.core.functions.MantisFunction;
 
-public interface SourceFunction<OUT> extends MantisFunction<Void, OUT> {
+public interface SourceFunction<OUT> extends MantisFunction {
 
     OUT next();
 

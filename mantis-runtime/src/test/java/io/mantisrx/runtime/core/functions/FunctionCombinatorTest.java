@@ -22,7 +22,7 @@ import io.mantisrx.common.MantisGroup;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.computation.GroupToScalarComputation;
 import io.mantisrx.runtime.computation.ScalarComputation;
-import io.mantisrx.runtime.core.MantisStream;
+import io.mantisrx.runtime.core.WindowSpec;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public class FunctionCombinatorTest {
             .add((MapFunction<Long, Long>) e -> e * e)
             .add((MapFunction<Long, String>) e -> e + "1")
             .add((MapFunction<String, Integer>) Integer::parseInt)
-            .add(new WindowFunction<>(MantisStream.WindowSpec.count(2)))
+            .add(new WindowFunction<>(WindowSpec.count(2)))
             .add(new ReduceFunction<Integer, Integer>() {
                 @Override
                 public Integer initialValue() {

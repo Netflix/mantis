@@ -17,10 +17,8 @@
 package io.mantisrx.runtime.core;
 
 import io.mantisrx.common.MantisGroup;
-import io.mantisrx.common.codec.Codec;
-import io.mantisrx.common.codec.Codecs;
+import io.mantisrx.runtime.Config;
 import io.mantisrx.runtime.Context;
-import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.computation.Computation;
 import io.mantisrx.runtime.computation.ToGroupComputation;
 import io.mantisrx.runtime.core.functions.FilterFunction;
@@ -29,17 +27,14 @@ import io.mantisrx.runtime.core.functions.FunctionCombinator;
 import io.mantisrx.runtime.core.functions.KeyByFunction;
 import io.mantisrx.runtime.core.functions.MantisFunction;
 import io.mantisrx.runtime.core.functions.MapFunction;
-import io.mantisrx.runtime.core.functions.ReduceFunction;
 import io.mantisrx.runtime.core.functions.WindowFunction;
 import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
 import io.mantisrx.runtime.core.sinks.SinkFunction;
 import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.core.sources.SourceFunction;
-import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +43,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.shaded.guava30.com.google.common.graph.ImmutableValueGraph;
-import org.apache.flink.shaded.guava30.com.google.common.graph.MutableValueGraph;
-import org.apache.flink.shaded.guava30.com.google.common.graph.ValueGraphBuilder;
 import rx.Observable;
 
 @Slf4j
@@ -62,11 +54,11 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
     final MantisGraph graph;
     final Iterable<ParameterDefinition<?>> params;
 
-    public MantisStreamImpl(OperandNode<T> newNode, MantisGraph graph) {
+    MantisStreamImpl(OperandNode<T> newNode, MantisGraph graph) {
         this(newNode, graph, ImmutableList.of());
     }
 
-    public MantisStreamImpl(OperandNode<T> node, MantisGraph graph, Iterable<ParameterDefinition<?>> params) {
+    MantisStreamImpl(OperandNode<T> node, MantisGraph graph, Iterable<ParameterDefinition<?>> params) {
         this.currNode = node;
         this.graph = graph;
         this.params = params;
@@ -77,23 +69,20 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
         return new MantisStreamImpl<>(node, new MantisGraph().addNode(node));
     }
 
-    @Override
-    public <OUT> MantisStream<OUT> create() {
-        return MantisStreamImpl.init();
-    }
-
     public <OUT> MantisStream<OUT> source(SourceFunction<OUT> source) {
-        // Preconditions.checkState(currNode == null, "Supports only 1 source which must be the first call");
         return updateGraph(source);
-
     }
 
     @Override
-    public MantisStream<Void> sink(SinkFunction<T> sink) {
-        return updateGraph(sink);
+    public Config<T> sink(SinkFunction<T> sink) {
+        MantisStreamImpl<Void> mantisStream = updateGraph(sink);
+        ImmutableValueGraph<OperandNode<?>, MantisFunction> graphDag = mantisStream.graph.immutable();
+        Iterable<OperandNode<?>> operandNodes = topSortTraversal(graphDag);
+        MantisJobBuilder jobBuilder = makeMantisJob(graphDag, operandNodes);
+        return (Config<T>) jobBuilder.buildJobConfig();
     }
 
-    <OUT> MantisStream<OUT> updateGraph(MantisFunction<?, OUT> mantisFn) {
+    <OUT> MantisStreamImpl<OUT> updateGraph(MantisFunction mantisFn) {
         OperandNode<OUT> node = OperandNode.create(graph, mantisFn.getClass().getName() + "OUT");
         graph.putEdge(currNode, node, mantisFn);
         return new MantisStreamImpl<>(node, graph);
@@ -136,23 +125,7 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
             .keyByInternal(keyFn);
     }
 
-    @Override
-    public MantisStream<T> parameters(ParameterDefinition<?>... params) {
-        return new MantisStreamImpl<>(currNode, graph, Arrays.stream(params).collect(Collectors.toList()));
-    }
-
-    @Override
-    public void execute() {
-        // traverse the graph and build MantisJob
-        // graph traversal using top-sort
-        // return an instance of mantis job (or break it into two functions)
-        ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graphDag = this.graph.immutable();
-        Iterable<OperandNode<?>> operandNodes = topSortTraversal(graphDag);
-        Job job = makeMantisJob(graphDag, operandNodes);
-        LocalJobExecutorNetworked.execute(job);
-    }
-
-    private Job makeMantisJob(ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graphDag, Iterable<OperandNode<?>> operandNodes) {
+    private MantisJobBuilder makeMantisJob(ImmutableValueGraph<OperandNode<?>, MantisFunction> graphDag, Iterable<OperandNode<?>> operandNodes) {
         MantisJobBuilder jobBuilder = new MantisJobBuilder();
         final AtomicReference<FunctionCombinator<?, ?>> composite = new AtomicReference<>(new FunctionCombinator<>(false));
         for (OperandNode<?> n : operandNodes) {
@@ -161,7 +134,7 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
                 continue;
             }
             // remove self-loop
-            Optional<MantisFunction<?, ?>> selfEdge = graphDag.edgeValue(n, n);
+            Optional<MantisFunction> selfEdge = graphDag.edgeValue(n, n);
             Integer numSelfEdges = selfEdge.map(x -> 1).orElse(0);
             selfEdge.ifPresent(mantisFn -> {
                 if (MantisFunction.empty().equals(mantisFn)) {
@@ -204,8 +177,7 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
                 });
             }
         }
-        jobBuilder.addParameters(params);
-        return jobBuilder.buildJob();
+        return jobBuilder;
     }
 
     private <A, K> Computation makeGroupComputation(KeyByFunction<K, A> keyFn) {
@@ -222,126 +194,26 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
         };
     }
 
-    private Iterable<OperandNode<?>> topSortTraversal(ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graphDag) {
-        Set<OperandNode<?>> nodes = graphDag.nodes();
-        Map<OperandNode<?>, AtomicInteger> inDegreeMap = nodes.stream().collect(Collectors.toMap(x -> x, x -> new AtomicInteger(graphDag.inDegree(x) - (graphDag.hasEdgeConnecting(x, x) ? 1 : 0))));
-        List<OperandNode<?>> nodeOrder = new ArrayList<>();
-        final Set<OperandNode<?>> visited = new HashSet<>();
-        while (true) {
-            Set<OperandNode<?>> starts = inDegreeMap.keySet().stream()
-                .filter(x -> !visited.contains(x) && inDegreeMap.get(x).get() == 0)
-                .collect(Collectors.toSet());
-
-            starts.forEach(x -> graphDag.successors(x).forEach(nbr -> inDegreeMap.get(nbr).decrementAndGet()));
-            if (starts.isEmpty()) {
-                break;
-            }
+    static <V, E> Iterable<V> topSortTraversal(ImmutableValueGraph<V, E> graphDag) {
+        Set<V> nodes = graphDag.nodes();
+        Map<V, AtomicInteger> inDegreeMap = nodes.stream()
+            .collect(Collectors.toMap(x -> x, x ->
+                new AtomicInteger(graphDag.inDegree(x) - (graphDag.hasEdgeConnecting(x, x) ? 1 : 0))));
+        List<V> nodeOrder = new ArrayList<>();
+        final Set<V> visited = new HashSet<>();
+        List<V> starts = inDegreeMap.keySet().stream()
+            .filter(x -> inDegreeMap.get(x).get() == 0)
+            .collect(Collectors.toList());
+        while (!starts.isEmpty()) {
+            starts.forEach(x -> graphDag.successors(x).forEach(nbr -> {
+                if (nbr != x) inDegreeMap.get(nbr).decrementAndGet();
+            }));
             visited.addAll(starts);
             nodeOrder.addAll(starts);
+            starts = starts.stream().flatMap(x -> graphDag.successors(x).stream())
+                .filter(x -> !visited.contains(x) && inDegreeMap.get(x).get() == 0)
+                .collect(Collectors.toList());
         }
         return nodeOrder;
-    }
-
-    private static class KeyedMantisStreamImpl<K, T> implements KeyedMantisStream<K, T> {
-        final OperandNode<T> currNode;
-        final MantisGraph graph;
-
-        public KeyedMantisStreamImpl(OperandNode<T> node, MantisGraph graph) {
-            this.currNode = node;
-            this.graph = graph;
-        }
-
-        <OUT> KeyedMantisStream<K, OUT> updateGraph(MantisFunction<?, OUT> mantisFn) {
-            OperandNode<OUT> node = OperandNode.create(graph, mantisFn.getClass().getName() + "OUT");
-            graph.putEdge(currNode, node, mantisFn);
-            return new KeyedMantisStreamImpl<>(node, graph);
-        }
-
-        @Override
-        public <OUT> KeyedMantisStream<K, OUT> map(MapFunction<T, OUT> mapFn) {
-            //todo(hmittal): figure out a way to make the key available inside these functions
-            return updateGraph(mapFn);
-        }
-
-        @Override
-        public <OUT> KeyedMantisStream<K, OUT> flatMap(FlatMapFunction<T, OUT> flatMapFn) {
-            return updateGraph(flatMapFn);
-        }
-
-        @Override
-        public KeyedMantisStream<K, T> filter(FilterFunction<T> filterFn) {
-            return updateGraph(filterFn);
-        }
-
-        public KeyedMantisStream<K, T> window(WindowSpec spec) {
-            this.graph.putEdge(currNode, currNode, new WindowFunction<>(spec));
-            return new KeyedMantisStreamImpl<>(currNode, graph);
-        }
-
-        @Override
-        public <OUT> MantisStream<OUT> reduce(ReduceFunction<T, OUT> reduceFn) {
-            OperandNode<OUT> node = OperandNode.create(graph, "reduceFunctionOut");
-            this.graph.putEdge(currNode, node, reduceFn);
-            this.graph.putEdge(node, node, MantisFunction.empty());
-            return new MantisStreamImpl<>(node, graph);
-        }
-    }
-
-    @Getter
-    private static class OperandNode<T> {
-        private final int nodeIdx;
-        private final String description;
-        private final Codec<T> codec;
-
-        public OperandNode(int i, String description) {
-            this.nodeIdx = i;
-            this.description = description;
-            this.codec = Codecs.javaSerializer();
-        }
-
-        public static <T> OperandNode<T> create(MantisGraph graph, String description) {
-            return new OperandNode<>(graph.nodes().size(), description);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%d (%s)", nodeIdx, description);
-        }
-
-        public <K> Codec<K> getKeyCodec() {
-            return Codecs.javaSerializer();
-        }
-    }
-
-    private static class MantisGraph {
-        private MutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graph;
-
-        MantisGraph() {
-            this(ValueGraphBuilder.directed().allowsSelfLoops(true).build());
-        }
-
-        MantisGraph(MutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> graph) {
-            this.graph = graph;
-        }
-
-        Set<OperandNode<?>> nodes() {
-            return this.graph.nodes();
-        }
-
-        private MantisGraph addNode(OperandNode<?> node) {
-            this.graph.addNode(node);
-            return this;
-        }
-
-        private MantisGraph putEdge(OperandNode<?> from, OperandNode<?> to, MantisFunction<?, ?> edge) {
-            this.graph.addNode(from);
-            this.graph.addNode(to);
-            this.graph.putEdgeValue(from, to, edge);
-            return this;
-        }
-
-        public ImmutableValueGraph<OperandNode<?>, MantisFunction<?, ?>> immutable() {
-            return ImmutableValueGraph.copyOf(this.graph);
-        }
     }
 }
