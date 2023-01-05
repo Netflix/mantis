@@ -111,14 +111,16 @@ public class JobsRouteTest extends RouteTestBase {
         JobDefinitionSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
-    private static ApiSettings apiSettings;
+    private static final ApiSettings apiSettings =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
-        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {

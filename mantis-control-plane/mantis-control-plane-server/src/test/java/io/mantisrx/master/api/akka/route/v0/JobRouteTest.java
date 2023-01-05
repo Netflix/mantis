@@ -181,7 +181,10 @@ public class JobRouteTest {
         JobDefinitionSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
-    private static ApiSettings apiSettings;
+    private static final ApiSettings apiSettings =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -189,7 +192,6 @@ public class JobRouteTest {
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
         TestHelpers.setupMasterConfig();
-        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
 
         t = new Thread(() -> {
             try {

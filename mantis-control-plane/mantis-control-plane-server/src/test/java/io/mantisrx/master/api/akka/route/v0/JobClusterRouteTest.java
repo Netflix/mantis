@@ -87,7 +87,10 @@ public class JobClusterRouteTest {
     private final Http http = Http.get(system);
     private static Thread t;
     private static final int serverPort = 8301;
-    private static ApiSettings apiSettings;
+    private static final ApiSettings apiSettings =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
     private static final JobDefinitionSettings jobDefinitionSettings =
         JobDefinitionSettings.fromConfig(
             ConfigFactory
@@ -123,7 +126,6 @@ public class JobClusterRouteTest {
     @BeforeClass
     public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
-        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {
