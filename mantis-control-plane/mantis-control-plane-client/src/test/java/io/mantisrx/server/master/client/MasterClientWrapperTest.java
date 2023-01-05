@@ -42,10 +42,10 @@ public class MasterClientWrapperTest {
     static Properties zkProps = new Properties();
 
     static {
-        zkProps.put("mantis.zookeeper.connectString", "100.67.80.172:2181,100.67.71.221:2181,100.67.89.26:2181,100.67.71.34:2181,100.67.80.18:2181");
-        zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
-        zkProps.put("mantis.zookeeper.root", "/mantis/master");
-        zkProps.put("mantis.localmode", "false");
+        zkProps.put("mantis.highAvailability.zookeeper.connectString", "100.67.80.172:2181,100.67.71.221:2181,100.67.89.26:2181,100.67.71.34:2181,100.67.80.18:2181");
+        zkProps.put("mantis.highAvailability.zookeeper.leaderAnnouncementPath", "/leader");
+        zkProps.put("mantis.highAvailability.zookeeper.rootPath", "/mantis/master");
+        zkProps.put("mantis.highAvailability.mode", "zookeeper");
     }
 
     MasterClientWrapper clientWrapper = null;

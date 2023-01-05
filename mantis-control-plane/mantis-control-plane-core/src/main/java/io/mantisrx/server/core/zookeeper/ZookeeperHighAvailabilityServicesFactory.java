@@ -17,6 +17,7 @@
 package io.mantisrx.server.core.zookeeper;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.server.core.highavailability.HighAvailabilityServices;
 import io.mantisrx.server.core.highavailability.HighAvailabilityServicesFactory;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
@@ -24,9 +25,16 @@ import java.io.IOException;
 import lombok.Getter;
 
 public class ZookeeperHighAvailabilityServicesFactory implements HighAvailabilityServicesFactory {
+    private final Config defaultZookeeperConfig =
+        ConfigFactory
+            .load()
+            .getConfig("mantis.highAvailability.zookeeper");
     @Override
     public HighAvailabilityServices getHighAvailabilityServices(Config config) {
-        final Config zookeeperConfig = config.getConfig("mantis.highAvailability.zookeeper");
+        final Config zookeeperConfig =
+            config
+                .getConfig("mantis.highAvailability.zookeeper")
+                .withFallback(defaultZookeeperConfig);
         ZookeeperSettings settings = ZookeeperSettings.fromConfig(zookeeperConfig);
         return new ZkHighAvailabilityServices(settings);
     }

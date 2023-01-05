@@ -22,7 +22,6 @@ import io.mantisrx.server.core.highavailability.HighAvailabilityServicesFactory;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 
 public class HighAvailabilityServicesUtil {
-
     public static HighAvailabilityServices createHighAvailabilityServices(Config config) throws Exception {
         String mode = config.getString("mantis.highAvailability.mode");
         if (mode.equals("local")) {
