@@ -155,6 +155,8 @@ public class LeaderRedirectionRouteTest {
     @Test
     public void testMasterInfoAPIWhenLeader() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
+        // mark the leader as bootstrapped and ready
+        when(contender.hasLeadership()).thenReturn(true);
         // leader is not ready by default
         CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
@@ -172,8 +174,6 @@ public class LeaderRedirectionRouteTest {
             });
         assertTrue(latch.await(2, TimeUnit.SECONDS));
 
-        // mark the leader as bootstrapped and ready
-        when(contender.hasLeadership()).thenReturn(true);
         isReady = true;
         final CountDownLatch latch2 = new CountDownLatch(1);
         final CompletionStage<HttpResponse> respF = http.singleRequest(

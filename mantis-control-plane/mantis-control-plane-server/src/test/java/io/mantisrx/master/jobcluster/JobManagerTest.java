@@ -50,7 +50,10 @@ public class JobManagerTest {
     private static AbstractActor.ActorContext context;
     private static MantisSchedulerFactory schedulerFactory;
     private static LifecycleEventPublisher publisher;
-    private static JobDefinitionSettings jobDefinitionSettings;
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() {
@@ -58,7 +61,6 @@ public class JobManagerTest {
 		context = mock(AbstractActor.ActorContext.class);
         schedulerFactory = mock(MantisSchedulerFactory.class);
 		publisher = mock(LifecycleEventPublisher.class);
-        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
 
 		JobTestHelper.createDirsIfRequired();
 		TestHelpers.setupMasterConfig();

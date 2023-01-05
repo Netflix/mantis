@@ -60,7 +60,9 @@ public class AdminMasterRouteTest extends RouteTestBase {
         System.currentTimeMillis());
 
     private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
 
     private static CompletionStage<ServerBinding> binding;
