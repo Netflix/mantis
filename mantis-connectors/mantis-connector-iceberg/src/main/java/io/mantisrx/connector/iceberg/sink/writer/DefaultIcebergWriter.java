@@ -34,7 +34,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.GenericParquetWriter;
-import org.apache.iceberg.hadoop.HadoopOutputFile;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.io.OutputFile;
@@ -121,7 +120,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
         Path path = new Path(table.location(), generateFilename());
         String location = locationProvider.newDataLocation(path.toString());
         logger.info("opening new {} file appender {}", format, location);
-        file = HadoopOutputFile.fromLocation(location, config.getHadoopConfig());
+        file = table.io().newOutputFile(path.toString());
 
         switch (format) {
             case PARQUET:
