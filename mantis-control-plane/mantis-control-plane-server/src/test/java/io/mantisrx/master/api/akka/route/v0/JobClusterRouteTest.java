@@ -40,8 +40,11 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
@@ -84,6 +87,8 @@ public class JobClusterRouteTest {
     private final Http http = Http.get(system);
     private static Thread t;
     private static final int serverPort = 8301;
+    private static ApiSettings apiSettings;
+    private static JobDefinitionSettings jobDefinitionSettings;
 
     private CompletionStage<String> processRespFut(final HttpResponse r, final int expectedStatusCode) {
         logger.info("headers {} {}", r.getHeaders(), r.status());
@@ -115,6 +120,8 @@ public class JobClusterRouteTest {
     @BeforeClass
     public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
+        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
+        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {
@@ -132,10 +139,10 @@ public class JobClusterRouteTest {
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
 
-                final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor);
-                final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor);
+                final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
+                final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
 
-                final JobClusterRoute app = new JobClusterRoute(jobClusterRouteHandler, jobRouteHandler, system);
+                final JobClusterRoute app = new JobClusterRoute(apiSettings, jobDefinitionSettings, jobClusterRouteHandler, jobRouteHandler, system);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("starting test server on port {}", serverPort);
                 binding = http.bindAndHandle(routeFlow,

@@ -24,31 +24,46 @@ import lombok.Value;
 @Value
 @Builder
 public class MesosSettings {
+    String masterLocation;
+
     Duration schedulerDriverInitTimeout;
     int schedulerDriverInitMaxAttempts;
     Duration workerTimeoutToReportStart;
     String workerExecutorScript;
     String workerInstallDir;
+    String workerExecutorName;
+    int workerJvmMemoryScaleBackPercent;
 
     boolean schedulerSlaveFilteringEnabled;
     String schedulerSlaveFilteringAttrName;
     String schedulerBalancedHostAttrName;
     Duration schedulerLeaseOfferExpiry;
 
+    String frameworkName;
+    String frameworkUser;
+
     Duration reconcilerInterval;
 
     public static MesosSettings fromConfig(Config config) {
         return MesosSettings.builder()
+            .masterLocation(config.getString("masterLocation"))
             .schedulerDriverInitTimeout(config.getDuration("schedulerDriver.initTimeout"))
             .schedulerDriverInitMaxAttempts(config.getInt("schedulerDriver.maxAttempts"))
+
             .workerTimeoutToReportStart(config.getDuration("worker.timeoutToReportStart"))
             .workerExecutorScript(config.getString("worker.executorScript"))
             .workerInstallDir(config.getString("worker.installDir"))
+            .workerExecutorName(config.getString("worker.executorName"))
+            .workerJvmMemoryScaleBackPercent(config.getInt("worker.jvmMemoryScaleBackPercent"))
+
             .schedulerSlaveFilteringEnabled(config.getBoolean("scheduler.slaveFiltering.enabled"))
             .schedulerSlaveFilteringAttrName(config.getString("scheduler.slaveFiltering.attributeName"))
             .schedulerLeaseOfferExpiry(config.getDuration("scheduler.leaseOfferExpiry"))
             .schedulerBalancedHostAttrName(config.getString("scheduler.balancedHostAttrName"))
             .reconcilerInterval(config.getDuration("reconcilerInterval"))
+
+            .frameworkName(config.getString("framework.name"))
+            .frameworkUser(config.getString("framework.user"))
             .build();
     }
 }

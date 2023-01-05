@@ -36,6 +36,7 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
@@ -55,6 +56,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +77,7 @@ public class JobClustersRouteTest extends RouteTestBase {
     private static File stateDirectory;
 
     private static String TEST_CLUSTER_NAME = "sine-function";
+    private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
 
     public JobClustersRouteTest() {
         super("JobClustersRouteTest", SERVER_PORT);
@@ -110,7 +113,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, apiSettings);
 
                 final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow =

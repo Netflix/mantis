@@ -22,25 +22,25 @@ import akka.actor.ActorRef;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private static final Logger logger = LoggerFactory.getLogger(JobClusterRouteHandlerAkkaImpl.class);
+    private final ApiSettings apiSettings;
 
     private final ActorRef jobClustersManagerActor;
     private final Counter allJobClustersGET;
     private final Duration timeout;
 
-    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
+    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, ApiSettings apiSettings) {
         this.jobClustersManagerActor = jobClusterManagerActor;
-        long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
-        this.timeout = Duration.ofMillis(timeoutMs);
+        this.apiSettings = apiSettings;
+        this.timeout = apiSettings.getAskTimeout();
         Metrics m = new Metrics.Builder()
             .id("JobClusterRouteHandler")
             .addCounter("allJobClustersGET")

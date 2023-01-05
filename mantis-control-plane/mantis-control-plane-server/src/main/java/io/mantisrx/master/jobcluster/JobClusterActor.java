@@ -45,6 +45,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
@@ -192,8 +193,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     public static Props props(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory mantisSchedulerFactory,
-                              final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher);
+                              final LifecycleEventPublisher eventPublisher, final JobDefinitionSettings jobDefinitionSettings) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, jobDefinitionSettings);
     }
 
     private Receive initializedBehavior;
@@ -212,15 +213,21 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private BehaviorSubject<JobId> jobIdSubmissionSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
+    private final JobDefinitionSettings jobDefinitionSettings;
 
 
-    public JobClusterActor(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory schedulerFactory, final LifecycleEventPublisher eventPublisher) {
+    public JobClusterActor(
+        final String name,
+        final MantisJobStore jobStore,
+        final MantisSchedulerFactory schedulerFactory,
+        final LifecycleEventPublisher eventPublisher,
+        final JobDefinitionSettings jobDefinitionSettings) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
 
-        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore);
+        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, jobDefinitionSettings);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
 
@@ -269,6 +276,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         this.numJobClusterDeleteErrors = m.getCounter("numJobClusterDeleteErrors");
         this.numJobClusterUpdateErrors = m.getCounter("numJobClusterUpdateErrors");
         this.numSLAEnforcementExecutions = m.getCounter("numSLAEnforcementExecutions");
+        this.jobDefinitionSettings = jobDefinitionSettings;
     }
 
 
@@ -2542,15 +2550,17 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         private final MantisJobStore jobStore;
 
         private final LabelCache labelCache = new LabelCache();
+        private final JobDefinitionSettings jobDefinitionSettings;
 
 
-        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore) {
+        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore, JobDefinitionSettings jobDefinitionSettings) {
             this.name = clusterName;
             this.jobStore = jobStore;
             this.context = context;
             this.scheduler = schedulerFactory;
             this.publisher = publisher;
             this.completedJobsCache = new CompletedJobCache(name, labelCache);
+            this.jobDefinitionSettings = jobDefinitionSettings;
         }
 
         /**
@@ -2627,7 +2637,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
-                    jobMeta, jobStore, scheduler1, publisher), "JobActor-" + jobMeta.getJobId().getId());
+                    jobMeta, jobStore, scheduler1, publisher, jobDefinitionSettings), "JobActor-" + jobMeta.getJobId().getId());
 
 
             context.watch(jobActor);

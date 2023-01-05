@@ -60,6 +60,7 @@ import org.apache.flink.runtime.rpc.RpcService;
 class ResourceClustersManagerActor extends AbstractActor {
 
     private final MasterConfiguration masterConfiguration;
+    private final ResourceClusterSettings settings;
     private final Clock clock;
     private final RpcService rpcService;
     private final MantisJobStore mantisJobStore;
@@ -73,6 +74,7 @@ class ResourceClustersManagerActor extends AbstractActor {
 
     public static Props props(
         MasterConfiguration masterConfiguration,
+        ResourceClusterSettings settings,
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
@@ -82,6 +84,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         return Props.create(
             ResourceClustersManagerActor.class,
             masterConfiguration,
+            settings,
             clock,
             rpcService,
             mantisJobStore,
@@ -91,13 +94,16 @@ class ResourceClustersManagerActor extends AbstractActor {
     }
 
     public ResourceClustersManagerActor(
-        MasterConfiguration masterConfiguration, Clock clock,
+        MasterConfiguration masterConfiguration,
+        ResourceClusterSettings settings,
+        Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
         ResourceClusterStorageProvider resourceStorageProvider,
         JobMessageRouter jobMessageRouter) {
         this.masterConfiguration = masterConfiguration;
+        this.settings = settings;
         this.clock = clock;
         this.rpcService = rpcService;
         this.mantisJobStore = mantisJobStore;
@@ -152,9 +158,7 @@ class ResourceClustersManagerActor extends AbstractActor {
             getContext().actorOf(
                 ResourceClusterActor.props(
                     clusterID,
-                    Duration.ofMillis(masterConfiguration.getHeartbeatIntervalInMs()),
-                    Duration.ofMillis(masterConfiguration.getAssignmentIntervalInMs()),
-                    Duration.ofMillis(masterConfiguration.getAssignmentIntervalInMs()),
+                    settings,
                     clock,
                     rpcService,
                     mantisJobStore,

@@ -60,6 +60,8 @@ import akka.japi.Pair;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.master.api.akka.ApiSettings;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
@@ -88,6 +90,8 @@ import scala.concurrent.duration.Duration;
 
 public class JobClusterRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobClusterRoute.class);
+    private final ApiSettings apiSettings;
+    private final JobDefinitionSettings jobDefinitionSettings;
     private final JobClusterRouteHandler jobClusterRouteHandler;
     private final JobRouteHandler jobRouteHandler;
     private final Cache<Uri, RouteResult> cache;
@@ -126,9 +130,12 @@ public class JobClusterRoute extends BaseRoute {
     private final Counter jobClusterListJobIdGET;
     private final Counter jobClusterListClusterGET;
 
-    public JobClusterRoute(final JobClusterRouteHandler jobClusterRouteHandler,
-                             final JobRouteHandler jobRouteHandler,
-                             final ActorSystem actorSystem) {
+    public JobClusterRoute(final ApiSettings apiSettings,
+                           JobDefinitionSettings jobDefinitionSettings, final JobClusterRouteHandler jobClusterRouteHandler,
+                           final JobRouteHandler jobRouteHandler,
+                           final ActorSystem actorSystem) {
+        this.apiSettings = apiSettings;
+        this.jobDefinitionSettings = jobDefinitionSettings;
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
@@ -268,28 +275,28 @@ public class JobClusterRoute extends BaseRoute {
             }
             for (StageSchedulingInfo stageSchedInfo : stages.values()) {
                 double cpuCores = stageSchedInfo.getMachineDefinition().getCpuCores();
-                int maxCpuCores = ConfigurationProvider.getConfig().getWorkerMachineDefinitionMaxCpuCores();
+                double maxCpuCores = jobDefinitionSettings.getWorkerMaxMachineDefinition().getCpuCores();
                 if (cpuCores > maxCpuCores) {
                     logger.info("rejecting job submit request, requested CPU {} > max for {} (user: {}) (stage: {})",
                         cpuCores, mjd.getName(), mjd.getUser(), stages);
                     return Pair.apply(false, "requested CPU cannot be more than max CPU per worker "+maxCpuCores);
                 }
                 double memoryMB = stageSchedInfo.getMachineDefinition().getMemoryMB();
-                int maxMemoryMB = ConfigurationProvider.getConfig().getWorkerMachineDefinitionMaxMemoryMB();
+                double maxMemoryMB = jobDefinitionSettings.getWorkerMaxMachineDefinition().getMemoryMB();
                 if (memoryMB > maxMemoryMB) {
                     logger.info("rejecting job submit request, requested memory {} > max for {} (user: {}) (stage: {})",
                         memoryMB, mjd.getName(), mjd.getUser(), stages);
                     return Pair.apply(false, "requested memory cannot be more than max memoryMB per worker "+maxMemoryMB);
                 }
                 double networkMbps = stageSchedInfo.getMachineDefinition().getNetworkMbps();
-                int maxNetworkMbps = ConfigurationProvider.getConfig().getWorkerMachineDefinitionMaxNetworkMbps();
+                double maxNetworkMbps = jobDefinitionSettings.getWorkerMaxMachineDefinition().getNetworkMbps();
                 if (networkMbps > maxNetworkMbps) {
                     logger.info("rejecting job submit request, requested network {} > max for {} (user: {}) (stage: {})",
                         networkMbps, mjd.getName(), mjd.getUser(), stages);
                     return Pair.apply(false, "requested network cannot be more than max networkMbps per worker "+maxNetworkMbps);
                 }
                 int numberOfInstances = stageSchedInfo.getNumberOfInstances();
-                int maxWorkersPerStage = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
+                int maxWorkersPerStage = jobDefinitionSettings.getMaxWorkersPerStage();
                 if (numberOfInstances > maxWorkersPerStage) {
                     logger.info("rejecting job submit request, requested num instances {} > max for {} (user: {}) (stage: {})",
                         numberOfInstances, mjd.getName(), mjd.getUser(), stages);

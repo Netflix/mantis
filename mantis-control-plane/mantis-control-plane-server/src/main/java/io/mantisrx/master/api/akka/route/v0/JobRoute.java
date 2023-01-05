@@ -42,6 +42,7 @@ import akka.japi.JavaPartialFunction;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
@@ -73,6 +74,7 @@ import org.slf4j.LoggerFactory;
 public class JobRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobRoute.class);
     private final JobRouteHandler jobRouteHandler;
+    private final JobDefinitionSettings jobDefinitionSettings;
     private final Metrics metrics;
 
     private final Counter jobListGET;
@@ -96,8 +98,9 @@ public class JobRoute extends BaseRoute {
         }
     };
 
-    public JobRoute(final JobRouteHandler jobRouteHandler, final ActorSystem actorSystem) {
+    public JobRoute(final JobRouteHandler jobRouteHandler, JobDefinitionSettings jobDefinitionSettings, final ActorSystem actorSystem) {
         this.jobRouteHandler = jobRouteHandler;
+        this.jobDefinitionSettings = jobDefinitionSettings;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
@@ -269,7 +272,7 @@ public class JobRoute extends BaseRoute {
                             try {
                                 ScaleStageRequest scaleStageRequest = Jackson.fromJSON(req, ScaleStageRequest.class);
                                 int numWorkers = scaleStageRequest.getNumWorkers();
-                                int maxWorkersPerStage = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
+                                int maxWorkersPerStage = jobDefinitionSettings.getMaxWorkersPerStage();
                                 if (numWorkers > maxWorkersPerStage) {
                                     logger.warn("rejecting ScaleStageRequest {} with invalid num workers", scaleStageRequest);
                                     return complete(StatusCodes.BAD_REQUEST, "{\"error\": \"num workers must be less than " + maxWorkersPerStage + "\"}");

@@ -43,7 +43,10 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -174,6 +177,8 @@ public class JobRouteTest {
 
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobRoutes");
+    private static JobDefinitionSettings jobDefinitionSettings;
+    private static ApiSettings apiSettings;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -181,6 +186,8 @@ public class JobRouteTest {
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
         TestHelpers.setupMasterConfig();
+        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
+        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
 
         t = new Thread(() -> {
             try {
@@ -209,10 +216,10 @@ public class JobRouteTest {
                         false), ActorRef.noSender());
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, apiSettings);
                 final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(mantisStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, apiSettings);
 
                 MasterDescription masterDescription = new MasterDescription(
                         "127.0.0.1",
@@ -230,14 +237,16 @@ public class JobRouteTest {
 
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(
                         jobClustersManagerActor,
-                        idleTimeout);
+                    apiSettings, idleTimeout);
                 final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(
-                        masterDescription);
-                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, system);
+                        masterDescription, jobDefinitionSettings);
+                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobDefinitionSettings, system);
 
                 final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(
                         jobDiscoveryRouteHandler);
                 final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(
+                        apiSettings,
+                        jobDefinitionSettings,
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
@@ -246,9 +255,9 @@ public class JobRouteTest {
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                        system);
+                    jobDefinitionSettings, system);
                 final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
-                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
+                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobDefinitionSettings);
 
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);
                 when(jobStatusRouteHandler.jobStatus(anyString())).thenReturn(Flow.create());

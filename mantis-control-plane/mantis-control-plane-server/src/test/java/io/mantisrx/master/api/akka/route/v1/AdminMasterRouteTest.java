@@ -29,6 +29,8 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -57,13 +59,16 @@ public class AdminMasterRouteTest extends RouteTestBase {
         -1,
         System.currentTimeMillis());
 
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
+
 
     private static CompletionStage<ServerBinding> binding;
     private static final AdminMasterRoute masterDescRoute;
 
     static {
         TestHelpers.setupMasterConfig();
-        masterDescRoute = new AdminMasterRoute(fakeMasterDesc);
+        masterDescRoute = new AdminMasterRoute(fakeMasterDesc, jobDefinitionSettings);
     }
 
     public AdminMasterRouteTest(){

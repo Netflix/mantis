@@ -19,6 +19,7 @@ package io.mantisrx.master.api.akka.route.handlers;
 import static akka.pattern.Patterns.ask;
 
 import akka.actor.ActorRef;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
@@ -34,10 +35,8 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,12 +45,12 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
 
     private final ActorRef resourceClustersHostManagerActor;
     private final Duration timeout;
+    private final ApiSettings apiSettings;
 
-    public ResourceClusterRouteHandlerAkkaImpl(ActorRef resourceClustersHostManagerActor) {
+    public ResourceClusterRouteHandlerAkkaImpl(ActorRef resourceClustersHostManagerActor, ApiSettings apiSettings) {
         this.resourceClustersHostManagerActor = resourceClustersHostManagerActor;
-        long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs())
-            .orElse(1000L);
-        this.timeout = Duration.ofMillis(timeoutMs);
+        this.apiSettings = apiSettings;
+        this.timeout = apiSettings.getAskTimeout();
     }
 
     @Override

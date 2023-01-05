@@ -32,7 +32,10 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -104,11 +107,16 @@ public class JobsRouteTest extends RouteTestBase {
         super("JobsRoute", SERVER_PORT);
     }
 
+    private static JobDefinitionSettings jobDefinitionSettings;
+    private static ApiSettings apiSettings;
+
     @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
+        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
+        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {
@@ -132,10 +140,10 @@ public class JobsRouteTest extends RouteTestBase {
                         false), ActorRef.noSender());
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, apiSettings);
                 final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(simpleCachedFileStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, apiSettings);
 
                 MasterDescription masterDescription = new MasterDescription(
                         "127.0.0.1",
@@ -156,13 +164,15 @@ public class JobsRouteTest extends RouteTestBase {
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);
                 when(jobStatusRouteHandler.jobStatus(anyString())).thenReturn(Flow.create());
 
-                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, system);
+                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobDefinitionSettings, system);
                 JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(
                         jobClustersManagerActor,
-                        idleTimeout);
+                    apiSettings, idleTimeout);
                 final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(
                         jobDiscoveryRouteHandler);
                 final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(
+                        apiSettings,
+                        jobDefinitionSettings,
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
@@ -171,12 +181,12 @@ public class JobsRouteTest extends RouteTestBase {
                         mockAgentClusterOps,
                         system);
                 final MasterDescriptionRoute v0MasterDescriptionRoute = new MasterDescriptionRoute(
-                        masterDescription);
+                        masterDescription, jobDefinitionSettings);
 
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                        system);
+                    jobDefinitionSettings, system);
 
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
                         jobClusterRouteHandler, system);
@@ -185,7 +195,7 @@ public class JobsRouteTest extends RouteTestBase {
                         mockAgentClusterOps);
                 final JobStatusStreamRoute v1JobStatusStreamRoute = new JobStatusStreamRoute(
                         jobStatusRouteHandler);
-                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
+                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobDefinitionSettings);
                 final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(
                         jobDiscoveryRouteHandler);
                 final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(

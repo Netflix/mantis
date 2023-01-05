@@ -32,6 +32,7 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaImpl;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
@@ -71,6 +72,7 @@ public class JobDiscoveryRouteTest {
     private static ActorSystem system = ActorSystem.create("JobDiscoveryRoute");
     private static ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
     private final TestMantisClient mantisClient = new TestMantisClient(serverPort);
+    private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -97,7 +99,7 @@ public class JobDiscoveryRouteTest {
                 agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
                 Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
-                final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
+                final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings, idleTimeout);
 
                 final JobDiscoveryRoute jobDiscoveryRoute = new JobDiscoveryRoute(jobDiscoveryRouteHandler);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = jobDiscoveryRoute.createRoute(Function.identity()).flow(system, materializer);

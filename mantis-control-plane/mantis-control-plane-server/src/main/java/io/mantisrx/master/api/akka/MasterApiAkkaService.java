@@ -63,6 +63,7 @@ import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
+import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -149,26 +150,28 @@ public class MasterApiAkkaService extends BaseService {
 
 
     private MantisMasterRoute configureApiRoutes(final ActorSystem actorSystem, final AgentClusterOperations agentClusterOperations) {
+        final ApiSettings apiSettings = ApiSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
+        final JobDefinitionSettings jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
         // Setup API routes
-        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor);
-        final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor);
+        final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
+        final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
 
-        final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription);
-        final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, actorSystem);
+        final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription, jobDefinitionSettings);
+        final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobDefinitionSettings, actorSystem);
 
         java.time.Duration idleTimeout = actorSystem.settings().config().getDuration("akka.http.server.idle-timeout");
         logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
         final JobStatusRouteHandler jobStatusRouteHandler = new JobStatusRouteHandlerAkkaImpl(actorSystem, statusEventBrokerActor);
-        final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
+        final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings, idleTimeout);
 
         final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(jobDiscoveryRouteHandler);
-        final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
+        final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(apiSettings, jobDefinitionSettings, jobClusterRouteHandler, jobRouteHandler, actorSystem);
         final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(agentClusterOperations, actorSystem);
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
         final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem);
-        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
-        final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
+        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, jobDefinitionSettings, actorSystem);
+        final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobDefinitionSettings);
         final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(agentClusterOperations);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);
@@ -179,7 +182,7 @@ public class MasterApiAkkaService extends BaseService {
 
         final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leaderElectorService.getContender(), this::isReady);
         final ResourceClusterRouteHandler resourceClusterRouteHandler = new ResourceClusterRouteHandlerAkkaImpl(
-            resourceClustersHostManagerActor);
+            resourceClustersHostManagerActor, apiSettings);
         return new MantisMasterRoute(
             actorSystem,
             leaderRedirectionFilter,

@@ -33,6 +33,7 @@ import akka.http.javadsl.testkit.TestRoute;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.payloads.ResourceClustersPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
@@ -70,6 +71,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,6 +85,11 @@ import org.mockito.ArgumentMatchers;
 public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private static final UnitTestResourceProviderAdapter resourceProviderAdapter =
         new UnitTestResourceProviderAdapter();
+    private static final ApiSettings apiSettings =
+        ApiSettings
+            .builder()
+            .askTimeout(Duration.ofSeconds(1))
+            .build();
 
     private final ResourceClusters resourceClusters = mock(ResourceClusters.class);
     private final ActorSystem system =
@@ -100,10 +107,10 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         "jobClustersManagerTest");
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithNoopAdapter =
-        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithNoopAdapter);
+        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithNoopAdapter, apiSettings);
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithTestAdapter =
-        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithTestAdapter);
+        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithTestAdapter, apiSettings);
 
     private final TestRoute testRouteWithNoopAdapter =
         testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithNoopAdapter, system)

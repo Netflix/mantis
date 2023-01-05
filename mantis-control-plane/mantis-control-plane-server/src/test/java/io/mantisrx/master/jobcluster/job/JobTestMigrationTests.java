@@ -27,6 +27,8 @@ import akka.testkit.javadsl.TestKit;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -66,6 +68,7 @@ public class JobTestMigrationTests {
 
     private static final String user = "mantis";
     final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
+    private static final JobDefinitionSettings jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
 
 
     @BeforeClass
@@ -108,7 +111,7 @@ public class JobTestMigrationTests {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, jobDefinitionSettings));
 
             jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
             JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);

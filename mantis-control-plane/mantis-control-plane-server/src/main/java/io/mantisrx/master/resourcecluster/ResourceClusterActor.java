@@ -99,23 +99,21 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsRequests;
     private final JobMessageRouter jobMessageRouter;
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter);
+    static Props props(final ClusterID clusterID, final ResourceClusterSettings settings, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
+        return Props.create(ResourceClusterActor.class, clusterID, settings, clock, rpcService, mantisJobStore, jobMessageRouter);
     }
 
     ResourceClusterActor(
         ClusterID clusterID,
-        Duration heartbeatTimeout,
-        Duration assignmentTimeout,
-        Duration disabledTaskExecutorsCheckInterval,
+        ResourceClusterSettings settings,
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
         JobMessageRouter jobMessageRouter) {
         this.clusterID = clusterID;
-        this.heartbeatTimeout = heartbeatTimeout;
-        this.assignmentTimeout = assignmentTimeout;
-        this.disabledTaskExecutorsCheckInterval = disabledTaskExecutorsCheckInterval;
+        this.heartbeatTimeout = settings.getTaskExecutorHeartbeatTimeout();
+        this.assignmentTimeout = settings.getTaskExecutorAssignmentTimeout();
+        this.disabledTaskExecutorsCheckInterval = settings.getDisabledTaskExecutorsCheckInterval();
 
         this.clock = clock;
         this.rpcService = rpcService;

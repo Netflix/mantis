@@ -19,8 +19,8 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
+import com.typesafe.config.Config;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -29,7 +29,6 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapp
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +45,7 @@ import org.apache.flink.runtime.rpc.RpcService;
 public class ResourceClustersAkkaImpl implements ResourceClusters {
 
     private final ActorRef resourceClustersManagerActor;
-    private final Duration askTimeout;
+    private final ResourceClusterSettings settings;
     private final ResourceClusterTaskExecutorMapper mapper;
     private final ConcurrentMap<ClusterID, ResourceCluster> cache =
         new ConcurrentHashMap<>();
@@ -58,7 +57,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
             dontCare ->
                 new ResourceClusterAkkaImpl(
                     resourceClustersManagerActor,
-                    askTimeout,
+                    settings.getAskTimeout(),
                     clusterID,
                     mapper));
         return cache.get(clusterID);
@@ -68,7 +67,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
     public CompletableFuture<Set<ClusterID>> listActiveClusters() {
         return
             Patterns.ask(resourceClustersManagerActor,
-                    new ResourceClustersManagerActor.ListActiveClusters(), askTimeout)
+                    new ResourceClustersManagerActor.ListActiveClusters(), settings.getAskTimeout())
                 .toCompletableFuture()
                 .thenApply(ResourceClustersManagerActor.ClusterIdSet.class::cast)
                 .thenApply(clusterIdSet -> clusterIdSet.getClusterIDS());
@@ -76,22 +75,26 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
 
     public static ResourceClusters load(
         MasterConfiguration masterConfiguration,
+        Config config,
         RpcService rpcService,
         ActorSystem actorSystem,
         MantisJobStore mantisJobStore,
         JobMessageRouter jobMessageRouter,
         ActorRef resourceClusterHostActorRef,
         ResourceClusterStorageProvider resourceStorageProvider) {
+        final ResourceClusterSettings settings =
+            ResourceClusterSettings.fromConfig(config.getConfig("mantis.resourceCluster"));
         final ActorRef resourceClusterManagerActor =
             actorSystem.actorOf(
-                ResourceClustersManagerActor.props(masterConfiguration, Clock.systemDefaultZone(),
+                ResourceClustersManagerActor.props(masterConfiguration, settings, Clock.systemDefaultZone(),
                     rpcService, mantisJobStore, resourceClusterHostActorRef, resourceStorageProvider,
                     jobMessageRouter));
         final ResourceClusterTaskExecutorMapper globalMapper =
             ResourceClusterTaskExecutorMapper.inMemory();
 
-        final Duration askTimeout = java.time.Duration.ofMillis(
-            ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
-        return new ResourceClustersAkkaImpl(resourceClusterManagerActor, askTimeout, globalMapper);
+        return new ResourceClustersAkkaImpl(
+            resourceClusterManagerActor,
+            settings,
+            globalMapper);
     }
 }

@@ -40,34 +40,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     //  Apache Mesos related configurations
     // ------------------------------------------------------------------------
 
-    @Config("mesos.master.location")
-    @Default("localhost:5050")
-    String getMasterLocation();
-
-
-    @Config("mantis.master.api.route.ask.timeout.millis")
-    @Default("1000")
-    long getMasterApiAskTimeoutMs();
-
-    @Config("mantis.worker.machine.definition.maxCpuCores")
-    @Default("8")
-    int getWorkerMachineDefinitionMaxCpuCores();
-
-    @Config("mantis.worker.machine.definition.maxMemoryMB")
-    @Default("28000")
-    int getWorkerMachineDefinitionMaxMemoryMB();
-
-    @Config("mantis.worker.machine.definition.maxNetworkMbps")
-    @Default("1024")
-    int getWorkerMachineDefinitionMaxNetworkMbps();
-
-    @Config("mantis.master.max.workers.per.stage")
-    @Default("1500")
-    int getMaxWorkersPerStage();
-
-    @Config("mantis.master.worker.jvm.memory.scale.back.percent")
-    @Default("10")
-    int getWorkerJvmMemoryScaleBackPercentage();
 
     @Config("mantis.master.active.slave.attribute.name")
     @Default("NETFLIX_AUTO_SCALE_GROUP")
@@ -94,18 +66,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.agent.fitness.goodenough.threshold")
     @Default("0.63")
     double getFitnessGoodEnoughThreshold();
-
-    @Config("mantis.master.framework.name")
-    @Default("MantisFramework")
-    String getMantisFrameworkName();
-
-    @Config("mantis.master.framework.user")
-    @Default("")
-    String getMantisFrameworkUserName();
-
-    @Config("mantis.worker.executor.name")
-    @Default("Mantis Worker Executor")
-    String getWorkerExecutorName();
 
     @Config("mantis.master.mesos.failover.timeout.secs")
     @Default("604800.0")
@@ -263,10 +223,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("5")
     int getApiCacheMinSize();
 
-    @Config("mantis.agent.heartbeat.interval.ms")
-    @Default("300000") // 5 minutes
-    int getHeartbeatIntervalInMs();
-
     /**
      * Config value for each {@link io.mantisrx.master.resourcecluster.ResourceClusterScalerActor}'s timer to trigger
      * check on current cluster usage.
@@ -283,15 +239,4 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("180")
     int getScalerRuleSetRefreshThresholdInSecs();
 
-    @Config("mantis.agent.assignment.interval.ms")
-    @Default("60000") // 1 minute
-    int getAssignmentIntervalInMs();
-
-    default Duration getHeartbeatInterval() {
-        return Duration.ofMillis(getHeartbeatIntervalInMs());
-    }
-
-    default Duration getMaxAssignmentThreshold() {
-        return Duration.ofMillis(getAssignmentIntervalInMs());
-    }
 }

@@ -21,13 +21,12 @@ import static akka.http.javadsl.server.PathMatchers.segment;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.Route;
 import com.netflix.spectator.api.BasicTag;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,6 +54,7 @@ public class AdminMasterRoute extends BaseRoute {
             false);
     private final MasterDescription masterDesc;
     private final List<Configlet> configs = new ArrayList<>();
+    private final JobDefinitionSettings jobDefinitionSettings;
 
 
     public static class Configlet {
@@ -133,7 +133,7 @@ public class AdminMasterRoute extends BaseRoute {
         }
     }
 
-    public AdminMasterRoute(final MasterDescription masterDescription) {
+    public AdminMasterRoute(final MasterDescription masterDescription, JobDefinitionSettings jobDefinitionSettings) {
         //TODO: hardcode some V1 admin master info, this should be cleaned up once v0 apis
         // are deprecated
         this.masterDesc = new MasterDescription(masterDescription.getHostname(),
@@ -144,6 +144,7 @@ public class AdminMasterRoute extends BaseRoute {
                                                 "api/v1/jobs/actions/postJobStatus",
                                                 -1,
                                                 masterDescription.getCreateTime());
+        this.jobDefinitionSettings = jobDefinitionSettings;
 
         try {
             configs.add(new Configlet(
@@ -155,10 +156,10 @@ public class AdminMasterRoute extends BaseRoute {
             configs.add(new Configlet(
                     WorkerMigrationConfig.MigrationStrategyEnum.class.getSimpleName(),
                     mapper.writeValueAsString(WorkerMigrationConfig.MigrationStrategyEnum.values())));
-            MasterConfiguration config = ConfigurationProvider.getConfig();
-            int maxCpuCores = config.getWorkerMachineDefinitionMaxCpuCores();
-            int maxMemoryMB = config.getWorkerMachineDefinitionMaxMemoryMB();
-            int maxNetworkMbps = config.getWorkerMachineDefinitionMaxNetworkMbps();
+//            MasterConfiguration config = ConfigurationProvider.getConfig();
+            int maxCpuCores = (int) jobDefinitionSettings.getWorkerMaxMachineDefinition().getCpuCores();
+            int maxMemoryMB = (int) jobDefinitionSettings.getWorkerMaxMachineDefinition().getMemoryMB();
+            int maxNetworkMbps = (int) jobDefinitionSettings.getWorkerMaxMachineDefinition().getNetworkMbps();
             configs.add(new Configlet(
                     WorkerResourceLimits.class.getSimpleName(),
                     mapper.writeValueAsString(new WorkerResourceLimits(

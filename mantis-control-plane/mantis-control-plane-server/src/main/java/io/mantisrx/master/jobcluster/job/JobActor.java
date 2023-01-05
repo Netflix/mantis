@@ -32,6 +32,7 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
@@ -145,6 +146,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final LifecycleEventPublisher eventPublisher;
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
+    private final JobDefinitionSettings jobDefinitionSettings;
 
     /**
      * Used by the JobCluster Actor to create this Job Actor.
@@ -162,9 +164,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobMetadataImpl jobMetadata,
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
-            final LifecycleEventPublisher eventPublisher) {
+            final LifecycleEventPublisher eventPublisher,
+            final JobDefinitionSettings jobDefinitionSettings) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher);
+                mantisScheduler, eventPublisher, jobDefinitionSettings);
     }
 
     /**
@@ -175,11 +178,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param jobStore
      * @param scheduler
      * @param eventPublisher
+     * @param jobDefinitionSettings
      */
     public JobActor(
-            final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
-            MantisJobStore jobStore, final MantisScheduler scheduler,
-            final LifecycleEventPublisher eventPublisher) {
+        final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
+        MantisJobStore jobStore, final MantisScheduler scheduler,
+        final LifecycleEventPublisher eventPublisher, JobDefinitionSettings jobDefinitionSettings) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -188,6 +192,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.mantisScheduler = scheduler;
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
+        this.jobDefinitionSettings = jobDefinitionSettings;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -2270,7 +2275,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         public int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason) {
             LOGGER.info("Scaling stage {} to {} workers", stageMetaData.getStageNum(), numWorkers);
             final int oldNumWorkers = stageMetaData.getNumWorkers();
-            int max = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
+            int max = jobDefinitionSettings.getMaxWorkersPerStage();
             int min = 0;
             if (stageMetaData.getScalingPolicy() != null) {
                 max = stageMetaData.getScalingPolicy().getMax();

@@ -72,7 +72,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
         logger.info("initializing mesos scheduler driver with timeout of {} sec", mesosSchedulerDriverInitTimeoutSec);
         Optional<MesosSchedulerDriver> mesosSchedulerDriverO = Optional.empty();
         try {
-            Future<MesosSchedulerDriver> driverF = executorService.submit(() -> new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, masterConfig.getMasterLocation()));
+            Future<MesosSchedulerDriver> driverF = executorService.submit(() -> new MesosSchedulerDriver(mesosSchedulerCallbackHandler, framework, mesosSettings.getMasterLocation()));
             MesosSchedulerDriver mesosSchedulerDriver = driverF.get(mesosSchedulerDriverInitTimeoutSec, TimeUnit.SECONDS);
             mesosSchedulerDriverO = Optional.ofNullable(mesosSchedulerDriver);
         } catch (Exception e) {
@@ -101,10 +101,10 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
                     new MesosSchedulerCallbackHandler(addVMLeaseAction, mesosSettings, vmLeaseRescindedObserver, jobMessageRouter,
                             workerRegistry);
             final Protos.FrameworkInfo framework = Protos.FrameworkInfo.newBuilder()
-                    .setUser(masterConfig.getMantisFrameworkUserName())
-                    .setName(masterConfig.getMantisFrameworkName())
+                    .setUser(mesosSettings.getFrameworkUser())
+                    .setName(mesosSettings.getFrameworkName())
                     .setFailoverTimeout(masterConfig.getMesosFailoverTimeOutSecs())
-                    .setId(Protos.FrameworkID.newBuilder().setValue(masterConfig.getMantisFrameworkName()))
+                    .setId(Protos.FrameworkID.newBuilder().setValue(mesosSettings.getFrameworkName()))
                     .setCheckpoint(true)
                     .build();
             logger.info("initializing mesos scheduler driver");

@@ -205,6 +205,7 @@ public class MasterMain implements Service {
             final ResourceClusters resourceClusters =
                 ResourceClustersAkkaImpl.load(
                     getConfig(),
+                    typesafeConfig,
                     rpcService,
                     system,
                     mantisJobStore,

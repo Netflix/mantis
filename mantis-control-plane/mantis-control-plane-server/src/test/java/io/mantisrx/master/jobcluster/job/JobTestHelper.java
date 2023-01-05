@@ -24,7 +24,9 @@ import static org.junit.Assert.assertTrue;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.WorkerPorts;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
@@ -306,6 +308,8 @@ public class JobTestHelper {
                                                         MantisScheduler schedulerMock, MantisJobStore jobStoreMock,
                                                         LifecycleEventPublisher lifecycleEventPublisher) throws io.mantisrx.runtime.command.InvalidJobException {
 
+        JobDefinitionSettings jobDefinitionSettings =
+            JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 
@@ -317,7 +321,7 @@ public class JobTestHelper {
             .withNextWorkerNumToUse(1)
             .withJobDefinition(jobDefn)
             .build();
-        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher));
+        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher, jobDefinitionSettings));
 
 
         jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());

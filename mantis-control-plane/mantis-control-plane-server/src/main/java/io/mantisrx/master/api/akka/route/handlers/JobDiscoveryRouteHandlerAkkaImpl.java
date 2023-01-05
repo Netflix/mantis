@@ -25,6 +25,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
@@ -33,7 +34,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobSchedInf
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse;
 import io.mantisrx.server.core.JobSchedulingInfo;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobId;
 import java.time.Duration;
 import java.util.HashMap;
@@ -52,6 +52,7 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
 
     private static final Logger logger = LoggerFactory.getLogger(JobDiscoveryRouteHandlerAkkaImpl.class);
     private final ActorRef jobClustersManagerActor;
+    private final ApiSettings apiSettings;
     private final Duration askTimeout;
     // We want to heartbeat at least once before the idle conn timeout to keep the SSE stream conn alive
     private final Duration serverIdleConnectionTimeout;
@@ -62,10 +63,10 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
     private final AsyncLoadingCache<GetJobSchedInfoRequest, GetJobSchedInfoResponse> schedInfoCache;
     private final AsyncLoadingCache<GetLastSubmittedJobIdStreamRequest, GetLastSubmittedJobIdStreamResponse> lastSubmittedJobIdStreamRespCache;
 
-    public JobDiscoveryRouteHandlerAkkaImpl(ActorRef jobClustersManagerActor, Duration serverIdleTimeout) {
+    public JobDiscoveryRouteHandlerAkkaImpl(ActorRef jobClustersManagerActor, ApiSettings apiSettings, Duration serverIdleTimeout) {
         this.jobClustersManagerActor = jobClustersManagerActor;
-        long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
-        this.askTimeout = Duration.ofMillis(timeoutMs);
+        this.apiSettings = apiSettings;
+        this.askTimeout = apiSettings.getAskTimeout();
         this.serverIdleConnectionTimeout = serverIdleTimeout;
         schedInfoCache = Caffeine.newBuilder()
             .expireAfterWrite(5, TimeUnit.SECONDS)

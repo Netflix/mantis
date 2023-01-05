@@ -22,6 +22,7 @@ import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.ExceptionHandler;
 import akka.http.javadsl.server.Route;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.WorkerMigrationConfig;
@@ -51,6 +52,8 @@ public class MasterDescriptionRoute extends BaseRoute {
     private final MasterDescription masterDesc;
     private String masterDescStr;
     private final List<Configlet> configs = new ArrayList<>();
+
+    private final JobDefinitionSettings jobDefinitionSettings;
 
     public static class Configlet {
         private final String name;
@@ -122,8 +125,9 @@ public class MasterDescriptionRoute extends BaseRoute {
     }
 
 
-    public MasterDescriptionRoute(final MasterDescription masterDescription) {
+    public MasterDescriptionRoute(final MasterDescription masterDescription, JobDefinitionSettings jobDefinitionSettings) {
         this.masterDesc = masterDescription;
+        this.jobDefinitionSettings = jobDefinitionSettings;
 
         try {
             this.masterDescStr = mapper.writeValueAsString(masterDesc);
@@ -136,10 +140,10 @@ public class MasterDescriptionRoute extends BaseRoute {
             configs.add(new Configlet(StageScalingPolicy.ScalingReason.class.getSimpleName(), mapper.writeValueAsString(StageScalingPolicy.ScalingReason.values())));
             configs.add(new Configlet(WorkerMigrationConfig.MigrationStrategyEnum.class.getSimpleName(), mapper.writeValueAsString(WorkerMigrationConfig.MigrationStrategyEnum.values())));
             MasterConfiguration config = ConfigurationProvider.getConfig();
-            int maxCpuCores = config.getWorkerMachineDefinitionMaxCpuCores();
-            int maxMemoryMB = config.getWorkerMachineDefinitionMaxMemoryMB();
-            int maxNetworkMbps = config.getWorkerMachineDefinitionMaxNetworkMbps();
-            configs.add(new Configlet(WorkerResourceLimits.class.getSimpleName(), mapper.writeValueAsString(new WorkerResourceLimits(maxCpuCores, maxMemoryMB, maxNetworkMbps))));
+            double maxCpuCores = jobDefinitionSettings.getWorkerMaxMachineDefinition().getCpuCores();
+            double maxMemoryMB = jobDefinitionSettings.getWorkerMaxMachineDefinition().getMemoryMB();
+            double maxNetworkMbps = jobDefinitionSettings.getWorkerMaxMachineDefinition().getNetworkMbps();
+            configs.add(new Configlet(WorkerResourceLimits.class.getSimpleName(), mapper.writeValueAsString(new WorkerResourceLimits((int) maxCpuCores, (int) maxMemoryMB, (int) maxNetworkMbps))));
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }

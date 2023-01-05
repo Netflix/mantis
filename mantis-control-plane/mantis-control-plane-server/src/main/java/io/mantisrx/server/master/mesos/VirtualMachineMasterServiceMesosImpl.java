@@ -29,7 +29,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.LaunchTaskException;
 import io.mantisrx.server.master.VirtualMachineMasterService;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
@@ -66,7 +65,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     private final String masterDescriptionJson;
     private final MesosDriverSupplier mesosDriver;
     private final AtomicBoolean initializationDone = new AtomicBoolean(false);
-    private volatile int workerJvmMemoryScaleBackPct;
+    private final int workerJvmMemoryScaleBackPct;
     private final MasterConfiguration masterConfig;
     private final ZookeeperSettings zkSettings;
     private final MesosSettings mesosSettings;
@@ -91,7 +90,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                 return t;
             }
         });
-        workerJvmMemoryScaleBackPct = Math.min(99, ConfigurationProvider.getConfig().getWorkerJvmMemoryScaleBackPercentage());
+        workerJvmMemoryScaleBackPct = Math.min(99, mesosSettings.getWorkerJvmMemoryScaleBackPercent());
     }
 
     // NOTE: All leases are for the same agent.
@@ -448,7 +447,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     public String getMesosMasterHostAndPort() {
-        return masterConfig.getMasterLocation();
+        return mesosSettings.getMasterLocation();
     }
 
     public String getWorkerInstallDir() {
@@ -471,12 +470,8 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
         return Paths.get(getWorkerBinDir(), getWorkerExecutorScript()).toString();
     }
 
-    public String getMantisFrameworkName() {
-        return masterConfig.getMantisFrameworkName();
-    }
-
     public String getWorkerExecutorName() {
-        return masterConfig.getWorkerExecutorName();
+        return mesosSettings.getWorkerExecutorName();
     }
 
     public long getTimeoutSecsToReportStart() {
