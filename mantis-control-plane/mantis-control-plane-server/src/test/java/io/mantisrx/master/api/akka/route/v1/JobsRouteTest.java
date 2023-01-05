@@ -107,7 +107,10 @@ public class JobsRouteTest extends RouteTestBase {
         super("JobsRoute", SERVER_PORT);
     }
 
-    private static JobDefinitionSettings jobDefinitionSettings;
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
     private static ApiSettings apiSettings;
 
     @BeforeClass
@@ -115,7 +118,6 @@ public class JobsRouteTest extends RouteTestBase {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
-        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
         apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -129,7 +131,8 @@ public class JobsRouteTest extends RouteTestBase {
 
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(
-                                true)), lifecycleEventPublisher), "jobClustersManager");
+                                true)), lifecycleEventPublisher,
+                    jobDefinitionSettings), "jobClustersManager");
 
                 IMantisPersistenceProvider simpleCachedFileStorageProvider = new FileBasedPersistenceProvider(new FileBasedStore());
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);

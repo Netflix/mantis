@@ -48,6 +48,7 @@ import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -131,6 +132,10 @@ public class JobClusterManagerTest {
             new StatusEventSubscriberLoggingImpl(),
             new WorkerEventSubscriberLoggingImpl());
     private static final String user = "nj";
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     @Rule
     public TemporaryFolder rootDir = new TemporaryFolder();
@@ -161,7 +166,8 @@ public class JobClusterManagerTest {
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreMock,
-            eventPublisher));
+            eventPublisher,
+            jobDefinitionSettings));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), ActorRef.noSender());
@@ -301,7 +307,8 @@ public class JobClusterManagerTest {
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 true), probe.getRef());
@@ -320,7 +327,8 @@ public class JobClusterManagerTest {
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStore,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
@@ -373,7 +381,8 @@ public class JobClusterManagerTest {
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 true), probe.getRef());
@@ -398,7 +407,8 @@ public class JobClusterManagerTest {
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 false), probe.getRef());
@@ -502,7 +512,8 @@ public class JobClusterManagerTest {
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
@@ -646,7 +657,8 @@ public class JobClusterManagerTest {
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 false), probe.getRef());
@@ -722,7 +734,8 @@ public class JobClusterManagerTest {
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                jobDefinitionSettings));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,

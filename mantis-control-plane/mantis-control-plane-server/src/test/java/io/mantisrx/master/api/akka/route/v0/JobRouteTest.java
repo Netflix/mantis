@@ -177,7 +177,10 @@ public class JobRouteTest {
 
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobRoutes");
-    private static JobDefinitionSettings jobDefinitionSettings;
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
     private static ApiSettings apiSettings;
 
     @BeforeClass
@@ -186,7 +189,6 @@ public class JobRouteTest {
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
         TestHelpers.setupMasterConfig();
-        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
         apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
 
         t = new Thread(() -> {
@@ -206,7 +208,7 @@ public class JobRouteTest {
                 IMantisPersistenceProvider mantisStorageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), lifecycleEventPublisher);
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(
-                                true)), lifecycleEventPublisher), "jobClustersManager");
+                                true)), lifecycleEventPublisher, jobDefinitionSettings), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

@@ -137,8 +137,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher)
+    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final JobDefinitionSettings jobDefinitionSettings) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, jobDefinitionSettings)
             .withMailbox("akka.actor.metered-mailbox");
     }
 

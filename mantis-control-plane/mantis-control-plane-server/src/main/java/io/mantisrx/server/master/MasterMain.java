@@ -35,6 +35,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.MasterApiAkkaService;
 import io.mantisrx.master.events.AuditEventBrokerActor;
 import io.mantisrx.master.events.AuditEventSubscriber;
@@ -184,7 +185,8 @@ public class MasterMain implements Service {
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
+            final JobDefinitionSettings jobDefinitionSettings = JobDefinitionSettings.fromConfig(typesafeConfig.getConfig("mantis.jobDefinition"));
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobDefinitionSettings), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff

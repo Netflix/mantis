@@ -30,7 +30,9 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
 import io.mantisrx.master.events.*;
@@ -61,6 +63,10 @@ public class JobStatusRouteTest {
     private static ActorSystem system = ActorSystem.create("JobStatusRoute");
     private static ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
     private static ActorRef statusEventBrokerActor = system.actorOf(StatusEventBrokerActor.props(agentsErrorMonitorActor));
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -76,7 +82,7 @@ public class JobStatusRouteTest {
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher), "jobClustersManager");
+                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, jobDefinitionSettings), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

@@ -88,7 +88,10 @@ public class JobClusterRouteTest {
     private static Thread t;
     private static final int serverPort = 8301;
     private static ApiSettings apiSettings;
-    private static JobDefinitionSettings jobDefinitionSettings;
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     private CompletionStage<String> processRespFut(final HttpResponse r, final int expectedStatusCode) {
         logger.info("headers {} {}", r.getHeaders(), r.status());
@@ -121,7 +124,6 @@ public class JobClusterRouteTest {
     public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
         apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
-        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {
@@ -132,7 +134,11 @@ public class JobClusterRouteTest {
 
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
-                ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher), "jobClustersManager");
+                ActorRef jobClustersManagerActor =
+                    system.actorOf(JobClustersManagerActor.props(
+                        new MantisJobStore(
+                            new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, jobDefinitionSettings),
+                        "jobClustersManager");
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);

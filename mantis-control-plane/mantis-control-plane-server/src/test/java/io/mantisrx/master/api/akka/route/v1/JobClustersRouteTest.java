@@ -35,8 +35,10 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.ApiSettings;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
@@ -78,6 +80,10 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     private static String TEST_CLUSTER_NAME = "sine-function";
     private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     public JobClustersRouteTest() {
         super("JobClustersRouteTest", SERVER_PORT);
@@ -102,7 +108,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                 ActorRef jobClustersManagerActor = system.actorOf(
                         JobClustersManagerActor.props(
                                 new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true)),
-                                lifecycleEventPublisher),
+                                lifecycleEventPublisher,
+                                jobDefinitionSettings),
                         "jobClustersManager");
                 MantisSchedulerFactory mantisSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

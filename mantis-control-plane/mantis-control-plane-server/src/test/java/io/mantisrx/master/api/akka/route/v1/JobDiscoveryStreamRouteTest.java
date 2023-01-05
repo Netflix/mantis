@@ -30,8 +30,10 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.ApiSettings;
+import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandlerAkkaImpl;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
@@ -68,6 +70,10 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
     private static volatile CompletionStage<ServerBinding> binding;
     private static ActorRef agentsErrorMonitorActor;
     private final TestMantisClient mantisClient = new TestMantisClient(SERVER_PORT);
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
     private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
 
     public JobDiscoveryStreamRouteTest(){
@@ -89,7 +95,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
 
                 TestHelpers.setupMasterConfig();
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher), "jobClustersManager");
+                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, jobDefinitionSettings), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
