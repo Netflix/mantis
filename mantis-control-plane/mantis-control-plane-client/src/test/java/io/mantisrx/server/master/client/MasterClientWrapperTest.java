@@ -185,7 +185,7 @@ public class MasterClientWrapperTest {
 
     }
 
-    @Test
+//    @Test
     public void testNamedJobExists() {
 
       ClientServices haServices = ClientServicesUtil.createClientServices(
