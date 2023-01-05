@@ -35,7 +35,6 @@ import akka.actor.PoisonPill;
 import akka.testkit.javadsl.TestKit;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
-import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.*;
 import io.mantisrx.master.jobcluster.job.JobActor.WorkerNumberGenerator;
@@ -85,16 +84,16 @@ public class JobTestLifecycle {
 	private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
 	private static final String user = "mantis";
-    private static JobDefinitionSettings jobDefinitionSettings;
-    private static ApiSettings apiSettings;
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
 	@BeforeClass
 	public static void setup() {
 		system = ActorSystem.create();
 
 		TestHelpers.setupMasterConfig();
-        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
-        apiSettings = ApiSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.api"));
 		storageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), eventPublisher);
 		jobStore = new MantisJobStore(storageProvider);
 	}

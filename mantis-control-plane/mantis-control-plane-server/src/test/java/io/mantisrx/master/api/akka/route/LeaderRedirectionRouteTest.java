@@ -103,8 +103,9 @@ public class LeaderRedirectionRouteTest {
     private static final LeaderElectorService.Contender contender = mock(LeaderElectorService.Contender.class);
     private static volatile boolean isReady = false;
     private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings
-            .fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() throws Exception {

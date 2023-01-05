@@ -304,12 +304,14 @@ public class JobTestHelper {
         assertEquals(numberOfWorkers, scaleResponse.getActualNumWorkers());
     }
 
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
+
     public static ActorRef submitSingleStageScalableJob(ActorSystem system, TestKit probe, String clusterName, SchedulingInfo sInfo,
                                                         MantisScheduler schedulerMock, MantisJobStore jobStoreMock,
                                                         LifecycleEventPublisher lifecycleEventPublisher) throws io.mantisrx.runtime.command.InvalidJobException {
-
-        JobDefinitionSettings jobDefinitionSettings =
-            JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
         IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName, sInfo);
         JobDefinition jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 

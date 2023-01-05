@@ -163,7 +163,10 @@ public class JobClusterTest {
     private static final String user = "mantis";
     @Rule
     public TemporaryFolder rootDir = new TemporaryFolder();
-    private static JobDefinitionSettings jobDefinitionSettings;
+    private static final JobDefinitionSettings jobDefinitionSettings =
+        JobDefinitionSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() {
@@ -178,7 +181,6 @@ public class JobClusterTest {
 
         JobTestHelper.createDirsIfRequired();
         TestHelpers.setupMasterConfig();
-        jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
     }
 
     @AfterClass
