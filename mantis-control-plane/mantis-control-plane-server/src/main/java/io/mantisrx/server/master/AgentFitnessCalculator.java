@@ -22,7 +22,7 @@ import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.functions.Func1;
 import com.netflix.fenzo.plugins.BinPackingFitnessCalculators;
-import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.mesos.AgentFitnessSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +38,11 @@ public class AgentFitnessCalculator implements VMTaskFitnessCalculator {
     private final double durationTypeWeight;
     private final double goodEnoughThreshold;
     private final Func1<Double, Boolean> fitnessGoodEnoughFunc;
-    public AgentFitnessCalculator() {
-        binPackingWeight = ConfigurationProvider.getConfig().getBinPackingFitnessWeight();
-        clusterWeight = ConfigurationProvider.getConfig().getPreferredClusterFitnessWeight();
-        durationTypeWeight = ConfigurationProvider.getConfig().getDurationTypeFitnessWeight();
-        goodEnoughThreshold = ConfigurationProvider.getConfig().getFitnessGoodEnoughThreshold();
+    public AgentFitnessCalculator(AgentFitnessSettings agentFitnessSettings) {
+        binPackingWeight = agentFitnessSettings.getBinPackingWeight();
+        clusterWeight = agentFitnessSettings.getPreferredClusterWeight();
+        durationTypeWeight = agentFitnessSettings.getDurationTypeWeight();
+        goodEnoughThreshold = agentFitnessSettings.getGoodEnoughThreshold();
         logger.info("clusterWeight {} durationTypeWeight {} binPackingWeight {} goodEnoughThreshold {}", clusterWeight, durationTypeWeight, binPackingWeight, goodEnoughThreshold);
         this.fitnessGoodEnoughFunc = f -> f > goodEnoughThreshold;
     }

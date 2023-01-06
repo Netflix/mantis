@@ -44,7 +44,6 @@ import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.ApiSettings;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
@@ -58,6 +57,7 @@ import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
@@ -91,8 +91,8 @@ public class JobClusterRouteTest {
         ApiSettings.fromConfig(
             ConfigFactory
                 .load("api-settings-sample.conf"));
-    private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
@@ -139,7 +139,7 @@ public class JobClusterRouteTest {
                 ActorRef jobClustersManagerActor =
                     system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(
-                            new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, jobDefinitionSettings),
+                            new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, JOB_SETTINGS),
                         "jobClustersManager");
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
@@ -150,7 +150,7 @@ public class JobClusterRouteTest {
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
 
-                final JobClusterRoute app = new JobClusterRoute(apiSettings, jobDefinitionSettings, jobClusterRouteHandler, jobRouteHandler, system);
+                final JobClusterRoute app = new JobClusterRoute(apiSettings, JOB_SETTINGS, jobClusterRouteHandler, jobRouteHandler, system);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("starting test server on port {}", serverPort);
                 binding = http.bindAndHandle(routeFlow,

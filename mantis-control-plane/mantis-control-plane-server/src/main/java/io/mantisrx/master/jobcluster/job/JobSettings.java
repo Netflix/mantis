@@ -14,30 +14,38 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.api.akka;
+package io.mantisrx.master.jobcluster.job;
 
 import com.typesafe.config.Config;
 import io.mantisrx.runtime.MachineDefinition;
+import java.time.Duration;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
 @Builder
 @Value
-public class JobDefinitionSettings {
+public class JobSettings {
     MachineDefinition workerMaxMachineDefinition;
-    int maxWorkersPerStage;
+    int workerMaxResubmits;
+    List<Duration> workerResubmitIntervals;
+    Duration workerResubmitExpiry;
 
-    public static JobDefinitionSettings fromConfig(Config config) {
+    int maxWorkersPerStage;
+    MachineDefinition jobMasterMachineDefinition;
+
+    public static JobSettings fromConfig(Config config) {
         return
-            JobDefinitionSettings
+            JobSettings
                 .builder()
                 .workerMaxMachineDefinition(
-                    new MachineDefinition(
-                        config.getDouble("worker.maxMachineDefinition.cpu"),
-                        config.getMemorySize("worker.maxMachineDefinition.memory").toBytes() / (1024.0 * 1024.0),
-                        config.getMemorySize("worker.maxMachineDefinition.network").toBytes() / (1024.0 * 1024.0),
-                        5))
+                    MachineDefinition.fromConfig(config.getConfig("worker.maxMachineDefinition")))
+                .workerMaxResubmits(config.getInt("worker.maxResubmits"))
+                .workerResubmitIntervals(config.getDurationList("worker.resubmitIntervals"))
+                .workerResubmitExpiry(config.getDuration("worker.resubmitExpiry"))
                 .maxWorkersPerStage(config.getInt("maxWorkersPerStage"))
+                .jobMasterMachineDefinition(
+                    MachineDefinition.fromConfig(config.getConfig("master.machineDefinition")))
                 .build();
     }
 }

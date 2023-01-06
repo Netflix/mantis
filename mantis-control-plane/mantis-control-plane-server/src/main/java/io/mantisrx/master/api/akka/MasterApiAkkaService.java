@@ -57,6 +57,7 @@ import io.mantisrx.master.api.akka.route.v1.JobStatusStreamRoute;
 import io.mantisrx.master.api.akka.route.v1.JobsRoute;
 import io.mantisrx.master.api.akka.route.v1.LastSubmittedJobIdStreamRoute;
 import io.mantisrx.master.events.LifecycleEventPublisher;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.highavailability.LeaderElectorService;
@@ -151,13 +152,13 @@ public class MasterApiAkkaService extends BaseService {
 
     private MantisMasterRoute configureApiRoutes(final ActorSystem actorSystem, final AgentClusterOperations agentClusterOperations) {
         final ApiSettings apiSettings = ApiSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
-        final JobDefinitionSettings jobDefinitionSettings = JobDefinitionSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
+        final JobSettings jobSettings = JobSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
         // Setup API routes
         final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
 
-        final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription, jobDefinitionSettings);
-        final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobDefinitionSettings, actorSystem);
+        final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription, jobSettings);
+        final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobSettings, actorSystem);
 
         java.time.Duration idleTimeout = actorSystem.settings().config().getDuration("akka.http.server.idle-timeout");
         logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
@@ -165,13 +166,13 @@ public class MasterApiAkkaService extends BaseService {
         final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings, idleTimeout);
 
         final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(jobDiscoveryRouteHandler);
-        final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(apiSettings, jobDefinitionSettings, jobClusterRouteHandler, jobRouteHandler, actorSystem);
+        final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(apiSettings, jobSettings, jobClusterRouteHandler, jobRouteHandler, actorSystem);
         final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(agentClusterOperations, actorSystem);
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
         final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem);
-        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, jobDefinitionSettings, actorSystem);
-        final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobDefinitionSettings);
+        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, jobSettings, actorSystem);
+        final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobSettings);
         final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(agentClusterOperations);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute = new LastSubmittedJobIdStreamRoute(jobDiscoveryRouteHandler);

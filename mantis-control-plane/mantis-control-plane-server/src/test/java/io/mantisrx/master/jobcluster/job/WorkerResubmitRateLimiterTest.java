@@ -19,59 +19,24 @@ package io.mantisrx.master.jobcluster.job;
 import static org.junit.Assert.*;
 
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.time.Duration;
 import java.util.List;
 import org.junit.Test;
 
 public class WorkerResubmitRateLimiterTest {
 
-    @Test
-    public void ctorTest() {
-
-        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter("5:10:15", 5);
-
-        assertEquals(5,wrrl.getExpireResubmitDelaySecs());
-        long [] resubmitIntervalArray = wrrl.getResubmitIntervalSecs();
-        assertEquals(4, resubmitIntervalArray.length);
-        assertEquals(0, resubmitIntervalArray[0]);
-        assertEquals(5, resubmitIntervalArray[1]);
-        assertEquals(10, resubmitIntervalArray[2]);
-        assertEquals(15, resubmitIntervalArray[3]);
-    }
-
-    @Test
-    public void ctorTest_nointervalgiven() {
-
-        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter("",  5);
-
-        assertEquals(5,wrrl.getExpireResubmitDelaySecs());
-        long [] resubmitIntervalArray = wrrl.getResubmitIntervalSecs();
-        assertEquals(4, resubmitIntervalArray.length);
-        assertEquals(0, resubmitIntervalArray[0]);
-        assertEquals(5, resubmitIntervalArray[1]);
-        assertEquals(10, resubmitIntervalArray[2]);
-        assertEquals(20, resubmitIntervalArray[3]);
-
-        try {
-            wrrl = new WorkerResubmitRateLimiter("",  0);
-            fail();
-        } catch(Exception e) {
-
-        }
-
-        try {
-            wrrl = new WorkerResubmitRateLimiter("", -1);
-            fail();
-        } catch(Exception e) {
-
-        }
-
-    }
+    private static final JobSettings jobSettings =
+        JobSettings
+            .builder()
+            .workerResubmitIntervals(ImmutableList.of(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(15)))
+            .workerResubmitExpiry(Duration.ofSeconds(5))
+            .build();
 
 
     @Test
     public void addWorkerTest() {
-
-        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter("5:10:15",  5);
+        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter(jobSettings);
         int stageNum = 1;
         long currTime = System.currentTimeMillis();
         WorkerId workerId = new WorkerId("TestJob-1", 0, 1);
@@ -95,8 +60,7 @@ public class WorkerResubmitRateLimiterTest {
 
     @Test
     public void addMultipleWorkerTest() {
-
-        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter("5:10:15",  5);
+        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter(jobSettings);
         int stageNum = 1;
         long currTime = System.currentTimeMillis();
         WorkerId workerId = new WorkerId("TestJob-1", 0, 1);
@@ -128,7 +92,7 @@ public class WorkerResubmitRateLimiterTest {
     @Test
     public void expireOldEntryTest() {
 
-        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter("5:10:15",  5);
+        WorkerResubmitRateLimiter wrrl = new WorkerResubmitRateLimiter(jobSettings);
         int stageNum = 1;
         long currTime = System.currentTimeMillis();
         WorkerId workerId = new WorkerId("TestJob-1", 0, 1);

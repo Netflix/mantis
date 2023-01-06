@@ -32,7 +32,6 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
@@ -146,7 +145,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final LifecycleEventPublisher eventPublisher;
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
-    private final JobDefinitionSettings jobDefinitionSettings;
+    private final JobSettings jobSettings;
 
     /**
      * Used by the JobCluster Actor to create this Job Actor.
@@ -165,9 +164,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
             final LifecycleEventPublisher eventPublisher,
-            final JobDefinitionSettings jobDefinitionSettings) {
+            final JobSettings jobSettings) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher, jobDefinitionSettings);
+                mantisScheduler, eventPublisher, jobSettings);
     }
 
     /**
@@ -178,12 +177,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param jobStore
      * @param scheduler
      * @param eventPublisher
-     * @param jobDefinitionSettings
+     * @param jobSettings
      */
     public JobActor(
         final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
         MantisJobStore jobStore, final MantisScheduler scheduler,
-        final LifecycleEventPublisher eventPublisher, JobDefinitionSettings jobDefinitionSettings) {
+        final LifecycleEventPublisher eventPublisher, JobSettings jobSettings) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -192,7 +191,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.mantisScheduler = scheduler;
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
-        this.jobDefinitionSettings = jobDefinitionSettings;
+        this.jobSettings = jobSettings;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -302,18 +301,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     private MachineDefinition getJobMasterMachineDef() {
-        MasterConfiguration config = ConfigurationProvider.getConfig();
-
-        if (config != null) {
-            return new MachineDefinition(
-                    config.getJobMasterCores(), config.getJobMasterMemoryMB(), config.getJobMasterNetworkMbps(),
-                    config.getJobMasterDiskMB(), 1
-            );
-        } else {
-            return new MachineDefinition(
-                    DEFAULT_JOB_MASTER_CORES, DEFAULT_JOB_MASTER_MEM, DEFAULT_JOB_MASTER_NW,
-                    DEFAULT_JOB_MASTER_DISK, 1);
-        }
+        return jobSettings.getJobMasterMachineDefinition();
     }
 
     @Override
@@ -1282,7 +1270,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private Map<Integer, WorkerAssignments> stageAssignments = new HashMap<>();
         private BehaviorSubject<JobSchedulingInfo> jobSchedulingInfoBehaviorSubject;
         private String currentJobSchedulingInfoStr = null;
-        private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter();
+        private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter(jobSettings);
         // Use expiring cache to effectively track worker resubmitted in the last hour.
         private Cache<Integer, Boolean> recentErrorWorkersCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(1, TimeUnit.HOURS)
@@ -2208,8 +2196,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
 
             IMantisWorkerMetadata oldWorkerMetadata = oldWorker.getMetadata();
-            if (recentErrorWorkersCache.size()
-                    < ConfigurationProvider.getConfig().getMaximumResubmissionsPerWorker()) {
+            if (recentErrorWorkersCache.size() < jobSettings.getWorkerMaxResubmits()) {
 
                 Integer stageNo = workerToStageMap.get(oldWorkerMetadata.getWorkerId().getWorkerNum());
                 if (stageNo == null) {
@@ -2275,7 +2262,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         public int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason) {
             LOGGER.info("Scaling stage {} to {} workers", stageMetaData.getStageNum(), numWorkers);
             final int oldNumWorkers = stageMetaData.getNumWorkers();
-            int max = jobDefinitionSettings.getMaxWorkersPerStage();
+            int max = jobSettings.getMaxWorkersPerStage();
             int min = 0;
             if (stageMetaData.getScalingPolicy() != null) {
                 max = stageMetaData.getScalingPolicy().getMax();

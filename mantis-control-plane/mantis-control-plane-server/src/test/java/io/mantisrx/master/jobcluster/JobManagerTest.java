@@ -26,10 +26,10 @@ import static org.mockito.Mockito.*;
 import akka.actor.AbstractActor;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import io.mantisrx.master.jobcluster.JobClusterActor.JobManager;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
@@ -50,8 +50,8 @@ public class JobManagerTest {
     private static AbstractActor.ActorContext context;
     private static MantisSchedulerFactory schedulerFactory;
     private static LifecycleEventPublisher publisher;
-    private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
@@ -69,7 +69,7 @@ public class JobManagerTest {
 	@Test
 	public void acceptedToActive() {
 
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -87,7 +87,7 @@ public class JobManagerTest {
 
 	@Test
 	public void acceptedToCompleted() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -115,7 +115,7 @@ public class JobManagerTest {
 
 	@Test
 	public void acceptedToTerminating() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -139,7 +139,7 @@ public class JobManagerTest {
 
 	@Test
 	public void terminatingToActiveIsIgnored() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobDefinition jdMock = mock(JobDefinition.class);
 		JobInfo jInfo1 = new JobInfo(jId1, jdMock, 0, null, JobState.Accepted, "nj");
@@ -163,7 +163,7 @@ public class JobManagerTest {
 
 	@Test
 	public void activeToAcceptedFails() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -179,7 +179,7 @@ public class JobManagerTest {
 	}
 	@Test
 	public void testGetAcceptedJobList() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -208,7 +208,7 @@ public class JobManagerTest {
 
 	@Test
 	public void testGetActiveJobList() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, jobDefinitionSettings);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -241,7 +241,7 @@ public class JobManagerTest {
 	public void testPurgeOldJobs() {
         String clusterName = "testPurgeOldJobs";
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
-        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, jobDefinitionSettings);
+        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, JOB_SETTINGS);
 
         JobId jId1 = new JobId(clusterName,1);
         JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
@@ -291,7 +291,7 @@ public class JobManagerTest {
     public void testJobListSortedCorrectly() {
         String clusterName = "testJobListSortedCorrectly";
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
-        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, jobDefinitionSettings);
+        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, JOB_SETTINGS);
 
         JobId jId1 = new JobId(clusterName,1);
         JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");

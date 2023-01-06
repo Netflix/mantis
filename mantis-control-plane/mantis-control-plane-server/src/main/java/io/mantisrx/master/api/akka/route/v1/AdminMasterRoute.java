@@ -21,8 +21,8 @@ import static akka.http.javadsl.server.PathMatchers.segment;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.Route;
 import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
@@ -54,7 +54,7 @@ public class AdminMasterRoute extends BaseRoute {
             false);
     private final MasterDescription masterDesc;
     private final List<Configlet> configs = new ArrayList<>();
-    private final JobDefinitionSettings jobDefinitionSettings;
+    private final JobSettings jobSettings;
 
 
     public static class Configlet {
@@ -133,7 +133,7 @@ public class AdminMasterRoute extends BaseRoute {
         }
     }
 
-    public AdminMasterRoute(final MasterDescription masterDescription, JobDefinitionSettings jobDefinitionSettings) {
+    public AdminMasterRoute(final MasterDescription masterDescription, JobSettings jobSettings) {
         //TODO: hardcode some V1 admin master info, this should be cleaned up once v0 apis
         // are deprecated
         this.masterDesc = new MasterDescription(masterDescription.getHostname(),
@@ -144,7 +144,7 @@ public class AdminMasterRoute extends BaseRoute {
                                                 "api/v1/jobs/actions/postJobStatus",
                                                 -1,
                                                 masterDescription.getCreateTime());
-        this.jobDefinitionSettings = jobDefinitionSettings;
+        this.jobSettings = jobSettings;
 
         try {
             configs.add(new Configlet(
@@ -157,9 +157,9 @@ public class AdminMasterRoute extends BaseRoute {
                     WorkerMigrationConfig.MigrationStrategyEnum.class.getSimpleName(),
                     mapper.writeValueAsString(WorkerMigrationConfig.MigrationStrategyEnum.values())));
 //            MasterConfiguration config = ConfigurationProvider.getConfig();
-            int maxCpuCores = (int) jobDefinitionSettings.getWorkerMaxMachineDefinition().getCpuCores();
-            int maxMemoryMB = (int) jobDefinitionSettings.getWorkerMaxMachineDefinition().getMemoryMB();
-            int maxNetworkMbps = (int) jobDefinitionSettings.getWorkerMaxMachineDefinition().getNetworkMbps();
+            int maxCpuCores = (int) jobSettings.getWorkerMaxMachineDefinition().getCpuCores();
+            int maxMemoryMB = (int) jobSettings.getWorkerMaxMachineDefinition().getMemoryMB();
+            int maxNetworkMbps = (int) jobSettings.getWorkerMaxMachineDefinition().getNetworkMbps();
             configs.add(new Configlet(
                     WorkerResourceLimits.class.getSimpleName(),
                     mapper.writeValueAsString(new WorkerResourceLimits(

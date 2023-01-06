@@ -35,8 +35,8 @@ import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
@@ -102,8 +102,8 @@ public class LeaderRedirectionRouteTest {
     private static final MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
     private static final LeaderElectorService.Contender contender = mock(LeaderElectorService.Contender.class);
     private static volatile boolean isReady = false;
-    private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
@@ -120,7 +120,7 @@ public class LeaderRedirectionRouteTest {
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
 
                 TestHelpers.setupMasterConfig();
-                final MasterDescriptionRoute app = new MasterDescriptionRoute(fakeMasterDesc, jobDefinitionSettings);
+                final MasterDescriptionRoute app = new MasterDescriptionRoute(fakeMasterDesc, JOB_SETTINGS);
                 final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, contender, () -> isReady);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(leaderRedirectionFilter::redirectIfNotLeader).flow(system, materializer);

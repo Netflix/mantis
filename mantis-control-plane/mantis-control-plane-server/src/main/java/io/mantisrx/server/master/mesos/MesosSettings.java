@@ -43,6 +43,7 @@ public class MesosSettings {
     String frameworkUser;
 
     Duration reconcilerInterval;
+    AgentFitnessSettings agentFitnessSettings;
 
     public static MesosSettings fromConfig(Config config) {
         return MesosSettings.builder()
@@ -64,6 +65,8 @@ public class MesosSettings {
 
             .frameworkName(config.getString("framework.name"))
             .frameworkUser(config.getString("framework.user"))
+
+            .agentFitnessSettings(AgentFitnessSettings.fromConfig(config.getConfig("agentFitness")))
             .build();
     }
 }

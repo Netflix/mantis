@@ -35,7 +35,6 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.MasterApiAkkaService;
 import io.mantisrx.master.events.AuditEventBrokerActor;
 import io.mantisrx.master.events.AuditEventSubscriber;
@@ -49,6 +48,7 @@ import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
 import io.mantisrx.master.events.WorkerMetricsCollector;
 import io.mantisrx.master.events.WorkerRegistryV2;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
@@ -185,8 +185,8 @@ public class MasterMain implements Service {
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
-            final JobDefinitionSettings jobDefinitionSettings = JobDefinitionSettings.fromConfig(typesafeConfig.getConfig("mantis.jobDefinition"));
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobDefinitionSettings), "JobClustersManager");
+            final JobSettings jobSettings = JobSettings.fromConfig(typesafeConfig.getConfig("mantis.jobDefinition"));
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobSettings), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff

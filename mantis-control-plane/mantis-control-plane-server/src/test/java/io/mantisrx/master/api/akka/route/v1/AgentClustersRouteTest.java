@@ -40,13 +40,13 @@ import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.AgentClusterPayloads;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
@@ -87,8 +87,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
             "http://127.0.0.1:%d/api/v1/agentClusters",
             serverPort);
 
-    private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
     private static CompletionStage<ServerBinding> binding;
@@ -116,7 +116,7 @@ public class AgentClustersRouteTest extends RouteTestBase {
                         JobClustersManagerActor.props(
                                 new MantisJobStore(storageProvider),
                                 lifecycleEventPublisher,
-                                jobDefinitionSettings),
+                            JOB_SETTINGS),
                         "jobClustersManager");
 
 

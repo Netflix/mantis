@@ -26,7 +26,6 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
@@ -304,8 +303,8 @@ public class JobTestHelper {
         assertEquals(numberOfWorkers, scaleResponse.getActualNumWorkers());
     }
 
-    private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
@@ -323,7 +322,7 @@ public class JobTestHelper {
             .withNextWorkerNumToUse(1)
             .withJobDefinition(jobDefn)
             .build();
-        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher, jobDefinitionSettings));
+        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher, JOB_SETTINGS));
 
 
         jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());

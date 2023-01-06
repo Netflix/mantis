@@ -139,7 +139,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         this.virtualMachineService = virtualMachineService;
         this.slaveClusterAttributeName = ConfigurationProvider.getConfig().getSlaveClusterAttributeName();
         SCHEDULING_ITERATION_INTERVAL_MILLIS = ConfigurationProvider.getConfig().getSchedulerIterationIntervalMillis();
-        AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator();
+        AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator(mesosSettings.getAgentFitnessSettings());
         TaskScheduler.Builder schedulerBuilder = new TaskScheduler.Builder()
                 .withLeaseRejectAction(virtualMachineService::rejectLease)
                 .withLeaseOfferExpirySecs(mesosSettings.getSchedulerLeaseOfferExpiry().getSeconds())

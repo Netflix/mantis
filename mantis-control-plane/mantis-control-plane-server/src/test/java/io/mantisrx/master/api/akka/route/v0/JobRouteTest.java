@@ -46,7 +46,6 @@ import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.ApiSettings;
-import io.mantisrx.master.api.akka.JobDefinitionSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -75,6 +74,7 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
@@ -177,8 +177,8 @@ public class JobRouteTest {
 
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobRoutes");
-    private static final JobDefinitionSettings jobDefinitionSettings =
-        JobDefinitionSettings.fromConfig(
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
     private static final ApiSettings apiSettings =
@@ -210,7 +210,7 @@ public class JobRouteTest {
                 IMantisPersistenceProvider mantisStorageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), lifecycleEventPublisher);
                 ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(
-                                true)), lifecycleEventPublisher, jobDefinitionSettings), "jobClustersManager");
+                                true)), lifecycleEventPublisher, JOB_SETTINGS), "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
@@ -243,14 +243,14 @@ public class JobRouteTest {
                         jobClustersManagerActor,
                     apiSettings, idleTimeout);
                 final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(
-                        masterDescription, jobDefinitionSettings);
-                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobDefinitionSettings, system);
+                        masterDescription, JOB_SETTINGS);
+                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, JOB_SETTINGS, system);
 
                 final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(
                         jobDiscoveryRouteHandler);
                 final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(
                         apiSettings,
-                        jobDefinitionSettings,
+                    JOB_SETTINGS,
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
@@ -259,9 +259,9 @@ public class JobRouteTest {
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                    jobDefinitionSettings, system);
+                    JOB_SETTINGS, system);
                 final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
-                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobDefinitionSettings);
+                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, JOB_SETTINGS);
 
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);
                 when(jobStatusRouteHandler.jobStatus(anyString())).thenReturn(Flow.create());

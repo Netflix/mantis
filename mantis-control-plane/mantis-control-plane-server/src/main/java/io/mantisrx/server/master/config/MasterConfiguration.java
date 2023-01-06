@@ -49,24 +49,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("CLUSTER_NAME")
     String getSlaveClusterAttributeName();
 
-    @Config("mantis.master.agent.fitness.cluster.weight")
-    @Default("0.2")
-    double getPreferredClusterFitnessWeight();
-
-    @Config("mantis.master.agent.fitness.durationtype.weight")
-    @Default("0.5")
-    double getDurationTypeFitnessWeight();
-
-    @Config("mantis.master.agent.fitness.binpacking.weight")
-    @Default("0.3")
-    double getBinPackingFitnessWeight();
-
-    // Threshold value compared should make sense with the 3 fitness weights above that aggregates the weighted results from
-    // individual fitness calculators.
-    @Config("mantis.master.agent.fitness.goodenough.threshold")
-    @Default("0.63")
-    double getFitnessGoodEnoughThreshold();
-
     @Config("mantis.master.mesos.failover.timeout.secs")
     @Default("604800.0")
         // 604800 secs = 1 week
@@ -76,10 +58,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.scheduler.iteration.interval.millis")
     @Default("50")
     long getSchedulerIterationIntervalMillis();
-
-    @Config("mantis.master.scheduler.disable.slave.duration.secs")
-    @Default("60")
-    long getDisableSlaveDurationSecs();
 
     // Sleep interval between consecutive scheduler retries
     @Config("mantis.master.scheduler.retry-interval.millis")
@@ -93,9 +71,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.scheduler.max-retries")
     @Default("10")
     int getSchedulerMaxRetries();
-
-    @Config("mantis.zookeeper.leader.election.path")
-    String getLeaderElectionPath();
 
     @Config("mantis.worker.heartbeat.interval.secs")
     @Default("60")
@@ -129,22 +104,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("10")
     int getMaximumNumberOfJarsPerJobName();
 
-    @Config("mantis.worker.resubmissions.maximum")
-    @Default("100")
-    int getMaximumResubmissionsPerWorker();
-
-    @Config("mantis.worker.resubmission.interval.secs")
-    @Default("5:10:20")
-    String getWorkerResubmitIntervalSecs();
-
-    @Config("mantis.worker.expire.resubmit.delay.secs")
-    @Default("300")
-    long getExpireWorkerResubmitDelaySecs();
-
-    @Config("mantis.worker.expire.resubmit.execution.interval.secs")
-    @Default("120")
-    long getExpireResubmitDelayExecutionIntervalSecs();
-
     @Config("mantis.master.purge.frequency.secs")
     @Default("1200")
     long getCompletedJobPurgeFrequencySeqs();
@@ -153,14 +112,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("50")
     int getMaxJobsToPurge();
 
-
-    @Config("mantis.worker.state.launched.timeout.millis")
-    @Default("7000")
-    long getWorkerInLaunchedStateTimeoutMillis();
-
-    @Config("mantis.master.store.worker.writes.batch.size")
-    @Default("100")
-    int getWorkerWriteBatchSize();
 
     @Config("mantis.master.ephemeral.job.unsubscribed.timeout.secs")
     @Default("300")
@@ -190,26 +141,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.agent.cluster.autoscaler.shortfall.evaluation.disabled")
     @Default("false")
     boolean getDisableShortfallEvaluation();
-
-    @Config("mantis.scheduling.info.observable.heartbeat.interval.secs")
-    @Default("120")
-    long getSchedulingInfoObservableHeartbeatIntervalSecs();
-
-    @Config("mantis.job.master.scheduling.info.cores")
-    @Default("2.0")
-    double getJobMasterCores();
-
-    @Config("mantis.job.master.scheduling.info.memoryMB")
-    @Default("4096.0")
-    double getJobMasterMemoryMB();
-
-    @Config("mantis.job.master.scheduling.info.networkMbps")
-    @Default("128.0")
-    double getJobMasterNetworkMbps();
-
-    @Config("mantis.job.master.scheduling.info.diskMB")
-    @Default("100.0")
-    double getJobMasterDiskMB();
 
     @Config("mantis.master.api.cache.ttl.milliseconds")
     @Default("250")

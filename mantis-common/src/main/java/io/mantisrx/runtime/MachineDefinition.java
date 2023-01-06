@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime;
 
+import com.typesafe.config.Config;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,6 +56,15 @@ public class MachineDefinition implements Serializable {
         this.diskMB = diskMB;
         this.numPorts = Math.max(minPorts, numPorts);
         this.networkMbps = 128;
+    }
+
+    public static MachineDefinition fromConfig(Config config) {
+        return new MachineDefinition(
+            config.getDouble("cpu"),
+            config.getMemorySize("memory").toBytes() / (1024.0 * 1024.0),
+            config.getMemorySize("network").toBytes() / (1024.0 * 1024.0),
+            config.getMemorySize("disk").toBytes() / (1024.0 * 1024.0),
+            config.hasPath("ports") ? config.getInt("ports") : minPorts);
     }
 
     public double getCpuCores() {
