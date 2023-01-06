@@ -113,10 +113,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     int getMaxJobsToPurge();
 
 
-    @Config("mantis.master.ephemeral.job.unsubscribed.timeout.secs")
-    @Default("300")
-    long getEphemeralJobUnsubscribedTimeoutSecs();
-
     @Config("mantis.master.init.timeout.secs")
     @Default("240")
     long getMasterInitTimeoutSecs();

@@ -54,7 +54,6 @@ import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
@@ -1162,14 +1161,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param mjmd
      * @return
      */
-    static long getSubscriptionTimeoutSecs(final IMantisJobMetadata mjmd) {
+    private long getSubscriptionTimeoutSecs(final IMantisJobMetadata mjmd) {
         // if perpetual job there is no subscription timeout
         if (mjmd.getJobDefinition().getJobSla().getDurationType() == MantisJobDurationType.Perpetual) {
             return 0;
         }
-        return mjmd.getSubscriptionTimeoutSecs() == 0
-                ? ConfigurationProvider.getConfig().getEphemeralJobUnsubscribedTimeoutSecs()
-                : mjmd.getSubscriptionTimeoutSecs();
+        return (mjmd.getSubscriptionTimeoutSecs() == 0)
+            ? jobSettings.getDefaultSubscriptionTimeout().getSeconds()
+            : mjmd.getSubscriptionTimeoutSecs();
     }
 
     /**
