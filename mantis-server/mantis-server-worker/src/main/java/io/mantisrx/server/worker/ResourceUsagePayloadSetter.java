@@ -141,36 +141,36 @@ public class ResourceUsagePayloadSetter {
         // figure out resource usage
         StatusPayloads.ResourceUsage usage = evalResourceUsage();
         long delay = getNextDelay();
-        if (usage != null) {
-            try {
-                heartbeat.addSingleUsePayload("" + StatusPayloads.Type.ResourceUsage, objectMapper.writeValueAsString(usage));
-            } catch (JsonProcessingException e) {
-                logger.warn("Error writing json for resourceUsage payload: " + e.getMessage());
+        try {
+            if (usage != null) {
+                try {
+                    heartbeat.addSingleUsePayload("" + StatusPayloads.Type.ResourceUsage, objectMapper.writeValueAsString(usage));
+                } catch (JsonProcessingException e) {
+                    logger.warn("Error writing json for resourceUsage payload: " + e.getMessage());
+                }
+                cpuLimitGauge.set(Math.round(usage.getCpuLimit() * 100.0));
+                cpuUsageCurrGauge.set(Math.round(usage.getCpuUsageCurrent() * 100.0));
+                cpuUsagePeakGauge.set(Math.round(usage.getCpuUsagePeak() * 100.0));
+                memLimitGauge.set(Math.round(usage.getMemLimit()));
+                cachedMemUsageCurrGauge.set(Math.round(usage.getMemCacheCurrent()));
+                cachedMemUsagePeakGauge.set(Math.round(usage.getMemCachePeak()));
+                totMemUsageCurrGauge.set(Math.round(usage.getTotMemUsageCurrent()));
+                totMemUsagePeakGauge.set(Math.round(usage.getTotMemUsagePeak()));
+                nwBytesLimitGauge.set(Math.round(nwBytesLimit));
+                nwBytesUsageCurrGauge.set(Math.round(usage.getNwBytesCurrent()));
+                nwBytesUsagePeakGauge.set(Math.round(usage.getNwBytesPeak()));
+                jvmMemoryUsedGauge.set(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+                jvmMemoryMaxGauge.set(Runtime.getRuntime().maxMemory());
+                if (isBigIncrease(oldUsage, usage) || closeToLimit(usage))
+                    delay = Math.min(delay, bigUsageChgReportingIntervalSecs);
+                oldUsage = usage;
             }
-            cpuLimitGauge.set(Math.round(usage.getCpuLimit() * 100.0));
-            cpuUsageCurrGauge.set(Math.round(usage.getCpuUsageCurrent() * 100.0));
-            cpuUsagePeakGauge.set(Math.round(usage.getCpuUsagePeak() * 100.0));
-            memLimitGauge.set(Math.round(usage.getMemLimit()));
-            cachedMemUsageCurrGauge.set(Math.round(usage.getMemCacheCurrent()));
-            cachedMemUsagePeakGauge.set(Math.round(usage.getMemCachePeak()));
-            totMemUsageCurrGauge.set(Math.round(usage.getTotMemUsageCurrent()));
-            totMemUsagePeakGauge.set(Math.round(usage.getTotMemUsagePeak()));
-            nwBytesLimitGauge.set(Math.round(nwBytesLimit));
-            nwBytesUsageCurrGauge.set(Math.round(usage.getNwBytesCurrent()));
-            nwBytesUsagePeakGauge.set(Math.round(usage.getNwBytesPeak()));
-            jvmMemoryUsedGauge.set(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
-            jvmMemoryMaxGauge.set(Runtime.getRuntime().maxMemory());
-            if (isBigIncrease(oldUsage, usage) || closeToLimit(usage))
-                delay = Math.min(delay, bigUsageChgReportingIntervalSecs);
-            oldUsage = usage;
+        } catch (Exception e) {
+            logger.error("Failed to compute resource usage", e);
+        } finally {
+            logger.debug("scheduling next metrics report with delay=" + delay);
+            executor.schedule(this::setPayloadAndMetrics, delay, TimeUnit.SECONDS);
         }
-        logger.debug("scheduling next metrics report with delay=" + delay);
-        executor.schedule(new Runnable() {
-            @Override
-            public void run() {
-                setPayloadAndMetrics();
-            }
-        }, delay, TimeUnit.SECONDS);
     }
 
     private boolean closeToLimit(StatusPayloads.ResourceUsage usage) {
