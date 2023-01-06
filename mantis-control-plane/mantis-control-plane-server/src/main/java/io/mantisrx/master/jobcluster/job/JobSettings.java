@@ -34,7 +34,8 @@ public class JobSettings {
     int maxWorkersPerStage;
     MachineDefinition jobMasterMachineDefinition;
     Duration defaultSubscriptionTimeout;
-    Duration stageAssignmentRefreshInterval;
+    Duration stageAssignmentsPeriodicRefreshInterval;
+    boolean stageAssignmentsPeriodicRefreshEnabled;
 
     public static JobSettings fromConfig(Config config) {
         return
@@ -49,6 +50,8 @@ public class JobSettings {
                 .jobMasterMachineDefinition(
                     MachineDefinition.fromConfig(config.getConfig("master.machineDefinition")))
                 .defaultSubscriptionTimeout(config.getDuration("defaultSubscriptionTimeout"))
+                .stageAssignmentsPeriodicRefreshEnabled(config.getBoolean("stageAssignmentsPeriodicRefresh.enabled"))
+                .stageAssignmentsPeriodicRefreshInterval(config.getDuration("stageAssignmentsPeriodicRefresh.interval"))
                 .build();
     }
 }

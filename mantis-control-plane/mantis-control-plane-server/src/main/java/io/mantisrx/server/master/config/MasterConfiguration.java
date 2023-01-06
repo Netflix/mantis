@@ -84,10 +84,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("55")
     double getHeartbeatReceiptsMinThresholdPercentage();
 
-    @Config("mantis.master.stage.assignment.refresh.interval.ms")
-    @Default("1000")
-    long getStageAssignmentRefreshIntervalMs();
-
     @Config("mantis.worker.heartbeat.termination.enabled")
     @Default("true")
     boolean isHeartbeatTerminationEnabled();

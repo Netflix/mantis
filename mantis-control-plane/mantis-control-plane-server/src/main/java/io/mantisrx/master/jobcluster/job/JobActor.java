@@ -260,16 +260,16 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 this.mantisScheduler, isSubmit);
 
         long checkAgainInSeconds = ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
-        long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
-                .getStageAssignmentRefreshIntervalMs();
+        Duration refreshInterval = jobSettings.getStageAssignmentsPeriodicRefreshInterval();
+        boolean refreshStageAssignmentsPeriodically = jobSettings.isStageAssignmentsPeriodicRefreshEnabled();
         getTimers().startPeriodicTimer(CHECK_HB_TIMER_KEY, new JobProto.CheckHeartBeat(),
                 Duration.ofSeconds(checkAgainInSeconds));
         // -1 indicates disabled, which means all updates will be sent immediately
-        if (refreshStageAssignementsDurationMs > 0) {
+        if (refreshStageAssignmentsPeriodically) {
             getTimers().startPeriodicTimer(
                     REFRESH_SEND_STAGE_ASSIGNEMNTS_KEY,
                     new JobProto.SendWorkerAssignementsIfChanged(),
-                    Duration.ofMillis(refreshStageAssignementsDurationMs));
+                    refreshInterval);
         }
         mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
         LOGGER.info("Job {} initialized", this.jobId);
@@ -1451,8 +1451,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void markStageAssignmentsChanged(boolean forceRefresh) {
             this.stageAssignmentPotentiallyChanged = true;
-            long refreshInterval = ConfigurationProvider.getConfig().getStageAssignmentRefreshIntervalMs();
-            if (refreshInterval == -1 || forceRefresh) {
+            if (forceRefresh || !jobSettings.isStageAssignmentsPeriodicRefreshEnabled()) {
                 refreshStageAssignmentsAndPush();
             }
         }
