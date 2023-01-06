@@ -48,7 +48,7 @@ public class JobSettings {
                 .maxWorkersPerStage(config.getInt("maxWorkersPerStage"))
                 .jobMasterMachineDefinition(
                     MachineDefinition.fromConfig(config.getConfig("master.machineDefinition")))
-                .defaultSubscriptionTimeout(config.getDuration("subscriptionTimeout"))
+                .defaultSubscriptionTimeout(config.getDuration("defaultSubscriptionTimeout"))
                 .build();
     }
 }
