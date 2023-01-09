@@ -43,8 +43,6 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.PostJobStatusRequest;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
@@ -98,7 +96,6 @@ public class JobsRoute extends BaseRoute {
         this.clusterRouteHandler = clusterRouteHandler;
         this.jobSettings = jobSettings;
         this.apiSettings = apiSettings;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
         this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(), apiSettings.getCacheTtl());
     }
 

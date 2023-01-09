@@ -45,8 +45,6 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -110,7 +108,6 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         this.gateway = gateway;
         this.resourceClusterRouteHandler = resourceClusterRouteHandler;
         this.apiSettings = apiSettings;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
         this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
             apiSettings.getCacheTtl());
     }

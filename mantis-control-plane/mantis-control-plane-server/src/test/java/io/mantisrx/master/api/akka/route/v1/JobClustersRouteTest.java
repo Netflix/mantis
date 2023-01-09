@@ -58,7 +58,6 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -79,7 +78,10 @@ public class JobClustersRouteTest extends RouteTestBase {
     private static File stateDirectory;
 
     private static String TEST_CLUSTER_NAME = "sine-function";
-    private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
+    private static final ApiSettings apiSettings =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));;
     private static final JobSettings JOB_SETTINGS =
         JobSettings.fromConfig(
             ConfigFactory

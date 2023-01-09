@@ -28,8 +28,6 @@ import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -139,7 +137,6 @@ public class MasterDescriptionRoute extends BaseRoute {
             configs.add(new Configlet(JobConstraints.class.getSimpleName(), mapper.writeValueAsString(JobConstraints.values())));
             configs.add(new Configlet(StageScalingPolicy.ScalingReason.class.getSimpleName(), mapper.writeValueAsString(StageScalingPolicy.ScalingReason.values())));
             configs.add(new Configlet(WorkerMigrationConfig.MigrationStrategyEnum.class.getSimpleName(), mapper.writeValueAsString(WorkerMigrationConfig.MigrationStrategyEnum.values())));
-            MasterConfiguration config = ConfigurationProvider.getConfig();
             double maxCpuCores = jobSettings.getWorkerMaxMachineDefinition().getCpuCores();
             double maxMemoryMB = jobSettings.getWorkerMaxMachineDefinition().getMemoryMB();
             double maxNetworkMbps = jobSettings.getWorkerMaxMachineDefinition().getNetworkMbps();

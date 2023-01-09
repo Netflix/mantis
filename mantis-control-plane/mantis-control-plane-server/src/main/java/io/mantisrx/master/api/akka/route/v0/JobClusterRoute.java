@@ -72,8 +72,6 @@ import io.mantisrx.runtime.NamedJobDefinition;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.io.IOException;
 import java.util.Arrays;
@@ -138,7 +136,6 @@ public class JobClusterRoute extends BaseRoute {
         this.jobSettings = jobSettings;
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
                 apiSettings.getCacheTtl());
 

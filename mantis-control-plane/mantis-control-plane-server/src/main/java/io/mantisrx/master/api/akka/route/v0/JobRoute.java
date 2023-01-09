@@ -55,8 +55,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWo
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
 import io.mantisrx.server.core.PostJobStatusRequest;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -103,7 +101,6 @@ public class JobRoute extends BaseRoute {
         this.jobRouteHandler = jobRouteHandler;
         this.jobSettings = jobSettings;
         this.apiSettings = apiSettings;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
                 apiSettings.getCacheTtl());
 

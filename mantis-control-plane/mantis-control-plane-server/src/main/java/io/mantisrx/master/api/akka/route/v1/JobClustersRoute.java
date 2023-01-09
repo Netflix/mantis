@@ -38,8 +38,6 @@ import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.runtime.NamedJobDefinition;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -75,7 +73,6 @@ public class JobClustersRoute extends BaseRoute {
                             final ActorSystem actorSystem, ApiSettings apiSettings) {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.apiSettings = apiSettings;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
         this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
                 apiSettings.getCacheTtl());
     }

@@ -74,7 +74,10 @@ public class JobDiscoveryRouteTest {
     private static ActorSystem system = ActorSystem.create("JobDiscoveryRoute");
     private static ActorRef agentsErrorMonitorActor = system.actorOf(AgentsErrorMonitorActor.props());
     private final TestMantisClient mantisClient = new TestMantisClient(serverPort);
-    private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
+    private static final ApiSettings API_SETTINGS =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
     private static final JobSettings JOB_SETTINGS =
         JobSettings.fromConfig(
             ConfigFactory
@@ -105,7 +108,7 @@ public class JobDiscoveryRouteTest {
                 agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(fakeScheduler), ActorRef.noSender());
                 Duration idleTimeout = system.settings().config().getDuration("akka.http.server.idle-timeout");
                 logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
-                final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings, idleTimeout);
+                final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, API_SETTINGS, idleTimeout);
 
                 final JobDiscoveryRoute jobDiscoveryRoute = new JobDiscoveryRoute(jobDiscoveryRouteHandler);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = jobDiscoveryRoute.createRoute(Function.identity()).flow(system, materializer);
