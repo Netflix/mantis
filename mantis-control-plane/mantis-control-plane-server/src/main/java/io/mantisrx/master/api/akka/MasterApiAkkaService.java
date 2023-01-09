@@ -158,7 +158,7 @@ public class MasterApiAkkaService extends BaseService {
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
 
         final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(masterDescription, jobSettings);
-        final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobSettings, actorSystem);
+        final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, jobSettings, actorSystem, apiSettings);
 
         java.time.Duration idleTimeout = actorSystem.settings().config().getDuration("akka.http.server.idle-timeout");
         logger.info("idle timeout {} sec ", idleTimeout.getSeconds());
@@ -167,11 +167,11 @@ public class MasterApiAkkaService extends BaseService {
 
         final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(jobDiscoveryRouteHandler);
         final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(apiSettings, jobSettings, jobClusterRouteHandler, jobRouteHandler, actorSystem);
-        final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(agentClusterOperations, actorSystem);
+        final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(agentClusterOperations, actorSystem, apiSettings);
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
 
-        final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem);
-        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, jobSettings, actorSystem);
+        final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(jobClusterRouteHandler, actorSystem, apiSettings);
+        final JobsRoute v1JobsRoute = new JobsRoute(jobClusterRouteHandler, jobRouteHandler, jobSettings, actorSystem, apiSettings);
         final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, jobSettings);
         final AgentClustersRoute v1AgentClustersRoute = new AgentClustersRoute(agentClusterOperations);
         final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
@@ -202,7 +202,8 @@ public class MasterApiAkkaService extends BaseService {
             v1LastSubmittedJobIdStreamRoute,
             v1JobStatusStreamRoute,
             resourceClusters,
-            resourceClusterRouteHandler);
+            resourceClusterRouteHandler,
+            apiSettings);
     }
 
     private void startAPIServer() {

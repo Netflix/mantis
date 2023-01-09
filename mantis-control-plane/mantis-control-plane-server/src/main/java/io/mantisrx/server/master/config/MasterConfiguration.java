@@ -19,7 +19,6 @@ package io.mantisrx.server.master.config;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.KeyValueStore;
-import java.time.Duration;
 import org.skife.config.Config;
 import org.skife.config.Default;
 
@@ -54,51 +53,9 @@ public interface MasterConfiguration extends CoreConfiguration {
         // 604800 secs = 1 week
     double getMesosFailoverTimeOutSecs();
 
-    // Sleep interval between consecutive scheduler iterations
-    @Config("mantis.master.scheduler.iteration.interval.millis")
-    @Default("50")
-    long getSchedulerIterationIntervalMillis();
-
-    // Sleep interval between consecutive scheduler retries
-    @Config("mantis.master.scheduler.retry-interval.millis")
-    @Default("60000") // 1 minute
-    int getSchedulerIntervalBetweenRetriesInMs();
-
-    default Duration getSchedulerIntervalBetweenRetries() {
-        return Duration.ofMillis(getSchedulerIntervalBetweenRetriesInMs());
-    }
-
-    @Config("mantis.master.scheduler.max-retries")
-    @Default("10")
-    int getSchedulerMaxRetries();
-
-    @Config("mantis.worker.heartbeat.interval.secs")
-    @Default("60")
-    long getWorkerTimeoutSecs();
-
-    @Config("mantis.worker.heartbeat.interval.init.secs")
-    @Default("180")
-    long getWorkerInitTimeoutSecs();
-
-    @Config("mantis.worker.heartbeat.receipts.min.threshold.percent")
-    @Default("55")
-    double getHeartbeatReceiptsMinThresholdPercentage();
-
-    @Config("mantis.worker.heartbeat.termination.enabled")
-    @Default("true")
-    boolean isHeartbeatTerminationEnabled();
-
-    @Config("mantis.worker.heartbeat.processing.enabled")
-    @Default("true")
-    boolean isHeartbeatProcessingEnabled();
-
     @Config("mantis.interval.move.workers.disabled.vms.millis")
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
-
-    @Config("mantis.jobs.max.jars.per.named.job")
-    @Default("10")
-    int getMaximumNumberOfJarsPerJobName();
 
     @Config("mantis.master.purge.frequency.secs")
     @Default("1200")
@@ -133,18 +90,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.agent.cluster.autoscaler.shortfall.evaluation.disabled")
     @Default("false")
     boolean getDisableShortfallEvaluation();
-
-    @Config("mantis.master.api.cache.ttl.milliseconds")
-    @Default("250")
-    int getApiCacheTtlMilliseconds();
-
-    @Config("mantis.master.api.cache.size.max")
-    @Default("50")
-    int getApiCacheMaxSize();
-
-    @Config("mantis.master.api.cache.size.min")
-    @Default("5")
-    int getApiCacheMinSize();
 
     /**
      * Config value for each {@link io.mantisrx.master.resourcecluster.ResourceClusterScalerActor}'s timer to trigger

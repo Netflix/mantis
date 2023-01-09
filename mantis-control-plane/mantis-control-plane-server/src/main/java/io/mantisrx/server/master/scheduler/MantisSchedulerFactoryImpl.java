@@ -43,6 +43,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
     private final Map<ClusterID, ActorRef> actorRefMap = new ConcurrentHashMap<>();
+    private final SchedulerSettings schedulerSettings;
 
     @Override
     public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
@@ -58,9 +59,9 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                     clusterID,
                     (cid) -> actorSystem.actorOf(
                         ResourceClusterAwareSchedulerActor.props(
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                            schedulerSettings.getMaxRetries(),
+                            schedulerSettings.getMaxRetries(),
+                            schedulerSettings.getIntervalBetweenRetries(),
                             resourceClusters.getClusterFor(cid),
                             executeStageRequestFactory,
                             jobMessageRouter,

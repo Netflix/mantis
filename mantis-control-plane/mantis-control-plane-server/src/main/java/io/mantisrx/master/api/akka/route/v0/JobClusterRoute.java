@@ -139,8 +139,8 @@ public class JobClusterRoute extends BaseRoute {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-                config.getApiCacheTtlMilliseconds());
+        this.cache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+                apiSettings.getCacheTtl());
 
         Metrics m = new Metrics.Builder()
                 .id("V0JobClusterRoute")

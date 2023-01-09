@@ -41,6 +41,7 @@ import com.netflix.fenzo.VirtualMachineLease;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.payloads.AgentClusterPayloads;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -88,6 +89,10 @@ public class AgentClusterRouteTest {
         JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
+    private static final ApiSettings API_SETTINGS =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
 //    private static final AgentClusterOperations agentClusterOperations = mock(AgentClusterOperations.class);
 
     private CompletionStage<String> processRespFut(final HttpResponse r, final int expectedStatusCode) {
@@ -144,7 +149,8 @@ public class AgentClusterRouteTest {
                         fakeScheduler,
                         lifecycleEventPublisher,
                         "cluster"),
-                    system);
+                    system,
+                    API_SETTINGS);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = v0AgentClusterRoute.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("test server starting on port {}", serverPort);

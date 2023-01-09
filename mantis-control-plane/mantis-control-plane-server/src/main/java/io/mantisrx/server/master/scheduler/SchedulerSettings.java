@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.api.akka;
+package io.mantisrx.server.master.scheduler;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
 import lombok.Builder;
 import lombok.Value;
 
-@Builder
 @Value
-public class ApiSettings {
-    Duration askTimeout;
-    int cacheInitialSize;
-    int cacheMaxSize;
-    Duration cacheTtl;
+@Builder
+public class SchedulerSettings {
+    int maxRetries;
+    Duration intervalBetweenRetries;
 
-    public static ApiSettings fromConfig(Config config) {
+    public static SchedulerSettings fromConfig(Config config) {
         return
-            ApiSettings
+            SchedulerSettings
                 .builder()
-                .askTimeout(config.getDuration("askTimeout"))
-                .cacheInitialSize(config.getInt("cache.initialSize"))
-                .cacheMaxSize(config.getInt("cache.maxSize"))
-                .cacheTtl(config.getDuration("cache.ttl"))
+                .maxRetries(config.getInt("maxRetries"))
+                .intervalBetweenRetries(config.getDuration("intervalBetweenRetries"))
                 .build();
     }
 }

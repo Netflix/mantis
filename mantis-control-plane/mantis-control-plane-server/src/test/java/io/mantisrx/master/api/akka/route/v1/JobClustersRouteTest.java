@@ -122,7 +122,7 @@ public class JobClustersRouteTest extends RouteTestBase {
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
                         jobClustersManagerActor, apiSettings);
 
-                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system);
+                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system, apiSettings);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow =
                         app.createRoute(Function.identity())
                            .flow(system, materializer);

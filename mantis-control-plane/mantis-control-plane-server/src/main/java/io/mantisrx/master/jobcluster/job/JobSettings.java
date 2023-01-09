@@ -30,6 +30,9 @@ public class JobSettings {
     int workerMaxResubmits;
     List<Duration> workerResubmitIntervals;
     Duration workerResubmitExpiry;
+    Duration workerHeartbeatInterval;
+    Duration workerInitTimeout;
+    boolean workerHeartbeatTerminationEnabled;
 
     int maxWorkersPerStage;
     MachineDefinition jobMasterMachineDefinition;
@@ -46,6 +49,9 @@ public class JobSettings {
                 .workerMaxResubmits(config.getInt("worker.maxResubmits"))
                 .workerResubmitIntervals(config.getDurationList("worker.resubmitIntervals"))
                 .workerResubmitExpiry(config.getDuration("worker.resubmitExpiry"))
+                .workerHeartbeatInterval(config.getDuration("worker.heartbeatInterval"))
+                .workerInitTimeout(config.getDuration("worker.initTimeout"))
+                .workerHeartbeatTerminationEnabled(config.getBoolean("worker.heartbeatTerminationEnabled"))
                 .maxWorkersPerStage(config.getInt("maxWorkersPerStage"))
                 .jobMasterMachineDefinition(
                     MachineDefinition.fromConfig(config.getConfig("master.machineDefinition")))

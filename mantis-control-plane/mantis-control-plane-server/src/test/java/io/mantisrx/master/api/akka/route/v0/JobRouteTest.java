@@ -181,7 +181,7 @@ public class JobRouteTest {
         JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
-    private static final ApiSettings apiSettings =
+    private static final ApiSettings API_SETTINGS =
         ApiSettings.fromConfig(
             ConfigFactory
                 .load("api-settings-sample.conf"));
@@ -220,10 +220,10 @@ public class JobRouteTest {
                         false), ActorRef.noSender());
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor, apiSettings);
+                        jobClustersManagerActor, API_SETTINGS);
                 final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(mantisStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
-                        jobClustersManagerActor, apiSettings);
+                        jobClustersManagerActor, API_SETTINGS);
 
                 MasterDescription masterDescription = new MasterDescription(
                         "127.0.0.1",
@@ -241,25 +241,27 @@ public class JobRouteTest {
 
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(
                         jobClustersManagerActor,
-                    apiSettings, idleTimeout);
+                    API_SETTINGS, idleTimeout);
                 final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(
                         masterDescription, JOB_SETTINGS);
-                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, JOB_SETTINGS, system);
+                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, JOB_SETTINGS, system, API_SETTINGS);
 
                 final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(
                         jobDiscoveryRouteHandler);
                 final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(
-                        apiSettings,
-                    JOB_SETTINGS,
+                        API_SETTINGS,
+                        JOB_SETTINGS,
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
-                        jobClusterRouteHandler, system);
+                        jobClusterRouteHandler, system, API_SETTINGS);
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                    JOB_SETTINGS, system);
+                        JOB_SETTINGS,
+                        system,
+                        API_SETTINGS);
                 final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
                 final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, JOB_SETTINGS);
 
@@ -269,7 +271,7 @@ public class JobRouteTest {
                 final AgentClusterOperations mockAgentClusterOps = mock(AgentClusterOperations.class);
                 final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(
                         mockAgentClusterOps,
-                        system);
+                        system, API_SETTINGS);
                 final AgentClustersRoute v1AgentClusterRoute = new AgentClustersRoute(
                         mockAgentClusterOps);
                 final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
@@ -302,7 +304,8 @@ public class JobRouteTest {
                         v1LastSubmittedJobIdStreamRoute,
                         v1JobStatusStreamRoute,
                         resourceClusters,
-                        mock(ResourceClusterRouteHandler.class));
+                        mock(ResourceClusterRouteHandler.class),
+                        API_SETTINGS);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                               .flow(system, materializer);

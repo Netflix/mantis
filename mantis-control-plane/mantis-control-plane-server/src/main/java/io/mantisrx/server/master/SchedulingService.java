@@ -54,6 +54,7 @@ import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
 import io.mantisrx.shaded.com.google.common.collect.Sets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -122,7 +123,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private final long vmCurrentStatesCheckInterval = 10000;
     private final AtomicLong lastVmCurrentStatesCheckDone = new AtomicLong(System.currentTimeMillis());
     private VirtualMachineMasterService virtualMachineService;
-    private long SCHEDULING_ITERATION_INTERVAL_MILLIS = 50;
+    private final Duration schedulerIterationInterval;
     private long MAX_DELAY_MILLIS_BETWEEN_SCHEDULING_ITER = 5_000;
     private AtomicLong lastSchedulingResultCallback = new AtomicLong(System.currentTimeMillis());
 
@@ -138,7 +139,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         this.workerRegistry = workerRegistry;
         this.virtualMachineService = virtualMachineService;
         this.slaveClusterAttributeName = ConfigurationProvider.getConfig().getSlaveClusterAttributeName();
-        SCHEDULING_ITERATION_INTERVAL_MILLIS = ConfigurationProvider.getConfig().getSchedulerIterationIntervalMillis();
+        schedulerIterationInterval = mesosSettings.getSchedulerIterationInterval();
         AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator(mesosSettings.getAgentFitnessSettings());
         TaskScheduler.Builder schedulerBuilder = new TaskScheduler.Builder()
                 .withLeaseRejectAction(virtualMachineService::rejectLease)
@@ -321,7 +322,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private TaskSchedulingService setupTaskSchedulingService(TaskScheduler taskScheduler) {
         TaskSchedulingService.Builder builder = new TaskSchedulingService.Builder()
                 .withTaskScheduler(taskScheduler)
-                .withLoopIntervalMillis(SCHEDULING_ITERATION_INTERVAL_MILLIS)
+                .withLoopIntervalMillis(schedulerIterationInterval.toMillis())
                 .withMaxDelayMillis(MAX_DELAY_MILLIS_BETWEEN_SCHEDULING_ITER) // sort of rate limiting when no assignments were made and no new offers available
                 .withSchedulingResultCallback(this::schedulingResultHandler)
                 .withTaskQueue(taskQueue)

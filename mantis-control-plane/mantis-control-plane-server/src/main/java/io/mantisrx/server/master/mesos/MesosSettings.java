@@ -38,6 +38,7 @@ public class MesosSettings {
     String schedulerSlaveFilteringAttrName;
     String schedulerBalancedHostAttrName;
     Duration schedulerLeaseOfferExpiry;
+    Duration schedulerIterationInterval;
 
     String frameworkName;
     String frameworkUser;
@@ -61,6 +62,7 @@ public class MesosSettings {
             .schedulerSlaveFilteringAttrName(config.getString("scheduler.slaveFiltering.attributeName"))
             .schedulerLeaseOfferExpiry(config.getDuration("scheduler.leaseOfferExpiry"))
             .schedulerBalancedHostAttrName(config.getString("scheduler.balancedHostAttrName"))
+            .schedulerIterationInterval(config.getDuration("scheduler.epoch"))
             .reconcilerInterval(config.getDuration("reconcilerInterval"))
 
             .frameworkName(config.getString("framework.name"))

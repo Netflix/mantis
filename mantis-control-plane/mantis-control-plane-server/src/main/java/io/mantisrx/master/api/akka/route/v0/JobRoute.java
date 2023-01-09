@@ -42,12 +42,12 @@ import akka.japi.JavaPartialFunction;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
-import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobRequest;
@@ -97,13 +97,15 @@ public class JobRoute extends BaseRoute {
             }
         }
     };
+    private final ApiSettings apiSettings;
 
-    public JobRoute(final JobRouteHandler jobRouteHandler, JobSettings jobSettings, final ActorSystem actorSystem) {
+    public JobRoute(final JobRouteHandler jobRouteHandler, JobSettings jobSettings, final ActorSystem actorSystem, ApiSettings apiSettings) {
         this.jobRouteHandler = jobRouteHandler;
         this.jobSettings = jobSettings;
+        this.apiSettings = apiSettings;
         MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-                config.getApiCacheTtlMilliseconds());
+        this.cache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+                apiSettings.getCacheTtl());
 
         Metrics m = new Metrics.Builder()
             .id("V0JobRoute")
@@ -203,16 +205,16 @@ public class JobRoute extends BaseRoute {
                                 workerHeartbeatStatusPOST.increment();
                                 PostJobStatusRequest postJobStatusRequest = Jackson.fromJSON(req, PostJobStatusRequest.class);
                                 WorkerEvent workerStatusRequest = createWorkerStatusRequest(postJobStatusRequest);
-                                if (workerStatusRequest instanceof WorkerHeartbeat) {
-                                    if (!ConfigurationProvider.getConfig().isHeartbeatProcessingEnabled()) {
-                                        // skip heartbeat processing
-                                        if (logger.isTraceEnabled()) {
-                                            logger.trace("skipped heartbeat event {}", workerStatusRequest);
-                                        }
-                                        workerHeartbeatSkipped.increment();
-                                        return complete(StatusCodes.OK);
-                                    }
-                                }
+//                                if (workerStatusRequest instanceof WorkerHeartbeat) {
+//                                    if (!ConfigurationProvider.getConfig().isHeartbeatProcessingEnabled()) {
+//                                        // skip heartbeat processing
+//                                        if (logger.isTraceEnabled()) {
+//                                            logger.trace("skipped heartbeat event {}", workerStatusRequest);
+//                                        }
+//                                        workerHeartbeatSkipped.increment();
+//                                        return complete(StatusCodes.OK);
+//                                    }
+//                                }
                                 return completeWithFuture(
                                     jobRouteHandler.workerStatus(workerStatusRequest)
                                         .thenApply(this::toHttpResponse));

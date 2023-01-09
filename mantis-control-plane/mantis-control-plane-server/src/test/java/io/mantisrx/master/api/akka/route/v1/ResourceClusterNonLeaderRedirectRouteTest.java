@@ -85,7 +85,7 @@ import org.mockito.ArgumentMatchers;
 public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private static final UnitTestResourceProviderAdapter resourceProviderAdapter =
         new UnitTestResourceProviderAdapter();
-    private static final ApiSettings apiSettings =
+    private static final ApiSettings API_SETTINGS =
         ApiSettings
             .builder()
             .askTimeout(Duration.ofSeconds(1))
@@ -107,17 +107,17 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         "jobClustersManagerTest");
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithNoopAdapter =
-        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithNoopAdapter, apiSettings);
+        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithNoopAdapter, API_SETTINGS);
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithTestAdapter =
-        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithTestAdapter, apiSettings);
+        new ResourceClusterRouteHandlerAkkaImpl(resourceClustersHostManagerActorWithTestAdapter, API_SETTINGS);
 
     private final TestRoute testRouteWithNoopAdapter =
-        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithNoopAdapter, system)
+        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithNoopAdapter, system, API_SETTINGS)
             .createRoute(route -> route));
 
     private final TestRoute testRoute =
-        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithTestAdapter, system)
+        testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithTestAdapter, system, API_SETTINGS)
             .createRoute(route -> route));
 
     @BeforeClass

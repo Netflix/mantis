@@ -27,6 +27,7 @@ import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.Endpoints;
@@ -99,16 +100,19 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
+    private final ApiSettings apiSettings;
 
     public ResourceClustersNonLeaderRedirectRoute(
         final ResourceClusters gateway,
         final ResourceClusterRouteHandler resourceClusterRouteHandler,
-        final ActorSystem actorSystem) {
+        final ActorSystem actorSystem,
+        final ApiSettings apiSettings) {
         this.gateway = gateway;
         this.resourceClusterRouteHandler = resourceClusterRouteHandler;
+        this.apiSettings = apiSettings;
         MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-            config.getApiCacheTtlMilliseconds());
+        this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+            apiSettings.getCacheTtl());
     }
 
     @Override

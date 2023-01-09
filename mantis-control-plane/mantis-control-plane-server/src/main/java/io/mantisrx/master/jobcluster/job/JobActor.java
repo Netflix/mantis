@@ -53,7 +53,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
@@ -259,11 +258,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
                 this.mantisScheduler, isSubmit);
 
-        long checkAgainInSeconds = ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
+        Duration checkAgainInSeconds = jobSettings.getWorkerHeartbeatInterval();
         Duration refreshInterval = jobSettings.getStageAssignmentsPeriodicRefreshInterval();
         boolean refreshStageAssignmentsPeriodically = jobSettings.isStageAssignmentsPeriodicRefreshEnabled();
         getTimers().startPeriodicTimer(CHECK_HB_TIMER_KEY, new JobProto.CheckHeartBeat(),
-                Duration.ofSeconds(checkAgainInSeconds));
+                checkAgainInSeconds);
         // -1 indicates disabled, which means all updates will be sent immediately
         if (refreshStageAssignmentsPeriodically) {
             getTimers().startPeriodicTimer(
@@ -1861,10 +1860,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         public void checkHeartBeats(Instant currentTime) {
             LOGGER.trace("In WorkerManager::checkHeartBeats");
             //// heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
-            long missedHeartBeatToleranceSecs = (long) (1.5 * ConfigurationProvider.getConfig().getWorkerTimeoutSecs());
+            long missedHeartBeatToleranceSecs = (long) (1.5 * jobSettings.getWorkerHeartbeatInterval().getSeconds());
             // Allow more time for workers to start
             long stuckInSubmitToleranceSecs =
-                missedHeartBeatToleranceSecs + ConfigurationProvider.getConfig().getWorkerInitTimeoutSecs();
+                missedHeartBeatToleranceSecs + jobSettings.getWorkerInitTimeout().getSeconds();
 
             List<JobWorker> workersToResubmit = Lists.newArrayList();
             // expire worker resubmit entries
@@ -1904,7 +1903,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                             workerMeta.getLastHeartbeatAt().get(),
                                             currentTime).getSeconds(), missedHeartBeatToleranceSecs);
 
-                            if (ConfigurationProvider.getConfig().isHeartbeatTerminationEnabled()) {
+                            if (jobSettings.isWorkerHeartbeatTerminationEnabled()) {
                                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,
                                         "heartbeat too old, resubmitting worker", workerMeta.getStageNum(),
                                         workerMeta.getWorkerId(), workerMeta.getState()));

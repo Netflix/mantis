@@ -82,6 +82,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
+import io.mantisrx.server.master.scheduler.SchedulerSettings;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import java.io.File;
 import java.io.FileInputStream;
@@ -229,8 +230,9 @@ public class MasterMain implements Service {
                 ZookeeperSettings.fromConfig(typesafeConfig), mesosSettings);
             schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService, mesosSettings);
 
+            final SchedulerSettings schedulerSettings = SchedulerSettings.fromConfig(typesafeConfig);
             final MantisSchedulerFactory mantisSchedulerFactory =
-                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(mesosSettings), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance());
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(mesosSettings), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance(), schedulerSettings);
             mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
 
             // initialize agents error monitor

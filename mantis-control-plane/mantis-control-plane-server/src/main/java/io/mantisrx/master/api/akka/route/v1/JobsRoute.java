@@ -29,6 +29,7 @@ import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.*;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.japi.Pair;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
@@ -84,18 +85,21 @@ public class JobsRoute extends BaseRoute {
 
     private final JobRouteHandler jobRouteHandler;
     private final JobClusterRouteHandler clusterRouteHandler;
-    private final MasterConfiguration config;
     private final Cache<Uri, RouteResult> routeResultCache;
+    private final ApiSettings apiSettings;
 
     public JobsRoute(
         final JobClusterRouteHandler clusterRouteHandler,
         final JobRouteHandler jobRouteHandler,
-        JobSettings jobSettings, final ActorSystem actorSystem) {
+        final JobSettings jobSettings,
+        final ActorSystem actorSystem,
+        final ApiSettings apiSettings) {
         this.jobRouteHandler = jobRouteHandler;
         this.clusterRouteHandler = clusterRouteHandler;
         this.jobSettings = jobSettings;
-        this.config = ConfigurationProvider.getConfig();
-        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(), config.getApiCacheTtlMilliseconds());
+        this.apiSettings = apiSettings;
+        MasterConfiguration config = ConfigurationProvider.getConfig();
+        this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(), apiSettings.getCacheTtl());
     }
 
 
