@@ -139,9 +139,9 @@ public class ResourceUsagePayloadSetter {
 
     private void setPayloadAndMetrics() {
         // figure out resource usage
-        StatusPayloads.ResourceUsage usage = evalResourceUsage();
         long delay = getNextDelay();
         try {
+            StatusPayloads.ResourceUsage usage = evalResourceUsage();
             if (usage != null) {
                 try {
                     heartbeat.addSingleUsePayload("" + StatusPayloads.Type.ResourceUsage, objectMapper.writeValueAsString(usage));
