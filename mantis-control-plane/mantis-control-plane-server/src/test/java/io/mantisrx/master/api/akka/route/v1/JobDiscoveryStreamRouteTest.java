@@ -74,7 +74,8 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
         JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
-    private static final ApiSettings apiSettings = ApiSettings.builder().askTimeout(Duration.ofSeconds(2)).build();
+    private static final ApiSettings apiSettings =
+        ApiSettings.fromConfig(ConfigFactory.load("api-settings-sample.conf"));
 
     public JobDiscoveryStreamRouteTest(){
         super("JobDiscoveryRoute", SERVER_PORT);

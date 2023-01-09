@@ -31,6 +31,7 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.testkit.JUnitRouteTest;
 import akka.http.javadsl.testkit.TestRoute;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.api.akka.ApiSettings;
@@ -71,7 +72,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,10 +86,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private static final UnitTestResourceProviderAdapter resourceProviderAdapter =
         new UnitTestResourceProviderAdapter();
     private static final ApiSettings API_SETTINGS =
-        ApiSettings
-            .builder()
-            .askTimeout(Duration.ofSeconds(1))
-            .build();
+        ApiSettings.fromConfig(ConfigFactory.load("api-settings-sample.conf"));
 
     private final ResourceClusters resourceClusters = mock(ResourceClusters.class);
     private final ActorSystem system =
