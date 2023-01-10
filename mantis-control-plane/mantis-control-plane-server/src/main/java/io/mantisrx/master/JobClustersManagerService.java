@@ -19,12 +19,10 @@ package io.mantisrx.master;
 import static akka.pattern.PatternsCS.ask;
 
 import akka.actor.ActorRef;
-import akka.util.Timeout;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitialize;
 import io.mantisrx.server.core.BaseService;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
