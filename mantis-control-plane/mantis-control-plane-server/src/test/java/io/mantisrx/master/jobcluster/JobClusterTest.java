@@ -118,6 +118,7 @@ import io.mantisrx.server.master.domain.*;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -173,6 +174,11 @@ public class JobClusterTest {
             ConfigFactory
                 .load("job-cluster-settings-sample.conf"));
 
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
+
     @BeforeClass
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
@@ -200,7 +206,7 @@ public class JobClusterTest {
         storageProvider = new KeyValueBasedPersistenceProvider(
             new FileBasedStore(rootDir.getRoot()),
             eventPublisher);
-        jobStore = new MantisJobStore(storageProvider);
+        jobStore = new MantisJobStore(storageProvider, STORE_SETTINGS);
     }
 
 

@@ -2555,6 +2555,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         private final LabelCache labelCache = new LabelCache();
         private final JobSettings jobSettings;
+        private final JobClusterSettings jobClusterSettings;
 
 
         JobManager(
@@ -2570,6 +2571,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             this.context = context;
             this.scheduler = schedulerFactory;
             this.publisher = publisher;
+            this.jobClusterSettings = jobClusterSettings;
             this.completedJobsCache = new CompletedJobCache(name, labelCache, jobClusterSettings);
             this.jobSettings = jobSettings;
         }
@@ -2608,9 +2610,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } else {
                 logger.warn("Unexpected job state {}", jobInfo.state);
             }
-            long masterInitTimeoutSecs = ConfigurationProvider.getConfig().getMasterInitTimeoutSecs();
-            long timeout = ((masterInitTimeoutSecs - 60)) > 0 ? (masterInitTimeoutSecs - 60) : masterInitTimeoutSecs;
-            Duration t = Duration.ofSeconds(timeout);
+            final Duration t = jobClusterSettings.getInitTimeout();
 
             // mark it as pending actor init
             markJobInitializeInitiated(jobInfo, System.currentTimeMillis());

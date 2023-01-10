@@ -59,6 +59,7 @@ import io.mantisrx.server.master.AgentClustersAutoScaler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
@@ -99,6 +100,11 @@ public class AgentClusterRouteTest {
         ApiSettings.fromConfig(
             ConfigFactory
                 .load("api-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 //    private static final AgentClusterOperations agentClusterOperations = mock(AgentClusterOperations.class);
 
     private CompletionStage<String> processRespFut(final HttpResponse r, final int expectedStatusCode) {
@@ -141,7 +147,7 @@ public class AgentClusterRouteTest {
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
                 ActorRef jobClustersManagerActor = system.actorOf(
-                    JobClustersManagerActor.props(new MantisJobStore(storageProvider), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS), "jobClustersManager");
+                    JobClustersManagerActor.props(new MantisJobStore(storageProvider, STORE_SETTINGS), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS), "jobClustersManager");
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);

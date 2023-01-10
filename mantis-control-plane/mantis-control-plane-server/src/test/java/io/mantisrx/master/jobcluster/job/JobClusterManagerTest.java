@@ -96,6 +96,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -141,6 +142,11 @@ public class JobClusterManagerTest {
         JobClusterSettings.fromConfig(
             ConfigFactory
                 .load("job-cluster-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 
     @Rule
     public TemporaryFolder rootDir = new TemporaryFolder();
@@ -306,9 +312,10 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+        MantisJobStore jobStore =
+            new MantisJobStore(
+                new KeyValueBasedPersistenceProvider(new FileBasedStore(rootDir.getRoot()), eventPublisher),
+                STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
@@ -384,7 +391,7 @@ public class JobClusterManagerTest {
         KeyValueBasedPersistenceProvider storageProviderAdapter = mock(KeyValueBasedPersistenceProvider.class);
         when(storageProviderAdapter.loadAllJobClusters()).thenThrow(new IOException(
                 "StorageException"));
-        MantisJobStore jobStore = new MantisJobStore(storageProviderAdapter);
+        MantisJobStore jobStore = new MantisJobStore(storageProviderAdapter, STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
@@ -410,9 +417,10 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+        MantisJobStore jobStore =
+            new MantisJobStore(
+                new KeyValueBasedPersistenceProvider(new FileBasedStore(rootDir.getRoot()), eventPublisher),
+                STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
@@ -661,9 +669,10 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+        MantisJobStore jobStore =
+            new MantisJobStore(
+                new KeyValueBasedPersistenceProvider(new FileBasedStore(rootDir.getRoot()), eventPublisher),
+                STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(

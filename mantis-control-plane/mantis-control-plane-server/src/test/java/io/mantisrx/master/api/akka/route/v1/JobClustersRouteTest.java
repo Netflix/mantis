@@ -52,6 +52,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
@@ -93,6 +94,11 @@ public class JobClustersRouteTest extends RouteTestBase {
             ConfigFactory
                 .load("job-cluster-settings-sample.conf"));
 
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
+
     public JobClustersRouteTest() {
         super("JobClustersRouteTest", SERVER_PORT);
     }
@@ -115,7 +121,7 @@ public class JobClustersRouteTest extends RouteTestBase {
 
                 ActorRef jobClustersManagerActor = system.actorOf(
                         JobClustersManagerActor.props(
-                            new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true)),
+                            new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true), STORE_SETTINGS),
                             lifecycleEventPublisher,
                             JOB_SETTINGS,
                             JOB_CLUSTER_SETTINGS),

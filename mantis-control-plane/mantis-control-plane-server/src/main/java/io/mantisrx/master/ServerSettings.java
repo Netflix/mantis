@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.mantisrx.master.jobcluster;
+package io.mantisrx.master;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
@@ -23,18 +23,12 @@ import lombok.Value;
 
 @Builder
 @Value
-public class JobClusterSettings {
-    int maxJobsToPurge;
-    Duration jobsPurgeInterval;
-    Duration terminatedJobExpiry;
+public class ServerSettings {
     Duration initTimeout;
 
-    public static JobClusterSettings fromConfig(Config config) {
-        return JobClusterSettings
+    public static ServerSettings fromConfig(Config config) {
+        return ServerSettings
             .builder()
-            .maxJobsToPurge(config.getInt("maxJobsToPurge"))
-            .jobsPurgeInterval(config.getDuration("jobsPurgeInterval"))
-            .terminatedJobExpiry(config.getDuration("terminatedJobExpiry"))
             .initTimeout(config.getDuration("initTimeout"))
             .build();
     }

@@ -356,12 +356,10 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                     clusterToJobMap.computeIfAbsent(clusterName, k -> new ArrayList<>()).add(jobMeta);
                 }
 
-                long masterInitTimeoutSecs = ConfigurationProvider.getConfig().getMasterInitTimeoutSecs();
-                long timeout = ((masterInitTimeoutSecs - 60)) > 0 ? (masterInitTimeoutSecs - 60) : masterInitTimeoutSecs;
+                Duration timeout = jobClusterSettings.getInitTimeout();
                 Observable.from(jobClusterMap.values())
                         .filter((jobClusterMeta) -> jobClusterMeta != null && jobClusterMeta.getJobClusterDefinition() != null)
                         .flatMap((jobClusterMeta) -> {
-                            Duration t = Duration.ofSeconds(timeout);
                             Optional<JobClusterInfo> jobClusterInfoO = jobClusterInfoManager.createClusterActorAndRegister(jobClusterMeta.getJobClusterDefinition());
                             if (!jobClusterInfoO.isPresent()) {
                                 logger.info("skipping job cluster {} on bootstrap as actor creating failed", jobClusterMeta.getJobClusterDefinition().getName());
@@ -377,7 +375,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                             List<CompletedJob> completedJobsList = Lists.newArrayList();
                             JobClusterProto.InitializeJobClusterRequest req = new JobClusterProto.InitializeJobClusterRequest((JobClusterDefinitionImpl) jobClusterMeta.getJobClusterDefinition(),
                                 jobClusterMeta.isDisabled(), jobClusterMeta.getLastJobCount(), jobList, completedJobsList, "system", getSelf(), false);
-                            return jobClusterInfoManager.initializeCluster(jobClusterInfo, req, t);
+                            return jobClusterInfoManager.initializeCluster(jobClusterInfo, req, timeout);
 
 
                         })

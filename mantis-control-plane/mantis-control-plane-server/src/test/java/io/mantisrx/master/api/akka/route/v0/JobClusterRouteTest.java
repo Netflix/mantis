@@ -63,6 +63,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
@@ -101,6 +102,11 @@ public class JobClusterRouteTest {
         JobClusterSettings.fromConfig(
             ConfigFactory
                 .load("job-cluster-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 
     private CompletionStage<String> processRespFut(final HttpResponse r, final int expectedStatusCode) {
         logger.info("headers {} {}", r.getHeaders(), r.status());
@@ -145,7 +151,7 @@ public class JobClusterRouteTest {
                 ActorRef jobClustersManagerActor =
                     system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(
-                            new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS),
+                            new FileBasedPersistenceProvider(true), STORE_SETTINGS), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS),
                         "jobClustersManager");
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

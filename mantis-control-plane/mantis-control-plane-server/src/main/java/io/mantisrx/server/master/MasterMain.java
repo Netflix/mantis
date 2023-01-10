@@ -35,6 +35,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.DeadLetterActor;
 import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.JobClustersManagerService;
+import io.mantisrx.master.ServerSettings;
 import io.mantisrx.master.api.akka.MasterApiAkkaService;
 import io.mantisrx.master.events.AuditEventBrokerActor;
 import io.mantisrx.master.events.AuditEventSubscriber;
@@ -79,6 +80,7 @@ import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
@@ -186,7 +188,8 @@ public class MasterMain implements Service {
                     workerEventSubscriber.and(workerMetricsCollector));
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
-            final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
+            final StoreSettings storeSettings = StoreSettings.fromConfig(typesafeConfig.getConfig("mantis.store"));
+            final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider, storeSettings);
             final JobSettings jobSettings = JobSettings.fromConfig(typesafeConfig.getConfig("mantis.job"));
             final JobClusterSettings jobClusterSettings = JobClusterSettings.fromConfig(typesafeConfig.getConfig("mantis.jobCluster"));
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobSettings, jobClusterSettings), "JobClustersManager");
@@ -241,7 +244,8 @@ public class MasterMain implements Service {
             agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(schedulingService), ActorRef.noSender());
 
             final boolean loadJobsFromStoreOnInit = true;
-            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
+            ServerSettings serverSettings = ServerSettings.fromConfig(typesafeConfig);
+            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit, serverSettings);
 
             this.agentClusterOps = new AgentClusterOperationsImpl(storageProvider,
                 jobMessageRouter,

@@ -59,6 +59,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.store.FileBasedStore;
@@ -88,13 +89,18 @@ public class JobTestLifecycle {
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
+
 	@BeforeClass
 	public static void setup() {
 		system = ActorSystem.create();
 
 		TestHelpers.setupMasterConfig();
 		storageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), eventPublisher);
-		jobStore = new MantisJobStore(storageProvider);
+		jobStore = new MantisJobStore(storageProvider, STORE_SETTINGS);
 	}
 
 	@AfterClass

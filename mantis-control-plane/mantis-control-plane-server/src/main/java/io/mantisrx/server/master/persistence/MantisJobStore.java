@@ -56,12 +56,12 @@ public class MantisJobStore {
     private final ArchivedWorkersCache archivedWorkersCache;
     private final PriorityBlockingQueue<TerminatedJob> terminatedJobsToDelete;
 
-    public MantisJobStore(IMantisPersistenceProvider storageProvider) {
+    public MantisJobStore(IMantisPersistenceProvider storageProvider, StoreSettings storeSettings) {
         this.storageProvider = storageProvider;
 
         archivedJobIds = new ConcurrentHashMap<>();
-        archivedWorkersCache = new ArchivedWorkersCache(ConfigurationProvider.getConfig().getMaxArchivedJobsToCache());
-        archivedJobsMetadataCache = new ArchivedJobsMetadataCache(ConfigurationProvider.getConfig().getMaxArchivedJobsToCache());
+        archivedWorkersCache = new ArchivedWorkersCache(storeSettings.getCacheMaxArchivedJobs());
+        archivedJobsMetadataCache = new ArchivedJobsMetadataCache(storeSettings.getCacheMaxArchivedJobs());
         terminatedJobsToDelete = new PriorityBlockingQueue<>();
 
     }

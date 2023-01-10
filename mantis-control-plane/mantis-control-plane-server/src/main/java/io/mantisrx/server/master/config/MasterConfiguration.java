@@ -52,14 +52,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
 
-    @Config("mantis.master.init.timeout.secs")
-    @Default("240")
-    long getMasterInitTimeoutSecs();
-
-    @Config("mantis.master.max.archived.jobs.to.cache")
-    @Default("1000")
-    int getMaxArchivedJobsToCache();
-
     @Config("mantis.agent.cluster.autoscale.by.attribute.name")
     @Default("CLUSTER_NAME")
     String getAutoscaleByAttributeName();

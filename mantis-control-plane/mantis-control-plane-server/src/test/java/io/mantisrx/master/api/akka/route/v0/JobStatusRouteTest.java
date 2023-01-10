@@ -43,6 +43,7 @@ import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import java.util.concurrent.CompletionStage;
@@ -74,6 +75,11 @@ public class JobStatusRouteTest {
             ConfigFactory
                 .load("job-cluster-settings-sample.conf"));
 
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
+
     @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
@@ -89,7 +95,7 @@ public class JobStatusRouteTest {
 
                 ActorRef jobClustersManagerActor = system.actorOf(
                     JobClustersManagerActor.props(
-                        new MantisJobStore(new FileBasedPersistenceProvider(true)),
+                        new MantisJobStore(new FileBasedPersistenceProvider(true), STORE_SETTINGS),
                         lifecycleEventPublisher,
                         JOB_SETTINGS,
                         JOB_CLUSTER_SETTINGS),

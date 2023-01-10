@@ -50,6 +50,7 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import java.time.Duration;
@@ -83,6 +84,11 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
             ConfigFactory
                 .load("job-cluster-settings-sample.conf"));
 
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
+
     public JobDiscoveryStreamRouteTest(){
         super("JobDiscoveryRoute", SERVER_PORT);
     }
@@ -103,7 +109,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                 TestHelpers.setupMasterConfig();
                 ActorRef jobClustersManagerActor = system.actorOf(
                     JobClustersManagerActor.props(
-                        new MantisJobStore(new FileBasedPersistenceProvider(true)),
+                        new MantisJobStore(new FileBasedPersistenceProvider(true), STORE_SETTINGS),
                         lifecycleEventPublisher,
                         JOB_SETTINGS,
                         JOB_CLUSTER_SETTINGS),

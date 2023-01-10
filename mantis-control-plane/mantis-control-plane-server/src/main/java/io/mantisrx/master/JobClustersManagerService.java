@@ -22,9 +22,11 @@ import akka.actor.ActorRef;
 import akka.util.Timeout;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.JobClustersManagerInitialize;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,14 +38,16 @@ public class JobClustersManagerService extends BaseService {
     private final ActorRef jobClustersManagerActor;
     private final MantisSchedulerFactory schedulerFactory;
     private final boolean loadJobsFromStore;
+    private final ServerSettings serverSettings;
 
     public JobClustersManagerService(final ActorRef jobClustersManagerActor,
                                      final MantisSchedulerFactory schedulerFactory,
-                                     final boolean loadJobsFromStore) {
+                                     final boolean loadJobsFromStore, ServerSettings serverSettings) {
         super(true);
         this.jobClustersManagerActor = jobClustersManagerActor;
         this.schedulerFactory = schedulerFactory;
         this.loadJobsFromStore = loadJobsFromStore;
+        this.serverSettings = serverSettings;
     }
 
     @Override
@@ -53,11 +57,10 @@ public class JobClustersManagerService extends BaseService {
             final CountDownLatch latch = new CountDownLatch(1);
             final long startTime = System.currentTimeMillis();
             try {
-                long masterInitTimeoutSecs = ConfigurationProvider.getConfig().getMasterInitTimeoutSecs();
+                Duration masterInitTimeoutSecs = serverSettings.getInitTimeout();
+                JobClustersManagerInitialize message = new JobClustersManagerInitialize(schedulerFactory, loadJobsFromStore);
                 CompletionStage<JobClusterManagerProto.JobClustersManagerInitializeResponse> initResponse =
-                    ask(jobClustersManagerActor,
-                        new JobClusterManagerProto.JobClustersManagerInitialize(schedulerFactory, loadJobsFromStore),
-                        Timeout.apply(masterInitTimeoutSecs, TimeUnit.SECONDS))
+                    ask(jobClustersManagerActor, message, masterInitTimeoutSecs)
                         .thenApply(JobClusterManagerProto.JobClustersManagerInitializeResponse.class::cast);
                 initResponse.whenComplete((resp, t) -> {
                     logger.info("JobClustersManagerActor init response {}", resp);
