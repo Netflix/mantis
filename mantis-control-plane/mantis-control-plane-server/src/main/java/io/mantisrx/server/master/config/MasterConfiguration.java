@@ -57,19 +57,9 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
 
-    @Config("mantis.master.purge.frequency.secs")
-    @Default("1200")
-    long getCompletedJobPurgeFrequencySeqs();
-
-
     @Config("mantis.master.init.timeout.secs")
     @Default("240")
     long getMasterInitTimeoutSecs();
-
-    @Config("mantis.master.terminated.job.to.delete.delay.hours")
-    @Default("360")
-        // 15 days * 24 hours
-    long getTerminatedJobToDeleteDelayHours();
 
     @Config("mantis.master.max.archived.jobs.to.cache")
     @Default("1000")

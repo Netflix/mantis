@@ -17,6 +17,7 @@
 package io.mantisrx.master.jobcluster;
 
 import com.typesafe.config.Config;
+import java.time.Duration;
 import lombok.Builder;
 import lombok.Value;
 
@@ -24,11 +25,15 @@ import lombok.Value;
 @Value
 public class JobClusterSettings {
     int maxJobsToPurge;
+    Duration jobsPurgeInterval;
+    Duration terminatedJobExpiry;
 
     public static JobClusterSettings fromConfig(Config config) {
         return JobClusterSettings
             .builder()
             .maxJobsToPurge(config.getInt("maxJobsToPurge"))
+            .jobsPurgeInterval(config.getDuration("jobsPurgeInterval"))
+            .terminatedJobExpiry(config.getDuration("terminatedJobExpiry"))
             .build();
     }
 }

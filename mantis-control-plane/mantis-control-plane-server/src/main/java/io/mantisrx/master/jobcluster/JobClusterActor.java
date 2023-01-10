@@ -665,9 +665,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 Duration.ofSeconds(checkAgainInSecs));
     }
 
-    private void setExpiredJobsTimer(long checkAgainInSecs) {
+    private void setExpiredJobsTimer(Duration checkAgainInSecs) {
         getTimers().startPeriodicTimer(CHECK_EXPIRED_TIMER_KEY, new JobClusterProto.ExpireOldJobsRequest(),
-                Duration.ofSeconds(checkAgainInSecs));
+                checkAgainInSecs);
     }
 
 
@@ -695,7 +695,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .build();
         // create sla enforcer
         slaEnforcer = new SLAEnforcer(jobClusterMetadata.getJobClusterDefinition().getSLA());
-        long expireFrequency = ConfigurationProvider.getConfig().getCompletedJobPurgeFrequencySeqs();
+        Duration expireFrequency = jobClusterSettings.getJobsPurgeInterval();
 
         // If cluster is disabled
         if(jobClusterMetadata.isDisabled()) {
@@ -2062,7 +2062,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onExpireOldJobs(JobClusterProto.ExpireOldJobsRequest request) {
-        final long tooOldCutOff = System.currentTimeMillis() - (getTerminatedJobToDeleteDelayHours()*3600000L);
+        final Instant tooOldCutOff = Instant.now().minus(getTerminatedJobToDeleteDelayHours());
         jobManager.purgeOldCompletedJobs(tooOldCutOff);
 
     }
@@ -2096,8 +2096,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Exit onTriggerCron Triggered for Job Cluster {}", this.name);}
     }
 
-    private long getTerminatedJobToDeleteDelayHours() {
-        return ConfigurationProvider.getConfig().getTerminatedJobToDeleteDelayHours();
+    private Duration getTerminatedJobToDeleteDelayHours() {
+        return jobClusterSettings.getTerminatedJobExpiry();
     }
 
     @Override
@@ -2579,7 +2579,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          *
          * @param tooOldCutOff Current cut off delta
          */
-        public void purgeOldCompletedJobs(long tooOldCutOff) {
+        public void purgeOldCompletedJobs(Instant tooOldCutOff) {
 
             completedJobsCache.purgeOldCompletedJobs(tooOldCutOff, jobStore);
 
@@ -3239,7 +3239,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @param tooOldCutOff timestamp, all jobs having an older timestamp should be deleted
          * @param jobStore
          */
-        public void purgeOldCompletedJobs(long tooOldCutOff, MantisJobStore jobStore) {
+        public void purgeOldCompletedJobs(Instant tooOldCutOff, MantisJobStore jobStore) {
             long numDeleted = 0;
             int maxJobsToPurge = jobClusterSettings.getMaxJobsToPurge();
             final long startNanos = System.nanoTime();
@@ -3250,7 +3250,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     break;
                 }
                 CompletedJob completedJob = it.next();
-                if(completedJob.getTerminatedAt() < tooOldCutOff) {
+                if(Instant.ofEpochMilli(completedJob.getTerminatedAt()).isBefore(tooOldCutOff)) {
                     try {
                         logger.info("Purging Job {} as it was terminated at {} which is older than cutoff {}", completedJob, completedJob.getTerminatedAt(), tooOldCutOff);
                         terminalSortedJobSet.remove(completedJob);

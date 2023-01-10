@@ -275,7 +275,7 @@ public class JobManagerTest {
         assertEquals(1,jm.getCompletedJobsList().size());
         assertEquals(jId1.getId(), jm.getCompletedJobsList().get(0).getJobId());
 
-        jm.purgeOldCompletedJobs(Instant.now().minusSeconds(3).toEpochMilli());
+        jm.purgeOldCompletedJobs(Instant.now().minusSeconds(3));
         assertEquals(0,jm.getCompletedJobsList().size());
 
         try {
