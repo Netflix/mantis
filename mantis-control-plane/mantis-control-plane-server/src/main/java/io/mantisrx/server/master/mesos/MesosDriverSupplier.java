@@ -17,7 +17,6 @@
 package io.mantisrx.server.master.mesos;
 
 import com.netflix.fenzo.VirtualMachineLease;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;

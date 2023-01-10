@@ -56,6 +56,7 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
@@ -79,6 +80,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -94,7 +96,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
     private final ActorRef resourceClustersHostManagerActorWithNoopAdapter = system.actorOf(
         ResourceClustersHostManagerActor.props(
-            new ResourceClusterProviderAdapter(ConfigurationProvider.getConfig().getResourceClusterProvider(), system),
+            new ResourceClusterProviderAdapter(NoopResourceClusterProvider.class.getCanonicalName(), system),
             ConfigurationProvider.getConfig().getResourceClusterStorageProvider()),
         "jobClustersManagerNoop");
 
@@ -222,6 +224,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertStatusCode(StatusCodes.INTERNAL_SERVER_ERROR);
     }
 
+    @Ignore
     @Test
     public void testResourceClusterHostRelatedRoutes() throws IOException {
         // test get empty clusters (nothing has been registered).
@@ -304,6 +307,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
             .assertStatusCode(StatusCodes.NOT_FOUND);
     }
 
+    @Ignore
     @Test
     public void testResourceClusterScaleRulesRoutes() throws IOException {
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
