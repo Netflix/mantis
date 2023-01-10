@@ -86,6 +86,7 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterActor;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobHelper;
 import io.mantisrx.master.jobcluster.job.JobSettings;
@@ -137,8 +138,13 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final JobSettings jobSettings) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, jobSettings)
+
+    public static Props props(
+        final MantisJobStore jobStore,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        final JobClusterSettings jobClusterSettings) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, jobSettings, jobClusterSettings)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -147,10 +153,15 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private MantisSchedulerFactory mantisSchedulerFactory = null;
 
     JobClusterInfoManager jobClusterInfoManager;
-    final JobSettings jobSettings;
+    private final JobSettings jobSettings;
+    private final JobClusterSettings jobClusterSettings;
 
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final JobSettings jobSettings) {
+    public JobClustersManagerActor(
+        final MantisJobStore store,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        final JobClusterSettings jobClusterSettings) {
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
 
@@ -167,6 +178,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
 
         initializedBehavior = getInitializedBehavior();
         this.jobSettings = jobSettings;
+        this.jobClusterSettings = jobClusterSettings;
     }
 
     MetricGroupId getMetricGroupId() {
@@ -835,7 +847,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 }
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, jobSettings),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, jobSettings, jobClusterSettings),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 

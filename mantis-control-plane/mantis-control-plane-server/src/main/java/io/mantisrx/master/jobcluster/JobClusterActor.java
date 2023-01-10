@@ -193,8 +193,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     public static Props props(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory mantisSchedulerFactory,
-                              final LifecycleEventPublisher eventPublisher, final JobSettings jobSettings) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, jobSettings);
+                              final LifecycleEventPublisher eventPublisher, final JobSettings jobSettings,
+                              final JobClusterSettings jobClusterSettings) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, jobSettings, jobClusterSettings);
     }
 
     private Receive initializedBehavior;
@@ -214,6 +215,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private BehaviorSubject<JobId> jobIdSubmissionSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
     private final JobSettings jobSettings;
+    private final JobClusterSettings jobClusterSettings;
 
 
     public JobClusterActor(
@@ -221,13 +223,15 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisJobStore jobStore,
         final MantisSchedulerFactory schedulerFactory,
         final LifecycleEventPublisher eventPublisher,
-        final JobSettings jobSettings) {
+        final JobSettings jobSettings,
+        JobClusterSettings jobClusterSettings) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
+        this.jobClusterSettings = jobClusterSettings;
 
-        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, jobSettings);
+        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, jobSettings, jobClusterSettings);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
 
@@ -2553,13 +2557,20 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         private final JobSettings jobSettings;
 
 
-        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore, JobSettings jobSettings) {
+        JobManager(
+            String clusterName,
+            ActorContext context,
+            MantisSchedulerFactory schedulerFactory,
+            LifecycleEventPublisher publisher,
+            MantisJobStore jobStore,
+            JobSettings jobSettings,
+            JobClusterSettings jobClusterSettings) {
             this.name = clusterName;
             this.jobStore = jobStore;
             this.context = context;
             this.scheduler = schedulerFactory;
             this.publisher = publisher;
-            this.completedJobsCache = new CompletedJobCache(name, labelCache);
+            this.completedJobsCache = new CompletedJobCache(name, labelCache, jobClusterSettings);
             this.jobSettings = jobSettings;
         }
 
@@ -3140,6 +3151,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     static class CompletedJobCache {
         private  final Logger logger = LoggerFactory.getLogger(CompletedJobCache.class);
+        private final JobClusterSettings jobClusterSettings;
 
         // Set of sorted terminal jobs
         private final Set<CompletedJob> terminalSortedJobSet = new TreeSet<>((o1, o2) -> {
@@ -3164,9 +3176,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         // Map of jobmetadata
         private final Map<JobId, IMantisJobMetadata> jobIdToMetadataMap = new HashMap<>();
 
-        public CompletedJobCache(String clusterName, LabelCache labelsCache) {
+        public CompletedJobCache(String clusterName, LabelCache labelsCache, JobClusterSettings jobClusterSettings) {
             this.name = clusterName;
             this.labelsCache = labelsCache;
+            this.jobClusterSettings = jobClusterSettings;
         }
 
         public Set<CompletedJob> getCompletedJobSortedSet() {
@@ -3228,7 +3241,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          */
         public void purgeOldCompletedJobs(long tooOldCutOff, MantisJobStore jobStore) {
             long numDeleted = 0;
-            int maxJobsToPurge = ConfigurationProvider.getConfig().getMaxJobsToPurge();
+            int maxJobsToPurge = jobClusterSettings.getMaxJobsToPurge();
             final long startNanos = System.nanoTime();
 
             for(Iterator<CompletedJob> it = completedJobs.values().iterator(); it.hasNext();) {

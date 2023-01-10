@@ -48,6 +48,7 @@ import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
 import io.mantisrx.master.events.WorkerMetricsCollector;
 import io.mantisrx.master.events.WorkerRegistryV2;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
@@ -186,8 +187,9 @@ public class MasterMain implements Service {
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
-            final JobSettings jobSettings = JobSettings.fromConfig(typesafeConfig.getConfig("mantis.jobDefinition"));
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobSettings), "JobClustersManager");
+            final JobSettings jobSettings = JobSettings.fromConfig(typesafeConfig.getConfig("mantis.job"));
+            final JobClusterSettings jobClusterSettings = JobClusterSettings.fromConfig(typesafeConfig.getConfig("mantis.jobCluster"));
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobSettings, jobClusterSettings), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff

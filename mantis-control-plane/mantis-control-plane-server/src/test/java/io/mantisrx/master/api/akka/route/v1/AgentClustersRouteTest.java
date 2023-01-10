@@ -46,6 +46,7 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
@@ -91,6 +92,12 @@ public class AgentClustersRouteTest extends RouteTestBase {
         JobSettings.fromConfig(
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
+
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
     private static CompletionStage<ServerBinding> binding;
 
     public AgentClustersRouteTest() {
@@ -116,7 +123,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
                         JobClustersManagerActor.props(
                                 new MantisJobStore(storageProvider),
                                 lifecycleEventPublisher,
-                            JOB_SETTINGS),
+                                JOB_SETTINGS,
+                                JOB_CLUSTER_SETTINGS),
                         "jobClustersManager");
 
 

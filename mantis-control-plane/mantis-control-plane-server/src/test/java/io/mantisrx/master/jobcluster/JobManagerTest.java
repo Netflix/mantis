@@ -55,6 +55,11 @@ public class JobManagerTest {
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
     @BeforeClass
     public static void setup() {
         jobStore = mock(MantisJobStore.class);
@@ -69,7 +74,7 @@ public class JobManagerTest {
 	@Test
 	public void acceptedToActive() {
 
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -87,7 +92,7 @@ public class JobManagerTest {
 
 	@Test
 	public void acceptedToCompleted() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -115,7 +120,7 @@ public class JobManagerTest {
 
 	@Test
 	public void acceptedToTerminating() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -139,7 +144,7 @@ public class JobManagerTest {
 
 	@Test
 	public void terminatingToActiveIsIgnored() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobDefinition jdMock = mock(JobDefinition.class);
 		JobInfo jInfo1 = new JobInfo(jId1, jdMock, 0, null, JobState.Accepted, "nj");
@@ -163,7 +168,7 @@ public class JobManagerTest {
 
 	@Test
 	public void activeToAcceptedFails() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -179,7 +184,7 @@ public class JobManagerTest {
 	}
 	@Test
 	public void testGetAcceptedJobList() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -208,7 +213,7 @@ public class JobManagerTest {
 
 	@Test
 	public void testGetActiveJobList() {
-		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS);
+		JobClusterActor.JobManager jm =  new JobManager("name", context, schedulerFactory, publisher, jobStore, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 		JobId jId1 = new JobId("name",1);
 		JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
 
@@ -241,7 +246,7 @@ public class JobManagerTest {
 	public void testPurgeOldJobs() {
         String clusterName = "testPurgeOldJobs";
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
-        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, JOB_SETTINGS);
+        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 
         JobId jId1 = new JobId(clusterName,1);
         JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");
@@ -291,7 +296,7 @@ public class JobManagerTest {
     public void testJobListSortedCorrectly() {
         String clusterName = "testJobListSortedCorrectly";
         MantisJobStore jobStoreMock = mock(MantisJobStore.class);
-        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, JOB_SETTINGS);
+        JobClusterActor.JobManager jm = new JobManager(clusterName, context, schedulerFactory, publisher, jobStoreMock, JOB_SETTINGS, JOB_CLUSTER_SETTINGS);
 
         JobId jId1 = new JobId(clusterName,1);
         JobInfo jInfo1 = new JobInfo(jId1, null, 0, null, JobState.Accepted, "nj");

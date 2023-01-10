@@ -35,6 +35,7 @@ import io.mantisrx.master.JobClustersManagerActor;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobStatusRouteHandlerAkkaImpl;
 import io.mantisrx.master.events.*;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
@@ -68,6 +69,11 @@ public class JobStatusRouteTest {
             ConfigFactory
                 .load("job-definition-settings-sample.conf"));
 
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
     @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
@@ -81,8 +87,13 @@ public class JobStatusRouteTest {
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
-                ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                    new MantisJobStore(new FileBasedPersistenceProvider(true)), lifecycleEventPublisher, JOB_SETTINGS), "jobClustersManager");
+                ActorRef jobClustersManagerActor = system.actorOf(
+                    JobClustersManagerActor.props(
+                        new MantisJobStore(new FileBasedPersistenceProvider(true)),
+                        lifecycleEventPublisher,
+                        JOB_SETTINGS,
+                        JOB_CLUSTER_SETTINGS),
+                    "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

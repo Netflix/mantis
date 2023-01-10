@@ -61,10 +61,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("1200")
     long getCompletedJobPurgeFrequencySeqs();
 
-    @Config("mantis.master.purge.size")
-    @Default("50")
-    int getMaxJobsToPurge();
-
 
     @Config("mantis.master.init.timeout.secs")
     @Default("240")

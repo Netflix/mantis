@@ -60,6 +60,7 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
@@ -116,6 +117,11 @@ public class JobsRouteTest extends RouteTestBase {
             ConfigFactory
                 .load("api-settings-sample.conf"));
 
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
     @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
@@ -131,10 +137,13 @@ public class JobsRouteTest extends RouteTestBase {
                         new StatusEventSubscriberLoggingImpl(),
                         new WorkerEventSubscriberLoggingImpl());
 
-                ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                        new MantisJobStore(new FileBasedPersistenceProvider(
-                                true)), lifecycleEventPublisher,
-                    JOB_SETTINGS), "jobClustersManager");
+                ActorRef jobClustersManagerActor = system.actorOf(
+                    JobClustersManagerActor.props(
+                        new MantisJobStore(new FileBasedPersistenceProvider(true)),
+                        lifecycleEventPublisher,
+                        JOB_SETTINGS,
+                        JOB_CLUSTER_SETTINGS),
+                    "jobClustersManager");
 
                 IMantisPersistenceProvider simpleCachedFileStorageProvider = new FileBasedPersistenceProvider(new FileBasedStore());
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
