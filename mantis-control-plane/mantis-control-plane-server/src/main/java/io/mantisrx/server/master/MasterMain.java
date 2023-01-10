@@ -222,7 +222,7 @@ public class MasterMain implements Service {
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
 
             MesosSettings mesosSettings = MesosSettings.fromConfig(typesafeConfig);
-            final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, mesosSettings, vmLeaseRescindedSubject,
+            final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(mesosSettings, vmLeaseRescindedSubject,
                 jobMessageRouter,
                 workerRegistry);
             final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(

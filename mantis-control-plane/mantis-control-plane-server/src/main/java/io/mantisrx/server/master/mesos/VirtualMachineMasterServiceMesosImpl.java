@@ -478,8 +478,4 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
         return mesosSettings.getWorkerTimeoutToReportStart().getSeconds();
     }
 
-    private double getMesosFailoverTimeoutSecs() {
-        return masterConfig.getMesosFailoverTimeOutSecs();
-    }
-
 }

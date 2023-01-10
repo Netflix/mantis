@@ -48,11 +48,6 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("CLUSTER_NAME")
     String getSlaveClusterAttributeName();
 
-    @Config("mantis.master.mesos.failover.timeout.secs")
-    @Default("604800.0")
-        // 604800 secs = 1 week
-    double getMesosFailoverTimeOutSecs();
-
     @Config("mantis.interval.move.workers.disabled.vms.millis")
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();

@@ -43,7 +43,6 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
 
     private static final Logger logger = LoggerFactory.getLogger(MesosDriverSupplier.class);
 
-    private final MasterConfiguration masterConfig;
     private final MesosSettings mesosSettings;
     private final Observer<String> vmLeaseRescindedObserver;
     private final JobMessageRouter jobMessageRouter;
@@ -53,12 +52,10 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     private volatile Action1<List<VirtualMachineLease>> addVMLeaseAction = null;
     private final AtomicInteger numAttemptsToInit = new AtomicInteger(0);
 
-    public MesosDriverSupplier(final MasterConfiguration masterConfig,
-                               final MesosSettings mesosSettings,
+    public MesosDriverSupplier(final MesosSettings mesosSettings,
                                final Observer<String> vmLeaseRescindedObserver,
                                final JobMessageRouter jobMessageRouter,
                                final WorkerRegistry workerRegistry) {
-        this.masterConfig = masterConfig;
         this.mesosSettings = mesosSettings;
         this.vmLeaseRescindedObserver = vmLeaseRescindedObserver;
         this.jobMessageRouter = jobMessageRouter;
@@ -103,7 +100,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             final Protos.FrameworkInfo framework = Protos.FrameworkInfo.newBuilder()
                     .setUser(mesosSettings.getFrameworkUser())
                     .setName(mesosSettings.getFrameworkName())
-                    .setFailoverTimeout(masterConfig.getMesosFailoverTimeOutSecs())
+                    .setFailoverTimeout(mesosSettings.getFrameworkFailoverTimeout().getSeconds())
                     .setId(Protos.FrameworkID.newBuilder().setValue(mesosSettings.getFrameworkName()))
                     .setCheckpoint(true)
                     .build();

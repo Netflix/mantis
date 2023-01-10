@@ -42,6 +42,7 @@ public class MesosSettings {
 
     String frameworkName;
     String frameworkUser;
+    Duration frameworkFailoverTimeout;
 
     Duration reconcilerInterval;
     AgentFitnessSettings agentFitnessSettings;
@@ -67,6 +68,7 @@ public class MesosSettings {
 
             .frameworkName(config.getString("framework.name"))
             .frameworkUser(config.getString("framework.user"))
+            .frameworkFailoverTimeout(config.getDuration("framework.failoverTimeout"))
 
             .agentFitnessSettings(AgentFitnessSettings.fromConfig(config.getConfig("agentFitness")))
             .build();
