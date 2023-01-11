@@ -35,7 +35,6 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatew
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -44,7 +43,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +57,6 @@ import org.apache.flink.runtime.rpc.RpcService;
 @Slf4j
 class ResourceClustersManagerActor extends AbstractActor {
 
-    private final MasterConfiguration masterConfiguration;
     private final ResourceClusterSettings settings;
     private final Clock clock;
     private final RpcService rpcService;
@@ -73,7 +70,6 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final JobMessageRouter jobMessageRouter;
 
     public static Props props(
-        MasterConfiguration masterConfiguration,
         ResourceClusterSettings settings,
         Clock clock,
         RpcService rpcService,
@@ -83,7 +79,6 @@ class ResourceClustersManagerActor extends AbstractActor {
         JobMessageRouter jobMessageRouter) {
         return Props.create(
             ResourceClustersManagerActor.class,
-            masterConfiguration,
             settings,
             clock,
             rpcService,
@@ -94,7 +89,6 @@ class ResourceClustersManagerActor extends AbstractActor {
     }
 
     public ResourceClustersManagerActor(
-        MasterConfiguration masterConfiguration,
         ResourceClusterSettings settings,
         Clock clock,
         RpcService rpcService,
@@ -102,7 +96,6 @@ class ResourceClustersManagerActor extends AbstractActor {
         ActorRef resourceClusterHostActorRef,
         ResourceClusterStorageProvider resourceStorageProvider,
         JobMessageRouter jobMessageRouter) {
-        this.masterConfiguration = masterConfiguration;
         this.settings = settings;
         this.clock = clock;
         this.rpcService = rpcService;
@@ -175,8 +168,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                 ResourceClusterScalerActor.props(
                     clusterID,
                     clock,
-                    Duration.ofSeconds(masterConfiguration.getScalerTriggerThresholdInSecs()),
-                    Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
+                    settings.getScalerSettings().getPullInterval(),
+                    settings.getScalerSettings().getRulesetRefreshInterval(),
                     this.resourceStorageProvider,
                     this.resourceClusterHostActor,
                     rcActor

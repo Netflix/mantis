@@ -22,7 +22,7 @@ import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.functions.Func1;
 import com.netflix.fenzo.plugins.BinPackingFitnessCalculators;
-import io.mantisrx.server.master.mesos.AgentFitnessSettings;
+import io.mantisrx.server.master.mesos.AgentSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,19 +32,20 @@ public class AgentFitnessCalculator implements VMTaskFitnessCalculator {
     private static final Logger logger = LoggerFactory.getLogger(AgentFitnessCalculator.class);
     final VMTaskFitnessCalculator binPacker = BinPackingFitnessCalculators.cpuMemNetworkBinPacker;
     final VMTaskFitnessCalculator durationTypeFitnessCalculator = new DurationTypeFitnessCalculator();
-    final VMTaskFitnessCalculator clusterFitnessCalculator = new ClusterFitnessCalculator();
+    private final VMTaskFitnessCalculator clusterFitnessCalculator;
     private final double binPackingWeight;
     private final double clusterWeight;
     private final double durationTypeWeight;
     private final double goodEnoughThreshold;
     private final Func1<Double, Boolean> fitnessGoodEnoughFunc;
-    public AgentFitnessCalculator(AgentFitnessSettings agentFitnessSettings) {
-        binPackingWeight = agentFitnessSettings.getBinPackingWeight();
-        clusterWeight = agentFitnessSettings.getPreferredClusterWeight();
-        durationTypeWeight = agentFitnessSettings.getDurationTypeWeight();
-        goodEnoughThreshold = agentFitnessSettings.getGoodEnoughThreshold();
+    public AgentFitnessCalculator(AgentSettings agentSettings) {
+        binPackingWeight = agentSettings.getBinPackingWeight();
+        clusterWeight = agentSettings.getPreferredClusterWeight();
+        durationTypeWeight = agentSettings.getDurationTypeWeight();
+        goodEnoughThreshold = agentSettings.getGoodEnoughThreshold();
         logger.info("clusterWeight {} durationTypeWeight {} binPackingWeight {} goodEnoughThreshold {}", clusterWeight, durationTypeWeight, binPackingWeight, goodEnoughThreshold);
         this.fitnessGoodEnoughFunc = f -> f > goodEnoughThreshold;
+        clusterFitnessCalculator = new ClusterFitnessCalculator(agentSettings);
     }
 
     @Override

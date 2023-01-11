@@ -39,13 +39,16 @@ public class MesosSettings {
     String schedulerBalancedHostAttrName;
     Duration schedulerLeaseOfferExpiry;
     Duration schedulerIterationInterval;
+    boolean schedulerDisableShortfallEvaluation;
+    String schedulerAutoScalerMapHostnameAttributeName;
+    String schedulerActiveVmGroupAttributeName;
 
     String frameworkName;
     String frameworkUser;
     Duration frameworkFailoverTimeout;
 
     Duration reconcilerInterval;
-    AgentFitnessSettings agentFitnessSettings;
+    AgentSettings agentSettings;
 
     public static MesosSettings fromConfig(Config config) {
         return MesosSettings.builder()
@@ -64,13 +67,16 @@ public class MesosSettings {
             .schedulerLeaseOfferExpiry(config.getDuration("scheduler.leaseOfferExpiry"))
             .schedulerBalancedHostAttrName(config.getString("scheduler.balancedHostAttrName"))
             .schedulerIterationInterval(config.getDuration("scheduler.epoch"))
+            .schedulerDisableShortfallEvaluation(config.getBoolean("scheduler.disableShortfallEvaluation"))
+            .schedulerAutoScalerMapHostnameAttributeName(config.getString("scheduler.autoScalerMapHostnameAttributeName"))
+            .schedulerActiveVmGroupAttributeName(config.getString("scheduler.activeVmGroupAttributeName"))
             .reconcilerInterval(config.getDuration("reconcilerInterval"))
 
             .frameworkName(config.getString("framework.name"))
             .frameworkUser(config.getString("framework.user"))
             .frameworkFailoverTimeout(config.getDuration("framework.failoverTimeout"))
 
-            .agentFitnessSettings(AgentFitnessSettings.fromConfig(config.getConfig("agentFitness")))
+            .agentSettings(AgentSettings.fromConfig(config.getConfig("agent")))
             .build();
     }
 }

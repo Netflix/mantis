@@ -40,44 +40,9 @@ public interface MasterConfiguration extends CoreConfiguration {
     // ------------------------------------------------------------------------
 
 
-    @Config("mantis.master.active.slave.attribute.name")
-    @Default("NETFLIX_AUTO_SCALE_GROUP")
-    String getActiveSlaveAttributeName();
-
-    @Config("mantis.master.slave.cluster.attribute.name")
-    @Default("CLUSTER_NAME")
-    String getSlaveClusterAttributeName();
-
     @Config("mantis.interval.move.workers.disabled.vms.millis")
     @Default("60000")
     long getIntervalMoveWorkersOnDisabledVMsMillis();
 
-    @Config("mantis.agent.cluster.autoscale.by.attribute.name")
-    @Default("CLUSTER_NAME")
-    String getAutoscaleByAttributeName();
-
-    @Config("mantis.agent.cluster.autoscaler.map.hostname.attribute.name")
-    @Default("EC2_INSTANCE_ID")
-    String getAutoScalerMapHostnameAttributeName();
-
-    @Config("mantis.agent.cluster.autoscaler.shortfall.evaluation.disabled")
-    @Default("false")
-    boolean getDisableShortfallEvaluation();
-
-    /**
-     * Config value for each {@link io.mantisrx.master.resourcecluster.ResourceClusterScalerActor}'s timer to trigger
-     * check on current cluster usage.
-     */
-    @Config("mantis.job.master.resource.cluster.scaler.interval.secs")
-    @Default("60")
-    int getScalerTriggerThresholdInSecs();
-
-    /**
-     * Config value for each {@link io.mantisrx.master.resourcecluster.ResourceClusterScalerActor}'s timer to refresh
-     * its cached scale rules.
-     */
-    @Config("mantis.job.master.resource.cluster.scaler.ruleset.refresh.secs")
-    @Default("180")
-    int getScalerRuleSetRefreshThresholdInSecs();
 
 }

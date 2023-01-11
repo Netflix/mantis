@@ -71,7 +71,10 @@ public class ConstraintsEvaluators {
     }
 
     public static String asgAttributeName() {
-        return ConfigurationProvider.getConfig().getActiveSlaveAttributeName();
+        return
+            MesosSettings
+                .fromConfig(ConfigurationProvider.getTypeSafeConfig())
+                .getSchedulerActiveVmGroupAttributeName();
     }
 
     public static String zoneAttributeName() {

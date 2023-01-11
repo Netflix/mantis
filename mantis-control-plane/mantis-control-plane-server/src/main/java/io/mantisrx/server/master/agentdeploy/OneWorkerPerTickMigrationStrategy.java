@@ -16,37 +16,29 @@
 
 package io.mantisrx.server.master.agentdeploy;
 
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.utils.MantisClock;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class OneWorkerPerTickMigrationStrategy extends MigrationStrategy {
 
-    private static final Logger logger = LoggerFactory.getLogger(OneWorkerPerTickMigrationStrategy.class);
+    private final Clock clock;
+    private final Duration workerOnDisabledVMsCheckInterval;
 
-    private final String jobId;
-    private final MantisClock clock;
-    private long intervalMoveWorkersOnDisabledVMsMillis;
-
-    public OneWorkerPerTickMigrationStrategy(final MantisClock clock,
+    public OneWorkerPerTickMigrationStrategy(final Clock clock,
                                              final String jobId,
-                                             final WorkerMigrationConfig config) {
+                                             final WorkerMigrationConfig config,
+                                             final JobSettings jobSettings) {
         super(config);
         this.clock = clock;
-        this.jobId = jobId;
-        try {
-            this.intervalMoveWorkersOnDisabledVMsMillis = ConfigurationProvider.getConfig().getIntervalMoveWorkersOnDisabledVMsMillis();
-        } catch (IllegalStateException ise) {
-            logger.warn("[{}] Error reading intervalMoveWorkersOnDisabledVMsMillis from config Provider, will default to 1 minute", jobId);
-            this.intervalMoveWorkersOnDisabledVMsMillis = 60_000L;
-        }
+        this.workerOnDisabledVMsCheckInterval = jobSettings.getWorkerOnDisabledVMsCheckInterval();
     }
 
     @Override
@@ -54,7 +46,7 @@ public class OneWorkerPerTickMigrationStrategy extends MigrationStrategy {
                                  final int numRunningWorkers,
                                  final int totalNumWorkers,
                                  final long lastMovedWorkerOnDisabledVM) {
-        if (lastMovedWorkerOnDisabledVM > (clock.now() - intervalMoveWorkersOnDisabledVMsMillis)) {
+        if (Duration.between(Instant.ofEpochMilli(lastMovedWorkerOnDisabledVM), clock.instant()).compareTo(workerOnDisabledVMsCheckInterval) < 0) {
             return Collections.emptyList();
         }
 

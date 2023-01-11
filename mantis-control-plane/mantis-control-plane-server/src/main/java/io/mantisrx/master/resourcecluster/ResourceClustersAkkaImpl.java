@@ -86,7 +86,7 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
             ResourceClusterSettings.fromConfig(config.getConfig("mantis.resourceCluster"));
         final ActorRef resourceClusterManagerActor =
             actorSystem.actorOf(
-                ResourceClustersManagerActor.props(masterConfiguration, settings, Clock.systemDefaultZone(),
+                ResourceClustersManagerActor.props(settings, Clock.systemDefaultZone(),
                     rpcService, mantisJobStore, resourceClusterHostActorRef, resourceStorageProvider,
                     jobMessageRouter));
         final ResourceClusterTaskExecutorMapper globalMapper =

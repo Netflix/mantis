@@ -33,6 +33,7 @@ public class JobSettings {
     Duration workerHeartbeatInterval;
     Duration workerInitTimeout;
     boolean workerHeartbeatTerminationEnabled;
+    Duration workerOnDisabledVMsCheckInterval;
 
     int maxWorkersPerStage;
     MachineDefinition jobMasterMachineDefinition;
@@ -52,6 +53,7 @@ public class JobSettings {
                 .workerHeartbeatInterval(config.getDuration("worker.heartbeatInterval"))
                 .workerInitTimeout(config.getDuration("worker.initTimeout"))
                 .workerHeartbeatTerminationEnabled(config.getBoolean("worker.heartbeatTerminationEnabled"))
+                .workerOnDisabledVMsCheckInterval(config.getDuration("worker.onDisabledVMsCheckInterval"))
                 .maxWorkersPerStage(config.getInt("maxWorkersPerStage"))
                 .jobMasterMachineDefinition(
                     MachineDefinition.fromConfig(config.getConfig("master.machineDefinition")))

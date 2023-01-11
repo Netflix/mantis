@@ -29,6 +29,8 @@ public class ResourceClusterSettings {
     Duration taskExecutorAssignmentTimeout;
     Duration disabledTaskExecutorsCheckInterval;
 
+    ScalerSettings scalerSettings;
+
     public static ResourceClusterSettings fromConfig(Config config) {
         return
             ResourceClusterSettings
@@ -37,6 +39,7 @@ public class ResourceClusterSettings {
                 .disabledTaskExecutorsCheckInterval(config.getDuration("disabledTaskExecutorsCheckInterval"))
                 .taskExecutorHeartbeatTimeout(config.getDuration("taskExecutor.heartbeatTimeout"))
                 .taskExecutorAssignmentTimeout(config.getDuration("taskExecutor.assignmentTimeout"))
+                .scalerSettings(ScalerSettings.fromConfig(config.getConfig("scaler")))
                 .build();
     }
 }

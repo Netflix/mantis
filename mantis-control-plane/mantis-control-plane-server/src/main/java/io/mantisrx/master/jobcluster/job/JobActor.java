@@ -1293,7 +1293,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
             this.scheduler = scheduler;
             this.jobMgr = jobMgr;
-            migrationStrategy = MigrationStrategyFactory.getStrategy(jobId.getId(), migrationConfig);
+            migrationStrategy = MigrationStrategyFactory.getStrategy(jobId.getId(), migrationConfig, jobSettings);
             int noOfStages = mantisJobMetaData.getStageMetadata().size();
             if (noOfStages == 1) {
                 sinkStageNum = 1;

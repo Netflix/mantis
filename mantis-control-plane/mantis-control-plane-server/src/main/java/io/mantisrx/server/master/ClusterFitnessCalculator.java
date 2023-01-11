@@ -21,7 +21,7 @@ import com.netflix.fenzo.TaskTrackerState;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.fenzo.VirtualMachineCurrentState;
 import com.netflix.fenzo.VirtualMachineLease;
-import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.mesos.AgentSettings;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -34,8 +34,8 @@ public class ClusterFitnessCalculator implements VMTaskFitnessCalculator {
 
     private final String clusterAttributeName;
 
-    public ClusterFitnessCalculator() {
-        clusterAttributeName = ConfigurationProvider.getConfig().getSlaveClusterAttributeName();
+    public ClusterFitnessCalculator(AgentSettings agentSettings) {
+        clusterAttributeName = agentSettings.getClusterAttribute();
     }
 
     private Optional<String> getAttribute(final VirtualMachineLease lease, final String attributeName) {

@@ -42,7 +42,6 @@ import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.mesos.MesosSettings;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
@@ -138,19 +137,22 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
         this.virtualMachineService = virtualMachineService;
-        this.slaveClusterAttributeName = ConfigurationProvider.getConfig().getSlaveClusterAttributeName();
+        this.slaveClusterAttributeName = mesosSettings.getAgentSettings().getClusterAttribute();
         schedulerIterationInterval = mesosSettings.getSchedulerIterationInterval();
-        AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator(mesosSettings.getAgentFitnessSettings());
+        AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator(mesosSettings.getAgentSettings());
         TaskScheduler.Builder schedulerBuilder = new TaskScheduler.Builder()
                 .withLeaseRejectAction(virtualMachineService::rejectLease)
                 .withLeaseOfferExpirySecs(mesosSettings.getSchedulerLeaseOfferExpiry().getSeconds())
                 .withFitnessCalculator(agentFitnessCalculator)
                 .withFitnessGoodEnoughFunction(agentFitnessCalculator.getFitnessGoodEnoughFunc())
-                .withAutoScaleByAttributeName(ConfigurationProvider.getConfig().getAutoscaleByAttributeName()); // set this always
-        if (ConfigurationProvider.getConfig().getDisableShortfallEvaluation())
+                .withAutoScaleByAttributeName(mesosSettings.getAgentSettings().getClusterAttribute()); // set this always
+
+        if (mesosSettings.isSchedulerDisableShortfallEvaluation()) {
             schedulerBuilder = schedulerBuilder.disableShortfallEvaluation();
+        }
+
         taskScheduler = setupTaskSchedulerAndAutoScaler(vmLeaseRescindedObservable, schedulerBuilder);
-        taskScheduler.setActiveVmGroupAttributeName(ConfigurationProvider.getConfig().getActiveSlaveAttributeName());
+        taskScheduler.setActiveVmGroupAttributeName(mesosSettings.getSchedulerActiveVmGroupAttributeName());
 
         taskQueue = new TieredQueue(2);
 
@@ -229,7 +231,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         int minMinIdle = 4;
         schedulerBuilder = schedulerBuilder
                 .withAutoScaleDownBalancedByAttributeName(mesosSettings.getSchedulerBalancedHostAttrName())
-                .withAutoScalerMapHostnameAttributeName(ConfigurationProvider.getConfig().getAutoScalerMapHostnameAttributeName());
+                .withAutoScalerMapHostnameAttributeName(mesosSettings.getSchedulerAutoScalerMapHostnameAttributeName());
         final AgentClustersAutoScaler agentClustersAutoScaler = AgentClustersAutoScaler.get();
         try {
             if (agentClustersAutoScaler != null) {

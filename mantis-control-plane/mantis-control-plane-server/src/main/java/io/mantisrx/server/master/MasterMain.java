@@ -251,7 +251,7 @@ public class MasterMain implements Service {
                 jobMessageRouter,
                 schedulingService,
                 lifecycleEventPublisher,
-                ConfigurationProvider.getConfig().getActiveSlaveAttributeName());
+                mesosSettings.getSchedulerActiveVmGroupAttributeName());
 
             // start serving metrics
             if (nodeSettings.getMetricsPort() > 0) {

@@ -22,20 +22,22 @@ import lombok.Value;
 
 @Value
 @Builder
-public class AgentFitnessSettings {
+public class AgentSettings {
     double binPackingWeight;
     double preferredClusterWeight;
     double goodEnoughThreshold;
     double durationTypeWeight;
+    String clusterAttribute;
 
-    public static AgentFitnessSettings fromConfig(Config config) {
+    public static AgentSettings fromConfig(Config config) {
         return
-            AgentFitnessSettings
+            AgentSettings
                 .builder()
-                .binPackingWeight(config.getDouble("binPackingWeight"))
-                .preferredClusterWeight(config.getDouble("preferredClusterWeight"))
-                .goodEnoughThreshold(config.getDouble("goodEnoughThreshold"))
-                .durationTypeWeight(config.getDouble("durationTypeWeight"))
+                .binPackingWeight(config.getDouble("fitness.binPackingWeight"))
+                .preferredClusterWeight(config.getDouble("fitness.preferredClusterWeight"))
+                .goodEnoughThreshold(config.getDouble("fitness.goodEnoughThreshold"))
+                .durationTypeWeight(config.getDouble("fitness.durationTypeWeight"))
+                .clusterAttribute(config.getString("clusterAttribute"))
                 .build();
     }
 }
