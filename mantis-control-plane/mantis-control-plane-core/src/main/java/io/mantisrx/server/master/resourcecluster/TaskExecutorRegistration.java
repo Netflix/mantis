@@ -64,8 +64,10 @@ public class TaskExecutorRegistration {
     @NonNull
     MachineDefinition machineDefinition;
 
-    // custom attributes describing the task executor
-    // TODO make this field non-null once no back-compat required.
+    /** custom attributes describing the task executor
+    * [Note] all keys/values need to be save as lower-case to avoid mismatch.
+    * TODO make this field non-null once no back-compat required.
+    **/
     Map<String, String> taskExecutorAttributes;
 
     @JsonCreator
@@ -86,16 +88,44 @@ public class TaskExecutorRegistration {
         this.taskExecutorAttributes = (taskExecutorAttributes == null) ? ImmutableMap.of() : taskExecutorAttributes;
     }
 
+    /**
+     * Check if all given attributes have a match in taskExecutorAttributes.
+     * [Note] all keys/values in taskExecutorAttributes are lower-case and
+     * requiredAttributes will be evaluated case-insensitive.
+     */
     public boolean containsAttributes(Map<String, String> requiredAttributes) {
-        return taskExecutorAttributes.entrySet().containsAll(requiredAttributes.entrySet());
+        for (Map.Entry<String, String> kv : requiredAttributes.entrySet()) {
+            String k = kv.getKey().toLowerCase();
+            if (this.taskExecutorAttributes.containsKey(k) &&
+                this.taskExecutorAttributes.get(k).equalsIgnoreCase(kv.getValue())) {
+                continue;
+            }
+
+            // handle back compat on case-sensitive registrations.
+            if (this.taskExecutorAttributes.containsKey(kv.getKey()) &&
+                this.taskExecutorAttributes.get(kv.getKey()).equalsIgnoreCase(kv.getValue())) {
+                continue;
+            }
+
+            return false;
+        }
+        return true;
     }
 
     @JsonIgnore
     public Optional<ContainerSkuID> getTaskExecutorContainerDefinitionId() {
-        return Optional.ofNullable(
-            this.getTaskExecutorAttributes() == null ||
-                !this.getTaskExecutorAttributes().containsKey(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID) ?
-                null :
-                ContainerSkuID.of(this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)));
+        // handle back compat on key case insensitivity.
+        String containerDefIdLower = WorkerConstants.WORKER_CONTAINER_DEFINITION_ID.toLowerCase();
+        if (this.taskExecutorAttributes.containsKey(containerDefIdLower)) {
+            return Optional.ofNullable(ContainerSkuID.of(this.getTaskExecutorAttributes().get(containerDefIdLower)));
+        }
+
+        if (this.taskExecutorAttributes.containsKey(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)) {
+            return Optional.ofNullable(
+                ContainerSkuID.of(
+                    this.getTaskExecutorAttributes().get(WorkerConstants.WORKER_CONTAINER_DEFINITION_ID)));
+        }
+
+        return Optional.empty();
     }
 }

@@ -201,7 +201,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             .forEach(kv -> {
                 if (kv.getValue() == null ||
                     kv.getValue().getRegistration() == null) {
-                    log.warn("Empty registration: {}, {}. Skip usage request.", this.clusterID, kv.getKey());
+                    log.info("Empty registration: {}, {}. Skip usage request.", this.clusterID, kv.getKey());
                     return;
                 }
 

@@ -51,6 +51,7 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -59,6 +60,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -156,7 +158,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
-                .taskExecutorAttributes(ImmutableMap.copyOf(workerConfiguration.getTaskExecutorAttributes()))
+                .taskExecutorAttributes(ImmutableMap.copyOf(
+                    workerConfiguration
+                        .getTaskExecutorAttributes()
+                        .entrySet()
+                        .stream()
+                        .collect(Collectors.<Map.Entry<String, String>, String, String>toMap(
+                            kv -> kv.getKey().toLowerCase(),
+                            kv -> kv.getValue().toLowerCase()))))
                 .build();
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 

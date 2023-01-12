@@ -16,6 +16,7 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
@@ -114,17 +115,21 @@ public class TaskExecutorRegistrationTest {
             "    },\n" +
             "    \"taskExecutorAttributes\": {\n" +
             "    \t\"attribute1\": \"attributeValue1\",\n" +
-            "    \t\"attribute2\": \"attributeValue2\",\n" +
+            "    \t\"attribute2\": \"AttributeValue2\",\n" +
             "    \t\"attribute3\": \"attributeValue3\"\n" +
             "    }\n" +
             "}";
 
         final TaskExecutorRegistration registration =
             serializer.fromJSON(str, TaskExecutorRegistration.class);
-        assertEquals(ImmutableMap.of("attribute1", "attributeValue1", "attribute2", "attributeValue2", "attribute3", "attributeValue3"), registration.getTaskExecutorAttributes());
+        assertEquals(ImmutableMap.of("attribute1", "attributeValue1", "attribute2", "AttributeValue2", "attribute3",
+            "attributeValue3"), registration.getTaskExecutorAttributes());
         final TaskExecutorRegistration deserialized =
             serializer.fromJSON(serializer.toJson(registration), TaskExecutorRegistration.class);
         assertEquals(registration, deserialized);
+        assertTrue(registration.containsAttributes(ImmutableMap.of("ATTribute2", "AttributevAlue2")));
+        assertTrue(registration.containsAttributes(ImmutableMap.of(
+            "ATTribute2", "AttributevAlue2", "attribute1", "attributevalue1")));
     }
 
     @Test
