@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.config;
+package io.mantisrx.server.master.store;
 
-import io.mantisrx.server.core.CoreConfiguration;
-import org.skife.config.Config;
+import akka.actor.ActorSystem;
+import com.typesafe.config.Config;
+import io.mantisrx.server.master.config.MantisExtension;
 
+public class FileBasedStoreFactory implements MantisExtension<KeyValueStore> {
 
-public interface MasterConfiguration extends CoreConfiguration {
-
-    @Config("mantis.master.resourceClusterProvider")
-    String getResourceClusterProvider();
+    @Override
+    public KeyValueStore createObject(Config config, ActorSystem actorSystem) {
+        return new FileBasedStore();
+    }
 }

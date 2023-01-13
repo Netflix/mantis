@@ -54,6 +54,7 @@ import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
@@ -72,6 +73,7 @@ import io.mantisrx.server.master.client.ClientServices;
 import io.mantisrx.server.master.client.ClientServicesImpl;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MantisExtensionFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
@@ -87,6 +89,7 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
 import io.mantisrx.server.master.scheduler.SchedulerSettings;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
+import io.mantisrx.server.master.store.KeyValueStore;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -187,7 +190,8 @@ public class MasterMain implements Service {
                 new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber,
                     workerEventSubscriber.and(workerMetricsCollector));
 
-            storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
+            final KeyValueStore keyValueStore = MantisExtensionFactory.createObject(typesafeConfig.getConfig("store.keyValueStore"), system);
+            storageProvider = new KeyValueBasedPersistenceProvider(keyValueStore, lifecycleEventPublisher);
             final StoreSettings storeSettings = StoreSettings.fromConfig(typesafeConfig.getConfig("mantis.store"));
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider, storeSettings);
             final JobSettings jobSettings = JobSettings.fromConfig(typesafeConfig.getConfig("mantis.job"));
@@ -198,10 +202,13 @@ public class MasterMain implements Service {
             // Beginning of new stuff
             Configuration configuration = loadConfiguration();
 
+            final ResourceClusterStorageProvider resourceClusterStorageProvider =
+                MantisExtensionFactory.createObject(typesafeConfig.getConfig("mantis.resourceCluster.store"), system);
+
             final ActorRef resourceClustersHostActor = system.actorOf(
                 ResourceClustersHostManagerActor.props(
                     new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
-                    config.getResourceClusterStorageProvider()),
+                    resourceClusterStorageProvider),
                 "ResourceClusterHostActor");
 
             final RpcSystem rpcSystem =
@@ -219,7 +226,7 @@ public class MasterMain implements Service {
                     mantisJobStore,
                     jobMessageRouter,
                     resourceClustersHostActor,
-                    config.getResourceClusterStorageProvider());
+                    resourceClusterStorageProvider);
 
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;

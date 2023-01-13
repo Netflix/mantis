@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 
 package io.mantisrx.server.master.config;
 
-import io.mantisrx.server.core.CoreConfiguration;
-import org.skife.config.Config;
+import akka.actor.ActorSystem;
+import com.typesafe.config.Config;
 
-
-public interface MasterConfiguration extends CoreConfiguration {
-
-    @Config("mantis.master.resourceClusterProvider")
-    String getResourceClusterProvider();
+public interface MantisExtension<T> {
+    T createObject(Config config, ActorSystem actorSystem);
 }
