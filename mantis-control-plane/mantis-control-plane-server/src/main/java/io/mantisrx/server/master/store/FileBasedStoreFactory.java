@@ -18,7 +18,7 @@ package io.mantisrx.server.master.store;
 
 import akka.actor.ActorSystem;
 import com.typesafe.config.Config;
-import io.mantisrx.server.master.config.MantisExtension;
+import io.mantisrx.server.core.config.MantisExtension;
 
 public class FileBasedStoreFactory implements MantisExtension<KeyValueStore> {
 

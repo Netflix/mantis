@@ -16,9 +16,9 @@
 package io.mantisrx.server.master.client;
 
 import com.typesafe.config.Config;
+import io.mantisrx.server.core.config.MantisExtensionFactory;
 import io.mantisrx.server.core.highavailability.HighAvailabilityServices;
 import io.mantisrx.server.core.highavailability.LeaderRetrievalService;
-import io.mantisrx.server.core.zookeeper.HighAvailabilityServicesUtil;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +35,7 @@ public class ClientServicesUtil {
                 if (val == null) {
                     try {
                         HighAvailabilityServices highAvailabilityServices =
-                            HighAvailabilityServicesUtil.createHighAvailabilityServices(config);
+                            MantisExtensionFactory.createObject(config, null);
                         highAvailabilityServices.startAsync().awaitRunning();
 
                         LeaderRetrievalService retrievalService =

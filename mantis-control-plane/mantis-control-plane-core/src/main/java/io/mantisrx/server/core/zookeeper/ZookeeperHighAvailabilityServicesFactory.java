@@ -16,21 +16,23 @@
 
 package io.mantisrx.server.core.zookeeper;
 
+import akka.actor.ActorSystem;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.mantisrx.server.core.config.MantisExtension;
 import io.mantisrx.server.core.highavailability.HighAvailabilityServices;
-import io.mantisrx.server.core.highavailability.HighAvailabilityServicesFactory;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.io.IOException;
 import lombok.Getter;
 
-public class ZookeeperHighAvailabilityServicesFactory implements HighAvailabilityServicesFactory {
+public class ZookeeperHighAvailabilityServicesFactory implements MantisExtension<HighAvailabilityServices> {
     private final Config defaultZookeeperConfig =
         ConfigFactory
             .load()
             .getConfig("mantis.highAvailability.zookeeper");
+
     @Override
-    public HighAvailabilityServices getHighAvailabilityServices(Config config) {
+    public HighAvailabilityServices createObject(Config config, ActorSystem actorSystem) {
         final Config zookeeperConfig =
             config
                 .getConfig("mantis.highAvailability.zookeeper")

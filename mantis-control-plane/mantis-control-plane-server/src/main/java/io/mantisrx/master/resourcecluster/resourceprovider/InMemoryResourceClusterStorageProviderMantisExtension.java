@@ -18,7 +18,7 @@ package io.mantisrx.master.resourcecluster.resourceprovider;
 
 import akka.actor.ActorSystem;
 import com.typesafe.config.Config;
-import io.mantisrx.server.master.config.MantisExtension;
+import io.mantisrx.server.core.config.MantisExtension;
 
 @SuppressWarnings("unused")
 public class InMemoryResourceClusterStorageProviderMantisExtension implements MantisExtension<ResourceClusterStorageProvider> {

@@ -61,19 +61,18 @@ import io.mantisrx.master.vm.AgentClusterOperationsImpl;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.MantisAkkaRpcSystemLoader;
 import io.mantisrx.server.core.Service;
+import io.mantisrx.server.core.config.MantisExtensionFactory;
 import io.mantisrx.server.core.highavailability.HighAvailabilityServices;
 import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.highavailability.LeaderRetrievalService;
 import io.mantisrx.server.core.highavailability.NodeSettings;
 import io.mantisrx.server.core.metrics.MetricsPublisherService;
 import io.mantisrx.server.core.metrics.MetricsServerService;
-import io.mantisrx.server.core.zookeeper.HighAvailabilityServicesUtil;
 import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.client.ClientServices;
 import io.mantisrx.server.master.client.ClientServicesImpl;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MantisExtensionFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
@@ -141,8 +140,14 @@ public class MasterMain implements Service {
         try {
             ConfigurationProvider.initialize(configFactory);
             this.config = ConfigurationProvider.getConfig();
+
+            final ActorSystem system = ActorSystem.create("MantisMaster");
+            // log the configuration of the actor system
+            system.logConfiguration();
+
+
             HighAvailabilityServices highAvailabilityServices =
-                HighAvailabilityServicesUtil.createHighAvailabilityServices(typesafeConfig);
+                MantisExtensionFactory.createObject(typesafeConfig.getConfig("mantis.highAvailability"), system);
             mantisServices.addService(BaseService.wrapAlwaysActiveService(highAvailabilityServices));
 
             LeaderRetrievalService leaderRetrievalService = highAvailabilityServices.getLeaderRetrievalService();
@@ -164,10 +169,6 @@ public class MasterMain implements Service {
 
             // shared state
             PublishSubject<String> vmLeaseRescindedSubject = PublishSubject.create();
-
-            final ActorSystem system = ActorSystem.create("MantisMaster");
-            // log the configuration of the actor system
-            system.logConfiguration();
 
             // log dead letter messages
             final ActorRef actor = system.actorOf(Props.create(DeadLetterActor.class), "MantisDeadLetter");
