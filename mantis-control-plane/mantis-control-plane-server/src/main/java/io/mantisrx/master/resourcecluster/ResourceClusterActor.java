@@ -20,19 +20,14 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
-import akka.japi.Pair;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
-import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
-import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.GetClusterUsageResponseBuilder;
-import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
@@ -46,8 +41,6 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Occupied;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
-import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
-import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import java.io.IOException;
@@ -59,19 +52,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.shaded.guava30.com.google.common.collect.Comparators;
 
@@ -90,9 +81,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final Duration assignmentTimeout;
     private final Duration disabledTaskExecutorsCheckInterval;
 
-    private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap;
+    private final ExecutorStateManager executorStateManager;
     private final Clock clock;
-    private final Set<TaskExecutorID> taskExecutorsReadyToPerformWork;
     private final RpcService rpcService;
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
@@ -120,10 +110,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.clock = clock;
         this.rpcService = rpcService;
         this.jobMessageRouter = jobMessageRouter;
-        this.taskExecutorStateMap = new HashMap<>();
-        this.taskExecutorsReadyToPerformWork = new HashSet<>();
         this.mantisJobStore = mantisJobStore;
         this.activeDisableTaskExecutorsRequests = new HashSet<>();
+
+        this.executorStateManager = new ExecutorStateManagerImpl();
     }
 
     @Override
@@ -146,14 +136,17 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         return
             ReceiveBuilder
                 .create()
-                .match(GetRegisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isRegistered), self()))
-                .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isBusy), self()))
-                .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isAvailable), self()))
-                .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(isDisabled), self()))
-                .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(unregistered), self()))
+                .match(GetRegisteredTaskExecutorsRequest.class,
+                    req -> sender().tell(getTaskExecutors(ExecutorStateManager.isRegistered),
+                    self()))
+                .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.isBusy), self()))
+                .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.isAvailable), self()))
+                .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.isDisabled), self()))
+                .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.unregistered), self()))
                 .match(GetActiveJobsRequest.class, this::getActiveJobs)
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
-                .match(GetClusterUsageRequest.class, req -> sender().tell(getClusterUsage(req), self()))
+                .match(GetClusterUsageRequest.class,
+                    req -> sender().tell(this.executorStateManager.getClusterUsage(req), self()))
                 .match(GetClusterIdleInstancesRequest.class,
                     req -> sender().tell(onGetClusterIdleInstancesRequest(req), self()))
                 .match(GetAssignedTaskExecutorRequest.class, this::onAssignedTaskExecutorRequest)
@@ -177,91 +170,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .build();
     }
 
-    private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isRegistered =
-        e -> e.getValue().isRegistered();
-
-    private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isBusy =
-        e -> e.getValue().isRunningTask();
-
-    private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> unregistered =
-        e -> e.getValue().isDisconnected();
-
-    private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAvailable =
-        e -> e.getValue().isAvailable();
-
-    private final Predicate<Entry<TaskExecutorID, TaskExecutorState>> isDisabled =
-        e -> e.getValue().isDisabled();
-
-    private GetClusterUsageResponse getClusterUsage(GetClusterUsageRequest req) {
-        log.info("Computing cluster usage: {}", this.clusterID);
-
-        // default grouping is containerSkuID to usage
-        Map<String, Pair<Integer, Integer>> usageByGroupKey = new HashMap<>();
-        taskExecutorStateMap.entrySet().stream()
-            .forEach(kv -> {
-                if (kv.getValue() == null ||
-                    kv.getValue().getRegistration() == null) {
-                    log.info("Empty registration: {}, {}. Skip usage request.", this.clusterID, kv.getKey());
-                    return;
-                }
-
-                Optional<String> groupKeyO =
-                    req.getGroupKeyFunc().apply(kv.getValue().getRegistration());
-
-                if (!groupKeyO.isPresent()) {
-                    log.info("Empty groupKey from: {}, {}. Skip usage request.", this.clusterID, kv.getKey());
-                    return;
-                }
-
-                String groupKey = groupKeyO.get();
-
-                Pair<Integer, Integer> kvState = new Pair<>(
-                    kv.getValue().isAvailable() ? 1 : 0,
-                    kv.getValue().isRegistered() ? 1 : 0);
-
-
-                if (usageByGroupKey.containsKey(groupKey)) {
-                    Pair<Integer, Integer> prevState = usageByGroupKey.get(groupKey);
-                    usageByGroupKey.put(groupKey,
-                        new Pair<>(kvState.first() + prevState.first(), kvState.second() + prevState.second()));
-                } else {
-                    usageByGroupKey.put(groupKey, kvState);
-                }
-            });
-
-        GetClusterUsageResponseBuilder resBuilder = GetClusterUsageResponse.builder().clusterID(this.clusterID);
-        usageByGroupKey.entrySet().stream()
-            .forEach(kv -> resBuilder.usage(UsageByGroupKey.builder()
-                .usageGroupKey(kv.getKey())
-                .idleCount(kv.getValue().first())
-                .totalCount(kv.getValue().second())
-                .build()));
-
-        GetClusterUsageResponse res = resBuilder.build();
-        log.info("Usage result: {}", res);
-        return res;
-    }
-
     private GetClusterIdleInstancesResponse onGetClusterIdleInstancesRequest(GetClusterIdleInstancesRequest req) {
         log.info("Computing idle instance list: {}", req);
         if (!req.getClusterID().equals(this.clusterID)) {
             throw new RuntimeException(String.format("Mismatch cluster ids %s, %s", req.getClusterID(), this.clusterID));
         }
 
-        List<TaskExecutorID> instanceList = taskExecutorStateMap.entrySet().stream()
-            .filter(kv -> {
-                if (kv.getValue().getRegistration() == null) {
-                    return false;
-                }
-
-                Optional<ContainerSkuID> skuIdO =
-                    kv.getValue().getRegistration().getTaskExecutorContainerDefinitionId();
-                return skuIdO.isPresent() && skuIdO.get().equals(req.getSkuId());
-            })
-            .filter(isAvailable)
-            .map(kv -> kv.getKey())
-            .limit(req.getMaxInstanceCount())
-            .collect(Collectors.toList());
+        List<TaskExecutorID> instanceList = this.executorStateManager.getIdleInstanceList(req);
 
         GetClusterIdleInstancesResponse res = GetClusterIdleInstancesResponse.builder()
             .instanceIds(instanceList)
@@ -273,28 +188,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private TaskExecutorsList getTaskExecutors(Predicate<Entry<TaskExecutorID, TaskExecutorState>> predicate) {
-        return
-            new TaskExecutorsList(
-                taskExecutorStateMap
-                    .entrySet()
-                    .stream()
-                    .filter(predicate)
-                    .map(Entry::getKey)
-                    .collect(Collectors.toList()));
+        return new TaskExecutorsList(this.executorStateManager.getTaskExecutors(predicate));
     }
 
     private void getActiveJobs(GetActiveJobsRequest req) {
-        List<String> pagedList = this.taskExecutorStateMap
-            .values()
-            .stream()
-            .map(TaskExecutorState::getWorkerId)
-            .filter(Objects::nonNull)
-            .map(WorkerId::getJobId)
-            .distinct()
-            .sorted((String::compareToIgnoreCase))
-            .skip(req.getStartingIndex().orElse(0))
-            .limit(req.getPageSize().orElse(3000))
-            .collect(Collectors.toList());
+        List<String> pagedList = this.executorStateManager.getActiveJobs(req);
 
         PagedActiveJobOverview res =
             new PagedActiveJobOverview(
@@ -308,14 +206,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onTaskExecutorInfoRequest(TaskExecutorInfoRequest request) {
         if (request.getTaskExecutorID() != null) {
-            sender().tell(taskExecutorStateMap.get(request.getTaskExecutorID()).getRegistration(), self());
+            sender().tell(this.executorStateManager.get(request.getTaskExecutorID()).getRegistration(), self());
         } else {
             Optional<TaskExecutorRegistration> taskExecutorRegistration =
-                taskExecutorStateMap
-                    .values()
-                    .stream()
-                    .filter(state -> state.getRegistration() != null && state.getRegistration().getHostname().equals(request.getHostName()))
-                    .findFirst()
+                this.executorStateManager
+                    .findFirst(
+                        kv -> kv.getValue().getRegistration() != null &&
+                            kv.getValue().getRegistration().getHostname().equals(request.getHostName()))
+                    .map(Entry::getValue)
                     .map(TaskExecutorState::getRegistration);
             if (taskExecutorRegistration.isPresent()) {
                 sender().tell(taskExecutorRegistration.get(), self());
@@ -327,12 +225,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onAssignedTaskExecutorRequest(GetAssignedTaskExecutorRequest request) {
         Optional<TaskExecutorID> matchedTaskExecutor =
-            taskExecutorStateMap
-                .entrySet()
-                .stream()
-                .filter(e -> e.getValue().isRunningOrAssigned(request.getWorkerId()))
-                .map(e -> e.getKey())
-                .findFirst();
+            this.executorStateManager.findFirst(
+                e -> e.getValue().isRunningOrAssigned(request.getWorkerId())).map(Entry::getKey);
 
         if (matchedTaskExecutor.isPresent()) {
             sender().tell(matchedTaskExecutor.get(), self());
@@ -343,7 +237,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorGatewayRequest(TaskExecutorGatewayRequest request) {
-        TaskExecutorState state = taskExecutorStateMap.get(request.getTaskExecutorID());
+        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
         if (state == null) {
             sender().tell(new Exception(), self());
         } else {
@@ -402,10 +296,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
             } else {
                 // go and mark all task executors that match the filter as disabled
-                taskExecutorStateMap.forEach((taskExecutorId, taskExecutorState) -> {
-                    if (request.covers(taskExecutorState.getRegistration())) {
-                        if (taskExecutorState.onNodeDisabled()) {
-                            log.info("Marking task executor {} as disabled", taskExecutorId);
+                this.executorStateManager.getActiveExecutorEntry().forEach(idAndState -> {
+                    if (request.covers(idAndState.getValue().getRegistration())) {
+                        if (idAndState.getValue().onNodeDisabled()) {
+                            log.info("Marking task executor {} as disabled", idAndState.getKey());
                         }
                     }
                 });
@@ -427,10 +321,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private Map<TaskExecutorID, WorkerId> getTaskExecutorWorkerMapping(Map<String, String> attributes) {
         final Map<TaskExecutorID, WorkerId> result = new HashMap<>();
-        taskExecutorStateMap.forEach((taskExecutorID, taskExecutorState) -> {
-            if (taskExecutorState.getRegistration() != null && taskExecutorState.getRegistration().containsAttributes(attributes)) {
-                if (taskExecutorState.isRunningTask()) {
-                    result.put(taskExecutorID, taskExecutorState.getWorkerId());
+        this.executorStateManager.getActiveExecutorEntry().forEach(idAndState -> {
+            if (idAndState.getValue().getRegistration() != null && idAndState.getValue().getRegistration().containsAttributes(attributes)) {
+                if (idAndState.getValue().isRunningTask()) {
+                    result.put(idAndState.getKey(), idAndState.getValue().getWorkerId());
                 }
             }
         });
@@ -463,12 +357,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         log.info("Request for registering on resource cluster {}: {}.", this, registration);
         try {
             final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
-            final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             boolean stateChange = state.onRegistration(registration);
             mantisJobStore.storeNewTaskExecutor(registration);
             if (stateChange) {
                 if (state.isAvailable()) {
-                    taskExecutorsReadyToPerformWork.add(taskExecutorID);
+                    this.executorStateManager.markAvailable(taskExecutorID);
                 }
                 // check if the task executor has been marked as 'Disabled'
                 for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
@@ -490,11 +384,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
-            final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange) {
                 if (state.isAvailable()) {
-                    taskExecutorsReadyToPerformWork.add(taskExecutorID);
+                    this.executorStateManager.markAvailable(taskExecutorID);
                 }
             }
 
@@ -509,13 +403,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         setupTaskExecutorStateIfNecessary(statusChange.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = statusChange.getTaskExecutorID();
-            final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             boolean stateChange = state.onTaskExecutorStatusChange(statusChange);
             if (stateChange) {
                 if (state.isAvailable()) {
-                    taskExecutorsReadyToPerformWork.add(taskExecutorID);
+                    this.executorStateManager.markAvailable(taskExecutorID);
                 } else {
-                    taskExecutorsReadyToPerformWork.remove(taskExecutorID);
+                    this.executorStateManager.markUnavailable(taskExecutorID);
                 }
             }
 
@@ -527,14 +421,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorAssignmentRequest(TaskExecutorAssignmentRequest request) {
-        Optional<Entry<TaskExecutorID, TaskExecutorState>> matchedExecutor =
-            taskExecutorStateMap
-                .entrySet()
-                .stream()
-                .filter(entry -> (entry.getValue().isAvailable() &&
-                    entry.getValue().getRegistration().getMachineDefinition()
-                        .canFit(request.getMachineDefinition())))
-                .findAny();
+        Optional<Pair<TaskExecutorID, TaskExecutorState>> matchedExecutor =
+            this.executorStateManager.findBestFit(request);
 
         if (matchedExecutor.isPresent()) {
             log.info("matched executor {} for request {}", matchedExecutor.get().getKey(), request);
@@ -555,13 +443,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
         try {
-            TaskExecutorState state = taskExecutorStateMap.get(request.getTaskExecutorID());
+            TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
             if (state.isRunningTask()) {
                 log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
             } else {
                 boolean stateChange = state.onUnassignment();
                 if (stateChange) {
-                    taskExecutorsReadyToPerformWork.add(request.getTaskExecutorID());
+                    this.executorStateManager.markAvailable(request.getTaskExecutorID());
                 }
             }
         } catch (IllegalStateException e) {
@@ -574,17 +462,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private ResourceOverview getResourceOverview() {
-        long numRegistered = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isRegistered).count();
-        long numAvailable = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isAvailable).count();
-        long numOccupied = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isRunningTask).count();
-        long numAssigned = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isAssigned).count();
-        long numDisabled = taskExecutorStateMap.values().stream().filter(TaskExecutorState::isDisabled).count();
-
-        return new ResourceOverview(numRegistered, numAvailable, numOccupied, numAssigned, numDisabled);
+        return this.executorStateManager.getResourceOverview();
     }
 
     private TaskExecutorStatus getTaskExecutorStatus(TaskExecutorID taskExecutorID) {
-        final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+        final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         if (state == null) {
             log.warn("Unknown executorID: {}", taskExecutorID);
             return null;
@@ -611,10 +493,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void disconnectTaskExecutor(TaskExecutorID taskExecutorID) {
-        final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+        final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         boolean stateChange = state.onDisconnection();
         if (stateChange) {
-            taskExecutorsReadyToPerformWork.remove(taskExecutorID);
+            this.executorStateManager.archive(taskExecutorID);
             getTimers().cancel(getHeartbeatTimerFor(taskExecutorID));
         }
     }
@@ -628,7 +510,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
             final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
-            final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             if (state.getLastActivity().compareTo(timeout.getLastActivity()) <= 0) {
                 log.info("Disconnecting task executor {}", timeout.getTaskExecutorID());
                 disconnectTaskExecutor(timeout.getTaskExecutorID());
@@ -640,11 +522,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void setupTaskExecutorStateIfNecessary(TaskExecutorID taskExecutorID) {
-        taskExecutorStateMap.putIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
+        this.executorStateManager
+            .putIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
     }
 
     private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {
-        final TaskExecutorState state = taskExecutorStateMap.get(taskExecutorID);
+        final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         getTimers().startSingleTimer(
             getHeartbeatTimerFor(taskExecutorID),
             new HeartbeatTimeout(taskExecutorID, state.getLastActivity()),
@@ -905,222 +788,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } else {
                 return throwInvalidTransition(report);
             }
-        }
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    @AllArgsConstructor
-    static class TaskExecutorState {
-
-        enum RegistrationState {
-            Registered,
-            Unregistered,
-        }
-
-        private RegistrationState state;
-        @Nullable
-        private TaskExecutorRegistration registration;
-
-        @Nullable
-        private CompletableFuture<TaskExecutorGateway> gateway;
-
-        // availabilityState being null here represents that we don't know about the actual state of the task executor
-        // and are waiting for more information
-        @Nullable
-        private AvailabilityState availabilityState;
-        private boolean disabled;
-        // last interaction initiated by the task executor
-        private Instant lastActivity;
-        private final Clock clock;
-        private final RpcService rpcService;
-        private final JobMessageRouter jobMessageRouter;
-
-        static TaskExecutorState of(Clock clock, RpcService rpcService, JobMessageRouter jobMessageRouter) {
-            return new TaskExecutorState(
-                RegistrationState.Unregistered,
-                null,
-                null,
-                null,
-                false,
-                clock.instant(),
-                clock,
-                rpcService,
-                jobMessageRouter);
-        }
-
-        boolean isRegistered() {
-            return state == RegistrationState.Registered;
-        }
-
-        boolean isDisconnected() {
-            return !isRegistered();
-        }
-
-        boolean isDisabled() {
-            return disabled;
-        }
-
-        boolean onRegistration(TaskExecutorRegistration registration) {
-            if (state == RegistrationState.Registered) {
-                return false;
-            } else {
-                this.state = RegistrationState.Registered;
-                this.registration = registration;
-                this.gateway =
-                    rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
-                        .whenComplete((gateway, throwable) -> {
-                            if (throwable != null) {
-                                log.error("Failed to connect to the gateway", throwable);
-                            }
-                        });
-                updateTicker();
-                return true;
-            }
-        }
-
-        boolean onDisconnection() {
-            if (state == RegistrationState.Unregistered) {
-                return false;
-            } else {
-                state = RegistrationState.Unregistered;
-                registration = null;
-                setAvailabilityState(null);
-                gateway = null;
-                updateTicker();
-                return true;
-            }
-        }
-
-        private static AvailabilityState from(TaskExecutorReport report) {
-            if (report instanceof Available) {
-                return AvailabilityState.pending();
-            } else if (report instanceof Occupied) {
-                return AvailabilityState.running(((Occupied) report).getWorkerId());
-            } else {
-                throw new RuntimeException(String.format("TaskExecutorReport=%s was unexpected", report));
-            }
-        }
-
-        boolean onAssignment(WorkerId workerId) throws IllegalStateException {
-            if (!isRegistered()) {
-                throwNotRegistered(String.format("assignment to %s", workerId));
-            }
-
-            if (this.availabilityState == null) {
-                throw new IllegalStateException("availability state was null when unassignmentas was issued");
-            }
-
-            return setAvailabilityState(this.availabilityState.onAssignment(workerId));
-        }
-
-        boolean onUnassignment() throws IllegalStateException {
-            if (this.availabilityState == null) {
-                throw new IllegalStateException("availability state was null when unassignment was issued");
-            }
-
-            return setAvailabilityState(this.availabilityState.onUnassignment());
-        }
-
-        boolean onNodeDisabled() {
-            if (!this.disabled) {
-                this.disabled = true;
-                if (this.availabilityState instanceof Running) {
-                    jobMessageRouter.routeWorkerEvent(new WorkerOnDisabledVM(this.availabilityState.getWorkerId()));
-                }
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        boolean onHeartbeat(TaskExecutorHeartbeat heartbeat) throws IllegalStateException {
-            if (!isRegistered()) {
-                throwNotRegistered(String.format("heartbeat %s", heartbeat));
-            }
-
-            boolean result = handleStatusChange(heartbeat.getTaskExecutorReport());
-            updateTicker();
-            return result;
-        }
-
-        boolean onTaskExecutorStatusChange(TaskExecutorStatusChange statusChange) {
-            if (!isRegistered()) {
-                throwNotRegistered(String.format("status change %s", statusChange));
-            }
-
-            boolean result = handleStatusChange(statusChange.getTaskExecutorReport());
-            updateTicker();
-            return result;
-        }
-
-        private boolean handleStatusChange(TaskExecutorReport report) throws IllegalStateException {
-            if (availabilityState == null) {
-                return setAvailabilityState(from(report));
-            } else {
-                return setAvailabilityState(availabilityState.onTaskExecutorStatusChange(report));
-            }
-        }
-
-        private boolean setAvailabilityState(AvailabilityState newState) {
-            if (this.availabilityState != newState) {
-                this.availabilityState = newState;
-                if (this.availabilityState instanceof Running) {
-                    if (isDisabled()) {
-                        jobMessageRouter.routeWorkerEvent(new WorkerOnDisabledVM(newState.getWorkerId()));
-                    }
-                }
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        @Nullable
-        private WorkerId getWorkerId() {
-            if (this.availabilityState != null) {
-                return this.availabilityState.getWorkerId();
-            } else {
-                return null;
-            }
-        }
-
-        private void throwNotRegistered(String message) throws IllegalStateException {
-            throw new IllegalStateException(
-                String.format("Task Executor un-registered when it received %s", message));
-        }
-
-        private void updateTicker() {
-            this.lastActivity = clock.instant();
-        }
-
-        boolean isAvailable() {
-            return this.availabilityState instanceof Pending && !isDisabled();
-        }
-
-        boolean isRunningTask() {
-            return this.availabilityState instanceof Running;
-        }
-
-        boolean isAssigned() {
-            return this.availabilityState instanceof Assigned;
-        }
-
-        boolean isRunningOrAssigned(WorkerId workerId) {
-            return this.getWorkerId() != null && this.getWorkerId().equals(workerId);
-        }
-
-        // Captures the last interaction from the task executor. Any interactions
-        // that are caused from within the server do not cause an uptick.
-        Instant getLastActivity() {
-            return this.lastActivity;
-        }
-
-        TaskExecutorRegistration getRegistration() {
-            return this.registration;
-        }
-
-        private CompletableFuture<TaskExecutorGateway> getGateway() {
-            return this.gateway;
         }
     }
 }
