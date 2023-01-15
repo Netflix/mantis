@@ -112,7 +112,6 @@ public class AgentClustersRouteTest extends RouteTestBase {
 
     @BeforeClass
     public static void setup() throws InterruptedException {
-        TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
         t = new Thread(() -> {
             try {
@@ -130,7 +129,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
                                 new MantisJobStore(storageProvider, STORE_SETTINGS),
                                 lifecycleEventPublisher,
                                 JOB_SETTINGS,
-                                JOB_CLUSTER_SETTINGS),
+                                JOB_CLUSTER_SETTINGS,
+                                TestHelpers.CONSTRAINTS_EVALUATORS),
                         "jobClustersManager");
 
 

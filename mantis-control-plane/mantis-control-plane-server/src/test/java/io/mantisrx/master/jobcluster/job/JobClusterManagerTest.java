@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import static com.netflix.mantis.master.scheduler.TestHelpers.CONSTRAINTS_EVALUATORS;
 import static io.mantisrx.master.jobcluster.JobClusterTest.DEFAULT_JOB_OWNER;
 import static io.mantisrx.master.jobcluster.JobClusterTest.NO_OP_SLA;
 import static io.mantisrx.master.jobcluster.JobClusterTest.TWO_WORKER_SCHED_INFO;
@@ -42,7 +43,6 @@ import static org.mockito.Mockito.when;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Label;
@@ -164,9 +164,6 @@ public class JobClusterManagerTest {
         system = ActorSystem.create(
                 "JobClusterManagerTest",
                 config.withFallback(ConfigFactory.load()));
-
-
-        TestHelpers.setupMasterConfig();
     }
 
     @Before
@@ -179,7 +176,8 @@ public class JobClusterManagerTest {
             jobStoreMock,
             eventPublisher,
             JOB_SETTINGS,
-            JOB_CLUSTER_SETTINGS));
+            JOB_CLUSTER_SETTINGS,
+            CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), ActorRef.noSender());
@@ -322,7 +320,8 @@ public class JobClusterManagerTest {
                 jobStoreSpied,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 true), probe.getRef());
@@ -343,7 +342,8 @@ public class JobClusterManagerTest {
                 jobStore,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
@@ -398,7 +398,8 @@ public class JobClusterManagerTest {
                 jobStoreSpied,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 true), probe.getRef());
@@ -426,7 +427,8 @@ public class JobClusterManagerTest {
                 jobStoreSpied,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 false), probe.getRef());
@@ -532,7 +534,8 @@ public class JobClusterManagerTest {
                 jobStoreSpied,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
@@ -679,7 +682,8 @@ public class JobClusterManagerTest {
                 jobStoreSpied,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 false), probe.getRef());
@@ -757,7 +761,8 @@ public class JobClusterManagerTest {
                 jobStoreSpied,
                 eventPublisher,
                 JOB_SETTINGS,
-                JOB_CLUSTER_SETTINGS));
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,

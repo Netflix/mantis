@@ -33,7 +33,6 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
 import io.mantisrx.master.jobcluster.job.JobSettings;
@@ -119,7 +118,6 @@ public class LeaderRedirectionRouteTest {
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
 
-                TestHelpers.setupMasterConfig();
                 final MasterDescriptionRoute app = new MasterDescriptionRoute(fakeMasterDesc, JOB_SETTINGS);
                 final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, contender, () -> isReady);
 

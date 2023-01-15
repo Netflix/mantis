@@ -24,7 +24,6 @@ import com.netflix.fenzo.plugins.BalancedHostAttrConstraint;
 import com.netflix.fenzo.plugins.ExclusiveHostConstraint;
 import com.netflix.fenzo.plugins.UniqueHostAttrConstraint;
 import io.mantisrx.runtime.JobConstraints;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.mesos.MesosSettings;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -38,9 +37,20 @@ public class ConstraintsEvaluators {
     private static final String MANTISAGENT_MAIN_M5 = "mantisagent-main-m5";
     private static final int EXPECTED_NUM_ZONES = 3;
     private static final Logger logger = LoggerFactory.getLogger(ConstraintsEvaluators.class);
-    public static ExclusiveHostConstraint exclusiveHostConstraint = new ExclusiveHostConstraint();
+    private static final ExclusiveHostConstraint exclusiveHostConstraint = new ExclusiveHostConstraint();
+    private final String asgAttributeName;
+    private final String zoneAttributeName;
 
-    public static ConstraintEvaluator hardConstraint(JobConstraints constraint, final Set<String> coTasks) {
+    public ConstraintsEvaluators(MesosSettings mesosSettings) {
+        this(mesosSettings.getSchedulerActiveVmGroupAttributeName(), mesosSettings.getSchedulerBalancedHostAttrName());
+    }
+
+    public ConstraintsEvaluators(String asgAttributeName, String zoneAttributeName) {
+        this.asgAttributeName = asgAttributeName;
+        this.zoneAttributeName = zoneAttributeName;
+    }
+
+    public ConstraintEvaluator hardConstraint(JobConstraints constraint, final Set<String> coTasks) {
         switch (constraint) {
         case ExclusiveHost:
             return exclusiveHostConstraint;
@@ -70,21 +80,15 @@ public class ConstraintsEvaluators {
         }
     }
 
-    public static String asgAttributeName() {
-        return
-            MesosSettings
-                .fromConfig(ConfigurationProvider.getTypeSafeConfig())
-                .getSchedulerActiveVmGroupAttributeName();
+    private String asgAttributeName() {
+        return asgAttributeName;
     }
 
-    public static String zoneAttributeName() {
-        return
-            MesosSettings
-                .fromConfig(ConfigurationProvider.getTypeSafeConfig())
-                .getSchedulerBalancedHostAttrName();
+    private String zoneAttributeName() {
+        return zoneAttributeName;
     }
 
-    public static VMTaskFitnessCalculator softConstraint(JobConstraints constraint, final Set<String> coTasks) {
+    public VMTaskFitnessCalculator softConstraint(JobConstraints constraint, final Set<String> coTasks) {
         switch (constraint) {
         case ExclusiveHost:
             return AsSoftConstraint.get(exclusiveHostConstraint);

@@ -137,7 +137,6 @@ public class JobClusterRouteTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {
@@ -151,7 +150,7 @@ public class JobClusterRouteTest {
                 ActorRef jobClustersManagerActor =
                     system.actorOf(JobClustersManagerActor.props(
                         new MantisJobStore(
-                            new FileBasedPersistenceProvider(true), STORE_SETTINGS), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS),
+                            new FileBasedPersistenceProvider(true), STORE_SETTINGS), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS, TestHelpers.CONSTRAINTS_EVALUATORS),
                         "jobClustersManager");
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

@@ -106,13 +106,13 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
-                TestHelpers.setupMasterConfig();
                 ActorRef jobClustersManagerActor = system.actorOf(
                     JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(true), STORE_SETTINGS),
                         lifecycleEventPublisher,
                         JOB_SETTINGS,
-                        JOB_CLUSTER_SETTINGS),
+                        JOB_CLUSTER_SETTINGS,
+                        TestHelpers.CONSTRAINTS_EVALUATORS),
                     "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);

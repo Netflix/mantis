@@ -76,9 +76,6 @@ public class JobTestMigrationTests {
     @BeforeClass
     public static void setup() {
         system = ActorSystem.create();
-
-        TestHelpers.setupMasterConfig();
-
     }
 
     @AfterClass
@@ -113,7 +110,7 @@ public class JobTestMigrationTests {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, TestHelpers.CONSTRAINTS_EVALUATORS));
 
             jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
             JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);

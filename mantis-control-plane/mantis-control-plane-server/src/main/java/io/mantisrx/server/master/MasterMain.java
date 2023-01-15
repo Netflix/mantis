@@ -53,7 +53,6 @@ import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.scheduler.AgentsErrorMonitorActor;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
@@ -71,10 +70,6 @@ import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.client.ClientServices;
 import io.mantisrx.server.master.client.ClientServicesImpl;
-import io.mantisrx.server.master.config.ConfigurationFactory;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
-import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
 import io.mantisrx.server.master.mesos.MesosSettings;
 import io.mantisrx.server.master.mesos.VirtualMachineMasterServiceMesosImpl;
@@ -124,10 +119,9 @@ public class MasterMain implements Service {
     private KeyValueBasedPersistenceProvider storageProvider;
     private final CountDownLatch blockUntilShutdown = new CountDownLatch(1);
     private volatile AgentClusterOperationsImpl agentClusterOps = null;
-    private MasterConfiguration config;
     private SchedulingService schedulingService;
 
-    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber, Config typesafeConfig) {
+    public MasterMain(AuditEventSubscriber auditEventSubscriber, Config typesafeConfig) {
 
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
@@ -138,12 +132,12 @@ public class MasterMain implements Service {
             .build();
         Metrics m = MetricsRegistry.getInstance().registerAndGet(metrics);
         try {
-            ConfigurationProvider.initialize(configFactory);
-            this.config = ConfigurationProvider.getConfig();
 
             final ActorSystem system = ActorSystem.create("MantisMaster");
             // log the configuration of the actor system
             system.logConfiguration();
+
+            MesosSettings mesosSettings = MesosSettings.fromConfig(typesafeConfig);
 
 
             HighAvailabilityServices highAvailabilityServices =
@@ -197,7 +191,7 @@ public class MasterMain implements Service {
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider, storeSettings);
             final JobSettings jobSettings = JobSettings.fromConfig(typesafeConfig.getConfig("mantis.job"));
             final JobClusterSettings jobClusterSettings = JobClusterSettings.fromConfig(typesafeConfig.getConfig("mantis.jobCluster"));
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobSettings, jobClusterSettings), "JobClustersManager");
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, jobSettings, jobClusterSettings, new ConstraintsEvaluators(mesosSettings)), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff
@@ -208,7 +202,7 @@ public class MasterMain implements Service {
 
             final ActorRef resourceClustersHostActor = system.actorOf(
                 ResourceClustersHostManagerActor.props(
-                    new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
+                    MantisExtensionFactory.createObject(typesafeConfig.getConfig("mantis.resourceCluster.provider"), system),
                     resourceClusterStorageProvider),
                 "ResourceClusterHostActor");
 
@@ -220,7 +214,6 @@ public class MasterMain implements Service {
                 RpcUtils.createRemoteRpcService(rpcSystem, configuration, null, "6123", null, Optional.empty());
             final ResourceClusters resourceClusters =
                 ResourceClustersAkkaImpl.load(
-                    getConfig(),
                     typesafeConfig,
                     rpcService,
                     system,
@@ -231,13 +224,10 @@ public class MasterMain implements Service {
 
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
-
-            MesosSettings mesosSettings = MesosSettings.fromConfig(typesafeConfig);
             final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(mesosSettings, vmLeaseRescindedSubject,
                 jobMessageRouter,
                 workerRegistry);
             final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
-                this.config,
                 new String(leadershipManager.getContenderMetadata()),
                 mesosDriverSupplier,
                 ZookeeperSettings.fromConfig(typesafeConfig), mesosSettings);
@@ -245,7 +235,7 @@ public class MasterMain implements Service {
 
             final SchedulerSettings schedulerSettings = SchedulerSettings.fromConfig(typesafeConfig);
             final MantisSchedulerFactory mantisSchedulerFactory =
-                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(mesosSettings), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance(), schedulerSettings);
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(mesosSettings), jobMessageRouter, schedulingService, MetricsRegistry.getInstance(), schedulerSettings);
             mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
 
             // initialize agents error monitor
@@ -287,7 +277,8 @@ public class MasterMain implements Service {
                 schedulingService,
                 lifecycleEventPublisher,
                 leaderElectorService,
-                agentClusterOps));
+                agentClusterOps,
+                typesafeConfig));
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {
             logger.error("caught exception on Mantis Master initialization", e);
@@ -385,10 +376,9 @@ public class MasterMain implements Service {
         }
 
         try {
-            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(loadProperties(propFile));
             setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
-            MasterMain master = new MasterMain(factory, auditEventSubscriber, ConfigFactory.load());
+            MasterMain master = new MasterMain(auditEventSubscriber, ConfigFactory.load());
             master.start(); // blocks until shutdown hook (ctrl-c)
         } catch (Exception e) {
             // unexpected to get a RuntimeException, will exit
@@ -423,10 +413,6 @@ public class MasterMain implements Service {
             logger.info("Mantis Master shutdown done");
         } else
             logger.info("Shutdown already initiated, not starting again");
-    }
-
-    public MasterConfiguration getConfig() {
-        return config;
     }
 
     public AgentClusterOperationsImpl getAgentClusterOps() {

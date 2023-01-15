@@ -105,7 +105,6 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     @BeforeClass
     public static void setup() throws Exception {
-        TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
         stateDirectory = Files.createTempDirectory("test").toFile();
 
@@ -124,7 +123,8 @@ public class JobClustersRouteTest extends RouteTestBase {
                             new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true), STORE_SETTINGS),
                             lifecycleEventPublisher,
                             JOB_SETTINGS,
-                            JOB_CLUSTER_SETTINGS),
+                            JOB_CLUSTER_SETTINGS,
+                            TestHelpers.CONSTRAINTS_EVALUATORS),
                         "jobClustersManager");
                 MantisSchedulerFactory mantisSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);

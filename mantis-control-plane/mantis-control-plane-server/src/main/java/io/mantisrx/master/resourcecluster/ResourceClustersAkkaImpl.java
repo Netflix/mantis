@@ -21,7 +21,6 @@ import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
 import com.typesafe.config.Config;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -74,7 +73,6 @@ public class ResourceClustersAkkaImpl implements ResourceClusters {
     }
 
     public static ResourceClusters load(
-        MasterConfiguration masterConfiguration,
         Config config,
         RpcService rpcService,
         ActorSystem actorSystem,

@@ -29,6 +29,7 @@ import akka.http.javadsl.settings.WebSocketSettings;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.spectator.impl.Preconditions;
+import com.typesafe.config.Config;
 import io.mantisrx.master.api.akka.route.MantisMasterRoute;
 import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobArtifactRouteHandlerImpl;
@@ -64,7 +65,6 @@ import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -98,6 +98,7 @@ public class MasterApiAkkaService extends BaseService {
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
     private volatile boolean isReady = false;
+    private final Config config;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -110,7 +111,8 @@ public class MasterApiAkkaService extends BaseService {
                                 final MantisScheduler scheduler,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final LeaderElectorService leaderElectorService,
-                                final AgentClusterOperations agentClusterOperations) {
+                                final AgentClusterOperations agentClusterOperations,
+                                final Config config) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -147,12 +149,13 @@ public class MasterApiAkkaService extends BaseService {
                 logger.warn("caught exception starting API server", e);
             }
         });
+        this.config = config;
     }
 
 
     private MantisMasterRoute configureApiRoutes(final ActorSystem actorSystem, final AgentClusterOperations agentClusterOperations) {
-        final ApiSettings apiSettings = ApiSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
-        final JobSettings jobSettings = JobSettings.fromConfig(ConfigurationProvider.getTypeSafeConfig());
+        final ApiSettings apiSettings = ApiSettings.fromConfig(config);
+        final JobSettings jobSettings = JobSettings.fromConfig(config);
         // Setup API routes
         final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);
         final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, apiSettings);

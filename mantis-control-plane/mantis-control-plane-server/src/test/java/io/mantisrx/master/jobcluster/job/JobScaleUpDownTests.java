@@ -45,7 +45,6 @@ import static org.mockito.Mockito.verify;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
@@ -93,8 +92,6 @@ public class JobScaleUpDownTests {
 	@BeforeClass
 	public static void setup() {
 		system = ActorSystem.create();
-		TestHelpers.setupMasterConfig();
-
 	}
 
 	@AfterClass

@@ -31,7 +31,6 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.jobcluster.job.JobSettings;
@@ -99,7 +98,6 @@ public class MasterDescriptionRouteTest {
             .fromConfig(ConfigFactory.load("reference").getConfig("mantis.jobDefinition"));
 
     static {
-        TestHelpers.setupMasterConfig();
         masterDescRoute = new MasterDescriptionRoute(fakeMasterDesc, JOB_SETTINGS);
     }
 

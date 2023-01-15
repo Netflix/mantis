@@ -30,7 +30,6 @@ import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.testkit.JUnitRouteTest;
 import akka.http.javadsl.testkit.TestRoute;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerPorts;
@@ -59,7 +58,6 @@ import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceC
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.runtime.MachineDefinition;
@@ -79,7 +77,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -98,9 +95,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         new InMemoryOnlyResourceClusterStorageProvider();
 
     private final ActorRef resourceClustersHostManagerActorWithNoopAdapter = system.actorOf(
-        ResourceClustersHostManagerActor.props(
-            new ResourceClusterProviderAdapter(NoopResourceClusterProvider.class.getCanonicalName(), system),
-            resourceClusterStorageProvider),
+        ResourceClustersHostManagerActor.props(new NoopResourceClusterProvider(), resourceClusterStorageProvider),
         "jobClustersManagerNoop");
 
     private final ActorRef resourceClustersHostManagerActorWithTestAdapter = system.actorOf(
@@ -120,11 +115,6 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private final TestRoute testRoute =
         testRoute(new ResourceClustersNonLeaderRedirectRoute(resourceClusters, resourceClusterRouteHandlerWithTestAdapter, system, API_SETTINGS)
             .createRoute(route -> route));
-
-    @BeforeClass
-    public static void init() {
-        TestHelpers.setupMasterConfig();
-    }
 
     @Test
     public void testGetTaskExecutorState() {

@@ -51,6 +51,7 @@ public class MesosSettings {
     AgentSettings agentSettings;
 
     public static MesosSettings fromConfig(Config config) {
+        config = config.getConfig("mesos");
         return MesosSettings.builder()
             .masterLocation(config.getString("masterLocation"))
             .schedulerDriverInitTimeout(config.getDuration("schedulerDriver.initTimeout"))

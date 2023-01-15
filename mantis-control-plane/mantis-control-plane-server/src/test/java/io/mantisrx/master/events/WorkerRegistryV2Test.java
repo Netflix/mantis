@@ -28,7 +28,6 @@ import static org.mockito.Mockito.mock;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
@@ -69,15 +68,8 @@ public class WorkerRegistryV2Test {
 
     @BeforeClass
     public static void setup() {
-
         system = ActorSystem.create();
         probe = new TestKit(system);
-
-//        JobTestHelper.createDirsIfRequired();
-        TestHelpers.setupMasterConfig();
-//        storageProvider = new MantisStorageProviderAdapter(new io.mantisrx.server.master.store.SimpleCachedFileStorageProvider(), eventPublisher);
-//        jobStore = new MantisJobStore(storageProvider);
-
     }
 
     @AfterClass

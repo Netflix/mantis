@@ -144,6 +144,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
     private final JobSettings jobSettings;
+    private final ConstraintsEvaluators constraintsEvaluators;
 
     /**
      * Used by the JobCluster Actor to create this Job Actor.
@@ -162,9 +163,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
             final LifecycleEventPublisher eventPublisher,
-            final JobSettings jobSettings) {
+            final JobSettings jobSettings,
+            final ConstraintsEvaluators constraintsEvaluators) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher, jobSettings);
+                mantisScheduler, eventPublisher, jobSettings, constraintsEvaluators);
     }
 
     /**
@@ -176,11 +178,16 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param scheduler
      * @param eventPublisher
      * @param jobSettings
+     * @param constraintsEvaluators
      */
     public JobActor(
-        final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
-        MantisJobStore jobStore, final MantisScheduler scheduler,
-        final LifecycleEventPublisher eventPublisher, JobSettings jobSettings) {
+        final IJobClusterDefinition jobClusterDefinition,
+        final MantisJobMetadataImpl jobMetadata,
+        final MantisJobStore jobStore,
+        final MantisScheduler scheduler,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        final ConstraintsEvaluators constraintsEvaluators) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -190,6 +197,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
         this.jobSettings = jobSettings;
+        this.constraintsEvaluators = constraintsEvaluators;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -1589,13 +1597,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 if (stageHC != null && !stageHC.isEmpty()) {
                     for (JobConstraints c : stageHC) {
-                        hardConstraints.add(ConstraintsEvaluators.hardConstraint(c, coTasks));
+                        hardConstraints.add(constraintsEvaluators.hardConstraint(c, coTasks));
                     }
                 }
 
                 if (stageSC != null && !stageSC.isEmpty()) {
                     for (JobConstraints c : stageSC) {
-                        softConstraints.add(ConstraintsEvaluators.softConstraint(c, coTasks));
+                        softConstraints.add(constraintsEvaluators.softConstraint(c, coTasks));
                     }
                 }
 

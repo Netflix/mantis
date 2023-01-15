@@ -100,6 +100,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.server.core.JobCompletedReason;
+import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
@@ -137,13 +138,15 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
+    private final ConstraintsEvaluators constraintsEvaluators;
 
     public static Props props(
         final MantisJobStore jobStore,
         final LifecycleEventPublisher eventPublisher,
         final JobSettings jobSettings,
-        final JobClusterSettings jobClusterSettings) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, jobSettings, jobClusterSettings)
+        final JobClusterSettings jobClusterSettings,
+        final ConstraintsEvaluators constraintsEvaluators) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, jobSettings, jobClusterSettings, constraintsEvaluators)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -160,7 +163,9 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         final MantisJobStore store,
         final LifecycleEventPublisher eventPublisher,
         final JobSettings jobSettings,
-        final JobClusterSettings jobClusterSettings) {
+        final JobClusterSettings jobClusterSettings,
+        final ConstraintsEvaluators constraintsEvaluators) {
+        this.constraintsEvaluators = constraintsEvaluators;
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
 
@@ -844,7 +849,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 }
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, jobSettings, jobClusterSettings),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, jobSettings, jobClusterSettings, constraintsEvaluators),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 

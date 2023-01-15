@@ -193,8 +193,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     public static Props props(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory mantisSchedulerFactory,
                               final LifecycleEventPublisher eventPublisher, final JobSettings jobSettings,
-                              final JobClusterSettings jobClusterSettings) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, jobSettings, jobClusterSettings);
+                              final JobClusterSettings jobClusterSettings,
+                              final ConstraintsEvaluators constraintsEvaluators) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, jobSettings, jobClusterSettings, constraintsEvaluators);
     }
 
     private Receive initializedBehavior;
@@ -215,6 +216,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
     private final JobSettings jobSettings;
     private final JobClusterSettings jobClusterSettings;
+    private final ConstraintsEvaluators constraintsEvaluators;
 
 
     public JobClusterActor(
@@ -223,14 +225,16 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         final MantisSchedulerFactory schedulerFactory,
         final LifecycleEventPublisher eventPublisher,
         final JobSettings jobSettings,
-        JobClusterSettings jobClusterSettings) {
+        JobClusterSettings jobClusterSettings,
+        ConstraintsEvaluators constraintsEvaluators) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
         this.jobClusterSettings = jobClusterSettings;
+        this.constraintsEvaluators = constraintsEvaluators;
 
-        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, jobSettings, jobClusterSettings);
+        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, jobSettings, jobClusterSettings, constraintsEvaluators);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
 
@@ -1657,7 +1661,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(softConstraints != null) {
 
             for (JobConstraints jc : softConstraints) {
-                if (ConstraintsEvaluators.softConstraint(jc, new HashSet<>()) == null) {
+                if (constraintsEvaluators.softConstraint(jc, new HashSet<>()) == null) {
                     logger.error("Invalid Soft Job Constraint {}", jc);
                     throw new InvalidJobRequest(null, "Unknown constraint " + jc);
 
@@ -1668,7 +1672,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         if(hardConstraints != null ) {
             for (JobConstraints jc : hardConstraints) {
-                if (ConstraintsEvaluators.hardConstraint(jc, new HashSet<>()) == null) {
+                if (constraintsEvaluators.hardConstraint(jc, new HashSet<>()) == null) {
                     logger.error("Invalid Hard Job Constraint {}", jc);
                     throw new InvalidJobRequest(null, "Unknown constraint " + jc);
 
@@ -2555,7 +2559,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         private final LabelCache labelCache = new LabelCache();
         private final JobSettings jobSettings;
         private final JobClusterSettings jobClusterSettings;
-
+        private final ConstraintsEvaluators constraintsEvaluators;
 
         JobManager(
             String clusterName,
@@ -2564,7 +2568,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             LifecycleEventPublisher publisher,
             MantisJobStore jobStore,
             JobSettings jobSettings,
-            JobClusterSettings jobClusterSettings) {
+            JobClusterSettings jobClusterSettings,
+            ConstraintsEvaluators constraintsEvaluators) {
             this.name = clusterName;
             this.jobStore = jobStore;
             this.context = context;
@@ -2573,6 +2578,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             this.jobClusterSettings = jobClusterSettings;
             this.completedJobsCache = new CompletedJobCache(name, labelCache, jobClusterSettings);
             this.jobSettings = jobSettings;
+            this.constraintsEvaluators = constraintsEvaluators;
         }
 
         /**
@@ -2647,7 +2653,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
-                    jobMeta, jobStore, scheduler1, publisher, jobSettings), "JobActor-" + jobMeta.getJobId().getId());
+                    jobMeta, jobStore, scheduler1, publisher, jobSettings, constraintsEvaluators), "JobActor-" + jobMeta.getJobId().getId());
 
 
             context.watch(jobActor);

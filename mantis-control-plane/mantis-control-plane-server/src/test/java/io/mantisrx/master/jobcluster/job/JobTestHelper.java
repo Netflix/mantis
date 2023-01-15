@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -322,7 +323,8 @@ public class JobTestHelper {
             .withNextWorkerNumToUse(1)
             .withJobDefinition(jobDefn)
             .build();
-        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher, JOB_SETTINGS));
+        final ActorRef jobActor = system.actorOf(JobActor.props(
+            jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher, JOB_SETTINGS, TestHelpers.CONSTRAINTS_EVALUATORS));
 
 
         jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());

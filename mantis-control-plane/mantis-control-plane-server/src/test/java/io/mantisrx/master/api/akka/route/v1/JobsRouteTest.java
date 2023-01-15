@@ -132,7 +132,6 @@ public class JobsRouteTest extends RouteTestBase {
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
-        TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
 
         t = new Thread(() -> {
@@ -148,7 +147,8 @@ public class JobsRouteTest extends RouteTestBase {
                         new MantisJobStore(new FileBasedPersistenceProvider(true), STORE_SETTINGS),
                         lifecycleEventPublisher,
                         JOB_SETTINGS,
-                        JOB_CLUSTER_SETTINGS),
+                        JOB_CLUSTER_SETTINGS,
+                        TestHelpers.CONSTRAINTS_EVALUATORS),
                     "jobClustersManager");
 
                 IMantisPersistenceProvider simpleCachedFileStorageProvider = new FileBasedPersistenceProvider(new FileBasedStore());

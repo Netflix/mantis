@@ -29,7 +29,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.LaunchTaskException;
 import io.mantisrx.server.master.VirtualMachineMasterService;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import java.io.IOException;
@@ -66,18 +65,15 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     private final MesosDriverSupplier mesosDriver;
     private final AtomicBoolean initializationDone = new AtomicBoolean(false);
     private final int workerJvmMemoryScaleBackPct;
-    private final MasterConfiguration masterConfig;
     private final ZookeeperSettings zkSettings;
     private final MesosSettings mesosSettings;
     private ExecutorService executor;
     private final JsonSerializer jsonSerializer = new JsonSerializer();
 
     public VirtualMachineMasterServiceMesosImpl(
-        final MasterConfiguration masterConfig,
         final String masterDescriptionJson,
         final MesosDriverSupplier mesosSchedulerDriverSupplier, ZookeeperSettings zkSettings, MesosSettings mesosSettings) {
         super(true);
-        this.masterConfig = masterConfig;
         this.masterDescriptionJson = masterDescriptionJson;
         this.mesosDriver = mesosSchedulerDriverSupplier;
         this.zkSettings = zkSettings;

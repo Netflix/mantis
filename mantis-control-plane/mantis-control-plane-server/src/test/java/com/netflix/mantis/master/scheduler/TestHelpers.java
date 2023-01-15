@@ -29,8 +29,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
+import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.mesos.VirtualMachineLeaseMesosImpl;
@@ -41,6 +40,9 @@ import java.util.Properties;
 import org.apache.mesos.Protos;
 
 public class TestHelpers {
+
+    public static final ConstraintsEvaluators CONSTRAINTS_EVALUATORS =
+        new ConstraintsEvaluators("NETFLIX_AUTO_SCALE_GROUP", "AWSZone");
     public static VirtualMachineLeaseMesosImpl createMockLease(final String id,
                                                                final String hostname,
                                                                final String vmId,
@@ -146,8 +148,6 @@ public class TestHelpers {
         props.setProperty("mesos.lease.offer.expiry.secs", "1");
         props.setProperty("mantis.master.stage.assignment.refresh.interval.ms","-1");
         props.setProperty("mantis.master.api.cache.ttl.milliseconds","0");
-
-        ConfigurationProvider.initialize(new StaticPropertiesConfigurationFactory(props));
     }
 
 //    public static MantisSchedulerFenzoImpl createMantisScheduler(final VMResourceManager vmResourceManager,

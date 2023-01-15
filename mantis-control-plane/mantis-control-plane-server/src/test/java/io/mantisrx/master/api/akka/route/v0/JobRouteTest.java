@@ -203,7 +203,6 @@ public class JobRouteTest {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
-        TestHelpers.setupMasterConfig();
 
         t = new Thread(() -> {
             try {
@@ -225,7 +224,8 @@ public class JobRouteTest {
                         new MantisJobStore(new FileBasedPersistenceProvider(true), STORE_SETTINGS),
                         lifecycleEventPublisher,
                         JOB_SETTINGS,
-                        JOB_CLUSTER_SETTINGS),
+                        JOB_CLUSTER_SETTINGS,
+                        TestHelpers.CONSTRAINTS_EVALUATORS),
                     "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
