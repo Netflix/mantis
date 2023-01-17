@@ -23,7 +23,6 @@ import static org.mockito.Mockito.mock;
 
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.util.DelegateClock;
-import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorState;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
