@@ -50,6 +50,9 @@ ext.libraries = [
         asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
         commonsIo      : "commons-io:commons-io:2.11.0",
         commonsLang3   : 'org.apache.commons:commons-lang3:3.5',
+        oldConfig      : "org.skife.config:config-magic:0.11",
+        cli            : "com.github.spullara.cli-parser:cli-parser:1.1.1",
+        config         : "com.typesafe:config:1.4.2",
         flinkCore      : "org.apache.flink:flink-core:${versions.flink}",
         flinkRpcApi    : [
                 "org.apache.flink:flink-rpc-core:${versions.flink}",
@@ -63,6 +66,7 @@ ext.libraries = [
         ],
         hadoopCommon   : "org.apache.hadoop:hadoop-common:${versions.hadoop}",
         hadoopS3       : "org.apache.hadoop:hadoop-aws:${versions.hadoop}",
+        jsr            : "com.google.code.findbugs:jsr305:3.0.2",
         junitJupiter   : [
                 "org.junit.jupiter:junit-jupiter-api:${versions.junit5}",
                 "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",

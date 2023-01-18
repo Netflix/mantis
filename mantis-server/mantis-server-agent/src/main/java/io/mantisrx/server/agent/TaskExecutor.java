@@ -31,7 +31,7 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.ClientServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
@@ -90,7 +90,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Getter
     private final ClusterID clusterID;
     private final WorkerConfiguration workerConfiguration;
-    private final HighAvailabilityServices highAvailabilityServices;
+    private final ClientServices highAvailabilityServices;
     private final ClassLoaderHandle classLoaderHandle;
     private final SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory;
     private final TaskExecutorRegistration taskExecutorRegistration;
@@ -116,7 +116,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
-        HighAvailabilityServices highAvailabilityServices,
+        ClientServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory) {
         this(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
@@ -126,7 +126,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public TaskExecutor(
         RpcService rpcService,
         WorkerConfiguration workerConfiguration,
-        HighAvailabilityServices highAvailabilityServices,
+        ClientServices highAvailabilityServices,
         ClassLoaderHandle classLoaderHandle,
         SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
         @Nullable TaskFactory taskFactory) {

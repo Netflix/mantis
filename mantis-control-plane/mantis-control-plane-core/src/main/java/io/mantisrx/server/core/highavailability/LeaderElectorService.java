@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.utils;
+package io.mantisrx.server.core.highavailability;
 
-public class MantisUserClock implements MantisClock {
+import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
+import java.util.concurrent.Executor;
 
-    private volatile long currentTime = 0l;
+public interface LeaderElectorService extends Service {
 
-    @Override
-    public long now() {
-        return currentTime;
-    }
+    void setContender(Contender contender);
 
-    public void setNow(final long timestamp) {
-        currentTime = timestamp;
-    }
+    Contender getContender();
 
-    public void advanceTime(final long delta) {
-        currentTime += delta;
+    interface Contender {
+        void onLeader();
+
+        void onNotLeader();
+
+        byte[] getContenderMetadata();
+
+        Executor getExecutor();
+
+        boolean hasLeadership();
     }
 }

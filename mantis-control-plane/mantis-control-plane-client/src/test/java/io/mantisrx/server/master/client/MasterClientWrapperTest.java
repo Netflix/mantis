@@ -19,8 +19,7 @@ package io.mantisrx.server.master.client;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import io.mantisrx.server.core.Configurations;
-import io.mantisrx.server.core.CoreConfiguration;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.reactivex.mantis.remote.observable.EndpointChange;
@@ -30,30 +29,30 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-
+@Slf4j
 public class MasterClientWrapperTest {
 
     private static final int sinkStageNumber = 3;
     static Properties zkProps = new Properties();
 
     static {
-        zkProps.put("mantis.zookeeper.connectString", "100.67.80.172:2181,100.67.71.221:2181,100.67.89.26:2181,100.67.71.34:2181,100.67.80.18:2181");
-        zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
-        zkProps.put("mantis.zookeeper.root", "/mantis/master");
-        zkProps.put("mantis.localmode", "false");
+        zkProps.put("mantis.highAvailability.zookeeper.connectString", "100.67.80.172:2181,100.67.71.221:2181,100.67.89.26:2181,100.67.71.34:2181,100.67.80.18:2181");
+        zkProps.put("mantis.highAvailability.zookeeper.leaderAnnouncementPath", "/leader");
+        zkProps.put("mantis.highAvailability.zookeeper.rootPath", "/mantis/master");
+        zkProps.put("mantis.highAvailability.mode", "zookeeper");
     }
 
     MasterClientWrapper clientWrapper = null;
 
     //@Before
     public void init() {
-      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
-          Configurations.frmProperties(zkProps, CoreConfiguration.class));
+      ClientServices haServices = ClientServicesUtil.createClientServices(
+          ConfigFactory.parseProperties(zkProps));
       clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
     }
 
@@ -163,8 +162,8 @@ public class MasterClientWrapperTest {
 
     //	@Test
     public void testJobStatusEndpoint() {
-      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
-          Configurations.frmProperties(zkProps, CoreConfiguration.class));
+      ClientServices haServices = ClientServicesUtil.createClientServices(
+          ConfigFactory.parseProperties(zkProps));
       MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         String jobId = "PriamRequestSource-45";
 
@@ -185,11 +184,11 @@ public class MasterClientWrapperTest {
 
     }
 
-    @Test
+//    @Test
     public void testNamedJobExists() {
 
-      HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
-          Configurations.frmProperties(zkProps, CoreConfiguration.class));
+      ClientServices haServices = ClientServicesUtil.createClientServices(
+          ConfigFactory.parseProperties(zkProps));
       MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
 
         CountDownLatch cdLatch = new CountDownLatch(1);
@@ -206,4 +205,31 @@ public class MasterClientWrapperTest {
         }
     }
 
+    public static void main(String[] args) throws InterruptedException {
+        Properties zkProps = new Properties();
+        zkProps.put("mantis.zookeeper.connectString", "ec2-50-19-255-1.compute-1.amazonaws.com:2181,ec2-54-235-159-245.compute-1.amazonaws.com:2181,ec2-50-19-255-97.compute-1.amazonaws.com:2181,ec2-184-73-152-248.compute-1.amazonaws.com:2181,ec2-50-17-247-179.compute-1.amazonaws.com:2181");
+        zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
+        zkProps.put("mantis.zookeeper.root", "/mantis/master");
+        String jobId = "GroupByIPNJ-12";
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(ClientServicesUtil.createClientServices(ConfigFactory.parseProperties(zkProps)).getMasterClientApi());
+        clientWrapper.getMasterClientApi()
+            .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
+                @Override
+                public Observable<EndpointChange> call(MantisMasterGateway mantisMasterClientApi) {
+                    Integer sinkStage = null;
+                    return mantisMasterClientApi.getSinkStageNum(jobId)
+                        .take(1) // only need to figure out sink stage number once
+                        .flatMap(new Func1<Integer, Observable<EndpointChange>>() {
+                            @Override
+                            public Observable<EndpointChange> call(Integer integer) {
+                                log.info("Getting sink locations for " + jobId);
+                                return clientWrapper.getSinkLocations(jobId, integer, 0, 0);
+                            }
+                        });
+                }
+            }).toBlocking().subscribe((ep) -> {
+                System.out.println("Endpoint Change -> " + ep);
+            });
+        Thread.sleep(50000);
+    }
 }

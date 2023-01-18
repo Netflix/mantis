@@ -22,7 +22,6 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
@@ -58,6 +57,7 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(MesosSchedulerCallbackHandler.class);
     private final Action1<List<VirtualMachineLease>> addVMLeaseAction;
+    private final MesosSettings mesosSettings;
     private final WorkerRegistry workerRegistry;
     private final Gauge lastOfferReceivedMillis;
     private final Gauge lastValidOfferReceiveMillis;
@@ -75,11 +75,13 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
     private long reconciliationTrial = 0;
 
     public MesosSchedulerCallbackHandler(
-            final Action1<List<VirtualMachineLease>> addVMLeaseAction,
-            final Observer<String> vmLeaseRescindedObserver,
-            final JobMessageRouter jobMessageRouter,
-            final WorkerRegistry workerRegistry) {
+        final Action1<List<VirtualMachineLease>> addVMLeaseAction,
+        MesosSettings mesosSettings,
+        final Observer<String> vmLeaseRescindedObserver,
+        final JobMessageRouter jobMessageRouter,
+        final WorkerRegistry workerRegistry) {
         this.addVMLeaseAction = Preconditions.checkNotNull(addVMLeaseAction);
+        this.mesosSettings = mesosSettings;
         this.vmLeaseRescindedObserver = vmLeaseRescindedObserver;
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
@@ -147,8 +149,8 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
             //                numInvalidOffers.increment();
             //                continue;
             //            }
-            if (ConfigurationProvider.getConfig().getUseSlaveFiltering()) {
-                String attrName = ConfigurationProvider.getConfig().getSlaveFilterAttributeName();
+            if (mesosSettings.isSchedulerSlaveFilteringEnabled()) {
+                String attrName = mesosSettings.getSchedulerSlaveFilteringAttrName();
                 String attrValue = null;
                 if (offer.getAttributesCount() > 0) {
                     for (Protos.Attribute attribute : offer.getAttributesList()) {
@@ -196,15 +198,6 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
     //            logger.info("Filtering slave with no attributes: " + offer.getHostname());
     //        return false;
     //    }
-
-    private boolean isIn(String value, List<String> list) {
-        if (value == null || value.isEmpty() || list == null || list.isEmpty())
-            return false;
-        for (String s : list)
-            if (value.equals(s))
-                return true;
-        return false;
-    }
 
     @Override
     public void disconnected(SchedulerDriver arg0) {
@@ -261,7 +254,7 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
             public void run() {
                 reconcileTasks(driver);
             }
-        }, 30, ConfigurationProvider.getConfig().getMesosTaskReconciliationIntervalSecs(), TimeUnit.SECONDS);
+        }, 30, mesosSettings.getReconcilerInterval().getSeconds(), TimeUnit.SECONDS);
     }
 
     private void reconcileTasks(final SchedulerDriver driver) {

@@ -36,10 +36,9 @@ import akka.japi.JavaPartialFunction;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.vm.AgentClusterOperations;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -71,12 +70,14 @@ public class AgentClusterRoute extends BaseRoute {
     private final Counter listAgentClustersCount;
 
 
-    public AgentClusterRoute(final AgentClusterOperations agentClusterOperations, final ActorSystem actorSystem) {
+    public AgentClusterRoute(
+        final AgentClusterOperations agentClusterOperations,
+        final ActorSystem actorSystem,
+        ApiSettings apiSettings) {
         Preconditions.checkNotNull(agentClusterOperations, "agentClusterOperations");
         this.agentClusterOps = agentClusterOperations;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-                config.getApiCacheTtlMilliseconds());
+        this.cache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+                apiSettings.getCacheTtl());
 
         Metrics m = new Metrics.Builder()
             .id("V0AgentClusterRoute")

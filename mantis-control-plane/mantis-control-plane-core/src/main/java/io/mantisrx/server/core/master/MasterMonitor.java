@@ -16,16 +16,17 @@
 
 package io.mantisrx.server.core.master;
 
+import java.io.Closeable;
 import javax.annotation.Nullable;
 import rx.Observable;
 
 
-public interface MasterMonitor {
+public interface MasterMonitor extends Closeable {
 
     Observable<MasterDescription> getMasterObservable();
 
     /**
-     * Returns the latest master if there's one. If there has been no master in recently history,
+     * Returns the latest master if there's one. If there has been no master in recent history,
      * then this return null.
      *
      * @return Latest description of the master

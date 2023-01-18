@@ -26,10 +26,9 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.WorkerTopologyInfo;
 import io.mantisrx.server.core.domain.JobMetadata;
 import io.mantisrx.server.core.domain.WorkerId;
+import io.mantisrx.server.core.zookeeper.ZookeeperSettings;
 import io.mantisrx.server.master.LaunchTaskException;
 import io.mantisrx.server.master.VirtualMachineMasterService;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import java.io.IOException;
@@ -65,19 +64,20 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     private final String masterDescriptionJson;
     private final MesosDriverSupplier mesosDriver;
     private final AtomicBoolean initializationDone = new AtomicBoolean(false);
-    private volatile int workerJvmMemoryScaleBackPct;
-    private MasterConfiguration masterConfig;
+    private final int workerJvmMemoryScaleBackPct;
+    private final ZookeeperSettings zkSettings;
+    private final MesosSettings mesosSettings;
     private ExecutorService executor;
     private final JsonSerializer jsonSerializer = new JsonSerializer();
 
     public VirtualMachineMasterServiceMesosImpl(
-            final MasterConfiguration masterConfig,
-            final String masterDescriptionJson,
-            final MesosDriverSupplier mesosSchedulerDriverSupplier) {
+        final String masterDescriptionJson,
+        final MesosDriverSupplier mesosSchedulerDriverSupplier, ZookeeperSettings zkSettings, MesosSettings mesosSettings) {
         super(true);
-        this.masterConfig = masterConfig;
         this.masterDescriptionJson = masterDescriptionJson;
         this.mesosDriver = mesosSchedulerDriverSupplier;
+        this.zkSettings = zkSettings;
+        this.mesosSettings = mesosSettings;
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -86,7 +86,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                 return t;
             }
         });
-        workerJvmMemoryScaleBackPct = Math.min(99, ConfigurationProvider.getConfig().getWorkerJvmMemoryScaleBackPercentage());
+        workerJvmMemoryScaleBackPct = Math.min(99, mesosSettings.getWorkerJvmMemoryScaleBackPercent());
     }
 
     // NOTE: All leases are for the same agent.
@@ -350,17 +350,17 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("mantis.zookeeper.connectString")
-                                .setValue(masterConfig.getZkConnectionString())
+                                .setValue(zkSettings.getConnectString())
                 )
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("mantis.zookeeper.root")
-                                .setValue(masterConfig.getZkRoot())
+                                .setValue(zkSettings.getRootPath())
                 )
                 .addVariables(
                         Protos.Environment.Variable.newBuilder()
                                 .setName("mantis.zookeeper.leader.announcement.path")
-                                .setValue(masterConfig.getLeaderAnnouncementPath())
+                                .setValue(zkSettings.getLeaderAnnouncementPath())
                 )
 
                 .addVariables(
@@ -443,11 +443,11 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     public String getMesosMasterHostAndPort() {
-        return masterConfig.getMasterLocation();
+        return mesosSettings.getMasterLocation();
     }
 
     public String getWorkerInstallDir() {
-        return masterConfig.getWorkerInstallDir();
+        return mesosSettings.getWorkerInstallDir();
     }
 
     public String getWorkerLibDir() {
@@ -455,15 +455,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
     }
 
     private String getWorkerExecutorScript() {
-        return masterConfig.getWorkerExecutorScript();
-    }
-
-    private boolean getUseSlaveFiltering() {
-        return masterConfig.getUseSlaveFiltering();
-    }
-
-    private String getSlaveFilterAttributeName() {
-        return masterConfig.getSlaveFilterAttributeName();
+        return mesosSettings.getWorkerExecutorScript();
     }
 
     public String getWorkerBinDir() {
@@ -474,20 +466,12 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
         return Paths.get(getWorkerBinDir(), getWorkerExecutorScript()).toString();
     }
 
-    public String getMantisFrameworkName() {
-        return masterConfig.getMantisFrameworkName();
-    }
-
     public String getWorkerExecutorName() {
-        return masterConfig.getWorkerExecutorName();
+        return mesosSettings.getWorkerExecutorName();
     }
 
     public long getTimeoutSecsToReportStart() {
-        return masterConfig.getTimeoutSecondsToReportStart();
-    }
-
-    private double getMesosFailoverTimeoutSecs() {
-        return masterConfig.getMesosFailoverTimeOutSecs();
+        return mesosSettings.getWorkerTimeoutToReportStart().getSeconds();
     }
 
 }

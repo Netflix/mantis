@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.utils;
+package io.mantisrx.common.metrics;
 
-public interface MantisClock {
+import com.typesafe.config.Config;
 
-    /**
-     * @return the difference, measured in milliseconds, between
-     * the current time and midnight, January 1, 1970 UTC.
-     */
-    long now();
+public interface MetricsPublisherFactory {
+    MetricsPublisher createMetricsPublisher(Config config);
 }

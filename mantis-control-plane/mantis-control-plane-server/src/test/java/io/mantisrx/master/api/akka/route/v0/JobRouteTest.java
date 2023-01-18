@@ -43,7 +43,9 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.payloads.JobPayloads;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -72,6 +74,8 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
@@ -82,15 +86,16 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
+import io.mantisrx.server.core.highavailability.LeaderElectorService.Contender;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import io.mantisrx.server.master.http.api.CompactJobInfo;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
@@ -174,13 +179,30 @@ public class JobRouteTest {
 
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobRoutes");
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
+    private static final ApiSettings API_SETTINGS =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
+
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
-        TestHelpers.setupMasterConfig();
 
         t = new Thread(() -> {
             try {
@@ -197,9 +219,14 @@ public class JobRouteTest {
                         new WorkerEventSubscriberLoggingImpl());
 
                 IMantisPersistenceProvider mantisStorageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), lifecycleEventPublisher);
-                ActorRef jobClustersManagerActor = system.actorOf(JobClustersManagerActor.props(
-                        new MantisJobStore(new FileBasedPersistenceProvider(
-                                true)), lifecycleEventPublisher), "jobClustersManager");
+                ActorRef jobClustersManagerActor = system.actorOf(
+                    JobClustersManagerActor.props(
+                        new MantisJobStore(new FileBasedPersistenceProvider(true), STORE_SETTINGS),
+                        lifecycleEventPublisher,
+                        JOB_SETTINGS,
+                        JOB_CLUSTER_SETTINGS,
+                        TestHelpers.CONSTRAINTS_EVALUATORS),
+                    "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
@@ -209,10 +236,10 @@ public class JobRouteTest {
                         false), ActorRef.noSender());
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, API_SETTINGS);
                 final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(mantisStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, API_SETTINGS);
 
                 MasterDescription masterDescription = new MasterDescription(
                         "127.0.0.1",
@@ -230,25 +257,29 @@ public class JobRouteTest {
 
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(
                         jobClustersManagerActor,
-                        idleTimeout);
+                    API_SETTINGS, idleTimeout);
                 final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(
-                        masterDescription);
-                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, system);
+                        masterDescription, JOB_SETTINGS);
+                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, JOB_SETTINGS, system, API_SETTINGS);
 
                 final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(
                         jobDiscoveryRouteHandler);
                 final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(
+                        API_SETTINGS,
+                        JOB_SETTINGS,
                         jobClusterRouteHandler,
                         jobRouteHandler,
                         system);
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
-                        jobClusterRouteHandler, system);
+                        jobClusterRouteHandler, system, API_SETTINGS);
                 final JobsRoute v1JobsRoute = new JobsRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                        system);
+                        JOB_SETTINGS,
+                        system,
+                        API_SETTINGS);
                 final JobArtifactsRoute v1JobArtifactsRoute = new JobArtifactsRoute(jobArtifactRouteHandler);
-                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription);
+                final AdminMasterRoute v1AdminMasterRoute = new AdminMasterRoute(masterDescription, JOB_SETTINGS);
 
                 final JobStatusRouteHandler jobStatusRouteHandler = mock(JobStatusRouteHandler.class);
                 when(jobStatusRouteHandler.jobStatus(anyString())).thenReturn(Flow.create());
@@ -256,7 +287,7 @@ public class JobRouteTest {
                 final AgentClusterOperations mockAgentClusterOps = mock(AgentClusterOperations.class);
                 final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(
                         mockAgentClusterOps,
-                        system);
+                        system, API_SETTINGS);
                 final AgentClustersRoute v1AgentClusterRoute = new AgentClustersRoute(
                         mockAgentClusterOps);
                 final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
@@ -265,12 +296,12 @@ public class JobRouteTest {
                 final ResourceClusters resourceClusters = mock(ResourceClusters.class);
 
                 LocalMasterMonitor localMasterMonitor = new LocalMasterMonitor(masterDescription);
-                LeadershipManagerLocalImpl leadershipMgr = new LeadershipManagerLocalImpl(
-                        masterDescription);
-                leadershipMgr.setLeaderReady();
+                Contender contender = mock(Contender.class);
+                when(contender.hasLeadership()).thenReturn(true);
                 LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(
                         localMasterMonitor,
-                        leadershipMgr);
+                        contender,
+                        () -> true);
                 final MantisMasterRoute app = new MantisMasterRoute(
                         system,
                         leaderRedirectionFilter,
@@ -289,7 +320,8 @@ public class JobRouteTest {
                         v1LastSubmittedJobIdStreamRoute,
                         v1JobStatusStreamRoute,
                         resourceClusters,
-                        mock(ResourceClusterRouteHandler.class));
+                        mock(ResourceClusterRouteHandler.class),
+                        API_SETTINGS);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute()
                                                                               .flow(system, materializer);

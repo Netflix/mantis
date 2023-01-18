@@ -16,9 +16,10 @@
 
 package io.mantisrx.server.master.agentdeploy;
 
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.server.master.utils.MantisSystemClock;
+import java.time.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,20 +28,21 @@ public class MigrationStrategyFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(MigrationStrategyFactory.class);
 
-    public static MigrationStrategy getStrategy(final String jobId, final WorkerMigrationConfig config) {
+    public static MigrationStrategy getStrategy(final String jobId, final WorkerMigrationConfig config, JobSettings jobSettings) {
         switch (config.getStrategy()) {
         case PERCENTAGE:
-            return new PercentageMigrationStrategy(MantisSystemClock.INSTANCE, jobId, config);
+            return new PercentageMigrationStrategy(Clock.systemDefaultZone(), jobId, config, jobSettings);
 
         case ONE_WORKER:
-            return new OneWorkerPerTickMigrationStrategy(MantisSystemClock.INSTANCE, jobId, config);
+            return new OneWorkerPerTickMigrationStrategy(Clock.systemDefaultZone(), jobId, config, jobSettings);
 
         default:
             logger.error("unknown strategy type {} in config {}, using default strategy to migrate 25 percent every 1 min", config.getStrategy(), config);
-            return new PercentageMigrationStrategy(MantisSystemClock.INSTANCE, jobId,
-                    new WorkerMigrationConfig(
-                            WorkerMigrationConfig.MigrationStrategyEnum.PERCENTAGE,
-                            "{\"percentToMove\":25,\"intervalMs\":60000}"));
+            return new PercentageMigrationStrategy(Clock.systemDefaultZone(), jobId,
+                new WorkerMigrationConfig(
+                    WorkerMigrationConfig.MigrationStrategyEnum.PERCENTAGE,
+                    "{\"percentToMove\":25,\"intervalMs\":60000}"),
+                jobSettings);
         }
     }
 }

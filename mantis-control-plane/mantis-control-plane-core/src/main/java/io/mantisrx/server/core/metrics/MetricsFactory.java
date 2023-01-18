@@ -15,7 +15,6 @@
  */
 package io.mantisrx.server.core.metrics;
 
-import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.stats.MetricStringConstants;
 import java.util.HashMap;
@@ -29,19 +28,14 @@ public class MetricsFactory {
    * @param request request for which the metrics need to be published
    * @return MetricsServerService server
    */
-  public static MetricsServerService newMetricsServer(CoreConfiguration configuration, ExecuteStageRequest request) {
+  public static MetricsServerService newMetricsServer(ExecuteStageRequest request) {
 
     // todo(sundaram): get rid of the dependency on the metrics port defined at the ExecuteStageRequest level
     // because that's a configuration of the task manager rather than the request.
     return new MetricsServerService(request.getMetricsPort(), 1, getCommonTags(request));
   }
 
-  public static MetricsPublisherService newMetricsPublisher(CoreConfiguration config, ExecuteStageRequest request) {
-    return new MetricsPublisherService(config.getMetricsPublisher(),
-        config.getMetricsPublisherFrequencyInSeconds(), getCommonTags(request));
-  }
-
-  public static Map<String, String> getCommonTags(ExecuteStageRequest request) {
+    public static Map<String, String> getCommonTags(ExecuteStageRequest request) {
     // provide common tags to metrics publishing service
     Map<String, String> commonTags = new HashMap<>();
     commonTags.put(MetricStringConstants.MANTIS_WORKER_NUM, Integer.toString(request.getWorkerNumber()));

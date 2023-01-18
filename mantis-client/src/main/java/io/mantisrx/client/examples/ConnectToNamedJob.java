@@ -18,16 +18,15 @@ package io.mantisrx.client.examples;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.client.SinkConnectionsStatus;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.server.core.Configurations;
-import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.ClientServices;
+import io.mantisrx.server.master.client.ClientServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import java.io.FileInputStream;
@@ -78,8 +77,9 @@ public class ConnectToNamedJob {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
-            Configurations.frmProperties(properties, CoreConfiguration.class));
+        // todo(sundaram): Fix this
+        ClientServices haServices = ClientServicesUtil.createClientServices(
+            ConfigFactory.parseProperties(properties));
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
                 .doOnNext(new Action1<MantisMasterGateway>() {

@@ -53,8 +53,6 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
 import io.mantisrx.server.master.agentdeploy.MigrationStrategyFactory;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobDefinition;
@@ -145,6 +143,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final LifecycleEventPublisher eventPublisher;
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
+    private final JobSettings jobSettings;
+    private final ConstraintsEvaluators constraintsEvaluators;
 
     /**
      * Used by the JobCluster Actor to create this Job Actor.
@@ -162,9 +162,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobMetadataImpl jobMetadata,
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
-            final LifecycleEventPublisher eventPublisher) {
+            final LifecycleEventPublisher eventPublisher,
+            final JobSettings jobSettings,
+            final ConstraintsEvaluators constraintsEvaluators) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher);
+                mantisScheduler, eventPublisher, jobSettings, constraintsEvaluators);
     }
 
     /**
@@ -175,11 +177,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param jobStore
      * @param scheduler
      * @param eventPublisher
+     * @param jobSettings
+     * @param constraintsEvaluators
      */
     public JobActor(
-            final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
-            MantisJobStore jobStore, final MantisScheduler scheduler,
-            final LifecycleEventPublisher eventPublisher) {
+        final IJobClusterDefinition jobClusterDefinition,
+        final MantisJobMetadataImpl jobMetadata,
+        final MantisJobStore jobStore,
+        final MantisScheduler scheduler,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        final ConstraintsEvaluators constraintsEvaluators) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -188,6 +196,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.mantisScheduler = scheduler;
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
+        this.jobSettings = jobSettings;
+        this.constraintsEvaluators = constraintsEvaluators;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -256,17 +266,17 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
                 this.mantisScheduler, isSubmit);
 
-        long checkAgainInSeconds = ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
-        long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
-                .getStageAssignmentRefreshIntervalMs();
+        Duration checkAgainInSeconds = jobSettings.getWorkerHeartbeatInterval();
+        Duration refreshInterval = jobSettings.getStageAssignmentsPeriodicRefreshInterval();
+        boolean refreshStageAssignmentsPeriodically = jobSettings.isStageAssignmentsPeriodicRefreshEnabled();
         getTimers().startPeriodicTimer(CHECK_HB_TIMER_KEY, new JobProto.CheckHeartBeat(),
-                Duration.ofSeconds(checkAgainInSeconds));
+                checkAgainInSeconds);
         // -1 indicates disabled, which means all updates will be sent immediately
-        if (refreshStageAssignementsDurationMs > 0) {
+        if (refreshStageAssignmentsPeriodically) {
             getTimers().startPeriodicTimer(
                     REFRESH_SEND_STAGE_ASSIGNEMNTS_KEY,
                     new JobProto.SendWorkerAssignementsIfChanged(),
-                    Duration.ofMillis(refreshStageAssignementsDurationMs));
+                    refreshInterval);
         }
         mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
         LOGGER.info("Job {} initialized", this.jobId);
@@ -297,18 +307,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     private MachineDefinition getJobMasterMachineDef() {
-        MasterConfiguration config = ConfigurationProvider.getConfig();
-
-        if (config != null) {
-            return new MachineDefinition(
-                    config.getJobMasterCores(), config.getJobMasterMemoryMB(), config.getJobMasterNetworkMbps(),
-                    config.getJobMasterDiskMB(), 1
-            );
-        } else {
-            return new MachineDefinition(
-                    DEFAULT_JOB_MASTER_CORES, DEFAULT_JOB_MASTER_MEM, DEFAULT_JOB_MASTER_NW,
-                    DEFAULT_JOB_MASTER_DISK, 1);
-        }
+        return jobSettings.getJobMasterMachineDefinition();
     }
 
     @Override
@@ -1169,14 +1168,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param mjmd
      * @return
      */
-    static long getSubscriptionTimeoutSecs(final IMantisJobMetadata mjmd) {
+    private long getSubscriptionTimeoutSecs(final IMantisJobMetadata mjmd) {
         // if perpetual job there is no subscription timeout
         if (mjmd.getJobDefinition().getJobSla().getDurationType() == MantisJobDurationType.Perpetual) {
             return 0;
         }
-        return mjmd.getSubscriptionTimeoutSecs() == 0
-                ? ConfigurationProvider.getConfig().getEphemeralJobUnsubscribedTimeoutSecs()
-                : mjmd.getSubscriptionTimeoutSecs();
+        return (mjmd.getSubscriptionTimeoutSecs() == 0)
+            ? jobSettings.getDefaultSubscriptionTimeout().getSeconds()
+            : mjmd.getSubscriptionTimeoutSecs();
     }
 
     /**
@@ -1277,7 +1276,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         private Map<Integer, WorkerAssignments> stageAssignments = new HashMap<>();
         private BehaviorSubject<JobSchedulingInfo> jobSchedulingInfoBehaviorSubject;
         private String currentJobSchedulingInfoStr = null;
-        private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter();
+        private final WorkerResubmitRateLimiter resubmitRateLimiter = new WorkerResubmitRateLimiter(jobSettings);
         // Use expiring cache to effectively track worker resubmitted in the last hour.
         private Cache<Integer, Boolean> recentErrorWorkersCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(1, TimeUnit.HOURS)
@@ -1302,7 +1301,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     : jobMgr.getJobDetails().getNextWorkerNumberToUse(), WorkerNumberGenerator.DEFAULT_INCREMENT_STEP);
             this.scheduler = scheduler;
             this.jobMgr = jobMgr;
-            migrationStrategy = MigrationStrategyFactory.getStrategy(jobId.getId(), migrationConfig);
+            migrationStrategy = MigrationStrategyFactory.getStrategy(jobId.getId(), migrationConfig, jobSettings);
             int noOfStages = mantisJobMetaData.getStageMetadata().size();
             if (noOfStages == 1) {
                 sinkStageNum = 1;
@@ -1459,8 +1458,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void markStageAssignmentsChanged(boolean forceRefresh) {
             this.stageAssignmentPotentiallyChanged = true;
-            long refreshInterval = ConfigurationProvider.getConfig().getStageAssignmentRefreshIntervalMs();
-            if (refreshInterval == -1 || forceRefresh) {
+            if (forceRefresh || !jobSettings.isStageAssignmentsPeriodicRefreshEnabled()) {
                 refreshStageAssignmentsAndPush();
             }
         }
@@ -1599,13 +1597,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 if (stageHC != null && !stageHC.isEmpty()) {
                     for (JobConstraints c : stageHC) {
-                        hardConstraints.add(ConstraintsEvaluators.hardConstraint(c, coTasks));
+                        hardConstraints.add(constraintsEvaluators.hardConstraint(c, coTasks));
                     }
                 }
 
                 if (stageSC != null && !stageSC.isEmpty()) {
                     for (JobConstraints c : stageSC) {
-                        softConstraints.add(ConstraintsEvaluators.softConstraint(c, coTasks));
+                        softConstraints.add(constraintsEvaluators.softConstraint(c, coTasks));
                     }
                 }
 
@@ -1870,10 +1868,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         public void checkHeartBeats(Instant currentTime) {
             LOGGER.trace("In WorkerManager::checkHeartBeats");
             //// heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
-            long missedHeartBeatToleranceSecs = (long) (1.5 * ConfigurationProvider.getConfig().getWorkerTimeoutSecs());
+            long missedHeartBeatToleranceSecs = (long) (1.5 * jobSettings.getWorkerHeartbeatInterval().getSeconds());
             // Allow more time for workers to start
             long stuckInSubmitToleranceSecs =
-                missedHeartBeatToleranceSecs + ConfigurationProvider.getConfig().getWorkerInitTimeoutSecs();
+                missedHeartBeatToleranceSecs + jobSettings.getWorkerInitTimeout().getSeconds();
 
             List<JobWorker> workersToResubmit = Lists.newArrayList();
             // expire worker resubmit entries
@@ -1913,7 +1911,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                             workerMeta.getLastHeartbeatAt().get(),
                                             currentTime).getSeconds(), missedHeartBeatToleranceSecs);
 
-                            if (ConfigurationProvider.getConfig().isHeartbeatTerminationEnabled()) {
+                            if (jobSettings.isWorkerHeartbeatTerminationEnabled()) {
                                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,
                                         "heartbeat too old, resubmitting worker", workerMeta.getStageNum(),
                                         workerMeta.getWorkerId(), workerMeta.getState()));
@@ -2203,8 +2201,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
 
             IMantisWorkerMetadata oldWorkerMetadata = oldWorker.getMetadata();
-            if (recentErrorWorkersCache.size()
-                    < ConfigurationProvider.getConfig().getMaximumResubmissionsPerWorker()) {
+            if (recentErrorWorkersCache.size() < jobSettings.getWorkerMaxResubmits()) {
 
                 Integer stageNo = workerToStageMap.get(oldWorkerMetadata.getWorkerId().getWorkerNum());
                 if (stageNo == null) {
@@ -2270,7 +2267,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         public int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason) {
             LOGGER.info("Scaling stage {} to {} workers", stageMetaData.getStageNum(), numWorkers);
             final int oldNumWorkers = stageMetaData.getNumWorkers();
-            int max = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
+            int max = jobSettings.getMaxWorkersPerStage();
             int min = 0;
             if (stageMetaData.getScalingPolicy() != null) {
                 max = stageMetaData.getScalingPolicy().getMax();

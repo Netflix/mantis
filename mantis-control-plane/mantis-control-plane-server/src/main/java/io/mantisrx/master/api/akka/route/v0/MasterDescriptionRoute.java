@@ -23,12 +23,11 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.ExceptionHandler;
 import akka.http.javadsl.server.Route;
 import io.mantisrx.master.api.akka.route.Jackson;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.server.core.master.MasterDescription;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -51,6 +50,8 @@ public class MasterDescriptionRoute extends BaseRoute {
     private final MasterDescription masterDesc;
     private String masterDescStr;
     private final List<Configlet> configs = new ArrayList<>();
+
+    private final JobSettings jobSettings;
 
     public static class Configlet {
         private final String name;
@@ -122,8 +123,9 @@ public class MasterDescriptionRoute extends BaseRoute {
     }
 
 
-    public MasterDescriptionRoute(final MasterDescription masterDescription) {
+    public MasterDescriptionRoute(final MasterDescription masterDescription, JobSettings jobSettings) {
         this.masterDesc = masterDescription;
+        this.jobSettings = jobSettings;
 
         try {
             this.masterDescStr = mapper.writeValueAsString(masterDesc);
@@ -135,11 +137,10 @@ public class MasterDescriptionRoute extends BaseRoute {
             configs.add(new Configlet(JobConstraints.class.getSimpleName(), mapper.writeValueAsString(JobConstraints.values())));
             configs.add(new Configlet(StageScalingPolicy.ScalingReason.class.getSimpleName(), mapper.writeValueAsString(StageScalingPolicy.ScalingReason.values())));
             configs.add(new Configlet(WorkerMigrationConfig.MigrationStrategyEnum.class.getSimpleName(), mapper.writeValueAsString(WorkerMigrationConfig.MigrationStrategyEnum.values())));
-            MasterConfiguration config = ConfigurationProvider.getConfig();
-            int maxCpuCores = config.getWorkerMachineDefinitionMaxCpuCores();
-            int maxMemoryMB = config.getWorkerMachineDefinitionMaxMemoryMB();
-            int maxNetworkMbps = config.getWorkerMachineDefinitionMaxNetworkMbps();
-            configs.add(new Configlet(WorkerResourceLimits.class.getSimpleName(), mapper.writeValueAsString(new WorkerResourceLimits(maxCpuCores, maxMemoryMB, maxNetworkMbps))));
+            double maxCpuCores = jobSettings.getWorkerMaxMachineDefinition().getCpuCores();
+            double maxMemoryMB = jobSettings.getWorkerMaxMachineDefinition().getMemoryMB();
+            double maxNetworkMbps = jobSettings.getWorkerMaxMachineDefinition().getNetworkMbps();
+            configs.add(new Configlet(WorkerResourceLimits.class.getSimpleName(), mapper.writeValueAsString(new WorkerResourceLimits((int) maxCpuCores, (int) maxMemoryMB, (int) maxNetworkMbps))));
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }

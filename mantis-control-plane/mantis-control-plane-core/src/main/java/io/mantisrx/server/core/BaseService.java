@@ -16,13 +16,15 @@
 
 package io.mantisrx.server.core;
 
+import java.io.Closeable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Action0;
 
-
+@Slf4j
 public abstract class BaseService implements Service {
 
     private static AtomicInteger SERVICES_COUNTER = new AtomicInteger(0);
@@ -153,7 +155,7 @@ public abstract class BaseService implements Service {
         }
     }
 
-    public static BaseService wrap(io.mantisrx.shaded.com.google.common.util.concurrent.Service service) {
+    public static BaseService wrapLeaderAwareService(io.mantisrx.shaded.com.google.common.util.concurrent.Service service) {
         return new BaseService() {
             @Override
             public void start() {
@@ -170,6 +172,43 @@ public abstract class BaseService implements Service {
             public void shutdown() {
                 service.stopAsync().awaitTerminated();
                 super.shutdown();
+            }
+        };
+    }
+
+    public static BaseService wrapAlwaysActiveService(io.mantisrx.shaded.com.google.common.util.concurrent.Service service) {
+        return new BaseService() {
+            @Override
+            public void start() {
+                service.startAsync().awaitRunning();
+            }
+
+            @Override
+            public void enterActiveMode() {
+            }
+
+            @Override
+            public void shutdown() {
+                service.stopAsync().awaitTerminated();
+                super.shutdown();
+            }
+        };
+    }
+
+    public static BaseService wrapCloseable(Closeable closeable) {
+        return new BaseService() {
+            @Override
+            public void start() {
+
+            }
+
+            @Override
+            public void shutdown() {
+                try {
+                    closeable.close();
+                } catch (Exception e) {
+                    log.error("Failed to close fully", e);
+                }
             }
         };
     }

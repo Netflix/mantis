@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import static com.netflix.mantis.master.scheduler.TestHelpers.CONSTRAINTS_EVALUATORS;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SERVER_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
@@ -33,7 +34,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.testkit.javadsl.TestKit;
-import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.events.*;
 import io.mantisrx.master.jobcluster.job.JobActor.WorkerNumberGenerator;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
@@ -58,6 +59,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.store.FileBasedStore;
@@ -82,14 +84,21 @@ public class JobTestLifecycle {
 	private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
 	private static final String user = "mantis";
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 
 	@BeforeClass
 	public static void setup() {
 		system = ActorSystem.create();
-
-		TestHelpers.setupMasterConfig();
 		storageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), eventPublisher);
-		jobStore = new MantisJobStore(storageProvider);
+		jobStore = new MantisJobStore(storageProvider, STORE_SETTINGS);
 	}
 
 	@AfterClass
@@ -120,7 +129,7 @@ public class JobTestLifecycle {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-			final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+			final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 			String jobId = clusterName + "-1";
 			jobActor.tell(new JobClusterManagerProto.GetJobDetailsRequest("nj", jobId), probe.getRef());
 			GetJobDetailsResponse resp = probe.expectMsgClass(GetJobDetailsResponse.class);
@@ -153,7 +162,7 @@ public class JobTestLifecycle {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -247,7 +256,7 @@ public class JobTestLifecycle {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
             jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -337,7 +346,7 @@ public class JobTestLifecycle {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
@@ -383,7 +392,7 @@ public class JobTestLifecycle {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -495,7 +504,7 @@ public class JobTestLifecycle {
 					.withNextWorkerNumToUse(1)
 					.withJobDefinition(jobDefn)
 					.build();
-			final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+			final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -603,7 +612,7 @@ public class JobTestLifecycle {
 					.withNextWorkerNumToUse(1)
 					.withJobDefinition(jobDefn)
 					.build();
-			final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+			final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -707,7 +716,7 @@ public class JobTestLifecycle {
                 .withNextWorkerNumToUse(1)
                 .withJobDefinition(jobDefn)
                 .build();
-        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
 		jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
@@ -751,7 +760,7 @@ public class JobTestLifecycle {
 	                .withNextWorkerNumToUse(1)
 	                .withJobDefinition(jobDefn)
 	                .build();
-	        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+	        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 			jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
 			JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
@@ -849,7 +858,7 @@ public class JobTestLifecycle {
 	                .withNextWorkerNumToUse(1)
 	                .withJobDefinition(jobDefn)
 	                .build();
-	        jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreSpied, schedulerMock, eventPublisher));
+	        jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreSpied, schedulerMock, eventPublisher, JOB_SETTINGS, CONSTRAINTS_EVALUATORS));
 
 
 

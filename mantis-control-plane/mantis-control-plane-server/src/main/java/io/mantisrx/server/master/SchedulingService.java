@@ -42,7 +42,7 @@ import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.mesos.MesosSettings;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.LaunchTaskRequest;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
@@ -53,6 +53,7 @@ import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
 import io.mantisrx.shaded.com.google.common.collect.Sets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -84,6 +85,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private final WorkerRegistry workerRegistry;
     private final TaskScheduler taskScheduler;
     private final TaskSchedulingService taskSchedulingService;
+    private final MesosSettings mesosSettings;
     private final TieredQueue taskQueue;
     private final Counter numWorkersLaunched;
     private final Counter numResourceOffersReceived;
@@ -120,32 +122,37 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private final long vmCurrentStatesCheckInterval = 10000;
     private final AtomicLong lastVmCurrentStatesCheckDone = new AtomicLong(System.currentTimeMillis());
     private VirtualMachineMasterService virtualMachineService;
-    private long SCHEDULING_ITERATION_INTERVAL_MILLIS = 50;
+    private final Duration schedulerIterationInterval;
     private long MAX_DELAY_MILLIS_BETWEEN_SCHEDULING_ITER = 5_000;
     private AtomicLong lastSchedulingResultCallback = new AtomicLong(System.currentTimeMillis());
 
     public SchedulingService(final JobMessageRouter jobMessageRouter,
                              final WorkerRegistry workerRegistry,
                              final Observable<String> vmLeaseRescindedObservable,
-                             final VirtualMachineMasterService virtualMachineService) {
+                             final VirtualMachineMasterService virtualMachineService,
+                             MesosSettings mesosSettings) {
         super(true);
+        this.mesosSettings = mesosSettings;
         this.schedulingState = new SchedulingStateManager();
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
         this.virtualMachineService = virtualMachineService;
-        this.slaveClusterAttributeName = ConfigurationProvider.getConfig().getSlaveClusterAttributeName();
-        SCHEDULING_ITERATION_INTERVAL_MILLIS = ConfigurationProvider.getConfig().getSchedulerIterationIntervalMillis();
-        AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator();
+        this.slaveClusterAttributeName = mesosSettings.getAgentSettings().getClusterAttribute();
+        schedulerIterationInterval = mesosSettings.getSchedulerIterationInterval();
+        AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator(mesosSettings.getAgentSettings());
         TaskScheduler.Builder schedulerBuilder = new TaskScheduler.Builder()
                 .withLeaseRejectAction(virtualMachineService::rejectLease)
-                .withLeaseOfferExpirySecs(ConfigurationProvider.getConfig().getMesosLeaseOfferExpirySecs())
+                .withLeaseOfferExpirySecs(mesosSettings.getSchedulerLeaseOfferExpiry().getSeconds())
                 .withFitnessCalculator(agentFitnessCalculator)
                 .withFitnessGoodEnoughFunction(agentFitnessCalculator.getFitnessGoodEnoughFunc())
-                .withAutoScaleByAttributeName(ConfigurationProvider.getConfig().getAutoscaleByAttributeName()); // set this always
-        if (ConfigurationProvider.getConfig().getDisableShortfallEvaluation())
+                .withAutoScaleByAttributeName(mesosSettings.getAgentSettings().getClusterAttribute()); // set this always
+
+        if (mesosSettings.isSchedulerDisableShortfallEvaluation()) {
             schedulerBuilder = schedulerBuilder.disableShortfallEvaluation();
+        }
+
         taskScheduler = setupTaskSchedulerAndAutoScaler(vmLeaseRescindedObservable, schedulerBuilder);
-        taskScheduler.setActiveVmGroupAttributeName(ConfigurationProvider.getConfig().getActiveSlaveAttributeName());
+        taskScheduler.setActiveVmGroupAttributeName(mesosSettings.getSchedulerActiveVmGroupAttributeName());
 
         taskQueue = new TieredQueue(2);
 
@@ -223,8 +230,8 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                                                           TaskScheduler.Builder schedulerBuilder) {
         int minMinIdle = 4;
         schedulerBuilder = schedulerBuilder
-                .withAutoScaleDownBalancedByAttributeName(ConfigurationProvider.getConfig().getHostZoneAttributeName())
-                .withAutoScalerMapHostnameAttributeName(ConfigurationProvider.getConfig().getAutoScalerMapHostnameAttributeName());
+                .withAutoScaleDownBalancedByAttributeName(mesosSettings.getSchedulerBalancedHostAttrName())
+                .withAutoScalerMapHostnameAttributeName(mesosSettings.getSchedulerAutoScalerMapHostnameAttributeName());
         final AgentClustersAutoScaler agentClustersAutoScaler = AgentClustersAutoScaler.get();
         try {
             if (agentClustersAutoScaler != null) {
@@ -317,7 +324,7 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private TaskSchedulingService setupTaskSchedulingService(TaskScheduler taskScheduler) {
         TaskSchedulingService.Builder builder = new TaskSchedulingService.Builder()
                 .withTaskScheduler(taskScheduler)
-                .withLoopIntervalMillis(SCHEDULING_ITERATION_INTERVAL_MILLIS)
+                .withLoopIntervalMillis(schedulerIterationInterval.toMillis())
                 .withMaxDelayMillis(MAX_DELAY_MILLIS_BETWEEN_SCHEDULING_ITER) // sort of rate limiting when no assignments were made and no new offers available
                 .withSchedulingResultCallback(this::schedulingResultHandler)
                 .withTaskQueue(taskQueue)

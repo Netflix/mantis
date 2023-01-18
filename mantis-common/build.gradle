@@ -29,6 +29,7 @@ dependencies {
     api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
     api "org.xerial.snappy:snappy-java:$snappyVersion"
     api "org.jctools:jctools-core:$jctoolsVersion"
+    api libraries.config
 
     // spectatorApi should be packaged at entry point level to avoid version conflicts.
     compileOnly libraries.spectatorApi

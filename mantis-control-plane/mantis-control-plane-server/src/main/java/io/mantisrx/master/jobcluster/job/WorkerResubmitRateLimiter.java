@@ -16,17 +16,15 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.config.ConfigurationProvider;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.Nullable;
+import lombok.Value;
 
 
 /**
@@ -35,60 +33,15 @@ import org.slf4j.LoggerFactory;
  */
 /* package */class WorkerResubmitRateLimiter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WorkerResubmitRateLimiter.class);
-    private static final String DEFAULT_WORKER_RESUBMIT_INTERVAL_SECS_STR = "5:10:20";
-
     private final Map<String, ResubmitRecord> resubmitRecords = new HashMap<>();
 
-    private static final long DEFAULT_EXPIRE_RESUBMIT_DELAY_SECS = 300;
-    private static final long DEFAULT_EXPIRE_RESUBMIT_DELAY_EXECUTION_INTERVAL_SECS = 120;
-    private static final long DEFAULT_RESUBMISSION_INTERVAL_SECS = 10;
+    private final Duration expireResubmitDelay;
 
-    private final long expireResubmitDelaySecs;
+    private final List<Duration> resubmitIntervals;
 
-    private final long[] resubmitIntervalSecs;
-
-    /**
-     * Constructor for this class.
-     * @param workerResubmitIntervalSecs
-     * @param expireResubmitDelaySecs
-     */
-    WorkerResubmitRateLimiter(String workerResubmitIntervalSecs, long expireResubmitDelaySecs) {
-
-
-        Preconditions.checkArg(expireResubmitDelaySecs > 0, "Expire "
-                + "Resubmit Delay cannot be 0 or less");
-        if (workerResubmitIntervalSecs == null || workerResubmitIntervalSecs.isEmpty())
-            workerResubmitIntervalSecs = DEFAULT_WORKER_RESUBMIT_INTERVAL_SECS_STR;
-        StringTokenizer tokenizer = new StringTokenizer(workerResubmitIntervalSecs, ":");
-        if (tokenizer.countTokens() == 0) {
-            this.resubmitIntervalSecs = new long[2];
-            this.resubmitIntervalSecs[0] = 0L;
-            this.resubmitIntervalSecs[1] = DEFAULT_RESUBMISSION_INTERVAL_SECS;
-        } else {
-            this.resubmitIntervalSecs = new long[tokenizer.countTokens() + 1];
-            this.resubmitIntervalSecs[0] = 0L;
-            for (int i = 1; i < this.resubmitIntervalSecs.length; i++) {
-                final String s = tokenizer.nextToken();
-                try {
-                    this.resubmitIntervalSecs[i] = Long.parseLong(s);
-                } catch (NumberFormatException e) {
-                    LOGGER.warn("Invalid number for resubmit interval " + s + ": using default "
-                            + DEFAULT_RESUBMISSION_INTERVAL_SECS);
-                    this.resubmitIntervalSecs[i] = DEFAULT_RESUBMISSION_INTERVAL_SECS;
-                }
-            }
-        }
-        this.expireResubmitDelaySecs = expireResubmitDelaySecs;
-
-    }
-
-    /**
-     * Default constructor.
-     */
-    WorkerResubmitRateLimiter() {
-        this(ConfigurationProvider.getConfig().getWorkerResubmitIntervalSecs(),
-                ConfigurationProvider.getConfig().getExpireWorkerResubmitDelaySecs());
+    WorkerResubmitRateLimiter(JobSettings jobSettings) {
+        this.expireResubmitDelay = jobSettings.getWorkerResubmitExpiry();
+        this.resubmitIntervals = jobSettings.getWorkerResubmitIntervals();
     }
 
     /**
@@ -101,8 +54,9 @@ import org.slf4j.LoggerFactory;
         Iterator<ResubmitRecord> it = resubmitRecords.values().iterator();
         while (it.hasNext()) {
             ResubmitRecord record = it.next();
-            if (record.getResubmitAt() - record.getDelayedBy() < (currentTime - this.expireResubmitDelaySecs * 1000))
+            if (record.getResubmitAt() - getDelay(record.getDelayedIdx()).toMillis() < (currentTime - this.expireResubmitDelay.toMillis())) {
                 it.remove();
+            }
         }
     }
 
@@ -113,20 +67,12 @@ import org.slf4j.LoggerFactory;
      *
      * @return
      */
-    long evalDelay(final ResubmitRecord resubmitRecord) {
-        long delay = resubmitIntervalSecs[0];
-        if (resubmitRecord != null) {
-            long prevDelay = resubmitRecord.getDelayedBy();
-            int index = 0;
-            for (; index < resubmitIntervalSecs.length; index++)
-                if (prevDelay <= resubmitIntervalSecs[index])
-                    break;
-            index++;
-            if (index >= resubmitIntervalSecs.length)
-                index = resubmitIntervalSecs.length - 1;
-            delay = resubmitIntervalSecs[index];
+    int evalNextDelay(@Nullable final ResubmitRecord resubmitRecord) {
+        if (resubmitRecord == null) {
+            return -1;
+        } else {
+            return Math.min(resubmitRecord.delayedIdx + 1, resubmitIntervals.size() - 1);
         }
-        return delay;
     }
 
     /**
@@ -140,11 +86,19 @@ import org.slf4j.LoggerFactory;
     long getWorkerResubmitTime(final WorkerId workerId, final int stageNum, final long currentTime) {
         String workerKey = generateWorkerIndexStageKey(workerId, stageNum);
         final ResubmitRecord prevResubmitRecord = resubmitRecords.get(workerKey);
-        long delay = evalDelay(prevResubmitRecord);
-        long resubmitAt = currentTime + delay * 1000;
-        final ResubmitRecord currResubmitRecord = new ResubmitRecord(workerKey, resubmitAt, delay);
+        int delayIdx = evalNextDelay(prevResubmitRecord);
+        Duration delay = getDelay(delayIdx);
+        long resubmitAt = currentTime +  delay.toMillis();
+        final ResubmitRecord currResubmitRecord = new ResubmitRecord(workerKey, resubmitAt, delayIdx);
         resubmitRecords.put(workerKey, currResubmitRecord);
         return resubmitAt;
+    }
+
+    private Duration getDelay(int idx) {
+        if (idx < 0) {
+            return Duration.ZERO;
+        }
+        return resubmitIntervals.get(idx);
     }
 
     /**
@@ -180,45 +134,17 @@ import org.slf4j.LoggerFactory;
      * @return
      */
     List<ResubmitRecord> getResubmitRecords() {
-        Map<String, ResubmitRecord> copy = new HashMap<>(resubmitRecords.size());
-        List<ResubmitRecord> resubmitRecordList = resubmitRecords.values().stream().collect(Collectors.toList());
-        return resubmitRecordList;
-    }
-
-    long getExpireResubmitDelaySecs() {
-        return expireResubmitDelaySecs;
-    }
-
-
-    public long[] getResubmitIntervalSecs() {
-        return resubmitIntervalSecs;
+        return new ArrayList<>(resubmitRecords.values());
     }
 
     /**
      * Tracks information about a worker resubmit.
      */
-    static final class ResubmitRecord {
+    @Value
+    static class ResubmitRecord {
 
-        private final String workerKey;
-        private final long resubmitAt;
-        private final long delayedBy;
-
-        private ResubmitRecord(String workerKey, long resubmitAt, long delayedBy) {
-            this.workerKey = workerKey;
-            this.resubmitAt = resubmitAt;
-            this.delayedBy = delayedBy;
-        }
-
-        public long getDelayedBy() {
-            return delayedBy;
-        }
-
-        public String getWorkerKey() {
-            return this.workerKey;
-        }
-
-        public long getResubmitAt() {
-            return resubmitAt;
-        }
+        String workerKey;
+        long resubmitAt;
+        int delayedIdx;
     }
 }

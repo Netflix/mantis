@@ -51,6 +51,7 @@ import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobActor;
 import io.mantisrx.master.jobcluster.job.JobHelper;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataImpl;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
@@ -112,7 +113,6 @@ import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
-import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.IJobClusterDefinition.CronPolicy;
 import io.mantisrx.server.master.domain.JobClusterConfig;
@@ -192,8 +192,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     public static Props props(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory mantisSchedulerFactory,
-                              final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher);
+                              final LifecycleEventPublisher eventPublisher, final JobSettings jobSettings,
+                              final JobClusterSettings jobClusterSettings,
+                              final ConstraintsEvaluators constraintsEvaluators) {
+        return Props.create(JobClusterActor.class, name, jobStore, mantisSchedulerFactory, eventPublisher, jobSettings, jobClusterSettings, constraintsEvaluators);
     }
 
     private Receive initializedBehavior;
@@ -212,15 +214,27 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     private BehaviorSubject<JobId> jobIdSubmissionSubject;
     private final JobDefinitionResolver jobDefinitionResolver = new JobDefinitionResolver();
+    private final JobSettings jobSettings;
+    private final JobClusterSettings jobClusterSettings;
+    private final ConstraintsEvaluators constraintsEvaluators;
 
 
-    public JobClusterActor(final String name, final MantisJobStore jobStore, final MantisSchedulerFactory schedulerFactory, final LifecycleEventPublisher eventPublisher) {
+    public JobClusterActor(
+        final String name,
+        final MantisJobStore jobStore,
+        final MantisSchedulerFactory schedulerFactory,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        JobClusterSettings jobClusterSettings,
+        ConstraintsEvaluators constraintsEvaluators) {
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
         this.eventPublisher = eventPublisher;
+        this.jobClusterSettings = jobClusterSettings;
+        this.constraintsEvaluators = constraintsEvaluators;
 
-        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore);
+        this.jobManager = new JobManager(name, getContext(), mantisSchedulerFactory, eventPublisher, jobStore, jobSettings, jobClusterSettings, constraintsEvaluators);
 
         jobIdSubmissionSubject = BehaviorSubject.create();
 
@@ -269,6 +283,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         this.numJobClusterDeleteErrors = m.getCounter("numJobClusterDeleteErrors");
         this.numJobClusterUpdateErrors = m.getCounter("numJobClusterUpdateErrors");
         this.numSLAEnforcementExecutions = m.getCounter("numSLAEnforcementExecutions");
+        this.jobSettings = jobSettings;
     }
 
 
@@ -653,9 +668,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 Duration.ofSeconds(checkAgainInSecs));
     }
 
-    private void setExpiredJobsTimer(long checkAgainInSecs) {
+    private void setExpiredJobsTimer(Duration checkAgainInSecs) {
         getTimers().startPeriodicTimer(CHECK_EXPIRED_TIMER_KEY, new JobClusterProto.ExpireOldJobsRequest(),
-                Duration.ofSeconds(checkAgainInSecs));
+                checkAgainInSecs);
     }
 
 
@@ -683,7 +698,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .build();
         // create sla enforcer
         slaEnforcer = new SLAEnforcer(jobClusterMetadata.getJobClusterDefinition().getSLA());
-        long expireFrequency = ConfigurationProvider.getConfig().getCompletedJobPurgeFrequencySeqs();
+        Duration expireFrequency = jobClusterSettings.getJobsPurgeInterval();
 
         // If cluster is disabled
         if(jobClusterMetadata.isDisabled()) {
@@ -1646,7 +1661,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(softConstraints != null) {
 
             for (JobConstraints jc : softConstraints) {
-                if (ConstraintsEvaluators.softConstraint(jc, new HashSet<>()) == null) {
+                if (constraintsEvaluators.softConstraint(jc, new HashSet<>()) == null) {
                     logger.error("Invalid Soft Job Constraint {}", jc);
                     throw new InvalidJobRequest(null, "Unknown constraint " + jc);
 
@@ -1657,7 +1672,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         if(hardConstraints != null ) {
             for (JobConstraints jc : hardConstraints) {
-                if (ConstraintsEvaluators.hardConstraint(jc, new HashSet<>()) == null) {
+                if (constraintsEvaluators.hardConstraint(jc, new HashSet<>()) == null) {
                     logger.error("Invalid Hard Job Constraint {}", jc);
                     throw new InvalidJobRequest(null, "Unknown constraint " + jc);
 
@@ -2050,7 +2065,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void onExpireOldJobs(JobClusterProto.ExpireOldJobsRequest request) {
-        final long tooOldCutOff = System.currentTimeMillis() - (getTerminatedJobToDeleteDelayHours()*3600000L);
+        final Instant tooOldCutOff = Instant.now().minus(getTerminatedJobToDeleteDelayHours());
         jobManager.purgeOldCompletedJobs(tooOldCutOff);
 
     }
@@ -2084,8 +2099,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if(logger.isTraceEnabled()) { logger.trace("Exit onTriggerCron Triggered for Job Cluster {}", this.name);}
     }
 
-    private long getTerminatedJobToDeleteDelayHours() {
-        return ConfigurationProvider.getConfig().getTerminatedJobToDeleteDelayHours();
+    private Duration getTerminatedJobToDeleteDelayHours() {
+        return jobClusterSettings.getTerminatedJobExpiry();
     }
 
     @Override
@@ -2542,15 +2557,28 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         private final MantisJobStore jobStore;
 
         private final LabelCache labelCache = new LabelCache();
+        private final JobSettings jobSettings;
+        private final JobClusterSettings jobClusterSettings;
+        private final ConstraintsEvaluators constraintsEvaluators;
 
-
-        JobManager(String clusterName, ActorContext context, MantisSchedulerFactory schedulerFactory, LifecycleEventPublisher publisher, MantisJobStore jobStore) {
+        JobManager(
+            String clusterName,
+            ActorContext context,
+            MantisSchedulerFactory schedulerFactory,
+            LifecycleEventPublisher publisher,
+            MantisJobStore jobStore,
+            JobSettings jobSettings,
+            JobClusterSettings jobClusterSettings,
+            ConstraintsEvaluators constraintsEvaluators) {
             this.name = clusterName;
             this.jobStore = jobStore;
             this.context = context;
             this.scheduler = schedulerFactory;
             this.publisher = publisher;
-            this.completedJobsCache = new CompletedJobCache(name, labelCache);
+            this.jobClusterSettings = jobClusterSettings;
+            this.completedJobsCache = new CompletedJobCache(name, labelCache, jobClusterSettings);
+            this.jobSettings = jobSettings;
+            this.constraintsEvaluators = constraintsEvaluators;
         }
 
         /**
@@ -2558,7 +2586,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          *
          * @param tooOldCutOff Current cut off delta
          */
-        public void purgeOldCompletedJobs(long tooOldCutOff) {
+        public void purgeOldCompletedJobs(Instant tooOldCutOff) {
 
             completedJobsCache.purgeOldCompletedJobs(tooOldCutOff, jobStore);
 
@@ -2587,9 +2615,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             } else {
                 logger.warn("Unexpected job state {}", jobInfo.state);
             }
-            long masterInitTimeoutSecs = ConfigurationProvider.getConfig().getMasterInitTimeoutSecs();
-            long timeout = ((masterInitTimeoutSecs - 60)) > 0 ? (masterInitTimeoutSecs - 60) : masterInitTimeoutSecs;
-            Duration t = Duration.ofSeconds(timeout);
+            final Duration t = jobClusterSettings.getInitTimeout();
 
             // mark it as pending actor init
             markJobInitializeInitiated(jobInfo, System.currentTimeMillis());
@@ -2627,7 +2653,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             MantisScheduler scheduler1 = scheduler.forJob(jobMeta.getJobDefinition());
             ActorRef jobActor = context.actorOf(JobActor.props(jobClusterMetadata.getJobClusterDefinition(),
-                    jobMeta, jobStore, scheduler1, publisher), "JobActor-" + jobMeta.getJobId().getId());
+                    jobMeta, jobStore, scheduler1, publisher, jobSettings, constraintsEvaluators), "JobActor-" + jobMeta.getJobId().getId());
 
 
             context.watch(jobActor);
@@ -3130,6 +3156,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      */
     static class CompletedJobCache {
         private  final Logger logger = LoggerFactory.getLogger(CompletedJobCache.class);
+        private final JobClusterSettings jobClusterSettings;
 
         // Set of sorted terminal jobs
         private final Set<CompletedJob> terminalSortedJobSet = new TreeSet<>((o1, o2) -> {
@@ -3154,9 +3181,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         // Map of jobmetadata
         private final Map<JobId, IMantisJobMetadata> jobIdToMetadataMap = new HashMap<>();
 
-        public CompletedJobCache(String clusterName, LabelCache labelsCache) {
+        public CompletedJobCache(String clusterName, LabelCache labelsCache, JobClusterSettings jobClusterSettings) {
             this.name = clusterName;
             this.labelsCache = labelsCache;
+            this.jobClusterSettings = jobClusterSettings;
         }
 
         public Set<CompletedJob> getCompletedJobSortedSet() {
@@ -3216,9 +3244,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
          * @param tooOldCutOff timestamp, all jobs having an older timestamp should be deleted
          * @param jobStore
          */
-        public void purgeOldCompletedJobs(long tooOldCutOff, MantisJobStore jobStore) {
+        public void purgeOldCompletedJobs(Instant tooOldCutOff, MantisJobStore jobStore) {
             long numDeleted = 0;
-            int maxJobsToPurge = ConfigurationProvider.getConfig().getMaxJobsToPurge();
+            int maxJobsToPurge = jobClusterSettings.getMaxJobsToPurge();
             final long startNanos = System.nanoTime();
 
             for(Iterator<CompletedJob> it = completedJobs.values().iterator(); it.hasNext();) {
@@ -3227,7 +3255,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     break;
                 }
                 CompletedJob completedJob = it.next();
-                if(completedJob.getTerminatedAt() < tooOldCutOff) {
+                if(Instant.ofEpochMilli(completedJob.getTerminatedAt()).isBefore(tooOldCutOff)) {
                     try {
                         logger.info("Purging Job {} as it was terminated at {} which is older than cutoff {}", completedJob, completedJob.getTerminatedAt(), tooOldCutOff);
                         terminalSortedJobSet.remove(completedJob);

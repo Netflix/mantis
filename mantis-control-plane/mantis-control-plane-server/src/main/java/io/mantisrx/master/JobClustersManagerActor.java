@@ -86,8 +86,10 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterActor;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobHelper;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobState;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetJobDetailsRequest;
@@ -98,7 +100,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.server.core.JobCompletedReason;
-import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
@@ -136,8 +138,15 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher)
+    private final ConstraintsEvaluators constraintsEvaluators;
+
+    public static Props props(
+        final MantisJobStore jobStore,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        final JobClusterSettings jobClusterSettings,
+        final ConstraintsEvaluators constraintsEvaluators) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, jobSettings, jobClusterSettings, constraintsEvaluators)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
@@ -146,9 +155,17 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private MantisSchedulerFactory mantisSchedulerFactory = null;
 
     JobClusterInfoManager jobClusterInfoManager;
+    private final JobSettings jobSettings;
+    private final JobClusterSettings jobClusterSettings;
 
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher) {
+    public JobClustersManagerActor(
+        final MantisJobStore store,
+        final LifecycleEventPublisher eventPublisher,
+        final JobSettings jobSettings,
+        final JobClusterSettings jobClusterSettings,
+        final ConstraintsEvaluators constraintsEvaluators) {
+        this.constraintsEvaluators = constraintsEvaluators;
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
 
@@ -164,6 +181,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         this.numJobClusterInitSuccesses = m.getCounter("numJobClusterInitSuccesses");
 
         initializedBehavior = getInitializedBehavior();
+        this.jobSettings = jobSettings;
+        this.jobClusterSettings = jobClusterSettings;
     }
 
     MetricGroupId getMetricGroupId() {
@@ -341,12 +360,10 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                     clusterToJobMap.computeIfAbsent(clusterName, k -> new ArrayList<>()).add(jobMeta);
                 }
 
-                long masterInitTimeoutSecs = ConfigurationProvider.getConfig().getMasterInitTimeoutSecs();
-                long timeout = ((masterInitTimeoutSecs - 60)) > 0 ? (masterInitTimeoutSecs - 60) : masterInitTimeoutSecs;
+                Duration timeout = jobClusterSettings.getInitTimeout();
                 Observable.from(jobClusterMap.values())
                         .filter((jobClusterMeta) -> jobClusterMeta != null && jobClusterMeta.getJobClusterDefinition() != null)
                         .flatMap((jobClusterMeta) -> {
-                            Duration t = Duration.ofSeconds(timeout);
                             Optional<JobClusterInfo> jobClusterInfoO = jobClusterInfoManager.createClusterActorAndRegister(jobClusterMeta.getJobClusterDefinition());
                             if (!jobClusterInfoO.isPresent()) {
                                 logger.info("skipping job cluster {} on bootstrap as actor creating failed", jobClusterMeta.getJobClusterDefinition().getName());
@@ -362,7 +379,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                             List<CompletedJob> completedJobsList = Lists.newArrayList();
                             JobClusterProto.InitializeJobClusterRequest req = new JobClusterProto.InitializeJobClusterRequest((JobClusterDefinitionImpl) jobClusterMeta.getJobClusterDefinition(),
                                 jobClusterMeta.isDisabled(), jobClusterMeta.getLastJobCount(), jobList, completedJobsList, "system", getSelf(), false);
-                            return jobClusterInfoManager.initializeCluster(jobClusterInfo, req, t);
+                            return jobClusterInfoManager.initializeCluster(jobClusterInfo, req, timeout);
 
 
                         })
@@ -832,7 +849,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 }
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, jobSettings, jobClusterSettings, constraintsEvaluators),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 

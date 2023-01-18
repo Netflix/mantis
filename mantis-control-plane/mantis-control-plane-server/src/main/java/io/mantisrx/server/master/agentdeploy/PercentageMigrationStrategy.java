@@ -16,16 +16,17 @@
 
 package io.mantisrx.server.master.agentdeploy;
 
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.runtime.MigrationStrategy;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.utils.MantisClock;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,31 +46,26 @@ public class PercentageMigrationStrategy extends MigrationStrategy {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    private final MantisClock clock;
+    private final Clock clock;
     private final String jobId;
     private final Configuration configuration;
-    public PercentageMigrationStrategy(final MantisClock clock,
+    public PercentageMigrationStrategy(final Clock clock,
                                        final String jobId,
-                                       final WorkerMigrationConfig config) {
+                                       final WorkerMigrationConfig config,
+                                       final JobSettings jobSettings) {
         super(config);
         this.clock = clock;
         this.jobId = jobId;
-        long defaultMigrationIntervalMs;
-        try {
-            defaultMigrationIntervalMs = ConfigurationProvider.getConfig().getIntervalMoveWorkersOnDisabledVMsMillis();
-        } catch (IllegalStateException ise) {
-            logger.warn("Error reading intervalMoveWorkersOnDisabledVMsMillis from config Provider, will default to 1 minute");
-            defaultMigrationIntervalMs = 60_000L;
-        }
-        configuration = parseConfig(config.getConfigString(), defaultMigrationIntervalMs);
+        final Duration defaultMigrationInterval = jobSettings.getWorkerOnDisabledVMsCheckInterval();
+        configuration = parseConfig(config.getConfigString(), defaultMigrationInterval);
     }
 
-    Configuration parseConfig(final String configuration, final long defaultMigrationIntervalMs) {
+    Configuration parseConfig(final String configuration, final Duration defaultMigrationIntervalMs) {
         try {
             return objectMapper.readValue(configuration, Configuration.class);
         } catch (IOException e) {
             logger.error("failed to parse config '{}' for job {}, default to {} percent workers migrated every {} millis", configuration, jobId, DEFAULT_PERCENT_WORKERS, defaultMigrationIntervalMs);
-            return new Configuration(DEFAULT_PERCENT_WORKERS, defaultMigrationIntervalMs);
+            return new Configuration(DEFAULT_PERCENT_WORKERS, defaultMigrationIntervalMs.toMillis());
         }
     }
 
@@ -78,7 +74,7 @@ public class PercentageMigrationStrategy extends MigrationStrategy {
                                  final int numRunningWorkers,
                                  final int totalNumWorkers,
                                  final long lastWorkerMigrationTimestamp) {
-        if (lastWorkerMigrationTimestamp > (clock.now() - configuration.getIntervalMs())) {
+        if (lastWorkerMigrationTimestamp > (clock.instant().toEpochMilli() - configuration.getIntervalMs())) {
             return Collections.emptyList();
         }
 

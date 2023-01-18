@@ -84,6 +84,15 @@ public class ResourceClusterActorTest {
     private static final Duration heartbeatTimeout = Duration.ofSeconds(10);
     private static final Duration checkForDisabledExecutorsInterval = Duration.ofSeconds(10);
     private static final Duration assignmentTimeout = Duration.ofSeconds(1);
+    private static final ResourceClusterSettings resourceClusterSettings =
+        ResourceClusterSettings
+            .builder()
+            .askTimeout(Duration.ofSeconds(1))
+            .taskExecutorAssignmentTimeout(assignmentTimeout)
+            .taskExecutorHeartbeatTimeout(heartbeatTimeout)
+            .disabledTaskExecutorsCheckInterval(checkForDisabledExecutorsInterval)
+            .build();
+
     private static final String HOST_NAME = "hostname";
 
     private static final ContainerSkuID CONTAINER_DEF_ID_1 = ContainerSkuID.of("SKU1");
@@ -179,9 +188,7 @@ public class ResourceClusterActorTest {
         final Props props =
             ResourceClusterActor.props(
                 CLUSTER_ID,
-                heartbeatTimeout,
-                assignmentTimeout,
-                checkForDisabledExecutorsInterval,
+                resourceClusterSettings,
                 Clock.systemDefaultZone(),
                 rpcService,
                 mantisJobStore,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.config;
+package io.mantisrx.server.master.store;
 
-/**
- * An implementation of this class should return an instance of {@link io.mantisrx.server.master.config.MasterConfiguration}.
- * We create this factory because it's possible that the logic of creating a {@link io.mantisrx.server.master.config.MasterConfiguration}
- * can change depending on the user or environment.
- *
- * @see ConfigurationProvider
- */
-public interface ConfigurationFactory {
+import akka.actor.ActorSystem;
+import com.typesafe.config.Config;
+import io.mantisrx.server.core.config.MantisExtension;
 
-    MasterConfiguration getConfig();
+public class FileBasedStoreFactory implements MantisExtension<KeyValueStore> {
+
+    @Override
+    public KeyValueStore createObject(Config config, ActorSystem actorSystem) {
+        return new FileBasedStore();
+    }
 }

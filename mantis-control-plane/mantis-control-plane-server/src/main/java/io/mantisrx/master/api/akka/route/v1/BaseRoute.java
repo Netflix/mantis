@@ -99,12 +99,12 @@ abstract class BaseRoute extends AllDirectives {
         }
     }
 
-    protected Cache<Uri, RouteResult> createCache(ActorSystem actorSystem, int initialCapacity, int maxCapacity, int ttlMillis) {
+    protected Cache<Uri, RouteResult> createCache(ActorSystem actorSystem, int initialCapacity, int maxCapacity, java.time.Duration ttl) {
         final CachingSettings defaultCachingSettings = CachingSettings.create(actorSystem);
         final LfuCacheSettings lfuCacheSettings = defaultCachingSettings.lfuCacheSettings()
             .withInitialCapacity(initialCapacity)
             .withMaxCapacity(maxCapacity)
-            .withTimeToLive(Duration.create(ttlMillis, TimeUnit.MILLISECONDS));
+            .withTimeToLive(Duration.create(ttl.toMillis(), TimeUnit.MILLISECONDS));
         final CachingSettings cachingSettings = defaultCachingSettings.withLfuCacheSettings(lfuCacheSettings);
         return LfuCache.create(cachingSettings);
     }

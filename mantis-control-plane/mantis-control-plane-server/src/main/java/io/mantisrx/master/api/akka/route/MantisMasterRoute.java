@@ -19,6 +19,7 @@ package io.mantisrx.master.api.akka.route;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v0.AgentClusterRoute;
 import io.mantisrx.master.api.akka.route.v0.JobClusterRoute;
@@ -80,7 +81,8 @@ public class MantisMasterRoute extends AllDirectives {
         final LastSubmittedJobIdStreamRoute v1LastSubmittedJobIdStreamRoute,
         final JobStatusStreamRoute v1JobStatusStreamRoute,
         final ResourceClusters resourceClusters,
-        final ResourceClusterRouteHandler resourceClusterRouteHandler) {
+        final ResourceClusterRouteHandler resourceClusterRouteHandler,
+        final ApiSettings apiSettings) {
         this.leaderRedirectionFilter = leaderRedirectionFilter;
         this.v0MasterDescriptionRoute = v0MasterDescriptionRoute;
         this.v0JobClusterRoute = v0JobClusterRoute;
@@ -98,7 +100,7 @@ public class MantisMasterRoute extends AllDirectives {
         this.v1LastSubmittedJobIdStreamRoute = v1LastSubmittedJobIdStreamRoute;
         this.v1JobStatusStreamRoute = v1JobStatusStreamRoute;
         this.resourceClustersNonLeaderRedirectRoute = new ResourceClustersNonLeaderRedirectRoute(
-            resourceClusters, resourceClusterRouteHandler, actorSystem);
+            resourceClusters, resourceClusterRouteHandler, actorSystem, apiSettings);
         this.resourceClustersLeaderExclusiveRoute = new ResourceClustersLeaderExclusiveRoute(resourceClusters);
     }
 

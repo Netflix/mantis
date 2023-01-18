@@ -27,6 +27,7 @@ import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.Endpoints;
@@ -44,8 +45,6 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -99,16 +98,18 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
+    private final ApiSettings apiSettings;
 
     public ResourceClustersNonLeaderRedirectRoute(
         final ResourceClusters gateway,
         final ResourceClusterRouteHandler resourceClusterRouteHandler,
-        final ActorSystem actorSystem) {
+        final ActorSystem actorSystem,
+        final ApiSettings apiSettings) {
         this.gateway = gateway;
         this.resourceClusterRouteHandler = resourceClusterRouteHandler;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-            config.getApiCacheTtlMilliseconds());
+        this.apiSettings = apiSettings;
+        this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+            apiSettings.getCacheTtl());
     }
 
     @Override

@@ -18,6 +18,7 @@ package io.mantisrx.server.worker;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
@@ -26,8 +27,8 @@ import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
-import io.mantisrx.server.master.client.HighAvailabilityServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
+import io.mantisrx.server.master.client.ClientServices;
+import io.mantisrx.server.master.client.ClientServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
@@ -76,29 +77,10 @@ public class MantisWorker extends BaseService {
         System.setProperty("rx.ring-buffer.size", "1024");
 
         WorkerConfiguration config = configFactory.getConfig();
-        final HighAvailabilityServices highAvailabilityServices =
-            HighAvailabilityServicesUtil.createHAServices(config);
-        mantisServices.add(new Service() {
-            @Override
-            public void start() {
-                highAvailabilityServices.startAsync().awaitRunning();
-            }
-
-            @Override
-            public void shutdown() {
-                highAvailabilityServices.stopAsync().awaitTerminated();
-            }
-
-            @Override
-            public void enterActiveMode() {
-
-            }
-
-            @Override
-            public String toString() {
-                return "HighAvailabilityServices Service";
-            }
-        });
+        // TODO(sundaram): Fix this
+        final ClientServices highAvailabilityServices =
+            ClientServicesUtil.createClientServices(ConfigFactory.load());
+        mantisServices.add(BaseService.wrapCloseable(highAvailabilityServices));
         final MantisMasterGateway gateway =
             highAvailabilityServices.getMasterClientApi();
         // shutdown hook

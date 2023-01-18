@@ -42,11 +42,12 @@ import akka.japi.JavaPartialFunction;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
-import io.mantisrx.master.jobcluster.job.worker.WorkerHeartbeat;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.KillJobRequest;
@@ -54,8 +55,6 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ListArchivedWo
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ResubmitWorkerRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.ScaleStageRequest;
 import io.mantisrx.server.core.PostJobStatusRequest;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -73,6 +72,7 @@ import org.slf4j.LoggerFactory;
 public class JobRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobRoute.class);
     private final JobRouteHandler jobRouteHandler;
+    private final JobSettings jobSettings;
     private final Metrics metrics;
 
     private final Counter jobListGET;
@@ -95,12 +95,14 @@ public class JobRoute extends BaseRoute {
             }
         }
     };
+    private final ApiSettings apiSettings;
 
-    public JobRoute(final JobRouteHandler jobRouteHandler, final ActorSystem actorSystem) {
+    public JobRoute(final JobRouteHandler jobRouteHandler, JobSettings jobSettings, final ActorSystem actorSystem, ApiSettings apiSettings) {
         this.jobRouteHandler = jobRouteHandler;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-                config.getApiCacheTtlMilliseconds());
+        this.jobSettings = jobSettings;
+        this.apiSettings = apiSettings;
+        this.cache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+                apiSettings.getCacheTtl());
 
         Metrics m = new Metrics.Builder()
             .id("V0JobRoute")
@@ -200,16 +202,16 @@ public class JobRoute extends BaseRoute {
                                 workerHeartbeatStatusPOST.increment();
                                 PostJobStatusRequest postJobStatusRequest = Jackson.fromJSON(req, PostJobStatusRequest.class);
                                 WorkerEvent workerStatusRequest = createWorkerStatusRequest(postJobStatusRequest);
-                                if (workerStatusRequest instanceof WorkerHeartbeat) {
-                                    if (!ConfigurationProvider.getConfig().isHeartbeatProcessingEnabled()) {
-                                        // skip heartbeat processing
-                                        if (logger.isTraceEnabled()) {
-                                            logger.trace("skipped heartbeat event {}", workerStatusRequest);
-                                        }
-                                        workerHeartbeatSkipped.increment();
-                                        return complete(StatusCodes.OK);
-                                    }
-                                }
+//                                if (workerStatusRequest instanceof WorkerHeartbeat) {
+//                                    if (!ConfigurationProvider.getConfig().isHeartbeatProcessingEnabled()) {
+//                                        // skip heartbeat processing
+//                                        if (logger.isTraceEnabled()) {
+//                                            logger.trace("skipped heartbeat event {}", workerStatusRequest);
+//                                        }
+//                                        workerHeartbeatSkipped.increment();
+//                                        return complete(StatusCodes.OK);
+//                                    }
+//                                }
                                 return completeWithFuture(
                                     jobRouteHandler.workerStatus(workerStatusRequest)
                                         .thenApply(this::toHttpResponse));
@@ -269,7 +271,7 @@ public class JobRoute extends BaseRoute {
                             try {
                                 ScaleStageRequest scaleStageRequest = Jackson.fromJSON(req, ScaleStageRequest.class);
                                 int numWorkers = scaleStageRequest.getNumWorkers();
-                                int maxWorkersPerStage = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
+                                int maxWorkersPerStage = jobSettings.getMaxWorkersPerStage();
                                 if (numWorkers > maxWorkersPerStage) {
                                     logger.warn("rejecting ScaleStageRequest {} with invalid num workers", scaleStageRequest);
                                     return complete(StatusCodes.BAD_REQUEST, "{\"error\": \"num workers must be less than " + maxWorkersPerStage + "\"}");

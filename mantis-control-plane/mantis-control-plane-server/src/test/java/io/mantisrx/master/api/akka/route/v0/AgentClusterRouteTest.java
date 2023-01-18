@@ -38,23 +38,28 @@ import akka.util.ByteString;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;
-import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.payloads.AgentClusterPayloads;
 import io.mantisrx.master.events.AuditEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.master.vm.AgentClusterOperationsImpl;
 import io.mantisrx.server.master.AgentClustersAutoScaler;
+import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
@@ -82,7 +87,27 @@ public class AgentClusterRouteTest {
     private static Thread t;
     private static final int serverPort = 8209;
     private static final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//    private static final AgentClusterOperations agentClusterOperations = mock(AgentClusterOperations.class);
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
+
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+    private static final ApiSettings API_SETTINGS =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
+
+    private static final ConstraintsEvaluators CONSTRAINTS_EVALUATORS =
+        new ConstraintsEvaluators("NETFLIX_AUTO_SCALE_GROUP", "AWSZone");
 
     private CompletionStage<String> processRespFut(final HttpResponse r, final int expectedStatusCode) {
         logger.info("headers {} {}", r.getHeaders(), r.status());
@@ -117,14 +142,13 @@ public class AgentClusterRouteTest {
         t = new Thread(() -> {
             try {
                 // boot up server using the route as defined below
-                TestHelpers.setupMasterConfig();
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
                 IMantisPersistenceProvider storageProvider = new FileBasedPersistenceProvider(true);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
                 ActorRef jobClustersManagerActor = system.actorOf(
-                    JobClustersManagerActor.props(new MantisJobStore(storageProvider), lifecycleEventPublisher), "jobClustersManager");
+                    JobClustersManagerActor.props(new MantisJobStore(storageProvider, STORE_SETTINGS), lifecycleEventPublisher, JOB_SETTINGS, JOB_CLUSTER_SETTINGS, CONSTRAINTS_EVALUATORS), "jobClustersManager");
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
@@ -138,7 +162,8 @@ public class AgentClusterRouteTest {
                         fakeScheduler,
                         lifecycleEventPublisher,
                         "cluster"),
-                    system);
+                    system,
+                    API_SETTINGS);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = v0AgentClusterRoute.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("test server starting on port {}", serverPort);

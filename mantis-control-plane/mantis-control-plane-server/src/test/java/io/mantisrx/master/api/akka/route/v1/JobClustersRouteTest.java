@@ -35,7 +35,9 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.JobClustersManagerActor;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.payloads.JobClusterPayloads;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandlerAkkaImpl;
@@ -44,10 +46,13 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.JsonNode;
@@ -75,6 +80,24 @@ public class JobClustersRouteTest extends RouteTestBase {
     private static File stateDirectory;
 
     private static String TEST_CLUSTER_NAME = "sine-function";
+    private static final ApiSettings apiSettings =
+        ApiSettings.fromConfig(
+            ConfigFactory
+                .load("api-settings-sample.conf"));;
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
+
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 
     public JobClustersRouteTest() {
         super("JobClustersRouteTest", SERVER_PORT);
@@ -82,7 +105,6 @@ public class JobClustersRouteTest extends RouteTestBase {
 
     @BeforeClass
     public static void setup() throws Exception {
-        TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
         stateDirectory = Files.createTempDirectory("test").toFile();
 
@@ -98,8 +120,11 @@ public class JobClustersRouteTest extends RouteTestBase {
 
                 ActorRef jobClustersManagerActor = system.actorOf(
                         JobClustersManagerActor.props(
-                                new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true)),
-                                lifecycleEventPublisher),
+                            new MantisJobStore(new FileBasedPersistenceProvider(stateDirectory, true), STORE_SETTINGS),
+                            lifecycleEventPublisher,
+                            JOB_SETTINGS,
+                            JOB_CLUSTER_SETTINGS,
+                            TestHelpers.CONSTRAINTS_EVALUATORS),
                         "jobClustersManager");
                 MantisSchedulerFactory mantisSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
@@ -110,9 +135,9 @@ public class JobClustersRouteTest extends RouteTestBase {
 
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, apiSettings);
 
-                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system);
+                final JobClustersRoute app = new JobClustersRoute(jobClusterRouteHandler, system, apiSettings);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow =
                         app.createRoute(Function.identity())
                            .flow(system, materializer);

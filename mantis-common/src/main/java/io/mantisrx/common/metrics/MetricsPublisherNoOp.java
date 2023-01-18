@@ -17,12 +17,11 @@
 package io.mantisrx.common.metrics;
 
 import java.util.Collection;
-import java.util.Properties;
 
-public class MetricsPublisherNoOp extends MetricsPublisher {
+class MetricsPublisherNoOp extends MetricsPublisher {
 
-    public MetricsPublisherNoOp(Properties properties) {
-        super(properties);
+    public MetricsPublisherNoOp() {
+        super();
     }
 
     @Override

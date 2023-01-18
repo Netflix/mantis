@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.jobcluster.job;
 
+import static com.netflix.mantis.master.scheduler.TestHelpers.CONSTRAINTS_EVALUATORS;
 import static io.mantisrx.master.jobcluster.JobClusterTest.DEFAULT_JOB_OWNER;
 import static io.mantisrx.master.jobcluster.JobClusterTest.NO_OP_SLA;
 import static io.mantisrx.master.jobcluster.JobClusterTest.TWO_WORKER_SCHED_INFO;
@@ -42,7 +43,6 @@ import static org.mockito.Mockito.when;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.netflix.mantis.master.scheduler.TestHelpers;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.mantisrx.common.Label;
@@ -53,6 +53,7 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.JobClusterSettings;
 import io.mantisrx.master.jobcluster.MantisJobClusterMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
@@ -95,6 +96,7 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.domain.SLA;
 import io.mantisrx.server.master.persistence.KeyValueBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
+import io.mantisrx.server.master.persistence.StoreSettings;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
@@ -131,6 +133,20 @@ public class JobClusterManagerTest {
             new StatusEventSubscriberLoggingImpl(),
             new WorkerEventSubscriberLoggingImpl());
     private static final String user = "nj";
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
+
+    private static final JobClusterSettings JOB_CLUSTER_SETTINGS =
+        JobClusterSettings.fromConfig(
+            ConfigFactory
+                .load("job-cluster-settings-sample.conf"));
+
+    private static final StoreSettings STORE_SETTINGS =
+        StoreSettings.fromConfig(
+            ConfigFactory
+                .load("store-settings-sample.conf"));
 
     @Rule
     public TemporaryFolder rootDir = new TemporaryFolder();
@@ -148,9 +164,6 @@ public class JobClusterManagerTest {
         system = ActorSystem.create(
                 "JobClusterManagerTest",
                 config.withFallback(ConfigFactory.load()));
-
-
-        TestHelpers.setupMasterConfig();
     }
 
     @Before
@@ -161,7 +174,10 @@ public class JobClusterManagerTest {
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreMock,
-            eventPublisher));
+            eventPublisher,
+            JOB_SETTINGS,
+            JOB_CLUSTER_SETTINGS,
+            CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), ActorRef.noSender());
@@ -294,14 +310,18 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+        MantisJobStore jobStore =
+            new MantisJobStore(
+                new KeyValueBasedPersistenceProvider(new FileBasedStore(rootDir.getRoot()), eventPublisher),
+                STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 true), probe.getRef());
@@ -320,7 +340,10 @@ public class JobClusterManagerTest {
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStore,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
@@ -368,12 +391,15 @@ public class JobClusterManagerTest {
         KeyValueBasedPersistenceProvider storageProviderAdapter = mock(KeyValueBasedPersistenceProvider.class);
         when(storageProviderAdapter.loadAllJobClusters()).thenThrow(new IOException(
                 "StorageException"));
-        MantisJobStore jobStore = new MantisJobStore(storageProviderAdapter);
+        MantisJobStore jobStore = new MantisJobStore(storageProviderAdapter, STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 true), probe.getRef());
@@ -392,13 +418,17 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+        MantisJobStore jobStore =
+            new MantisJobStore(
+                new KeyValueBasedPersistenceProvider(new FileBasedStore(rootDir.getRoot()), eventPublisher),
+                STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 false), probe.getRef());
@@ -502,7 +532,10 @@ public class JobClusterManagerTest {
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
@@ -639,14 +672,18 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+        MantisJobStore jobStore =
+            new MantisJobStore(
+                new KeyValueBasedPersistenceProvider(new FileBasedStore(rootDir.getRoot()), eventPublisher),
+                STORE_SETTINGS);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,
                 false), probe.getRef());
@@ -722,7 +759,10 @@ public class JobClusterManagerTest {
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
                 jobStoreSpied,
-                eventPublisher));
+                eventPublisher,
+                JOB_SETTINGS,
+                JOB_CLUSTER_SETTINGS,
+                CONSTRAINTS_EVALUATORS));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
                 schedulerMockFactory,

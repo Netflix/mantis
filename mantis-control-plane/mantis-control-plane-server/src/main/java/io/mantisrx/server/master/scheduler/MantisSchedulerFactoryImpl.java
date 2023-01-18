@@ -21,7 +21,6 @@ import akka.actor.ActorSystem;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.SchedulingService;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.shaded.com.google.common.base.Strings;
@@ -40,9 +39,9 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final ExecuteStageRequestFactory executeStageRequestFactory;
     private final JobMessageRouter jobMessageRouter;
     private final SchedulingService mesosSchedulingService;
-    private final MasterConfiguration masterConfiguration;
     private final MetricsRegistry metricsRegistry;
     private final Map<ClusterID, ActorRef> actorRefMap = new ConcurrentHashMap<>();
+    private final SchedulerSettings schedulerSettings;
 
     @Override
     public MantisScheduler forClusterID(@Nullable ClusterID clusterID) {
@@ -58,9 +57,9 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                     clusterID,
                     (cid) -> actorSystem.actorOf(
                         ResourceClusterAwareSchedulerActor.props(
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerMaxRetries(),
-                            masterConfiguration.getSchedulerIntervalBetweenRetries(),
+                            schedulerSettings.getMaxRetries(),
+                            schedulerSettings.getMaxRetries(),
+                            schedulerSettings.getIntervalBetweenRetries(),
                             resourceClusters.getClusterFor(cid),
                             executeStageRequestFactory,
                             jobMessageRouter,

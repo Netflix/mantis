@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.utils;
+package io.mantisrx.server.core.config;
 
-public class MantisSystemClock implements MantisClock {
-    public static final MantisSystemClock INSTANCE = new MantisSystemClock();
+import akka.actor.ActorSystem;
+import com.typesafe.config.Config;
+import javax.annotation.Nullable;
+import lombok.val;
 
-    @Override
-    public long now() {
-        return System.currentTimeMillis();
+public class MantisExtensionFactory {
+
+    @SuppressWarnings({"unchecked"})
+    public static <T> T createObject(Config config, @Nullable ActorSystem actorSystem) throws Exception {
+        String className = config.getString("class");
+        val extension = (MantisExtension<T>) Class.forName(className).newInstance();
+        return extension.createObject(config, actorSystem);
     }
 }

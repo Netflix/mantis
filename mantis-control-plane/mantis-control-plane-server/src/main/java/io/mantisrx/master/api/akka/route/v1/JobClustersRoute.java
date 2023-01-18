@@ -31,14 +31,13 @@ import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
+import io.mantisrx.master.api.akka.ApiSettings;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.runtime.NamedJobDefinition;
-import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -68,13 +67,14 @@ public class JobClustersRoute extends BaseRoute {
 
     private final JobClusterRouteHandler jobClusterRouteHandler;
     private final Cache<Uri, RouteResult> routeResultCache;
+    private final ApiSettings apiSettings;
 
     public JobClustersRoute(final JobClusterRouteHandler jobClusterRouteHandler,
-                            final ActorSystem actorSystem) {
+                            final ActorSystem actorSystem, ApiSettings apiSettings) {
         this.jobClusterRouteHandler = jobClusterRouteHandler;
-        MasterConfiguration config = ConfigurationProvider.getConfig();
-        this.routeResultCache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-                config.getApiCacheTtlMilliseconds());
+        this.apiSettings = apiSettings;
+        this.routeResultCache = createCache(actorSystem, apiSettings.getCacheInitialSize(), apiSettings.getCacheMaxSize(),
+                apiSettings.getCacheTtl());
     }
 
     public Route constructRoutes() {

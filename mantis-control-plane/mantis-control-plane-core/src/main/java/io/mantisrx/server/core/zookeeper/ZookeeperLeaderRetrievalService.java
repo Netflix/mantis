@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2022 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,45 +14,46 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.core.master;
+package io.mantisrx.server.core.zookeeper;
 
-import io.mantisrx.common.JsonSerializer;
-import io.mantisrx.server.core.json.DefaultObjectMapper;
-import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.mantisrx.server.core.highavailability.LeaderRetrievalService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.api.BackgroundCallback;
 import io.mantisrx.shaded.org.apache.curator.framework.api.CuratorEvent;
+import io.mantisrx.shaded.org.apache.curator.framework.listen.Listenable;
+import io.mantisrx.shaded.org.apache.curator.framework.listen.ListenerContainer;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCache;
 import io.mantisrx.shaded.org.apache.curator.framework.recipes.cache.NodeCacheListener;
-import java.util.concurrent.atomic.AtomicReference;
+import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import javax.annotation.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.subjects.BehaviorSubject;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * A monitor that monitors the status of Mantis masters.
  */
-public class ZookeeperMasterMonitor extends AbstractIdleService implements MasterMonitor {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZookeeperMasterMonitor.class);
+@Slf4j
+public class ZookeeperLeaderRetrievalService extends AbstractIdleService implements LeaderRetrievalService {
 
     private final CuratorFramework curator;
     private final String masterPath;
-    private final BehaviorSubject<MasterDescription> masterSubject;
-    private final AtomicReference<MasterDescription> latestMaster = new AtomicReference<>();
+    private final ListenerContainer<LeaderRetrievalService.Listener> listenable = new ListenerContainer<>();
     private final NodeCache nodeMonitor;
-    private final JsonSerializer jsonSerializer;
 
-    public ZookeeperMasterMonitor(CuratorFramework curator, String masterPath) {
+    public ZookeeperLeaderRetrievalService(CuratorFramework curator, ZookeeperSettings settings) {
+        this(curator, ZKPaths.makePath(settings.getRootPath(), settings.getLeaderAnnouncementPath()));
+    }
+
+    public ZookeeperLeaderRetrievalService(CuratorFramework curator, String masterPath) {
         this.curator = curator;
         this.masterPath = masterPath;
-        this.masterSubject = BehaviorSubject.create();
         this.nodeMonitor = new NodeCache(curator, masterPath);
-        this.jsonSerializer = new JsonSerializer();
+    }
+
+    @Override
+    public Listenable<LeaderRetrievalService.Listener> getListenable() {
+        return listenable;
     }
 
     @Override
@@ -65,21 +66,22 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
         });
 
         nodeMonitor.start(true);
-
-        onMasterNodeUpdated(nodeMonitor.getCurrentData() == null ? null : nodeMonitor.getCurrentData().getData());
-        logger.info("The ZK master monitor has started");
+        log.info("The ZK master monitor has started");
     }
 
     private void onMasterNodeUpdated(@Nullable byte[] data) throws Exception {
         if (data != null) {
-            logger.info("value was {}", new String(data));
-            MasterDescription description = DefaultObjectMapper.getInstance().readValue(data, MasterDescription.class);
-            logger.info("new master description = {}", description);
-            latestMaster.set(description);
-            masterSubject.onNext(description);
-        } else {
-            logger.info("looks like there's no master at the moment");
+            log.info("value is {}", new String(data));
         }
+
+        listenable.forEach(listener -> {
+            try {
+                listener.onLeaderChanged(data);
+            } catch (Exception e) {
+                log.error("Failed to update listener {} on leader changed to {}", listener, data != null ? new String(data) : "null", e);
+            }
+            return null;
+        });
     }
 
     private void retrieveMaster() {
@@ -100,30 +102,14 @@ public class ZookeeperMasterMonitor extends AbstractIdleService implements Maste
                 .forPath(masterPath);
 
         } catch (Exception e) {
-            logger.error("Failed to retrieve updated master information: " + e.getMessage(), e);
+            log.error("Failed to retrieve updated master information: " + e.getMessage(), e);
         }
 
     }
 
     @Override
-    public Observable<MasterDescription> getMasterObservable() {
-        return masterSubject;
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Override
-    @Nullable
-    public MasterDescription getLatestMaster() {
-        Preconditions.checkState(isRunning(), "ZookeeperMasterMonitor is currently not running but instead is at state %s", state());
-        return latestMaster.get();
-    }
-
-    @Override
     public void shutDown() throws Exception {
         nodeMonitor.close();
-        logger.info("ZK master monitor is shut down");
+        log.info("ZK master monitor is shut down");
     }
 }

@@ -19,6 +19,8 @@ package io.mantisrx.master.api.akka.route;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import akka.NotUsed;
 import akka.actor.ActorSystem;
@@ -31,15 +33,15 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.util.ByteString;
-import com.netflix.mantis.master.scheduler.TestHelpers;
+import com.typesafe.config.ConfigFactory;
 import io.mantisrx.master.api.akka.route.v0.MasterDescriptionRoute;
+import io.mantisrx.master.jobcluster.job.JobSettings;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
+import io.mantisrx.server.core.highavailability.LeaderElectorService;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
-import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
-import io.mantisrx.server.master.LeadershipManagerLocalImpl;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -97,7 +99,12 @@ public class LeaderRedirectionRouteTest {
     private static ActorSystem system = ActorSystem.create("MasterDescriptionRouteTest");
 
     private static final MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
-    private static final ILeadershipManager leadershipMgr = new LeadershipManagerLocalImpl(fakeMasterDesc);
+    private static final LeaderElectorService.Contender contender = mock(LeaderElectorService.Contender.class);
+    private static volatile boolean isReady = false;
+    private static final JobSettings JOB_SETTINGS =
+        JobSettings.fromConfig(
+            ConfigFactory
+                .load("job-definition-settings-sample.conf"));
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -111,9 +118,8 @@ public class LeaderRedirectionRouteTest {
                 final Http http = Http.get(system);
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
 
-                TestHelpers.setupMasterConfig();
-                final MasterDescriptionRoute app = new MasterDescriptionRoute(fakeMasterDesc);
-                final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, leadershipMgr);
+                final MasterDescriptionRoute app = new MasterDescriptionRoute(fakeMasterDesc, JOB_SETTINGS);
+                final LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(masterMonitor, contender, () -> isReady);
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(leaderRedirectionFilter::redirectIfNotLeader).flow(system, materializer);
                 logger.info("starting test server on port {}", serverPort);
@@ -147,6 +153,8 @@ public class LeaderRedirectionRouteTest {
     @Test
     public void testMasterInfoAPIWhenLeader() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
+        // mark the leader as bootstrapped and ready
+        when(contender.hasLeadership()).thenReturn(true);
         // leader is not ready by default
         CompletionStage<HttpResponse> responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
@@ -164,8 +172,7 @@ public class LeaderRedirectionRouteTest {
             });
         assertTrue(latch.await(2, TimeUnit.SECONDS));
 
-        // mark the leader as bootstrapped and ready
-        leadershipMgr.setLeaderReady();
+        isReady = true;
         final CountDownLatch latch2 = new CountDownLatch(1);
         final CompletionStage<HttpResponse> respF = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
@@ -186,7 +193,7 @@ public class LeaderRedirectionRouteTest {
             });
         assertTrue(latch2.await(2, TimeUnit.SECONDS));
 
-        leadershipMgr.stopBeingLeader();
+        when(contender.hasLeadership()).thenReturn(false);
         responseFuture = http.singleRequest(
             HttpRequest.GET(masterEndpoint("masterinfo")));
         try {
@@ -220,6 +227,5 @@ public class LeaderRedirectionRouteTest {
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
         }
-        leadershipMgr.becomeLeader();
     }
 }
