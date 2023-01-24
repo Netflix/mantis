@@ -268,6 +268,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     new JobProto.SendWorkerAssignementsIfChanged(),
                     Duration.ofMillis(refreshStageAssignementsDurationMs));
         }
+        // todo(sundaram): What is this line for if we are not using it's output?
         mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
         LOGGER.info("Job {} initialized", this.jobId);
     }
@@ -1400,6 +1401,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 if (stageMeta.getStageNum() > 0) {
                     stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
                             stageMeta.getNumWorkers(), workerHosts));
+                }
+
+                if (stageMeta.getNumWorkers() != stageMeta.getAllWorkers().size()) {
+                    scaleStage((MantisStageMetadataImpl) stageMeta, stageMeta.getNumWorkers(), "reconciliation");
                 }
             }
 
