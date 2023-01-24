@@ -42,6 +42,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
@@ -53,6 +54,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -174,21 +176,23 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
         final AtomicReference<MantisJobMetadataWritable> wrapper = new AtomicReference<>();
         final List<MantisStageMetadataWritable> stages = new LinkedList<>();
-        items.forEach(
-            (k, v) -> {
-                try {
-                    if (k != null && v != null) {
-                        if (jobMetadataColumnName.equals(k)) {
-                            wrapper.set(mapper.readValue(v, MantisJobMetadataWritable.class));
-                        } else if (k.startsWith(getStageMetadataFieldPrefix())) {
-                            stages.add(mapper.readValue(v, MantisStageMetadataWritable.class));
-                        }
+        for (Entry<String, String> entry : items.entrySet()) {
+            String k = entry.getKey();
+            String v = entry.getValue();
+            try {
+                if (k != null && v != null) {
+                    if (jobMetadataColumnName.equals(k)) {
+                        wrapper.set(mapper.readValue(v, MantisJobMetadataWritable.class));
+                    } else if (k.startsWith(getStageMetadataFieldPrefix())) {
+                        stages.add(mapper.readValue(v, MantisStageMetadataWritable.class));
                     }
-                } catch (JsonProcessingException e) {
-                    logger.warn(
-                        "failed to deserialize job metadata for jobId {}, column name {}", jobId, k, e);
                 }
-            });
+            } catch (JsonProcessingException e) {
+                throw new IOException(
+                    String.format("failed to deserialize job metadata for jobId %s, column name %s",
+                        jobId, k), e);
+            }
+        }
         final MantisJobMetadataWritable job = wrapper.get();
         if (job == null) {
             throw new IOException("No " + jobMetadataColumnName + " column found for key jobId=" + jobId);
@@ -268,8 +272,25 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     @Override
     public void storeMantisStage(IMantisStageMetadata msmd) throws IOException {
-        MantisStageMetadataWritable msmw = DataFormatAdapter.convertMantisStageMetadataToMantisStageMetadataWriteable(msmd);
-        kvStore.upsert(JOB_STAGEDATA_NS, msmd.getJobId().toString(), getJobStageFieldName(msmd.getStageNum()), mapper.writeValueAsString(msmw));
+        MantisStageMetadataWritable msmw =
+            DataFormatAdapter.convertMantisStageMetadataToMantisStageMetadataWriteable(msmd);
+        final String expected = mapper.writeValueAsString(msmw);
+        Preconditions.checkState(
+            kvStore.upsert(
+                JOB_STAGEDATA_NS,
+                msmd.getJobId().toString(),
+                getJobStageFieldName(msmd.getStageNum()),
+                expected));
+        String data =
+            kvStore.get(
+                JOB_STAGEDATA_NS,
+                msmd.getJobId().toString(),
+                getJobStageFieldName(msmd.getStageNum()));
+        MantisStageMetadataWritable actual =
+            mapper.readValue(data, MantisStageMetadataWritable.class);
+        if (!actual.equals(msmw)) {
+            logger.error("Mantis Stage write was not successful. actual={} expected={}", data, expected);
+        }
     }
 
     @Override

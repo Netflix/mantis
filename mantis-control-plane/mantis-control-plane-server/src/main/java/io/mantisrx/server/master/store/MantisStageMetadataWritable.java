@@ -31,10 +31,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.EqualsAndHashCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+@EqualsAndHashCode
 public class MantisStageMetadataWritable implements MantisStageMetadata {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisStageMetadataWritable.class);
