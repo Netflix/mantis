@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.worker;
 
+import com.netflix.spectator.api.Tag;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
@@ -32,8 +33,10 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
+import org.slf4j.MDC;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
@@ -91,6 +94,18 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     @Override
     protected void startUp() throws Exception {
         try {
+            List<Tag> tags =
+                MetricsFactory.getCommonTags(
+                        this.wrappedExecuteStageRequest.getRequest())
+                    .entrySet().stream()
+                    .map(e -> Tag.of(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList());
+
+            for (Tag t : tags) {
+                MDC.put(t.key(), t.value());
+                log.info("Adding tag to MDS: {}", t);
+            }
+
             log.info("Starting current task {}", this);
             doRun();
         } catch (Exception e) {
