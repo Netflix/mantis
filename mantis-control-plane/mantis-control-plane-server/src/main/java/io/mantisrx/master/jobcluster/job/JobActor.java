@@ -2274,7 +2274,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason) {
             LOGGER.info("Scaling stage {} to {} workers", stageMetaData.getStageNum(), numWorkers);
-            final int oldNumWorkers = stageMetaData.getNumWorkers();
+            final int oldNumWorkers = stageMetaData.getAllWorkers().size();
             int max = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
             int min = 0;
             if (stageMetaData.getScalingPolicy() != null) {
