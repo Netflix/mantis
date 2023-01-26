@@ -20,7 +20,6 @@ import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_
 
 import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
@@ -51,7 +50,6 @@ import io.mantisrx.server.core.Status.TYPE;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
-import io.mantisrx.server.core.metrics.MetricsFactory;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.jobmaster.AutoScaleMetricsConfig;
@@ -83,7 +81,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Action0;
@@ -273,16 +270,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     public void executeStage(final ExecutionDetails setup) throws IOException {
 
         ExecuteStageRequest executionRequest = setup.getExecuteStageRequest().getRequest();
-        List<Tag> tags =
-            MetricsFactory.getCommonTags(
-                    executionRequest)
-                .entrySet().stream()
-                .map(e -> Tag.of(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
-        for (Tag t : tags) {
-            MDC.put(t.key(), t.value());
-            logger.info("executeStage Adding tag to MDS: {}", t);
-        }
 
         // Initialize the schedulingInfo observable for current job and mark it shareable to be reused by anyone interested in this data.
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
