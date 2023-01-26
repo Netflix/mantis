@@ -16,20 +16,28 @@
 package io.mantisrx.server.worker;
 
 import com.netflix.spectator.api.Tag;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationWritable;
+import io.mantisrx.server.agent.metrics.cgroups.CgroupsMetricsCollector;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
+import java.io.IOException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -85,6 +93,40 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.masterMonitor = masterMonitor;
         this.userCodeClassLoader = userCodeClassLoader;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+    }
+
+    public void initialize(
+        String executeStageRequestString, // request string + publishSubject replace?
+        String workerConfigurationString, // config string
+        UserCodeClassLoader userCodeClassLoader) {
+
+        try {
+            log.info("Creating runtimeTaskImpl.");
+            log.info("runtimeTaskImpl workerConfigurationString: {}", workerConfigurationString);
+            log.info("runtimeTaskImpl executeStageRequestString: {}", executeStageRequestString);
+            JsonSerializer ser = new JsonSerializer();
+            WorkerConfigurationWritable configWritable =
+                WorkerConfigurationUtils.stringToWorkerConfiguration(workerConfigurationString);
+            this.config = configWritable;
+            ExecuteStageRequest executeStageRequest =
+                ser.fromJSON(executeStageRequestString, ExecuteStageRequest.class);
+            this.wrappedExecuteStageRequest =
+                new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
+
+            // todo: apply metrics collector from config values
+            configWritable.setMetricsCollector(CgroupsMetricsCollector.valueOf(System.getProperties()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(config);
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+        this.masterMonitor = haServices.getMasterClientApi();
+        this.userCodeClassLoader = userCodeClassLoader;
+        this.sinkSubscriptionStateHandlerFactory =
+            SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                haServices.getMasterClientApi(),
+                Clock.systemDefaultZone());
     }
 
     public void setJob(Optional<Job> job) {

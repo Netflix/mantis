@@ -19,6 +19,7 @@ import com.mantisrx.common.utils.ListenerCallQueue;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
@@ -27,6 +28,7 @@ import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
@@ -466,14 +468,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 wrappedRequest.getRequest(), classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
+            JsonSerializer ser = new JsonSerializer();
+            String executeRequest = ser.toJson(wrappedRequest.getRequest());
+            String configString = ser.toJson(WorkerConfigurationUtils.toWritable(workerConfiguration));
             RuntimeTask task = this.taskFactory.getRuntimeTaskInstance(wrappedRequest.getRequest(), cl);
 
             task.initialize(
-                wrappedRequest,
-                workerConfiguration,
-                masterMonitor,
-                userCodeClassLoader,
-                subscriptionStateHandlerFactory);
+                executeRequest,
+                configString,
+                userCodeClassLoader
+                );
 
             scheduleRunAsync(() -> {
                 setCurrentTask(task);

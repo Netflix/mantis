@@ -34,6 +34,11 @@ public interface RuntimeTask extends Service {
                     UserCodeClassLoader userCodeClassLoader,
                     Factory sinkSubscriptionStateHandlerFactory);
 
+    void initialize(
+        String executeStageRequestString,
+        String workerConfigurationString,
+        UserCodeClassLoader userCodeClassLoader);
+
     Observable<Status> getStatus();
 
     WorkerId getWorkerId();

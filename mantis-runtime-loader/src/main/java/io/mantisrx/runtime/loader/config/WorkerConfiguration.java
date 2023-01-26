@@ -17,6 +17,7 @@
 package io.mantisrx.runtime.loader.config;
 
 import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.google.common.base.Splitter;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -134,6 +135,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default(value = "")
     String taskExecutorAttributes();
 
+    @JsonIgnore
     default Map<String, String> getTaskExecutorAttributes() {
         String input = taskExecutorAttributes();
         if (input == null || input.isEmpty()) {

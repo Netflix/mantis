@@ -16,8 +16,10 @@
 
 package io.mantisrx.runtime.loader.config;
 
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.server.core.MetricsCoercer;
 import io.mantisrx.server.master.client.config.PluginCoercible;
+import java.io.IOException;
 import java.util.Properties;
 import org.skife.config.ConfigurationObjectFactory;
 
@@ -28,5 +30,47 @@ public class WorkerConfigurationUtils {
         configurationObjectFactory.addCoercible(new MetricsCoercer(properties));
         configurationObjectFactory.addCoercible(new PluginCoercible<>(MetricsCollector.class, properties));
         return configurationObjectFactory.build(tClass);
+    }
+
+    public static <T extends WorkerConfiguration> WorkerConfigurationWritable toWritable(T configSource) {
+        return WorkerConfigurationWritable.builder()
+            .bindAddress(configSource.getBindAddress())
+            .bindPort(configSource.getBindPort())
+            .blobStoreArtifactDir(configSource.getBlobStoreArtifactDir())
+            .consolePort(configSource.getConsolePort())
+            .clusterId(configSource.getClusterId())
+            .customPort(configSource.getCustomPort())
+            .debugPort(configSource.getDebugPort())
+            .externalAddress(configSource.getExternalAddress())
+            .externalPortRange(configSource.getExternalPortRange())
+            .heartbeatInternalInMs(configSource.heartbeatInternalInMs())
+            .heartbeatTimeoutMs(configSource.heartbeatTimeoutMs())
+            .isLocalMode(configSource.isLocalMode())
+            .leaderAnnouncementPath(configSource.getLeaderAnnouncementPath())
+            .localStorageDir(configSource.getLocalStorageDir())
+            .metricsCollector(configSource.getUsageSupplier())
+            .metricsPort(configSource.getMetricsPort())
+            .metricsPublisher(configSource.getMetricsPublisher())
+            .metricsPublisherFrequencyInSeconds(configSource.getMetricsPublisherFrequencyInSeconds())
+            .networkBandwidthInMB(configSource.getNetworkBandwidthInMB())
+            .sinkPort(configSource.getSinkPort())
+            .taskExecutorId(configSource.getTaskExecutorId())
+            .taskExecutorAttributesStr(configSource.taskExecutorAttributes())
+            .zkConnectionMaxRetries(configSource.getZkConnectionMaxRetries())
+            .zkConnectionTimeoutMs(configSource.getZkConnectionTimeoutMs())
+            .zkConnectionString(configSource.getZkConnectionString())
+            .zkConnectionRetrySleepMs(configSource.getZkConnectionRetrySleepMs())
+            .zkRoot(configSource.getZkRoot())
+            .build();
+    }
+
+    public static String configWritableToString(WorkerConfigurationWritable configurationWritable) throws IOException {
+        JsonSerializer ser = new JsonSerializer();
+        return ser.toJson(configurationWritable);
+    }
+
+    public static WorkerConfigurationWritable stringToWorkerConfiguration(String sourceStr) throws IOException {
+        JsonSerializer ser = new JsonSerializer();
+        return ser.fromJSON(sourceStr, WorkerConfigurationWritable.class);
     }
 }
