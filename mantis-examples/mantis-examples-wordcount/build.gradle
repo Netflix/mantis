@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 
 configurations.all {
     resolutionStrategy {
-        force "com.google.guava:guava:18.0"
+        force "com.google.guava:guava:31.1-jre"
         force "org.apache.httpcomponents:httpclient:4.5.9"
     }
 }

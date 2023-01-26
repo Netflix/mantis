@@ -26,7 +26,8 @@ apply plugin: 'com.github.johnrengelman.shadow'
  */
 ext {
     jacksonVersion = '2.12.+'
-    guavaVersion = '31.+'
+    guavaFailureAccessVersion = '1.0.1'
+    guavaVersion = '31.1-jre'
     curatorVersion = '2.12.+'
     zookeeperVersion = '3.4.+'
     jlineVersion = '0.9.94'
@@ -55,6 +56,7 @@ dependencies {
     shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
     shaded libraries.vavrJackson
     shaded "com.google.guava:guava:$guavaVersion"
+    shaded "com.google.guava:failureaccess:$guavaFailureAccessVersion"
     shaded "org.apache.curator:curator-recipes:$curatorVersion"
     shaded "org.apache.curator:curator-framework:$curatorVersion"
     shaded "org.apache.curator:curator-client:$curatorVersion"
