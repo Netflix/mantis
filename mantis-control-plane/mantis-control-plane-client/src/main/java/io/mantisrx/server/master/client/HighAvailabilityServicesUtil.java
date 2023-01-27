@@ -40,16 +40,22 @@ import rx.schedulers.Schedulers;
 public class HighAvailabilityServicesUtil {
   private final static AtomicReference<HighAvailabilityServices> HAServiceInstanceRef = new AtomicReference<>();
 
+  /**
+    * Test hook only.
+    */
+  public static void setHAServiceInstanceRef(HighAvailabilityServices highAvailabilityServices) {
+    HAServiceInstanceRef.compareAndSet(null, highAvailabilityServices);
+  }
+
   public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
     if (configuration.isLocalMode()) {
-      throw new UnsupportedOperationException();
+      log.warn("HA service running in local mode. This is only valid in local test.");
     } else {
       if (HAServiceInstanceRef.get() == null) {
           HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
       }
-
-      return HAServiceInstanceRef.get();
     }
+      return HAServiceInstanceRef.get();
   }
 
   /**

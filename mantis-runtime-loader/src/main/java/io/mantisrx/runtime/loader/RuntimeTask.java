@@ -16,11 +16,8 @@
 
 package io.mantisrx.runtime.loader;
 
-import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import org.apache.flink.util.UserCodeClassLoader;
-import rx.Observable;
 
 public interface RuntimeTask extends Service {
 
@@ -35,7 +32,7 @@ public interface RuntimeTask extends Service {
         String workerConfigurationString,
         UserCodeClassLoader userCodeClassLoader);
 
-    Observable<Status> getStatus();
+    // Observable<Status> getStatus();
 
-    WorkerId getWorkerId();
+    String getWorkerId();
 }

@@ -76,7 +76,6 @@ import org.apache.flink.runtime.rpc.RpcServiceUtils;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import rx.Subscription;
-import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 /**
@@ -327,7 +326,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             if (this.currentTask == null) {
                 return TaskExecutorReport.available();
             } else {
-                return TaskExecutorReport.occupied(currentTask.getWorkerId());
+                return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
         }, timeout);
     }
@@ -443,11 +442,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         log.info("Received request {} for execution", request);
         if (currentTask != null) {
-            if (currentTask.getWorkerId().equals(request.getWorkerId())) {
+            if (currentTask.getWorkerId().equals(request.getWorkerId().getId())) {
                 return CompletableFuture.completedFuture(Ack.getInstance());
             } else {
                 return CompletableFutures.exceptionallyCompletedFuture(
-                    new TaskAlreadyRunningException(currentTask.getWorkerId()));
+                    new TaskAlreadyRunningException(WorkerId.fromIdUnsafe(currentTask.getWorkerId())));
             }
         }
 
@@ -524,18 +523,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         this.currentTask = task;
         if (task == null) {
-            if (currentTaskStatusSubscription != null) {
-                currentTaskStatusSubscription.unsubscribe();
-            }
+            // if (currentTaskStatusSubscription != null) {
+            //     currentTaskStatusSubscription.unsubscribe();
+            // }
 
             setStatus(TaskExecutorReport.available());
         } else {
-            currentTaskStatusSubscription =
-                task
-                    .getStatus()
-                    .observeOn(Schedulers.from(getMainThreadExecutor()))
-                    .subscribe(this::updateExecutionStatus);
-            setStatus(TaskExecutorReport.occupied(task.getWorkerId()));
+            // currentTaskStatusSubscription =
+            //     task
+            //         .getStatus()
+            //         .observeOn(Schedulers.from(getMainThreadExecutor()))
+            //         .subscribe(this::updateExecutionStatus);
+            setStatus(TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(task.getWorkerId())));
         }
     }
 
@@ -573,7 +572,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public CompletableFuture<Ack> cancelTask(WorkerId workerId) {
         if (this.currentTask == null) {
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
-        } else if (!this.currentTask.getWorkerId().equals(workerId)) {
+        } else if (!this.currentTask.getWorkerId().equals(workerId.getId())) {
             log.error("my current worker id is {} while expected worker id is {}", currentTask.getWorkerId(), workerId);
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
         } else {

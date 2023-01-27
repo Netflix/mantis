@@ -30,7 +30,6 @@ import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
@@ -113,7 +112,7 @@ public class MantisWorker extends BaseService {
 
         // services
         // metrics
-        TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
+        // TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
         PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
@@ -160,10 +159,10 @@ public class MantisWorker extends BaseService {
                                     wrappedRequest.getRequest()));
                             runtimeTaskImpl.setJob(jobToRun);
 
-                            taskStatusUpdateSubscription =
-                                runtimeTaskImpl
-                                    .getStatus()
-                                    .subscribe(statusUpdateHandler::onStatusUpdate);
+                            // taskStatusUpdateSubscription =
+                            //     runtimeTaskImpl
+                            //         .getStatus()
+                            //         .subscribe(statusUpdateHandler::onStatusUpdate);
 
                             vmStatusSubscription =
                                 runtimeTaskImpl.getVMStatus().subscribe(vmTaskStatusSubject);

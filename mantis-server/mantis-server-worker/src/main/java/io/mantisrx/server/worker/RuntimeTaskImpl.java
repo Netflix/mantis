@@ -28,11 +28,11 @@ import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
-import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
@@ -47,6 +47,7 @@ import org.apache.flink.util.UserCodeClassLoader;
 import org.slf4j.MDC;
 import rx.Observable;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 @Slf4j
@@ -57,6 +58,8 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     private WorkerConfiguration config;
 
     private final List<Service> mantisServices = new ArrayList<>();
+
+    private TaskStatusUpdateHandler taskStatusUpdateHandler;
 
     private MantisMasterGateway masterMonitor;
 
@@ -80,8 +83,6 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.tasksStatusSubject = tasksStatusSubject;
     }
 
-
-    // @Override
     // public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
     //                        WorkerConfiguration config,
     //                        MantisMasterGateway masterMonitor,
@@ -127,6 +128,11 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
                 haServices.getMasterClientApi(),
                 Clock.systemDefaultZone());
+
+        // link task status to status updateHandler
+        this.taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+        this.getStatus().observeOn(Schedulers.io())
+            .subscribe(status -> this.taskStatusUpdateHandler.onStatusUpdate(status));
     }
 
     public void setJob(Optional<Job> job) {
@@ -212,7 +218,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         return executeStageRequest.getNameOfJobProviderClass();
     }
 
-    public Observable<Status> getStatus() {
+    protected Observable<Status> getStatus() {
         return tasksStatusSubject
             .flatMap((Func1<Observable<Status>, Observable<Status>>) status -> status);
     }
@@ -221,7 +227,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         return vmTaskStatusSubject;
     }
 
-    public WorkerId getWorkerId() {
-        return executeStageRequest.getWorkerId();
+    public String getWorkerId() {
+        return executeStageRequest.getWorkerId().getId();
     }
 }

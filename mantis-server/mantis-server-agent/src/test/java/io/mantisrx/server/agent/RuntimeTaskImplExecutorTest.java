@@ -50,6 +50,7 @@ import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -90,7 +91,7 @@ public class RuntimeTaskImplExecutorTest {
 
     private WorkerConfiguration workerConfiguration;
     private RpcService rpcService;
-    private MantisMasterGateway masterMonitor;
+    private MantisMasterGateway masterClientApi;
     private HighAvailabilityServices highAvailabilityServices;
     private ClassLoaderHandle classLoaderHandle;
     private TaskExecutor taskExecutor;
@@ -121,13 +122,29 @@ public class RuntimeTaskImplExecutorTest {
         workerConfiguration = new StaticPropertiesConfigurationFactory(props).getConfig();
         rpcService = new TestingRpcService();
 
-        masterMonitor = mock(MantisMasterGateway.class);
+        masterClientApi = mock(MantisMasterGateway.class);
         classLoaderHandle = ClassLoaderHandle.fixed(getClass().getClassLoader());
         resourceManagerGateway = getHealthyGateway("gateway 1");
         resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
         highAvailabilityServices = mock(HighAvailabilityServices.class);
-        when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterMonitor);
+        when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterClientApi);
         when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
+
+        HighAvailabilityServicesUtil.setHAServiceInstanceRef(highAvailabilityServices);
+        when(masterClientApi.updateStatus(any())).thenAnswer(s -> {
+            Object[] args = s.getArguments();
+            Status status = (Status) args[0];
+            log.info("Task Status = {}", status.getState());
+            if (status.getState() == MantisJobState.Started) {
+                startedSignal.countDown();
+            }
+
+            if (status.getState().isTerminalState()) {
+                finalStatus = status;
+                terminatedSignal.countDown();
+            }
+            return CompletableFuture.completedFuture(Ack.getInstance());
+        });
     }
 
     private void start() throws Exception {
@@ -176,7 +193,7 @@ public class RuntimeTaskImplExecutorTest {
                 .put(1, new WorkerAssignments(1, 1,
                     ImmutableMap.<Integer, WorkerHost>builder().put(0, host).build()))
                 .build();
-        when(masterMonitor.schedulingChanges("jobId-0")).thenReturn(
+        when(masterClientApi.schedulingChanges("jobId-0")).thenReturn(
             Observable.just(new JobSchedulingInfo("jobId-0", stageAssignmentMap)));
 
         WorkerId workerId = new WorkerId("jobId-0", 0, 1);
@@ -378,7 +395,6 @@ public class RuntimeTaskImplExecutorTest {
 
     private static class TestingTaskExecutor extends TaskExecutor {
 
-        private final Consumer<Status> consumer;
 
         public TestingTaskExecutor(RpcService rpcService,
                                    WorkerConfiguration workerConfiguration,
@@ -388,13 +404,8 @@ public class RuntimeTaskImplExecutorTest {
                                    Consumer<Status> consumer) {
             super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
                 subscriptionStateHandlerFactory);
-            this.consumer = consumer;
         }
 
-        @Override
-        protected void updateExecutionStatus(Status status) {
-            consumer.accept(status);
-        }
     }
 
     @Getter
