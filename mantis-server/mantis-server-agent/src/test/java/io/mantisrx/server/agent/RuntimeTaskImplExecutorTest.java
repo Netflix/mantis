@@ -27,7 +27,11 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.spotify.futures.CompletableFutures;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -44,13 +48,13 @@ import io.mantisrx.runtime.source.http.impl.HttpRequestFactories;
 import io.mantisrx.server.agent.TaskExecutor.Listener;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.JobSchedulingInfo;
+import io.mantisrx.server.core.PostJobStatusRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
-import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -62,6 +66,11 @@ import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +78,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -93,6 +104,7 @@ public class RuntimeTaskImplExecutorTest {
     private RpcService rpcService;
     private MantisMasterGateway masterClientApi;
     private HighAvailabilityServices highAvailabilityServices;
+    private HttpServer localApiServer;
     private ClassLoaderHandle classLoaderHandle;
     private TaskExecutor taskExecutor;
     private CountDownLatch startedSignal;
@@ -105,7 +117,7 @@ public class RuntimeTaskImplExecutorTest {
     private CollectingTaskLifecycleListener listener;
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         final Properties props = new Properties();
         props.setProperty("mantis.zookeeper.root", "");
 
@@ -114,6 +126,9 @@ public class RuntimeTaskImplExecutorTest {
         props.setProperty("mantis.taskexecutor.cluster-id", "default");
         props.setProperty("mantis.taskexecutor.heartbeats.interval", "100");
         props.setProperty("mantis.taskexecutor.metrics.collector", "io.mantisrx.server.agent.DummyMetricsCollector");
+
+        props.setProperty("mantis.localmode", "true");
+        props.setProperty("mantis.zookeeper.connectString", "localhost:8100");
 
         startedSignal = new CountDownLatch(1);
         doneSignal = new CountDownLatch(1);
@@ -126,26 +141,14 @@ public class RuntimeTaskImplExecutorTest {
         classLoaderHandle = ClassLoaderHandle.fixed(getClass().getClassLoader());
         resourceManagerGateway = getHealthyGateway("gateway 1");
         resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
+
+        // worker and task executor do not share the same HA instance.
         highAvailabilityServices = mock(HighAvailabilityServices.class);
         when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterClientApi);
         when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
         when(highAvailabilityServices.startAsync()).thenReturn(highAvailabilityServices);
 
-        HighAvailabilityServicesUtil.setHAServiceInstanceRef(highAvailabilityServices);
-        when(masterClientApi.updateStatus(any())).thenAnswer(s -> {
-            Object[] args = s.getArguments();
-            Status status = (Status) args[0];
-            log.info("Task Status = {}", status.getState());
-            if (status.getState() == MantisJobState.Started) {
-                startedSignal.countDown();
-            }
-
-            if (status.getState().isTerminalState()) {
-                finalStatus = status;
-                terminatedSignal.countDown();
-            }
-            return CompletableFuture.completedFuture(Ack.getInstance());
-        });
+        setupLocalControl(8100);
     }
 
     private void start() throws Exception {
@@ -258,6 +261,51 @@ public class RuntimeTaskImplExecutorTest {
         assertTrue(listener.isCancellingCalled());
         assertTrue(listener.isCancelledCalled());
         assertFalse(listener.isFailedCalled());
+    }
+
+    private void setupLocalControl(int port) throws IOException {
+        this.localApiServer = HttpServer.create(new InetSocketAddress("localhost", port), 0);
+        this.localApiServer.createContext(
+            "/",
+            new HttpHandler() {
+                private JsonSerializer jsonSerializer = new JsonSerializer();
+
+                @Override
+                public void handle(HttpExchange exchange) throws IOException {
+                    if ("GET".equals(exchange.getRequestMethod())) {
+                        log.warn("unexpect get request: {}", exchange.getRequestURI());
+                    } else if ("POST".equals(exchange.getRequestMethod())) {
+                        InputStreamReader isr = new InputStreamReader(exchange.getRequestBody());
+                        BufferedReader br = new BufferedReader(isr);
+                        String value = br.readLine();
+                        log.info("post body: {}", value);
+                        PostJobStatusRequest statusReq =
+                            jsonSerializer.fromJSON(value, PostJobStatusRequest.class);
+                        log.info("Job signal: {}", statusReq.getStatus());
+                        if (statusReq.getStatus().getState() == MantisJobState.Started) {
+                            log.info("Job start signal received");
+                            startedSignal.countDown();
+                        }
+
+                        if (statusReq.getStatus().getState().isTerminalState()) {
+                            log.info("Job terminate signal received");
+                            terminatedSignal.countDown();
+                        }
+                    }
+
+                    OutputStream outputStream = exchange.getResponseBody();
+                    String payload = "";
+                    exchange.sendResponseHeaders(200, payload.length());
+                    outputStream.write(payload.getBytes());
+                    outputStream.flush();
+                    outputStream.close();
+                }
+            });
+
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
+        this.localApiServer.setExecutor(threadPoolExecutor);
+        this.localApiServer.start();
+        log.info("Local API Server started on port: {}", port);
     }
 
     @Test
