@@ -55,7 +55,8 @@ public class HighAvailabilityServicesUtil {
           HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
       }
     }
-      return HAServiceInstanceRef.get();
+
+    return HAServiceInstanceRef.get();
   }
 
   /**

@@ -59,6 +59,8 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
 
     private final List<Service> mantisServices = new ArrayList<>();
 
+    private HighAvailabilityServices highAvailabilityServices;
+
     private TaskStatusUpdateHandler taskStatusUpdateHandler;
 
     private MantisMasterGateway masterMonitor;
@@ -120,13 +122,13 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             throw new RuntimeException(e);
         }
 
-        HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(config);
+        this.highAvailabilityServices = HighAvailabilityServicesUtil.createHAServices(config);
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
-        this.masterMonitor = haServices.getMasterClientApi();
+        this.masterMonitor = this.highAvailabilityServices.getMasterClientApi();
         this.userCodeClassLoader = userCodeClassLoader;
         this.sinkSubscriptionStateHandlerFactory =
             SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                haServices.getMasterClientApi(),
+                this.highAvailabilityServices.getMasterClientApi(),
                 Clock.systemDefaultZone());
 
         // link task status to status updateHandler
@@ -155,6 +157,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             }
 
             log.info("Starting current task {}", this);
+            this.highAvailabilityServices.startAsync().awaitRunning();
             doRun();
         } catch (Exception e) {
             log.error("Failed executing the task {}", executeStageRequest, e);

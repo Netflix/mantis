@@ -129,6 +129,7 @@ public class RuntimeTaskImplExecutorTest {
         highAvailabilityServices = mock(HighAvailabilityServices.class);
         when(highAvailabilityServices.getMasterClientApi()).thenReturn(masterClientApi);
         when(highAvailabilityServices.connectWithResourceManager(any())).thenReturn(resourceManagerGatewayCxn);
+        when(highAvailabilityServices.startAsync()).thenReturn(highAvailabilityServices);
 
         HighAvailabilityServicesUtil.setHAServiceInstanceRef(highAvailabilityServices);
         when(masterClientApi.updateStatus(any())).thenAnswer(s -> {
