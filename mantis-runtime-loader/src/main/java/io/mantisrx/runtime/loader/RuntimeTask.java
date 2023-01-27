@@ -16,23 +16,19 @@
 
 package io.mantisrx.runtime.loader;
 
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler.Factory;
-import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 
 public interface RuntimeTask extends Service {
 
-    void initialize(WrappedExecuteStageRequest request,
-                    WorkerConfiguration config,
-                    MantisMasterGateway masterMonitor,
-                    UserCodeClassLoader userCodeClassLoader,
-                    Factory sinkSubscriptionStateHandlerFactory);
+    // void initialize(WrappedExecuteStageRequest request,
+    //                 WorkerConfiguration config,
+    //                 MantisMasterGateway masterMonitor,
+    //                 UserCodeClassLoader userCodeClassLoader,
+    //                 Factory sinkSubscriptionStateHandlerFactory);
 
     void initialize(
         String executeStageRequestString,

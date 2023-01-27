@@ -81,19 +81,19 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     }
 
 
-    @Override
-    public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
-                           WorkerConfiguration config,
-                           MantisMasterGateway masterMonitor,
-                           UserCodeClassLoader userCodeClassLoader,
-                           SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
-        this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
-        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
-        this.config = config;
-        this.masterMonitor = masterMonitor;
-        this.userCodeClassLoader = userCodeClassLoader;
-        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
-    }
+    // @Override
+    // public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
+    //                        WorkerConfiguration config,
+    //                        MantisMasterGateway masterMonitor,
+    //                        UserCodeClassLoader userCodeClassLoader,
+    //                        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+    //     this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
+    //     this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+    //     this.config = config;
+    //     this.masterMonitor = masterMonitor;
+    //     this.userCodeClassLoader = userCodeClassLoader;
+    //     this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+    // }
 
     public void initialize(
         String executeStageRequestString, // request string + publishSubject replace?

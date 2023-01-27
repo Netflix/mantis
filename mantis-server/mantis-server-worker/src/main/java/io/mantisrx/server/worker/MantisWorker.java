@@ -18,11 +18,12 @@ package io.mantisrx.server.worker;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
@@ -39,7 +40,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -141,17 +141,23 @@ public class MantisWorker extends BaseService {
                     .subscribe(wrappedRequest -> {
                         try {
                             runtimeTaskImpl = new RuntimeTaskImpl();
+                            JsonSerializer ser = new JsonSerializer();
+                            // runtimeTaskImpl.initialize(
+                            //     wrappedRequest,
+                            //     config,
+                            //     gateway,
+                            //     ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
+                            //         wrappedRequest.getRequest()),
+                            //     SinkSubscriptionStateHandler
+                            //         .Factory
+                            //         .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                            //             gateway,
+                            //             Clock.systemDefaultZone()));
                             runtimeTaskImpl.initialize(
-                                wrappedRequest,
-                                config,
-                                gateway,
+                                ser.toJson(wrappedRequest.getRequest()),
+                                ser.toJson(WorkerConfigurationUtils.toWritable(config)),
                                 ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
-                                    wrappedRequest.getRequest()),
-                                SinkSubscriptionStateHandler
-                                    .Factory
-                                    .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                        gateway,
-                                        Clock.systemDefaultZone()));
+                                    wrappedRequest.getRequest()));
                             runtimeTaskImpl.setJob(jobToRun);
 
                             taskStatusUpdateSubscription =
