@@ -504,7 +504,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "18.0"
+            "locked": "31.1-jre"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -827,7 +827,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "18.0"
+            "locked": "31.1-jre"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -1098,7 +1098,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "18.0"
+            "locked": "31.1-jre"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [

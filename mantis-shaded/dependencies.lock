@@ -49,8 +49,11 @@
         "com.fasterxml.jackson.module:jackson-module-afterburner": {
             "locked": "2.12.7"
         },
+        "com.google.guava:failureaccess": {
+            "locked": "1.0.1"
+        },
         "com.google.guava:guava": {
-            "locked": "18.0"
+            "locked": "31.1-jre"
         },
         "io.netty:netty": {
             "locked": "3.7.0.Final"
