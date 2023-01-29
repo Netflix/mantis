@@ -61,6 +61,8 @@ public interface IMantisPersistenceProvider {
 
     void updateMantisStage(final IMantisStageMetadata msmd) throws IOException;
 
+    IMantisStageMetadata getMantisStage(String jobId, int stageNum) throws IOException;
+
 
     /**
      * Store a new worker for the given job and stage number. This will be called only once for a given

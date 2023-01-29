@@ -277,6 +277,15 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         storeMantisStage(msmd);
     }
 
+    @Override
+    public IMantisStageMetadata getMantisStage(String jobId, int stageNum) throws IOException {
+        MantisStageMetadataWritable msmw =
+            mapper.readValue(
+                kvStore.get(JOB_STAGEDATA_NS, jobId, getJobStageFieldName(stageNum)),
+                MantisStageMetadataWritable.class);
+        return DataFormatAdapter.convertMantisStageMetadataWriteableToMantisStageMetadata(msmw, eventPublisher, false);
+    }
+
     private int workerMaxPartitionKey(MantisJobMetadataWritable jobMetadata) {
         try {
             return jobMetadata.getNextWorkerNumberToUse();
