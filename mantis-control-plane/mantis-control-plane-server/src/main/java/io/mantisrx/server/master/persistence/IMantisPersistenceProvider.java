@@ -28,6 +28,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -88,6 +89,8 @@ public interface IMantisPersistenceProvider {
     }
 
     void storeWorkers(final List<IMantisWorkerMetadata> workers) throws IOException;
+
+    Collection<IMantisWorkerMetadata> getActiveWorkers() throws IOException;
 
     /**
      * Store a new worker and update existing worker of a job atomically. Either both are stored or none is.

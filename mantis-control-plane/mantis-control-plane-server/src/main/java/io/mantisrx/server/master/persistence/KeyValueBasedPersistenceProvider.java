@@ -313,6 +313,21 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
+    public Collection<IMantisWorkerMetadata> getActiveWorkers() throws IOException {
+        return getAllWorkersByJobId(WORKERS_NS)
+            .values()
+            .parallelStream()
+            .flatMap(l ->
+                l.parallelStream()
+                    .map(storeWritable ->
+                        DataFormatAdapter
+                            .convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
+                                storeWritable, eventPublisher)))
+            .map(JobWorker::getMetadata)
+            .collect(Collectors.toList());
+    }
+
+    @Override
     public void storeWorkers(List<IMantisWorkerMetadata> workers) throws IOException {
         for (IMantisWorkerMetadata worker : workers) {
             final MantisWorkerMetadataWritable mwmw = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(worker);
@@ -335,7 +350,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private Map<String, List<MantisWorkerMetadataWritable>> getAllWorkersByJobId(final String namespace) throws IOException {
         Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = new HashMap<>();
         for (Map.Entry<String, Map<String, String>> worker : kvStore.getAllRows(namespace).entrySet()) {
-            if (worker.getValue().values().size() <= 0) {
+            if (worker.getValue().values().size() == 0) {
                 continue;
             }
             List<MantisWorkerMetadataWritable> workers = worker.getValue().values().stream()

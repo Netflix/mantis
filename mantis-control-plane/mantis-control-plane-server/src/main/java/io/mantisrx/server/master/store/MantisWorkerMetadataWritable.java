@@ -27,15 +27,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
 
 
 public class MantisWorkerMetadataWritable implements MantisWorkerMetadata {
 
     @JsonIgnore
     private final WorkerId workerId;
-    @JsonIgnore
-    private final ReentrantLock lock = new ReentrantLock();
     private int workerIndex;
     private int workerNumber;
     private String jobId;

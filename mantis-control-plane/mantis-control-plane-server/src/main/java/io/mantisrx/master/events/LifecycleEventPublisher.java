@@ -16,8 +16,32 @@
 
 package io.mantisrx.master.events;
 
+import io.mantisrx.master.events.LifecycleEventsProto.AuditEvent;
+import io.mantisrx.master.events.LifecycleEventsProto.StatusEvent;
+import io.mantisrx.master.events.LifecycleEventsProto.WorkerListChangedEvent;
+
 public interface LifecycleEventPublisher {
     void publishAuditEvent(LifecycleEventsProto.AuditEvent auditEvent);
     void publishStatusEvent(LifecycleEventsProto.StatusEvent statusEvent);
     void publishWorkerListChangedEvent(LifecycleEventsProto.WorkerListChangedEvent workerListChangedEvent);
+
+    static LifecycleEventPublisher noop() {
+        return new LifecycleEventPublisher() {
+            @Override
+            public void publishAuditEvent(AuditEvent auditEvent) {
+
+            }
+
+            @Override
+            public void publishStatusEvent(StatusEvent statusEvent) {
+
+            }
+
+            @Override
+            public void publishWorkerListChangedEvent(
+                WorkerListChangedEvent workerListChangedEvent) {
+
+            }
+        };
+    }
 }
