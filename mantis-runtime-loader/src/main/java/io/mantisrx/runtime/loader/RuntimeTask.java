@@ -16,25 +16,21 @@
 
 package io.mantisrx.runtime.loader;
 
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler.Factory;
-import io.mantisrx.runtime.loader.config.WorkerConfiguration;
-import io.mantisrx.server.core.Status;
-import io.mantisrx.server.core.WrappedExecuteStageRequest;
-import io.mantisrx.server.core.domain.WorkerId;
-import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import org.apache.flink.util.UserCodeClassLoader;
-import rx.Observable;
 
+/**
+ * Interface to load core runtime work load from external host (mesos or TaskExecutor).
+ * [Note] To avoid dependency conflicts in TaskExecutors running in custom structure
+ * e.g. SpringBoot based runtime, adding dependency here shall be carefully reviewed.
+ * Do not have any shared Mantis library that will be used on both TaskExecutor and implementations of
+ * RuntimeTask in here and use primitive types in general.
+ */
 public interface RuntimeTask extends Service {
+    void initialize(
+        String executeStageRequestString,
+        String workerConfigurationString,
+        UserCodeClassLoader userCodeClassLoader);
 
-    void initialize(WrappedExecuteStageRequest request,
-                    WorkerConfiguration config,
-                    MantisMasterGateway masterMonitor,
-                    UserCodeClassLoader userCodeClassLoader,
-                    Factory sinkSubscriptionStateHandlerFactory);
-
-    Observable<Status> getStatus();
-
-    WorkerId getWorkerId();
+    String getWorkerId();
 }

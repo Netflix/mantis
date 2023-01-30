@@ -16,6 +16,8 @@
 package io.mantisrx.server.master.client;
 
 import io.mantisrx.server.core.CoreConfiguration;
+import io.mantisrx.server.core.master.LocalMasterMonitor;
+import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -42,13 +44,75 @@ public class HighAvailabilityServicesUtil {
 
   public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
     if (configuration.isLocalMode()) {
-      throw new UnsupportedOperationException();
-    } else {
+      log.warn("HA service running in local mode. This is only valid in local test.");
+      if (HAServiceInstanceRef.get() == null) {
+          String[] parts = configuration.getZkConnectionString().split(":");
+          if (parts.length != 2) {
+              throw new RuntimeException(
+                  "invalid local mode connection string: " + configuration.getZkConnectionString());
+          }
+
+          int apiPort = Integer.parseInt(parts[1]);
+          HAServiceInstanceRef.compareAndSet(null, new LocalHighAvailabilityServices(
+              new MasterDescription(
+                  parts[0],
+                  "127.0.0.1",
+                  apiPort,
+                  apiPort + 2,
+                  apiPort + 4,
+                  "api/postjobstatus",
+                  apiPort + 6,
+                  System.currentTimeMillis())));
+      }
+    }
+    else {
       if (HAServiceInstanceRef.get() == null) {
           HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
       }
+    }
 
-      return HAServiceInstanceRef.get();
+    return HAServiceInstanceRef.get();
+  }
+
+  private static class LocalHighAvailabilityServices extends AbstractIdleService implements HighAvailabilityServices {
+    private final MasterMonitor masterMonitor;
+
+    public LocalHighAvailabilityServices(MasterDescription masterDescription) {
+        this.masterMonitor = new LocalMasterMonitor(masterDescription);
+    }
+
+    @Override
+    public MantisMasterGateway getMasterClientApi() {
+        return new MantisMasterClientApi(this.masterMonitor);
+    }
+
+    @Override
+    public MasterMonitor getMasterMonitor() {
+        return this.masterMonitor;
+    }
+
+    @Override
+    public ResourceLeaderConnection<ResourceClusterGateway> connectWithResourceManager(ClusterID clusterID) {
+        return new ResourceLeaderConnection<ResourceClusterGateway>() {
+            final MasterMonitor masterMonitor = LocalHighAvailabilityServices.this.masterMonitor;
+
+            @Override
+            public ResourceClusterGateway getCurrent() {
+                return new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster());
+            }
+
+            @Override
+            public void register(ResourceLeaderChangeListener<ResourceClusterGateway> changeListener) {
+            }
+        };
+    }
+
+    @Override
+    protected void startUp() throws Exception {
+    }
+
+    @Override
+    protected void shutDown() throws Exception {
     }
   }
 

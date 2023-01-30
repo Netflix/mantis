@@ -18,18 +18,18 @@ package io.mantisrx.server.worker;
 
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
-import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
@@ -39,7 +39,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -113,7 +112,6 @@ public class MantisWorker extends BaseService {
 
         // services
         // metrics
-        TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
         PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
@@ -121,7 +119,6 @@ public class MantisWorker extends BaseService {
         // TODO(sundaram): inline services are hard to read. Would be good to refactor this.
         mantisServices.add(new Service() {
             private RuntimeTaskImpl runtimeTaskImpl;
-            private Subscription taskStatusUpdateSubscription;
             private Subscription vmStatusSubscription;
 
             @Override
@@ -141,23 +138,14 @@ public class MantisWorker extends BaseService {
                     .subscribe(wrappedRequest -> {
                         try {
                             runtimeTaskImpl = new RuntimeTaskImpl();
-                            runtimeTaskImpl.initialize(
-                                wrappedRequest,
-                                config,
-                                gateway,
-                                ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
-                                    wrappedRequest.getRequest()),
-                                SinkSubscriptionStateHandler
-                                    .Factory
-                                    .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
-                                        gateway,
-                                        Clock.systemDefaultZone()));
-                            runtimeTaskImpl.setJob(jobToRun);
+                            JsonSerializer ser = new JsonSerializer();
 
-                            taskStatusUpdateSubscription =
-                                runtimeTaskImpl
-                                    .getStatus()
-                                    .subscribe(statusUpdateHandler::onStatusUpdate);
+                            runtimeTaskImpl.initialize(
+                                ser.toJson(wrappedRequest.getRequest()),
+                                ser.toJson(WorkerConfigurationUtils.toWritable(config)),
+                                ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
+                                    wrappedRequest.getRequest()));
+                            runtimeTaskImpl.setJob(jobToRun);
 
                             vmStatusSubscription =
                                 runtimeTaskImpl.getVMStatus().subscribe(vmTaskStatusSubject);
@@ -175,7 +163,6 @@ public class MantisWorker extends BaseService {
                     try {
                         runtimeTaskImpl.stopAsync().awaitTerminated();
                     } finally {
-                        taskStatusUpdateSubscription.unsubscribe();
                         vmStatusSubscription.unsubscribe();
                     }
                 }

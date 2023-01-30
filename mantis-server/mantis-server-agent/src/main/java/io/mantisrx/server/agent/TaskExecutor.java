@@ -19,6 +19,7 @@ import com.mantisrx.common.utils.ListenerCallQueue;
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
@@ -27,6 +28,7 @@ import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
@@ -74,7 +76,6 @@ import org.apache.flink.runtime.rpc.RpcServiceUtils;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import rx.Subscription;
-import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 /**
@@ -325,7 +326,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             if (this.currentTask == null) {
                 return TaskExecutorReport.available();
             } else {
-                return TaskExecutorReport.occupied(currentTask.getWorkerId());
+                return TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(currentTask.getWorkerId()));
             }
         }, timeout);
     }
@@ -441,11 +442,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         log.info("Received request {} for execution", request);
         if (currentTask != null) {
-            if (currentTask.getWorkerId().equals(request.getWorkerId())) {
+            if (currentTask.getWorkerId().equals(request.getWorkerId().getId())) {
                 return CompletableFuture.completedFuture(Ack.getInstance());
             } else {
                 return CompletableFutures.exceptionallyCompletedFuture(
-                    new TaskAlreadyRunningException(currentTask.getWorkerId()));
+                    new TaskAlreadyRunningException(WorkerId.fromIdUnsafe(currentTask.getWorkerId())));
             }
         }
 
@@ -466,14 +467,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 wrappedRequest.getRequest(), classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
             // There should only be 1 task implementation provided by mantis-server-worker.
+            JsonSerializer ser = new JsonSerializer();
+            String executeRequest = ser.toJson(wrappedRequest.getRequest());
+            String configString = ser.toJson(WorkerConfigurationUtils.toWritable(workerConfiguration));
             RuntimeTask task = this.taskFactory.getRuntimeTaskInstance(wrappedRequest.getRequest(), cl);
 
             task.initialize(
-                wrappedRequest,
-                workerConfiguration,
-                masterMonitor,
-                userCodeClassLoader,
-                subscriptionStateHandlerFactory);
+                executeRequest,
+                configString,
+                userCodeClassLoader
+                );
 
             scheduleRunAsync(() -> {
                 setCurrentTask(task);
@@ -520,18 +523,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         this.currentTask = task;
         if (task == null) {
-            if (currentTaskStatusSubscription != null) {
-                currentTaskStatusSubscription.unsubscribe();
-            }
-
             setStatus(TaskExecutorReport.available());
         } else {
-            currentTaskStatusSubscription =
-                task
-                    .getStatus()
-                    .observeOn(Schedulers.from(getMainThreadExecutor()))
-                    .subscribe(this::updateExecutionStatus);
-            setStatus(TaskExecutorReport.occupied(task.getWorkerId()));
+            setStatus(TaskExecutorReport.occupied(WorkerId.fromIdUnsafe(task.getWorkerId())));
         }
     }
 
@@ -569,7 +563,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public CompletableFuture<Ack> cancelTask(WorkerId workerId) {
         if (this.currentTask == null) {
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
-        } else if (!this.currentTask.getWorkerId().equals(workerId)) {
+        } else if (!this.currentTask.getWorkerId().equals(workerId.getId())) {
             log.error("my current worker id is {} while expected worker id is {}", currentTask.getWorkerId(), workerId);
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
         } else {

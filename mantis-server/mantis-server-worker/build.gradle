@@ -27,6 +27,7 @@ dependencies {
     api project(":mantis-runtime")
     api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
+    api project(":mantis-server:mantis-server-agent")
 
     implementation "org.apache.mesos:mesos:$mesosVersion"
     implementation libraries.slf4jApi
