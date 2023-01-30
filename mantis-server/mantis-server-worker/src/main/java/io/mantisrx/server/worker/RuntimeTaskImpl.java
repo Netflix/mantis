@@ -138,7 +138,9 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     protected void startUp() throws Exception {
         try {
             log.info("Starting current task {}", this);
-            this.highAvailabilityServices.startAsync().awaitRunning();
+            if (!this.highAvailabilityServices.isRunning()) {
+                this.highAvailabilityServices.startAsync().awaitRunning();
+            }
             doRun();
         } catch (Exception e) {
             log.error("Failed executing the task {}", executeStageRequest, e);
