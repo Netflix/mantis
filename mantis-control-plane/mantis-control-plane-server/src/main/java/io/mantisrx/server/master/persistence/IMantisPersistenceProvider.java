@@ -94,6 +94,8 @@ public interface IMantisPersistenceProvider {
 
     Collection<IMantisWorkerMetadata> getActiveWorkers() throws IOException;
 
+    Collection<IMantisWorkerMetadata> getActiveWorkers(String jobId) throws IOException;
+
     /**
      * Store a new worker and update existing worker of a job atomically. Either both are stored or none is.
      *

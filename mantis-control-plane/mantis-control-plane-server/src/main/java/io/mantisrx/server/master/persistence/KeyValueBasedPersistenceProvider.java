@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -336,6 +337,20 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
             .collect(Collectors.toList());
     }
 
+    public Collection<IMantisWorkerMetadata> getActiveWorkers(String jobId) throws IOException {
+        return getAllWorkersByJobId(WORKERS_NS, jobId)
+            .values()
+            .parallelStream()
+            .flatMap(l ->
+                l.parallelStream()
+                    .map(storeWritable ->
+                        DataFormatAdapter
+                            .convertMantisWorkerMetadataWriteableToMantisWorkerMetadata(
+                                storeWritable, eventPublisher)))
+            .map(JobWorker::getMetadata)
+            .collect(Collectors.toList());
+    }
+
     @Override
     public void storeWorkers(List<IMantisWorkerMetadata> workers) throws IOException {
         for (IMantisWorkerMetadata worker : workers) {
@@ -356,9 +371,20 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         storeWorker(worker);
     }
 
-    private Map<String, List<MantisWorkerMetadataWritable>> getAllWorkersByJobId(final String namespace) throws IOException {
+    private Map<String, List<MantisWorkerMetadataWritable>> getAllWorkersByJobId(final String namespace, String... jobIds) throws IOException {
         Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = new HashMap<>();
-        for (Map.Entry<String, Map<String, String>> worker : kvStore.getAllRows(namespace).entrySet()) {
+        final Set<Entry<String, Map<String, String>>> workerSet;
+        if (jobIds.length == 0) {
+            workerSet = kvStore.getAllRows(namespace).entrySet();
+        } else {
+            Map<String, Map<String, String>> map = new HashMap<>();
+            for (String jobId : jobIds) {
+                map.put(jobId, kvStore.getAll(namespace, jobId));
+            }
+            workerSet = map.entrySet();
+        }
+
+        for (Map.Entry<String, Map<String, String>> worker : workerSet) {
             if (worker.getValue().values().size() == 0) {
                 continue;
             }
