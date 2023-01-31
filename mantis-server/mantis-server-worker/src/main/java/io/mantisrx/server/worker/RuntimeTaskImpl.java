@@ -33,9 +33,7 @@ import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
-import io.mantisrx.server.worker.mesos.MesosMetricsCollector;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
-import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import java.io.IOException;
 import java.time.Clock;
@@ -84,6 +82,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.tasksStatusSubject = tasksStatusSubject;
     }
 
+    @Override
     public void initialize(
         String executeStageRequestString, // request string + publishSubject replace?
         String workerConfigurationString, // config string
@@ -102,15 +101,8 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             this.wrappedExecuteStageRequest =
                 new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
 
-            // todo: temp workaournd to pick host metrics collector.
-            if (Strings.isNullOrEmpty(this.config.getTaskExecutorId())) {
-                log.info("Picking mesos metrics collector.");
-                configWritable.setMetricsCollector(MesosMetricsCollector.valueOf(this.config));
-            }
-            else {
-                log.info("Picking Cgroups metrics collector.");
-                configWritable.setMetricsCollector(CgroupsMetricsCollector.valueOf(System.getProperties()));
-            }
+            log.info("Picking Cgroups metrics collector.");
+            configWritable.setMetricsCollector(CgroupsMetricsCollector.valueOf(System.getProperties()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -128,6 +120,27 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
         this.getStatus().observeOn(Schedulers.io())
             .subscribe(status -> this.taskStatusUpdateHandler.onStatusUpdate(status));
+    }
+
+    /**
+     * Initialize path used by Mesos driver. This is not part of the RuntimeTask interface but only invoked directly
+     * via mesos startup.
+     */
+    protected void initialize(
+        WrappedExecuteStageRequest wrappedExecuteStageRequest,
+        WorkerConfiguration config,
+        MantisMasterGateway masterMonitor,
+        UserCodeClassLoader userCodeClassLoader,
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+
+        log.info("initialize RuntimeTaskImpl on injected ExecuteStageRequest: {}",
+            wrappedExecuteStageRequest.getRequest());
+        this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+        this.config = config;
+        this.masterMonitor = masterMonitor;
+        this.userCodeClassLoader = userCodeClassLoader;
+        this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
     }
 
     public void setJob(Optional<Job> job) {

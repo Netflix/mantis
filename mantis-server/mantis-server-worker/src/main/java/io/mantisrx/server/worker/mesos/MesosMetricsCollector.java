@@ -19,6 +19,7 @@ package io.mantisrx.server.worker.mesos;
 import io.mantisrx.runtime.loader.config.MetricsCollector;
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.OperatorOnErrorResumeNextViaFunction;
 import java.nio.charset.Charset;
@@ -70,6 +71,11 @@ public class MesosMetricsCollector implements MetricsCollector {
 
     MesosMetricsCollector(int slavePort, String taskId) {
         logger.info("Creating MesosMetricsCollector to port {} of taskId: {}", slavePort, taskId);
+
+        if (Strings.isNullOrEmpty(taskId)) {
+            // only log error to avoid breaking tests.
+            logger.error("Invalid task id for MesosMetricsCollector");
+        }
         this.slavePort = slavePort;
         this.taskId = taskId;
     }

@@ -18,6 +18,7 @@ package io.mantisrx.server.agent;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
@@ -56,6 +57,7 @@ public class WorkerConfigurationWritableTest {
         assertEquals("testId1", configurationWritable.getTaskExecutorId());
         assertEquals(999, configurationWritable.getHeartbeatInternalInMs());
         assertEquals(998, configurationWritable.getMesosSlavePort());
+        assertNotNull(configurationWritable.getUsageSupplier());
 
         String configStr = ConfigWritableToString(configurationWritable);
         WorkerConfigurationWritable configurationWritable2 =
@@ -64,5 +66,6 @@ public class WorkerConfigurationWritableTest {
         assertEquals("testId1", configurationWritable2.getTaskExecutorId());
         assertEquals(999, configurationWritable2.getHeartbeatInternalInMs());
         assertEquals(998, configurationWritable2.getMesosSlavePort());
+        assertNull(configurationWritable2.getUsageSupplier());
     }
 }
