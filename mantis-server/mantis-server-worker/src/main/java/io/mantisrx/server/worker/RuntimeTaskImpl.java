@@ -56,6 +56,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
 
     private final List<Service> mantisServices = new ArrayList<>();
 
+    // HA service instance on TaskExecutor path. Could be null in mesos task.
     private HighAvailabilityServices highAvailabilityServices;
 
     private TaskStatusUpdateHandler taskStatusUpdateHandler;
@@ -151,7 +152,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     protected void startUp() throws Exception {
         try {
             log.info("Starting current task {}", this);
-            if (!this.highAvailabilityServices.isRunning()) {
+            if (this.highAvailabilityServices != null && !this.highAvailabilityServices.isRunning()) {
                 this.highAvailabilityServices.startAsync().awaitRunning();
             }
             doRun();
