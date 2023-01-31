@@ -142,6 +142,11 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.masterMonitor = masterMonitor;
         this.userCodeClassLoader = userCodeClassLoader;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+
+        // link task status to status updateHandler
+        this.taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+        this.getStatus().observeOn(Schedulers.io())
+            .subscribe(status -> this.taskStatusUpdateHandler.onStatusUpdate(status));
     }
 
     public void setJob(Optional<Job> job) {
