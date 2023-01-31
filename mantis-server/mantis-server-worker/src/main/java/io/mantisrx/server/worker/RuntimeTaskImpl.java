@@ -105,7 +105,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
             // todo: temp workaournd to pick host metrics collector.
             if (Strings.isNullOrEmpty(this.config.getTaskExecutorId())) {
                 log.info("Picking mesos metrics collector.");
-                configWritable.setMetricsCollector(MesosMetricsCollector.valueOf(System.getProperties()));
+                configWritable.setMetricsCollector(MesosMetricsCollector.valueOf(this.config));
             }
             else {
                 log.info("Picking Cgroups metrics collector.");
