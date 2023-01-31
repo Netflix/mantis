@@ -31,6 +31,7 @@ import lombok.Data;
 @Builder
 public class WorkerConfigurationWritable implements WorkerConfiguration {
 
+    int mesosSlavePort;
     int zkConnectionTimeoutMs;
     int zkConnectionRetrySleepMs;
     int zkConnectionMaxRetries;
@@ -114,7 +115,7 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
 
     @Override
     public int getMesosSlavePort() {
-        return -1; // deprecated mesos fields
+        return this.mesosSlavePort;
     }
 
     @Override

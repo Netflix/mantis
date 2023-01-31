@@ -69,6 +69,7 @@ public class MesosMetricsCollector implements MetricsCollector {
     }
 
     MesosMetricsCollector(int slavePort, String taskId) {
+        logger.info("Creating MesosMetricsCollector to port {} of taskId: {}", slavePort, taskId);
         this.slavePort = slavePort;
         this.taskId = taskId;
     }
@@ -89,13 +90,17 @@ public class MesosMetricsCollector implements MetricsCollector {
             .firstOrDefault("");
     }
 
+    @Override
     public Usage get() {
         return getCurentUsage(taskId, getUsageJson());
     }
 
     static Usage getCurentUsage(String taskId, String usageJson) {
-        if (usageJson == null || usageJson.isEmpty())
+        if (usageJson == null || usageJson.isEmpty()) {
+            logger.warn("Empty usage on task {}", taskId);
             return null;
+        }
+
         JSONArray array = new JSONArray(usageJson);
         if (array.length() == 0)
             return null;
