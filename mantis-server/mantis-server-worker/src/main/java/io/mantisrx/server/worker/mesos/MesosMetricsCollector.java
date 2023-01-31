@@ -41,7 +41,7 @@ import rx.functions.Func2;
  * <a href="https://mesos.readthedocs.io/en/latest/endpoints/slave/monitor/statistics.json/">mesos statics endpoint link</a>
  */
 public class MesosMetricsCollector implements MetricsCollector {
-
+    private static final String MESOS_TASK_EXECUTOR_ID_KEY = "MESOS_EXECUTOR_ID";
     private static final Logger logger = LoggerFactory.getLogger(MesosMetricsCollector.class);
     private static final long GET_TIMEOUT_SECS = 5;
     private static final int MAX_REDIRECTS = 10;
@@ -58,13 +58,13 @@ public class MesosMetricsCollector implements MetricsCollector {
     @SuppressWarnings("unused")
     public static MesosMetricsCollector valueOf(Properties properties) {
         int slavePort = Integer.parseInt(properties.getProperty("mantis.agent.mesos.slave.port", "5051"));
-        String taskId = System.getenv("MESOS_TASK_ID");
+        String taskId = System.getenv(MESOS_TASK_EXECUTOR_ID_KEY);
         return new MesosMetricsCollector(slavePort, taskId);
     }
 
     public static MesosMetricsCollector valueOf(WorkerConfiguration workerConfiguration) {
         int slavePort = workerConfiguration.getMesosSlavePort();
-        String taskId = System.getenv("MESOS_TASK_ID");
+        String taskId = System.getenv(MESOS_TASK_EXECUTOR_ID_KEY);
         return new MesosMetricsCollector(slavePort, taskId);
     }
 
