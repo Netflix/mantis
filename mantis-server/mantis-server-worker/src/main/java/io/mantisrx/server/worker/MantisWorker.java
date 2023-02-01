@@ -29,7 +29,6 @@ import io.mantisrx.server.core.WrappedExecuteStageRequest;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
-import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
@@ -113,7 +112,6 @@ public class MantisWorker extends BaseService {
 
         // services
         // metrics
-        TaskStatusUpdateHandler statusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(gateway);
 
         PublishSubject<WrappedExecuteStageRequest> executeStageSubject = PublishSubject.create();
         PublishSubject<VirtualMachineTaskStatus> vmTaskStatusSubject = PublishSubject.create();
@@ -121,7 +119,6 @@ public class MantisWorker extends BaseService {
         // TODO(sundaram): inline services are hard to read. Would be good to refactor this.
         mantisServices.add(new Service() {
             private RuntimeTaskImpl runtimeTaskImpl;
-            private Subscription taskStatusUpdateSubscription;
             private Subscription vmStatusSubscription;
 
             @Override
@@ -141,6 +138,8 @@ public class MantisWorker extends BaseService {
                     .subscribe(wrappedRequest -> {
                         try {
                             runtimeTaskImpl = new RuntimeTaskImpl();
+
+                            // invoke internal runtimeTaskImpl initialize to inject the wrapped request.
                             runtimeTaskImpl.initialize(
                                 wrappedRequest,
                                 config,
@@ -153,11 +152,6 @@ public class MantisWorker extends BaseService {
                                         gateway,
                                         Clock.systemDefaultZone()));
                             runtimeTaskImpl.setJob(jobToRun);
-
-                            taskStatusUpdateSubscription =
-                                runtimeTaskImpl
-                                    .getStatus()
-                                    .subscribe(statusUpdateHandler::onStatusUpdate);
 
                             vmStatusSubscription =
                                 runtimeTaskImpl.getVMStatus().subscribe(vmTaskStatusSubject);
@@ -175,7 +169,6 @@ public class MantisWorker extends BaseService {
                     try {
                         runtimeTaskImpl.stopAsync().awaitTerminated();
                     } finally {
-                        taskStatusUpdateSubscription.unsubscribe();
                         vmStatusSubscription.unsubscribe();
                     }
                 }

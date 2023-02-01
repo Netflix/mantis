@@ -15,20 +15,28 @@
  */
 package io.mantisrx.server.worker;
 
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+import io.mantisrx.runtime.loader.config.WorkerConfigurationWritable;
+import io.mantisrx.server.agent.metrics.cgroups.CgroupsMetricsCollector;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
-import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.core.metrics.MetricsFactory;
+import io.mantisrx.server.master.client.HighAvailabilityServices;
+import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
+import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.worker.client.WorkerMetricsClient;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
+import java.io.IOException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.UserCodeClassLoader;
 import rx.Observable;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
 @Slf4j
@@ -46,6 +55,11 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     private WorkerConfiguration config;
 
     private final List<Service> mantisServices = new ArrayList<>();
+
+    // HA service instance on TaskExecutor path. Could be null in mesos task.
+    private HighAvailabilityServices highAvailabilityServices;
+
+    private TaskStatusUpdateHandler taskStatusUpdateHandler;
 
     private MantisMasterGateway masterMonitor;
 
@@ -69,19 +83,70 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         this.tasksStatusSubject = tasksStatusSubject;
     }
 
-
     @Override
-    public void initialize(WrappedExecuteStageRequest wrappedExecuteStageRequest,
-                           WorkerConfiguration config,
-                           MantisMasterGateway masterMonitor,
-                           UserCodeClassLoader userCodeClassLoader,
-                           SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+    public void initialize(
+        String executeStageRequestString, // request string + publishSubject replace?
+        String workerConfigurationString, // config string
+        UserCodeClassLoader userCodeClassLoader) {
+
+        try {
+            log.info("Creating runtimeTaskImpl.");
+            log.info("runtimeTaskImpl workerConfigurationString: {}", workerConfigurationString);
+            log.info("runtimeTaskImpl executeStageRequestString: {}", executeStageRequestString);
+            JsonSerializer ser = new JsonSerializer();
+            WorkerConfigurationWritable configWritable =
+                WorkerConfigurationUtils.stringToWorkerConfiguration(workerConfigurationString);
+            this.config = configWritable;
+            ExecuteStageRequest executeStageRequest =
+                ser.fromJSON(executeStageRequestString, ExecuteStageRequest.class);
+            this.wrappedExecuteStageRequest =
+                new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
+
+            log.info("Picking Cgroups metrics collector.");
+            configWritable.setMetricsCollector(CgroupsMetricsCollector.valueOf(System.getProperties()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        this.highAvailabilityServices = HighAvailabilityServicesUtil.createHAServices(config);
+        this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
+        this.masterMonitor = this.highAvailabilityServices.getMasterClientApi();
+        this.userCodeClassLoader = userCodeClassLoader;
+        this.sinkSubscriptionStateHandlerFactory =
+            SinkSubscriptionStateHandler.Factory.forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
+                this.highAvailabilityServices.getMasterClientApi(),
+                Clock.systemDefaultZone());
+
+        // link task status to status updateHandler
+        this.taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+        this.getStatus().observeOn(Schedulers.io())
+            .subscribe(status -> this.taskStatusUpdateHandler.onStatusUpdate(status));
+    }
+
+    /**
+     * Initialize path used by Mesos driver. This is not part of the RuntimeTask interface but only invoked directly
+     * via mesos startup.
+     */
+    protected void initialize(
+        WrappedExecuteStageRequest wrappedExecuteStageRequest,
+        WorkerConfiguration config,
+        MantisMasterGateway masterMonitor,
+        UserCodeClassLoader userCodeClassLoader,
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+
+        log.info("initialize RuntimeTaskImpl on injected ExecuteStageRequest: {}",
+            wrappedExecuteStageRequest.getRequest());
         this.wrappedExecuteStageRequest = wrappedExecuteStageRequest;
         this.executeStageRequest = wrappedExecuteStageRequest.getRequest();
         this.config = config;
         this.masterMonitor = masterMonitor;
         this.userCodeClassLoader = userCodeClassLoader;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+
+        // link task status to status updateHandler
+        this.taskStatusUpdateHandler = TaskStatusUpdateHandler.forReportingToGateway(masterMonitor);
+        this.getStatus().observeOn(Schedulers.io())
+            .subscribe(status -> this.taskStatusUpdateHandler.onStatusUpdate(status));
     }
 
     public void setJob(Optional<Job> job) {
@@ -92,6 +157,9 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
     protected void startUp() throws Exception {
         try {
             log.info("Starting current task {}", this);
+            if (this.highAvailabilityServices != null && !this.highAvailabilityServices.isRunning()) {
+                this.highAvailabilityServices.startAsync().awaitRunning();
+            }
             doRun();
         } catch (Exception e) {
             log.error("Failed executing the task {}", executeStageRequest, e);
@@ -155,7 +223,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         return executeStageRequest.getNameOfJobProviderClass();
     }
 
-    public Observable<Status> getStatus() {
+    protected Observable<Status> getStatus() {
         return tasksStatusSubject
             .flatMap((Func1<Observable<Status>, Observable<Status>>) status -> status);
     }
@@ -164,7 +232,7 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
         return vmTaskStatusSubject;
     }
 
-    public WorkerId getWorkerId() {
-        return executeStageRequest.getWorkerId();
+    public String getWorkerId() {
+        return executeStageRequest.getWorkerId().getId();
     }
 }

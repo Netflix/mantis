@@ -18,6 +18,8 @@ package io.mantisrx.server.worker.mesos;
 
 import io.mantisrx.runtime.loader.config.MetricsCollector;
 import io.mantisrx.runtime.loader.config.Usage;
+import io.mantisrx.runtime.loader.config.WorkerConfiguration;
+import io.mantisrx.shaded.com.google.common.base.Strings;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.OperatorOnErrorResumeNextViaFunction;
 import java.nio.charset.Charset;
@@ -40,7 +42,7 @@ import rx.functions.Func2;
  * <a href="https://mesos.readthedocs.io/en/latest/endpoints/slave/monitor/statistics.json/">mesos statics endpoint link</a>
  */
 public class MesosMetricsCollector implements MetricsCollector {
-
+    private static final String MESOS_TASK_EXECUTOR_ID_KEY = "MESOS_EXECUTOR_ID";
     private static final Logger logger = LoggerFactory.getLogger(MesosMetricsCollector.class);
     private static final long GET_TIMEOUT_SECS = 5;
     private static final int MAX_REDIRECTS = 10;
@@ -57,11 +59,23 @@ public class MesosMetricsCollector implements MetricsCollector {
     @SuppressWarnings("unused")
     public static MesosMetricsCollector valueOf(Properties properties) {
         int slavePort = Integer.parseInt(properties.getProperty("mantis.agent.mesos.slave.port", "5051"));
-        String taskId = System.getenv("MESOS_TASK_ID");
+        String taskId = System.getenv(MESOS_TASK_EXECUTOR_ID_KEY);
+        return new MesosMetricsCollector(slavePort, taskId);
+    }
+
+    public static MesosMetricsCollector valueOf(WorkerConfiguration workerConfiguration) {
+        int slavePort = workerConfiguration.getMesosSlavePort();
+        String taskId = System.getenv(MESOS_TASK_EXECUTOR_ID_KEY);
         return new MesosMetricsCollector(slavePort, taskId);
     }
 
     MesosMetricsCollector(int slavePort, String taskId) {
+        logger.info("Creating MesosMetricsCollector to port {} of taskId: {}", slavePort, taskId);
+
+        if (Strings.isNullOrEmpty(taskId)) {
+            // only log error to avoid breaking tests.
+            logger.error("Invalid task id for MesosMetricsCollector");
+        }
         this.slavePort = slavePort;
         this.taskId = taskId;
     }
@@ -82,13 +96,17 @@ public class MesosMetricsCollector implements MetricsCollector {
             .firstOrDefault("");
     }
 
+    @Override
     public Usage get() {
         return getCurentUsage(taskId, getUsageJson());
     }
 
     static Usage getCurentUsage(String taskId, String usageJson) {
-        if (usageJson == null || usageJson.isEmpty())
+        if (usageJson == null || usageJson.isEmpty()) {
+            logger.warn("Empty usage on task {}", taskId);
             return null;
+        }
+
         JSONArray array = new JSONArray(usageJson);
         if (array.length() == 0)
             return null;
