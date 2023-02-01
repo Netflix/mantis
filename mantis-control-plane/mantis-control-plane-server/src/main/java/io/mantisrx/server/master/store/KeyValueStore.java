@@ -85,6 +85,14 @@ public interface KeyValueStore {
      */
     Map<String, String> getAll(String tableName, String partitionKey) throws IOException;
 
+    default Map<String, Map<String, String>> getAll(String tableName, List<String> partitionKeys) throws IOException {
+        Map<String, Map<String, String>> results = new HashMap<>();
+        for (String pKey : partitionKeys) {
+            results.put(pKey, getAll(tableName, pKey));
+        }
+        return results;
+    }
+
     /**
      * Adds a row corresponding to primary key (partitionKey, secondaryKey)
      * @param tableName the tableName/table to read from

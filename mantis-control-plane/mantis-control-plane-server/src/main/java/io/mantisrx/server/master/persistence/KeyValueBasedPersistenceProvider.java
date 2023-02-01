@@ -46,10 +46,13 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +66,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -306,6 +311,18 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         return String.format("%s-%d", pkeyPart, bucketized);
     }
 
+    static Pattern pattern = Pattern.compile("(.*)-(\\d+)");
+    private SimpleEntry<String, Integer> extractBucketizedPartitionKey(String s) {
+        Matcher matcher = pattern.matcher(s);
+        if (matcher.find()) {
+            String stringValue = matcher.group(1);
+            int intValue = Integer.parseInt(matcher.group(2));
+            return new SimpleEntry<>(stringValue, intValue);
+        } else {
+            return null;
+        }
+    }
+
     private String makeBucketizedSecondaryKey(int stageNum, int workerIdx, int workerNum) {
         return String.format("%d-%d-%d", stageNum, workerIdx, workerNum);
     }
@@ -324,7 +341,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     @Override
     public Collection<IMantisWorkerMetadata> getActiveWorkers() throws IOException {
-        return getAllWorkersByJobId(WORKERS_NS)
+        return getAllWorkersByJobId()
             .values()
             .parallelStream()
             .flatMap(l ->
@@ -338,7 +355,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     public Collection<IMantisWorkerMetadata> getActiveWorkers(String jobId) throws IOException {
-        return getAllWorkersByJobId(WORKERS_NS, jobId)
+        return getAllWorkersByJobId(jobId)
             .values()
             .parallelStream()
             .flatMap(l ->
@@ -371,17 +388,21 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         storeWorker(worker);
     }
 
-    private Map<String, List<MantisWorkerMetadataWritable>> getAllWorkersByJobId(final String namespace, String... jobIds) throws IOException {
+    private Map<String, List<MantisWorkerMetadataWritable>> getAllWorkersByJobId(String... jobIds) throws IOException {
         Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = new HashMap<>();
         final Set<Entry<String, Map<String, String>>> workerSet;
         if (jobIds.length == 0) {
-            workerSet = kvStore.getAllRows(namespace).entrySet();
+            workerSet = kvStore.getAllRows(KeyValueBasedPersistenceProvider.WORKERS_NS).entrySet();
         } else {
-            Map<String, Map<String, String>> map = new HashMap<>();
-            for (String jobId : jobIds) {
-                map.put(jobId, kvStore.getAll(namespace, jobId));
-            }
-            workerSet = map.entrySet();
+            Set<String> jobIdsSet = new HashSet<>(Arrays.asList(jobIds));
+            List<String> partitionKeys = kvStore.getAllPartitionKeys(
+                KeyValueBasedPersistenceProvider.WORKERS_NS);
+            List<String> matchedPKeys =
+                partitionKeys
+                    .stream()
+                    .filter(pKey -> jobIdsSet.contains(extractBucketizedPartitionKey(pKey).getKey()))
+                    .collect(Collectors.toList());
+            workerSet = kvStore.getAll(WORKERS_NS, matchedPKeys).entrySet();
         }
 
         for (Map.Entry<String, Map<String, String>> worker : workerSet) {
@@ -409,7 +430,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     @Override
     public List<IMantisJobMetadata> loadAllJobs() throws IOException {
         logger.info("MantisStorageProviderAdapter:Enter loadAllJobs");
-        final Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = getAllWorkersByJobId(WORKERS_NS);
+        final Map<String, List<MantisWorkerMetadataWritable>> workersByJobId = getAllWorkersByJobId();
         final List<IMantisJobMetadata> jobMetas = Lists.newArrayList();
         final Map<String, Map<String, String>> allRows = kvStore.getAllRows(JOB_STAGEDATA_NS);
         for (Map.Entry<String, Map<String, String>> jobInfo : allRows.entrySet()) {
