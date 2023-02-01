@@ -87,6 +87,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("1000")
     long getMasterApiAskTimeoutMs();
 
+    @Config("mantis.master.api.route.ask.longOperation.timeout.millis")
+    @Default("2500")
+    long getMasterApiLongOperationAskTimeoutMs();
+
     @Config("mesos.master.location")
     @Default("localhost:5050")
     String getMasterLocation();

@@ -37,7 +37,6 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,12 +45,13 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
 
     private final ActorRef resourceClustersHostManagerActor;
     private final Duration timeout;
+    private final Duration longOperationTimeout;
 
     public ResourceClusterRouteHandlerAkkaImpl(ActorRef resourceClustersHostManagerActor) {
         this.resourceClustersHostManagerActor = resourceClustersHostManagerActor;
-        long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs())
-            .orElse(1000L);
-        this.timeout = Duration.ofMillis(timeoutMs);
+        this.timeout = Duration.ofMillis(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs());
+        this.longOperationTimeout = Duration.ofMillis(
+            ConfigurationProvider.getConfig().getMasterApiLongOperationAskTimeoutMs());
     }
 
     @Override
@@ -92,7 +92,7 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
     @Override
     public CompletionStage<ScaleResourceResponse> scale(ScaleResourceRequest request) {
         CompletionStage<ScaleResourceResponse> response =
-                ask(this.resourceClustersHostManagerActor, request, timeout)
+                ask(this.resourceClustersHostManagerActor, request, this.longOperationTimeout)
                         .thenApply(ScaleResourceResponse.class::cast);
         return response;
     }
@@ -100,7 +100,7 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
     @Override
     public CompletionStage<UpgradeClusterContainersResponse> upgrade(UpgradeClusterContainersRequest request) {
         CompletionStage<UpgradeClusterContainersResponse> response =
-            ask(this.resourceClustersHostManagerActor, request, timeout)
+            ask(this.resourceClustersHostManagerActor, request, this.longOperationTimeout)
                 .thenApply(UpgradeClusterContainersResponse.class::cast);
         return response;
     }
@@ -120,7 +120,8 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
     }
 
     @Override
-    public CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(GetResourceClusterScaleRulesRequest request) {
+    public CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(
+        GetResourceClusterScaleRulesRequest request) {
         return ask(this.resourceClustersHostManagerActor, request, timeout)
             .thenApply(GetResourceClusterScaleRulesResponse.class::cast);
     }
