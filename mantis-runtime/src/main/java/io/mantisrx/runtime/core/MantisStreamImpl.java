@@ -34,6 +34,7 @@ import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.core.sources.SourceFunction;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.graph.ImmutableValueGraph;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.shaded.guava30.com.google.common.graph.ImmutableValueGraph;
 import rx.Observable;
 
 @Slf4j

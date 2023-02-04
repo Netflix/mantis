@@ -220,7 +220,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.8.4"
+            "locked": "1.1.9.0"
         }
     },
     "compileClasspath": {
@@ -393,7 +393,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.8.4"
+            "locked": "1.1.9.0"
         }
     },
     "lombok": {
@@ -604,7 +604,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.8.4"
+            "locked": "1.1.9.0"
         }
     },
     "testAnnotationProcessor": {
@@ -823,7 +823,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.8.4"
+            "locked": "1.1.9.0"
         }
     },
     "testRuntimeClasspath": {
@@ -1105,7 +1105,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.8.4"
+            "locked": "1.1.9.0"
         }
     }
 }

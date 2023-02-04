@@ -17,10 +17,10 @@
 package io.mantisrx.runtime.core;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.com.google.common.graph.ImmutableValueGraph;
+import io.mantisrx.shaded.com.google.common.graph.ValueGraphBuilder;
 import java.util.Set;
 import junit.framework.TestCase;
-import org.apache.flink.shaded.guava30.com.google.common.graph.ImmutableValueGraph;
-import org.apache.flink.shaded.guava30.com.google.common.graph.ValueGraphBuilder;
 import org.junit.Test;
 
 public class MantisStreamImplTest extends TestCase {

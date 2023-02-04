@@ -17,10 +17,10 @@
 package io.mantisrx.runtime.core;
 
 import io.mantisrx.runtime.core.functions.MantisFunction;
+import io.mantisrx.shaded.com.google.common.graph.ImmutableValueGraph;
+import io.mantisrx.shaded.com.google.common.graph.MutableValueGraph;
+import io.mantisrx.shaded.com.google.common.graph.ValueGraphBuilder;
 import java.util.Set;
-import org.apache.flink.shaded.guava30.com.google.common.graph.ImmutableValueGraph;
-import org.apache.flink.shaded.guava30.com.google.common.graph.MutableValueGraph;
-import org.apache.flink.shaded.guava30.com.google.common.graph.ValueGraphBuilder;
 
 class MantisGraph {
     private MutableValueGraph<OperandNode<?>, MantisFunction> graph;
