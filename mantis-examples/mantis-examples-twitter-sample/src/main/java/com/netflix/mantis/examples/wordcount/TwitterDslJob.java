@@ -16,23 +16,25 @@
 
 package com.netflix.mantis.examples.wordcount;
 
-import com.netflix.mantis.examples.config.StageConfigs;
 import com.netflix.mantis.examples.core.WordCountPair;
 import com.netflix.mantis.examples.wordcount.sources.TwitterSource;
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.Job;
-import io.mantisrx.runtime.MantisJob;
 import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.runtime.Metadata;
+import io.mantisrx.runtime.core.MantisStream;
+import io.mantisrx.runtime.core.WindowSpec;
+import io.mantisrx.runtime.core.functions.ReduceFunctionImpl;
+import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
+import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import rx.Observable;
 
 
 /**
@@ -47,50 +49,48 @@ import rx.Observable;
  * ../gradlew execute --args='consumerKey consumerSecret token tokensecret'
  */
 @Slf4j
-public class TwitterJob extends MantisJobProvider<String> {
+public class TwitterDslJob extends MantisJobProvider<String> {
 
     @Override
     public Job<String> getJobInstance() {
         final JsonSerializer jsonSerializer = new JsonSerializer();
-        return MantisJob
-                .source(new TwitterSource())
-                // Simply echoes the tweet
-                .stage((context, dataO) -> dataO
-                        .map(event -> {
-                            try {
-                                return jsonSerializer.toMap(event);
-                            } catch (Exception e) {
-                                log.error("Failed to deserialize event {}", event, e);
-                                return null;
-                            }
-                        })
-                        // filter out english tweets
-                        .filter((eventMap) -> {
-                            if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
-                                String lang = (String)eventMap.get("lang");
-                                return "en".equalsIgnoreCase(lang);
-                            }
-                            return false;
-                        }).map((eventMap) -> (String)eventMap.get("text"))
-                        // tokenize the tweets into words
-                        .flatMap((text) -> Observable.from(tokenize(text)))
-                        // On a hopping window of 10 seconds
-                        .window(10, TimeUnit.SECONDS)
-                        .flatMap((wordCountPairObservable) -> wordCountPairObservable
-                                // count how many times a word appears
-                                .groupBy(WordCountPair::getWord)
-                                .flatMap((groupO) -> groupO.reduce(0, (cnt, wordCntPair) -> cnt + 1)
-                                        .map((cnt) -> new WordCountPair(groupO.getKey(), cnt))))
-                                .map(WordCountPair::toString)
-                                .doOnNext((cnt) -> log.info(cnt))
-                        , StageConfigs.scalarToScalarConfig())
-                // Reuse built in sink that eagerly subscribes and delivers data over SSE
-                .sink(Sinks.eagerSubscribe(Sinks.sse((String data) -> data)))
-                .metadata(new Metadata.Builder()
-                        .name("TwitterSample")
-                        .description("Connects to a Twitter feed")
-                        .build())
-                .create();
+        return MantisStream.create(null)
+            .source(new ObservableSourceImpl<>(new TwitterSource()))
+            .map(event -> {
+                try {
+                    return jsonSerializer.toMap(event);
+                } catch (Exception e) {
+                    log.error("Failed to deserialize event {}", event, e);
+                    return null;
+                }
+            })
+            // filter out english tweets
+            .filter((eventMap) -> {
+                if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
+                    String lang = (String)eventMap.get("lang");
+                    return "en".equalsIgnoreCase(lang);
+                }
+                return false;
+            }).map((eventMap) -> (String) eventMap.get("text"))
+            // tokenize the tweets into words
+            .flatMap(this::tokenize)
+            .keyBy(WordCountPair::getWord)
+            // On a hopping window of 10 seconds
+            .window(WindowSpec.timed(Duration.ofSeconds(10)))
+            .reduce((ReduceFunctionImpl<WordCountPair>) (acc, item) -> {
+                if (acc.getWord() != null && !acc.getWord().isEmpty() && !acc.getWord().equals(item.getWord())) {
+                    log.warn("keys dont match: acc ({}) vs item ({})", acc.getWord(), item.getWord());
+                }
+                return new WordCountPair(acc.getWord(), acc.getCount() + item.getCount());
+            })
+            .map(WordCountPair::toString)
+            // Reuse built in sink that eagerly subscribes and delivers data over SSE
+            .sink(new ObservableSinkImpl<>(Sinks.eagerSubscribe(Sinks.sse((String data) -> data))))
+            .metadata(new Metadata.Builder()
+                .name("TwitterSample")
+                .description("Connects to a Twitter feed")
+                .build())
+            .create();
     }
 
     private List<WordCountPair> tokenize(String text) {
@@ -120,7 +120,7 @@ public class TwitterJob extends MantisJobProvider<String> {
             tokenSecret = args[3].trim();
         }
 
-        LocalJobExecutorNetworked.execute(new TwitterJob().getJobInstance(),
+        LocalJobExecutorNetworked.execute(new TwitterDslJob().getJobInstance(),
                 new Parameter(TwitterSource.CONSUMER_KEY_PARAM, consumerKey),
                 new Parameter(TwitterSource.CONSUMER_SECRET_PARAM, consumerSecret),
                 new Parameter(TwitterSource.TOKEN_PARAM, token),

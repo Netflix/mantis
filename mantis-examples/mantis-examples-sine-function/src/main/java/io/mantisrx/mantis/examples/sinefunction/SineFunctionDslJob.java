@@ -38,7 +38,7 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SineFunction {
+public class SineFunctionDslJob {
     public static void main(String[] args) {
         final double amplitude = 5.0;
         final double frequency = 1;
@@ -50,11 +50,7 @@ public class SineFunction {
             .map(x -> new Point(x, amplitude * Math.sin((frequency * x) + phase)))
             .keyBy(x -> x.getX() % 10)
             .window(WindowSpec.count(2))
-            .reduce((ReduceFunctionImpl<Point>) (acc, i) -> {
-                Point point = new Point(acc.getX() + i.getX(), i.getY());
-                log.info("received point ({}, {}) -> ({}, {})", i.getX(), i.getY(), point.getX(), point.getY());
-                return point;
-            })
+            .reduce((ReduceFunctionImpl<Point>) (acc, i) -> new Point(acc.getX() + i.getX(), i.getY()))
             .sink(new ObservableSinkImpl<>(SineFunctionJob.sseSink));
 
         Job<Point> pointJob = jobConfig.parameterDefinition(

@@ -20,6 +20,7 @@ import io.mantisrx.common.codec.Codec;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 
@@ -29,7 +30,7 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class RequestAggregation {
+public class RequestAggregation implements Serializable {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final ObjectReader requestAggregationReader = mapper.readerFor(RequestAggregation.class);
 

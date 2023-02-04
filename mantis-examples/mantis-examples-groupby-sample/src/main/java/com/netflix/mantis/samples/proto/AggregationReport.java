@@ -16,6 +16,7 @@
 
 package com.netflix.mantis.samples.proto;
 
+import java.io.Serializable;
 import java.util.Map;
 import lombok.Data;
 
@@ -24,6 +25,6 @@ import lombok.Data;
  * A simple POJO which holds the result of aggregating counts per request path.
  */
 @Data
-public class AggregationReport {
+public class AggregationReport implements Serializable {
     private final Map<String, Integer> pathToCountMap;
 }
