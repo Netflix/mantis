@@ -52,7 +52,7 @@ public class ScalarToGroup<T, K, R> extends KeyValueStageConfig<T, K, R> {
         this(computation, config, NettyCodec.fromNetty(inputCodec));
     }
 
-    ScalarToGroup(ToGroupComputation<T, K, R> computation,
+    public ScalarToGroup(ToGroupComputation<T, K, R> computation,
                   Config<T, K, R> config, Codec<T> inputCodec) {
         super(config.description, null, inputCodec, config.keyCodec, config.codec, config.inputStrategy, config.parameters);
         this.computation = computation;

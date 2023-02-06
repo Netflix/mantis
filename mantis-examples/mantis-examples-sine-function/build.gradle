@@ -27,4 +27,5 @@ task execute(type:JavaExec) {
 }
 dependencies {
     implementation project(':mantis-runtime')
+    implementation "com.netflix.spectator:spectator-api:1.3.+"
 }

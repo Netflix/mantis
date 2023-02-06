@@ -21,9 +21,10 @@ import io.mantisrx.runtime.codec.JsonType;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 
 
-public class Point implements JsonType {
+public class Point implements JsonType, Serializable {
 
     private double x;
     private double y;

@@ -40,7 +40,7 @@ public class ScalarToScalar<T, R> extends StageConfig<T, R> {
     }
 
 
-    ScalarToScalar(ScalarComputation<T, R> computation,
+    public ScalarToScalar(ScalarComputation<T, R> computation,
                    Config<T, R> config, Codec<T> inputCodec) {
         super(config.description, inputCodec, config.codec, config.inputStrategy, config.parameters, config.concurrency);
         this.computation = computation;
