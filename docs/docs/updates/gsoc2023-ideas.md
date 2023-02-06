@@ -77,3 +77,43 @@ The mantis-publish library only requires a simplified version of MQL, known as S
 
 ### Difficulty rating
 Hard
+
+## Resource Cluster Management User Interface
+
+### Abstract
+Develop a user interface to allow Mantis admins to manage resource clusters and allow end-users to select resource clusters to run their jobs on.
+
+### Deliverables
+- Full support for CRUD operations on resource clusters
+- Support for specifying scaling operations and upgrading clusters
+- Allow users to select a resource cluster before submitting a job and a container SKU per job stage
+
+### Required SkillSet
+-   Javascript, HTML, CSS
+-   Experience using a front end framework such as React, Angular, Vue
+
+### Skills that you will gain
+-   You will learn about how to create a UI feature from design, implementation, and testing
+
+### Difficulty rating
+Medium
+
+## User Interface for Querying Real-time Streaming Data on Mantis
+
+### Abstract
+Mantis provides a real-time streaming platform for processing data at scale. However, there is currently no way for a user to query their data and show the results in a user friendly way. This project aims to develop a UI that allows users to query their data in Mantis and visualize the results.
+
+### Deliverables
+- New Query page featuring a query editor to allow users to write queries
+- Page to list of recent queries that the user has previously submitted
+- Page to list and create recipes which are saved templates for queries
+
+### Required SkillSet
+- Javascript, HTML, CSS
+- Experience using a front end framework such as React, Angular, Vue
+
+### Skills that you will gain
+- You will learn about how to create a UI feature from design, implementation, and testing
+
+### Difficulty rating
+Hard
