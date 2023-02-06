@@ -9,8 +9,13 @@
       
       
       
+        <link rel="prev" href="../../querying/sampling/">
+      
+      
+        <link rel="next" href="../twitter/">
+      
       <link rel="icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.3">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.11">
     
     
       
@@ -18,32 +23,32 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.e35208c4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.0d440cfe.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ef6f36e2.min.css">
-        
-          
-          
-          <meta name="theme-color" content="#ef5552">
-        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.2505c338.min.css">
       
+      
+
     
     
     
       
+        
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
-    
     
     
       <link rel="stylesheet" href="../../../css/extra.css">
     
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
+
+    
     
     
   </head>
@@ -54,10 +59,9 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="red" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
   
     
-    <script>function __prefix(e){return new URL("../../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -74,7 +78,10 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+    
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../../.." title="Mantis" class="md-header__button md-logo" aria-label="Mantis" data-md-component="logo">
       
@@ -82,7 +89,7 @@
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -104,21 +111,24 @@
     
     
       <label class="md-header__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
       </label>
-      
-<div class="md-search" data-md-component="search" role="dialog">
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
-      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
-      </button>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
@@ -126,7 +136,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -135,11 +145,10 @@
     
     
       <div class="md-header__source">
-        
-<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/netflix/mantis" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     Github
@@ -148,11 +157,14 @@
       </div>
     
   </nav>
+  
 </header>
     
     <div class="md-container" data-md-component="container">
       
       
+        
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -177,11 +189,10 @@
   </label>
   
     <div class="md-nav__source">
-      
-<a href="https://github.com/netflix/mantis/" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/netflix/mantis" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     Github
@@ -217,13 +228,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
       
-      <label class="md-nav__link" for="__nav_2">
-        Getting Started
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2">
           <span class="md-nav__icon md-icon"></span>
           Getting Started
@@ -231,6 +247,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -241,8 +258,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -253,8 +272,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -262,13 +283,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
       
-      <label class="md-nav__link" for="__nav_2_3">
-        Tutorials
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Tutorials" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+          Tutorials
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2_3">
           <span class="md-nav__icon md-icon"></span>
           Tutorials
@@ -276,6 +302,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -286,8 +313,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -298,8 +327,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -310,14 +341,17 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -325,13 +359,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" >
       
-      <label class="md-nav__link" for="__nav_2_4">
-        Samples
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Samples" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+          Samples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2_4">
           <span class="md-nav__icon md-icon"></span>
           Samples
@@ -339,6 +378,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -349,8 +389,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -361,8 +403,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -373,12 +417,14 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
         </ul>
       </nav>
@@ -399,13 +445,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
-      <label class="md-nav__link" for="__nav_3">
-        Develop
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Develop" data-md-level="1">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Develop
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_3">
           <span class="md-nav__icon md-icon"></span>
           Develop
@@ -413,6 +464,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -420,13 +472,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_1" type="checkbox" id="__nav_3_1" >
       
-      <label class="md-nav__link" for="__nav_3_1">
-        Ingestion
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Ingestion" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+          Ingestion
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_1">
           <span class="md-nav__icon md-icon"></span>
           Ingestion
@@ -434,6 +491,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -444,14 +502,17 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -459,13 +520,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" >
       
-      <label class="md-nav__link" for="__nav_3_2">
-        Querying
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Querying" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+          Querying
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_2">
           <span class="md-nav__icon md-icon"></span>
           Querying
@@ -473,6 +539,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -483,8 +550,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -495,14 +564,17 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
             
+              
   
   
     
@@ -512,13 +584,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" checked>
       
-      <label class="md-nav__link" for="__nav_3_3">
-        Writing Jobs
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Writing Jobs" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+          Writing Jobs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_3_3">
           <span class="md-nav__icon md-icon"></span>
           Writing Jobs
@@ -526,6 +603,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
     
@@ -533,7 +611,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
@@ -549,6 +627,7 @@
       </a>
       
         
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -617,8 +696,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -629,8 +710,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -641,14 +724,17 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -656,13 +742,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" >
       
-      <label class="md-nav__link" for="__nav_3_4">
-        Connectors
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Connectors" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+          Connectors
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3_4">
           <span class="md-nav__icon md-icon"></span>
           Connectors
@@ -670,6 +761,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -680,12 +772,14 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
         </ul>
       </nav>
@@ -704,13 +798,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
       
-      <label class="md-nav__link" for="__nav_4">
-        Deploy
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Deploy" data-md-level="1">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Deploy
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           Deploy
@@ -718,6 +817,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -728,6 +828,7 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
@@ -746,13 +847,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
       
-      <label class="md-nav__link" for="__nav_5">
-        Operate
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Operate" data-md-level="1">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Operate
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_5">
           <span class="md-nav__icon md-icon"></span>
           Operate
@@ -760,6 +866,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -770,8 +877,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -782,8 +891,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -794,8 +905,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -806,6 +919,7 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
@@ -824,13 +938,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
       
-      <label class="md-nav__link" for="__nav_6">
-        Reference
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Reference" data-md-level="1">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_6">
           <span class="md-nav__icon md-icon"></span>
           Reference
@@ -838,6 +957,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -848,8 +968,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -860,8 +982,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -872,8 +996,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -884,6 +1010,7 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
@@ -902,13 +1029,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" >
       
-      <label class="md-nav__link" for="__nav_7">
-        Internals
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Internals" data-md-level="1">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          Internals
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           Internals
@@ -916,6 +1048,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -926,8 +1059,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -935,13 +1070,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7_2" type="checkbox" id="__nav_7_2" >
       
-      <label class="md-nav__link" for="__nav_7_2">
-        Mantis Jobs
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Mantis Jobs" data-md-level="2">
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
+          Mantis Jobs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_2">
           <span class="md-nav__icon md-icon"></span>
           Mantis Jobs
@@ -949,6 +1089,7 @@
         <ul class="md-nav__list" data-md-scrollfix>
           
             
+              
   
   
   
@@ -959,8 +1100,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -971,8 +1114,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -983,8 +1128,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -995,14 +1142,17 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -1013,8 +1163,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -1025,8 +1177,10 @@
     </li>
   
 
+            
           
             
+              
   
   
   
@@ -1037,6 +1191,7 @@
     </li>
   
 
+            
           
         </ul>
       </nav>
@@ -1055,6 +1210,55 @@
       <a href="../../../community/" class="md-nav__link">
         Community
       </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          Updates
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9">
+          <span class="md-nav__icon md-icon"></span>
+          Updates
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../updates/gsoc2023-ideas/" class="md-nav__link">
+        GSOC 2023 Ideas
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -1101,6 +1305,7 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -1170,17 +1375,19 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
-                  <a href="https://github.com/netflix/mantis/edit/master/docs/develop/writing-jobs/word-count.md" title="Edit this page" class="md-content__button md-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
-                  </a>
-                
-                
-                <h1 id="writing-your-first-mantis-job">Writing Your First Mantis Job<a class="headerlink" href="#writing-your-first-mantis-job" title="Permanent link">&para;</a></h1>
-<p>We'll be doing the classic word count example for streaming data for the tutorial section. For this example we'll be keeping it simple and focusing on the processing logic and job provider. The tutorials are structured progressively to allow us to incrementally build some experience writing jobs without getting overwhelmed with details. We'll stream text from a Project Gutenberg book, perform some application logic on the stream, and then write the data to a sink for consumption by other Mantis jobs. If you want to follow along check out the <a href="https://github.com/Netflix/mantis-examples/tree/master/wordcount">Word Count</a> project in the <a href="https://github.com/Netflix/mantis-examples/">mantis-examples</a> repository.</p>
+                  
+
+  
+  
+
+
+
+<h1 id="writing-your-first-mantis-job">Writing Your First Mantis Job<a class="headerlink" href="#writing-your-first-mantis-job" title="Permanent link">&para;</a></h1>
+<p>We'll be doing the classic word count example for streaming data for the tutorial section. For this example we'll be keeping it simple and focusing on the processing logic and job provider. The tutorials are structured progressively to allow us to incrementally build some experience writing jobs without getting overwhelmed with details. We'll stream text from a Project Gutenberg book, perform some application logic on the stream, and then write the data to a sink for consumption by other Mantis jobs. If you want to follow along, please check the <a href="https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-wordcount">Word Count</a> module in Mantis repository.</p>
 <p>There are a few things to keep in mind when implementing a Mantis Job;</p>
 <ul>
 <li>We're just writing Java and there are a few interfaces necessary for Mantis</li>
@@ -1188,7 +1395,7 @@
 <li>Mantis makes heavy use of Reactive Streams as a DSL for implementing processing logic.</li>
 </ul>
 <h2 id="wordcountjob">WordCountJob<a class="headerlink" href="#wordcountjob" title="Permanent link">&para;</a></h2>
-<p>The full source of the <a href="https://github.com/Netflix/mantis-examples/wordcount/...">WordCountJob</a> class is included below with imports elided. This class implements the <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java"><code>io.mantisrx.runtime.MantisJobProvider</code></a> interface which the Mantis runtime loads. <code>MantisJobProvider#getJobInstance()</code> provides the runtime with an entry point to your job's code.</p>
+<p>The full source of the <a href="https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-wordcount/src/main/java/com/netflix/mantis/examples/wordcount/WordCountJob.java">WordCountJob</a> class is included below with imports elided. This class implements the <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java"><code>io.mantisrx.runtime.MantisJobProvider</code></a> interface which the Mantis runtime loads. <code>MantisJobProvider#getJobInstance()</code> provides the runtime with an entry point to your job's code.</p>
 <div class="codehilite"><pre><span></span><code><span class="cm">/**</span>
 <span class="cm"> * This sample demonstrates ingesting data from a text file and counting the number of occurrences of words within a 10</span>
 <span class="cm"> * sec hopping window.</span>
@@ -1196,52 +1403,49 @@
 <span class="cm"> * E.g</span>
 <span class="cm"> * &lt;code&gt; Serving modern HTTP SSE server sink on port: 8650 &lt;/code&gt;</span>
 <span class="cm"> * You can curl this port &lt;code&gt; curl localhost:8650&lt;/code&gt; to view the output of the job.</span>
-<span class="cm"> *</span>
-<span class="cm"> * To run via gradle</span>
-<span class="cm"> * /gradlew :mantis-examples-wordcount:execute</span>
 <span class="cm"> */</span>
 <span class="nd">@Slf4j</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">WordCountJob</span> <span class="kd">extends</span> <span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">{</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">WordCountJob</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">MantisJobProvider</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 
-    <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getJobInstance</span><span class="p">()</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="n">MantisJob</span>
-                <span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span> <span class="n">IlliadSource</span><span class="p">())</span> <span class="c1">// Ignore for now, we&#39;ll implement one in the next tutorial.</span>
-                <span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span> <span class="n">dataO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
-                        <span class="c1">// Tokenize</span>
-                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observable</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
-                        <span class="c1">// On a hopping window of 10 seconds</span>
-                        <span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
-                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">wordCountPairObservable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wordCountPairObservable</span>
-                                <span class="c1">// count how many times a word appears</span>
-                                <span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">getWord</span><span class="p">)</span>
-                                <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">groupO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">groupO</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">wordCntPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                                        <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">cnt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">WordCountPair</span><span class="p">(</span><span class="n">groupO</span><span class="p">.</span><span class="na">getKey</span><span class="p">(),</span> <span class="n">cnt</span><span class="p">))))</span>
-                                <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">toString</span><span class="p">)</span>
-                        <span class="p">,</span> <span class="n">StageConfigs</span><span class="p">.</span><span class="na">scalarToScalarConfig</span><span class="p">())</span>
-                <span class="c1">// Reuse built in sink that eagerly subscribes and delivers data over SSE</span>
-                <span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">data</span><span class="p">)))</span>
-                <span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="k">new</span> <span class="n">Metadata</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
-                        <span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;WordCount&quot;</span><span class="p">)</span>
-                        <span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Reads Homer&#39;s The Illiad faster than we can.&quot;</span><span class="p">)</span>
-                        <span class="p">.</span><span class="na">build</span><span class="p">())</span>
-                <span class="p">.</span><span class="na">create</span><span class="p">();</span>
-    <span class="p">}</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getJobInstance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">MantisJob</span>
+<span class="w">                </span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">IlliadSource</span><span class="p">())</span><span class="w"> </span><span class="c1">// Ignore for now, we&#39;ll implement one in the next tutorial.</span>
+<span class="w">                </span><span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">dataO</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">dataO</span>
+<span class="w">                        </span><span class="c1">// Tokenize</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">text</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Observable</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
+<span class="w">                        </span><span class="c1">// On a hopping window of 10 seconds</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">wordCountPairObservable</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">wordCountPairObservable</span>
+<span class="w">                                </span><span class="c1">// count how many times a word appears</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">getWord</span><span class="p">)</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">groupO</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">groupO</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span><span class="w"> </span><span class="n">wordCntPair</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">cnt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="w">                                        </span><span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">cnt</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">WordCountPair</span><span class="p">(</span><span class="n">groupO</span><span class="p">.</span><span class="na">getKey</span><span class="p">(),</span><span class="w"> </span><span class="n">cnt</span><span class="p">))))</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">toString</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">,</span><span class="w"> </span><span class="n">StageConfigs</span><span class="p">.</span><span class="na">scalarToScalarConfig</span><span class="p">())</span>
+<span class="w">                </span><span class="c1">// Reuse built in sink that eagerly subscribes and delivers data over SSE</span>
+<span class="w">                </span><span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span><span class="w"> </span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">data</span><span class="p">)))</span>
+<span class="w">                </span><span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Metadata</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;WordCount&quot;</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Reads Homer&#39;s The Illiad faster than we can.&quot;</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<span class="w">                </span><span class="p">.</span><span class="na">create</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
 
-    <span class="kd">private</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">String</span> <span class="n">text</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">StringTokenizer</span> <span class="n">tokenizer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringTokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
-        <span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span> <span class="n">wordCountPairs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
-        <span class="k">while</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">.</span><span class="na">hasMoreTokens</span><span class="p">())</span> <span class="p">{</span>
-            <span class="n">String</span> <span class="n">word</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">.</span><span class="na">nextToken</span><span class="p">().</span><span class="na">replaceAll</span><span class="p">(</span><span class="s">&quot;\\s*&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">).</span><span class="na">toLowerCase</span><span class="p">();</span>
-            <span class="n">wordCountPairs</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="n">WordCountPair</span><span class="p">(</span><span class="n">word</span><span class="p">,</span><span class="mi">1</span><span class="p">));</span>
-        <span class="p">}</span>
-        <span class="k">return</span> <span class="n">wordCountPairs</span><span class="p">;</span>
-    <span class="p">}</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">tokenize</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">text</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">StringTokenizer</span><span class="w"> </span><span class="n">tokenizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">StringTokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
+<span class="w">        </span><span class="n">List</span><span class="o">&lt;</span><span class="n">WordCountPair</span><span class="o">&gt;</span><span class="w"> </span><span class="n">wordCountPairs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+<span class="w">        </span><span class="k">while</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">.</span><span class="na">hasMoreTokens</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">String</span><span class="w"> </span><span class="n">word</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tokenizer</span><span class="p">.</span><span class="na">nextToken</span><span class="p">().</span><span class="na">replaceAll</span><span class="p">(</span><span class="s">&quot;\\s*&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">).</span><span class="na">toLowerCase</span><span class="p">();</span>
+<span class="w">            </span><span class="n">wordCountPairs</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">WordCountPair</span><span class="p">(</span><span class="n">word</span><span class="p">,</span><span class="mi">1</span><span class="p">));</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">wordCountPairs</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
 
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">LocalJobExecutorNetworked</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="k">new</span> <span class="n">WordCountJob</span><span class="p">().</span><span class="na">getJobInstance</span><span class="p">());</span>
-    <span class="p">}</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">LocalJobExecutorNetworked</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">WordCountJob</span><span class="p">().</span><span class="na">getJobInstance</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 
@@ -1251,126 +1455,102 @@
 <h3 id="the-stage">The Stage<a class="headerlink" href="#the-stage" title="Permanent link">&para;</a></h3>
 <p>Our stage implements the bulk of the processing logic for the streaming job. Recall that a Mantis job has 1..n stages which can be used to create a topology for data processing. This stage is a <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/computation/ScalarComputation.java"><code>ScalarComputation</code></a> but we'll learn about other stage types in the third tutorial when we make word counting a distributed job.</p>
 <p>We'll take advantage of Java's lambda syntax to implement this stage inline. The <code>call</code> method receives a <a href=""><code>Context</code></a> object and an <code>Observable&lt;String&gt;</code> provided by our source. The stage's responsibility is to produce an <code>Observable&lt;R&gt;</code> for consumption by down stream stages or the sink if this is the last stage.</p>
-<div class="codehilite"><pre><span></span><code><span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span> <span class="n">dataO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dataO</span>
-                        <span class="c1">// Tokenize the string</span>
-                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observable</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
+<div class="codehilite"><pre><span></span><code><span class="p">.</span><span class="na">stage</span><span class="p">((</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">dataO</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">dataO</span>
+<span class="w">                        </span><span class="c1">// Tokenize the string</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">text</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Observable</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
 
-                        <span class="c1">// Hopping / Tumbling window of 10 seconds</span>
-                        <span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
+<span class="w">                        </span><span class="c1">// Hopping / Tumbling window of 10 seconds</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
 
-                        <span class="c1">// Reduce each window</span>
-                        <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">wordCountPairObservable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wordCountPairObservable</span>
-                                <span class="c1">// count how many times a word appears</span>
+<span class="w">                        </span><span class="c1">// Reduce each window</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">wordCountPairObservable</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">wordCountPairObservable</span>
+<span class="w">                                </span><span class="c1">// count how many times a word appears</span>
 
-                                <span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">getWord</span><span class="p">)</span>
-                                <span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">groupO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">groupO</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">wordCntPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cnt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                                        <span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">cnt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">WordCountPair</span><span class="p">(</span><span class="n">groupO</span><span class="p">.</span><span class="na">getKey</span><span class="p">(),</span> <span class="n">cnt</span><span class="p">))))</span>
-                                <span class="c1">// Convert the result to a string</span>
-                                <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">toString</span><span class="p">)</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">getWord</span><span class="p">)</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">groupO</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">groupO</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span><span class="w"> </span><span class="n">wordCntPair</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">cnt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="w">                                        </span><span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">cnt</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">WordCountPair</span><span class="p">(</span><span class="n">groupO</span><span class="p">.</span><span class="na">getKey</span><span class="p">(),</span><span class="w"> </span><span class="n">cnt</span><span class="p">))))</span>
+<span class="w">                                </span><span class="c1">// Convert the result to a string</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">WordCountPair</span><span class="p">::</span><span class="n">toString</span><span class="p">)</span>
 </code></pre></div>
 
 <p>If you're familiar with reactive stream processing the above should be fairly easy to comprehend. Unfortunately if you aren't then an introduction to this is outside of the scope of this tutorial. Head over to <a href="http://reactivex.io/">reactivex.io</a> to learn more about the concept.</p>
 <p>The stage configuration below specifies a few things; First that this stage is a scalar to scalar stage in that it ingests single events, and produces single events. The type of the input events is String, and the output is also String. Finally the configuration also specifies which <a href="https://github.com/Netflix/mantis/blob/master/mantis-common/src/main/java/io/mantisrx/common/codec/Codecs.java"><code>Codec</code></a> to use on the wire for this stage's output. You can use this configuration to specify concurrency for this stage as well, but we've not elected to do so here.</p>
-<div class="codehilite"><pre><span></span><code><span class="kd">public</span> <span class="kd">static</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="nf">scalarToScalarConfig</span><span class="p">()</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="k">new</span> <span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span>
-            <span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">Codecs</span><span class="p">.</span><span class="na">string</span><span class="p">());</span>
+<div class="codehilite"><pre><span></span><code><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">scalarToScalarConfig</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">            </span><span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">Codecs</span><span class="p">.</span><span class="na">string</span><span class="p">());</span>
 <span class="p">}</span>
 </code></pre></div>
 
 <h3 id="the-job-provider">The Job Provider<a class="headerlink" href="#the-job-provider" title="Permanent link">&para;</a></h3>
-<p>The <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java"><code>MantisJobProvider</code></a> interface is what the Mantis runtime expects to load. The runtime reads <a href="https://github.com/Netflix/mantis-examples/blob/master/wordcount/src/main/resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider"><code>resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider</code></a> to discover the fully qualified classname of the MantisJobProvider to be used as an entry point for the application.</p>
+<p>The <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/MantisJobProvider.java"><code>MantisJobProvider</code></a> interface is what the Mantis runtime expects to load. The runtime reads <a href="https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-wordcount/src/main/resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider"><code>resources/META-INF/services/io.mantisrx.runtime.MantisJobProvider</code></a> to discover the fully qualified classname of the MantisJobProvider to be used as an entry point for the application.</p>
 <h3 id="main-method">Main Method<a class="headerlink" href="#main-method" title="Permanent link">&para;</a></h3>
-<p>The main method invokes the <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/executor/LocalJobExecutorNetworked.java"><code>LocalJobExecutorNetworked</code></a> <code>execute</code> method to run our job locally. The first three tutorials will take advantage of the ability to run jobs locally. In the fourth tutorial we will explore uploading and submitting our job on a Mantis cloud deployment for greater scalability. We can and should run this main method by invoking <code>./gradlew :mantis-examples-wordcount:execute</code> at the root of the <code>mantis-examples</code> directory.</p>
-<div class="codehilite"><pre><span></span><code>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">LocalJobExecutorNetworked</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="k">new</span> <span class="n">WordCountJob</span><span class="p">().</span><span class="na">getJobInstance</span><span class="p">());</span>
-    <span class="p">}</span>
+<p>The main method invokes the <a href="https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/executor/LocalJobExecutorNetworked.java"><code>LocalJobExecutorNetworked</code></a> <code>execute</code> method to run our job locally. The first three tutorials will take advantage of the ability to run jobs locally. In the fourth tutorial we will explore uploading and submitting our job on a Mantis cloud deployment for greater scalability. We can and should run this main method by following commands from the Mantis repository:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>mantis-examples/mantis-examples-wordcount
+$<span class="w"> </span>../../gradlew<span class="w"> </span>execute
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">LocalJobExecutorNetworked</span><span class="p">.</span><span class="na">execute</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">WordCountJob</span><span class="p">().</span><span class="na">getJobInstance</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 
 <h2 id="conclusions-and-future-work">Conclusions and Future Work<a class="headerlink" href="#conclusions-and-future-work" title="Permanent link">&para;</a></h2>
 <p>We've implemented a complete end-to-end Mantis job which counts words from The Illiad repeatedly. This leaves much to be desired. If you inspect our source we're really just iterating over the same data set every ten seconds. In the next tutorial we'll explore the task of writing our own custom source to pull external data from Twitter into Mantis and designing this source in a templated fashion so that it can be used with different queries and API keys.</p>
 <p>As an extra credit task see if you can modify the stage in this job to print the top 10 words instead of the entire list.</p>
-                
-              
-              
-                
 
 
-              
-            </article>
-          </div>
+
+
+
+                
+              </article>
+            </div>
+          
+          
         </div>
         
       </main>
       
-        
-<footer class="md-footer">
-  
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
-      
-        <a href="../../querying/sampling/" class="md-footer__link md-footer__link--prev" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              Sampling
-            </div>
-          </div>
-        </a>
-      
-      
-        <a href="../twitter/" class="md-footer__link md-footer__link--next" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Writing Your Second Job
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
+        <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        Made with
-        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-          Material for MkDocs
-        </a>
-        
-      </div>
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
       
-  <div class="md-footer-social">
+        <div class="md-social">
+  
+    
+    
+    
     
       
       
-        
-        
-      
-      <a href="https://twitter.com/NetflixOSS" target="_blank" rel="noopener" title="twitter.com" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
-      </a>
+    
+    <a href="https://twitter.com/NetflixOSS" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+    
+    
+    
     
       
       
-        
-        
-      
-      <a href="https://netflix.github.io/" target="_blank" rel="noopener" title="netflix.github.io" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
-      </a>
     
-  </div>
-
+    <a href="https://netflix.github.io/" target="_blank" rel="noopener" title="netflix.github.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
     </div>
   </div>
 </footer>
@@ -1379,10 +1559,11 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.db81ec45.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.4ea5477f.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.6df46069.min.js"></script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
       
