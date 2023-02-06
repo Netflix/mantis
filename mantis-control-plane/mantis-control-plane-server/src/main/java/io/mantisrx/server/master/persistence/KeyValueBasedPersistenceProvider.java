@@ -42,6 +42,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
@@ -371,7 +372,14 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     continue;
                 }
                 for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
-                    jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null);
+                    Preconditions.checkState(
+                        jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null),
+                        "JobID=%s stage=%d workerIdx=%d has existing worker, existing=%s, new=%s",
+                        workerMeta.getJobId(),
+                        workerMeta.getStageNum(),
+                        workerMeta.getWorkerIndex(),
+                        jobMeta.getWorkerByIndex(workerMeta.getStageNum(), workerMeta.getWorkerIndex()).getWorkerId(),
+                        workerMeta.getWorkerId());
                 }
                 jobMetas.add(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jobMeta, eventPublisher));
             } catch (Exception e) {
@@ -561,7 +569,14 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                 for (IMantisWorkerMetadata w : archivedWorkers) {
                     try {
                         MantisWorkerMetadataWritable wmw = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(w);
-                        jmw.addWorkerMedata(w.getStageNum(), wmw, null);
+                        Preconditions.checkState(
+                            jmw.addWorkerMedata(w.getStageNum(), wmw, null),
+                            "JobID=%s stage=%d workerIdx=%d has existing worker, existing=%s, new=%s",
+                            wmw.getJobId(),
+                            wmw.getStageNum(),
+                            wmw.getWorkerIndex(),
+                            jmw.getWorkerByIndex(wmw.getStageNum(), wmw.getWorkerIndex()).getWorkerId(),
+                            wmw.getWorkerId());
                     } catch (InvalidJobException e) {
                         logger.warn(
                             "Unexpected error adding worker index={}, number={} to job {}",

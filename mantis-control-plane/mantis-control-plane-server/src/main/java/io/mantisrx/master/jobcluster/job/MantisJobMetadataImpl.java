@@ -240,18 +240,19 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
      public boolean addWorkerMetadata(int stageNum, JobWorker newWorker)
             throws InvalidJobException {
          if(logger.isTraceEnabled()) { logger.trace("Adding workerMetadata {} for stage {}", stageNum, newWorker); }
-        boolean result=true;
         if(!stageMetadataMap.containsKey(stageNum)) {
         	logger.warn("No such stage {}", stageNum);
         }
-        if(!((MantisStageMetadataImpl)stageMetadataMap.get(stageNum)).addWorkerIndex(newWorker))
-            result=false;
-        Integer integer = workerNumberToStageMap.put(newWorker.getMetadata().getWorkerNumber(), stageNum);
-        if(integer != null && integer != stageNum) {
-            logger.error(String.format("Unexpected to put worker number mapping from %d to stage %d for job %s, prev mapping to stage %d",
-            		newWorker.getMetadata().getWorkerNumber(), stageNum, newWorker.getMetadata().getJobId(), integer));
+        final boolean result = ((MantisStageMetadataImpl) stageMetadataMap.get(stageNum)).addWorkerIndex(newWorker);
+
+        if (result) {
+            Integer integer = workerNumberToStageMap.put(newWorker.getMetadata().getWorkerNumber(), stageNum);
+            if(integer != null && integer != stageNum) {
+                logger.error(String.format("Unexpected to put worker number mapping from %d to stage %d for job %s, prev mapping to stage %d",
+                    newWorker.getMetadata().getWorkerNumber(), stageNum, newWorker.getMetadata().getJobId(), integer));
+            }
+            if(logger.isTraceEnabled()) { logger.trace("Exit addworkerMeta {}", workerNumberToStageMap); }
         }
-         if(logger.isTraceEnabled()) { logger.trace("Exit addworkerMeta {}", workerNumberToStageMap); }
         return result;
     }
 
