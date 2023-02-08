@@ -200,3 +200,7 @@ gradle-app.setting
 .project
 .settings
 bin/
+
+# mkdocs Build files
+build
+site

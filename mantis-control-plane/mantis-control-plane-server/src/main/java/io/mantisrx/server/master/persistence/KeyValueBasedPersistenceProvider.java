@@ -29,7 +29,6 @@ import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
-import io.mantisrx.server.master.store.InvalidJobException;
 import io.mantisrx.server.master.store.KeyValueStore;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.server.master.store.MantisStageMetadata;
@@ -42,6 +41,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.io.IOException;
@@ -371,7 +371,14 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     continue;
                 }
                 for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
-                    jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null);
+                    Preconditions.checkState(
+                        jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null),
+                        "JobID=%s stage=%d workerIdx=%d has existing worker, existing=%s, new=%s",
+                        workerMeta.getJobId(),
+                        workerMeta.getStageNum(),
+                        workerMeta.getWorkerIndex(),
+                        jobMeta.getWorkerByIndex(workerMeta.getStageNum(), workerMeta.getWorkerIndex()).getWorkerId(),
+                        workerMeta.getWorkerId());
                 }
                 jobMetas.add(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jobMeta, eventPublisher));
             } catch (Exception e) {
@@ -555,21 +562,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     public Optional<IMantisJobMetadata> loadArchivedJob(String jobId) throws IOException {
         try {
             MantisJobMetadataWritable jmw = readJobStageData(ARCHIVED_JOB_STAGEDATA_NS, jobId);
-
-            final List<IMantisWorkerMetadata> archivedWorkers = getArchivedWorkers(jmw.getJobId());
-            if (CollectionUtils.isNotEmpty(archivedWorkers)) {
-                for (IMantisWorkerMetadata w : archivedWorkers) {
-                    try {
-                        MantisWorkerMetadataWritable wmw = DataFormatAdapter.convertMantisWorkerMetadataToMantisWorkerMetadataWritable(w);
-                        jmw.addWorkerMedata(w.getStageNum(), wmw, null);
-                    } catch (InvalidJobException e) {
-                        logger.warn(
-                            "Unexpected error adding worker index={}, number={} to job {}",
-                            w.getWorkerIndex(), w.getWorkerNumber(), jmw.getJobId());
-                    }
-                }
-                return Optional.of(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jmw, eventPublisher));
-            }
+            return Optional.of(DataFormatAdapter.convertMantisJobWriteableToMantisJobMetadata(jmw, eventPublisher));
         } catch (Exception e) {
             logger.error("Exception loading archived job {}", jobId, e);
         }

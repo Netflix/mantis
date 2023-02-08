@@ -222,13 +222,16 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
 
     public boolean addWorkerMedata(int stageNum, MantisWorkerMetadata workerMetadata, MantisWorkerMetadata replacedWorker)
             throws InvalidJobException {
-        boolean result = true;
-        if (!stageMetadataMap.get(stageNum).replaceWorkerIndex(workerMetadata, replacedWorker))
-            result = false;
-        Integer integer = workerNumberToStageMap.put(workerMetadata.getWorkerNumber(), stageNum);
-        if (integer != null && integer != stageNum) {
-            logger.error(String.format("Unexpected to put worker number mapping from %d to stage %d for job %s, prev mapping to stage %d",
+        final boolean result =
+            stageMetadataMap.get(stageNum)
+                .replaceWorkerIndex(workerMetadata, replacedWorker);
+
+        if (result) {
+            Integer integer = workerNumberToStageMap.put(workerMetadata.getWorkerNumber(), stageNum);
+            if (integer != null && integer != stageNum) {
+                logger.error(String.format("Unexpected to put worker number mapping from %d to stage %d for job %s, prev mapping to stage %d",
                     workerMetadata.getWorkerNumber(), stageNum, workerMetadata.getJobId(), integer));
+            }
         }
         return result;
     }

@@ -214,8 +214,9 @@ public class MantisStageMetadataWritable implements MantisStageMetadata {
         boolean result = true;
         if (!MantisJobState.isErrorState(newWorker.getState())) {
             if (oldWorker == null) {
-                if (workerByIndexMetadataSet.putIfAbsent(index, newWorker) != null)
+                if (workerByIndexMetadataSet.putIfAbsent(index, newWorker) != null) {
                     result = false;
+                }
             } else {
                 if (oldWorker.getWorkerIndex() != index) {
                     throw new InvalidJobException(newWorker.getJobId(), stageNum, oldWorker.getWorkerIndex());
