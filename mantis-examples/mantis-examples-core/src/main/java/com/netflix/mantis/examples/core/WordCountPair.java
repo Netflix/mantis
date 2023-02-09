@@ -16,6 +16,7 @@
 
 package com.netflix.mantis.examples.core;
 
+import java.io.Serializable;
 import lombok.Data;
 
 
@@ -23,7 +24,7 @@ import lombok.Data;
  * A simple class that holds a word and a count of how many times it has occurred.
  */
 @Data
-public class WordCountPair {
+public class WordCountPair implements Serializable {
 
     private final String word;
     private final int count;
