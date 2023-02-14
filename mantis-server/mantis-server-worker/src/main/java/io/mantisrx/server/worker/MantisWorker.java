@@ -144,8 +144,9 @@ public class MantisWorker extends BaseService {
                                 wrappedRequest,
                                 config,
                                 gateway,
-                                ClassLoaderHandle.fixed(getClass().getClassLoader()).createUserCodeClassloader(
-                                    wrappedRequest.getRequest()),
+                                ClassLoaderHandle
+                                    .fixed(Thread.currentThread().getContextClassLoader())
+                                    .createUserCodeClassloader(wrappedRequest.getRequest()),
                                 SinkSubscriptionStateHandler
                                     .Factory
                                     .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
