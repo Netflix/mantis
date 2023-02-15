@@ -33,7 +33,6 @@ import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
-import io.mantisrx.shaded.com.google.common.base.Strings;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -42,8 +41,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -150,7 +150,9 @@ public class MantisWorker extends BaseService {
                                 config,
                                 gateway,
                                 ClassLoaderHandle
-                                    .fixed(URLClassLoader.newInstance(getJVMClassPathUrls()))
+                                    .fixed(URLClassLoader.newInstance(getJVMClassPathUrls(
+                                        wrappedRequest.getRequest().getJobId(),
+                                        Integer.toString(wrappedRequest.getRequest().getWorkerNumber()))))
                                     .createUserCodeClassloader(wrappedRequest.getRequest()),
                                 SinkSubscriptionStateHandler
                                     .Factory
@@ -303,17 +305,16 @@ public class MantisWorker extends BaseService {
     public void enterActiveMode() {
     }
 
-    protected static URL[] getJVMClassPathUrls() {
-        return Arrays.stream(System.getProperty("java.class.path").split(":"))
-            .filter(p -> !Strings.isNullOrEmpty(p))
-            .map(p -> {
-                try {
-                    logger.info("Add url to loader: {}", p);
-                    return new File(p).toURI().toURL();
-                } catch (MalformedURLException e) {
-                    throw new RuntimeException(e);
-                }
-            })
-            .toArray(URL[]::new);
+    protected static URL[] getJVMClassPathUrls(String jobId, String workerNumber) {
+        // path used to store job on local disk
+        Path path = Paths.get("/tmp", "mantis-jobs", jobId, workerNumber, "libs");
+        URL pathLocation = null;
+        try {
+            pathLocation = Paths.get(path.toString(), "*").toUri().toURL();
+        } catch (MalformedURLException e1) {
+            logger.error("Failed to convert path location to URL", e1);
+        }
+        logger.info("Creating job classpath with pathLocation " + pathLocation);
+        return new URL[] {pathLocation};
     }
 }

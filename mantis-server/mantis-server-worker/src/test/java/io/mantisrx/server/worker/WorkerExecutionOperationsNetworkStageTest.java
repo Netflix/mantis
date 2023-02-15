@@ -187,7 +187,9 @@ public class WorkerExecutionOperationsNetworkStageTest {
 
     @Test
     public void testGetClassPathUrls() {
-        URL[] jvmClassPathUrls = MantisWorker.getJVMClassPathUrls();
+        URL[] jvmClassPathUrls = MantisWorker.getJVMClassPathUrls(
+            "jobName",
+            "jobNumber");
         assertNotNull(jvmClassPathUrls);
         assertTrue(jvmClassPathUrls.length > 0);
         URLClassLoader urlClassLoader = URLClassLoader.newInstance(jvmClassPathUrls);
