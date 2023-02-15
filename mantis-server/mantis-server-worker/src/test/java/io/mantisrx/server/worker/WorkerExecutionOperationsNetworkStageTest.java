@@ -17,6 +17,7 @@
 package io.mantisrx.server.worker;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -27,6 +28,8 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -180,6 +183,20 @@ public class WorkerExecutionOperationsNetworkStageTest {
         Thread.sleep(5000);
         subscribe3.unsubscribe();
         Thread.sleep(10000);
+    }
+
+    @Test
+    public void testGetClassPathUrls() {
+        URL[] jvmClassPathUrls = MantisWorker.getJVMClassPathUrls();
+        assertNotNull(jvmClassPathUrls);
+        assertTrue(jvmClassPathUrls.length > 0);
+        URLClassLoader urlClassLoader = URLClassLoader.newInstance(jvmClassPathUrls);
+        try {
+            Class<?> strClazz = urlClassLoader.loadClass("java.lang.String");
+            assertNotNull(strClazz);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     Observable<Long> getObs() {

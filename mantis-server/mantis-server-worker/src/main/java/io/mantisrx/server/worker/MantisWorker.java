@@ -40,15 +40,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -140,23 +137,6 @@ public class MantisWorker extends BaseService {
                     logger.info("Choosing current thread classloader {}", classLoader);
                 }
 
-                URLClassLoader userCodeLoader = URLClassLoader.newInstance(
-                    (URL[]) Arrays.stream(System.getProperty("java.class.path").split(":"))
-                        .map(p -> {
-                            if (Strings.isNullOrEmpty(p)) {
-                                return null;
-                            }
-
-                            try {
-                                logger.info("Add url to loader: {}", p);
-                                return new URI(p).toURL();
-                            } catch (MalformedURLException | URISyntaxException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .filter(Objects::nonNull)
-                        .toArray());
-
                 executeStageSubject
                     .asObservable()
                     .first()
@@ -170,7 +150,7 @@ public class MantisWorker extends BaseService {
                                 config,
                                 gateway,
                                 ClassLoaderHandle
-                                    .fixed(userCodeLoader)
+                                    .fixed(URLClassLoader.newInstance(getJVMClassPathUrls()))
                                     .createUserCodeClassloader(wrappedRequest.getRequest()),
                                 SinkSubscriptionStateHandler
                                     .Factory
@@ -321,5 +301,19 @@ public class MantisWorker extends BaseService {
 
     @Override
     public void enterActiveMode() {
+    }
+
+    protected static URL[] getJVMClassPathUrls() {
+        return Arrays.stream(System.getProperty("java.class.path").split(":"))
+            .filter(p -> !Strings.isNullOrEmpty(p))
+            .map(p -> {
+                try {
+                    logger.info("Add url to loader: {}", p);
+                    return new File(p).toURI().toURL();
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            })
+            .toArray(URL[]::new);
     }
 }
