@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -150,7 +149,7 @@ public class MantisWorker extends BaseService {
                                 config,
                                 gateway,
                                 ClassLoaderHandle
-                                    .fixed(URLClassLoader.newInstance(getJVMClassPathUrls()))
+                                    .fixed(new WorkerUserCodeClassLoader(getJVMClassPathUrls()))
                                     .createUserCodeClassloader(wrappedRequest.getRequest()),
                                 SinkSubscriptionStateHandler
                                     .Factory
