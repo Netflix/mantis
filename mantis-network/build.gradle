@@ -15,13 +15,13 @@
  */
 
 ext {
-    mqlVersion = '3.4.+'
+    mqlVersion = '3.2.+'
     nettyVersion = '4.1.17.Final'
 }
 
 dependencies {
     api "io.netty:netty-handler:$nettyVersion"
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    api "io.mantisrx:mql-jvm:$mqlVersion"
     api project(':mantis-common')
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
