@@ -68,7 +68,10 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -197,7 +200,10 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -503,7 +509,10 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.2.2"
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-network"
+            ],
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
