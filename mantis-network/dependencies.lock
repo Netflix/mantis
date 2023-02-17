@@ -6,7 +6,7 @@
     },
     "baseline-exact-dependencies-main": {
         "io.mantisrx:mql-jvm": {
-            "locked": "3.4.0"
+            "locked": "3.2.13"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -56,7 +56,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.4.0"
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -110,7 +110,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "lombok": {
@@ -148,7 +148,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.4.0"
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -211,7 +211,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testAnnotationProcessor": {
@@ -246,7 +246,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.4.0"
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -312,7 +312,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testRuntimeClasspath": {
@@ -348,7 +348,7 @@
             "project": true
         },
         "io.mantisrx:mql-jvm": {
-            "locked": "3.4.0"
+            "locked": "3.2.13"
         },
         "io.netty:netty-buffer": {
             "firstLevelTransitive": [
@@ -423,7 +423,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     }
 }

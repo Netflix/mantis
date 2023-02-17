@@ -15,7 +15,7 @@
  */
 
 ext {
-    mqlVersion = '3.4.+'
+    mqlVersion = '3.2.13'
     nettyVersion = '4.1.17.Final'
 }
 
@@ -25,7 +25,7 @@ dependencies {
     api project(':mantis-common')
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
-    
+
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12
