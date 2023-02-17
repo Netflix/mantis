@@ -128,12 +128,13 @@ public class MantisWorker extends BaseService {
             @Override
             public void start() {
                 final ClassLoader classLoader;
-                if (Thread.currentThread().getContextClassLoader() == null) {
-                    classLoader = ClassLoader.getSystemClassLoader();
-                    logger.info("Choosing system classloader {}", classLoader);
-                } else {
-                    classLoader = Thread.currentThread().getContextClassLoader();
-                    logger.info("Choosing current thread classloader {}", classLoader);
+                try {
+                    classLoader =
+                        new WorkerUserCodeClassLoader(getJVMClassPathUrls());
+                    Thread.currentThread().setContextClassLoader(classLoader);
+                    logger.info("Setting user class loader on current thread.");
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
 
                 executeStageSubject
@@ -149,7 +150,7 @@ public class MantisWorker extends BaseService {
                                 config,
                                 gateway,
                                 ClassLoaderHandle
-                                    .fixed(new WorkerUserCodeClassLoader(getJVMClassPathUrls()))
+                                    .fixed(classLoader)
                                     .createUserCodeClassloader(wrappedRequest.getRequest()),
                                 SinkSubscriptionStateHandler
                                     .Factory
