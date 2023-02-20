@@ -44,7 +44,7 @@ dependencies {
     implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
+    testImplementation libraries.mockitoCore3
     testImplementation 'org.hamcrest:hamcrest-all:1.3'
     testImplementation libraries.vavrTest
     testImplementation(testFixtures(project(":mantis-common")))
