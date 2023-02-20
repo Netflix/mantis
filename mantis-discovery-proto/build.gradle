@@ -18,5 +18,5 @@ dependencies {
     api libraries.mantisShaded
 
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoCore
+    testImplementation libraries.mockitoCore3
 }
