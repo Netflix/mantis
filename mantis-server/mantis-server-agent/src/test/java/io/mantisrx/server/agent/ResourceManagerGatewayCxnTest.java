@@ -17,12 +17,12 @@ package io.mantisrx.server.agent;
 
 import static org.apache.flink.util.ExceptionUtils.stripExecutionException;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.eq;
 
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
@@ -43,7 +43,6 @@ import java.util.concurrent.Executors;
 import org.apache.flink.api.common.time.Time;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
