@@ -19,13 +19,13 @@ package io.mantisrx.server.agent;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.File;
 import java.net.URI;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Test;
-import org.mockito.Matchers;
 
 public class TestHadoopFileSystemBlobStore {
 
@@ -43,7 +43,6 @@ public class TestHadoopFileSystemBlobStore {
         new URI(
             "/mnt/data/mantis-artifacts/sananthanarayanan-mantis-jobs-sine-function-thin-0.1.0.zip");
     blobStore.get(src);
-    verify(fileSystem, times(1)).copyToLocalFile(Matchers.eq(new Path(src)),
-        Matchers.eq(new Path(dst)));
+    verify(fileSystem, times(1)).copyToLocalFile(eq(new Path(src)), eq(new Path(dst)));
   }
 }

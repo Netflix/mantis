@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -72,8 +73,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Matchers;
 
 public class ResourceClusterActorTest {
     private static final TaskExecutorID TASK_EXECUTOR_ID = TaskExecutorID.of("taskExecutorId");
@@ -204,9 +203,9 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testInitializationAfterRestart() throws Exception {
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(ArgumentMatchers.eq(CLUSTER_ID)))
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(eq(CLUSTER_ID)))
             .thenReturn(ImmutableList.of());
-        when(mantisJobStore.getTaskExecutor(ArgumentMatchers.eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
+        when(mantisJobStore.getTaskExecutor(eq(TASK_EXECUTOR_ID))).thenReturn(TASK_EXECUTOR_REGISTRATION);
         assertEquals(
             Ack.getInstance(),
             resourceCluster.initializeTaskExecutor(TASK_EXECUTOR_ID, WORKER_ID).get());
@@ -529,7 +528,7 @@ public class ResourceClusterActorTest {
 
     @Test
     public void testIfDisabledTaskExecutorRequestsAreInitializedCorrectlyWhenTheControlPlaneStarts() throws Exception {
-        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(Matchers.eq(CLUSTER_ID)))
+        when(mantisJobStore.loadAllDisableTaskExecutorsRequests(eq(CLUSTER_ID)))
             .thenReturn(ImmutableList.of(
                 new DisableTaskExecutorsRequest(
                     ATTRIBUTES,

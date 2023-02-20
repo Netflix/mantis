@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 
 import com.mantisrx.common.utils.Services;
 import com.spotify.futures.CompletableFutures;
@@ -42,7 +43,7 @@ import java.util.concurrent.Executors;
 import org.apache.flink.api.common.time.Time;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -83,11 +84,11 @@ public class ResourceManagerGatewayCxnTest {
     @Test
     public void testIfTaskExecutorRegistersItselfWithResourceManagerAndSendsHeartbeatsPeriodically()
         throws Exception {
-        when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        when(gateway.registerTaskExecutor(eq(registration))).thenReturn(
             CompletableFuture.completedFuture(null));
-        when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(
+        when(gateway.disconnectTaskExecutor(eq(disconnection))).thenReturn(
             CompletableFuture.completedFuture(null));
-        when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
+        when(gateway.heartBeatFromTaskExecutor(eq(heartbeat)))
             .thenReturn(CompletableFuture.completedFuture(null));
         cxn.startAsync().awaitRunning();
 
@@ -99,7 +100,7 @@ public class ResourceManagerGatewayCxnTest {
 
     @Test(expected = UnknownError.class)
     public void testWhenRegistrationFails() throws Throwable {
-        when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        when(gateway.registerTaskExecutor(eq(registration))).thenReturn(
             CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception")));
         cxn.startAsync();
         CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
@@ -112,9 +113,9 @@ public class ResourceManagerGatewayCxnTest {
 
     @Test
     public void testWhenHeartbeatFailsIntermittently() throws Exception {
-        when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        when(gateway.registerTaskExecutor(eq(registration))).thenReturn(
             CompletableFuture.completedFuture(null));
-        when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
+        when(gateway.heartBeatFromTaskExecutor(eq(heartbeat)))
             .thenAnswer(new Answer<CompletableFuture<Void>>() {
                 private int count = 0;
 
@@ -135,9 +136,9 @@ public class ResourceManagerGatewayCxnTest {
 
     @Test
     public void testWhenHeartbeatFailsContinuously() {
-        when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+        when(gateway.registerTaskExecutor(eq(registration))).thenReturn(
             CompletableFuture.completedFuture(null));
-        when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))
+        when(gateway.heartBeatFromTaskExecutor(eq(heartbeat)))
             .thenAnswer(new Answer<CompletableFuture<Void>>() {
                 private int count = 0;
 
@@ -151,7 +152,7 @@ public class ResourceManagerGatewayCxnTest {
                     }
                 }
             });
-        when(gateway.disconnectTaskExecutor(Matchers.eq(disconnection))).thenReturn(CompletableFuture.completedFuture(null));
+        when(gateway.disconnectTaskExecutor(eq(disconnection))).thenReturn(CompletableFuture.completedFuture(null));
         cxn.startAsync();
         CompletableFuture<Void> result = Services.awaitAsync(cxn, Executors.newSingleThreadExecutor());
         Throwable throwable = null;
