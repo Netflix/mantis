@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.netflix.mantis.discovery.proto.MantisWorker;
 import com.netflix.spectator.api.NoopRegistry;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.discovery.proto.MantisWorker;
 import io.mantisrx.publish.EventChannel;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.config.MrePublishConfiguration;

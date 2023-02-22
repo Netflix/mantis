@@ -16,13 +16,13 @@
 
 package io.mantisrx.publish;
 
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import com.netflix.mantis.discovery.proto.StageWorkers;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.ipc.http.HttpClient;
 import com.netflix.spectator.ipc.http.HttpResponse;
+import io.mantisrx.discovery.proto.JobDiscoveryInfo;
+import io.mantisrx.discovery.proto.MantisWorker;
+import io.mantisrx.discovery.proto.StageWorkers;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.MantisJobDiscovery;
 import io.mantisrx.publish.internal.metrics.SpectatorUtils;

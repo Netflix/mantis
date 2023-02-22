@@ -16,10 +16,10 @@
 
 package io.mantisrx.publish.netty.pipeline;
 
-import com.netflix.mantis.discovery.proto.MantisWorker;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Timer;
+import io.mantisrx.discovery.proto.MantisWorker;
 import io.mantisrx.publish.EventChannel;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;

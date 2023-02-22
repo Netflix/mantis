@@ -16,11 +16,11 @@
 
 package io.mantisrx.publish.internal.discovery;
 
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import com.netflix.mantis.discovery.proto.StageWorkers;
-import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
+import io.mantisrx.discovery.proto.AppJobClustersMap;
+import io.mantisrx.discovery.proto.JobDiscoveryInfo;
+import io.mantisrx.discovery.proto.MantisWorker;
+import io.mantisrx.discovery.proto.StageWorkers;
+import io.mantisrx.discovery.proto.StreamJobClusterMap;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
