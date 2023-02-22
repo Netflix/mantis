@@ -43,6 +43,7 @@ dependencies {
     api "com.netflix.fenzo:fenzo-triggers:$fenzoVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
+    api "org.apache.commons:commons-collections4:4.4"
 
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi

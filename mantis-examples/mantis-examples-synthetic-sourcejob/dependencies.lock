@@ -88,6 +88,12 @@
         "net.andreinc:mockneat": {
             "locked": "0.4.8"
         },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.12.0"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -202,6 +208,12 @@
         },
         "net.andreinc:mockneat": {
             "locked": "0.4.8"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.12.0"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -344,6 +356,18 @@
             ],
             "locked": "1.0"
         },
+        "org.apache.commons:commons-collections4": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.12.0"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -460,6 +484,12 @@
         },
         "net.andreinc:mockneat": {
             "locked": "0.4.8"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.12.0"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -599,6 +629,18 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.0"
+        },
+        "org.apache.commons:commons-collections4": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.12.0"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [

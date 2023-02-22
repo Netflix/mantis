@@ -33,7 +33,8 @@ dependencies {
     // spectatorApi should be packaged at entry point level to avoid version conflicts.
     compileOnly libraries.spectatorApi
     api 'com.google.code.findbugs:jsr305:3.0.1' // For Nonnull annotation
-    
+
+    api libraries.commonsLang3
     api libraries.mantisShaded
     api libraries.rxNettyShaded
     api libraries.rxJava
@@ -41,6 +42,7 @@ dependencies {
     api libraries.slf4jLog4j12
     implementation libraries.commonsIo
     implementation 'net.jcip:jcip-annotations:1.0'
+    implementation 'org.apache.commons:commons-collections4:4.4'
 
     testImplementation libraries.spectatorApi
     testImplementation libraries.commonsLang3

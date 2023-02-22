@@ -117,6 +117,12 @@
         "junit:junit-dep": {
             "locked": "4.11"
         },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
+        },
         "org.apache.mesos:mesos": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -307,6 +313,12 @@
         },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.6"
@@ -548,6 +560,18 @@
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
+        "org.apache.commons:commons-collections4": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
+        },
         "org.apache.hadoop:hadoop-common": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-server-agent"
@@ -768,6 +792,12 @@
         },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
         },
         "org.apache.httpcomponents:httpclient": {
             "locked": "4.5.6"
@@ -1020,6 +1050,18 @@
         },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
+        },
+        "org.apache.commons:commons-collections4": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
         },
         "org.apache.hadoop:hadoop-common": {
             "firstLevelTransitive": [

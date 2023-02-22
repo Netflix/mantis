@@ -10,6 +10,9 @@
         },
         "net.jcip:jcip-annotations": {
             "locked": "1.0"
+        },
+        "org.apache.commons:commons-collections4": {
+            "locked": "4.4"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -78,6 +81,9 @@
             "locked": "4.11"
         },
         "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
             "locked": "3.5"
         },
         "org.hamcrest:hamcrest-core": {
@@ -148,6 +154,12 @@
         "net.jcip:jcip-annotations": {
             "locked": "1.0"
         },
+        "org.apache.commons:commons-collections4": {
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "locked": "3.5"
+        },
         "org.jctools:jctools-core": {
             "locked": "1.2.1"
         },
@@ -202,6 +214,12 @@
         },
         "net.jcip:jcip-annotations": {
             "locked": "1.0"
+        },
+        "org.apache.commons:commons-collections4": {
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "locked": "3.5"
         },
         "org.jctools:jctools-core": {
             "locked": "1.2.1"
@@ -292,7 +310,13 @@
         "net.jcip:jcip-annotations": {
             "locked": "1.0"
         },
+        "org.apache.commons:commons-collections4": {
+            "locked": "4.4"
+        },
         "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
             "locked": "3.5"
         },
         "org.hamcrest:hamcrest-core": {
@@ -387,6 +411,12 @@
             ],
             "locked": "1.3.8"
         },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
+        },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -479,6 +509,18 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.0"
+        },
+        "org.apache.commons:commons-collections4": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.4"
+        },
+        "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.5"
         },
         "org.jctools:jctools-core": {
             "firstLevelTransitive": [
@@ -582,7 +624,16 @@
             ],
             "locked": "1.0"
         },
+        "org.apache.commons:commons-collections4": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "4.4"
+        },
         "org.apache.commons:commons-lang3": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
             "locked": "3.5"
         },
         "org.hamcrest:hamcrest-core": {
