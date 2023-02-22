@@ -38,6 +38,8 @@ dependencies {
     api "org.hdrhistogram:HdrHistogram:$hdrHistogramVersion"
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "joda-time:joda-time:$jodaTimeVersion"
+    api 'javax.annotation:javax.annotation-api:1.3.2'
+
 
 
     testImplementation libraries.junit4

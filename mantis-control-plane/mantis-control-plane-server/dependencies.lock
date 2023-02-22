@@ -81,6 +81,12 @@
             ],
             "locked": "1.3.8"
         },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
+        },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -236,6 +242,12 @@
         },
         "io.reactivex:rxjava-reactive-streams": {
             "locked": "1.2.1"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
@@ -394,6 +406,12 @@
         },
         "io.reactivex:rxjava-reactive-streams": {
             "locked": "1.2.1"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
@@ -562,6 +580,12 @@
         },
         "io.reactivex:rxjava-reactive-streams": {
             "locked": "1.2.1"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
@@ -737,6 +761,12 @@
         },
         "io.reactivex:rxjava-reactive-streams": {
             "locked": "1.2.1"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [

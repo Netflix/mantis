@@ -120,6 +120,12 @@
             ],
             "locked": "1.3.8"
         },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
+        },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -305,6 +311,12 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.3.8"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
@@ -533,6 +545,12 @@
             ],
             "locked": "1.3.8"
         },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
+        },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -719,6 +737,12 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.3.8"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
@@ -953,6 +977,12 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.3.8"
+        },
+        "javax.annotation:javax.annotation-api": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [

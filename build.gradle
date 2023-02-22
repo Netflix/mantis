@@ -125,7 +125,7 @@ subprojects {
             exclude group: 'org.apache.curator'
             exclude group: 'org.apache.zookeeper'
             exclude group: 'org.apache.jute'
-            exclude group: 'org.apache.flink'
+            //exclude group: 'org.apache.flink'
             exclude group: 'scala'
         }
         exclude group: 'ch.qos.logback', module: 'logback-classic'
