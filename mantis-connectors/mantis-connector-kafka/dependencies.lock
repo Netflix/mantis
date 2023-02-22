@@ -99,7 +99,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -118,10 +118,10 @@
     },
     "compileClasspath": {
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.82.0"
@@ -226,7 +226,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "lombok": {
@@ -236,10 +236,10 @@
     },
     "runtimeClasspath": {
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -375,7 +375,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testAnnotationProcessor": {
@@ -388,10 +388,10 @@
             "locked": "2.21.0"
         },
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.82.0"
@@ -505,7 +505,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testRuntimeClasspath": {
@@ -513,10 +513,10 @@
             "locked": "2.21.0"
         },
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -661,7 +661,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     }
 }
