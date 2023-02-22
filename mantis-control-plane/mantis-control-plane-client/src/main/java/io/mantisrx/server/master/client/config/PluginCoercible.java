@@ -16,12 +16,12 @@
 
 package io.mantisrx.server.master.client.config;
 
+import io.mantisrx.shaded.flink.util.ExceptionUtils;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.base.Preconditions;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
-import io.mantisrx.shaded.flink.util.ExceptionUtils;
 import org.skife.config.Coercer;
 import org.skife.config.Coercible;
 

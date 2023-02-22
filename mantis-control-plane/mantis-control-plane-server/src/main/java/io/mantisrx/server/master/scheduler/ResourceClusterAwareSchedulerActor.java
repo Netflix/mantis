@@ -34,6 +34,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
+import io.mantisrx.shaded.flink.util.ExceptionUtils;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import io.mantisrx.shaded.flink.util.ExceptionUtils;
 
 @Slf4j
 class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {

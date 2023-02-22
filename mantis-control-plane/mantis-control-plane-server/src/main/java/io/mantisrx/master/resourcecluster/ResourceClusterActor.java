@@ -44,6 +44,7 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -64,7 +65,6 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 /**
  * Akka actor implementation of ResourceCluster.

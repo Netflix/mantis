@@ -18,8 +18,8 @@ package io.mantisrx.server.worker;
 import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
-import java.util.concurrent.CompletableFuture;
 import io.mantisrx.shaded.flink.runtime.rpc.RpcGateway;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Gateway to talk to the task executor running on the mantis-agent.

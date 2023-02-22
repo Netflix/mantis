@@ -28,6 +28,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Set;
@@ -36,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 /**
  * This class is an implementation of {@link ResourceClusters} that uses the Akka actor implementation under the hood.

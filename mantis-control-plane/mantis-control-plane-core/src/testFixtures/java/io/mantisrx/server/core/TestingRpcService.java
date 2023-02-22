@@ -17,13 +17,6 @@ package io.mantisrx.server.core;
 
 import static io.mantisrx.shaded.flink.util.Preconditions.checkNotNull;
 
-import java.io.Serializable;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import io.mantisrx.shaded.flink.configuration.Configuration;
 import io.mantisrx.shaded.flink.runtime.rpc.FencedRpcGateway;
 import io.mantisrx.shaded.flink.runtime.rpc.RpcEndpoint;
@@ -34,6 +27,13 @@ import io.mantisrx.shaded.flink.runtime.rpc.RpcSystem;
 import io.mantisrx.shaded.flink.runtime.rpc.akka.AkkaRpcSystem;
 import io.mantisrx.shaded.flink.util.concurrent.FutureUtils;
 import io.mantisrx.shaded.flink.util.concurrent.ScheduledExecutor;
+import java.io.Serializable;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * Copied from <a href="https://github.com/apache/flink/blob/master/flink-runtime/src/test/java/org/apache/flink/runtime/rpc/TestingRpcService.java">flink</a>.

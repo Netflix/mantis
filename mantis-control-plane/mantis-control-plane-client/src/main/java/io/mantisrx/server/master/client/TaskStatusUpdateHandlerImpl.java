@@ -20,8 +20,8 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.Status;
-import lombok.extern.slf4j.Slf4j;
 import io.mantisrx.shaded.flink.util.ExceptionUtils;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TaskStatusUpdateHandlerImpl implements TaskStatusUpdateHandler {

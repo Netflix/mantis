@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.store;
 
 
+import io.mantisrx.shaded.flink.util.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +33,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
-import io.mantisrx.shaded.flink.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

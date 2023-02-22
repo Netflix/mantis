@@ -15,6 +15,7 @@
  */
 package io.mantisrx.server.agent;
 
+import io.mantisrx.shaded.flink.util.OperatingSystem;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -27,7 +28,6 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import io.mantisrx.shaded.flink.util.OperatingSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

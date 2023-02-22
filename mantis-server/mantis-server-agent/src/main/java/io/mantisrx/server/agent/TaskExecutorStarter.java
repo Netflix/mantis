@@ -27,6 +27,10 @@ import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import io.mantisrx.shaded.flink.configuration.Configuration;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcSystem;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcUtils;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.time.Clock;
@@ -38,10 +42,6 @@ import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import io.mantisrx.shaded.flink.configuration.Configuration;
-import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
-import io.mantisrx.shaded.flink.runtime.rpc.RpcSystem;
-import io.mantisrx.shaded.flink.runtime.rpc.RpcUtils;
 
 /**
  * TaskExecutorStarter class represents the starting point for a task executor.

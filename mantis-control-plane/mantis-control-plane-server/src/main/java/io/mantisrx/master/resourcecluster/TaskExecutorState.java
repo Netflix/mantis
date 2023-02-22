@@ -30,13 +30,13 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 @SuppressWarnings("UnusedReturnValue")
 @AllArgsConstructor

@@ -17,6 +17,9 @@ package io.mantisrx.server.agent;
 
 import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
+import io.mantisrx.shaded.flink.util.FlinkUserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.SimpleUserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -34,9 +37,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import io.mantisrx.shaded.flink.util.FlinkUserCodeClassLoader;
-import io.mantisrx.shaded.flink.util.SimpleUserCodeClassLoader;
-import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 
 /**
  * ClassLoader that gets created out of downloading blobs from the corresponding blob store.

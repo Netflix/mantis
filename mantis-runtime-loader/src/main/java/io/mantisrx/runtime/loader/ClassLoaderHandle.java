@@ -17,13 +17,13 @@ package io.mantisrx.runtime.loader;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
+import io.mantisrx.shaded.flink.util.SimpleUserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
-import io.mantisrx.shaded.flink.util.SimpleUserCodeClassLoader;
-import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 
 /**
  * Handle to retrieve a user code class loader for the associated job.
