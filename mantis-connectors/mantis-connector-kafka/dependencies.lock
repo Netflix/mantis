@@ -5,6 +5,12 @@
         }
     },
     "baseline-exact-dependencies-main": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -117,6 +123,12 @@
         }
     },
     "compileClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.archaius:archaius2-api": {
             "locked": "2.3.19"
         },
@@ -235,6 +247,12 @@
         }
     },
     "runtimeClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.archaius:archaius2-api": {
             "locked": "2.3.19"
         },
@@ -381,6 +399,12 @@
         "com.github.tomakehurst:wiremock-jre8": {
             "locked": "2.21.0"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.2"
+        },
         "com.netflix.archaius:archaius2-api": {
             "locked": "2.3.19"
         },
@@ -505,6 +529,12 @@
     "testRuntimeClasspath": {
         "com.github.tomakehurst:wiremock-jre8": {
             "locked": "2.21.0"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.2"
         },
         "com.netflix.archaius:archaius2-api": {
             "locked": "2.3.19"

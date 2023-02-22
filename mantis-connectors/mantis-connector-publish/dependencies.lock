@@ -5,6 +5,12 @@
         }
     },
     "baseline-exact-dependencies-main": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -120,6 +126,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -217,12 +229,6 @@
             ],
             "locked": "1.3.8"
         },
-        "javax.annotation:javax.annotation-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.2"
-        },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -293,6 +299,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -424,12 +436,6 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.3.8"
-        },
-        "javax.annotation:javax.annotation-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
@@ -508,6 +514,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -605,12 +617,6 @@
             ],
             "locked": "1.3.8"
         },
-        "javax.annotation:javax.annotation-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.2"
-        },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -685,6 +691,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -816,12 +828,6 @@
                 "io.mantisrx:mantis-common"
             ],
             "locked": "1.3.8"
-        },
-        "javax.annotation:javax.annotation-api": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.2"
         },
         "joda-time:joda-time": {
             "firstLevelTransitive": [
