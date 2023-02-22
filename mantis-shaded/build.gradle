@@ -63,8 +63,9 @@ dependencies {
     shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
     shaded "jline:jline:$jlineVersion"
     shaded "io.netty:netty:$nettyVersion"
-
-    implementation libraries.vavr
+    shaded libraries.flinkCore
+    shaded libraries.flinkRpcApi
+    shaded libraries.flinkRpcImpl
 }
 
 shadowJar {
@@ -82,6 +83,7 @@ shadowJar {
     relocate 'org.apache.jute', 'io.mantisrx.shaded.org.apache.jute'
     relocate 'jline', 'io.mantisrx.shaded.jline'
     relocate 'org.jboss.netty', 'io.mantisrx.shaded.org.jboss.netty'
+    relocate 'scala', 'fdichiara.shaded.scala'
 
     mergeServiceFiles()
 }
