@@ -15,7 +15,7 @@
  */
 package io.mantisrx.server.core;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static io.mantisrx.shaded.flink.util.Preconditions.checkNotNull;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;

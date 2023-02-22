@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.master;
 
-import static org.apache.flink.configuration.GlobalConfiguration.loadConfiguration;
+import static io.mantisrx.shaded.flink.configuration.GlobalConfiguration.loadConfiguration;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;

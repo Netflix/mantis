@@ -15,7 +15,7 @@
  */
 package io.mantisrx.server.agent;
 
-import static org.apache.flink.util.ExceptionUtils.stripExecutionException;
+import static io.mantisrx.shaded.flink.util.ExceptionUtils.stripExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
