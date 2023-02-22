@@ -22,9 +22,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.netflix.mantis.discovery.proto.MantisWorker;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.discovery.proto.MantisWorker;
 import io.mantisrx.publish.api.Event;
 import io.mantisrx.publish.netty.proto.MantisEvent;
 import io.netty.channel.Channel;

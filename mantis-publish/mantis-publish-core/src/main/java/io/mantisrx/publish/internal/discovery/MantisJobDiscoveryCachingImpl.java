@@ -16,13 +16,13 @@
 
 package io.mantisrx.publish.internal.discovery;
 
-import static com.netflix.mantis.discovery.proto.AppJobClustersMap.DEFAULT_APP_KEY;
+import static io.mantisrx.discovery.proto.AppJobClustersMap.DEFAULT_APP_KEY;
 
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.discovery.proto.AppJobClustersMap;
+import io.mantisrx.discovery.proto.JobDiscoveryInfo;
+import io.mantisrx.discovery.proto.StreamJobClusterMap;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.mantisapi.MantisApiClient;
 import io.mantisrx.publish.internal.exceptions.NonRetryableException;
