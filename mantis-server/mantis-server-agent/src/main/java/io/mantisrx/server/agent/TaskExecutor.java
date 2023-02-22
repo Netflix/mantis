@@ -69,12 +69,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.RxNetty;
-import org.apache.flink.api.common.time.Time;
-import org.apache.flink.runtime.rpc.RpcEndpoint;
-import org.apache.flink.runtime.rpc.RpcService;
-import org.apache.flink.runtime.rpc.RpcServiceUtils;
-import org.apache.flink.util.UserCodeClassLoader;
-import org.apache.flink.util.concurrent.ExecutorThreadFactory;
+import io.mantisrx.shaded.flink.api.common.time.Time;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcEndpoint;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcServiceUtils;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.concurrent.ExecutorThreadFactory;
 import rx.Subscription;
 import rx.subjects.PublishSubject;
 

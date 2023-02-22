@@ -66,7 +66,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import org.apache.flink.util.ExceptionUtils;
+import io.mantisrx.shaded.flink.util.ExceptionUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

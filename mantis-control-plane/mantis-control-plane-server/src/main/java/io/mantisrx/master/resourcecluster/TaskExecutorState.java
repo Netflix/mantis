@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 @SuppressWarnings("UnusedReturnValue")
 @AllArgsConstructor

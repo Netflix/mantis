@@ -19,7 +19,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.runtime.rpc.RpcGateway;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcGateway;
 
 /**
  * Gateway to talk to the task executor running on the mantis-agent.

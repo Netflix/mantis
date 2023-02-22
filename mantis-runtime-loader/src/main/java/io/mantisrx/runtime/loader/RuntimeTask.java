@@ -17,7 +17,7 @@
 package io.mantisrx.runtime.loader;
 
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
-import org.apache.flink.util.UserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 
 /**
  * Interface to load core runtime work load from external host (mesos or TaskExecutor).

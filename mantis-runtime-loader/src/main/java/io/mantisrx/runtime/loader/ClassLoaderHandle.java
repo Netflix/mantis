@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
-import org.apache.flink.util.SimpleUserCodeClassLoader;
-import org.apache.flink.util.UserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.SimpleUserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 
 /**
  * Handle to retrieve a user code class loader for the associated job.

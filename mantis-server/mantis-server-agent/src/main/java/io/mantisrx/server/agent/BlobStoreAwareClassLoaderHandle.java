@@ -34,9 +34,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.apache.flink.util.FlinkUserCodeClassLoader;
-import org.apache.flink.util.SimpleUserCodeClassLoader;
-import org.apache.flink.util.UserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.FlinkUserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.SimpleUserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 
 /**
  * ClassLoader that gets created out of downloading blobs from the corresponding blob store.

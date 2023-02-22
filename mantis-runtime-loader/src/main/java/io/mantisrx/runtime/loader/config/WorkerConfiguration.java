@@ -23,7 +23,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.net.URI;
 import java.util.Map;
-import org.apache.flink.api.common.time.Time;
+import io.mantisrx.shaded.flink.api.common.time.Time;
 import org.skife.config.Config;
 import org.skife.config.Default;
 import org.skife.config.DefaultNull;

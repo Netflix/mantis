@@ -64,7 +64,7 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 /**
  * Akka actor implementation of ResourceCluster.

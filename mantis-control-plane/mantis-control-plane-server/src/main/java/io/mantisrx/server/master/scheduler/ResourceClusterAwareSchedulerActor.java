@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.util.ExceptionUtils;
+import io.mantisrx.shaded.flink.util.ExceptionUtils;
 
 @Slf4j
 class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {

@@ -51,7 +51,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 /**
  * Supervisor actor responsible for creating/deleting/listing all resource clusters in the system.

@@ -38,10 +38,10 @@ import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.rpc.RpcService;
-import org.apache.flink.runtime.rpc.RpcSystem;
-import org.apache.flink.runtime.rpc.RpcUtils;
+import io.mantisrx.shaded.flink.configuration.Configuration;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcSystem;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcUtils;
 
 /**
  * TaskExecutorStarter class represents the starting point for a task executor.

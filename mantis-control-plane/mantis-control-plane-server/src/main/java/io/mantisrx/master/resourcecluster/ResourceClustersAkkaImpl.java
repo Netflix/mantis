@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.apache.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
 
 /**
  * This class is an implementation of {@link ResourceClusters} that uses the Akka actor implementation under the hood.

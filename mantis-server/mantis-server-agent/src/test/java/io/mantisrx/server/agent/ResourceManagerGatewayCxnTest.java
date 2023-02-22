@@ -39,7 +39,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import org.apache.flink.api.common.time.Time;
+import io.mantisrx.shaded.flink.api.common.time.Time;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;

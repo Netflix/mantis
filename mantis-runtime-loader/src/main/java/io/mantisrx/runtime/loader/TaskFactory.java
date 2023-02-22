@@ -17,7 +17,7 @@
 package io.mantisrx.runtime.loader;
 
 import io.mantisrx.server.core.ExecuteStageRequest;
-import org.apache.flink.util.UserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 
 /**
  * Interface to factory building ITask implementation instance. Can be override to use customized ITask impl.

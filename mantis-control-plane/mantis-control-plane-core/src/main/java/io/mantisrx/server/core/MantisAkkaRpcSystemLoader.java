@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.core;
 
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.rpc.RpcSystem;
-import org.apache.flink.runtime.rpc.RpcSystemLoader;
-import org.apache.flink.runtime.rpc.akka.AkkaRpcSystem;
+import io.mantisrx.shaded.flink.configuration.Configuration;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcSystem;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcSystemLoader;
+import io.mantisrx.shaded.flink.runtime.rpc.akka.AkkaRpcSystem;
 
 /**
  * RpcSystemLoader for mantis task executor and other services that need to expose an RPC API.

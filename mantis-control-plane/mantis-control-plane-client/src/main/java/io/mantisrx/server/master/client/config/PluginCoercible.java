@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
-import org.apache.flink.util.ExceptionUtils;
+import io.mantisrx.shaded.flink.util.ExceptionUtils;
 import org.skife.config.Coercer;
 import org.skife.config.Coercible;
 

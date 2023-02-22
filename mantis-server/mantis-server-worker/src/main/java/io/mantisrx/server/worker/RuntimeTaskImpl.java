@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.util.UserCodeClassLoader;
+import io.mantisrx.shaded.flink.util.UserCodeClassLoader;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;

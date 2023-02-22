@@ -24,16 +24,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.rpc.FencedRpcGateway;
-import org.apache.flink.runtime.rpc.RpcEndpoint;
-import org.apache.flink.runtime.rpc.RpcGateway;
-import org.apache.flink.runtime.rpc.RpcServer;
-import org.apache.flink.runtime.rpc.RpcService;
-import org.apache.flink.runtime.rpc.RpcSystem;
-import org.apache.flink.runtime.rpc.akka.AkkaRpcSystem;
-import org.apache.flink.util.concurrent.FutureUtils;
-import org.apache.flink.util.concurrent.ScheduledExecutor;
+import io.mantisrx.shaded.flink.configuration.Configuration;
+import io.mantisrx.shaded.flink.runtime.rpc.FencedRpcGateway;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcEndpoint;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcGateway;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcServer;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcService;
+import io.mantisrx.shaded.flink.runtime.rpc.RpcSystem;
+import io.mantisrx.shaded.flink.runtime.rpc.akka.AkkaRpcSystem;
+import io.mantisrx.shaded.flink.util.concurrent.FutureUtils;
+import io.mantisrx.shaded.flink.util.concurrent.ScheduledExecutor;
 
 /**
  * Copied from <a href="https://github.com/apache/flink/blob/master/flink-runtime/src/test/java/org/apache/flink/runtime/rpc/TestingRpcService.java">flink</a>.
