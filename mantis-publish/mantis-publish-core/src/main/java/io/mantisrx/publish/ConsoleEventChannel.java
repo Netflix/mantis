@@ -16,7 +16,7 @@
 
 package io.mantisrx.publish;
 
-import com.netflix.mantis.discovery.proto.MantisWorker;
+import io.mantisrx.discovery.proto.MantisWorker;
 import io.mantisrx.publish.api.Event;
 import java.io.PrintStream;
 import java.util.concurrent.CompletableFuture;

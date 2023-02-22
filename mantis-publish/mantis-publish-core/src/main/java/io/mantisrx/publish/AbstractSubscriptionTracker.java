@@ -16,9 +16,9 @@
 
 package io.mantisrx.publish;
 
-import com.netflix.mantis.discovery.proto.StreamJobClusterMap;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
+import io.mantisrx.discovery.proto.StreamJobClusterMap;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.core.SubscriptionFactory;
