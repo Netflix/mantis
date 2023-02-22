@@ -16,8 +16,8 @@
 
 package io.mantisrx.publish.internal.discovery.mantisapi;
 
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
+import io.mantisrx.discovery.proto.AppJobClustersMap;
+import io.mantisrx.discovery.proto.JobDiscoveryInfo;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 

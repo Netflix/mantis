@@ -16,13 +16,13 @@
 
 package io.mantisrx.publish.internal.discovery.mantisapi;
 
-import com.netflix.mantis.discovery.proto.AppJobClustersMap;
-import com.netflix.mantis.discovery.proto.JobDiscoveryInfo;
-import com.netflix.mantis.discovery.proto.MantisWorker;
-import com.netflix.mantis.discovery.proto.StageWorkers;
 import com.netflix.spectator.ipc.http.HttpClient;
 import com.netflix.spectator.ipc.http.HttpResponse;
 import io.mantisrx.common.JsonSerializer;
+import io.mantisrx.discovery.proto.AppJobClustersMap;
+import io.mantisrx.discovery.proto.JobDiscoveryInfo;
+import io.mantisrx.discovery.proto.MantisWorker;
+import io.mantisrx.discovery.proto.StageWorkers;
 import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.internal.discovery.proto.JobSchedulingInfo;
 import io.mantisrx.publish.internal.discovery.proto.MantisJobState;
