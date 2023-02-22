@@ -68,7 +68,7 @@ ext.libraries = [
                 "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",
                 "org.junit.jupiter:junit-jupiter-params:${versions.junit5}",
         ],
-        mantisShaded   : "io.mantisrx:mantis-shaded:2.0.2",
+        mantisShaded   : "io.mantisrx:mantis-shaded:0.1.0-20230222.001112-92",
         mockitoAll     : "org.mockito:mockito-all:${versions.mockito}",
         mockitoCore    : "org.mockito:mockito-core:${versions.mockito}",
         mockitoCore3   : "org.mockito:mockito-core:${versions.mockito3}",
@@ -125,16 +125,22 @@ subprojects {
             exclude group: 'org.apache.curator'
             exclude group: 'org.apache.zookeeper'
             exclude group: 'org.apache.jute'
+            exclude group: 'org.apache.flink'
+            exclude group: 'scala'
         }
         exclude group: 'ch.qos.logback', module: 'logback-classic'
     }
 
     repositories {
+        maven {
+            url "https://artifacts-oss.netflix.net/artifactory/maven-oss-snapshots"
+        }
         mavenCentral()
         maven {
             url "https://netflixoss.jfrog.io/artifactory/maven-oss-candidates"
         }
-    }
+}
+
 
     tasks.withType(Javadoc).all {
         enabled = false

@@ -20,12 +20,6 @@
     "runtimeClasspath": {
         "io.mantisrx:mantis-shaded": {
             "project": true
-        },
-        "io.vavr:vavr": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-shaded"
-            ],
-            "locked": "0.9.2"
         }
     },
     "testAnnotationProcessor": {
@@ -44,12 +38,6 @@
     "testRuntimeClasspath": {
         "io.mantisrx:mantis-shaded": {
             "project": true
-        },
-        "io.vavr:vavr": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-shaded"
-            ],
-            "locked": "0.9.2"
         }
     }
 }
