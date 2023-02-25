@@ -24,7 +24,18 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.rx.MonitorOperator;
-import io.mantisrx.runtime.*;
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.GroupToGroup;
+import io.mantisrx.runtime.GroupToScalar;
+import io.mantisrx.runtime.Groups;
+import io.mantisrx.runtime.KeyToKey;
+import io.mantisrx.runtime.KeyToScalar;
+import io.mantisrx.runtime.ScalarToGroup;
+import io.mantisrx.runtime.ScalarToKey;
+import io.mantisrx.runtime.ScalarToScalar;
+import io.mantisrx.runtime.SinkHolder;
+import io.mantisrx.runtime.SourceHolder;
+import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.computation.Computation;
 import io.mantisrx.runtime.markers.MantisMarker;
 import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
@@ -313,7 +324,9 @@ public class StageExecutors {
         if (givenStageConcurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY) {
             String jobParamPrefix = "JOB_PARAM_";
             String stageConcurrencyParam = jobParamPrefix + STAGE_CONCURRENCY;
-            String concurrency = System.getenv(stageConcurrencyParam);
+            // Need to be compatible for both Mesos and TaskExecutor.
+            String concurrency = System.getProperty(stageConcurrencyParam, System.getenv(stageConcurrencyParam));
+
             logger.info("Job param: " + stageConcurrencyParam + " value: " + concurrency);
             // check if env property is set.
             if (concurrency != null && !concurrency.isEmpty()) {
