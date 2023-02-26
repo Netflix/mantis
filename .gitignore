@@ -195,12 +195,3 @@ gradle-app.setting
 **/build/
 
 # End of https://www.gitignore.io/api/vim,java,linux,macos,gradle,intellij+all
-
-.classpath
-.project
-.settings
-bin/
-
-# mkdocs Build files
-build
-site

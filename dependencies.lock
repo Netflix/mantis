@@ -1,3 +1,223 @@
 {
-    
+    "annotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.10"
+        }
+    },
+    "compileClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0"
+        },
+        "com.netflix.blitz4j:blitz4j": {
+            "locked": "1.37.2"
+        },
+        "com.netflix.governator:governator": {
+            "locked": "1.17.12"
+        },
+        "com.netflix.zuul:zuul-core": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-groovy": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-guice": {
+            "locked": "2.3.0"
+        },
+        "commons-configuration:commons-configuration": {
+            "locked": "1.8"
+        },
+        "io.mantisrx:mantis-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-control-plane-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-runtime": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-server-worker-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.4.0"
+        },
+        "io.vavr:vavr": {
+            "locked": "0.10.2"
+        },
+        "org.apache.commons:commons-lang3": {
+            "locked": "3.12.0"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.10"
+        }
+    },
+    "pmd": {
+        "net.sourceforge.pmd:pmd-java": {
+            "locked": "6.26.0"
+        }
+    },
+    "runtimeClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0"
+        },
+        "com.netflix.blitz4j:blitz4j": {
+            "locked": "1.37.2"
+        },
+        "com.netflix.governator:governator": {
+            "locked": "1.17.12"
+        },
+        "com.netflix.zuul:zuul-core": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-groovy": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-guice": {
+            "locked": "2.3.0"
+        },
+        "commons-configuration:commons-configuration": {
+            "locked": "1.8"
+        },
+        "io.mantisrx:mantis-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-control-plane-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-runtime": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-server-worker-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.4.0"
+        },
+        "io.vavr:vavr": {
+            "locked": "0.10.2"
+        },
+        "org.apache.commons:commons-lang3": {
+            "locked": "3.12.0"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.10"
+        }
+    },
+    "testAnnotationProcessor": {
+        "org.projectlombok:lombok": {
+            "locked": "1.18.10"
+        }
+    },
+    "testCompileClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0"
+        },
+        "com.netflix.blitz4j:blitz4j": {
+            "locked": "1.37.2"
+        },
+        "com.netflix.governator:governator": {
+            "locked": "1.17.12"
+        },
+        "com.netflix.zuul:zuul-core": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-groovy": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-guice": {
+            "locked": "2.3.0"
+        },
+        "commons-configuration:commons-configuration": {
+            "locked": "1.8"
+        },
+        "io.mantisrx:mantis-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-control-plane-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-runtime": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-server-worker-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.4.0"
+        },
+        "io.vavr:vavr": {
+            "locked": "0.10.2"
+        },
+        "junit:junit": {
+            "locked": "4.13.1"
+        },
+        "org.apache.commons:commons-lang3": {
+            "locked": "3.12.0"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.10"
+        }
+    },
+    "testRuntimeClasspath": {
+        "com.google.inject:guice": {
+            "locked": "4.1.0"
+        },
+        "com.netflix.blitz4j:blitz4j": {
+            "locked": "1.37.2"
+        },
+        "com.netflix.governator:governator": {
+            "locked": "1.17.12"
+        },
+        "com.netflix.zuul:zuul-core": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-groovy": {
+            "locked": "2.3.0"
+        },
+        "com.netflix.zuul:zuul-guice": {
+            "locked": "2.3.0"
+        },
+        "commons-configuration:commons-configuration": {
+            "locked": "1.8"
+        },
+        "io.mantisrx:mantis-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-control-plane-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-discovery-proto": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-runtime": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mantis-server-worker-client": {
+            "locked": "2.0.6"
+        },
+        "io.mantisrx:mql-jvm": {
+            "locked": "3.4.0"
+        },
+        "io.vavr:vavr": {
+            "locked": "0.10.2"
+        },
+        "junit:junit": {
+            "locked": "4.13.1"
+        },
+        "org.apache.commons:commons-lang3": {
+            "locked": "3.12.0"
+        },
+        "org.projectlombok:lombok": {
+            "locked": "1.18.10"
+        }
+    }
 }

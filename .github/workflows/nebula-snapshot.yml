@@ -1,56 +1,37 @@
 name: "Publish snapshot to NetflixOSS and Maven Central"
 
-on: [pull_request_target]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
-  approve: # First step
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Approve
-        run: echo For security reasons, all pull requests need to be approved first before running any automated CI.
-  build: # Second step
-    runs-on: ubuntu-latest
-    needs: [ approve ] # Require the first step to finish
-    environment:
-      name: Integrate Pull Request # Our protected environment variable
-    steps:
-      - name: Checkout PR
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Setup jdk
-        uses: actions/setup-java@v2
+          fetch-depth: 0
+      - name: Set up JDK
+        uses: actions/setup-java@v1
         with:
           java-version: 8
-          distribution: 'zulu'
+      - uses: actions/cache@v2
+        id: gradle-cache
+        with:
+          path: |
+            ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+      - uses: actions/cache@v2
+        id: gradle-wrapper-cache
+        with:
+          path: |
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradlewrapper-${{ hashFiles('gradle/wrapper/*') }}
       - name: Build
-        uses: gradle/gradle-build-action@v2
+        run: ./gradlew build snapshot
         env:
           NETFLIX_OSS_SIGNING_KEY: ${{ secrets.ORG_SIGNING_KEY }}
           NETFLIX_OSS_SIGNING_PASSWORD: ${{ secrets.ORG_SIGNING_PASSWORD }}
           NETFLIX_OSS_REPO_USERNAME: ${{ secrets.ORG_NETFLIXOSS_USERNAME }}
           NETFLIX_OSS_REPO_PASSWORD: ${{ secrets.ORG_NETFLIXOSS_PASSWORD }}
-        with:
-          arguments: --info --stacktrace build -x test snapshot
-      - name: Create PR Comment String
-        run: |
-          src=${GITHUB_WORKSPACE}/build/versions.txt
-          dest=${GITHUB_WORKSPACE}/build/versions2.txt
-          echo 'resolutionStrategy {' > $dest
-          awk '{print "    force \"" $0 "\""}' $src >> $dest
-          echo '}' >> $dest
-          echo "PR_STR<<EOF" >> $GITHUB_ENV
-          cat ${dest} >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-      - name: Upload
-        uses: mshick/add-pr-comment@v2
-        with:
-          message: |
-            ## Uploaded Artifacts
-            To use these artifacts in your Gradle project, paste the following lines in your build.gradle.
-            ```
-            ${{ env.PR_STR }}
-            ```
-          message-id: ${{ github.event.number }} # For sticky messages
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          allow-repeats: false # This is the default

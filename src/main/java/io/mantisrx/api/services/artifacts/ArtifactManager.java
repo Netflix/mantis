@@ -1,3 +1,4 @@
+package io.mantisrx.api.services.artifacts;
 /*
  * Copyright 2019 Netflix, Inc.
  *
@@ -14,4 +15,18 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-api'
+import io.mantisrx.api.proto.Artifact;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface ArtifactManager {
+
+    List<String> getArtifacts();
+
+    Optional<Artifact> getArtifact(String name);
+
+    void deleteArtifact(String name);
+
+    void putArtifact(Artifact artifact);
+}
