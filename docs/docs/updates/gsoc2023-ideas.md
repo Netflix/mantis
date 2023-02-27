@@ -25,6 +25,9 @@ full cluster.
 - You will learn about you can leverage actor frameworks such as Akka to write safe, high performance code.
 - You will also learn a lot about stream processing and how Mantis leverages stream processing to analyze operational data.
 
+### Mentors
+- Sundaram Ananthanarayanan
+
 ### Difficulty rating
 Medium
 
@@ -75,6 +78,10 @@ The mantis-publish library only requires a simplified version of MQL, known as S
 3. Write a parser to convert simplified-MQL to the spec.
 4. Replicate mantis-publish java library in that programming language
 
+### Mentors
+- Sundaram Ananthanarayanan
+- Harshit Mittal
+
 ### Difficulty rating
 Hard
 
@@ -94,6 +101,9 @@ Develop a user interface to allow Mantis admins to manage resource clusters and 
 
 ### Skills that you will gain
 -   You will learn about how to create a UI feature from design, implementation, and testing
+
+### Mentors
+- Santosh Kalidindi
 
 ### Difficulty rating
 Medium
@@ -115,5 +125,32 @@ Mantis provides a real-time streaming platform for processing data at scale. How
 ### Skills that you will gain
 - You will learn about how to create a UI feature from design, implementation, and testing
 
+### Mentors
+- Santosh Kalidindi
+
 ### Difficulty rating
 Hard
+
+## Support custom serializers Mantis DSL (mantis-runtime/io.mantisrx.runtime.core)
+
+### Abstract
+Mantis is adopting a new interface for writing mantis jobs. We are calling it mantis-dsl and code can be [found here](https://github.com/Netflix/mantis/tree/master/mantis-runtime/src/main/java/io/mantisrx/runtime/core). Because of it's nascency, the new interface only supports (de)serializing objects using the default java serializer. It'd be nice to add support for more serialization techniques.
+
+A starting point could be using kryo which is a popular (de)serializer library that supports dynamic discovery of many encoding formats like protobufs, json, custom.
+
+### Deliverables
+- Add support for efficient serialization libraries in mantis-dsl
+- Support encoding java objects using json, protobuf, and custom
+
+### Required SkillSet
+- Java, Familiarity with object encoding, json and protobuf formats.
+
+### Skills that you will gain
+- Work on an open-source software used in production at scale
+- Learn about serializations, object encoding
+
+### Mentors
+- Harshit Mittal
+
+### Difficulty rating
+Medium
