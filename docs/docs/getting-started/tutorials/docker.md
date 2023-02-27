@@ -26,7 +26,7 @@ This starts up the following Docker containers:
 - Mantis API
 - Mesos Slave and Mantis Worker run on a single container (mantisagent)
 - A simple hello world web application that sends events to Mantis
-- A simple Java application that sends events to Manits
+- A simple Java application that sends events to Mantis
 
 ### Mantis Admin UI
 
