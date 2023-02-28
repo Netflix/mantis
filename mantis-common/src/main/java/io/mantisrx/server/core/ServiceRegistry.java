@@ -18,7 +18,6 @@ package io.mantisrx.server.core;
 
 import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
-import io.mantisrx.common.properties.MantisPropertiesService;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
@@ -34,9 +33,9 @@ public class ServiceRegistry {
     private ServiceRegistry() {
     }
 
-    private void setMantisPropertiesService(MantisPropertiesService service) {
+    private void setMantisPropertiesService(MantisPropertiesLoader service) {
         if (!registryRef.compareAndSet(null, service)) {
-            logger.warn("MantisPropertiesService already set to {}", registryRef.get());
+            logger.error("MantisPropertiesService already set to {}", registryRef.get());
         }
     }
 
