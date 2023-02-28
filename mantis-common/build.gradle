@@ -26,7 +26,7 @@ dependencies {
     api project(":mantis-common-serde")
     api libraries.nettyCodec
     api libraries.nettyBuffer
-    api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
+    api libraries.nettyEpoll
     api libraries.snappyJava
     api libraries.jctools
 
