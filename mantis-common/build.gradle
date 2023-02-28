@@ -24,11 +24,11 @@ ext {
 
 dependencies {
     api project(":mantis-common-serde")
-    api "io.netty:netty-codec-http:$nettyVersion"
-    api "io.netty:netty-buffer:$nettyVersion"
+    api libraries.nettyCodec
+    api libraries.nettyBuffer
     api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
-    api "org.xerial.snappy:snappy-java:$snappyVersion"
-    api "org.jctools:jctools-core:$jctoolsVersion"
+    api libraries.snappyJava
+    api libraries.jctools
 
     // spectatorApi should be packaged at entry point level to avoid version conflicts.
     compileOnly libraries.spectatorApi
@@ -39,11 +39,11 @@ dependencies {
     api libraries.slf4jApi
     api libraries.slf4jLog4j12
     implementation libraries.commonsIo
-    implementation 'net.jcip:jcip-annotations:1.0'
+    implementation libraries.jcip
 
     testImplementation libraries.spectatorApi
     testImplementation libraries.commonsLang3
-    testImplementation "org.hamcrest:hamcrest-core:1.3"
+    testImplementation libraries.hamcrest
     testImplementation libraries.junit4
     testImplementation libraries.mockitoCore
 }
