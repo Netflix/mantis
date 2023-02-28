@@ -33,7 +33,7 @@ public class ServiceRegistry {
     private ServiceRegistry() {
     }
 
-    private void setMantisPropertiesService(MantisPropertiesLoader service) {
+    public void setMantisPropertiesService(MantisPropertiesLoader service) {
         if (!registryRef.compareAndSet(null, service)) {
             logger.error("MantisPropertiesService already set to {}", registryRef.get());
         }
