@@ -16,12 +16,6 @@
 
 apply plugin: 'java-test-fixtures'
 
-ext {
-    jctoolsVersion = '1.+'
-    nettyVersion = '4.1.17.Final'
-    snappyVersion = '1.1.+'
-}
-
 dependencies {
     api project(":mantis-common-serde")
     api libraries.nettyCodec
