@@ -17,11 +17,24 @@
 package io.mantisrx.runtime.executor;
 
 import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.properties.MantisPropertiesService;
-import io.mantisrx.runtime.*;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
+import io.mantisrx.runtime.GroupToGroup;
+import io.mantisrx.runtime.GroupToScalar;
+import io.mantisrx.runtime.KeyToKey;
+import io.mantisrx.runtime.KeyToScalar;
+import io.mantisrx.runtime.KeyValueStageConfig;
+import io.mantisrx.runtime.ScalarToGroup;
+import io.mantisrx.runtime.ScalarToKey;
+import io.mantisrx.runtime.ScalarToScalar;
+import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
-import io.reactivex.mantis.network.push.*;
+import io.reactivex.mantis.network.push.HashFunctions;
+import io.reactivex.mantis.network.push.KeyValuePair;
+import io.reactivex.mantis.network.push.LegacyTcpPushServer;
+import io.reactivex.mantis.network.push.PushServers;
+import io.reactivex.mantis.network.push.Routers;
+import io.reactivex.mantis.network.push.ServerConfig;
 import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivex.mantis.remote.observable.ServeNestedObservable;
@@ -43,7 +56,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     private final String name;
     private final int serverPort;
     private RemoteRxServer server;
-    private final MantisPropertiesService propService;
+    private final MantisPropertiesLoader propService;
     private String jobName;
 
     public WorkerPublisherRemoteObservable(int serverPort,
