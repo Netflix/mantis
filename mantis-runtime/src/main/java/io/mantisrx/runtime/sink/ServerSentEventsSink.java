@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.sink;
 
-import io.mantisrx.common.properties.MantisPropertiesService;
+import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
@@ -54,7 +54,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     private Func2<Map<String, List<String>>, Context, Void> requestPreprocessor;
     private Func2<Map<String, List<String>>, Context, Void> requestPostprocessor;
     private int port = -1;
-    private final MantisPropertiesService propService;
+    private final MantisPropertiesLoader propService;
 
     private PushServerSse<T, Context> pushServerSse;
     private HttpServer<ByteBuf, ServerSentEvent> httpServer;

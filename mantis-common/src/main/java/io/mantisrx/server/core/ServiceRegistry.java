@@ -20,6 +20,7 @@ import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesService;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,19 +28,28 @@ import org.slf4j.LoggerFactory;
 public class ServiceRegistry {
 
     private static Logger logger = LoggerFactory.getLogger(ServiceRegistry.class);
-    private MantisPropertiesService propertiesService;
+    private final AtomicReference<MantisPropertiesLoader> registryRef = new AtomicReference<>(null);
     public static ServiceRegistry INSTANCE = new ServiceRegistry();
 
     private ServiceRegistry() {
-        propertiesService = new MantisPropertiesService(loadMantisPropertiesService());
+    }
+
+    private void setMantisPropertiesService(MantisPropertiesService service) {
+        if (!registryRef.compareAndSet(null, service)) {
+            logger.warn("MantisPropertiesService already set to {}", registryRef.get());
+        }
     }
 
 
-    public MantisPropertiesService getPropertiesService() {
-        return propertiesService;
+    public MantisPropertiesLoader getPropertiesService() {
+        if (registryRef.get() == null) {
+            registryRef.set(loadMantisPropertiesLoader());
+        }
+
+        return registryRef.get();
     }
 
-    private MantisPropertiesLoader loadMantisPropertiesService() {
+    private static MantisPropertiesLoader loadMantisPropertiesLoader() {
         MantisPropertiesLoader mpl = new DefaultMantisPropertiesLoader(new Properties());
         try {
             mpl = (MantisPropertiesLoader) Class.forName("com.netflix.mantis.common.properties.MantisFastPropertiesLoader").getConstructor(Properties.class)
