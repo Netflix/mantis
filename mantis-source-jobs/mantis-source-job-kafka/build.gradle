@@ -16,7 +16,7 @@
 apply plugin: 'mantis'
 
 ext {
-    mqlVersion = '3.2.2'
+    mqlVersion = '3.2.2' // todo: builds correctly, bump version later
 }
 
 dependencies {
