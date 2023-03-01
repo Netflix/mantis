@@ -35,14 +35,17 @@ buildscript {
 }
 
 ext.versions = [
+        avroVersion : "1.10.2",
         flink    : "1.14.2",
         hadoop   : "2.7.7",
+        icebergVersion : "0.14.+",
         jctoolsVersion : "1.+",
         junit4   : "4.11",
         junit5   : "5.4.+",
         mockito  : "2.0.+",
         mockito3 : "3.+",
         nettyVersion : "4.1.34.Final",
+        parquetVersion : "1.12.0",
         snappyVersion : "1.1.+",
         spectator: "1.3.+",
         slf4j    : "1.7.0",
@@ -51,6 +54,7 @@ ext.versions = [
 
 ext.libraries = [
         asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
+        avro           : "org.apache.avro:avro:${versions.avroVersion}",
         commonsIo      : "commons-io:commons-io:2.11.0",
         commonsLang3   : 'org.apache.commons:commons-lang3:3.5',
         flinkCore      : "org.apache.flink:flink-core:${versions.flink}",
@@ -67,6 +71,10 @@ ext.libraries = [
         hadoopCommon   : "org.apache.hadoop:hadoop-common:${versions.hadoop}",
         hadoopS3       : "org.apache.hadoop:hadoop-aws:${versions.hadoop}",
         hamcrest       : "org.hamcrest:hamcrest-core:1.3",
+        icebergApi     : "org.apache.iceberg:iceberg-api:${versions.icebergVersion}",
+        icebergCore    : "org.apache.iceberg:iceberg-core:${versions.icebergVersion}",
+        icebergData    : "org.apache.iceberg:iceberg-data:${versions.icebergVersion}",
+        icebergParquet : "org.apache.iceberg:iceberg-parquet:${versions.icebergVersion}", 
         jcip           : "net.jcip:jcip-annotations:1.0",
         jctools        : "org.jctools:jctools-core:${versions.jctoolsVersion}",
         junitJupiter   : [
@@ -82,6 +90,7 @@ ext.libraries = [
         nettyBuffer    : "io.netty:netty-buffer:${versions.nettyVersion}",
         nettyCodec     : "io.netty:netty-codec-http:${versions.nettyVersion}",
         nettyEpoll     : "io.netty:netty-transport-native-epoll:${versions.nettyVersion}:linux-x86_64",
+        parquetHadoop  : "org.apache.parquet:parquet-hadoop:${versions.parquetVersion}",
         rxJava         : "io.reactivex:rxjava:1.3.8",
         rxNettyShaded  : "com.netflix:mantis-rxnetty:0.4.19.1",
         slf4jApi       : "org.slf4j:slf4j-api:${versions.slf4j}",
