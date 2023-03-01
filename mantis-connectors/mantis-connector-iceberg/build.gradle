@@ -38,10 +38,7 @@ dependencies {
     shadow libraries.hadoopCommon
 
     // Exclude in case there are differences in SHAs between 0.7.0 incubation versions.
-    shadow libraries.icebergApi
-    shadow libraries.icebergCore
-    shadow libraries.icebergData
-    shadow libraries.icebergParquet
+    shadow libraries.iceberg
     shadow libraries.avro
     shadow libraries.parquetHadoop
 
@@ -50,7 +47,7 @@ dependencies {
 
     testImplementation project(":mantis-runtime").sourceSets.test.output
     testImplementation libraries.hadoopCommon
-    testImplementation libraries.icebergData 
+    testImplementation libraries.iceberg[2]
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.spectatorApi

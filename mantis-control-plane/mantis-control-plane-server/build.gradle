@@ -21,8 +21,6 @@ dependencies {
     api project(':mantis-control-plane:mantis-control-plane-core')
 
     api libraries.akkaHttp
-    api libraries.akkaHttpJackson
-    api libraries.akkaHttpCaching
     api libraries.akkaStream
     api libraries.akkaSlf4j
     api libraries.akkaActor
