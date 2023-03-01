@@ -26,7 +26,7 @@ full cluster.
 - You will also learn a lot about stream processing and how Mantis leverages stream processing to analyze operational data.
 
 ### Mentors
-- Sundaram Ananthanarayanan
+- [Sundaram Ananthanarayanan](https://www.linkedin.com/in/sundaram-ananthanarayanan-97b8b545/)
 
 ### Difficulty rating
 Medium
@@ -54,9 +54,9 @@ ensuring the stability and reliability of the system.
 Java, RxJava, RxNetty
 
 ### Mentors
-- Calvin Cheung
-- Sundaram Ananthanarayanan
-- Harshit Mittal
+- [Calvin Cheung](https://www.linkedin.com/in/cal681/)
+- [Sundaram Ananthanarayanan](https://www.linkedin.com/in/sundaram-ananthanarayanan-97b8b545/)
+- [Harshit Mittal](https://www.linkedin.com/in/harshitmittal/)
 
 ### Difficulty rating
 Hard
@@ -79,8 +79,8 @@ The mantis-publish library only requires a simplified version of MQL, known as S
 4. Replicate mantis-publish java library in that programming language
 
 ### Mentors
-- Sundaram Ananthanarayanan
-- Harshit Mittal
+- [Sundaram Ananthanarayanan](https://www.linkedin.com/in/sundaram-ananthanarayanan-97b8b545/)
+- [Harshit Mittal](https://www.linkedin.com/in/harshitmittal/)
 
 ### Difficulty rating
 Hard
@@ -103,7 +103,7 @@ Develop a user interface to allow Mantis admins to manage resource clusters and 
 -   You will learn about how to create a UI feature from design, implementation, and testing
 
 ### Mentors
-- Santosh Kalidindi
+- [Santosh Kalidindi](https://www.linkedin.com/in/santosh-kalidindi/)
 
 ### Difficulty rating
 Medium
@@ -126,7 +126,7 @@ Mantis provides a real-time streaming platform for processing data at scale. How
 - You will learn about how to create a UI feature from design, implementation, and testing
 
 ### Mentors
-- Santosh Kalidindi
+- [Santosh Kalidindi](https://www.linkedin.com/in/santosh-kalidindi/)
 
 ### Difficulty rating
 Hard
@@ -150,7 +150,47 @@ A starting point could be using kryo which is a popular (de)serializer library t
 - Learn about serializations, object encoding
 
 ### Mentors
-- Harshit Mittal
+- [Harshit Mittal](https://www.linkedin.com/in/harshitmittal/)
 
 ### Difficulty rating
 Medium
+
+## Refactor Metrics Interface/Implementation in Mantis
+
+### Abstract
+Mantis currently utilizes its own metrics interfaces and implementation in various components
+such as the Runtime, Control Plane, and Task Executor, with the relevant classes residing under the
+`io.mantisrx.common.metrics` package. While this has been effective in the past, it may be advisable
+to replace this library with specialized OSS libraries for metrics, such as micrometer, moving
+forward.
+
+Making such a transition can help address several issues that exist in the current metrics library.
+Firstly, it is challenging to support other time-series databases without significant effort, as
+one must create a MetricsPublisher implementation. Additionally, the current implementation is
+dependent on spectator-api, further complicating the system. Finally, maintaining a metrics
+implementation that is not integral to Mantis itself can add unnecessary complexity.
+
+By adopting a more standardized and OSS option like micrometer, we can eliminate all these issues.
+
+### Deliverables
+- Proposal that evaluates various options in this space and suggests a solution based on our design goals.
+- Getting rid of the existing implementation and cleaning up the spectator usage in various components.
+
+### Required SkillSet
+- Java
+
+### Skills that you will gain
+- You will learn about how metrics is implemented in Java microservices.
+- You will learn about how to evaluate different solutions within a given design space.
+
+### Mentors
+- [Sundaram Ananthanarayanan](https://www.linkedin.com/in/sundaram-ananthanarayanan-97b8b545/)
+
+### Difficulty rating
+Medium
+
+[//]: # (contributors:)
+[//]: # (    hmittal: [Harshit Mittal]&#40;https://www.linkedin.com/in/harshitmittal/&#41;)
+[//]: # (    sundaram: [Sundaram Ananthanarayanan]&#40;https://www.linkedin.com/in/sundaram-ananthanarayanan-97b8b545/&#41;)
+[//]: # (    ccheung: [Calvin Cheung]&#40;https://www.linkedin.com/in/cal681/&#41;)
+[//]: # (    santosh: [Santosh Kalidindi]&#40;https://www.linkedin.com/in/santosh-kalidindi/&#41;)
