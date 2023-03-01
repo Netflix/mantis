@@ -37,6 +37,7 @@ buildscript {
 ext.versions = [
         avroVersion : "1.10.2",
         flink    : "1.14.2",
+        gsonVersion : "2.8.+",
         hadoop   : "2.7.7",
         icebergVersion : "0.14.+",
         jctoolsVersion : "1.+",
@@ -68,6 +69,7 @@ ext.libraries = [
                 "junit:junit:${versions.junit4}",
                 "junit:junit-dep:${versions.junit4}",
         ],
+        gson           : "com.google.code.gson:gson:${versions.gsonVersion}",
         hadoopCommon   : "org.apache.hadoop:hadoop-common:${versions.hadoop}",
         hadoopS3       : "org.apache.hadoop:hadoop-aws:${versions.hadoop}",
         hamcrest       : "org.hamcrest:hamcrest-core:1.3",
