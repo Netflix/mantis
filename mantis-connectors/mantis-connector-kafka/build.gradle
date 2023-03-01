@@ -16,26 +16,21 @@
 
 apply plugin: 'mantis'
 
-ext {
-    archaiusVersion = '2.3.+'
-    spectatorVersion = '0.82.+'
-    kafkaVersion = '2.2.+'
-}
 
 dependencies {
     implementation libraries.mantisShaded
     implementation project(":mantis-runtime")
 
-    api "org.apache.kafka:kafka-clients:$kafkaVersion"
+    api libraries.kafkaClients
 
     api libraries.rxJava
-    api "com.netflix.spectator:spectator-api:$spectatorVersion"
-    api "com.netflix.archaius:archaius2-api:$archaiusVersion"
-    api "com.netflix.archaius:archaius2-core:$archaiusVersion"
+    api libraries.spectatorApiv0
+    api libraries.archaius2Api
+    api libraries.archaius2Core
 
     testImplementation libraries.junit4
     testImplementation project(':mantis-runtime').sourceSets.test.output
     testImplementation libraries.mockitoAll
-    testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
-    testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
+    testImplementation libraries.wiremock
+    testCompileOnly libraries.archaius2Core
 }
