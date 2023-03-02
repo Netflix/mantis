@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 
 configurations.all {
     resolutionStrategy {
-        force "com.google.guava:guava:31.1-jre"
+        force libraries.guava
 
     }
 }
@@ -12,15 +12,12 @@ task execute(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
-ext {
-    mantisConnectorsVersion = '1.2.5'
-}
 
 dependencies {
     api libraries.mantisShaded
 
     implementation project(':mantis-runtime')
-    implementation "io.mantisrx:mantis-connector-job:$mantisConnectorsVersion"
+    implementation libraries.mantisConnectorJob
 
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
