@@ -14,4 +14,19 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-api'
+checkstyle {
+    toolVersion = '8.14'
+    // TODO: Don't ignore failures.
+    ignoreFailures = true
+    configFile = rootProject.file('codequality/checkstyle.xml')
+    sourceSets = [sourceSets.main]
+}
+
+pmd {
+    toolVersion = '6.9.0'
+    // TODO: Don't ignore failures.
+    ignoreFailures = true
+    sourceSets = [sourceSets.main]
+    ruleSets = []
+    ruleSetFiles = rootProject.files("codequality/pmd.xml")
+}

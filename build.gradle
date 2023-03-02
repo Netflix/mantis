@@ -1,3 +1,5 @@
+import org.gradle.api.internal.project.ProjectInternal
+
 /*
  * Copyright 2019 Netflix, Inc.
  *
@@ -16,149 +18,131 @@
 
 buildscript {
     repositories {
-        gradlePluginPortal()
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
     }
+    
     dependencies {
-        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:10.6.0'
-        classpath 'com.netflix.nebula:nebula-dependency-recommender:11.+'
-        classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
-        classpath "io.freefair.gradle:lombok-plugin:5.3.3.3"
-        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
-        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
-        classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
-        classpath 'com.palantir.baseline:gradle-baseline-java:4.0.0'
+        classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:9.1.0'
     }
 }
 
-ext.versions = [
-        flink    : "1.14.2",
-        hadoop   : "2.7.7",
-        junit4   : "4.11",
-        junit5   : "5.4.+",
-        mockito  : "2.0.+",
-        mockito3 : "3.+",
-        spectator: "1.3.+",
-        slf4j    : "1.7.0",
-        vavr     : "0.9.2",
-]
+apply plugin: 'nebula.netflixoss'
+apply plugin: 'idea'
+apply plugin: 'java-library'
+apply plugin: 'pmd'
+apply plugin: 'application'
 
-ext.libraries = [
-        asyncHttpClient: "org.asynchttpclient:async-http-client:2.12.3",
-        commonsIo      : "commons-io:commons-io:2.11.0",
-        commonsLang3   : 'org.apache.commons:commons-lang3:3.5',
-        flinkCore      : "org.apache.flink:flink-core:${versions.flink}",
-        flinkRpcApi    : [
-                "org.apache.flink:flink-rpc-core:${versions.flink}",
-        ],
-        flinkRpcImpl   : [
-                "org.apache.flink:flink-rpc-akka:${versions.flink}",
-        ],
-        junit4         : [
-                "junit:junit:${versions.junit4}",
-                "junit:junit-dep:${versions.junit4}",
-        ],
-        hadoopCommon   : "org.apache.hadoop:hadoop-common:${versions.hadoop}",
-        hadoopS3       : "org.apache.hadoop:hadoop-aws:${versions.hadoop}",
-        junitJupiter   : [
-                "org.junit.jupiter:junit-jupiter-api:${versions.junit5}",
-                "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}",
-                "org.junit.jupiter:junit-jupiter-params:${versions.junit5}",
-        ],
-        mantisShaded   : "io.mantisrx:mantis-shaded:2.0.2",
-        mockitoAll     : "org.mockito:mockito-all:${versions.mockito}",
-        mockitoCore    : "org.mockito:mockito-core:${versions.mockito}",
-        mockitoCore3   : "org.mockito:mockito-core:${versions.mockito3}",
-        mockneat       : "net.andreinc:mockneat:0.4.8",
-        rxJava         : "io.reactivex:rxjava:1.3.8",
-        rxNettyShaded  : "com.netflix:mantis-rxnetty:0.4.19.1",
-        slf4jApi       : "org.slf4j:slf4j-api:${versions.slf4j}",
-        slf4jLog4j12   : "org.slf4j:slf4j-log4j12:${versions.slf4j}",
-        spectatorApi   : "com.netflix.spectator:spectator-api:${versions.spectator}",
-        spotifyFutures : "com.spotify:completable-futures:0.3.1",
-        vavr           : "io.vavr:vavr:${versions.vavr}",
-        vavrJackson    : "io.vavr:vavr-jackson:${versions.vavr}",
-        vavrTest       : "io.vavr:vavr-test:${versions.vavr}",
-        zip4j          : "net.lingala.zip4j:zip4j:2.9.0",
-]
-
-allprojects {
-    apply plugin: 'nebula.netflixoss'
+ext {
+    archaiusVersion = '2.3.+'
+    assetjCoreVersion = '3.11.1'
+    guavaVersion = '19.+'
+    gsonVersion = '2.8.+'
+    guiceVersion = '4.1.0'
+    jettyVersion = '9.4.12.v20180830'
+    jsonVersion = '20160810'
+    junitVersion = '4.10'
+    lombokVersion = '1.18.10'
+    mantisVersion = '2.0.6'
+    mockitoVersion = '1.9.5'
+    s3Version = '1.11.566'
+    servletApiVersion = '3.1.0'
+    spectatorVersion = '0.92.+'
+    vavrVersion = '0.10.2'
+    zuulVersion = '2.3.0'
 }
 
-def printAllReleasedArtifacts = project.tasks.create('printAllReleasedArtifacts')
-project.snapshot.configure { finalizedBy printAllReleasedArtifacts }
-subprojects {
-    apply plugin: 'java-library'
+group = 'io.mantisrx'
 
-    // Apply lombok plugin and disabled the default config file generation.
-    apply plugin: "io.freefair.lombok"
-    generateLombokConfig.enabled = false
-    lombok {
-        version = "1.18.20"
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://netflixoss.jfrog.io/artifactory/maven-oss-candidates"
     }
-
-    group = 'io.mantisrx'
-
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-
-    if (project.hasProperty('useMavenLocal')) {
-        repositories {
-            mavenLocal()
-        }
-    }
-
-    configurations.compileClasspath {
-        if (!"mantis-shaded".equals(project.name)) {
-            exclude group: 'com.fasterxml.jackson.core'
-            exclude group: 'com.fasterxml.jackson.datatype'
-            exclude group: 'com.fasterxml.jackson.module'
-            exclude group: 'com.fasterxml.jackson.dataformat'
-            exclude group: 'com.google.guava', module: 'guava'
-            exclude group: 'io.netty', module: 'netty'
-            exclude group: 'io.vavr', module: 'vavr-jackson'
-            exclude group: 'jline', module: 'jline'
-            exclude group: 'org.apache.curator'
-            exclude group: 'org.apache.zookeeper'
-            exclude group: 'org.apache.jute'
-        }
-        exclude group: 'ch.qos.logback', module: 'logback-classic'
-    }
-
-    repositories {
-        mavenCentral()
-        maven {
-            url "https://netflixoss.jfrog.io/artifactory/maven-oss-candidates"
-        }
-    }
-
-    tasks.withType(Javadoc).all {
-        enabled = false
-    }
-
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:deprecation"
-    }
-
-    project.plugins.withType(MavenPublishPlugin) {
-        def printReleasedArtifact = project.tasks.create('printReleasedArtifact')
-        printReleasedArtifact.doLast {
-            def file1 = file("${buildDir}/tmp/publishNebulaPublicationToNetflixOSSRepository/maven-metadata.xml")
-            def file2 = file("${buildDir}/tmp/publishNebulaPublicationToNetflixOSSRepository/snapshot-maven-metadata.xml")
-            def xmlText = file1.exists() ? file1.text : (file2.exists() ? file2.text : "file not found")
-            def xml = new XmlParser(false, false).parseText(xmlText)
-            def snapshotVersion = xml.versioning.snapshotVersions.snapshotVersion[0].'value'.text()
-            logger.lifecycle("${project.group}:${project.name}:${snapshotVersion}")
-            file("${project.rootProject.buildDir}/versions.txt").append("${project.group}:${project.name}:${snapshotVersion}" + '\n')
-        }
-
-        printReleasedArtifact.dependsOn(project.rootProject.snapshot)
-        printAllReleasedArtifacts.dependsOn("${project.path}:printReleasedArtifact")
+    maven {
+        url "https://artifacts-oss.netflix.net/artifactory/maven-oss-snapshots"
     }
 }
 
-apply from: file('baseline.gradle')
+tasks.withType(Javadoc).all {
+    enabled = false
+}
+
+
+dependencies {
+    api("com.netflix.zuul:zuul-core:${zuulVersion}") {
+        attributes { attribute(ProjectInternal.STATUS_ATTRIBUTE, 'release') }
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.inject', module: 'guice'
+    }
+    api("com.netflix.zuul:zuul-guice:${zuulVersion}") {
+        attributes { attribute(ProjectInternal.STATUS_ATTRIBUTE, 'release') }
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.inject', module: 'guice'
+    }
+    implementation("com.netflix.zuul:zuul-groovy:${zuulVersion}") {
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.inject', module: 'guice'
+    }
+    implementation 'com.netflix.blitz4j:blitz4j:1.37.2'
+    implementation ("com.netflix.governator:governator:1.+") {
+        attributes { attribute(ProjectInternal.STATUS_ATTRIBUTE, 'release') }
+    }
+    implementation "org.apache.commons:commons-lang3:3.+"
+    implementation "commons-configuration:commons-configuration:1.8"
+    api "io.mantisrx:mantis-discovery-proto:$mantisVersion"
+    api "io.mantisrx:mantis-client:$mantisVersion"
+    api "io.mantisrx:mantis-runtime:$mantisVersion"
+    api "io.mantisrx:mantis-control-plane-client:$mantisVersion"
+    api "io.mantisrx:mantis-server-worker-client:$mantisVersion"
+    api "io.mantisrx:mql-jvm:3.+"
+    api "io.vavr:vavr:$vavrVersion"
+    api "com.google.inject:guice:$guiceVersion"
+    api "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation"org.projectlombok:lombok:$lombokVersion"
+    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+}
+
+
+configurations.all {
+    resolutionStrategy {
+        force "com.google.guava:guava:$guavaVersion"
+        force "com.google.inject:guice:$guiceVersion"
+        force "com.google.inject.extensions:guice-multibindings:$guiceVersion"
+        force "com.google.inject.extensions:guice-grapher:$guiceVersion"
+        force "com.google.inject.extensions:guice-assistedinject:$guiceVersion"
+        force "javax.servlet:javax.servlet-api:$servletApiVersion"
+    }
+}
+
+/*
+ * Run regular:   ./gradlew run
+ * Run benchmark: ./gradlew run -Pbench
+ */
+run {
+    mainClassName = "io.mantisrx.api.Bootstrap"
+
+    applicationDefaultJvmArgs = ["-DTZ=GMT",
+                                 "-Darchaius.deployment.environment=test",
+                                 "-Dcom.sun.management.jmxremote",
+                                 "-Dcom.sun.management.jmxremote.local.only=false",
+                                 "-Deureka.validateInstanceId=false",
+                                 "-Deureka.mt.num_retries=1"]
+
+    if (project.hasProperty('bench')) {
+        println 'Running benchmark configuration...'
+        jvmArgs "-Darchaius.deployment.environment=benchmark"
+    }
+}
+
+pmd {
+    ignoreFailures = true
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2020 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,4 +14,15 @@
  * limitations under the License.
  */
 
-rootProject.name = 'mantis-api'
+package io.mantisrx.api.tunnel;
+
+import io.netty.buffer.ByteBuf;
+import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
+import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
+
+public interface MantisCrossRegionalClient {
+    HttpClient<ByteBuf, ServerSentEvent> getSecureSseClient(String region);
+
+    HttpClient<String, ByteBuf> getSecureRestClient(String region);
+}
+
