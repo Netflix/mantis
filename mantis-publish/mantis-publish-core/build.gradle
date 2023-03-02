@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-ext {
-    archaiusVersion = 'latest.release'
-    versionMockito = '2.18.+'
-    mqlVersion = '3.2.2'
-    spectatorVersion = '0.134.0'
-}
 
 dependencies {
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation libraries.mqlJvm
     implementation project(":mantis-common-serde")
     api project(":mantis-discovery-proto")
 
-    api "com.netflix.spectator:spectator-api:$spectatorVersion"
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
+    api libraries.spectatorApi0
+    implementation libraries.spectatorExtIpc0
 
-    api "com.netflix.archaius:archaius2-api:$archaiusVersion"
-    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
+    api libraries.archaius2Api
+    implementation libraries.archaius2Core
 
-    testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
-    testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
+    testImplementation libraries.wiremock
+    testCompileOnly libraries.archaius2Core
 
     implementation libraries.slf4jApi
 

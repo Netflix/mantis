@@ -45,23 +45,17 @@ application {
     mainClassName = 'com.netflix.mantis.examples.mantispublishsample.Application'
 }
 
-ext {
-    guiceVersion = '4.2.2'
-    spectatorVersion = '0.96.0'
-    archaiusVersion = 'latest.release'
-    mockNeatVersion = '0.4.8'
-}
 
 
 dependencies {
     implementation project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation libraries.rxJava
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
-    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
-    implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
-    implementation "com.google.inject:guice:$guiceVersion"
-    implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
+    implementation libraries.spectatorExtIpc0
+    implementation libraries.archaius2Core
+    implementation libraries.archaius2Guice
+    implementation libraries.guice
+    implementation libraries.spectatorPlugin0
     implementation libraries.mockneat
 
     implementation libraries.slf4jLog4j12

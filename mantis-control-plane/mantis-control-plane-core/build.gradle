@@ -15,32 +15,21 @@
  */
 apply plugin: 'java-test-fixtures'
 
-ext {
-
-    cliParserVersion = '1.1.1'
-    configMagicVersion = '0.11'
-    curatorVersion = '2.11.0'
-    hdrHistogramVersion = '2.+'
-    jodaTimeVersion = '2.+'
-    jsonVersion = '20180813'
-    mesosVersion = '1.7.2'
-    testngVersion = '6.14.+'
-}
 
 dependencies {
 
     api project(":mantis-common")
 
-    api "org.skife.config:config-magic:$configMagicVersion"
+    api libraries.configMagic
     api libraries.flinkRpcApi
     api libraries.flinkRpcImpl
     api libraries.flinkCore
 
-    api "org.apache.mesos:mesos:$mesosVersion"
-    api "org.json:json:$jsonVersion"
-    api "org.hdrhistogram:HdrHistogram:$hdrHistogramVersion"
-    api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
-    api "joda-time:joda-time:$jodaTimeVersion"
+    api libraries.mesos
+    api libraries.json
+    api libraries.hdrHistogram
+    api libraries.cliParser
+    api libraries.jodaTime
 
 
     testImplementation libraries.junit4

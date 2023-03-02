@@ -15,18 +15,13 @@
  */
 apply plugin: 'com.github.johnrengelman.shadow'
 
-ext {
-    archaiusVersion = 'latest.release'
-    spectatorVersion = 'latest.release'
-    nettyVersion = '4.1.34.Final'
-}
 
 dependencies {
     implementation project(':mantis-publish:mantis-publish-core')
-    implementation "io.netty:netty-all:$nettyVersion"
+    implementation libraries.nettyAll
 
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
-    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
+    implementation libraries.spectatorExtIpc
+    implementation libraries.archaius2Core
 
     implementation libraries.slf4jApi
 

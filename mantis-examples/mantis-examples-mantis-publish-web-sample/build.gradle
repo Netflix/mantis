@@ -30,25 +30,18 @@ plugins {
 }
 
 
-ext {
-
-    guiceVersion = '4.2.2'
-    spectatorVersion = '0.96.0'
-    archaiusVersion = 'latest.release'
-    guiceServletVersion = '4.0'
-}
 
 
 dependencies {
     compile project(":mantis-publish:mantis-publish-netty-guice")
 
-    providedCompile 'javax.servlet:javax.servlet-api:3.1.0'
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
-    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
-    implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
-    implementation "com.google.inject:guice:$guiceVersion"
-    implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
+    providedCompile libraries.javaxServletApi
+    implementation libraries.spectatorExtIpc0
+    implementation libraries.archaius2Core
+    implementation libraries.archaius2Guice
+    implementation libraries.guice
+    implementation libraries.spectatorPlugin0
     implementation libraries.slf4jLog4j12
 
-    compile 'com.google.inject.extensions:guice-servlet:4.0'
+    compile libraries.guiceServlet
 }

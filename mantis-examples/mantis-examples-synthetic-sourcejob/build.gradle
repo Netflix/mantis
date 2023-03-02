@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-ext {
-    mqlVersion = '3.2.2'
-    mockNeatVersion = '0.3.7'
-}
 
 task execute(type: JavaExec) {
     main = "io.mantisrx.sourcejob.synthetic.SyntheticSourceJob"
@@ -28,11 +24,11 @@ task execute(type: JavaExec) {
 dependencies {
     implementation project(':mantis-runtime')
 
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    implementation libraries.mqlJvm
 
     implementation libraries.mockneat
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
 
-    testImplementation "org.mockito:mockito-all:1.9.5"
+    testImplementation libraries.mockitoAll1
 }
