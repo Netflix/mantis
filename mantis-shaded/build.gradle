@@ -25,13 +25,13 @@ apply plugin: 'com.github.johnrengelman.shadow'
  * On the second publish, you update all subprojects that depend on mantis-shaded
  */
 ext {
-    jacksonVersion = '2.12.+'
-    guavaFailureAccessVersion = '1.0.1'
-    guavaVersion = '31.1-jre'
-    curatorVersion = '2.12.+'
-    zookeeperVersion = '3.4.+'
-    jlineVersion = '0.9.94'
-    nettyVersion = '3.7.0.Final'
+    // jacksonVersion = '2.12.+'
+    // guavaFailureAccessVersion = '1.0.1'
+    // guavaVersion = '31.1-jre'
+    // curatorVersion = '2.12.+'
+    // zookeeperVersion = '3.4.+'
+    // jlineVersion = '0.9.94'
+    // nettyVersion = '3.7.0.Final'
 }
 
 configurations {
@@ -43,26 +43,21 @@ configurations {
 
 dependencies {
     // Libraries to be shaded. Add their dependencies that do not need to be shaded as 'implementation' dependencies
-    shaded "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
-    shaded "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
-    shaded "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    shaded "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
+    shaded libraries.jackson
 
 //    TODO(sundaram): This can only be added when we can get rid of all ObjectMappers spilled throughout the codebase
 //    as the absence of this change would mean Instant for instance cannot be serialized by the existing ObjectMappers.
 //    @see <a href="https://github.com/Netflix/mantis/issues/194">Github issue describing the ObjectMapper problem</a>
-    shaded "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
-    shaded "com.fasterxml.jackson.module:jackson-module-afterburner:$jacksonVersion"
-    shaded "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$jacksonVersion"
+    shaded libraries.jacksonDatatypeJsr310
+    shaded libraries.jacksonModuleAfterburner
+    shaded libraries.jacksonDataformatCbor
     shaded libraries.vavrJackson
-    shaded "com.google.guava:guava:$guavaVersion"
-    shaded "com.google.guava:failureaccess:$guavaFailureAccessVersion"
-    shaded "org.apache.curator:curator-recipes:$curatorVersion"
-    shaded "org.apache.curator:curator-framework:$curatorVersion"
-    shaded "org.apache.curator:curator-client:$curatorVersion"
-    shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
-    shaded "jline:jline:$jlineVersion"
-    shaded "io.netty:netty:$nettyVersion"
+    shaded libraries.guava
+    shaded libraries.failureaccess
+    shaded libraries.curator
+    shaded libraries.zookeeper
+    shaded libraries.jline
+    shaded libraries.netty
 
     implementation libraries.vavr
 }
