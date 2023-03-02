@@ -83,7 +83,8 @@ shadowJar {
     relocate 'org.apache.jute', 'io.mantisrx.shaded.org.apache.jute'
     relocate 'jline', 'io.mantisrx.shaded.jline'
     relocate 'org.jboss.netty', 'io.mantisrx.shaded.org.jboss.netty'
-    relocate 'org.apache.flink', 'io.mantisrx.shaded.flink'
+//    relocate 'org.apache.flink', 'io.mantisrx.shaded.flink'
+    relocate 'akka', 'io.mantisrx.shaded.akka'
     relocate 'scala', 'io.mantisrx.shaded.scala'
 
     mergeServiceFiles()
