@@ -24,7 +24,7 @@ dependencies {
     api libraries.kafkaClients
 
     api libraries.rxJava
-    api libraries.spectatorApiv0
+    api libraries.spectatorApi0
     api libraries.archaius2Api
     api libraries.archaius2Core
 
