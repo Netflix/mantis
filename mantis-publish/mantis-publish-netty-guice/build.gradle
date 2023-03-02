@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 ext {
-    archaiusVersion = 'latest.release'
-    guiceVersion = '4.2.2'
-    spectatorVersion = '0.96.0'
 }
 
 dependencies {
     api project(':mantis-publish:mantis-publish-core')
 
     implementation project(':mantis-publish:mantis-publish-netty')
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
-    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
-    implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
-    implementation "com.google.inject:guice:$guiceVersion"
-    implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
+    implementation libraries.spectatorExtIpc0
+    implementation libraries.archaius2Core
+    implementation libraries.archaius2Guice
+    implementation libraries.guice
+    implementation libraries.spectatorPlugin
 
     implementation libraries.slf4jApi
 
