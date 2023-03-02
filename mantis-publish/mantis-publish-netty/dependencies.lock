@@ -9,19 +9,19 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "io.mantisrx:mantis-discovery-proto": {
             "firstLevelTransitive": [
@@ -67,19 +67,19 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "io.mantisrx:mantis-discovery-proto": {
             "firstLevelTransitive": [
@@ -116,25 +116,25 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "io.mantisrx:mantis-common-serde": {
             "firstLevelTransitive": [
@@ -190,19 +190,19 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "io.mantisrx:mantis-discovery-proto": {
             "firstLevelTransitive": [
@@ -249,25 +249,25 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.2"
+            "locked": "1.5.4"
         },
         "io.mantisrx:mantis-common-serde": {
             "firstLevelTransitive": [
