@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-ext {
-    nettyVersion = '4.1.17.Final'
-    rxJavaMathVersion = '0.20.6'
-}
 
 test {
     exclude 'io/reactivex/mantis/remote/observable/**'  // exclude remote observable tests that require ports
@@ -25,8 +21,8 @@ test {
 
 dependencies {
     implementation project(':mantis-common')
-    implementation "io.netty:netty-handler:$nettyVersion"
-    implementation("com.netflix.rxjava:rxjava-math:$rxJavaMathVersion") {
+    implementation libraries.nettyHandler
+    implementation(libraries.rxJavaMath) {
         exclude module: 'rxjava-core'
     }
     implementation libraries.slf4jApi
