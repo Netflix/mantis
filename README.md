@@ -1,6 +1,9 @@
 <img alt="Mantis logo" src="./.assets/mantis.png" width="200" align="right">
 
 # Mantis Documentation
+Mantis is a platform designed to help developers build real-time stream processing applications easily and efficiently. It provides APIs for managing the lifecycle of jobs, containerizes a common pool of servers to manage underlying resources, and facilitates job discovery and communication.
+
+The Mantis platform allows developers to focus on their business logic and easily build powerful and cost-effective streaming applications. With Mantis, developers can deploy, update, and terminate jobs quickly and efficiently, without worrying about the underlying infrastructure. The platform also provides support for a wide range of programming languages, making it easy to build applications in the language of your choice.
 
 
 [![Build Status](https://img.shields.io/travis/com/Netflix/mantis.svg)](https://travis-ci.com/Netflix/mantis)
