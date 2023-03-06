@@ -1,26 +1,50 @@
 # Application Guidelines for Google Summer of Code 2023
+Thank you for expressing interest in Mantis.
+We wish you a successful experience with GSoC this year and hope that you will consider
+contributing to Mantis.
+
+To ensure a positive experience while applying for the Mantis project, please read the following
+instructions carefully.
+These instructions may also be applied to other projects.
+
 
 ## Before the application
 
-Before you apply, getting in touch with the Mantis Community is a good idea.
-Ask questions on the [Mantis Community] channel to connect with potential mentors and find interesting projects.
-Additionally, it would be best to start making small contributions to the Mantis project.
-You can find starter issues to work on on the [Mantis Issues] page.
-While PRs before the applications are not required, the Mantis GSoC program might be highly competitive, given the number of potential applicants interested in the project.
-So, the more you can contribute to Mantis, the better it is for your application.
-It will also help you judge if contributing to Mantis is something you enjoy and learn from.
+Before submitting your application, we recommend reviewing the [Mantis GSOC2023 Projects] list
+to become familiar with the available ideas.
+Identify the projects that pique your interests and engage with the Mantis community to begin
+exploring these ideas.
+
+To connect with potential mentors and ensure that your understanding of the project is accurate,
+we encourage you to ask questions on the [Mantis Discord] channel.
+You can also evaluate different approaches that fit within the project's design space.
+
+We also suggest making small contributions to the Mantis project before submitting your application.
+The [Mantis Issues] page offers starter issues for you to work on.
+While submitting pull requests before the application deadline is not mandatory,
+it can be highly beneficial for your application, considering the competitive nature of the
+Mantis GSoC program and the significant number of potential applicants interested in the project.
+Contributing to Mantis beforehand can also help you determine if it's a project that you enjoy
+and can learn from.
+
+## Where to apply?
+
+GSoC applications must be submitted to https://summerofcode.withgoogle.com.
 
 ## Application Format
 Applications are free-form, so you can discuss your project however you feel is best.
-Our organization does not have page or formatting requirements, but we recommend building a formal PDF document of fewer than four pages formatted using Word or LaTeX.
-If you have any questions that are not answered here, contact the mentors on the [Mantis Discord] channel.
+Our organization does not have page or formatting requirements, but we recommend building a formal
+PDF document of fewer than four pages formatted using Word or LaTeX.
+If you have any questions that are not answered here, contact the mentors on the
+[Mantis Discord] channel.
 We recommend having a mentor to help you with the application process.
-Please feel free to share your draft applications in the #gsoc2023-applications channel of the Mantis Discord server to receive feedback.
+Please feel free to share your draft applications in the #gsoc2023-applications channel of the
+Mantis Discord server to receive feedback.
 
 
 The key questions we will ask ourselves when considering the applications are:
 -
-- Is the contributor a good fit for the project, given their contributions?
+- Is the contributor a good fit for the project?
 - Is the plan a reasonable amount to do in the allotted project time?
 - Are there clear milestones we can use to assess progress quantitatively?
 - Is the proposed mentor enthusiastic about the project?
@@ -50,6 +74,7 @@ The key questions we will ask ourselves when considering the applications are:
 [cold Observable]:         ../../glossary#cold              "A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it."
 [cold Observables]:        ../../glossary#cold              "A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it."
 [Mantis Community]:        https://discord.gg/bKvxTn4jRv    "Link to the Mantis Discord Community"
+[Mantis GSOC2023 Projects]: https://netflix.github.io/mantis/updates/gsoc2023-ideas/ "Mantis GSOC 2023 Projects Page"
 [Mantis Issues]:           https://github.com/Netflix/mantis/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22 "Link to the Mantis Issues Page"
 [component]:               ../../glossary#component         "A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink."
 [components]:              ../../glossary#component         "A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink."
