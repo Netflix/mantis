@@ -3,7 +3,8 @@ name: "Publish Docker images to Docker Registry"
 on:
   pull_request:
     paths:
-      - Dockerfile
+      - ./mantis-control-plane/Dockerfile
+      - ./mantis-server/mantis-server-worker/Dockerfile
       - .github/workflows/push-docker-image.yml
   push:
     tags:
