@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - ./mantis-control-plane/Dockerfile
-      - ./mantis-server/mantis-server-agent/Dockerfile
+      - ./mantis-server/mantis-server-worker/Dockerfile
       - .github/workflows/push-docker-image.yml
   push:
     tags:
@@ -22,11 +22,9 @@ jobs:
       matrix:
         include:
           - dockerfile: ./mantis-control-plane/Dockerfile
-            image: "netflixoss/mantiscontrolplaneserver"
-            workingDirectory: ./mantis-control-plane
-          - dockerfile: ./mantis-server/mantis-server-agent/Dockerfile
-            image: "netflixoss/mantisagent"
-            workingDirectory: ./mantis-server/mantis-server-agent
+            image: netflixoss/mantiscontrolplaneserver
+          - dockerfile: ./mantis-server/mantis-server-worker/Dockerfile
+            image: netflixoss/mantisagent
     permissions:
       contents: read
       packages: write
@@ -34,16 +32,6 @@ jobs:
     steps:
       - name: Checkout PR
         uses: actions/checkout@v3
-
-      - name: Build executable
-        uses: gradle/gradle-build-action@v2
-        env:
-          NETFLIX_OSS_SIGNING_KEY: ${{ secrets.ORG_SIGNING_KEY }}
-          NETFLIX_OSS_SIGNING_PASSWORD: ${{ secrets.ORG_SIGNING_PASSWORD }}
-          NETFLIX_OSS_REPO_USERNAME: ${{ secrets.ORG_NETFLIXOSS_USERNAME }}
-          NETFLIX_OSS_REPO_PASSWORD: ${{ secrets.ORG_NETFLIXOSS_PASSWORD }}
-        with:
-          arguments: installDist
 
       - name: Fetch tags
         run: |
@@ -70,17 +58,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build and push Docker images
         uses: docker/build-push-action@v3
         with:
-          context: ${{ matrix.workingDirectory }}
+          context: .
           file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
