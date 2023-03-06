@@ -1,17 +1,17 @@
 name: "Publish Docker images to Docker Registry"
-#on:
-#  pull_request:
-#    paths:
-#      - Dockerfile
-#      - .github/workflows/push-docker-image.yml
-#  push:
-#    tags:
-#      - v*.*.*
-#      - v*.*.*-rc.*
-#    release:
-#      types:
-#        - published
-on: [pull_request_target]
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .github/workflows/push-docker-image.yml
+  push:
+    tags:
+      - v*.*.*
+      - v*.*.*-rc.*
+    release:
+      types:
+        - published
 
 jobs:
   build-and-push-image:
