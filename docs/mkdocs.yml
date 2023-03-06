@@ -48,6 +48,7 @@ nav:
       - 'Mantis Publish': 'internals/mantis-publish.md'
   - 'Community': 'community.md'
   - 'Updates':
+      - 'GSOC 2023 Application Guidelines': 'updates/gsoc2023-application-guidelines.md'
       - 'GSOC 2023 Ideas': 'updates/gsoc2023-ideas.md'
   - 'FAQ': 'faq.md'
   - 'Glossary': 'glossary.md'
