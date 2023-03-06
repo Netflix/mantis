@@ -10,7 +10,7 @@ These instructions may also be applied to other projects.
 
 ## Before the application
 
-Before submitting your application, we recommend reviewing the [Mantis GSOC2023 Projects] list
+Before submitting your application, we recommend reviewing the [Mantis GSoC-2023 Projects] list
 to become familiar with the available ideas.
 Identify the projects that pique your interests and engage with the Mantis community to begin
 exploring these ideas.
@@ -29,7 +29,7 @@ and can learn from.
 
 ## Where to apply?
 
-GSoC applications must be submitted to https://summerofcode.withgoogle.com.
+GSoC applications must be submitted to [https://summerofcode.withgoogle.com](https://summerofcode.withgoogle.com).
 
 ## Application Format
 Applications are free-form, so you can discuss your project however you feel is best.
@@ -73,8 +73,8 @@ The key questions we will ask ourselves when considering the applications are:
 [cold]:                    ../../glossary#cold              "A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it."
 [cold Observable]:         ../../glossary#cold              "A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it."
 [cold Observables]:        ../../glossary#cold              "A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it."
-[Mantis Community]:        https://discord.gg/bKvxTn4jRv    "Link to the Mantis Discord Community"
-[Mantis GSOC2023 Projects]: https://netflix.github.io/mantis/updates/gsoc2023-ideas/ "Mantis GSOC 2023 Projects Page"
+[Mantis Discord]:          https://discord.gg/bKvxTn4jRv    "Link to the Mantis Discord Community"
+[Mantis GSoC-2023 Projects]: https://netflix.github.io/mantis/updates/gsoc2023-ideas/ "Mantis GSOC 2023 Projects Page"
 [Mantis Issues]:           https://github.com/Netflix/mantis/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22 "Link to the Mantis Issues Page"
 [component]:               ../../glossary#component         "A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink."
 [components]:              ../../glossary#component         "A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink."
