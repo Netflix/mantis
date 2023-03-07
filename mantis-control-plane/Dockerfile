@@ -1,4 +1,4 @@
-FROM docker-hub.netflix.net/azul/zulu-openjdk:8u172-8.30.0.1
+FROM azul/zulu-openjdk:8u345
 
 MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 
