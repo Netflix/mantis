@@ -16,18 +16,23 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
+import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
+import io.mantisrx.master.resourcecluster.metrics.ResourceClusterActorMetrics;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
@@ -44,6 +49,7 @@ import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -53,10 +59,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -89,6 +97,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsRequests;
     private final JobMessageRouter jobMessageRouter;
 
+    private final ResourceClusterActorMetrics metrics;
+
     static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
         return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter);
     }
@@ -114,6 +124,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.activeDisableTaskExecutorsRequests = new HashSet<>();
 
         this.executorStateManager = new ExecutorStateManagerImpl();
+
+        this.metrics = new ResourceClusterActorMetrics();
     }
 
     @Override
@@ -129,6 +141,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             String.format("periodic-disabled-task-executors-test-for-%s", clusterID.getResourceID()),
             new CheckDisabledTaskExecutors("periodic"),
             disabledTaskExecutorsCheckInterval);
+
+        timers().startTimerWithFixedDelay(
+            "periodic-resource-overview-metrics-publisher",
+            new PublishResourceOverviewMetricsRequest(),
+            Duration.ofMinutes(1));
     }
 
     @Override
@@ -167,6 +184,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
                 .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
                 .match(GetTaskExecutorWorkerMappingRequest.class, req -> sender().tell(getTaskExecutorWorkerMapping(req.getAttributes()), self()))
+                .match(PublishResourceOverviewMetricsRequest.class, this::onPublishResourceOverviewMetricsRequest)
                 .build();
     }
 
@@ -291,7 +309,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private void findAndMarkDisabledTaskExecutors(CheckDisabledTaskExecutors r) {
         log.info("Checking disabled task executors for Cluster {} because of {}", clusterID.getResourceID(), r.getReason());
         final Instant now = clock.instant();
-        for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
+        for (DisableTaskExecutorsRequest request : activeDisableTaskExecutorsRequests) {
             if (request.isExpired(now)) {
                 self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
             } else {
@@ -459,6 +477,29 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onResourceOverviewRequest(ResourceOverviewRequest request) {
         sender().tell(getResourceOverview(), self());
+    }
+
+    private void onPublishResourceOverviewMetricsRequest(PublishResourceOverviewMetricsRequest request) {
+        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isRegistered), ResourceClusterActorMetrics.NUM_REGISTERED_TE);
+        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isBusy), ResourceClusterActorMetrics.NUM_BUSY_TE);
+        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isAvailable), ResourceClusterActorMetrics.NUM_AVAILABLE_TE);
+        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isDisabled), ResourceClusterActorMetrics.NUM_DISABLED_TE);
+        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.unregistered), ResourceClusterActorMetrics.NUM_UNREGISTERED_TE);
+        publishResourceClusterMetricBySKU(getTaskExecutors(ExecutorStateManager.isAssigned), ResourceClusterActorMetrics.NUM_ASSIGNED_TE);
+    }
+
+    private void publishResourceClusterMetricBySKU(TaskExecutorsList taskExecutorsList, String metricName) {
+        taskExecutorsList.getTaskExecutors()
+            .stream()
+            .map(this::getTaskExecutorStatus)
+            .filter(Objects::nonNull)
+            .map(taskExecutorStatus -> taskExecutorStatus.getRegistration().getTaskExecutorContainerDefinitionId().orElse(null))
+            .filter(Objects::nonNull)
+            .collect(groupingBy(ContainerSkuID::getResourceID, Collectors.counting()))
+            .forEach((sku, count) -> metrics.setGauge(
+                metricName,
+                count,
+                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", sku))));
     }
 
     private ResourceOverview getResourceOverview() {
@@ -658,6 +699,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class GetTaskExecutorWorkerMappingRequest {
         Map<String, String> attributes;
+    }
+
+    @Value
+    private static class PublishResourceOverviewMetricsRequest {
     }
 
     /**

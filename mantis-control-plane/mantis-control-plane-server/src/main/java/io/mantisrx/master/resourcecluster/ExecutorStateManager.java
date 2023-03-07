@@ -81,4 +81,7 @@ public interface ExecutorStateManager {
 
     Predicate<Entry<TaskExecutorID, TaskExecutorState>> isDisabled =
         e -> e.getValue().isDisabled();
+
+    Predicate<Entry<TaskExecutorID, TaskExecutorState>> isAssigned =
+        e -> e.getValue().isAssigned();
 }

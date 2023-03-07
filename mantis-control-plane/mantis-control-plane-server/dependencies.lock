@@ -20,7 +20,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -177,7 +177,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
@@ -347,7 +347,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
@@ -532,7 +532,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
@@ -722,7 +722,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
