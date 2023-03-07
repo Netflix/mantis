@@ -11,6 +11,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -84,12 +90,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
         "org.apache.flink:flink-rpc-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -145,12 +145,20 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
+        }
+    },
+    "baseline-exact-dependencies-testFixtures": {
+        "org.apache.flink:flink-rpc-akka": {
+            "locked": "1.14.2"
         }
     },
     "compileClasspath": {
         "com.github.spullara.cli-parser:cli-parser": {
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "locked": "3.0.1"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -247,7 +255,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "lombok": {
@@ -258,6 +266,9 @@
     "runtimeClasspath": {
         "com.github.spullara.cli-parser:cli-parser": {
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "locked": "3.0.1"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -329,9 +340,6 @@
         "org.apache.flink:flink-core": {
             "locked": "1.14.2"
         },
-        "org.apache.flink:flink-rpc-akka": {
-            "locked": "1.14.2"
-        },
         "org.apache.flink:flink-rpc-core": {
             "locked": "1.14.2"
         },
@@ -369,7 +377,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testAnnotationProcessor": {
@@ -384,6 +392,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -457,12 +471,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
         "org.apache.flink:flink-rpc-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -521,7 +529,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testFixturesAnnotationProcessor": {
@@ -536,6 +544,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -601,9 +615,6 @@
             "locked": "1.14.2"
         },
         "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
             "locked": "1.14.2"
         },
         "org.apache.flink:flink-rpc-core": {
@@ -661,7 +672,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testFixturesRuntimeClasspath": {
@@ -670,6 +681,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -754,9 +771,6 @@
             "locked": "1.14.2"
         },
         "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
             "locked": "1.14.2"
         },
         "org.apache.flink:flink-rpc-core": {
@@ -811,7 +825,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testRuntimeClasspath": {
@@ -820,6 +834,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -973,7 +993,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     }
 }

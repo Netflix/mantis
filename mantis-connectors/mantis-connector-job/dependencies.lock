@@ -11,6 +11,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.google.code.gson:gson": {
             "locked": "2.8.9"
         },
@@ -18,7 +24,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -124,12 +130,6 @@
             "locked": "2.12.2"
         },
         "org.apache.flink:flink-core": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
-        "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
@@ -188,7 +188,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "compileClasspath": {
@@ -198,6 +198,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.google.code.gson:gson": {
             "locked": "2.8.9"
         },
@@ -205,7 +211,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -311,12 +317,6 @@
             "locked": "2.12.2"
         },
         "org.apache.flink:flink-core": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
-        "org.apache.flink:flink-rpc-akka": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
@@ -378,7 +378,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "lombok": {
@@ -393,6 +393,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.google.code.gson:gson": {
             "locked": "2.8.9"
         },
@@ -400,13 +406,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -582,12 +588,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
         "org.apache.flink:flink-rpc-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -651,7 +651,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testAnnotationProcessor": {
@@ -666,6 +666,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.google.code.gson:gson": {
             "locked": "2.8.9"
         },
@@ -673,7 +679,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -784,12 +790,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
         "org.apache.flink:flink-rpc-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -846,7 +846,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     },
     "testRuntimeClasspath": {
@@ -856,6 +856,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "3.0.1"
+        },
         "com.google.code.gson:gson": {
             "locked": "2.8.9"
         },
@@ -863,13 +869,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.18"
+            "locked": "2.3.19"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -1045,12 +1051,6 @@
             ],
             "locked": "1.14.2"
         },
-        "org.apache.flink:flink-rpc-akka": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.14.2"
-        },
         "org.apache.flink:flink-rpc-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -1114,7 +1114,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "1.1.9.0"
+            "locked": "1.1.9.1"
         }
     }
 }

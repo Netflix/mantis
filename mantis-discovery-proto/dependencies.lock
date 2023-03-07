@@ -10,9 +10,6 @@
         },
         "junit:junit-dep": {
             "locked": "4.11"
-        },
-        "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
         }
     },
     "compileClasspath": {
@@ -54,9 +51,6 @@
         "junit:junit-dep": {
             "locked": "4.11"
         },
-        "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
-        },
         "org.projectlombok:lombok": {
             "locked": "1.18.20"
         }
@@ -76,9 +70,6 @@
         },
         "junit:junit-dep": {
             "locked": "4.11"
-        },
-        "org.mockito:mockito-core": {
-            "locked": "2.0.111-beta"
         }
     }
 }

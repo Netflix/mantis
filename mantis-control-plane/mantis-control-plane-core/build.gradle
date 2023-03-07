@@ -32,9 +32,10 @@ dependencies {
     api project(":mantis-common")
 
     api "org.skife.config:config-magic:$configMagicVersion"
+    api libraries.jsr305
     api libraries.flinkRpcApi
-    api libraries.flinkRpcImpl
     api libraries.flinkCore
+    compileOnly libraries.flinkRpcImpl // Provided by copyLibs task
 
     api "org.apache.mesos:mesos:$mesosVersion"
     api "org.json:json:$jsonVersion"
@@ -42,7 +43,20 @@ dependencies {
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "joda-time:joda-time:$jodaTimeVersion"
 
-
+    testFixturesImplementation libraries.flinkRpcImpl
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
 }
+
+// This task makes flink-rpc-akka.jar available in mantis-control-plane-core classpath,
+// to ensure that all the classes from flink-rpc-akka.jar (like scala and akka) are always
+// loaded through a custom submodule classloader.
+task copyLibs(type: Copy) {
+    from(sourceSets.main.compileClasspath) {
+        rename 'flink-rpc-akka(.*)', 'flink-rpc-akka.jar'
+    }
+    include '*flink-rpc-akka*.jar'
+    into "$buildDir/classes/java/main"
+}
+
+jar.dependsOn copyLibs
