@@ -23,8 +23,10 @@ jobs:
         include:
           - dockerfile: ./mantis-control-plane/Dockerfile
             image: netflixoss/mantiscontrolplaneserver
+            workingDirectory: ./mantis-control-plane
           - dockerfile: ./mantis-server/mantis-server-worker/Dockerfile
             image: netflixoss/mantisagent
+            workingDirectory: ./mantis-server/mantis-server-worker
     permissions:
       contents: read
       packages: write
@@ -60,6 +62,7 @@ jobs:
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v3
+        working-directory: ${{ matrix.workingDirectory }}
         with:
           context: .
           file: ${{ matrix.dockerfile }}
