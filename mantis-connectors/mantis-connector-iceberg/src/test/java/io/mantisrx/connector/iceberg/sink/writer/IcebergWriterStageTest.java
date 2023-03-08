@@ -98,7 +98,7 @@ class IcebergWriterStageTest {
                 factory,
                 config.getWriterFlushFrequencyBytes(),
                 config.getWriterMaximumPoolSize()));
-        doReturn(Collections.singleton(record)).when(writerPool).getFlushableWriters();
+        doReturn(Collections.singleton(record.getRecord())).when(writerPool).getFlushableWriters();
 
         this.partitioner = mock(Partitioner.class);
         when(partitioner.partition(icebergRecord)).thenReturn(icebergRecord);
