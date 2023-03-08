@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 buildscript {
     repositories {
         gradlePluginPortal()
@@ -28,12 +27,14 @@ buildscript {
         classpath 'io.mantisrx:mantis-gradle-plugin:1.2.+'
         classpath "io.freefair.gradle:lombok-plugin:5.3.3.3"
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
-        classpath("gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0")
+        classpath 'com.github.johnrengelman:shadow:8.1.0'
         classpath 'gradle.plugin.org.inferred:gradle-processors:3.3.0'
         classpath 'com.palantir.baseline:gradle-baseline-java:4.0.0'
     }
 }
-
+plugins {
+    id 'java-library'
+}
 ext.versions = [
         flink    : "1.14.2",
         hadoop   : "2.7.7",
@@ -90,19 +91,15 @@ ext.libraries = [
 allprojects {
     apply plugin: 'nebula.netflixoss'
 }
-
 def printAllReleasedArtifacts = project.tasks.create('printAllReleasedArtifacts')
 project.snapshot.configure { finalizedBy printAllReleasedArtifacts }
 subprojects {
-    apply plugin: 'java-library'
-
     // Apply lombok plugin and disabled the default config file generation.
     apply plugin: "io.freefair.lombok"
     generateLombokConfig.enabled = false
     lombok {
         version = "1.18.20"
     }
-
     group = 'io.mantisrx'
 
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -114,7 +111,7 @@ subprojects {
         }
     }
 
-    configurations.compileClasspath {
+    configurations.all {
         if (!"mantis-shaded".equals(project.name)) {
             exclude group: 'com.fasterxml.jackson.core'
             exclude group: 'com.fasterxml.jackson.datatype'
