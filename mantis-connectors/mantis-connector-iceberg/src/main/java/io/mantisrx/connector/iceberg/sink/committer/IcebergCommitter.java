@@ -16,6 +16,7 @@
 
 package io.mantisrx.connector.iceberg.sink.committer;
 
+import static io.mantisrx.connector.iceberg.sink.writer.DefaultIcebergWriter.maxNullSafe;
 import static io.mantisrx.connector.iceberg.sink.writer.DefaultIcebergWriter.minNullSafe;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
@@ -65,16 +66,18 @@ public class IcebergCommitter {
             config.getTable(),
             dataFiles.size());
 
-        Long lowWatermark = getCurrentWatermark(transaction.table());
+        Long currentWatermark = getCurrentWatermark(transaction.table());
+        Long lowWatermark = null;
         for (MantisDataFile flinkDataFile : dataFiles) {
             lowWatermark = minNullSafe(lowWatermark, flinkDataFile.getLowWatermark());
         }
+        final Long finalWatermark = maxNullSafe(currentWatermark, lowWatermark);
 
-        if (lowWatermark != null) {
+        if (finalWatermark != null) {
             UpdateProperties updateProperties = transaction.updateProperties();
-            updateProperties.set(config.getWatermarkPropertyKey(), Long.toString(lowWatermark));
+            updateProperties.set(config.getWatermarkPropertyKey(), Long.toString(finalWatermark));
             updateProperties.commit();
-            log.info("Iceberg committer for table={} set VTTS watermark to {}", config.getTable(), lowWatermark);
+            log.info("Iceberg committer for table={} set VTTS watermark to {}", config.getTable(), finalWatermark);
         }
 
 

@@ -245,6 +245,10 @@ public class DefaultIcebergWriter implements IcebergWriter {
         return compareNullSafe(v1, v2, Math::min);
     }
 
+    public static Long maxNullSafe(@Nullable Long v1, @Nullable Long v2) {
+        return compareNullSafe(v1, v2, Math::max);
+    }
+
     private static Long compareNullSafe(
         @Nullable Long v1, @Nullable Long v2, BiFunction<Long, Long, Long> comparator) {
         if (v1 != null && v2 != null) {
