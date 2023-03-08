@@ -2,11 +2,11 @@ FROM azul/zulu-openjdk:8u345
 
 MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 
-RUN apt-get update && apt-get install -y gnupg && \
+RUN apt-get -o Acquire::Check-Valid-Until=false -y update && \
+    apt-get install -y gnupg && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
     echo "deb http://repos.mesosphere.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/mesosphere.list && \
-    apt-get -o Acquire::Check-Valid-Until=false -y update && \
-    apt-get install -y libevent-openssl-2.0-5 && \
+    apt-get install -y libevent-openssl-2.1.7 && \
     apt-get install -y mesos=1.3.2-2.0.1 && \
     apt-get clean
 
