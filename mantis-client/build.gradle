@@ -22,7 +22,7 @@ dependencies {
     implementation libraries.slf4jApi
     implementation libraries.spectatorApi
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoCore
+    testImplementation libraries.mockitoCore3
 }
 
 task runsubmit(type: JavaExec) {

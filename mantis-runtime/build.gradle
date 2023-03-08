@@ -27,6 +27,6 @@ dependencies {
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoCore
+    testImplementation libraries.mockitoCore3
 
 }

@@ -37,7 +37,7 @@ dependencies {
     implementation libraries.slf4jApi
 
     testImplementation libraries.junitJupiter
-    testImplementation libraries.mockitoCore
+    testImplementation libraries.mockitoCore3
     testImplementation libraries.slf4jLog4j12
     testImplementation libraries.commonsIo
 }
