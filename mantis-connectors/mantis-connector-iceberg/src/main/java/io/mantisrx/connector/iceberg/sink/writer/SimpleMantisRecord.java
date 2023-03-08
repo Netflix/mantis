@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,14 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import org.apache.iceberg.StructLike;
+import javax.annotation.Nullable;
+import lombok.Value;
+import org.apache.iceberg.data.Record;
 
-public interface IcebergWriter {
+@Value
+public class SimpleMantisRecord implements MantisRecord {
 
-    void open() throws IOException;
-
-    void open(StructLike newPartitionKey) throws IOException;
-
-    void write(MantisRecord record);
-
-    MantisDataFile close() throws IOException, UncheckedIOException;
-
-    boolean isClosed();
-
-    long length();
-
-    StructLike getPartitionKey();
+    Record record;
+    @Nullable
+    Long timestamp;
 }

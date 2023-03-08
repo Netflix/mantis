@@ -17,9 +17,11 @@
 package io.mantisrx.connector.iceberg.sink.committer.config;
 
 import static io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties.COMMIT_FREQUENCY_MS;
+import static io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties.WATERMARK_PROPERTY_KEY;
 
 import io.mantisrx.connector.iceberg.sink.config.SinkConfig;
 import io.mantisrx.runtime.parameter.Parameters;
+import javax.annotation.Nullable;
 
 /**
  * Config for controlling Iceberg Committer semantics.
@@ -28,12 +30,16 @@ public class CommitterConfig extends SinkConfig {
 
     private final long commitFrequencyMs;
 
+    @Nullable
+    private final String watermarkPropertyKey;
+
     /**
      * Creates an instance from {@link Parameters} derived from the current Mantis Stage's {@code Context}.
      */
     public CommitterConfig(Parameters parameters) {
         super(parameters);
         this.commitFrequencyMs = Long.parseLong((String) parameters.get(COMMIT_FREQUENCY_MS));
+        this.watermarkPropertyKey = (String) parameters.get(WATERMARK_PROPERTY_KEY, null);
     }
 
     /**
@@ -41,5 +47,10 @@ public class CommitterConfig extends SinkConfig {
      */
     public long getCommitFrequencyMs() {
         return commitFrequencyMs;
+    }
+
+    @Nullable
+    public String getWatermarkPropertyKey() {
+        return watermarkPropertyKey;
     }
 }

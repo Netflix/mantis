@@ -16,23 +16,23 @@
 
 package io.mantisrx.connector.iceberg.sink.writer.pool;
 
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
+import io.mantisrx.connector.iceberg.sink.writer.MantisRecord;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.Record;
 
 public interface IcebergWriterPool {
 
     void open(StructLike partition) throws IOException;
 
-    void write(StructLike partition, Record record);
+    void write(StructLike partition, MantisRecord record);
 
-    DataFile close(StructLike partition) throws IOException, UncheckedIOException;
+    MantisDataFile close(StructLike partition) throws IOException, UncheckedIOException;
 
-    List<DataFile> closeAll() throws IOException, UncheckedIOException;
+    List<MantisDataFile> closeAll() throws IOException, UncheckedIOException;
 
     Set<StructLike> getWriters();
 

@@ -16,7 +16,10 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
-import static io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties.*;
+import static io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties.WRITER_FILE_FORMAT_DEFAULT;
+import static io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties.WRITER_FLUSH_FREQUENCY_BYTES_DEFAULT;
+import static io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties.WRITER_MAXIMUM_POOL_SIZE_DEFAULT;
+import static io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties.WRITER_ROW_GROUP_SIZE_DEFAULT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
@@ -102,7 +104,8 @@ public class IcebergWriterEndToEndTest {
                 100L,
                 WRITER_FILE_FORMAT_DEFAULT,
                 WRITER_MAXIMUM_POOL_SIZE_DEFAULT,
-                new Configuration());
+                new Configuration(),
+                false);
 
         final IcebergWriterFactory writerFactory =
                 new DefaultIcebergWriterFactory(writerConfig, WORKER_INFO, tableExtension.getTable(),
@@ -146,10 +149,10 @@ public class IcebergWriterEndToEndTest {
 
         Observable<Record> recordObservable = Observable.merge(oddObservable, evenObservable);
 
-        Observable<DataFile> dataFileObservable = transformer.call(recordObservable);
+        Observable<MantisDataFile> dataFileObservable = transformer.call(recordObservable.map(s -> new SimpleMantisRecord(s, null)));
 
         AtomicReference<Throwable> failure = new AtomicReference<>();
-        List<DataFile> dataFileList = new ArrayList<>();
+        List<MantisDataFile> dataFileList = new ArrayList<>();
         Subscription subscription = dataFileObservable.subscribe(dataFileList::add, failure::set);
         Thread.sleep(TimeUnit.SECONDS.toMillis(15));
         if (failure.get() != null) {

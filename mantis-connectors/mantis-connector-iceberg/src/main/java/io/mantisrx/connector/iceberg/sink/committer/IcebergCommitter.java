@@ -16,12 +16,20 @@
 
 package io.mantisrx.connector.iceberg.sink.committer;
 
+import static io.mantisrx.connector.iceberg.sink.writer.DefaultIcebergWriter.minNullSafe;
+
+import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
+import org.apache.iceberg.UpdateProperties;
 
 
 /**
@@ -29,12 +37,15 @@ import org.apache.iceberg.Table;
  *
  * This class uses Iceberg's Table API and only supports Table#append operations.
  */
+@Slf4j
 public class IcebergCommitter {
 
     private final Table table;
+    private final CommitterConfig config;
 
-    public IcebergCommitter(Table table) {
+    public IcebergCommitter(Table table, CommitterConfig committerConfig) {
         this.table = table;
+        this.config = committerConfig;
     }
 
     /**
@@ -42,10 +53,42 @@ public class IcebergCommitter {
      *
      * @return the current snapshot of the table.
      */
-    public Map<String, Object> commit(List<DataFile> dataFiles) {
-        AppendFiles tableAppender = table.newAppend();
-        dataFiles.forEach(tableAppender::appendFile);
+    public Map<String, Object> commit(List<MantisDataFile> dataFiles) {
+        Transaction transaction = table.newTransaction();
+
+        AppendFiles tableAppender = transaction.newAppend();
+        dataFiles.stream().map(MantisDataFile::getDataFile).forEach(tableAppender::appendFile);
         tableAppender.commit();
+        log.info(
+            "Iceberg committer {}.{} appended {} data files to transaction",
+            config.getDatabase(),
+            config.getTable(),
+            dataFiles.size());
+
+        Long lowWatermark = getCurrentWatermark(transaction.table());
+        for (MantisDataFile flinkDataFile : dataFiles) {
+            lowWatermark = minNullSafe(lowWatermark, flinkDataFile.getLowWatermark());
+        }
+
+        if (lowWatermark != null) {
+            UpdateProperties updateProperties = transaction.updateProperties();
+            updateProperties.set(config.getWatermarkPropertyKey(), Long.toString(lowWatermark));
+            updateProperties.commit();
+            log.info("Iceberg committer for table={} set VTTS watermark to {}", config.getTable(), lowWatermark);
+        }
+
+
+        transaction.commitTransaction();
         return table.currentSnapshot() == null ? new HashMap<>() : new HashMap<>(table.currentSnapshot().summary());
+    }
+
+    @Nullable
+    private Long getCurrentWatermark(Table table) {
+        try {
+            return Long.parseLong(table.properties().get(config.getWatermarkPropertyKey()));
+        } catch (Exception e) {
+            log.error("Failed to extract watermark from the table", e);
+            return null;
+        }
     }
 }

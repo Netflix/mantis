@@ -34,6 +34,8 @@ public class WriterConfig extends SinkConfig {
     private final int writerMaximumPoolSize;
     private final Configuration hadoopConfig;
 
+    private final boolean watermarkEnabled;
+
     /**
      * Creates an instance from {@link Parameters} derived from the current Mantis Stage's {@code Context}.
      */
@@ -45,12 +47,14 @@ public class WriterConfig extends SinkConfig {
         this.writerFileFormat = (String) parameters.get(WRITER_FILE_FORMAT);
         this.writerMaximumPoolSize = (int) parameters.get(WRITER_MAXIMUM_POOL_SIZE);
         this.hadoopConfig = hadoopConfig;
+        this.watermarkEnabled = (boolean) parameters.get(WATERMARK_ENABLED, false);
     }
 
     public WriterConfig(String catalog, String database, String table, int writerRowGroupSize,
         long writerFlushFrequencyBytes, long writerFlushFrequencyMsec,
         String writerFileFormat, int writerMaximumPoolSize,
-        Configuration hadoopConfig) {
+        Configuration hadoopConfig,
+        boolean watermarkEnabled) {
         super(catalog, database, table);
         this.writerRowGroupSize = writerRowGroupSize;
         this.writerFlushFrequencyBytes = writerFlushFrequencyBytes;
@@ -58,6 +62,7 @@ public class WriterConfig extends SinkConfig {
         this.writerFileFormat = writerFileFormat;
         this.writerMaximumPoolSize = writerMaximumPoolSize;
         this.hadoopConfig = hadoopConfig;
+        this.watermarkEnabled = watermarkEnabled;
     }
 
     /**
@@ -65,6 +70,10 @@ public class WriterConfig extends SinkConfig {
      */
     public int getWriterRowGroupSize() {
         return writerRowGroupSize;
+    }
+
+    public boolean isWatermarkEnabled() {
+        return watermarkEnabled;
     }
 
     /**

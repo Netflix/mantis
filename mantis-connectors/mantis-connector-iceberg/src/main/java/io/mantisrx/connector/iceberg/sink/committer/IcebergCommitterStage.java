@@ -20,6 +20,7 @@ import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
 import io.mantisrx.connector.iceberg.sink.config.SinkProperties;
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.codec.JacksonCodecs;
@@ -32,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -45,7 +45,7 @@ import rx.schedulers.Schedulers;
 /**
  * Processing stage which commits table metadata to Iceberg on a time interval.
  */
-public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<String, Object>> {
+public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, Map<String, Object>> {
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergCommitterStage.class);
 
@@ -54,8 +54,8 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
      */
-    public static ScalarToScalar.Config<DataFile, Map<String, Object>> config() {
-        return new ScalarToScalar.Config<DataFile, Map<String, Object>>()
+    public static ScalarToScalar.Config<MantisDataFile, Map<String, Object>> config() {
+        return new ScalarToScalar.Config<MantisDataFile, Map<String, Object>>()
                 .description("")
                 .codec(JacksonCodecs.mapStringObject())
                 .withParameters(parameters());
@@ -98,7 +98,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
         Table table = catalog.loadTable(id);
-        IcebergCommitter committer = new IcebergCommitter(table);
+        IcebergCommitter committer = new IcebergCommitter(table, config);
 
         return new Transformer(config, metrics, committer, Schedulers.computation());
     }
@@ -122,7 +122,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
     }
 
     @Override
-    public Observable<Map<String, Object>> call(Context context, Observable<DataFile> dataFileObservable) {
+    public Observable<Map<String, Object>> call(Context context, Observable<MantisDataFile> dataFileObservable) {
         return dataFileObservable.compose(transformer);
     }
 
@@ -134,7 +134,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
      * an existing Stage. One benefit of this co-location is to avoid extra network
      * cost from worker-to-worker communication, trading off debuggability.
      */
-    public static class Transformer implements Observable.Transformer<DataFile, Map<String, Object>> {
+    public static class Transformer implements Observable.Transformer<MantisDataFile, Map<String, Object>> {
 
         private final CommitterConfig config;
         private final CommitterMetrics metrics;
@@ -155,7 +155,7 @@ public class IcebergCommitterStage implements ScalarComputation<DataFile, Map<St
          * Periodically commits DataFiles to Iceberg as a batch.
          */
         @Override
-        public Observable<Map<String, Object>> call(Observable<DataFile> source) {
+        public Observable<Map<String, Object>> call(Observable<MantisDataFile> source) {
             return source
                     .buffer(config.getCommitFrequencyMs(), TimeUnit.MILLISECONDS, scheduler)
                     .doOnNext(dataFiles -> metrics.increment(CommitterMetrics.INVOCATION_COUNT))
