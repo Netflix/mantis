@@ -6,9 +6,10 @@ RUN apt-get -o Acquire::Check-Valid-Until=false -y update && \
     apt-get install -y gnupg && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
     apt-get install -y libevent-openssl-2.1.7 && \
+    apt-get install -y libcurl3-gnutls libcurl3-nss && \
     echo "deb http://repos.mesosphere.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/mesosphere.list && \
     apt-get -o Acquire::Check-Valid-Until=false -y update && \
-    apt-get install -y mesos && \
+    apt-get install -y mesos=1.3.2-2.0.1 && \
     apt-get clean
 
 COPY ./mantis-control-plane-server/build/install/mantis-control-plane-server/bin/* /apps/mantis/mantis-control-plane-server/bin/
