@@ -1,8 +1,10 @@
 #!/bin/sh
-#perl -i -p0e 's/<!-- START.*END -->\n*/`cat reference_links`/se' *.md
-#perl -i -p0e 's/<!-- START.*END -->\n*/`cat reference_links`/se' */*.md
-#perl -i -p0e 's/<!-- START.*END -->\n*/`cat reference_links`/se' */*/*.md
+
+perl -i -p0e 's/<!-- START.*END -->\n*/`cat reference_links`/se' *.md
+perl -i -p0e 's/<!-- START.*END -->\n*/`cat reference_links`/se' */*.md
+perl -i -p0e 's/<!-- START.*END -->\n*/`cat reference_links`/se' */*/*.md
 perl -i -p0e 's/<!-- START.*END -->\n*/`sed "s+SUBDIR++g" reference_links`/se' index.md
 perl -i -p0e 's/<!-- START.*END -->\n*/`sed "s+SUBDIR+..\/+g" reference_links`/se' *.md
 perl -i -p0e 's/<!-- START.*END -->\n*/`sed "s+SUBDIR+..\/..\/+g" reference_links`/se' */*.md
-perl -i -p0e 's/<!-- START.*END -->\n*/`sed "s+SUBDIR+..\/+g" reference_links`/se' */index.md
+perl -i -p0e 's/<!-- START.*END -->\n*/`sed "s+SUBDIR+..\/..\/..\/+g" reference_links`/se' */*/*.md
+#perl -i -p0e 's/<!-- START.*END -->\n*/`sed "s+SUBDIR+..\/+g" reference_links`/se' */index.md
