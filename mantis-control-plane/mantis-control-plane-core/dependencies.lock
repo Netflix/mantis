@@ -15,7 +15,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -158,7 +158,7 @@
             "locked": "1.1.1"
         },
         "com.google.code.findbugs:jsr305": {
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -268,7 +268,7 @@
             "locked": "1.1.1"
         },
         "com.google.code.findbugs:jsr305": {
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -396,7 +396,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -548,7 +548,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -686,7 +686,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -839,7 +839,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [

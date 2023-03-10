@@ -15,7 +15,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -219,7 +219,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -417,7 +417,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -675,7 +675,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
@@ -880,7 +880,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [

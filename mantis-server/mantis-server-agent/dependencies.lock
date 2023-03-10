@@ -38,7 +38,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "1.3.9"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -242,7 +242,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.0"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -420,7 +420,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.0"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -631,7 +631,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.0"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -853,7 +853,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "3.0.1"
+            "locked": "3.0.0"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
