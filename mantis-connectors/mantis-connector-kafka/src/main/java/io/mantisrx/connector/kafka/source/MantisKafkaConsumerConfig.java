@@ -16,6 +16,7 @@
 
 package io.mantisrx.connector.kafka.source;
 
+import io.mantisrx.common.MantisProperties;
 import io.mantisrx.connector.kafka.KafkaSourceParameters;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
@@ -101,7 +102,7 @@ public class MantisKafkaConsumerConfig extends ConsumerConfig {
     @VisibleForTesting
     static String getGroupId() {
 
-        String jobId = System.getenv("JOB_ID");
+        String jobId = MantisProperties.getProperty("JOB_ID");
         if (jobId != null && !jobId.isEmpty()) {
             LOGGER.info("default consumer groupId to {} if not overridden by job param", "mantis-kafka-source-" + jobId);
             return "mantis-kafka-source-" + jobId;

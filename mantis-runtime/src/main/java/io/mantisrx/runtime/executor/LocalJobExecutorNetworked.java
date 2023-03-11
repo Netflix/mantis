@@ -16,6 +16,7 @@
 
 package io.mantisrx.runtime.executor;
 
+import io.mantisrx.common.MantisProperties;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.MetricsServer;
@@ -183,7 +184,8 @@ public class LocalJobExecutorNetworked {
 
         // create job context
         Map parameterDefinitions = job.getParameterDefinitions();
-        final String user = Optional.ofNullable(System.getenv("USER")).orElse("userUnknown");
+        final String user = Optional.ofNullable(MantisProperties.getProperty("USER")).orElse(
+            "userUnknown");
         String jobId = String.format("localJob-%s-%d", user, (int) (Math.random() * 10000));
         logger.info("jobID {}", jobId);
         final ServiceLocator serviceLocator = lifecycle.getServiceLocator();

@@ -16,6 +16,7 @@
 
 package io.mantisrx.sourcejob.kafka.sink;
 
+import io.mantisrx.common.MantisProperties;
 import io.mantisrx.sourcejob.kafka.core.TaggedData;
 import io.mantisrx.sourcejob.kafka.core.utils.SourceJobConstants;
 import java.util.ArrayList;
@@ -57,11 +58,11 @@ public class TaggedEventFilter implements Func1<Map<String, List<String>>, Func1
 
         SourceEventFilter(List<String> terms) {
             this.terms = terms;
-            String jId = System.getenv("JOB_ID");
+            String jId = MantisProperties.getProperty("JOB_ID");
             if (jId != null && !jId.isEmpty()) {
                 jobId = jId;
             }
-            String jName = System.getenv("JOB_NAME");
+            String jName = MantisProperties.getProperty("JOB_NAME");
             if (jName != null && !jName.isEmpty()) {
                 jobName = jName;
             }
