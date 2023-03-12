@@ -219,36 +219,42 @@ public class ResourceUsagePayloadSetter implements Closeable {
         if (prevStatsGatheredAt == 0L) {
             setPreviousStats(usage);
             return null;
+        } else {
+            double elapsedInSecs =
+                ((double) System.currentTimeMillis() - (double) prevStatsGatheredAt) / 1000.0;
+            double cpuUsage = ((usage.getCpusSystemTimeSecs() - prev_cpus_system_time_secs) / elapsedInSecs) +
+                ((usage.getCpusUserTimeSecs() - prev_cpus_user_time_secs) / elapsedInSecs);
+            if (cpuUsage > peakCpuUsage) {
+                peakCpuUsage = cpuUsage;
+            }
+            if (cpuUsage > usage.getCpusLimit()) {
+                logger.warn("CPU usage {} greater than limit {}, usage={}, elapsedInSecs={}", cpuUsage, usage.getCpusLimit(), usage, elapsedInSecs);
+            }
+            if (usage.getMemRssBytes() > peakTotMem)
+                peakTotMem = usage.getMemRssBytes();
+            double memCache = Math.max(0.0, usage.getMemRssBytes() - usage.getMemAnonBytes());
+            if (memCache > peakMemCache)
+                peakMemCache = memCache;
+            double readBw = (usage.getNetworkReadBytes() - prev_bytes_read) / elapsedInSecs; // TODO check if byteCounts are already rate counts
+            double writeBw = (usage.getNetworkWriteBytes() - prev_bytes_written) / elapsedInSecs;
+            if (readBw > peakBytesRead)
+                peakBytesRead = readBw;
+            if (writeBw > peakBytesWritten)
+                peakBytesWritten = writeBw;
+            // set previous values to new values
+            setPreviousStats(usage);
+            return new StatusPayloads.ResourceUsage(
+                usage.getCpusLimit(),
+                cpuUsage,
+                peakCpuUsage,
+                StorageUnit.BYTES.toMBs(usage.getMemLimit()),
+                StorageUnit.BYTES.toMBs(memCache),
+                StorageUnit.BYTES.toMBs(peakMemCache),
+                StorageUnit.BYTES.toMBs(usage.getMemRssBytes()),
+                StorageUnit.BYTES.toMBs(peakTotMem),
+                Math.max(readBw, writeBw),
+                Math.max(peakBytesRead, peakBytesWritten));
         }
-        double duration = ((double) System.currentTimeMillis() - (double) prevStatsGatheredAt) / 1000.0;
-        double cpuSecs = (usage.getCpusSystemTimeSecs() - prev_cpus_system_time_secs) / duration +
-                (usage.getCpusUserTimeSecs() - prev_cpus_user_time_secs) / duration;
-        if (cpuSecs > peakCpuUsage)
-            peakCpuUsage = cpuSecs;
-        if (usage.getMemRssBytes() > peakTotMem)
-            peakTotMem = usage.getMemRssBytes();
-        double memCache = Math.max(0.0, usage.getMemRssBytes() - usage.getMemAnonBytes());
-        if (memCache > peakMemCache)
-            peakMemCache = memCache;
-        double readBw = (usage.getNetworkReadBytes() - prev_bytes_read) / duration; // TODO check if byteCounts are already rate counts
-        double writeBw = (usage.getNetworkWriteBytes() - prev_bytes_written) / duration;
-        if (readBw > peakBytesRead)
-            peakBytesRead = readBw;
-        if (writeBw > peakBytesWritten)
-            peakBytesWritten = writeBw;
-        // set previous values to new values
-        setPreviousStats(usage);
-        return new StatusPayloads.ResourceUsage(
-            usage.getCpusLimit(),
-            cpuSecs,
-            peakCpuUsage,
-            StorageUnit.BYTES.toMBs(usage.getMemLimit()),
-            StorageUnit.BYTES.toMBs(memCache),
-            StorageUnit.BYTES.toMBs(peakMemCache),
-            StorageUnit.BYTES.toMBs(usage.getMemRssBytes()),
-            StorageUnit.BYTES.toMBs(peakTotMem),
-            Math.max(readBw, writeBw),
-            Math.max(peakBytesRead, peakBytesWritten));
     }
 
     private void setPreviousStats(Usage usage) {

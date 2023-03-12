@@ -40,8 +40,10 @@ class CpuAcctsSubsystemProcess implements SubsystemProcess {
         Optional<Long> system = Optional.ofNullable(stat.get("system"));
 
         if (user.isPresent() && system.isPresent()) {
-            resourceUsageBuilder.cpusUserTimeSecs(user.get());
-            resourceUsageBuilder.cpusSystemTimeSecs(system.get());
+            // the user usage and the system usage is measured in jiffies.
+            // Hence, the division by 100.0.
+            resourceUsageBuilder.cpusUserTimeSecs(user.get() / (100.0));
+            resourceUsageBuilder.cpusSystemTimeSecs(system.get() / (100.0));
         } else {
             log.warn("Expected metrics not found; Found stats={}", stat);
         }
