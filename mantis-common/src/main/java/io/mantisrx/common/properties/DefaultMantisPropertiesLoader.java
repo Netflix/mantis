@@ -16,6 +16,7 @@
 
 package io.mantisrx.common.properties;
 
+import io.mantisrx.common.MantisProperties;
 import java.util.Map;
 import java.util.Properties;
 
@@ -37,17 +38,9 @@ public class DefaultMantisPropertiesLoader implements MantisPropertiesLoader {
     @Override
     public String getStringValue(String name, String defaultVal) {
         if (name != null) {
-            if (env.containsKey("JOB_PARAM_" + name)) {
-                System.out.println(" Parameter overridden in job " + name + " value " + env.get("JOB_PARAM_" + name));
-                return env.get("JOB_PARAM_" + name);
-            } else if (env.containsKey(name)) {
-                System.out.println(" Property set on env " + name + " value " + env.get(name));
-                return env.get(name);
-            }
-        } //
+            return MantisProperties.getProperty("JOB_PARAM_" + name, MantisProperties.getProperty(name, defaultVal));
+        }
         return defaultVal;
-
-
     }
 
     @Override

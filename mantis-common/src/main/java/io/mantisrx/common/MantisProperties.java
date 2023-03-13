@@ -34,10 +34,18 @@ public class MantisProperties {
 
     public String getStringValue(String name) {
         if (name != null && env.containsKey(name)) {
-            return env.get(name);
+            return System.getProperty(name, env.get(name));
         } else {
             return null;
         }
 
+    }
+
+    public static String getProperty(String key) {
+        return System.getProperty(key, System.getenv(key));
+    }
+
+    public static String getProperty(String key, String defaultVal) {
+        return System.getProperty(key, defaultVal);
     }
 }

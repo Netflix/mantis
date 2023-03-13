@@ -22,8 +22,11 @@ public class MetricStringConstants {
     public static final String MANTIS_JOB_NAME = "mantisJobName";
     public static final String MANTIS_JOB_ID = "mantisJobId";
     public static final String MANTIS_STAGE_NUM = "mantisStageNum";
+    public static final String MANTIS_WORKER_STAGE_NUMBER = "mantisWorkerStageNumber";
+
     public static final String MANTIS_WORKER_INDEX = "mantisWorkerIndex";
     public static final String MANTIS_WORKER_NUM = "mantisWorkerNum";
+    public static final String MANTIS_WORKER_NUMBER = "mantisWorkerNumber";
     // Resource Usage metrics
     public static final String RESOURCE_USAGE_METRIC_GROUP = "ResourceUsage";
     public static final String CPU_PCT_LIMIT = "cpuPctLimit";

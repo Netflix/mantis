@@ -50,6 +50,10 @@ public class MetricsFactory {
     commonTags.put(MetricStringConstants.MANTIS_JOB_NAME, request.getJobName());
     commonTags.put(MetricStringConstants.MANTIS_JOB_ID, request.getJobId());
 
+    // adding the following for mesos metrics back compat
+    commonTags.put(MetricStringConstants.MANTIS_WORKER_NUMBER, Integer.toString(request.getWorkerNumber()));
+    commonTags.put(MetricStringConstants.MANTIS_WORKER_STAGE_NUMBER, Integer.toString(request.getStage()));
+
     return commonTags;
   }
 }

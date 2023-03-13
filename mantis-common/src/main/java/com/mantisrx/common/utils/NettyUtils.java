@@ -16,6 +16,7 @@
 
 package com.mantisrx.common.utils;
 
+import io.mantisrx.common.MantisProperties;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.channel.SingleNioLoopProvider;
 
@@ -43,7 +44,8 @@ public class NettyUtils {
     public static void setNettyThreads() {
         // NJ
 
-        String useSingleThreadStr = System.getenv("JOB_PARAM_mantis.netty.useSingleThread");
+        String useSingleThreadKey = "JOB_PARAM_mantis.netty.useSingleThread";
+        String useSingleThreadStr = MantisProperties.getProperty(useSingleThreadKey);
 
         if (useSingleThreadStr != null && !useSingleThreadStr.isEmpty() && useSingleThreadStr.equalsIgnoreCase("true")) {
             RxNetty.useEventLoopProvider(new SingleNioLoopProvider(1));

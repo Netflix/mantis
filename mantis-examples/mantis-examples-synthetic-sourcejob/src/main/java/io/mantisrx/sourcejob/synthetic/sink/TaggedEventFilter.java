@@ -19,6 +19,7 @@ package io.mantisrx.sourcejob.synthetic.sink;
 import static com.mantisrx.common.utils.MantisSourceJobConstants.CLIENT_ID_PARAMETER_NAME;
 import static com.mantisrx.common.utils.MantisSourceJobConstants.SUBSCRIPTION_ID_PARAM_NAME;
 
+import io.mantisrx.common.MantisProperties;
 import io.mantisrx.sourcejob.synthetic.core.TaggedData;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,11 +63,11 @@ public class TaggedEventFilter implements Func1<Map<String, List<String>>, Func1
 
         SourceEventFilter(List<String> terms) {
             this.terms = terms;
-            String jId = System.getenv("JOB_ID");
+            String jId = MantisProperties.getProperty("JOB_ID");
             if (jId != null && !jId.isEmpty()) {
                 jobId = jId;
             }
-            String jName = System.getenv("JOB_NAME");
+            String jName = MantisProperties.getProperty("JOB_NAME");
             if (jName != null && !jName.isEmpty()) {
                 jobName = jName;
             }

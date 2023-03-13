@@ -16,6 +16,7 @@
 
 package io.mantisrx.sourcejobs.publish.core;
 
+import io.mantisrx.common.MantisProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,7 @@ public class Utils {
 
     public static String getEnvVariable(String envVariableName, String defaultValue) {
 
-        String v = System.getenv(envVariableName);
+        String v = MantisProperties.getProperty(envVariableName);
         if (v != null && !v.isEmpty()) {
             return v;
         }

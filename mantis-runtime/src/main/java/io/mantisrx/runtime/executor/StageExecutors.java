@@ -24,7 +24,18 @@ import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.rx.MonitorOperator;
-import io.mantisrx.runtime.*;
+import io.mantisrx.runtime.Context;
+import io.mantisrx.runtime.GroupToGroup;
+import io.mantisrx.runtime.GroupToScalar;
+import io.mantisrx.runtime.Groups;
+import io.mantisrx.runtime.KeyToKey;
+import io.mantisrx.runtime.KeyToScalar;
+import io.mantisrx.runtime.ScalarToGroup;
+import io.mantisrx.runtime.ScalarToKey;
+import io.mantisrx.runtime.ScalarToScalar;
+import io.mantisrx.runtime.SinkHolder;
+import io.mantisrx.runtime.SourceHolder;
+import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.computation.Computation;
 import io.mantisrx.runtime.markers.MantisMarker;
 import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
@@ -309,26 +320,18 @@ public class StageExecutors {
      *
      * @return
      */
-    private static int resolveStageConcurrency(int givenStageConcurrency) {
+    private static int resolveStageConcurrency(Context context, int givenStageConcurrency) {
         if (givenStageConcurrency == StageConfig.DEFAULT_STAGE_CONCURRENCY) {
             String jobParamPrefix = "JOB_PARAM_";
             String stageConcurrencyParam = jobParamPrefix + STAGE_CONCURRENCY;
-            String concurrency = System.getenv(stageConcurrencyParam);
-            logger.info("Job param: " + stageConcurrencyParam + " value: " + concurrency);
-            // check if env property is set.
-            if (concurrency != null && !concurrency.isEmpty()) {
-                logger.info("Job param: " + stageConcurrencyParam + " value: " + concurrency);
-                try {
-                    int jobParamConcurrency = Integer.parseInt(concurrency);
-                    if (jobParamConcurrency <= 0) {
-                        return givenStageConcurrency;
-                    } else {
-                        return jobParamConcurrency;
-                    }
-                } catch (NumberFormatException ignored) {
+            // Need to be compatible for both Mesos and TaskExecutor.
+            int jobParamConcurrency = (int) context.getParameters().get(STAGE_CONCURRENCY, givenStageConcurrency);
 
-                }
-                // check if System property has been set (useful for local debugging)
+            logger.info("Job param: " + stageConcurrencyParam + " value: " + jobParamConcurrency);
+            if (jobParamConcurrency <= 0) {
+                return givenStageConcurrency;
+            } else {
+                return jobParamConcurrency;
             }
         }
         return givenStageConcurrency;
@@ -339,11 +342,17 @@ public class StageExecutors {
                                                                              Observable<Observable<T>> source, Context context) {
 
         StageConfig.INPUT_STRATEGY inputType = stage.getInputStrategy();
-        logger.info("Setting up ScalarToScalar stage with input type: " + inputType);
+        logger.info("Setting up ScalarToScalar stage with input type: {}", inputType);
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
 
-            return executeInnersInParallel(source, stage.getComputation(), context, false, Integer.MAX_VALUE, resolveStageConcurrency(stage.getConcurrency()));
+            return executeInnersInParallel(
+                source,
+                stage.getComputation(),
+                context,
+                false,
+                Integer.MAX_VALUE,
+                resolveStageConcurrency(context, stage.getConcurrency()));
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, false, Integer.MAX_VALUE);
@@ -358,7 +367,8 @@ public class StageExecutors {
         logger.info("Setting up ScalarToKey stage with input type: " + inputType);
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
-            return executeInnersInParallel(source, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds(), resolveStageConcurrency(stage.getConcurrency()));
+            return executeInnersInParallel(source, stage.getComputation(), context, true,
+                stage.getKeyExpireTimeSeconds(), resolveStageConcurrency(context, stage.getConcurrency()));
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds());
@@ -374,7 +384,8 @@ public class StageExecutors {
         logger.info("Setting up ScalarToGroup stage with input type: " + inputType);
         // check if job overrides the default input strategy
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
-            return executeInnersInParallel(source, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(stage.getConcurrency()));
+            return executeInnersInParallel(source, stage.getComputation(), context, true,
+                stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(context, stage.getConcurrency()));
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
             Observable<Observable<T>> merged = Observable.just(Observable.merge(source));
             return executeInners(merged, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds());
@@ -434,7 +445,8 @@ public class StageExecutors {
 
         if (inputType == StageConfig.INPUT_STRATEGY.CONCURRENT) {
             logger.info("Execute Groups in PARALLEL!!!!");
-            return executeMantisGroupsInParallel(source, stage.getComputation(), context, true, stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(stage.getConcurrency()));
+            return executeMantisGroupsInParallel(source, stage.getComputation(), context, true,
+                stage.getKeyExpireTimeSeconds(),resolveStageConcurrency(context, stage.getConcurrency()));
         } else if (inputType == StageConfig.INPUT_STRATEGY.SERIAL) {
 
             Observable<Observable<MantisGroup<K, T>>> merged = Observable.just(Observable.merge(source));
