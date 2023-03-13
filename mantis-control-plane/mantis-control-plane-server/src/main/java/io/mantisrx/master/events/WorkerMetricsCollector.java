@@ -29,6 +29,7 @@ import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.domain.JobId;
+import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledService;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.base.Preconditions;
 import io.netty.util.internal.ConcurrentSet;
@@ -126,7 +127,7 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
             }
 
             final WorkerMetrics workerMetrics = getWorkerMetrics(
-                metadata.getCluster().orElse("unknown"));
+                metadata.getResourceCluster().map(ClusterID::getResourceID).orElse("mesos"));
 
             switch (workerState) {
                 case Accepted:
