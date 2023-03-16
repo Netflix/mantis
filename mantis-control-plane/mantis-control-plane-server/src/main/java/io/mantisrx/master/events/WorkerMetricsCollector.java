@@ -177,7 +177,10 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
         public WorkerMetrics(final String clusterName) {
             MetricGroupId metricGroupId =
-                new MetricGroupId("WorkerMetricsCollector", Tag.of("cluster", clusterName));
+                new MetricGroupId(
+                    "WorkerMetricsCollector",
+                    Tag.of("cluster", clusterName),
+                    Tag.of("resourceCluster", clusterName));
             Metrics m = new Metrics.Builder()
                 .id(metricGroupId)
                 .addTimer(SCHEDULING_DURATION)
