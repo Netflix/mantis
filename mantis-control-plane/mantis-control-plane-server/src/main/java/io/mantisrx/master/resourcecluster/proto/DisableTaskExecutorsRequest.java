@@ -22,4 +22,6 @@ import lombok.Value;
 @Value
 public class DisableTaskExecutorsRequest {
     Map<String, String> attributes;
+
+    Long expirationDurationInHours;
 }
