@@ -265,9 +265,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors called with body {}", clusterID, request);
             return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(
                 request.getAttributes(),
-                request.getExpirationDurationInHours() == null || request.getExpirationDurationInHours() <= 0L ?
-                    Instant.now().plus(Duration.ofHours(24)) :
-                    Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
+                Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
         });
     }
 

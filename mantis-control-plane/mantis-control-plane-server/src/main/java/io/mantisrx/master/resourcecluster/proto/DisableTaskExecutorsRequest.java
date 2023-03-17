@@ -17,11 +17,14 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import java.util.Map;
+import lombok.NonNull;
 import lombok.Value;
 
 @Value
 public class DisableTaskExecutorsRequest {
+    @NonNull
     Map<String, String> attributes;
 
+    @NonNull
     Long expirationDurationInHours;
 }
