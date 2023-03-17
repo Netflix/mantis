@@ -45,6 +45,7 @@ public class ResourceClustersPayloads {
 
     public static final String RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_PAYLOAD = "" +
         "{\n" +
+        "  \"expirationDurationInHours\": 19,\n" +
         "  \"attributes\": {\n" +
         "    \"attr1\": \"attr1\"\n" +
         "  }\n" +

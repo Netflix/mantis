@@ -70,6 +70,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -178,7 +179,11 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     public void testDisableTaskExecutorsRoute() {
         // set up the mocks
         ResourceCluster resourceCluster = mock(ResourceCluster.class);
-        when(resourceCluster.disableTaskExecutorsFor(ArgumentMatchers.eq(RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS), ArgumentMatchers.any()))
+        when(resourceCluster.disableTaskExecutorsFor(
+            ArgumentMatchers.eq(RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS),
+            ArgumentMatchers.argThat(expiry ->
+                expiry.isAfter(Instant.now().plus(Duration.ofHours(18))) &&
+                    expiry.isBefore(Instant.now().plus(Duration.ofHours(19))))))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
 
