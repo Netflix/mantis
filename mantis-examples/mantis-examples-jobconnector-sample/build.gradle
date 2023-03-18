@@ -23,5 +23,4 @@ dependencies {
     implementation "io.mantisrx:mantis-connector-job:$mantisConnectorsVersion"
 
     implementation libraries.slf4jApi
-    implementation libraries.slf4jLog4j12
 }

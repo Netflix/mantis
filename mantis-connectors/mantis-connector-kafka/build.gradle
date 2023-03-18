@@ -30,12 +30,8 @@ dependencies {
 
     api libraries.rxJava
     api "com.netflix.spectator:spectator-api:$spectatorVersion"
-    api "com.netflix.archaius:archaius2-api:$archaiusVersion"
-    api "com.netflix.archaius:archaius2-core:$archaiusVersion"
 
     testImplementation libraries.junit4
     testImplementation project(':mantis-runtime').sourceSets.test.output
     testImplementation libraries.mockitoAll
-    testImplementation "com.github.tomakehurst:wiremock-jre8:2.21.0"
-    testCompileOnly "com.netflix.archaius:archaius2-core:$archaiusVersion"
 }

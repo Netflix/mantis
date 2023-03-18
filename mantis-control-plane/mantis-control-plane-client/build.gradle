@@ -23,6 +23,5 @@ dependencies {
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
-    testImplementation libraries.spectatorApi
     testImplementation(testFixtures(project(":mantis-common")))
 }

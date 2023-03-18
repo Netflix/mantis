@@ -15,9 +15,7 @@ task execute(type: JavaExec) {
 
 dependencies {
     implementation project(':mantis-runtime')
-    implementation "com.netflix.spectator:spectator-api:1.3.+"
     implementation 'com.twitter:hbc-core:2.2.0'
 
     implementation libraries.slf4jApi
-    implementation libraries.slf4jLog4j12
 }

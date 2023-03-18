@@ -3,6 +3,4 @@ apply plugin: 'java-library'
 dependencies {
     implementation project(':mantis-runtime')
 
-    implementation libraries.slf4jApi
-    implementation libraries.slf4jLog4j12
 }

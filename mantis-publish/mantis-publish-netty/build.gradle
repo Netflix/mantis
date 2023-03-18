@@ -32,7 +32,6 @@ dependencies {
 
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
-    testImplementation libraries.slf4jLog4j12
 }
 
 test {
