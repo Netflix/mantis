@@ -16,11 +16,11 @@
 
 package io.mantisrx.runtime.source.http;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,8 +34,8 @@ import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
@@ -52,7 +52,7 @@ public class ClientResumePoliciesTest {
     private HttpClientRequest<String> request;
 
     @SuppressWarnings("unchecked")
-    @Before
+    @BeforeEach
     public void setup() {
         observer = new TestSourceObserver();
         client = mock(HttpClient.class);
@@ -80,8 +80,8 @@ public class ClientResumePoliciesTest {
                 assertNotNull(resumedOnError);
                 assertEquals(RESPONSE_CONTENT, resumedOnError.toBlocking().first().getContent().toBlocking().first());
             } else {
-                assertNull("The resumed on completion should be null as max repeat is passed", resumedOnCompleted);
-                assertNull("The resumed on error should be null as max repeat is passed", resumedOnError);
+                assertNull(resumedOnCompleted,"The resumed on completion should be null as max repeat is passed");
+                assertNull(resumedOnError, "The resumed on error should be null as max repeat is passed");
             }
         }
 
@@ -116,8 +116,8 @@ public class ClientResumePoliciesTest {
                 assertNotNull(resumedOnCompleted);
                 assertNotNull(resumedOnError);
             } else {
-                assertNull("The resumed on completion should be null as max repeat is passed", resumedOnCompleted);
-                assertNull("The resumed on error should be null as max repeat is passed", resumedOnError);
+                assertNull(resumedOnCompleted, "The resumed on completion should be null as max repeat is passed");
+                assertNull(resumedOnError, "The resumed on error should be null as max repeat is passed");
             }
 
             resumedOnCompleted.subscribe(new Subscriber<HttpClientResponse<String>>() {
@@ -146,7 +146,7 @@ public class ClientResumePoliciesTest {
 
         long elapsed = end.get();
         long maxDelay = delay + delay / 2;
-        assertTrue(String.format("The delay should be more than %d milliseconds, but no more than %d milliseconds. The actual: %d", repeat * delay, repeat * maxDelay, elapsed), elapsed >= repeat * delay && elapsed <= repeat * maxDelay);
+        assertTrue(elapsed >= repeat * delay && elapsed <= repeat * maxDelay, String.format("The delay should be more than %d milliseconds, but no more than %d milliseconds. The actual: %d", repeat * delay, repeat * maxDelay, elapsed));
     }
 
     @Test
@@ -196,7 +196,7 @@ public class ClientResumePoliciesTest {
 
         long elapsed = end.get();
         long maxDelay = delay + delay / 2;
-        assertTrue(String.format("The delay should be more than %d milliseconds, but no more than %d milliseconds. The actual: %d", repeat * delay, repeat * maxDelay, elapsed), elapsed >= repeat * delay && elapsed <= repeat * maxDelay);
+        assertTrue(elapsed >= repeat * delay && elapsed <= repeat * maxDelay, String.format("The delay should be more than %d milliseconds, but no more than %d milliseconds. The actual: %d", repeat * delay, repeat * maxDelay, elapsed));
     }
 
     @Test
@@ -246,6 +246,6 @@ public class ClientResumePoliciesTest {
 
         long elapsed = end.get();
         long maxDelay = delay + delay / 2;
-        assertTrue(String.format("The delay should be more than %d millionseconds, but no more than %d millionseconds. The actual: %d", repeat * delay, repeat * maxDelay, elapsed), elapsed >= repeat * delay && elapsed <= repeat * maxDelay);
+        assertTrue(elapsed >= repeat * delay && elapsed <= repeat * maxDelay, String.format("The delay should be more than %d millionseconds, but no more than %d millionseconds. The actual: %d", repeat * delay, repeat * maxDelay, elapsed));
     }
 }

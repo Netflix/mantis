@@ -22,9 +22,9 @@ import io.reactivex.mantis.remote.observable.slotting.RoundRobin;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Notification;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
@@ -41,7 +41,7 @@ import rx.subjects.ReplaySubject;
 
 public class RemoteObservableTest {
 
-    @After
+    @AfterEach
     public void waitForServerToShutdown() {
         try {
             Thread.sleep(200);
@@ -66,7 +66,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -96,7 +96,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(15150, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(15150, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -116,7 +116,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc1).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
         // connect
@@ -125,7 +125,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc2).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
         // connect
@@ -134,7 +134,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc3).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -165,7 +165,7 @@ public class RemoteObservableTest {
             MathObservable.sumInteger(oc1).toBlocking().forEach(new Action1<Integer>() {
                 @Override
                 public void call(Integer t1) {
-                    Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                    Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
                 }
             });
         } catch (RuntimeException e) {
@@ -176,7 +176,7 @@ public class RemoteObservableTest {
             MathObservable.sumInteger(oc2).toBlocking().forEach(new Action1<Integer>() {
                 @Override
                 public void call(Integer t1) {
-                    Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                    Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
                 }
             });
         } catch (RuntimeException e) {
@@ -187,13 +187,13 @@ public class RemoteObservableTest {
             MathObservable.sumInteger(oc3).toBlocking().forEach(new Action1<Integer>() {
                 @Override
                 public void call(Integer t1) {
-                    Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                    Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
                 }
             });
         } catch (RuntimeException e) {
             errorCount++;
         }
-        Assert.assertEquals(3, errorCount);
+        Assertions.assertEquals(3, errorCount);
     }
 
 
@@ -219,7 +219,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -245,30 +245,32 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testFailedToConnect() throws InterruptedException {
-        // setup
-        Observable<Integer> os = Observable.range(0, 101);
-        // serve
-        PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
-        int serverPort = portSelector.acquirePort();
-        int wrongPort = portSelector.acquirePort();
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            // setup
+            Observable<Integer> os = Observable.range(0, 101);
+            // serve
+            PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
+            int serverPort = portSelector.acquirePort();
+            int wrongPort = portSelector.acquirePort();
 
-        RemoteRxServer server = RemoteObservable.serve(serverPort, os, Codecs.integer());
-        server.start();
-        // connect
-        Observable<Integer> oc = RemoteObservable.connect("localhost", wrongPort, Codecs.integer());
-        // assert
-        MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
-            @Override
-            public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
-            }
+            RemoteRxServer server = RemoteObservable.serve(serverPort, os, Codecs.integer());
+            server.start();
+            // connect
+            Observable<Integer> oc = RemoteObservable.connect("localhost", wrongPort, Codecs.integer());
+            // assert
+            MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
+                @Override
+                public void call(Integer t1) {
+                    Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                }
+            });
         });
     }
 
@@ -317,7 +319,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(ro1).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
         ro2.reduce(new Func2<String, String, String>() {
@@ -328,7 +330,7 @@ public class RemoteObservableTest {
         }).toBlocking().forEach(new Action1<String>() {
             @Override
             public void call(String t1) {
-                Assert.assertEquals("abcde", t1);
+                Assertions.assertEquals("abcde", t1);
             }
         });
     }
@@ -363,7 +365,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(20200, t1.intValue()); // sum of number 0-200
+                Assertions.assertEquals(20200, t1.intValue()); // sum of number 0-200
             }
         });
     }
@@ -400,7 +402,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(45150, t1.intValue()); // sum of number 0-200
+                Assertions.assertEquals(45150, t1.intValue()); // sum of number 0-200
             }
         });
     }
@@ -442,7 +444,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(80200, t1.intValue()); // sum of number 0-200
+                Assertions.assertEquals(80200, t1.intValue()); // sum of number 0-200
             }
         });
     }
@@ -475,7 +477,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(merged).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
 
@@ -528,30 +530,32 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc2).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testError() {
-        PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
-        Observable<Integer> os = Observable.create(new OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                subscriber.onNext(1);
-                subscriber.onError(new Exception("test-exception"));
-            }
-        });
-        int serverPort = portSelector.acquirePort();
-        RemoteObservable.serve(serverPort, os, Codecs.integer())
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
+            Observable<Integer> os = Observable.create(new OnSubscribe<Integer>() {
+                @Override
+                public void call(Subscriber<? super Integer> subscriber) {
+                    subscriber.onNext(1);
+                    subscriber.onError(new Exception("test-exception"));
+                }
+            });
+            int serverPort = portSelector.acquirePort();
+            RemoteObservable.serve(serverPort, os, Codecs.integer())
                 .start();
-        Observable<Integer> oc = RemoteObservable.connect("localhost", serverPort, Codecs.integer());
-        MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
-            @Override
-            public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
-            }
+            Observable<Integer> oc = RemoteObservable.connect("localhost", serverPort, Codecs.integer());
+            MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
+                @Override
+                public void call(Integer t1) {
+                    Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                }
+            });
         });
     }
 
@@ -586,12 +590,12 @@ public class RemoteObservableTest {
         Observable<Integer> oc = RemoteObservable.connect("localhost", serverPort, Codecs.integer());
         Subscription sub = oc.subscribe();
 
-        Assert.assertEquals(false, sub.isUnsubscribed());
+        Assertions.assertEquals(false, sub.isUnsubscribed());
         Thread.sleep(1000); // allow a few iterations
         sub.unsubscribe();
         Thread.sleep(5000); // allow time for unsubscribe to propagate
-        Assert.assertEquals(true, sub.isUnsubscribed());
-        Assert.assertEquals(true, sourceSubscriptionUnsubscribed.getValue());
+        Assertions.assertEquals(true, sub.isUnsubscribed());
+        Assertions.assertEquals(true, sourceSubscriptionUnsubscribed.getValue());
     }
 
 
@@ -633,7 +637,7 @@ public class RemoteObservableTest {
         Subscription subscription = oc2.subscribe();
 
         // check client subscription
-        Assert.assertEquals(false, subscription.isUnsubscribed());
+        Assertions.assertEquals(false, subscription.isUnsubscribed());
 
         Thread.sleep(4000); // allow a few iterations to complete
 
@@ -641,9 +645,9 @@ public class RemoteObservableTest {
         subscription.unsubscribe();
         Thread.sleep(7000); // allow time for unsubscribe to propagate
         // check client
-        Assert.assertEquals(true, subscription.isUnsubscribed());
+        Assertions.assertEquals(true, subscription.isUnsubscribed());
         // check source
-        Assert.assertEquals(true, sourceSubscriptionUnsubscribed.getValue());
+        Assertions.assertEquals(true, sourceSubscriptionUnsubscribed.getValue());
     }
 
     @Test
@@ -680,7 +684,7 @@ public class RemoteObservableTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(2550, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(2550, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -715,7 +719,7 @@ public class RemoteObservableTest {
                 }
             }
         });
-        Assert.assertEquals(true, completed.getValue());
+        Assertions.assertEquals(true, completed.getValue());
     }
 
 }

@@ -31,5 +31,5 @@ dependencies {
     }
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
 }

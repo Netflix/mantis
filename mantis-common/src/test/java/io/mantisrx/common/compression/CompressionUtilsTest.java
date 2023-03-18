@@ -15,7 +15,7 @@
  */
 package io.mantisrx.common.compression;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.common.MantisServerSentEvent;
 import java.io.BufferedReader;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CompressionUtilsTest {
 
@@ -56,7 +56,7 @@ public class CompressionUtilsTest {
         List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
 
         List<String> actual = result.stream().map(e -> e.getEventAsString()).collect(Collectors.toList());
-        assertEquals("Delimiter: '" + delimiter + "'", Arrays.asList(event1,event2,event3), actual);
+        assertEquals(Arrays.asList(event1,event2,event3), actual, "Delimiter: '" + delimiter + "'");
     }
 
     @Test
@@ -76,7 +76,7 @@ public class CompressionUtilsTest {
         List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
 
         List<String> actual = result.stream().map(e -> e.getEventAsString()).collect(Collectors.toList());
-        assertEquals("Delimiter: '" + delimiter + "'", Arrays.asList(event1,event2,event3), actual);
+        assertEquals(Arrays.asList(event1,event2,event3), actual, "Delimiter: '" + delimiter + "'");
     }
 
     @Test
@@ -102,7 +102,7 @@ public class CompressionUtilsTest {
         List<MantisServerSentEvent> result = CompressionUtils.tokenize(reader, delimiter);
 
         List<String> actual = result.stream().map(e -> e.getEventAsString()).collect(Collectors.toList());
-        assertEquals("Delimiter: '" + delimiter + "'", Arrays.asList(event1,event2,event3), actual);
+        assertEquals(Arrays.asList(event1,event2,event3), actual, "Delimiter: '" + delimiter + "'");
     }
 
     @Test

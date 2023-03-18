@@ -17,5 +17,5 @@
 dependencies {
     api libraries.mantisShaded
 
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
 }

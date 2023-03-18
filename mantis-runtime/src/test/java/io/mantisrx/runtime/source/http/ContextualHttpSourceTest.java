@@ -23,9 +23,9 @@ import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEven
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SOURCE_COMPLETED;
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ENDED;
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_ESTABLISHED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.source.Index;
@@ -44,11 +44,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -64,7 +64,7 @@ public class ContextualHttpSourceTest {
     private TestSourceObserver sourceObserver = new TestSourceObserver();
     // Just make sure the unused port is out side the range of possible ports: [SEED_PORT, SEED_PORT + PORT_RANGE)
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         int portStart = new Random().nextInt(PORT_RANGE) + SEED_PORT;
 
@@ -72,12 +72,12 @@ public class ContextualHttpSourceTest {
         localServerProvider.start(3, portStart);
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdown() throws Exception {
         localServerProvider.shutDown();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         sourceObserver = new TestSourceObserver();
     }
@@ -137,27 +137,27 @@ public class ContextualHttpSourceTest {
             fail(String.format("Waited at least %d seconds for the test to finish. Something is wrong", waitSeconds));
         }
 
-        assertEquals("There should be as many as provided servers", localServerProvider.serverSize(), connectedServers.size());
-        Assert.assertEquals(String.format("%d servers => the result has %d times of a single stream", localServerProvider.serverSize(), localServerProvider.serverSize()), counter.get(), RequestProcessor.smallStreamContent.size() * localServerProvider.serverSize());
+        assertEquals(localServerProvider.serverSize(), connectedServers.size(), "There should be as many as provided servers");
+        Assertions.assertEquals(counter.get(), RequestProcessor.smallStreamContent.size() * localServerProvider.serverSize(), String.format("%d servers => the result has %d times of a single stream", localServerProvider.serverSize(), localServerProvider.serverSize()));
         for (String data : RequestProcessor.smallStreamContent) {
-            assertEquals(String.format("%d servers => %d identical copies per message", localServerProvider.serverSize(), localServerProvider.serverSize()), localServerProvider.serverSize(), result.get(data).get());
+            assertEquals(localServerProvider.serverSize(), result.get(data).get(), String.format("%d servers => %d identical copies per message", localServerProvider.serverSize(), localServerProvider.serverSize()));
         }
 
         for (ServerInfo server : localServerProvider.getServerInfos()) {
-            assertEquals("There should be one completion per server", 1, sourceObserver.getCount(server, EventType.SOURCE_COMPLETED));
-            assertEquals("There should be one un-subscription per server", 1, sourceObserver.getCount(server, EventType.CONNECTION_UNSUBSCRIBED));
-            assertEquals("There should be no error", 0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED));
-            assertEquals("There should be one connection per server", 1, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED));
+            assertEquals(1, sourceObserver.getCount(server, EventType.SOURCE_COMPLETED), "There should be one completion per server");
+            assertEquals(1, sourceObserver.getCount(server, EventType.CONNECTION_UNSUBSCRIBED), "There should be one un-subscription per server");
+            assertEquals(0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED), "There should be no error");
+            assertEquals(1, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED), "There should be one connection per server");
         }
 
-        assertEquals("There should be one completions", 1, sourceObserver.getCompletionCount());
+        assertEquals(1, sourceObserver.getCompletionCount());
         assertEquals(0, sourceObserver.getErrorCount());
 
         Set<EventType> events = sourceObserver.getEvents();
         assertEquals(EXPECTED_EVENTS_SETS, events);
 
         for (EventType event : events) {
-            assertEquals("Each event should be recorded exactly once per server", localServerProvider.serverSize(), sourceObserver.getEventCount(event));
+            assertEquals(localServerProvider.serverSize(), sourceObserver.getEventCount(event), "Each event should be recorded exactly once per server");
         }
 
     }

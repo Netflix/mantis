@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker.jobmaster.control.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 

@@ -15,12 +15,12 @@
  */
 package io.mantisrx.server.master.resourcecluster;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TaskExecutorRegistrationTest {
     private final JsonSerializer serializer = new JsonSerializer();

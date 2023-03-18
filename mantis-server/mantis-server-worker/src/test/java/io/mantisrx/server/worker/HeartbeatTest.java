@@ -19,8 +19,8 @@ package io.mantisrx.server.worker;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.StatusPayloads;
 import java.util.List;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 
 public class HeartbeatTest {
@@ -35,14 +35,14 @@ public class HeartbeatTest {
         heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, "" + val2);
         final Status currentHeartbeatStatus = heartbeat.getCurrentHeartbeatStatus();
         List<Status.Payload> payloads = currentHeartbeatStatus.getPayloads();
-        Assert.assertEquals(2, payloads.size());
+        Assertions.assertEquals(2, payloads.size());
         int value = 0;
         for (Status.Payload p : payloads) {
             if (StatusPayloads.Type.valueOf(p.getType()) == StatusPayloads.Type.IncomingDataDrop)
                 value = Integer.parseInt(p.getData());
         }
-        Assert.assertEquals(val2, value);
+        Assertions.assertEquals(val2, value);
         payloads = heartbeat.getCurrentHeartbeatStatus().getPayloads();
-        Assert.assertEquals(1, payloads.size());
+        Assertions.assertEquals(1, payloads.size());
     }
 }

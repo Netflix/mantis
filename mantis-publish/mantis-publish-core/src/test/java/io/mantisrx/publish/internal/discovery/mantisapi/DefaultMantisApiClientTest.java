@@ -42,18 +42,17 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class DefaultMantisApiClientTest {
-    @Rule
-    public WireMockRule mantisAPI = new WireMockRule(options().dynamicPort());
+    WireMockRule mantisAPI;
 
     @BeforeEach
     public void setup() {
+        mantisAPI = new WireMockRule(options().dynamicPort());
         mantisAPI.start();
     }
 
@@ -64,7 +63,7 @@ public class DefaultMantisApiClientTest {
 
     @Test
     public void simpleTest() throws Exception {
-        mantisAPI.stubFor(get(urlMatching("/jobClusters/discoveryInfo/TestJob"))
+       mantisAPI.stubFor(get(urlMatching("/jobClusters/discoveryInfo/TestJob"))
             .willReturn(aResponse()
             .withStatus(200)
             .withBody(readStub("mantisapi/jobclusters_discoveryinfo_stub.json"))));

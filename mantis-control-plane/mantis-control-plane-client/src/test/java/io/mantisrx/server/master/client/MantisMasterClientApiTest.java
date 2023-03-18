@@ -21,8 +21,8 @@ package io.mantisrx.server.master.client;
 //import io.mantisrx.master.core.proto.JobDefinition;
 //import io.mantisrx.master.core.proto.MachineDefinition;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,8 +41,8 @@ import mantis.io.reactivex.netty.protocol.http.server.HttpServer;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import mantis.io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import mantis.io.reactivex.netty.protocol.http.server.RequestHandler;
-import org.junit.AfterClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -60,7 +60,7 @@ public class MantisMasterClientApiTest {
     private static AtomicInteger port = new AtomicInteger(8950);
     private static List<HttpServer<String, String>> startedServers = new ArrayList<>();
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() throws InterruptedException {
         for (HttpServer<String, String> startedServer : startedServers) {
             logger.info("shutting down server on port {}", startedServer.getServerPort());

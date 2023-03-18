@@ -16,21 +16,21 @@
 
 package io.mantisrx.runtime.parameter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ParametersTest {
     private Parameters parameters;
 
-    @Before
+    @BeforeEach
     public void setup() {
         final Set<String> requiredParameters = new HashSet<>();
         final Set<String> parameterDefinitions = new HashSet<>();

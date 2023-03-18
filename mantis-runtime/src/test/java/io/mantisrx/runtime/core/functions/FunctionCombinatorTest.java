@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.core.functions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.common.MantisGroup;
 import io.mantisrx.runtime.Context;
@@ -27,7 +27,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 
 public class FunctionCombinatorTest {

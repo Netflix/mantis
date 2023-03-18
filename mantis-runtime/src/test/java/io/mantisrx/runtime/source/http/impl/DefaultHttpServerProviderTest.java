@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.runtime.source.http.ServerPoller;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -119,7 +119,7 @@ public class DefaultHttpServerProviderTest {
             assertEquals(port, server.getPort());
         }
 
-        assertEquals("The very last element should not be removed. ", max - 1, port);
+        assertEquals(max - 1, port, "The very last element should not be removed. ");
     }
 
     @Test
@@ -210,7 +210,7 @@ public class DefaultHttpServerProviderTest {
             assertEquals(port, server.getPort());
         }
 
-        assertEquals("The very last two elements should not be removed. ", max - 2, port);
+        assertEquals(max - 2, port, "The very last two elements should not be removed. ");
     }
 
     @Test
@@ -288,6 +288,6 @@ public class DefaultHttpServerProviderTest {
         assertEquals(2, port);
 
 
-        assertEquals("No element should be removed. ", 0, removed.size());
+        assertEquals(0, removed.size(), "No element should be removed. ");
     }
 }

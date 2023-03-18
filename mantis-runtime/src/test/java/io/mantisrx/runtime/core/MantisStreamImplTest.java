@@ -16,14 +16,15 @@
 
 package io.mantisrx.runtime.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.graph.ImmutableValueGraph;
 import io.mantisrx.shaded.com.google.common.graph.ValueGraphBuilder;
 import java.util.Set;
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class MantisStreamImplTest extends TestCase {
+public class MantisStreamImplTest {
 
     @Test
     public void testGraphApi() {

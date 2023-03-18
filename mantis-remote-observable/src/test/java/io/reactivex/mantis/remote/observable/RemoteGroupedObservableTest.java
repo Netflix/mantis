@@ -18,8 +18,8 @@ package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Codecs;
 import io.reactivex.mantis.remote.observable.slotting.ConsistentHashing;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -108,15 +108,15 @@ public class RemoteGroupedObservableTest {
             @Override
             public void call(Result result) {
                 if (result.getKey().equals("odd")) {
-                    Assert.assertEquals(25, result.getResults().intValue());
+                    Assertions.assertEquals(25, result.getResults().intValue());
                     intRef.setValue(intRef.getValue() + 1);
                 } else {
-                    Assert.assertEquals(30, result.getResults().intValue());
+                    Assertions.assertEquals(30, result.getResults().intValue());
                     intRef.setValue(intRef.getValue() + 1);
                 }
             }
         });
 
-        Assert.assertEquals(2, intRef.getValue().intValue());
+        Assertions.assertEquals(2, intRef.getValue().intValue());
     }
 }

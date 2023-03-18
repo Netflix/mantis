@@ -44,6 +44,6 @@ dependencies {
     testImplementation libraries.spectatorApi
     testImplementation libraries.commonsLang3
     testImplementation "org.hamcrest:hamcrest-core:1.3"
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
 }

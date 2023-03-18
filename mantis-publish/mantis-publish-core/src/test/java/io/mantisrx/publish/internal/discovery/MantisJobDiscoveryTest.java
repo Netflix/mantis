@@ -43,10 +43,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +55,26 @@ public class MantisJobDiscoveryTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobDiscoveryTest.class);
     private final Map<String, String> streamJobClusterMap = new HashMap<>();
-    @Rule
-    public WireMockRule mantisApi = new WireMockRule(options().dynamicPort());
+    WireMockRule mantisApi;
     private MrePublishConfiguration config;
     private MantisJobDiscovery jobDiscovery;
+
+//    public class WireMockExtension implements AfterEachCallback, BeforeEachCallback {
+//        static WireMockServer mantisAPI = new WireMockServer();
+//        @Override
+//        public void beforeEach(ExtensionContext context) throws Exception {
+//            mantisAPI.start();
+//        }
+//
+//        @Override
+//        public void afterEach(ExtensionContext context) throws Exception {
+//            mantisAPI.shutdown();
+//        }
+//
+//        public static WireMockServer getMantisAPI() {
+//            return mantisAPI;
+//        }
+//    }
 
     public MantisJobDiscoveryTest() {
         streamJobClusterMap.put(StreamType.DEFAULT_EVENT_STREAM, "RequestEventSubTrackerTestJobCluster");
@@ -82,6 +97,7 @@ public class MantisJobDiscoveryTest {
 
     @BeforeEach
     public void setup() {
+        mantisApi = new WireMockRule(options().dynamicPort());
         mantisApi.start();
         config = testConfig();
         Registry registry = new DefaultRegistry();
@@ -94,8 +110,10 @@ public class MantisJobDiscoveryTest {
         mantisApi.shutdown();
     }
 
+//    @ExtendWith(WireMockExtension.class)
     @Test
     public void testJobDiscoveryFetch() throws IOException {
+//        WireMockServer mantisAPI = WireMockExtension.getMantisAPI();
         String jobCluster = "MantisJobDiscoveryTestJobCluster";
         String jobId = jobCluster + "-1";
 
@@ -122,7 +140,7 @@ public class MantisJobDiscoveryTest {
     }
 
     @Test
-    @Ignore("another flaky test")
+    @Disabled("another flaky test")
     public void testJobDiscoveryFetchFailureHandlingAfterSuccess() throws IOException, InterruptedException {
         String jobCluster = "MantisJobDiscoveryTestJobCluster";
         String jobId = jobCluster + "-1";

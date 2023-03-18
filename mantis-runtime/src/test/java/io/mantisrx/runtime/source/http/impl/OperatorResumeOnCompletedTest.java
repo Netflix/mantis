@@ -16,15 +16,15 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.Operator;
 import rx.Subscriber;
@@ -81,9 +81,9 @@ public class OperatorResumeOnCompletedTest {
             fail("Should finish within " + timeoutSecs + " seconds");
         }
 
-        assertEquals(String.format("There should be exactly %d retries", repeat), repeat, retries.get());
-        assertEquals("There should be exactly one onCompleted call", 1, completionCount.get());
+        assertEquals(repeat, retries.get(), String.format("There should be exactly %d retries", repeat));
+        assertEquals(1, completionCount.get(), "There should be exactly one onCompleted call");
         List<Integer> expected = Observable.range(1, max + repeat).toList().toBlocking().first();
-        assertEquals("The collected should include the original stream plus every attempt", expected, collected);
+        assertEquals(expected, collected, "The collected should include the original stream plus every attempt");
     }
 }

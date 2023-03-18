@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import akka.NotUsed;
 import akka.actor.ActorSystem;
@@ -46,9 +46,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +99,7 @@ public class LeaderRedirectionRouteTest {
     private static final MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
     private static final ILeadershipManager leadershipMgr = new LeadershipManagerLocalImpl(fakeMasterDesc);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
@@ -131,7 +131,7 @@ public class LeaderRedirectionRouteTest {
         latch.await();
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         logger.info("MasterDescriptionRouteTest teardown");
         binding

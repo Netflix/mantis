@@ -20,8 +20,8 @@ import io.mantisrx.common.network.Endpoint;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.observables.BlockingObservable;
 import rx.subjects.ReplaySubject;
 
@@ -57,31 +57,31 @@ public class ToDeltaEndpointInjectorTest {
 
         // check for two adds
         Iterator<EndpointChange> iter = be.getIterator();
-        Assert.assertTrue(iter.hasNext());
+        Assertions.assertTrue(iter.hasNext());
         EndpointChange ce1 = iter.next();
-        Assert.assertEquals(ce1.getEndpoint().getSlotId(), "localhost:1234");
-        Assert.assertEquals(ce1.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce1.getEndpoint().getSlotId(), "localhost:1234");
+        Assertions.assertEquals(ce1.getType(), EndpointChange.Type.add);
         EndpointChange ce2 = iter.next();
-        Assert.assertEquals(ce2.getEndpoint().getSlotId(), "localhost:2468");
-        Assert.assertEquals(ce2.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce2.getEndpoint().getSlotId(), "localhost:2468");
+        Assertions.assertEquals(ce2.getType(), EndpointChange.Type.add);
 
         // check for complete
         EndpointChange ce3 = iter.next();
-        Assert.assertEquals(ce3.getEndpoint().getSlotId(), "localhost:2468");
-        Assert.assertEquals(ce3.getType(), EndpointChange.Type.complete);
+        Assertions.assertEquals(ce3.getEndpoint().getSlotId(), "localhost:2468");
+        Assertions.assertEquals(ce3.getType(), EndpointChange.Type.complete);
 
         // check for complete
         EndpointChange ce4 = iter.next();
-        Assert.assertEquals(ce4.getEndpoint().getSlotId(), "localhost:1234");
-        Assert.assertEquals(ce4.getType(), EndpointChange.Type.complete);
+        Assertions.assertEquals(ce4.getEndpoint().getSlotId(), "localhost:1234");
+        Assertions.assertEquals(ce4.getType(), EndpointChange.Type.complete);
 
         // check for add
         EndpointChange ce5 = iter.next();
-        Assert.assertEquals(ce5.getEndpoint().getSlotId(), "localhost:1234");
-        Assert.assertEquals(ce5.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce5.getEndpoint().getSlotId(), "localhost:1234");
+        Assertions.assertEquals(ce5.getType(), EndpointChange.Type.add);
         EndpointChange ce6 = iter.next();
-        Assert.assertEquals(ce6.getEndpoint().getSlotId(), "localhost:2468");
-        Assert.assertEquals(ce6.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce6.getEndpoint().getSlotId(), "localhost:2468");
+        Assertions.assertEquals(ce6.getType(), EndpointChange.Type.add);
     }
 
     @Test
@@ -117,33 +117,33 @@ public class ToDeltaEndpointInjectorTest {
         BlockingObservable<EndpointChange> be = service.deltas().toBlocking();
 
         Iterator<EndpointChange> iter = be.getIterator();
-        Assert.assertTrue(iter.hasNext());
+        Assertions.assertTrue(iter.hasNext());
 
         EndpointChange ce2 = iter.next();
-        Assert.assertEquals(ce2.getEndpoint().getSlotId(), "xyz");
-        Assert.assertEquals(ce2.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce2.getEndpoint().getSlotId(), "xyz");
+        Assertions.assertEquals(ce2.getType(), EndpointChange.Type.add);
 
         EndpointChange ce1 = iter.next();
-        Assert.assertEquals(ce1.getEndpoint().getSlotId(), "abc");
-        Assert.assertEquals(ce1.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce1.getEndpoint().getSlotId(), "abc");
+        Assertions.assertEquals(ce1.getType(), EndpointChange.Type.add);
 
 
         EndpointChange ce3 = iter.next();
-        Assert.assertEquals(ce3.getEndpoint().getSlotId(), "xyz");
-        Assert.assertEquals(ce3.getType(), EndpointChange.Type.complete);
+        Assertions.assertEquals(ce3.getEndpoint().getSlotId(), "xyz");
+        Assertions.assertEquals(ce3.getType(), EndpointChange.Type.complete);
 
 
         EndpointChange ce4 = iter.next();
-        Assert.assertEquals(ce4.getEndpoint().getSlotId(), "abc");
-        Assert.assertEquals(ce4.getType(), EndpointChange.Type.complete);
+        Assertions.assertEquals(ce4.getEndpoint().getSlotId(), "abc");
+        Assertions.assertEquals(ce4.getType(), EndpointChange.Type.complete);
 
         EndpointChange ce6 = iter.next();
-        Assert.assertEquals(ce6.getEndpoint().getSlotId(), "xyz");
-        Assert.assertEquals(ce6.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce6.getEndpoint().getSlotId(), "xyz");
+        Assertions.assertEquals(ce6.getType(), EndpointChange.Type.add);
 
         EndpointChange ce5 = iter.next();
-        Assert.assertEquals(ce5.getEndpoint().getSlotId(), "abc");
-        Assert.assertEquals(ce5.getType(), EndpointChange.Type.add);
+        Assertions.assertEquals(ce5.getEndpoint().getSlotId(), "abc");
+        Assertions.assertEquals(ce5.getType(), EndpointChange.Type.add);
 
     }
 }

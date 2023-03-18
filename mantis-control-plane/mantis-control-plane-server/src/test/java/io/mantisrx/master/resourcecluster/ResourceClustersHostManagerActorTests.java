@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.atMost;
@@ -50,14 +50,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import lombok.val;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class ResourceClustersHostManagerActorTests {
     static ActorSystem system;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
                 "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
@@ -68,7 +68,7 @@ public class ResourceClustersHostManagerActorTests {
         system = ActorSystem.create("ResourceClusterManagerUnitTest", config.withFallback(ConfigFactory.load()));
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         TestKit.shutdownActorSystem(system);
         system = null;

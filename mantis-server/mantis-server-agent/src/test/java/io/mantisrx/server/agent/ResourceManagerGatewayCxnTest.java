@@ -16,7 +16,8 @@
 package io.mantisrx.server.agent;
 
 import static org.apache.flink.util.ExceptionUtils.stripExecutionException;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -40,8 +41,8 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.apache.flink.api.common.time.Time;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Matchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -55,7 +56,7 @@ public class ResourceManagerGatewayCxnTest {
     private ResourceManagerGatewayCxn cxn;
     private TaskExecutorReport report;
 
-    @Before
+    @BeforeEach
     public void setup() {
         WorkerPorts workerPorts = new WorkerPorts(100, 101, 102, 103, 104);
         TaskExecutorID taskExecutorID = TaskExecutorID.of("taskExecutor");
@@ -97,17 +98,19 @@ public class ResourceManagerGatewayCxnTest {
         verify(gateway, atLeastOnce()).heartBeatFromTaskExecutor(heartbeat);
     }
 
-    @Test(expected = UnknownError.class)
+    @Test
     public void testWhenRegistrationFails() throws Throwable {
-        when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
-            CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception")));
-        cxn.startAsync();
-        CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
-        try {
-            result.get();
-        } catch (Exception e) {
-            throw stripExecutionException(e);
-        }
+        assertThrows(UnknownError.class, () -> {
+            when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
+                CompletableFutures.exceptionallyCompletedFuture(new UnknownError("exception")));
+            cxn.startAsync();
+            CompletableFuture<Void> result = Services.stopAsync(cxn, Executors.newSingleThreadExecutor());
+            try {
+                result.get();
+            } catch (Exception e) {
+                throw stripExecutionException(e);
+            }
+        });
     }
 
     @Test

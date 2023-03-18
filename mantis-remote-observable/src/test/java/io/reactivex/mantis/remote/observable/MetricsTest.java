@@ -17,8 +17,8 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Codecs;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -49,13 +49,13 @@ public class MetricsTest {
         MathObservable.sumInteger(rc.getObservable()).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
             }
         });
 
-        Assert.assertEquals(1000, rc.getMetrics().getOnNextCount());
-        Assert.assertEquals(0, rc.getMetrics().getOnErrorCount());
-        Assert.assertEquals(1, rc.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(1000, rc.getMetrics().getOnNextCount());
+        Assertions.assertEquals(0, rc.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(1, rc.getMetrics().getOnCompletedCount());
     }
 
     @Test
@@ -79,13 +79,13 @@ public class MetricsTest {
         MathObservable.sumInteger(oc).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
             }
         });
 
-        Assert.assertEquals(1000, server.getMetrics().getOnNextCount());
-        Assert.assertEquals(0, server.getMetrics().getOnErrorCount());
-        Assert.assertEquals(1, server.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(1000, server.getMetrics().getOnNextCount());
+        Assertions.assertEquals(0, server.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(1, server.getMetrics().getOnCompletedCount());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class MetricsTest {
         MathObservable.sumInteger(ro1.getObservable()).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
             }
         });
 
@@ -118,26 +118,26 @@ public class MetricsTest {
         MathObservable.sumInteger(ro2.getObservable()).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
             }
         });
 
         // client asserts
-        Assert.assertEquals(1000, ro1.getMetrics().getOnNextCount());
-        Assert.assertEquals(0, ro1.getMetrics().getOnErrorCount());
-        Assert.assertEquals(1, ro1.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(1000, ro1.getMetrics().getOnNextCount());
+        Assertions.assertEquals(0, ro1.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(1, ro1.getMetrics().getOnCompletedCount());
 
-        Assert.assertEquals(1000, ro2.getMetrics().getOnNextCount());
-        Assert.assertEquals(0, ro2.getMetrics().getOnErrorCount());
-        Assert.assertEquals(1, ro2.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(1000, ro2.getMetrics().getOnNextCount());
+        Assertions.assertEquals(0, ro2.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(1, ro2.getMetrics().getOnCompletedCount());
 
         // server asserts
-        Assert.assertEquals(2000, server.getMetrics().getOnNextCount());
-        Assert.assertEquals(0, server.getMetrics().getOnErrorCount());
-        Assert.assertEquals(2, server.getMetrics().getOnCompletedCount());
-        Assert.assertEquals(2, server.getMetrics().getSubscribedCount());
+        Assertions.assertEquals(2000, server.getMetrics().getOnNextCount());
+        Assertions.assertEquals(0, server.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(2, server.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(2, server.getMetrics().getSubscribedCount());
         Thread.sleep(1000); // allow time for unsub, connections to close
-        Assert.assertEquals(2, server.getMetrics().getUnsubscribedCount());
+        Assertions.assertEquals(2, server.getMetrics().getUnsubscribedCount());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class MetricsTest {
             MathObservable.sumInteger(ro1.getObservable()).toBlocking().forEach(new Action1<Integer>() {
                 @Override
                 public void call(Integer t1) {
-                    Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                    Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
                 }
             });
         } catch (Exception e) {
@@ -184,7 +184,7 @@ public class MetricsTest {
             MathObservable.sumInteger(ro2.getObservable()).toBlocking().forEach(new Action1<Integer>() {
                 @Override
                 public void call(Integer t1) {
-                    Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                    Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
                 }
             });
         } catch (Exception e) {
@@ -192,21 +192,21 @@ public class MetricsTest {
         }
 
         // client asserts
-        Assert.assertEquals(5, ro1.getMetrics().getOnNextCount());
-        Assert.assertEquals(1, ro1.getMetrics().getOnErrorCount());
-        Assert.assertEquals(0, ro1.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(5, ro1.getMetrics().getOnNextCount());
+        Assertions.assertEquals(1, ro1.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(0, ro1.getMetrics().getOnCompletedCount());
 
-        Assert.assertEquals(5, ro2.getMetrics().getOnNextCount());
-        Assert.assertEquals(1, ro2.getMetrics().getOnErrorCount());
-        Assert.assertEquals(0, ro2.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(5, ro2.getMetrics().getOnNextCount());
+        Assertions.assertEquals(1, ro2.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(0, ro2.getMetrics().getOnCompletedCount());
 
         // server asserts
-        Assert.assertEquals(10, server.getMetrics().getOnNextCount());
-        Assert.assertEquals(2, server.getMetrics().getOnErrorCount());
-        Assert.assertEquals(0, server.getMetrics().getOnCompletedCount());
-        Assert.assertEquals(2, server.getMetrics().getSubscribedCount());
+        Assertions.assertEquals(10, server.getMetrics().getOnNextCount());
+        Assertions.assertEquals(2, server.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(0, server.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(2, server.getMetrics().getSubscribedCount());
         Thread.sleep(1000); // allow time for unsub, connections to close
-        Assert.assertEquals(2, server.getMetrics().getUnsubscribedCount());
+        Assertions.assertEquals(2, server.getMetrics().getUnsubscribedCount());
     }
 
     @Test
@@ -243,16 +243,16 @@ public class MetricsTest {
             MathObservable.sumInteger(rc.getObservable()).toBlocking().forEach(new Action1<Integer>() {
                 @Override
                 public void call(Integer t1) {
-                    Assert.assertEquals(500500, t1.intValue()); // sum of number 0-100
+                    Assertions.assertEquals(500500, t1.intValue()); // sum of number 0-100
                 }
             });
         } catch (Exception e) {
             // noOp
         }
 
-        Assert.assertEquals(5, rc.getMetrics().getOnNextCount());
-        Assert.assertEquals(1, rc.getMetrics().getOnErrorCount());
-        Assert.assertEquals(0, rc.getMetrics().getOnCompletedCount());
+        Assertions.assertEquals(5, rc.getMetrics().getOnNextCount());
+        Assertions.assertEquals(1, rc.getMetrics().getOnErrorCount());
+        Assertions.assertEquals(0, rc.getMetrics().getOnCompletedCount());
     }
 
 }

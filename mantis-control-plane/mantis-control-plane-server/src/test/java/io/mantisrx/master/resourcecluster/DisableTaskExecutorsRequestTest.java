@@ -16,14 +16,14 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.time.Instant;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DisableTaskExecutorsRequestTest {
     private static final DisableTaskExecutorsRequest R1 =

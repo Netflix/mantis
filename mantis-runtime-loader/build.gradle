@@ -17,7 +17,7 @@
 dependencies {
     api project(":mantis-control-plane:mantis-control-plane-client")
 
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoAll
     testImplementation(testFixtures(project(":mantis-common")))
 

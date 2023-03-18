@@ -18,8 +18,8 @@ package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.network.Endpoint;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -63,7 +63,7 @@ public class DynamicConnectionTest {
                 .subscribe(new Action1<Integer>() {
                     @Override
                     public void call(Integer t1) {
-                        Assert.assertEquals(20100, t1.intValue());
+                        Assertions.assertEquals(20100, t1.intValue());
                     }
                 });
 

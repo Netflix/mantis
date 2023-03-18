@@ -16,15 +16,15 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Observable.Operator;
@@ -65,7 +65,7 @@ public class OperatorResumeOnErrorTest {
 
                     @Override
                     public void onNext(Integer integer) {
-                        assertTrue("The integer should not be over the threshold. The integer value: " + integer, integer < threshold);
+                        assertTrue(integer < threshold, "The integer should not be over the threshold. The integer value: " + integer);
                     }
                 });
 
@@ -74,9 +74,9 @@ public class OperatorResumeOnErrorTest {
             fail("Should finish within " + timeoutSecs + " seconds");
         }
 
-        assertEquals(String.format("There should be exactly %d retries", repeat), repeat, retries.get());
-        assertEquals("There should be exactly one onError", 1, errorCount.get());
-        assertEquals("The error should be the user created one. ", TestException.class, error.get().getClass());
+        assertEquals(repeat, retries.get(), String.format("There should be exactly %d retries", repeat));
+        assertEquals(1, errorCount.get(), "There should be exactly one onError");
+        assertEquals(TestException.class, error.get().getClass(), "The error should be the user created one. ");
     }
 
     private OperatorResumeOnError<Integer> resumeWithFixNumberOfRetries(final Observable<Integer> ints, final int repeat, final AtomicInteger retries) {

@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -68,9 +68,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observer;
@@ -111,7 +111,7 @@ public class AgentClusterRouteTest {
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("AgentClusterRoutes");
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         t = new Thread(() -> {
@@ -156,7 +156,7 @@ public class AgentClusterRouteTest {
         latch.await();
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         logger.info("V0AgentClusterRouteTest teardown");
         binding

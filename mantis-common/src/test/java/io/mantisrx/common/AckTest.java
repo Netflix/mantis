@@ -16,9 +16,9 @@
 
 package io.mantisrx.common;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AckTest {
     private final JsonSerializer serializer = new JsonSerializer();

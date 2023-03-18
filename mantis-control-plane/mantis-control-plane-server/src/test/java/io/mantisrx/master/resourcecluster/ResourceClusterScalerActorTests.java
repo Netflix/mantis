@@ -17,9 +17,9 @@
 package io.mantisrx.master.resourcecluster;
 
 import static io.mantisrx.master.resourcecluster.ResourceClusterActorTest.actorSystem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -55,10 +55,10 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ResourceClusterScalerActorTests {
     private static final ClusterID CLUSTER_ID = ClusterID.of("clusterId");
@@ -78,18 +78,18 @@ public class ResourceClusterScalerActorTests {
     private static final MachineDefinition MACHINE_DEFINITION_M =
         new MachineDefinition(3, 4096, 700, 10240, 5);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         actorSystem = ActorSystem.create();
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TestKit.shutdownActorSystem(actorSystem);
         actorSystem = null;
     }
 
-    @Before
+    @BeforeEach
     public void setupMocks() {
         clusterActorProbe = new TestKit(actorSystem);
         hostActorProbe = new TestKit(actorSystem);

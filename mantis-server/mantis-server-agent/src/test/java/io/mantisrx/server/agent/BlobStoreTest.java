@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.net.URI;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Matchers;
 
 public class BlobStoreTest {

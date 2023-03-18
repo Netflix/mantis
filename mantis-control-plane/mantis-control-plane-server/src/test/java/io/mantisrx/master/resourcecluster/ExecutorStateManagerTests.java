@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import io.mantisrx.common.WorkerPorts;
@@ -43,8 +43,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ExecutorStateManagerTests {
     private final AtomicReference<Clock> actual =
@@ -111,7 +111,7 @@ public class ExecutorStateManagerTests {
 
     private final ExecutorStateManager stateManager = new ExecutorStateManagerImpl();
 
-    @Before
+    @BeforeEach
     public void setup() {
         rpc.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
     }

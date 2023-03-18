@@ -17,7 +17,7 @@
 package io.mantisrx.runtime.source.http;
 
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.runtime.*;
@@ -46,7 +46,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;
@@ -72,7 +72,7 @@ public class HttpSourceTest {
 
     private TestSourceObserver sourceObserver = new TestSourceObserver();
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         int portStart = new Random().nextInt(PORT_RANGE) + SEED_PORT;
 
@@ -80,12 +80,12 @@ public class HttpSourceTest {
         localServerProvider.start(3, portStart);
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdown() throws Exception {
         localServerProvider.shutDown();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         sourceObserver = new TestSourceObserver();
     }
@@ -139,24 +139,21 @@ public class HttpSourceTest {
             fail(String.format("Waited at least %d seconds for the test to finish. Something is wrong", waitSeconds));
         }
 
-        Assert.assertEquals(
-                String.format("%d servers => the result has %d times of a single echo",
-                        localServerProvider.serverSize(),
-                        localServerProvider.serverSize()),
+        Assertions.assertEquals(localServerProvider.serverSize(),
+                counter.get(), String.format("%d servers => the result has %d times of a single echo",
                 localServerProvider.serverSize(),
-                counter.get());
+                localServerProvider.serverSize()));
 
-        assertEquals(String.format("%d servers => %d identical copies per message",
+        assertEquals(localServerProvider.serverSize(),
+                result.get(postContent).get(), String.format("%d servers => %d identical copies per message",
                 localServerProvider.serverSize(),
-                localServerProvider.serverSize()),
-                localServerProvider.serverSize(),
-                result.get(postContent).get());
+                localServerProvider.serverSize()));
 
         for (ServerInfo server : localServerProvider.getServerInfos()) {
-            assertEquals("There should be one completion per server", 1, sourceObserver.getCount(server, EventType.SOURCE_COMPLETED));
-            assertEquals("There should be one un-subscription per server", 1, sourceObserver.getCount(server, EventType.CONNECTION_UNSUBSCRIBED));
-            assertEquals("There should be no error", 0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED));
-            assertEquals("There should be one connection per server", 1, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED));
+            assertEquals(1, sourceObserver.getCount(server, EventType.SOURCE_COMPLETED), "There should be one completion per server");
+            assertEquals(1, sourceObserver.getCount(server, EventType.CONNECTION_UNSUBSCRIBED), "There should be one un-subscription per server");
+            assertEquals(0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED), "There should be no error");
+            assertEquals(1, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED), "There should be one connection per server");
         }
 
         assertEquals(1, sourceObserver.getCompletionCount());
@@ -166,7 +163,7 @@ public class HttpSourceTest {
         assertEquals(EXPECTED_EVENTS_SETS, events);
 
         for (EventType event : events) {
-            assertEquals("Each event should be recorded exactly once per server", localServerProvider.serverSize(), sourceObserver.getEventCount(event));
+            assertEquals(localServerProvider.serverSize(), sourceObserver.getEventCount(event), "Each event should be recorded exactly once per server");
         }
     }
 
@@ -206,22 +203,21 @@ public class HttpSourceTest {
             fail(String.format("Waited at least %d seconds for the test to finish. Something is wrong", waitSeconds));
         }
 
-        Assert.assertEquals(
-                String.format("%d servers => the result has %d times of a single stream",
-                        localServerProvider.serverSize(),
-                        localServerProvider.serverSize()),
-                counter.get(),
-                RequestProcessor.smallStreamContent.size() * localServerProvider.serverSize());
+        Assertions.assertEquals(counter.get(),
+                RequestProcessor.smallStreamContent.size() * localServerProvider.serverSize(),
+            String.format("%d servers => the result has %d times of a single stream",
+                localServerProvider.serverSize(),
+                localServerProvider.serverSize()));
 
         for (String data : RequestProcessor.smallStreamContent) {
-            assertEquals(String.format("%d servers => %d identical copies per message", localServerProvider.serverSize(), localServerProvider.serverSize()), localServerProvider.serverSize(), result.get(data).get());
+            assertEquals(localServerProvider.serverSize(), result.get(data).get(), String.format("%d servers => %d identical copies per message", localServerProvider.serverSize(), localServerProvider.serverSize()));
         }
 
         for (ServerInfo server : localServerProvider.getServerInfos()) {
-            assertEquals("There should be one completion per server", 1, sourceObserver.getCount(server, EventType.SOURCE_COMPLETED));
-            assertEquals("There should be one un-subscription per server", 1, sourceObserver.getCount(server, EventType.CONNECTION_UNSUBSCRIBED));
-            assertEquals("There should be no error", 0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED));
-            assertEquals("There should be one connection per server", 1, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED));
+            assertEquals(1, sourceObserver.getCount(server, EventType.SOURCE_COMPLETED), "There should be one completion per server");
+            assertEquals(1, sourceObserver.getCount(server, EventType.CONNECTION_UNSUBSCRIBED), "There should be one un-subscription per server");
+            assertEquals(0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED), "There should be no error");
+            assertEquals(1, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED), "There should be one connection per server");
         }
 
         assertEquals(1, sourceObserver.getCompletionCount());
@@ -231,7 +227,7 @@ public class HttpSourceTest {
         assertEquals(EXPECTED_EVENTS_SETS, events);
 
         for (EventType event : events) {
-            assertEquals("Each event should be recorded exactly once per server", localServerProvider.serverSize(), sourceObserver.getEventCount(event));
+            assertEquals(localServerProvider.serverSize(), sourceObserver.getEventCount(event), "Each event should be recorded exactly once per server");
         }
     }
 
@@ -302,23 +298,21 @@ public class HttpSourceTest {
             fail(String.format("Waited at least %d seconds for the test to finish. Something is wrong", waitSeconds));
         }
 
-        Assert.assertEquals(String.format("%d servers => the result has %d times of a single stream", localServerProvider.serverSize(), localServerProvider.serverSize()), counter.get(), maxRepeat);
+        Assertions.assertEquals(counter.get(), maxRepeat, String.format("%d servers => the result has %d times of a single stream", localServerProvider.serverSize(), localServerProvider.serverSize()));
 
-        assertTrue(
-                String.format("There should be at least %d completions after %d repeats (The last one may not have completion. Actual completion count: %d",
-                        maxRepeat - 1,
-                        maxRepeat,
-                        sourceObserver.getCount(server, EventType.SOURCE_COMPLETED)),
-                maxRepeat - 1 <= sourceObserver.getCount(server, EventType.SOURCE_COMPLETED));
+        assertTrue(maxRepeat - 1 <= sourceObserver.getCount(server, EventType.SOURCE_COMPLETED), String.format("There should be at least %d completions after %d repeats (The last one may not have completion. Actual completion count: %d",
+            maxRepeat - 1,
+            maxRepeat,
+            sourceObserver.getCount(server, EventType.SOURCE_COMPLETED)));
 
-        assertEquals("There should be no error", 0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED));
-        assertEquals("There should be " + maxRepeat + " connection establishment in total", maxRepeat, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED));
+        assertEquals(0, sourceObserver.getCount(server, EventType.SUBSCRIPTION_FAILED), "There should be no error");
+        assertEquals(maxRepeat, sourceObserver.getCount(server, EventType.CONNECTION_ESTABLISHED), "There should be " + maxRepeat + " connection establishment in total");
 
-        assertEquals("There should no final completion", 0, sourceObserver.getCompletionCount());
+        assertEquals(0, sourceObserver.getCompletionCount(), "There should no final completion");
         assertEquals(0, sourceObserver.getErrorCount());
 
         Set<EventType> events = sourceObserver.getEvents();
-        assertTrue("Polling Source always has subscriptions, so there won't be subscription_ended event. But other events should all be there", EXPECTED_EVENTS_SETS.containsAll(events));
+        assertTrue(EXPECTED_EVENTS_SETS.containsAll(events), "Polling Source always has subscriptions, so there won't be subscription_ended event. But other events should all be there");
     }
 
     @Test
@@ -374,7 +368,7 @@ public class HttpSourceTest {
      * @throws Exception
      */
     @Test
-    @Ignore(value = "This is meant to be run as an integration test. " +
+    @Disabled(value = "This is meant to be run as an integration test. " +
         "Also has test exclusion set for this package")
     public void testWithJobExecutionWillWorkForResubscription() throws Exception {
         final HttpSource<ServerSentEvent, ServerSentEvent> source = HttpSources
@@ -398,7 +392,7 @@ public class HttpSourceTest {
     }
 
     @Test
-    @Ignore(value = "This is meant to be run as an integration test. " +
+    @Disabled(value = "This is meant to be run as an integration test. " +
         "Also has test exclusion set for this package")
     public void testDummySource() throws Exception {
         Source<String> dummySource = new Source<String>() {

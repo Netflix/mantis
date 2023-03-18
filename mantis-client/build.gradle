@@ -21,7 +21,7 @@ dependencies {
 
     implementation libraries.slf4jApi
     implementation libraries.spectatorApi
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
 }
 

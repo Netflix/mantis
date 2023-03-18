@@ -16,8 +16,9 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,10 +68,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.flink.util.ExceptionUtils;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Matchers;
@@ -155,18 +156,18 @@ public class ResourceClusterActorTest {
     private ResourceCluster resourceCluster;
     private JobMessageRouter jobMessageRouter;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         actorSystem = ActorSystem.create();
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TestKit.shutdownActorSystem(actorSystem);
         actorSystem = null;
     }
 
-    @Before
+    @BeforeEach
     public void setupRpcService() {
         rpcService.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
         mantisJobStore = mock(MantisJobStore.class);
@@ -174,7 +175,7 @@ public class ResourceClusterActorTest {
         jobMessageRouter = mock(JobMessageRouter.class);
     }
 
-    @Before
+    @BeforeEach
     public void setupActor() {
         final Props props =
             ResourceClusterActor.props(
@@ -581,27 +582,29 @@ public class ResourceClusterActorTest {
         assertEquals(WORKER_ID, actualWorkerEvent.getWorkerId());
     }
 
-    @Test(expected = TaskNotFoundException.class)
+    @Test
     public void testGetAssignedTaskExecutorAfterTaskCompletes() throws Throwable {
-        assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).join());
-        assertEquals(
-            Ack.getInstance(),
-            resourceCluster.heartBeatFromTaskExecutor(
-                new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
+        assertThrows(TaskNotFoundException.class, () -> {
+            assertEquals(Ack.getInstance(), resourceCluster.registerTaskExecutor(TASK_EXECUTOR_REGISTRATION).join());
+            assertEquals(
+                Ack.getInstance(),
+                resourceCluster.heartBeatFromTaskExecutor(
+                    new TaskExecutorHeartbeat(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
 
-        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).join());
-        assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join());
-        assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
-            new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).join());
+            assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorFor(MACHINE_DEFINITION, WORKER_ID).join());
+            assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join());
+            assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
+                new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).join());
 
-        assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
-            new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
+            assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
+                new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.available())).join());
 
-        try {
-            TaskExecutorID result = resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join();
+            try {
+                TaskExecutorID result = resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join();
 
-        } catch (Exception e) {
-            throw ExceptionUtils.stripCompletionException(e);
-        }
+            } catch (Exception e) {
+                throw ExceptionUtils.stripCompletionException(e);
+            }
+        });
     }
 }
