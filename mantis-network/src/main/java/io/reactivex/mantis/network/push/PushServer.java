@@ -38,6 +38,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,15 +69,19 @@ public abstract class PushServer<T, R> {
     private Counter successfulWrites;
     private Counter failedWrites;
     private Gauge batchWriteSize;
+    private Counter channelNotWritableTimeoutCounter;
     private Set<Future<Void>> consumerThreadFutures = new HashSet<>();
     private Observable<String> serverSignals;
     private String serverName;
+    private final int maxNotWritableTimeSec;
+    private final ScheduledExecutorService scheduledExecutorService;
 
     public PushServer(final PushTrigger<T> trigger, ServerConfig<T> config,
                       Observable<String> serverSignals) {
 
         this.serverSignals = serverSignals;
         serverName = config.getName();
+        maxNotWritableTimeSec = config.getMaxNotWritableTimeSec();
         MetricsRegistry metricsRegistry = config.getMetricsRegistry();
 
         outboundBuffer = new MonitoredQueue<T>(serverName, config.getBufferCapacity(), config.useSpscQueue());
@@ -100,54 +106,57 @@ public abstract class PushServer<T, R> {
         final MetricGroupId metricsGroup = new MetricGroupId("PushServer", idTag);
         // manager will auto add metrics for connection groups
         connectionManager = new ConnectionManager<T>(metricsRegistry, doOnFirstConnection,
-                doOnZeroConnections);
+            doOnZeroConnections);
 
 
         int numQueueProcessingThreads = config.getNumQueueConsumers();
         MonitoredThreadPool consumerThreads = new MonitoredThreadPool("QueueConsumerPool",
-                new ThreadPoolExecutor(numQueueProcessingThreads, numQueueProcessingThreads, 5, TimeUnit.SECONDS,
-                        new ArrayBlockingQueue<Runnable>(numQueueProcessingThreads), new NamedThreadFactory("QueueConsumerPool")));
+            new ThreadPoolExecutor(numQueueProcessingThreads, numQueueProcessingThreads, 5, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<Runnable>(numQueueProcessingThreads), new NamedThreadFactory("QueueConsumerPool")));
 
         if (config.useSpscQueue()) {
             consumerThreadFutures.add(consumerThreads.submit(new SingleThreadedChunker<T>(
-                    config.getChunkProcessor(),
-                    outboundBuffer,
-                    config.getMaxChunkSize(),
-                    config.getMaxChunkTimeMSec(),
-                    connectionManager
+                config.getChunkProcessor(),
+                outboundBuffer,
+                config.getMaxChunkSize(),
+                config.getMaxChunkTimeMSec(),
+                connectionManager
             )));
         } else {
 
             for (int i = 0; i < numQueueProcessingThreads; i++) {
                 consumerThreadFutures.add(consumerThreads.submit(new TimedChunker<T>(
-                        outboundBuffer,
-                        config.getMaxChunkSize(),
-                        config.getMaxChunkTimeMSec(),
-                        config.getChunkProcessor(),
-                        connectionManager
+                    outboundBuffer,
+                    config.getMaxChunkSize(),
+                    config.getMaxChunkTimeMSec(),
+                    config.getChunkProcessor(),
+                    connectionManager
                 )));
             }
         }
 
         Metrics serverMetrics = new Metrics.Builder()
-                .id(metricsGroup)
-                .addCounter("numProcessedWrites")
-                .addCounter("numSuccessfulWrites")
-                .addCounter("numFailedWrites")
-                .addGauge(connectionManager.getActiveConnections(metricsGroup))
-                .addGauge("batchWriteSize")
-                .build();
+            .id(metricsGroup)
+            .addCounter("numProcessedWrites")
+            .addCounter("numSuccessfulWrites")
+            .addCounter("numFailedWrites")
+            .addCounter("channelNotWritableTimeout")
+            .addGauge(connectionManager.getActiveConnections(metricsGroup))
+            .addGauge("batchWriteSize")
+            .build();
         successfulWrites = serverMetrics.getCounter("numSuccessfulWrites");
         failedWrites = serverMetrics.getCounter("numFailedWrites");
         batchWriteSize = serverMetrics.getGauge("batchWriteSize");
         processedWrites = serverMetrics.getCounter("numProcessedWrites");
+        channelNotWritableTimeoutCounter = serverMetrics.getCounter("channelNotWritableTimeout");
 
         registerMetrics(metricsRegistry, serverMetrics, consumerThreads.getMetrics(),
-                outboundBuffer.getMetrics(), trigger.getMetrics(),
-                config.getChunkProcessor().router.getMetrics());
+            outboundBuffer.getMetrics(), trigger.getMetrics(),
+            config.getChunkProcessor().router.getMetrics());
 
         port = config.getPort();
         writeRetryCount = config.getWriteRetryCount();
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(10);
     }
 
     private void registerMetrics(MetricsRegistry registry, Metrics serverMetrics,
@@ -169,7 +178,7 @@ public abstract class PushServer<T, R> {
                                                 final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
                                                 final Action0 connectionSubscribeCallback) {
         return manageConnection(writer, host, port, groupId, slotId, id, lastWriteTime, applicationHeartbeats, heartbeatSubscription,
-                applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback);
+            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback);
     }
 
     protected Observable<Void> manageConnection(final DefaultChannelWriter<R> writer, String host, int port,
@@ -180,7 +189,7 @@ public abstract class PushServer<T, R> {
                                                 final Counter legacyMsgProcessedCounter, final Counter legacyDroppedWrites,
                                                 final Action0 connectionSubscribeCallback) {
         return manageConnectionWithCompression(writer, host, port, groupId, slotId, id, lastWriteTime, applicationHeartbeats, heartbeatSubscription,
-                applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null);
+            applySampling, samplingRateMSec, null, null, predicate, connectionClosedCallback, legacyMsgProcessedCounter, legacyDroppedWrites, connectionSubscribeCallback, false, false, null);
 
     }
 
@@ -235,26 +244,52 @@ public abstract class PushServer<T, R> {
         final BasicTag slotIdTag = new BasicTag("slotId", slotId);
 
         SerializedSubject<List<byte[]>, List<byte[]>> subject
-                = new SerializedSubject<>(PublishSubject.<List<byte[]>>create());
+            = new SerializedSubject<>(PublishSubject.<List<byte[]>>create());
         Observable<List<byte[]>> observable = subject.lift(new DropOperator<>("batch_writes", slotIdTag));
 
         if (applySampling) {
             observable =
-                    observable
-                            .sample(samplingRateMSec, TimeUnit.MILLISECONDS)
-                            .map((List<byte[]> list) -> {
-                                        // get most recent item from sample
-                                        List<byte[]> singleItem = new LinkedList<>();
-                                        if (!list.isEmpty()) {
-                                            singleItem.add(list.get(list.size() - 1));
-                                        }
-                                        return singleItem;
-                                    }
-                            );
+                observable
+                    .sample(samplingRateMSec, TimeUnit.MILLISECONDS)
+                    .map((List<byte[]> list) -> {
+                            // get most recent item from sample
+                            List<byte[]> singleItem = new LinkedList<>();
+                            if (!list.isEmpty()) {
+                                singleItem.add(list.get(list.size() - 1));
+                            }
+                            return singleItem;
+                        }
+                    );
+        }
+
+        final Future<?> writableCheck;
+        AtomicLong lastWritableTS = new AtomicLong(System.currentTimeMillis());
+        if (maxNotWritableTimeSec > 0) {
+            writableCheck = scheduledExecutorService.scheduleAtFixedRate(
+                () -> {
+                    long currentTime = System.currentTimeMillis();
+                    if (writer.getChannel().isWritable()) {
+                        lastWritableTS.set(currentTime);
+                    } else if (currentTime - lastWritableTS.get() > TimeUnit.SECONDS.toMillis(maxNotWritableTimeSec)) {
+                        logger.warn("Closing connection due to channel not writable for more than {} secs", maxNotWritableTimeSec);
+                        channelNotWritableTimeoutCounter.increment();
+                        try {
+                            writer.close();
+                        } catch (Throwable ex) {
+                            logger.error("Failed to close connection.", ex);
+                        }
+                    }
+                },
+                0,
+                10,
+                TimeUnit.SECONDS
+            );
+        } else {
+            writableCheck = null;
         }
 
         final AsyncConnection<T> connection = new AsyncConnection<T>(host,
-                port, id, slotId, groupId, subject, predicate);
+            port, id, slotId, groupId, subject, predicate);
 
         final Channel channel = writer.getChannel();
         channel.closeFuture().addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Void>>() {
@@ -262,101 +297,105 @@ public abstract class PushServer<T, R> {
             public void operationComplete(io.netty.util.concurrent.Future<Void> future) throws Exception {
                 connectionManager.remove(connection);
                 connectionCleanup(heartbeatSubscription, connectionClosedCallback, metaMsgSubscription);
+                if (writableCheck != null) {
+                    writableCheck.cancel(false);
+                }
             }
         });
 
         return
-                observable
-                        .doOnSubscribe(() -> {
-                                    connectionManager.add(connection);
-                                    if (connectionSubscribeCallback != null) {
-                                        connectionSubscribeCallback.call();
-                                    }
-                                }
-                        ) // per connection buffer
-                        .lift(new DisableBackPressureOperator<List<byte[]>>())
-                        .buffer(200, TimeUnit.MILLISECONDS)
-                        .flatMap((List<List<byte[]>> bufferOfBuffers) -> {
-                                    if (bufferOfBuffers != null && !bufferOfBuffers.isEmpty()) {
-                                        ByteBuffer blockBuffer = null;
+            observable
+                .doOnSubscribe(() -> {
+                        connectionManager.add(connection);
+                        if (connectionSubscribeCallback != null) {
+                            connectionSubscribeCallback.call();
+                        }
+                    }
+                ) // per connection buffer
+                .lift(new DisableBackPressureOperator<List<byte[]>>())
+                .buffer(200, TimeUnit.MILLISECONDS)
+                .flatMap((List<List<byte[]>> bufferOfBuffers) -> {
+                        if (bufferOfBuffers != null && !bufferOfBuffers.isEmpty()) {
+                            ByteBuffer blockBuffer = null;
 
-                                        int size = 0;
+                            int size = 0;
+                            for (List<byte[]> buffer : bufferOfBuffers) {
+                                size += buffer.size();
+                            }
+                            final int batchSize = size;
+                            processedWrites.increment(batchSize);
+                            if (channel.isActive() && channel.isWritable()) {
+                                lastWritableTS.set(System.currentTimeMillis());
+                                if (isSSE) {
+                                    if (compressOutput) {
+                                        boolean useSnappy = true;
+                                        byte[] compressedData =  delimiter == null
+                                            ? CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy)
+                                            : CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy, delimiter);
+
+                                        blockBuffer = ByteBuffer.allocate(prefix.length + compressedData.length + nwnw.length);
+                                        blockBuffer.put(prefix);
+                                        blockBuffer.put(compressedData);
+                                        blockBuffer.put(nwnw);
+                                    } else {
+                                        int totalBytes = 0;
                                         for (List<byte[]> buffer : bufferOfBuffers) {
-                                            size += buffer.size();
-                                        }
-                                        final int batchSize = size;
-                                        processedWrites.increment(batchSize);
-                                        if (channel.isActive() && channel.isWritable()) {
-                                            if (isSSE) {
-                                                if (compressOutput) {
-                                                    boolean useSnappy = true;
-                                                    byte[] compressedData =  delimiter == null
-                                                            ? CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy)
-                                                            : CompressionUtils.compressAndBase64EncodeBytes(bufferOfBuffers, useSnappy, delimiter);
 
-                                                    blockBuffer = ByteBuffer.allocate(prefix.length + compressedData.length + nwnw.length);
-                                                    blockBuffer.put(prefix);
-                                                    blockBuffer.put(compressedData);
-                                                    blockBuffer.put(nwnw);
-                                                } else {
-                                                    int totalBytes = 0;
-                                                    for (List<byte[]> buffer : bufferOfBuffers) {
-
-                                                        for (byte[] data : buffer) {
-                                                            totalBytes += (data.length + prefix.length + nwnw.length);
-                                                        }
-                                                    }
-                                                    byte[] block = new byte[totalBytes];
-                                                    blockBuffer = ByteBuffer.wrap(block);
-                                                    for (List<byte[]> buffer : bufferOfBuffers) {
-                                                        for (byte[] data : buffer) {
-                                                            blockBuffer.put(prefix);
-                                                            blockBuffer.put(data);
-                                                            blockBuffer.put(nwnw);
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-                                                int totalBytes = 0;
-                                                for (List<byte[]> buffer : bufferOfBuffers) {
-
-                                                    for (byte[] data : buffer) {
-                                                        totalBytes += (data.length);
-                                                    }
-                                                }
-                                                byte[] block = new byte[totalBytes];
-                                                blockBuffer = ByteBuffer.wrap(block);
-                                                for (List<byte[]> buffer : bufferOfBuffers) {
-                                                    for (byte[] data : buffer) {
-                                                        blockBuffer.put(data);
-                                                    }
-                                                }
+                                            for (byte[] data : buffer) {
+                                                totalBytes += (data.length + prefix.length + nwnw.length);
                                             }
-                                            return
-                                                    writer
-                                                            .writeBytesAndFlush(blockBuffer.array())
-                                                            .retry(writeRetryCount)
-                                                            .doOnError((Throwable t1) -> failedToWriteBatch(connection, batchSize, legacyDroppedWrites, metaMsgSubject))
-                                                            .doOnCompleted(() -> {
-                                                                        if (applicationHeartbeats && lastWriteTime != null) {
-                                                                            lastWriteTime.set(System.currentTimeMillis());
-                                                                        }
-                                                                        if (legacyMsgProcessedCounter != null) {
-                                                                            legacyMsgProcessedCounter.increment(batchSize);
-                                                                        }
-                                                                        successfulWrites.increment(batchSize);
-                                                                        connectionManager.successfulWrites(connection, batchSize);
-                                                                    }
-                                                            )
-                                                            .doOnTerminate(() -> batchWriteSize.set(batchSize));
-                                        } else {
-                                            // connection is not active or writable
-                                            failedToWriteBatch(connection, batchSize, legacyDroppedWrites, metaMsgSubject);
+                                        }
+                                        byte[] block = new byte[totalBytes];
+                                        blockBuffer = ByteBuffer.wrap(block);
+                                        for (List<byte[]> buffer : bufferOfBuffers) {
+                                            for (byte[] data : buffer) {
+                                                blockBuffer.put(prefix);
+                                                blockBuffer.put(data);
+                                                blockBuffer.put(nwnw);
+                                            }
                                         }
                                     }
-                                    return Observable.empty();
+                                } else {
+                                    int totalBytes = 0;
+                                    for (List<byte[]> buffer : bufferOfBuffers) {
+
+                                        for (byte[] data : buffer) {
+                                            totalBytes += (data.length);
+                                        }
+                                    }
+                                    byte[] block = new byte[totalBytes];
+                                    blockBuffer = ByteBuffer.wrap(block);
+                                    for (List<byte[]> buffer : bufferOfBuffers) {
+                                        for (byte[] data : buffer) {
+                                            blockBuffer.put(data);
+                                        }
+                                    }
                                 }
-                        );
+                                return
+                                    writer
+                                        .writeBytesAndFlush(blockBuffer.array())
+                                        .retry(writeRetryCount)
+                                        .doOnError((Throwable t1) -> failedToWriteBatch(connection, batchSize, legacyDroppedWrites, metaMsgSubject))
+                                        .doOnCompleted(() -> {
+                                                if (applicationHeartbeats && lastWriteTime != null) {
+                                                    lastWriteTime.set(System.currentTimeMillis());
+                                                }
+                                                if (legacyMsgProcessedCounter != null) {
+                                                    legacyMsgProcessedCounter.increment(batchSize);
+                                                }
+                                                successfulWrites.increment(batchSize);
+                                                connectionManager.successfulWrites(connection, batchSize);
+                                            }
+                                        )
+                                        .doOnTerminate(() -> batchWriteSize.set(batchSize));
+                            } else {
+                                // connection is not active or writable
+                                failedToWriteBatch(connection, batchSize, legacyDroppedWrites, metaMsgSubject);
+                            }
+                        }
+                        return Observable.empty();
+                    }
+                );
     }
 
     protected void failedToWriteBatch(AsyncConnection<T> connection,
@@ -393,17 +432,17 @@ public abstract class PushServer<T, R> {
         server = createServer();
         server.start();
         serverSignals
-                .subscribe(
-                        (String message) -> logger.info("Signal received for server: " + serverName + " signal: " + message),
-                        (Throwable t) -> logger.info("Signal received for server: " + serverName + " signal: SERVER_ERROR", t),
-                        () -> logger.info("Signal received for server: " + serverName + " signal: SERVER_COMPLETED")
-                );
+            .subscribe(
+                (String message) -> logger.info("Signal received for server: " + serverName + " signal: " + message),
+                (Throwable t) -> logger.info("Signal received for server: " + serverName + " signal: SERVER_ERROR", t),
+                () -> logger.info("Signal received for server: " + serverName + " signal: SERVER_COMPLETED")
+            );
     }
 
     public void blockUntilShutdown() {
         // block on server signal until completed
         serverSignals.toBlocking()
-                .forEach((String message) -> { /* no op */ });
+            .forEach((String message) -> { /* no op */ });
     }
 
     public void startAndBlock() {
@@ -411,7 +450,7 @@ public abstract class PushServer<T, R> {
         server.start();
         try {
             serverSignals.toBlocking()
-                    .forEach((String message) -> logger.info("Signal received for server: " + serverName + " signal: " + message));
+                .forEach((String message) -> logger.info("Signal received for server: " + serverName + " signal: " + message));
         } catch (Throwable t) {
             logger.info("Signal received for server: " + serverName + " signal: SERVER_ERROR", t);
             throw t;

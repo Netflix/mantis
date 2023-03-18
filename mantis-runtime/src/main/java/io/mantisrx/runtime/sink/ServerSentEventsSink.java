@@ -64,8 +64,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
     }
 
     ServerSentEventsSink(Func1<T, String> encoder,
-        Func1<Throwable, String> errorEncoder,
-        Predicate<T> predicate) {
+                         Func1<Throwable, String> errorEncoder,
+                         Predicate<T> predicate) {
         if (errorEncoder == null) {
             // default
             errorEncoder = Throwable::getMessage;
@@ -127,6 +127,11 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         return Integer.parseInt(maxChunkSize);
     }
 
+    private int maxNotWritableTimeSec() {
+        String maxNotWritableTimeSec = propService.getStringValue("mantis.sse.maxNotWritableTimeSec", "-1");
+        return Integer.parseInt(maxNotWritableTimeSec);
+    }
+
     private int bufferCapacity() {
         String bufferCapacityString = propService.getStringValue("mantis.sse.bufferCapacity", "25000");
         return Integer.parseInt(bufferCapacityString);
@@ -154,7 +159,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                 .bufferCapacity(bufferCapacity())
                 .numQueueConsumers(numConsumerThreads())
                 .useSpscQueue(useSpsc())
-                .maxChunkTimeMSec(getBatchInterval());
+                .maxChunkTimeMSec(getBatchInterval())
+                .maxNotWritableTimeSec(maxNotWritableTimeSec());
             if (predicate != null) {
                 config.predicate(predicate.getPredicate());
             }
