@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.core;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,10 +30,7 @@ public class WorkerHostTest {
         WorkerHost w2 = new WorkerHost("localhost", 1, ImmutableList.of(7001, 7002), MantisJobState.Accepted, 2, 7003, 7004);
         WorkerHost w3 = new WorkerHost("localhost", 1, ImmutableList.of(7001, 7002), MantisJobState.Accepted, 2, 7003, 7005);
 
-        // required?
-        assertAll(
-            () -> assertTrue(w1.equals(w2)),
-            () -> assertFalse(w1.equals(w3))
-        );
+        assertTrue(w1.equals(w2));
+        assertFalse(w1.equals(w3));
     }
 }

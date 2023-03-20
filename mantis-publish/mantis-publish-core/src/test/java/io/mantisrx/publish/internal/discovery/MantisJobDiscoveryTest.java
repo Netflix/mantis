@@ -59,23 +59,6 @@ public class MantisJobDiscoveryTest {
     private MrePublishConfiguration config;
     private MantisJobDiscovery jobDiscovery;
 
-//    public class WireMockExtension implements AfterEachCallback, BeforeEachCallback {
-//        static WireMockServer mantisAPI = new WireMockServer();
-//        @Override
-//        public void beforeEach(ExtensionContext context) throws Exception {
-//            mantisAPI.start();
-//        }
-//
-//        @Override
-//        public void afterEach(ExtensionContext context) throws Exception {
-//            mantisAPI.shutdown();
-//        }
-//
-//        public static WireMockServer getMantisAPI() {
-//            return mantisAPI;
-//        }
-//    }
-
     public MantisJobDiscoveryTest() {
         streamJobClusterMap.put(StreamType.DEFAULT_EVENT_STREAM, "RequestEventSubTrackerTestJobCluster");
         streamJobClusterMap.put(StreamType.LOG_EVENT_STREAM, "LogEventSubTrackerTestJobCluster");
@@ -110,10 +93,8 @@ public class MantisJobDiscoveryTest {
         mantisApi.shutdown();
     }
 
-//    @ExtendWith(WireMockExtension.class)
     @Test
     public void testJobDiscoveryFetch() throws IOException {
-//        WireMockServer mantisAPI = WireMockExtension.getMantisAPI();
         String jobCluster = "MantisJobDiscoveryTestJobCluster";
         String jobId = jobCluster + "-1";
 
