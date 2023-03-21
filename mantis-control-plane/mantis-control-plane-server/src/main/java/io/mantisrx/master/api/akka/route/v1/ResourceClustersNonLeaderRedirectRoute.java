@@ -263,7 +263,9 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route disableTaskExecutors(ClusterID clusterID) {
         return entity(Jackson.unmarshaller(DisableTaskExecutorsRequest.class), request -> {
             log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors called with body {}", clusterID, request);
-            return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(request.getAttributes(), Instant.now().plus(Duration.ofHours(24))));
+            return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(
+                request.getAttributes(),
+                Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
         });
     }
 
