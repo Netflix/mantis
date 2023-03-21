@@ -24,7 +24,7 @@ identify anomalies and provide operators with rich and relevant context.
 The realtime nature of these Mantis-backed aggregations allows the Mean-Time-To-Detect to be cut down from tens of minutes to a few seconds. 
 Given the scale of Netflix this makes a huge impact.
 
-##Raven 
+## Raven
 
 In large distributed systems, often there are cases where a user reports a problem but the overall health of the system
 is green. In such cases there is a need to explore events associated with the user/device/service in realtime to find
@@ -44,7 +44,7 @@ The [Cassandra](https://www.youtube.com/watch?v=w3WbVMavy2I) and Elastic Search 
 of the health of every Cassandra cluster at Netflix. Since this system has gone into operation the number of _false pages_ 
 has dropped down significantly. 
 
-##Alerting on Log
+## Alerting on Logs
 
 The Alerting on Logs application allows users to create alerts which page when a certain pattern is detected within
 the application logs. This application analyzes logs from thousands of servers in realtime. 
@@ -65,3 +65,5 @@ accidentally passed along.
 This application samples data across all streaming sources and applies custom pattern
 detection algorithms to identify presence of such data.
 
+## Canary Analysis
+Mantis supports on-demand request/response capture which are forwarded to a canary application instance to test out new changes OR even perform scale test.
