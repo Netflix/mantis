@@ -17,6 +17,7 @@
 package io.reactivex.mantis.network.push;
 
 import static com.mantisrx.common.utils.MantisMetricStringConstants.GROUP_ID_TAG;
+import static io.reactivex.mantis.network.push.PushServerSse.CLIENT_ID_TAG_NAME;
 
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.compression.CompressionUtils;
@@ -69,12 +70,12 @@ public abstract class PushServer<T, R> {
     private Counter successfulWrites;
     private Counter failedWrites;
     private Gauge batchWriteSize;
-    private Counter channelNotWritableTimeoutCounter;
     private Set<Future<Void>> consumerThreadFutures = new HashSet<>();
     private Observable<String> serverSignals;
     private String serverName;
     private final int maxNotWritableTimeSec;
     private final ScheduledExecutorService scheduledExecutorService;
+    private final MetricsRegistry metricsRegistry;
 
     public PushServer(final PushTrigger<T> trigger, ServerConfig<T> config,
                       Observable<String> serverSignals) {
@@ -82,7 +83,7 @@ public abstract class PushServer<T, R> {
         this.serverSignals = serverSignals;
         serverName = config.getName();
         maxNotWritableTimeSec = config.getMaxNotWritableTimeSec();
-        MetricsRegistry metricsRegistry = config.getMetricsRegistry();
+        metricsRegistry = config.getMetricsRegistry();
 
         outboundBuffer = new MonitoredQueue<T>(serverName, config.getBufferCapacity(), config.useSpscQueue());
         trigger.setBuffer(outboundBuffer);
@@ -140,7 +141,6 @@ public abstract class PushServer<T, R> {
             .addCounter("numProcessedWrites")
             .addCounter("numSuccessfulWrites")
             .addCounter("numFailedWrites")
-            .addCounter("channelNotWritableTimeout")
             .addGauge(connectionManager.getActiveConnections(metricsGroup))
             .addGauge("batchWriteSize")
             .build();
@@ -148,7 +148,6 @@ public abstract class PushServer<T, R> {
         failedWrites = serverMetrics.getCounter("numFailedWrites");
         batchWriteSize = serverMetrics.getGauge("batchWriteSize");
         processedWrites = serverMetrics.getCounter("numProcessedWrites");
-        channelNotWritableTimeoutCounter = serverMetrics.getCounter("channelNotWritableTimeout");
 
         registerMetrics(metricsRegistry, serverMetrics, consumerThreads.getMetrics(),
             outboundBuffer.getMetrics(), trigger.getMetrics(),
@@ -262,6 +261,18 @@ public abstract class PushServer<T, R> {
                     );
         }
 
+        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
+        Metrics writableMetrics = new Metrics.Builder()
+            .id("PushServer", clientIdTag)
+            .addCounter("channelWritable")
+            .addCounter("channelNotWritable")
+            .addCounter("channelNotWritableTimeout")
+            .build();
+        metricsRegistry.registerAndGet(writableMetrics);
+        Counter channelWritableCounter = writableMetrics.getCounter("channelWritable");
+        Counter channelNotWritableCounter = writableMetrics.getCounter("channelNotWritable");
+        Counter channelNotWritableTimeoutCounter = writableMetrics.getCounter("channelNotWritableTimeout");
+
         final Future<?> writableCheck;
         AtomicLong lastWritableTS = new AtomicLong(System.currentTimeMillis());
         if (maxNotWritableTimeSec > 0) {
@@ -269,6 +280,7 @@ public abstract class PushServer<T, R> {
                 () -> {
                     long currentTime = System.currentTimeMillis();
                     if (writer.getChannel().isWritable()) {
+                        channelWritableCounter.increment();
                         lastWritableTS.set(currentTime);
                     } else if (currentTime - lastWritableTS.get() > TimeUnit.SECONDS.toMillis(maxNotWritableTimeSec)) {
                         logger.warn("Closing connection due to channel not writable for more than {} secs", maxNotWritableTimeSec);
@@ -278,6 +290,8 @@ public abstract class PushServer<T, R> {
                         } catch (Throwable ex) {
                             logger.error("Failed to close connection.", ex);
                         }
+                    } else {
+                        channelNotWritableCounter.increment();
                     }
                 },
                 0,
