@@ -5,6 +5,9 @@
         }
     },
     "baseline-exact-dependencies-main": {
+        "com.google.guava:guava": {
+            "locked": "31.1-jre"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -129,6 +132,9 @@
         }
     },
     "compileClasspath": {
+        "com.google.guava:guava": {
+            "locked": "31.1-jre"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"

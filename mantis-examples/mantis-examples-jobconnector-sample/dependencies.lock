@@ -11,6 +11,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.guava:guava": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "31.1-jre"
+        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -241,6 +247,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.guava:guava": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-control-plane-core"
+            ],
+            "locked": "31.1-jre"
         },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
