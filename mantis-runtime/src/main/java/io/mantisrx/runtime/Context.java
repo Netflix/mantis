@@ -16,12 +16,11 @@
 
 package io.mantisrx.runtime;
 
-import javax.annotation.Nullable;
-
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.lifecycle.LifecycleNoOp;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
+import javax.annotation.Nullable;
 import rx.Observable;
 import rx.functions.Action0;
 import rx.subjects.BehaviorSubject;
