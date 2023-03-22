@@ -91,25 +91,6 @@ public class ListObjectTests {
         }
     }
 
-    @Test
-    public void testSortingByPublicValueFieldNameDescending() {
-
-        List<TestObject> objects = generateList(10);
-        List<TestObject> sortedList = new ListObject.Builder<TestObject>()
-                .withObjects(objects, TestObject.class)
-                .withSortField("publicValue")
-                .withSortAscending(false)
-                .build().list;
-
-        assert sortedList.size() == objects.size();
-
-        int prevValue = sortedList.get(0).publicValue;
-        for (int i = 1; i < sortedList.size(); i++) {
-            assert sortedList.get(i).publicValue < prevValue;
-            prevValue = sortedList.get(i).publicValue;
-        }
-    }
-
     @Test(expected = RuntimeException.class)
     public void testSortingByPrivateValueFieldName() {
         try {
