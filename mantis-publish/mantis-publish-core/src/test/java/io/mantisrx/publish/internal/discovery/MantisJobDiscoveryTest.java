@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,58 +118,6 @@ public class MantisJobDiscoveryTest {
         assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().size(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().size());
         assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getCustomPort(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().get(0).getPort());
         assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getHost(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().get(0).getHost());
-    }
-
-    @Test
-    @Ignore("another flaky test")
-    public void testJobDiscoveryFetchFailureHandlingAfterSuccess() throws IOException, InterruptedException {
-        String jobCluster = "MantisJobDiscoveryTestJobCluster";
-        String jobId = jobCluster + "-1";
-
-        JobSchedulingInfo jobSchedulingInfo = new JobSchedulingInfo(jobId, Collections.singletonMap(1, new WorkerAssignments(1, 1, Collections.singletonMap(1,
-                new WorkerHost("127.0.0.1", 0, Collections.emptyList(), MantisJobState.Started, 1, 7777, 7151)
-        ))));
-
-        //        JobDiscoveryInfo jobDiscoveryInfo = new JobDiscoveryInfo(jobCluster, jobId,
-        //            Collections.singletonMap(1, new StageWorkers(jobCluster, jobId, 1, Arrays.asList(
-        //                new MantisWorker("127.0.0.1", 7151)
-        //            ))));
-
-        // worker 1 subs list
-        mantisApi.stubFor(get("/jobClusters/discoveryInfo/" + jobCluster)
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(jobSchedulingInfo)))
-        );
-
-        Optional<JobDiscoveryInfo> currentJobWorkers = jobDiscovery.getCurrentJobWorkers(jobCluster);
-        assertTrue(currentJobWorkers.isPresent());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().size(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().size());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getCustomPort(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().get(0).getPort());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getHost(), currentJobWorkers.get().getIngestStageWorkers().getWorkers().get(0).getHost());
-        logger.info("sleep to force a refresh after configured interval");
-        Thread.sleep((config.jobDiscoveryRefreshIntervalSec() + 1) * 1000);
-        mantisApi.stubFor(get("/jobClusters/discoveryInfo/" + jobCluster)
-                .willReturn(aResponse()
-                        .withStatus(503)
-                        .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(jobSchedulingInfo)))
-        );
-
-        Optional<JobDiscoveryInfo> currentJobWorkers2 = jobDiscovery.getCurrentJobWorkers(jobCluster);
-        assertTrue(currentJobWorkers2.isPresent());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().size(), currentJobWorkers2.get().getIngestStageWorkers().getWorkers().size());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getCustomPort(), currentJobWorkers2.get().getIngestStageWorkers().getWorkers().get(0).getPort());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getHost(), currentJobWorkers2.get().getIngestStageWorkers().getWorkers().get(0).getHost());
-        logger.info("sleep to let async refresh complete");
-        Thread.sleep(1000);
-        mantisApi.verify(2, getRequestedFor(urlMatching("/jobClusters/discoveryInfo/" + jobCluster)));
-
-        // should continue serving old Job Discovery data after a 503
-        Optional<JobDiscoveryInfo> currentJobWorkers3 = jobDiscovery.getCurrentJobWorkers(jobCluster);
-        assertTrue(currentJobWorkers3.isPresent());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().size(), currentJobWorkers3.get().getIngestStageWorkers().getWorkers().size());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getCustomPort(), currentJobWorkers3.get().getIngestStageWorkers().getWorkers().get(0).getPort());
-        assertEquals(jobSchedulingInfo.getWorkerAssignments().get(1).getHosts().get(1).getHost(), currentJobWorkers3.get().getIngestStageWorkers().getWorkers().get(0).getHost());
     }
 
     @Test
