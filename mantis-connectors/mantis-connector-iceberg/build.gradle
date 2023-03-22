@@ -73,7 +73,8 @@ test {
 shadowJar {
     classifier = null
     dependencies {
-        exclude dependency("com.netflix.spectator:spectator-api")
+        exclude(dependency("com.netflix.spectator:spectator-api"))
+        exclude(dependency("com.google.guava:guava"))
     }
 
     // include the LICENSE and NOTICE files for the shaded Jar
