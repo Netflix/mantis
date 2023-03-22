@@ -105,18 +105,21 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private Action0 onSinkUnsubscribe = null;
     private final List<Closeable> closeables = new ArrayList<>();
     private final ScheduledExecutorService scheduledExecutorService;
+    private final ClassLoader classLoader;
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
         MantisMasterGateway mantisMasterApi,
         WorkerConfiguration config,
         WorkerMetricsClient workerMetricsClient,
-        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory) {
+        SinkSubscriptionStateHandler.Factory sinkSubscriptionStateHandlerFactory,
+        ClassLoader classLoader) {
         this.vmTaskStatusObserver = vmTaskStatusObserver;
         this.mantisMasterApi = mantisMasterApi;
         this.config = config;
         this.workerMetricsClient = workerMetricsClient;
         this.sinkSubscriptionStateHandlerFactory = sinkSubscriptionStateHandlerFactory;
+        this.classLoader = classLoader;
 
         String connectionsPerEndpointStr =
             ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.connectionsPerEndpoint", "2");
@@ -199,9 +202,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     }
 
     private static Context generateContext(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
-                                           MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable) {
+                                           MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, ClassLoader classLoader) {
 
-        return new Context(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, workerMapObservable);
+        return new Context(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, workerMapObservable, classLoader);
 
     }
 
@@ -346,7 +349,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                             logger.warn("Unexpected exception sleeping: " + ie.getMessage());
                         }
                         System.exit(0);
-                    }, createWorkerMapObservable(selfSchedulingInfo, executionRequest.getJobName(), executionRequest.getJobId(), executionRequest.getDurationType())
+                    }, createWorkerMapObservable(selfSchedulingInfo, executionRequest.getJobName(), executionRequest.getJobId(), executionRequest.getDurationType()),
+                classLoader
             );
             //context.setPrevStageCompletedObservable(createPrevStageCompletedObservable(selfSchedulingInfo, rw.getJobId(), rw.getStageNum()));
 

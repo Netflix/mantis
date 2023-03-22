@@ -48,6 +48,8 @@ public class Context {
     private Observable<Boolean> prevStageCompletedObservable = BehaviorSubject.create(false);
     // An Observable providing details of all workers of the current job
     private Observable<WorkerMap> workerMapObservable = Observable.empty();
+    // Custom class loader
+    private ClassLoader classLoader;
 
     /**
      * For testing only
@@ -60,11 +62,16 @@ public class Context {
 
     public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
                    MetricsRegistry metricsRegistry, Action0 completeAndExitAction) {
-        this(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, Observable.empty());
+        this(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, Observable.empty(), null);
     }
 
     public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
                    MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable) {
+        this(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, workerMapObservable, null);
+    }
+
+    public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
+                   MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, ClassLoader classLoader) {
         this.parameters = parameters;
         this.serviceLocator = serviceLocator;
         this.workerInfo = workerInfo;
@@ -73,6 +80,7 @@ public class Context {
             throw new IllegalArgumentException("Null complete action provided in Context contructor");
         this.completeAndExitAction = completeAndExitAction;
         this.workerMapObservable = workerMapObservable;
+        this.classLoader = classLoader;
     }
 
 
@@ -159,5 +167,5 @@ public class Context {
         return this.workerMapObservable;
     }
 
-
+    public ClassLoader getClassLoader() { return this.classLoader; }
 }

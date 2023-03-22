@@ -185,7 +185,8 @@ public class RuntimeTaskImpl extends AbstractIdleService implements RuntimeTask 
                 masterMonitor,
                 config,
                 workerMetricsClient,
-                sinkSubscriptionStateHandlerFactory),
+                sinkSubscriptionStateHandlerFactory,
+                userCodeClassLoader.asClassLoader()),
             getJobProviderClass(),
             userCodeClassLoader,
             mantisJob));

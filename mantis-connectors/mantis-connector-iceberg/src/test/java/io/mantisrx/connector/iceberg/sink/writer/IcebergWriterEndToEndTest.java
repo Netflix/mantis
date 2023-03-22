@@ -111,7 +111,7 @@ public class IcebergWriterEndToEndTest {
         final IcebergWriterPool writerPool = new FixedIcebergWriterPool(writerFactory, writerConfig);
         Transformer transformer =
                 IcebergWriterStage.newTransformer(writerConfig, new WriterMetrics(), writerPool, partitioner,
-                        WORKER_INFO);
+                        WORKER_INFO, null);
 
         final int size = 1000;
         // odd numbers observable
