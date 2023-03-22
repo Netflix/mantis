@@ -24,6 +24,7 @@ dependencies {
     api project(':mantis-network')
     api project(':mantis-common')
     api libraries.slf4jApi
+    compileOnly libraries.jsr305
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
     testImplementation libraries.junit4

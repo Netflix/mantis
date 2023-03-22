@@ -34,12 +34,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.9"
-        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -238,12 +232,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "3.0.0"
-        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -415,12 +403,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
-        },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "3.0.0"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -626,12 +608,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
-        },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "3.0.0"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -848,12 +824,6 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
-        },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "3.0.0"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [

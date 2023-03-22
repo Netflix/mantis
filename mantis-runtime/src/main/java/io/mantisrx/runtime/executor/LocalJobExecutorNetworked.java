@@ -235,7 +235,8 @@ public class LocalJobExecutorNetworked {
                         workerInfo,
                         MetricsRegistry.getInstance(), () -> {
                     System.exit(0);
-                }, workerMapObservable);
+                }, workerMapObservable,
+                    Thread.currentThread().getContextClassLoader());
 
                 // workers for stage 1
                 workerInfoMap.put(1, workerInfoList);
@@ -280,7 +281,8 @@ public class LocalJobExecutorNetworked {
                         ParameterUtils.createContextParameters(parameterDefinitions,
                                 parameters),
                         serviceLocator, workerInfo,
-                        MetricsRegistry.getInstance(), nullAction, workerMapObservable);
+                        MetricsRegistry.getInstance(), nullAction, workerMapObservable,
+                    Thread.currentThread().getContextClassLoader());
 
                 startSource(i, sourcePort, nextStageScalingInfo.getNumberOfInstances(),
                         job.getSource(), currentStage, context, workersInStageOneObservable);
@@ -313,7 +315,8 @@ public class LocalJobExecutorNetworked {
                             ParameterUtils.createContextParameters(parameterDefinitions,
                                     parameters),
                             serviceLocator, workerInfo,
-                            MetricsRegistry.getInstance(), nullAction, workerMapObservable);
+                            MetricsRegistry.getInstance(), nullAction, workerMapObservable,
+                        Thread.currentThread().getContextClassLoader());
 
 
                     startIntermediate(previousPorts, port, currentStage, context, j,
@@ -359,7 +362,8 @@ public class LocalJobExecutorNetworked {
                         ParameterUtils.createContextParameters(parameterDefinitions,
                                 parameters),
                         serviceLocator, workerInfo,
-                        MetricsRegistry.getInstance(), nullAction, workerMapObservable);
+                        MetricsRegistry.getInstance(), nullAction, workerMapObservable,
+                    Thread.currentThread().getContextClassLoader());
 
 
                 startSink(previousStage, previousPorts, currentStage, () -> workerInfo.getWorkerPorts().getSinkPort(), sink,

@@ -32,9 +32,9 @@ dependencies {
     api project(":mantis-common")
 
     api "org.skife.config:config-magic:$configMagicVersion"
-    api libraries.jsr305
     api libraries.flinkRpcApi
     api libraries.flinkCore
+    compileOnly libraries.jsr305
     compileOnly libraries.flinkRpcImpl // Provided by copyLibs task
 
     api "org.apache.mesos:mesos:$mesosVersion"

@@ -59,6 +59,8 @@ import rx.Scheduler;
 import rx.exceptions.Exceptions;
 import rx.schedulers.Schedulers;
 
+import javax.annotation.Nullable;
+
 /**
  * Processing stage which writes records to Iceberg through a backing file store.
  */
@@ -140,7 +142,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             IcebergWriterPool writerPool,
             Partitioner partitioner,
             WorkerInfo workerInfo,
-            ClassLoader loader) {
+            @Nullable ClassLoader loader) {
         int workerIdx = workerInfo.getWorkerIndex();
         String nameFormat = "IcebergWriter (" + (workerIdx + 1) + ")-%d";
         ThreadFactoryBuilder tfBuilder = new ThreadFactoryBuilder().setNameFormat(nameFormat);

@@ -16,6 +16,8 @@
 
 package io.mantisrx.runtime;
 
+import javax.annotation.Nullable;
+
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.lifecycle.LifecycleNoOp;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
@@ -49,12 +51,14 @@ public class Context {
     // An Observable providing details of all workers of the current job
     private Observable<WorkerMap> workerMapObservable = Observable.empty();
     // Custom class loader
-    private ClassLoader classLoader;
+    @Nullable
+    private final ClassLoader classLoader;
 
     /**
      * For testing only
      */
     public Context() {
+        this.classLoader = null;
         completeAndExitAction = () -> {
             // no-op
         };
@@ -66,12 +70,7 @@ public class Context {
     }
 
     public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
-                   MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable) {
-        this(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, workerMapObservable, null);
-    }
-
-    public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
-                   MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, ClassLoader classLoader) {
+                   MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, @Nullable ClassLoader classLoader) {
         this.parameters = parameters;
         this.serviceLocator = serviceLocator;
         this.workerInfo = workerInfo;
