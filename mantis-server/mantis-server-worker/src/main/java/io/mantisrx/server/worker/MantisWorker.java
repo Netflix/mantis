@@ -33,6 +33,7 @@ import io.mantisrx.server.worker.config.ConfigurationFactory;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus;
 import io.mantisrx.server.worker.mesos.VirualMachineWorkerServiceMesosImpl;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -144,7 +145,8 @@ public class MantisWorker extends BaseService {
                                 wrappedRequest,
                                 config,
                                 gateway,
-                                ClassLoaderHandle.fixed(classLoader).createUserCodeClassloader(null),
+                                ClassLoaderHandle.fixed(classLoader).getOrResolveClassLoader(
+                                    ImmutableList.of(), ImmutableList.of()),
                                 SinkSubscriptionStateHandler
                                     .Factory
                                     .forEphemeralJobsThatNeedToBeKilledInAbsenceOfSubscriber(
