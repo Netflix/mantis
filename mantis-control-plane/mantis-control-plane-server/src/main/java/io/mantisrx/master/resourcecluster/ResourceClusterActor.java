@@ -493,7 +493,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             .stream()
             .map(this::getTaskExecutorStatus)
             .filter(Objects::nonNull)
-            .map(taskExecutorStatus -> taskExecutorStatus.getRegistration().getTaskExecutorContainerDefinitionId().orElse(null))
+            .map(TaskExecutorStatus::getRegistration)
+            .filter(Objects::nonNull)
+            .map(registration -> registration.getTaskExecutorContainerDefinitionId().orElse(null))
             .filter(Objects::nonNull)
             .collect(groupingBy(ContainerSkuID::getResourceID, Collectors.counting()))
             .forEach((sku, count) -> metrics.setGauge(
