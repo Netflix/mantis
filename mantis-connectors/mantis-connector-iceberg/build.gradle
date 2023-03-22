@@ -39,6 +39,7 @@ dependencies {
     }
     implementation project(":mantis-runtime")
     implementation libraries.slf4jApi
+    implementation "com.google.guava:guava:31.1-jre"
 
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
     shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
@@ -56,7 +57,7 @@ dependencies {
 
     testImplementation project(":mantis-runtime").sourceSets.test.output
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
-    testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion" 
+    testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion"
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.spectatorApi

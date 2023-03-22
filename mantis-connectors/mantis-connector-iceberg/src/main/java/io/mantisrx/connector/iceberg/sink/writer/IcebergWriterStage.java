@@ -16,6 +16,7 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.mantisrx.connector.iceberg.sink.codecs.IcebergCodecs;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterConfig;
 import io.mantisrx.connector.iceberg.sink.writer.config.WriterProperties;
@@ -36,7 +37,6 @@ import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
-import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;

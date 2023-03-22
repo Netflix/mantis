@@ -16,7 +16,7 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
-import io.mantisrx.shaded.com.google.common.io.Files;
+import com.google.common.io.Files;
 import java.io.File;
 import lombok.Builder;
 import lombok.Getter;
