@@ -19,17 +19,10 @@ package io.mantisrx.master.api.akka.route;
 import static org.junit.Assert.*;
 
 import io.mantisrx.common.Ack;
-import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
-import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.List;
-import java.util.Optional;
 import org.junit.Test;
 
 
