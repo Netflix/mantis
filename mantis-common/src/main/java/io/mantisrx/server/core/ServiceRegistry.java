@@ -34,6 +34,7 @@ public class ServiceRegistry {
     }
 
     public void setMantisPropertiesService(MantisPropertiesLoader service) {
+        logger.info(String.format("Setting Mantis Properties Service to %s", service), new Exception());
         if (!registryRef.compareAndSet(null, service)) {
             logger.error("MantisPropertiesService already set to {}", registryRef.get());
         }
@@ -42,7 +43,7 @@ public class ServiceRegistry {
 
     public MantisPropertiesLoader getPropertiesService() {
         if (registryRef.get() == null) {
-            registryRef.set(loadMantisPropertiesLoader());
+            setMantisPropertiesService(loadMantisPropertiesLoader());
         }
 
         return registryRef.get();

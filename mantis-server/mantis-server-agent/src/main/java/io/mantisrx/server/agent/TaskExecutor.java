@@ -475,8 +475,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             task.initialize(
                 executeRequest,
                 configString,
-                userCodeClassLoader
-                );
+                userCodeClassLoader);
 
             scheduleRunAsync(() -> {
                 setCurrentTask(task);
