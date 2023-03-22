@@ -39,7 +39,9 @@ import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
@@ -129,7 +131,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         PartitionerFactory partitionerFactory = context.getServiceLocator().service(PartitionerFactory.class);
         Partitioner partitioner = partitionerFactory.getPartitioner(table);
 
-        return newTransformer(config, metrics, writerPool, partitioner, context.getWorkerInfo());
+        return newTransformer(config, metrics, writerPool, partitioner, context.getWorkerInfo(), context.getClassLoader());
     }
 
     @VisibleForTesting
@@ -138,11 +140,22 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
             WriterMetrics writerMetrics,
             IcebergWriterPool writerPool,
             Partitioner partitioner,
-            WorkerInfo workerInfo) {
+            WorkerInfo workerInfo,
+            @Nullable ClassLoader loader) {
         int workerIdx = workerInfo.getWorkerIndex();
         String nameFormat = "IcebergWriter (" + (workerIdx + 1) + ")-%d";
-        Scheduler executingService = new MantisRxSingleThreadScheduler(
-                new ThreadFactoryBuilder().setNameFormat(nameFormat).build());
+        ThreadFactoryBuilder tfBuilder = new ThreadFactoryBuilder().setNameFormat(nameFormat);
+        if(loader != null) {
+            // if the job classloader is enabled, let's use the job classloader
+            // as the thread context classloader of these threads
+            ThreadFactory backingTf = r -> {
+                Thread thread = new Thread(r);
+                thread.setContextClassLoader(loader);
+                return thread;
+            };
+            tfBuilder.setThreadFactory(backingTf);
+        }
+        Scheduler executingService = new MantisRxSingleThreadScheduler(tfBuilder.build());
         return new Transformer(writerConfig, writerMetrics, writerPool, partitioner,
                 Schedulers.computation(), executingService);
     }

@@ -11,12 +11,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.9"
-        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -215,12 +209,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.9"
-        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -413,12 +401,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.9"
-        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -442,14 +424,14 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.4"
+            "locked": "1.6.0"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "1.5.4"
+            "locked": "1.6.0"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
@@ -671,12 +653,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.9"
-        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -876,12 +852,6 @@
             ],
             "locked": "1.1.1"
         },
-        "com.google.code.findbugs:jsr305": {
-            "firstLevelTransitive": [
-                "io.mantisrx:mantis-control-plane-core"
-            ],
-            "locked": "1.3.9"
-        },
         "com.netflix.archaius:archaius2-api": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
@@ -905,14 +875,14 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.5.4"
+            "locked": "1.6.0"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "1.5.4"
+            "locked": "1.6.0"
         },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
