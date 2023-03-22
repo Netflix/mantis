@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
@@ -58,8 +59,6 @@ import rx.Observable;
 import rx.Scheduler;
 import rx.exceptions.Exceptions;
 import rx.schedulers.Schedulers;
-
-import javax.annotation.Nullable;
 
 /**
  * Processing stage which writes records to Iceberg through a backing file store.
