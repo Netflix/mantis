@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'mantis'
-
 ext {
     hadoopVersion = '2.7.3'
     icebergVersion = '0.14.+'
@@ -28,7 +24,7 @@ dependencies {
     configurations {
         // we need parquet dependency to be present in testing classpath.
         // hence we need to extend from shadow configuration
-        testImplementation.extendsFrom shadow
+        testImplementation.extendsFrom compileOnly
         all {
             // we want a parquet version above 1.12.0 because we need this fix
             // https://issues.apache.org/jira/browse/PARQUET-1851
@@ -37,75 +33,27 @@ dependencies {
             }
         }
     }
-    implementation project(":mantis-runtime")
+    api project(":mantis-runtime")
     implementation libraries.slf4jApi
 
     // We only need the Configuration interface. Users can bring their own hadoop-common version.
-    shadow "org.apache.hadoop:hadoop-common:$hadoopVersion"
+    compileOnly "org.apache.hadoop:hadoop-common:$hadoopVersion"
 
     // Exclude in case there are differences in SHAs between 0.7.0 incubation versions.
-    shadow "org.apache.iceberg:iceberg-api:$icebergVersion"
-    shadow "org.apache.iceberg:iceberg-core:$icebergVersion"
-    shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
-    shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
-    shadow "org.apache.avro:avro:$avroVersion"
-    shadow "org.apache.parquet:parquet-hadoop:${parquetVersion}"
-
-    // We only need this for local mains(). Users bring their own implementation.
-    shadow libraries.slf4jLog4j12
+    compileOnly "org.apache.iceberg:iceberg-api:$icebergVersion"
+    compileOnly "org.apache.iceberg:iceberg-core:$icebergVersion"
+    compileOnly "org.apache.iceberg:iceberg-data:$icebergVersion"
+    compileOnly "org.apache.iceberg:iceberg-parquet:$icebergVersion"
+    compileOnly "org.apache.avro:avro:$avroVersion"
+    compileOnly "org.apache.parquet:parquet-hadoop:${parquetVersion}"
 
     testImplementation project(":mantis-runtime").sourceSets.test.output
-    testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
-    testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion" 
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.spectatorApi
     testImplementation libraries.slf4jLog4j12
 }
 
-tasks.jar.dependsOn tasks.shadowJar
-
 test {
     useJUnitPlatform()
-}
-
-shadowJar {
-    classifier = null
-    dependencies {
-        exclude dependency("com.netflix.spectator:spectator-api")
-    }
-
-    // include the LICENSE and NOTICE files for the shaded Jar
-    from(projectDir) {
-        include 'LICENSE'
-        include 'NOTICE'
-    }
-}
-
-jar {
-    enabled = false
-}
-jar.dependsOn(shadowJar)
-
-afterEvaluate {
-    publishing {
-        publications {
-            // to remove shaded dependency from pom.xml
-            withType(MavenPublication) {
-                pom.withXml {
-                    asNode()
-                            .dependencies
-                            .dependency
-                            .findAll {
-                                ['hadoop-common',
-                                 'iceberg-core',
-                                 'iceberg-data',
-                                 'iceberg-parquet'
-                                ].contains(it.artifactId.text())
-                            }
-                            .each { it.parent().remove(it) }
-                }
-            }
-        }
-    }
 }
