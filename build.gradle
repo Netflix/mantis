@@ -156,6 +156,10 @@ subprojects {
         printReleasedArtifact.dependsOn(project.rootProject.snapshot)
         printAllReleasedArtifacts.dependsOn("${project.path}:printReleasedArtifact")
     }
+
+    test {
+        useJUnitPlatform()
+    }
 }
 
 apply from: file('baseline.gradle')

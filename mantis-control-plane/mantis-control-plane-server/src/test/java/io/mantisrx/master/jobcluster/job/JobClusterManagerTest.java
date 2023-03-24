@@ -131,12 +131,8 @@ public class JobClusterManagerTest {
             new WorkerEventSubscriberLoggingImpl());
     private static final String user = "nj";
 
-//    @Rule
-//    public TemporaryFolder rootDir = new TemporaryFolder();
     @TempDir
     File rootDir;
-//    @Rule
-//    public Timeout globalTimeout = new Timeout(2000);
 
     @BeforeAll
     public static void setup() {

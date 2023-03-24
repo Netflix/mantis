@@ -48,11 +48,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class DefaultMantisApiClientTest {
-    WireMockRule mantisAPI;
+    WireMockRule mantisAPI = new WireMockRule(options().dynamicPort());
 
     @BeforeEach
     public void setup() {
-        mantisAPI = new WireMockRule(options().dynamicPort());
         mantisAPI.start();
     }
 

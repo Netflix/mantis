@@ -279,8 +279,9 @@ public class HttpSourceImplTest {
                 .subscribe();
 
         done.await(3000, TimeUnit.SECONDS);
-        assertEquals(localServerProvider.serverSize(),
-                counter.get(),
+        assertEquals(
+            localServerProvider.serverSize(),
+            counter.get(),
             String.format("There should be exactly one response from each of the %d servers", localServerProvider.serverSize()));
 
         for (Server server : localServerProvider.getServers()) {
@@ -576,23 +577,24 @@ public class HttpSourceImplTest {
         if (!done.await(5, TimeUnit.SECONDS)) {
             fail(String.format("All streaming should be done within %d seconds. ", wait));
         }
-        assertEquals(maxRepeat * localServerProvider.serverSize(),
-                counter.get(),
+        assertEquals(
+            maxRepeat * localServerProvider.serverSize(),
+            counter.get(),
             String.format("There should be exactly %d response from each of the %d servers",
                 maxRepeat,
                 localServerProvider.serverSize()));
 
         for (Server server : localServerProvider.getServers()) {
             ServerInfo serverInfo = toServerInfo(server);
-            assertEquals(maxRepeat,
-                    sourceObserver.getCount(serverInfo, EventType.SOURCE_COMPLETED),
+            assertEquals(
+                maxRepeat,
+                sourceObserver.getCount(serverInfo, EventType.SOURCE_COMPLETED),
                 String.format("There should be %d completion per server as resumption function should called %d times",
                     maxRepeat,
                     maxRepeat - 1));
 
             assertEquals(0, sourceObserver.getCount(serverInfo, EventType.SUBSCRIPTION_FAILED), "There should be no error");
-            assertEquals(10,
-                    sourceObserver.getCount(serverInfo, EventType.SUBSCRIPTION_ESTABLISHED), String.format("Connection per server should have been established %d times", maxRepeat));
+            assertEquals(10, sourceObserver.getCount(serverInfo, EventType.SUBSCRIPTION_ESTABLISHED), String.format("Connection per server should have been established %d times", maxRepeat));
         }
 
         assertEquals(1, sourceObserver.getCompletionCount(),
@@ -605,13 +607,13 @@ public class HttpSourceImplTest {
 
         assertEquals(localServerProvider.serverSize(), sourceObserver.getEventCount(CONNECTION_UNSUBSCRIBED), "Each connection should be unsubscribed once by the subscriber");
         for (EventType eventType : new EventType[] {EventType.SOURCE_COMPLETED, EventType.SUBSCRIPTION_ESTABLISHED, EventType.CONNECTION_ATTEMPTED, EventType.CONNECTION_ESTABLISHED}) {
-            assertEquals(maxRepeat * localServerProvider.serverSize(),
-                    sourceObserver.getEventCount(eventType), String.format("Event %s should be recorded exactly %d times per server", eventType, maxRepeat));
+            assertEquals(maxRepeat * localServerProvider.serverSize(), sourceObserver.getEventCount(eventType), String.format("Event %s should be recorded exactly %d times per server", eventType, maxRepeat));
         }
 
 
-        assertEquals(localServerProvider.serverSize(),
-                sourceObserver.getEventCount(EventType.SERVER_FOUND),
+        assertEquals(
+            localServerProvider.serverSize(),
+            sourceObserver.getEventCount(EventType.SERVER_FOUND),
             "Event SERVER_FOUND should be recorded exactly once per server");
     }
 
@@ -699,9 +701,11 @@ public class HttpSourceImplTest {
         for (ServerInfo server : resumptionCounts.keySet()) {
             assertTrue(maxRepeat > resumptionCounts.get(server).get(), String.format("The server %s:%s should be resumed fewer than %d times", server.getHost(), server.getPort(), maxRepeat));
         }
-        assertTrue((cutOff + 1) * localServerProvider.serverSize() <= counter.get(), String.format("There should be at least %d response from each of the %d servers",
-            cutOff + 1,
-            localServerProvider.serverSize()));
+        assertTrue(
+            (cutOff + 1) * localServerProvider.serverSize() <= counter.get(),
+            String.format("There should be at least %d response from each of the %d servers",
+                cutOff + 1,
+                localServerProvider.serverSize()));
 
         for (Server server : localServerProvider.getServers()) {
             ServerInfo serverInfo = toServerInfo(server);
@@ -729,13 +733,15 @@ public class HttpSourceImplTest {
 
         assertEquals(localServerProvider.serverSize(), sourceObserver.getEventCount(CONNECTION_UNSUBSCRIBED), "Each connection should be unsubscribed once by the subscriber");
         for (EventType eventType : new EventType[] {EventType.SOURCE_COMPLETED, EventType.SUBSCRIPTION_ESTABLISHED, EventType.CONNECTION_ATTEMPTED, EventType.CONNECTION_ESTABLISHED}) {
-            assertTrue((cutOff + 1) * localServerProvider.serverSize() <= sourceObserver.getEventCount(eventType),
+            assertTrue(
+                (cutOff + 1) * localServerProvider.serverSize() <= sourceObserver.getEventCount(eventType),
                 String.format("Event %s should be recorded at least %d times per server", eventType, cutOff));
         }
 
         for (EventType eventType : new EventType[] {EventType.SERVER_FOUND, EventType.SUBSCRIPTION_CANCELED}) {
-            assertEquals(localServerProvider.serverSize(),
-                    sourceObserver.getEventCount(eventType),
+            assertEquals(
+                localServerProvider.serverSize(),
+                sourceObserver.getEventCount(eventType),
                 String.format("Event %s should be recorded exactly once per server", eventType));
         }
     }

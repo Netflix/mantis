@@ -21,9 +21,9 @@
 //
 //import java.time.Instant;
 //
-//import org.junit.AfterClass;
-//import org.junit.BeforeClass;
-//import org.junit.Test;
+//import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.BeforeAll;
+//import org.junit.jupiter.api.Test;
 //
 //import com.google.common.collect.Lists;
 //
@@ -51,7 +51,7 @@
 //	private static final String user = "mantis";
 //	private static IJobClusterDefinition jobClusterDefn ;
 //
-//	@BeforeClass
+//	@BeforeAll
 //	public static void setup() {
 //		system = ActorSystem.create();
 //
@@ -87,7 +87,7 @@
 //
 //	}
 //
-//	@AfterClass
+//	@AfterAll
 //	public static void tearDown() {
 //		((SimpleCachedFileStorageProvider)storageProvider).deleteAllFiles();
 //		TestKit.shutdownActorSystem(system);

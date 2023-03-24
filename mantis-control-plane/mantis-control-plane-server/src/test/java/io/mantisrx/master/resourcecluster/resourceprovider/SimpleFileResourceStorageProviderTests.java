@@ -40,16 +40,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-//import org.junit.rules.TemporaryFolder;
 
 @Slf4j
 public class SimpleFileResourceStorageProviderTests {
     static ActorSystem system;
 
-//    @Rule
-//    public TemporaryFolder storageDirectory = new TemporaryFolder();
     @TempDir
-    File storageDirectory, testDirectory;
+    File storageDirectory;
 
     @BeforeAll
     public static void setup() throws IOException {
@@ -163,7 +160,7 @@ public class SimpleFileResourceStorageProviderTests {
                 .id(spec.getId())
                 .build();
 
-        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, testDirectory);
+        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory);
 
         CompletionStage<ResourceClusterSpecWritable> updateFut = prov.registerAndUpdateClusterSpec(specWritable);
         log.info("res: " + updateFut.toCompletableFuture().get());

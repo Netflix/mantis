@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -138,7 +137,7 @@ public class ContextualHttpSourceTest {
         }
 
         assertEquals(localServerProvider.serverSize(), connectedServers.size(), "There should be as many as provided servers");
-        Assertions.assertEquals(counter.get(), RequestProcessor.smallStreamContent.size() * localServerProvider.serverSize(), String.format("%d servers => the result has %d times of a single stream", localServerProvider.serverSize(), localServerProvider.serverSize()));
+        assertEquals(counter.get(), RequestProcessor.smallStreamContent.size() * localServerProvider.serverSize(), String.format("%d servers => the result has %d times of a single stream", localServerProvider.serverSize(), localServerProvider.serverSize()));
         for (String data : RequestProcessor.smallStreamContent) {
             assertEquals(localServerProvider.serverSize(), result.get(data).get(), String.format("%d servers => %d identical copies per message", localServerProvider.serverSize(), localServerProvider.serverSize()));
         }

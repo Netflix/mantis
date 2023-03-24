@@ -55,7 +55,7 @@ public class DefaultSubscriptionTrackerTest {
 
     private static final int subscriptionExpiryIntervalSec = 3;
     private final Map<String, String> streamJobClusterMap = new HashMap<>();
-    WireMockRule mantisWorker1, mantisWorker2, mantisWorker3;
+    public WireMockRule mantisWorker1 = new WireMockRule(options().dynamicPort()), mantisWorker2 = new WireMockRule(options().dynamicPort()), mantisWorker3 = new WireMockRule(options().dynamicPort());
     private DefaultSubscriptionTracker subscriptionTracker;
     private MantisJobDiscovery mockJobDiscovery;
     private StreamManager mockStreamManager;
@@ -97,9 +97,6 @@ public class DefaultSubscriptionTrackerTest {
         Registry registry = new DefaultRegistry();
         mockJobDiscovery = mock(MantisJobDiscovery.class);
         mockStreamManager = spy(new StreamManager(registry, mrePublishConfiguration));
-        mantisWorker1 = new WireMockRule(options().dynamicPort());
-        mantisWorker2 = new WireMockRule(options().dynamicPort());
-        mantisWorker3 = new WireMockRule(options().dynamicPort());
         mantisWorker1.start();
         mantisWorker2.start();
         mantisWorker3.start();
@@ -129,7 +126,7 @@ public class DefaultSubscriptionTrackerTest {
         MantisServerSubscriptionEnvelope w1Subs = SubscriptionsHelper.createSubsEnvelope(2, 0);
         mantisWorker1.stubFor(get(urlMatching("/\\?jobId=.*"))
                 .willReturn(aResponse()
-                        .withStatus(200)
+                        .withStatus(400)
                         .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(w1Subs)))
         );
 

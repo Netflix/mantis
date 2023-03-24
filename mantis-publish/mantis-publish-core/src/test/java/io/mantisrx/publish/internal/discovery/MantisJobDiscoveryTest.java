@@ -55,7 +55,7 @@ public class MantisJobDiscoveryTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobDiscoveryTest.class);
     private final Map<String, String> streamJobClusterMap = new HashMap<>();
-    WireMockRule mantisApi;
+    WireMockRule mantisApi = new WireMockRule(options().dynamicPort());
     private MrePublishConfiguration config;
     private MantisJobDiscovery jobDiscovery;
 
@@ -80,7 +80,6 @@ public class MantisJobDiscoveryTest {
 
     @BeforeEach
     public void setup() {
-        mantisApi = new WireMockRule(options().dynamicPort());
         mantisApi.start();
         config = testConfig();
         Registry registry = new DefaultRegistry();

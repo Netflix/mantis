@@ -139,13 +139,17 @@ public class HttpSourceTest {
             fail(String.format("Waited at least %d seconds for the test to finish. Something is wrong", waitSeconds));
         }
 
-        Assertions.assertEquals(localServerProvider.serverSize(),
-                counter.get(), String.format("%d servers => the result has %d times of a single echo",
+        assertEquals(
+            localServerProvider.serverSize(),
+            counter.get(),
+            String.format("%d servers => the result has %d times of a single echo",
                 localServerProvider.serverSize(),
                 localServerProvider.serverSize()));
 
-        assertEquals(localServerProvider.serverSize(),
-                result.get(postContent).get(), String.format("%d servers => %d identical copies per message",
+        assertEquals(
+            localServerProvider.serverSize(),
+            result.get(postContent).get(),
+            String.format("%d servers => %d identical copies per message",
                 localServerProvider.serverSize(),
                 localServerProvider.serverSize()));
 

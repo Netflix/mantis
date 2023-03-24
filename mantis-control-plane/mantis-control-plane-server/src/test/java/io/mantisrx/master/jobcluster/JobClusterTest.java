@@ -159,8 +159,6 @@ public class JobClusterTest {
     private IMantisPersistenceProvider storageProvider;
     private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
     private static final String user = "mantis";
-//    @Rule
-//    public TemporaryFolder rootDir = new TemporaryFolder();
     @TempDir
     File rootDir;
 
