@@ -24,6 +24,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ServiceLoader;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.core.classloading.ComponentClassLoader;
@@ -35,6 +37,7 @@ import org.apache.flink.util.IOUtils;
  * RpcSystemLoader for mantis task executor and other services that need to expose an RPC API.
  * This particular implementation uses the akka RPC implementation under the hood.
  */
+@Slf4j
 public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
 
     private static final RpcSystem INSTANCE = createRpcSystem();
@@ -52,8 +55,15 @@ public class MantisAkkaRpcSystemLoader implements RpcSystemLoader {
         try {
             final ClassLoader flinkClassLoader = RpcSystem.class.getClassLoader();
 
-            final Path tmpDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
+            final Path tmpDirectory = Paths.get(System.getProperty("java.io.tmpdir") + "/flink-rpc-akka-jar");
             Files.createDirectories(tmpDirectory);
+
+            try {
+                // Best-effort cleanup directory in case some other jobs has failed abruptly
+                FileUtils.cleanDirectory(tmpDirectory.toFile());
+            } catch (Exception e) {
+                log.warn("Could not cleanup flink-rpc-akka jar directory {}.", tmpDirectory, e);
+            }
             final Path tempFile =
                 Files.createFile(
                     tmpDirectory.resolve("flink-rpc-akka_" + UUID.randomUUID() + ".jar"));
