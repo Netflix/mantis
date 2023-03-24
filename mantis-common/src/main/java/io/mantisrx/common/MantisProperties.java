@@ -55,9 +55,6 @@ public class MantisProperties {
     }
 
     public static String getProperty(String key, String defaultVal) {
-        if (key == null) {
-            return null;
-        }
         String value = System.getProperty(key);
         if (value != null) {
             return value;
