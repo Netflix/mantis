@@ -53,6 +53,7 @@ import org.apache.flink.runtime.rpc.RpcUtils;
 public class TaskExecutorStarter extends AbstractIdleService {
     private final TaskExecutor taskExecutor;
     private final HighAvailabilityServices highAvailabilityServices;
+    private final RpcSystem rpcSystem;
 
     @Override
     protected void startUp() {
@@ -68,6 +69,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
             .exceptionally(throwable -> null)
             .thenCompose(dontCare -> Services.stopAsync(highAvailabilityServices,
                 MoreExecutors.directExecutor()))
+            .thenRunAsync(rpcSystem::close)
             .get();
     }
 
@@ -193,7 +195,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
                 taskExecutor.addListener(listener._1(), listener._2());
             }
 
-            return new TaskExecutorStarter(taskExecutor, highAvailabilityServices);
+            return new TaskExecutorStarter(taskExecutor, highAvailabilityServices, getRpcSystem());
         }
     }
 }

@@ -34,6 +34,7 @@ dependencies {
     api "org.skife.config:config-magic:$configMagicVersion"
     api libraries.flinkRpcApi
     api libraries.flinkCore
+    implementation libraries.commonsIo
     compileOnly libraries.jsr305
     compileOnly libraries.flinkRpcImpl // Provided by copyLibs task
 
