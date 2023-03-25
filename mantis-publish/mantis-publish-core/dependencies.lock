@@ -6,7 +6,7 @@
     },
     "baseline-exact-dependencies-main": {
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "locked": "0.134.0"
@@ -24,7 +24,7 @@
             "locked": "3.2.2"
         },
         "org.slf4j:slf4j-api": {
-            "locked": "1.7.2"
+            "locked": "1.7.0"
         }
     },
     "baseline-exact-dependencies-test": {
@@ -52,10 +52,10 @@
     },
     "compileClasspath": {
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -83,7 +83,7 @@
             "locked": "1.18.20"
         },
         "org.slf4j:slf4j-api": {
-            "locked": "1.7.2"
+            "locked": "1.7.0"
         }
     },
     "lombok": {
@@ -93,10 +93,10 @@
     },
     "runtimeClasspath": {
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -127,7 +127,7 @@
             "locked": "0.9.2"
         },
         "org.slf4j:slf4j-api": {
-            "locked": "1.7.32"
+            "locked": "1.7.36"
         }
     },
     "testAnnotationProcessor": {
@@ -140,10 +140,10 @@
             "locked": "2.21.0"
         },
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -197,10 +197,10 @@
             "locked": "2.21.0"
         },
         "com.netflix.archaius:archaius2-api": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "locked": "0.134.0"
@@ -246,7 +246,7 @@
             "locked": "2.0.111-beta"
         },
         "org.slf4j:slf4j-api": {
-            "locked": "1.7.32"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "locked": "1.7.0"

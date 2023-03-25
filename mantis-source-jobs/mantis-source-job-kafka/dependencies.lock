@@ -9,13 +9,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -138,13 +138,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -275,13 +275,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -418,7 +418,7 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.25"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
@@ -444,13 +444,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -576,13 +576,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-connector-kafka"
             ],
-            "locked": "2.3.19"
+            "locked": "2.3.20"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -719,7 +719,7 @@
                 "io.mantisrx:mantis-remote-observable",
                 "io.mantisrx:mantis-runtime"
             ],
-            "locked": "1.7.25"
+            "locked": "1.7.36"
         },
         "org.slf4j:slf4j-log4j12": {
             "firstLevelTransitive": [
