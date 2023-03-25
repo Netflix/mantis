@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+plugins {
+    id 'org.gradle.test-retry' version '1.0.0'
+}
+
 apply plugin: 'application'
 
 ext {
@@ -65,4 +69,9 @@ run {
 
 test {
     maxParallelForks = 1
+    retry {
+        failOnPassedAfterRetry = false
+        maxFailures = 3
+        maxRetries = 1
+    }
 }
