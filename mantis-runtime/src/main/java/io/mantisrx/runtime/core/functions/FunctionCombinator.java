@@ -106,7 +106,7 @@ public class FunctionCombinator<T, R> {
                             current = ((Observable<Observable<?>>) current)
                                 .map(obs -> obs.reduce(reduceFn.initialValue(), (acc, e) -> reduceFn.reduce(acc, e)))
                                 .flatMap(x -> x)
-                                .filter(x -> x != ReduceFunctionImpl.EMPTY);
+                                .filter(x -> x != SimpleReduceFunction.EMPTY);
                         }
                     }
                     return current;

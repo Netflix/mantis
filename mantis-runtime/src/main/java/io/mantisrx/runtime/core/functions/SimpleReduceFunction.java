@@ -17,7 +17,7 @@
 package io.mantisrx.runtime.core.functions;
 
 @FunctionalInterface
-public interface ReduceFunctionImpl<IN> extends ReduceFunction<IN, IN> {
+public interface SimpleReduceFunction<IN> extends ReduceFunction<IN, IN> {
     Object EMPTY = new Object();
 
     @Override
