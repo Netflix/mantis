@@ -118,36 +118,47 @@ You may have noticed that our `init` method is pulling a bunch of parameters out
     }
 ```
 
-Now our primary class `TwitterJob` which implements `MantisJobProvider` needs to specify our new source so change the source line to match the following.
+Now our primary class `TwitterDslJob` which implements `MantisJobProvider` needs to specify our new source so change the source line to match the following.
 
 ```java
-.source(new TwitterSource())
+        .source(new ObservableSourceImpl<>(new TwitterSource()))
 ```
 
-## The Stage
+## Operators
 
-The stage is nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.
+The operators thereafter are nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.
 
 
 ```java
-            .stage((context, dataO) -> dataO
-
-                    // Deserialize data
-                    .map(JsonUtility::jsonToMap)
-
-                    // Filter for English Tweets
-                    .filter((eventMap) -> {
-                        if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
-                            String lang = (String)eventMap.get("lang");
-                            return "en".equalsIgnoreCase(lang);
-                        }
-                        return false;
-                    })
-
-                    // Extract Tweet body
-                    .map((eventMap) -> (String)eventMap.get("text"))
-
-                    // Same from here...
+        .map(event -> {
+            try {
+                return jsonSerializer.toMap(event);
+            } catch (Exception e) {
+                log.error("Failed to deserialize event {}", event, e);
+                return null;
+            }
+        })
+        // filter out english tweets
+        .filter((eventMap) -> {
+            if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
+                String lang = (String)eventMap.get("lang");
+                return "en".equalsIgnoreCase(lang);
+            }
+            return false;
+        }).map((eventMap) -> (String) eventMap.get("text"))
+        // tokenize the tweets into words
+        .flatMap(this::tokenize)
+        .keyBy(WordCountPair::getWord)
+        // On a hopping window of 10 seconds
+        .window(WindowSpec.timed(Duration.ofSeconds(10)))
+        .reduce((ReduceFunctionImpl<WordCountPair>) (acc, item) -> {
+            if (acc.getWord() != null && !acc.getWord().isEmpty() && !acc.getWord().equals(item.getWord())) {
+                log.warn("keys dont match: acc ({}) vs item ({})", acc.getWord(), item.getWord());
+            }
+            return new WordCountPair(acc.getWord(), acc.getCount() + item.getCount());
+        })
+        .map(WordCountPair::toString)
+        // Same from here...
 ```
 
 # Conclusion

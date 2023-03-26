@@ -6,7 +6,7 @@ Random sampling uniformly downsamples the stream to a percentage of its original
 establish random sampling through a sampling clause like the following:
 
 ```
-select * from stream SAMPLE {'strategy': 'RANDOM', 'threshold': 200, 'factor': 10000}
+select * from stream SAMPLE {"strategy": "RANDOM", "threshold": 200, "factor": 10000}
 ```
 
 For each item in the stream, a numeric hash is generated. That hash is modded by `factor` to produce
@@ -21,7 +21,7 @@ you want to sample over the same set of values but retrieve a different sample o
 example:
 
 ```
-select * from stream SAMPLE {'strategy': 'RANDOM', 'threshold': 200, 'factor': 10000, 'salt': 123}
+select * from stream SAMPLE {"strategy": "RANDOM", "threshold": 200, "factor": 10000, "salt": 123}
 ```
 
 ## Sticky Sampling
@@ -31,7 +31,7 @@ will observe all events which contain that specific `zipcode`. Sticky sampling c
 a query like such:
 
 ```
-select * from stream SAMPLE {'strategy':'STICKY', 'keys':['zipcode'], 'threshold':200, 'factor':10000, 'salt': 1}
+select * from stream SAMPLE {"strategy": "STICKY", "keys":["zipcode"], "threshold": 200, "factor": 10000, "salt": 1}
 ```
 
 The query above should retrieve 2% of the total stream (see [Random Sampling](#random-sampling)

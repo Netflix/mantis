@@ -35,7 +35,7 @@ The [Raven](https://www.youtube.com/watch?v=uODxUJ5Jwis) applications makes this
 matching a certain criterion (user-id/device-id etc) right at the server and stream matching results in realtime.
 It provides an intuitive UI that allows SREs to construct and submit simple MQL queries. 
 
-##Cassandra and Elastic Search Health Monitoring
+## Cassandra and Elastic Search Health Monitoring
 
 Netflix maintains hundreds of Cassandra and Elastic Search clusters. These clusters are critical for the day to day
 operation of Netflix.  
@@ -58,7 +58,8 @@ the resilience of variety of applications.
 The Chaos experimentation application tracks user experience by analyzing
 client and server side events during a Chaos exercise in realtime and triggers an abort of the chaos exercise in case of an adverse impact.
 
-## Realtime Personally Identifiable Information (PII) data detection 
+## Realtime detection of Personally Identifiable Information (PII) data detection
+
 With trillions of events flowing through Netflix data systems daily it is critical to ensure no sensitive data is
 accidentally passed along. 
 
@@ -66,4 +67,5 @@ This application samples data across all streaming sources and applies custom pa
 detection algorithms to identify presence of such data.
 
 ## Canary Analysis
+
 Mantis supports on-demand request/response capture which are forwarded to a canary application instance to test out new changes OR even perform scale test.

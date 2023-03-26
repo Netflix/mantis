@@ -1,6 +1,4 @@
-A [Mantis Job] is a JVM-based stream processing application that takes in an [Observable] stream of
-data items, [transforms] this stream by using [RxJava] operators, and then outputs the results as
-another Observable stream.
+A [Mantis Job] is a JVM-based stream processing application that takes in an [Observable] stream of data items, [transforms] this stream by using [RxJava] operators, and then outputs the results as another Observable stream.
 
 [RxJava] Observables can be visualized by using “marble diagrams”:
 
@@ -10,17 +8,11 @@ You can combine multiple RxJava operators to transform an Observable stream of i
 
 ![An incoming stream is processed by a Mantis Job composed of the operators map and merge, to compose an output stream](../../images/complex.svg)
 
-The above diagram shows a Mantis Job composed of two operators that process an input stream to
-compose an output stream. The first operator, `map`, emits a new Observable for each item emitted by
-the source Observable. The second operator, `merge`, emits each item emitted by those Observables
-as a fresh Observable stream.
+The above diagram shows a Mantis Job composed of two operators that process an input stream to compose an output stream. The first operator, `map`, emits a new Observable for each item emitted by the source Observable. The second operator, `merge`, emits each item emitted by those Observables as a fresh Observable stream.
 
-There is an enormous wealth of ways in which you can transform streams of data by using RxJava
-Observable operators.
+There is an enormous wealth of ways in which you can transform streams of data by using RxJava Observable operators.
 
-If the volume of data to be processed is too large for a single [worker] to handle, you can “divide
-and conquer” by grouping and dividing the operators across various [processing stages], as in the
-following diagram:
+If the volume of data to be processed is too large for a single [worker] to handle, you can “divide and conquer” by grouping and dividing the operators across various [processing stages], as in the following diagram:
 
 ![An incoming stream is processed by a Mantis Job composed of three stages, one composed of the groupBy operator, the second by the window and reduce operators, and the third composed of the merge operator, together resulting in an output stream](../../images/stages.svg)
 
@@ -40,13 +32,16 @@ Cluster so that the next Job submission picks up the latest version.
 A Mantis Job has three [components], each of which has a corresponding chapter in this
 documentation:
 
-1. [**Source**](source) — Fetches data from an external source and makes it available in the form of
+1. [**Source**](../source) — Fetches data from an external source and makes it available in the form of
    an Observable.
 
-1. [**Processing Stage**](stage) — Transforms the Observable stream by means of a variety of
-   operators.
+1. [**Processing Stage**](../processing-stage) — Transforms the Observable stream by means of a variety of operators. In the new [DSL], we can think of it as the middle instead of a combination of stages — [read more](../../../reference/dsl)
 
-1. [**Sink**](sink) — Pushes the resulting Observable out in the form of a fresh stream.
+1. [**Sink**](../sink) — Pushes the resulting Observable out in the form of a fresh stream.
+
+!!! note
+
+    There is an alternate implementation that allows writing a Mantis Job as a series of operators operating directly on a `MantisStream` instance which abstracts information about RxJava, Observables from the user and offers a simpler way (hopefully 🤞) to write mantis jobs. Please see [Mantis DSL docs](../../../reference/dsl) for more details
 
 ![A Mantis Job is composed of three components: the “Source” fetches data in a streaming, non-blocking, back-pressure-aware manner; the “Stage” transforms the incoming stream by applying high-level functions such as map, scan, reduce, et cetera; the “Sink” pushes the results of the transformation in a non-blocking, asynchronous manner.](../../images/job-components.svg)
 
@@ -79,23 +74,32 @@ To create a Mantis Job, call `MantisJob…create()`. When you do so, interpolate
 methods. The first three — `.source()`, `.stage()`, and `.sink()` — are required, they must be the
 first three of the methods that you call, and you must call them in that order:
 
-1. <code>.source(<var>AbstractJobSource</var>)</code> — required, see [The Source Component](source)
-1. <code>.stage(<var>Stage</var>, <var>stageConfig</var>)</code> — required, (call this one or more times) see [The Processing Stage Component](stage)
-1. <code>.sink(<var>Sink</var>)</code> — required, see [The Sink Component](sink)
+1. <code>.source(<var>AbstractJobSource</var>)</code> — required, see [The Source Component](../source)
+1. <code>.stage(<var>Stage</var>, <var>stageConfig</var>)</code> — required, (call this one or more times) see [The Processing Stage Component](../processing-stage). Alternatively, <br/>
+   <code>.filter|.map|.flatMap|.keyBy</code> — required, (call these operators one or more times) an alternative to `.stage` to simplify job description. See [Mantis DSL](../../../reference/dsl)
+1. <code>.sink(<var>Sink</var>)</code> — required, see [The Sink Component](../sink)
 1. <code>.lifecycle(<var>Lifecycle</var>)</code> — optional, allows for start-up and shut-down hooks
 1. <code>.parameterDefinition(<var>ParameterDefinition</var>)</code> — optional, (call this zero to many times) define any [parameters](/glossary#parameter) your job requires here
 1. <code>.metadata(<var>Metadata</var>)</code> — optional, (call this zero to many times) define your job name and description here
 
-| of this class    | this method                | returns an object of this class |
-| ---------------- | -------------------------- | ------------------------------- |
-| `MantisJob` ⟶    | `source()` ⟶               | `SourceHolder`<br />⤶           |
-| `SourceHolder` ⟶ | `stage()` ⟶                | `Stages`<br />⤶                 |
-| [ `Stages` ⟶     | `stage()` ⟶                | `Stages` ]<br />⤶               |
-| `Stages` ⟶       | `sink()` ⟶                 | `Config`<br />⤶                 |
-| [ `Config` ⟶     | `lifecycle()` ⟶            | `Config` ]<br />⤶               |
-| [ `Config` ⟶     | `parameterDefinition()` ⟶  | `Config` ]<br />⤶               |
-| [ `Config` ⟶     | `metadata()` ⟶             | `Config` ]<br />⤶               |
-| `Config` ⟶       | `create()` ⟶               | `Job`                           |
+| of this class          | this method                 | returns an object of this class |
+| ----------------       | --------------------------  | ------------------------------- |
+| `MantisStream` ⟶      | `init()` ⟶                 | `MantisStream`                  |
+| `MantisStream` ⟶      | `source()` ⟶               | `MantisStream`                  |
+| `MantisStream` ⟶      | `sink()` ⟶                 | `MantisStream`                  |
+| `MantisStream` ⟶      | `map, flatMap, ...` ⟶      | `MantisStream`                  |
+| `MantisStream` ⟶      | `keyBy()` ⟶                | `KeyedMantisStream`             |
+| `KeyedMantisStream` ⟶ | `map, window, ...` ⟶       | `KeyedMantisStream`             |
+| `KeyedMantisStream` ⟶ | `reduce` ⟶                 | `MantisStream`                  |
+| `MantisJob` ⟶         | `source()` ⟶               | `SourceHolder`                  |
+| `SourceHolder` ⟶      | `stage()` ⟶                | `Stages`                        |
+| `Stages` ⟶            | `stage()` ⟶                | `Stages`                        |
+| `Stages` ⟶            | `sink()` ⟶                 | `Config`                        |
+| `Config` ⟶            | `lifecycle()` ⟶            | `Config`                        |
+| `Config` ⟶            | `parameterDefinition()` ⟶  | `Config`                        |
+| `Config` ⟶            | `metadata()` ⟶             | `Config`                        |
+| `Config` ⟶            | `create()` ⟶               | `Job`                           |
+
 
 ### Lifecycle Management
 
@@ -150,12 +154,13 @@ There are some standard Validators you can choose from that cover some common va
 For example:
 
 ```java
-myStringParameter = new StringParameter().name("MyParameter")
-                                         .description("This is a human-friendly description of my parameter")
-                                         .validator(Validators.notNullOrEmpty())
-                                         .defaultValue("SomeValue")
-                                         .required()
-                                         .build();
+myStringParameter = new StringParameter()
+    .name("MyParameter")
+    .description("This is a human-friendlydescription of my parameter")
+    .validator(Validators.notNullOrEmpty())
+    .defaultValue("SomeValue")
+    .required()
+    .build();
 ```
 
 ### Defining Metadata
@@ -169,9 +174,10 @@ builder, use the following `new Metadata.Builder()…build()` builder methods:
 For example:
 
 ```java
-myMetadata = new Metadata.Builder().name("MyMetadata")
-                                   .description("Description of my metadata")
-                                   .build();
+myMetadata = new Metadata.Builder()
+    .name("MyMetadata")
+    .description("Description of my metadata")
+    .build();
 ```
 
 <!-- Do not edit below this line -->

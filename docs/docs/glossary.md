@@ -29,6 +29,9 @@ component {#component}
 Custom source {#customsource}
 :   In contrast to a [Source Job], which is a built-in variety of [Source]  [component] designed to pull data from a common sort of data source, a custom source typically accesses data from less-common sources or has unusual delivery guarantee semantics.
 
+DSL {#dsl}
+: Domain Specific Language. Set of operators and functions supported by Mantis Platform for users to specify their realtime data processing pipeline.
+
 Executor {#executor}
 :   The stage executor is responsible for loading the bytecode for a [Mantis Job] and then executing its [stages] and [workers] in a coordinated fashion. In the [Mesos] UI, workers are also referred to as executors.
 
