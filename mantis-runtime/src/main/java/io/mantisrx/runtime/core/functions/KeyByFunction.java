@@ -16,6 +16,17 @@
 
 package io.mantisrx.runtime.core.functions;
 
+/**
+ * Functional interface for extracting a key of type {@code K} from an input value
+ * of type {@code IN}.
+ */
+@FunctionalInterface
 public interface KeyByFunction<K, IN> extends MantisFunction {
+    /**
+     * Extracts a key from the given input value.
+     *
+     * @param in the input value
+     * @return the extracted key
+     */
     K getKey(IN in);
 }

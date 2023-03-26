@@ -16,7 +16,20 @@
 
 package io.mantisrx.runtime.core.functions;
 
+
+/**
+ * Functional interface for mapping an input value of type {@code IN}
+ * to an iterable of output values of type {@code OUT}.
+ * There could be zero, one, or more output elements.
+ * {@code FunctionalInterface} allows java-8 lambda
+ */
 @FunctionalInterface
 public interface FlatMapFunction<IN, OUT> extends MantisFunction {
+
+    /**
+     * Applies the flat map function to the given input value.
+     @param in the input value
+     @return an iterable of output values
+     */
     Iterable<OUT> apply(IN in);
 }

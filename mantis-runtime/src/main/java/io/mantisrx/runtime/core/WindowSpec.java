@@ -40,18 +40,57 @@ class WindowSpec {
         this.elementOffset = elementOffset;
     }
 
+    /**
+     *
+     * Creates a time-based window specification for windows of the specified
+     * length. The window type is {@link WindowType#TUMBLING}, which means that
+     * non-overlapping windows are created.
+     *
+     * @param windowLength the length of the windows
+     * @return the time-based window specification
+     */
     public static WindowSpec timed(Duration windowLength) {
         return new WindowSpec(WindowType.TUMBLING, windowLength, windowLength);
     }
 
+    /**
+     *
+     * Creates a time-based window specification for sliding windows of the specified
+     * length and offset. The window type is {@link WindowType#SLIDING}, which means
+     * that overlapping windows are created.
+     *
+     * @param windowLength the length of the windows
+     * @param windowOffset the offset between the start of adjacent windows
+     * @return the time-based window specification
+     */
     public static WindowSpec timed(Duration windowLength, Duration windowOffset) {
         return new WindowSpec(WindowType.SLIDING, windowLength, windowOffset);
     }
 
+    /**
+     *
+     * Creates an element-based window specification for windows of the specified
+     * number of elements. The window type is {@link WindowType#ELEMENT}, which
+     * means that non-overlapping windows are created.
+     *
+     * @param numElements the number of elements per window
+     * @return the element-based window specification
+     */
     public static WindowSpec count(int numElements) {
         return new WindowSpec(WindowType.ELEMENT, numElements, numElements);
     }
 
+    /**
+     *
+     * Creates an element-based window specification for sliding windows of the
+     * specified number of elements and offset. The window type is
+     * {@link WindowType#ELEMENT_SLIDING}, which means that overlapping windows
+     * are created.
+     *
+     * @param numElements the number of elements per window
+     * @param elementOffset the offset between the start of adjacent windows
+     * @return the element-based window specification
+     */
     public static WindowSpec count(int numElements, int elementOffset) {
         return new WindowSpec(WindowType.ELEMENT_SLIDING, numElements, elementOffset);
     }
