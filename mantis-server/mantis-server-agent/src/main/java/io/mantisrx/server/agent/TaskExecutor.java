@@ -97,6 +97,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final TaskExecutorRegistration taskExecutorRegistration;
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
+    private final ExecutorService runtimeTaskExecutor;
     private final ListenerCallQueue<Listener> listeners = new ListenerCallQueue<>();
 
     // the reason the MantisMasterGateway field is not final is because we expect the HighAvailabilityServices
@@ -174,6 +175,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             Executors.newFixedThreadPool(
                 Hardware.getNumberCPUCores(),
                 new ExecutorThreadFactory("taskexecutor-io"));
+
+        this.runtimeTaskExecutor =
+            Executors.newFixedThreadPool(
+                1,
+                new ExecutorThreadFactory("taskexecutor-runtime"));
         this.resourceManagerCxnIdx = 0;
         this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
     }
@@ -319,6 +325,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private ExecutorService getIOExecutor() {
         return this.ioExecutor;
+    }
+
+    private ExecutorService getRuntimeExecutor() {
+        return this.runtimeTaskExecutor;
     }
 
     private CompletableFuture<TaskExecutorReport> getCurrentReport(Time timeout) {
@@ -500,13 +510,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             getIOExecutor().execute(listeners::dispatch);
 
             CompletableFuture<Void> currentTaskSuccessfullyStartFuture =
-                Services.startAsync(currentTask, getIOExecutor());
+                Services.startAsync(currentTask, getRuntimeExecutor());
 
             currentTaskSuccessfullyStartFuture
                 .whenCompleteAsync((dontCare, throwable) -> {
                     if (throwable != null) {
                         // okay failed to start task successfully
                         // lets stop it
+                        log.error("TaskExecutor failed to start: {}", throwable);
                         RuntimeTask task = currentTask;
                         setCurrentTask(null);
                         setPreviousFailure(throwable);
@@ -560,6 +571,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     @Override
     public CompletableFuture<Ack> cancelTask(WorkerId workerId) {
+        log.info("TaskExecutor cancelTask requested for {}", workerId);
         if (this.currentTask == null) {
             return CompletableFutures.exceptionallyCompletedFuture(new TaskNotFoundException(workerId));
         } else if (!this.currentTask.getWorkerId().equals(workerId.getId())) {
@@ -572,13 +584,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private CompletableFuture<Void> stopCurrentTask() {
+        log.info("TaskExecutor stopCurrentTask.");
         validateRunsInMainThread();
         if (this.currentTask != null) {
             try {
                 if (this.currentTask.state().ordinal() <= Service.State.RUNNING.ordinal()) {
                     listeners.enqueue(getTaskCancellingEvent(currentTask));
                     CompletableFuture<Void> stopTaskFuture =
-                        Services.stopAsync(this.currentTask, getIOExecutor());
+                        Services.stopAsync(this.currentTask, getRuntimeExecutor());
 
                     return stopTaskFuture
                         .whenCompleteAsync((dontCare, throwable) -> {
@@ -634,6 +647,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     protected CompletableFuture<Void> onStop() {
         validateRunsInMainThread();
 
+        log.info("TaskExecutor onStop.");
         final CompletableFuture<Void> runningTaskCompletionFuture = stopCurrentTask();
 
         return runningTaskCompletionFuture

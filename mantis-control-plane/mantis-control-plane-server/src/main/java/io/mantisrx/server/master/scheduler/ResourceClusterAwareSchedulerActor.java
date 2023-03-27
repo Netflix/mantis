@@ -203,6 +203,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
     private void onCancelRequestEvent(CancelRequestEvent event) {
         try {
+            log.info("onCancelRequestEvent {}", event);
             getTimers().cancel(getSchedulingQueueKeyFor(event.getWorkerId()));
             final TaskExecutorID taskExecutorID =
                 resourceCluster.getTaskExecutorAssignedFor(event.getWorkerId()).join();
