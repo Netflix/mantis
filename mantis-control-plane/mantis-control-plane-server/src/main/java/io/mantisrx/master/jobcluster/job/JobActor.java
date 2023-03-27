@@ -62,7 +62,6 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
-import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.scheduler.*;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
@@ -198,7 +197,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         terminatedBehavior = getTerminatedBehavior();
 
-        this.metricsGroupId = getMetricGroupId(jobId.getId(), getResourceCluster());
+        this.metricsGroupId = getMetricGroupId(jobId.getId());
         Metrics m = new Metrics.Builder()
                 .id(metricsGroupId)
                 .addCounter("numWorkerResubmissions")
@@ -223,11 +222,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * Create a MetricGroupId using the given job Id.
      *
      * @param id
-     * @param resourceCluster
      * @return
      */
-    MetricGroupId getMetricGroupId(String id, String resourceCluster) {
-        return new MetricGroupId("JobActor", new BasicTag("jobId", id), new BasicTag("resourceCluster", resourceCluster));
+    MetricGroupId getMetricGroupId(String id) {
+        return new MetricGroupId("JobActor", new BasicTag("jobId", id));
     }
 
     /**
@@ -321,8 +319,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     @Override
     public void postStop() throws Exception {
         LOGGER.info("Job Actor {} stopped invoking cleanup logic", jobId);
-        if (jobId != null && mantisJobMetaData != null) {
-            MetricsRegistry.getInstance().remove(getMetricGroupId(jobId.getId(), getResourceCluster()));
+        if (jobId != null) {
+            MetricsRegistry.getInstance().remove(getMetricGroupId(jobId.getId()));
         }
         //shutdown();
     }
@@ -2330,9 +2328,5 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             LOGGER.info("{} Scaled stage to {} workers", stageMetaData.getJobId().getId(), newNumWorkerCount);
             return newNumWorkerCount;
         }
-    }
-
-    private String getResourceCluster() {
-        return mantisJobMetaData.getJobDefinition().getResourceCluster().map(ClusterID::getResourceID).orElse("mesos");
     }
 }
