@@ -263,17 +263,28 @@ public abstract class PushServer<T, R> {
                     );
         }
 
-        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
         Metrics writableMetrics = new Metrics.Builder()
             .id("PushServer", clientIdTag)
             .addCounter("channelWritable")
             .addCounter("channelNotWritable")
             .addCounter("channelNotWritableTimeout")
+            .addCounter("channelActive")
+            .addCounter("channelNotActive")
+            .addCounter("channelOpen")
+            .addCounter("channelNotOpen")
+            .addCounter("channelRegistered")
+            .addCounter("channelNotRegistered")
             .build();
         metricsRegistry.registerAndGet(writableMetrics);
         Counter channelWritableCounter = writableMetrics.getCounter("channelWritable");
         Counter channelNotWritableCounter = writableMetrics.getCounter("channelNotWritable");
         Counter channelNotWritableTimeoutCounter = writableMetrics.getCounter("channelNotWritableTimeout");
+        Counter channelActiveCounter = writableMetrics.getCounter("channelActive");
+        Counter channelNotActiveCounter = writableMetrics.getCounter("channelNotActive");
+        Counter channelOpenCounter = writableMetrics.getCounter("channelOpen");
+        Counter channelNotOpenCounter = writableMetrics.getCounter("channelNotOpen");
+        Counter channelRegisteredCounter = writableMetrics.getCounter("channelRegistered");
+        Counter channelNotRegisteredCounter = writableMetrics.getCounter("channelNotRegistered");
 
         final Future<?> writableCheck;
         AtomicLong lastWritableTS = new AtomicLong(System.currentTimeMillis());
@@ -281,6 +292,21 @@ public abstract class PushServer<T, R> {
             writableCheck = scheduledExecutorService.scheduleAtFixedRate(
                 () -> {
                     long currentTime = System.currentTimeMillis();
+                    if (writer.getChannel().isActive()) {
+                        channelActiveCounter.increment();
+                    } else {
+                        channelNotActiveCounter.increment();
+                    }
+                    if (writer.getChannel().isOpen()) {
+                        channelOpenCounter.increment();
+                    } else {
+                        channelNotOpenCounter.increment();
+                    }
+                    if (writer.getChannel().isRegistered()) {
+                        channelRegisteredCounter.increment();
+                    } else {
+                        channelNotRegisteredCounter.increment();
+                    }
                     if (writer.getChannel().isWritable()) {
                         channelWritableCounter.increment();
                         lastWritableTS.set(currentTime);
