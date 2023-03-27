@@ -489,19 +489,23 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void publishResourceClusterMetricBySKU(TaskExecutorsList taskExecutorsList, String metricName) {
-        taskExecutorsList.getTaskExecutors()
-            .stream()
-            .map(this::getTaskExecutorStatus)
-            .filter(Objects::nonNull)
-            .map(TaskExecutorStatus::getRegistration)
-            .filter(Objects::nonNull)
-            .map(registration -> registration.getTaskExecutorContainerDefinitionId().orElse(null))
-            .filter(Objects::nonNull)
-            .collect(groupingBy(ContainerSkuID::getResourceID, Collectors.counting()))
-            .forEach((sku, count) -> metrics.setGauge(
-                metricName,
-                count,
-                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", sku))));
+        try {
+            taskExecutorsList.getTaskExecutors()
+                .stream()
+                .map(this::getTaskExecutorStatus)
+                .filter(Objects::nonNull)
+                .map(TaskExecutorStatus::getRegistration)
+                .filter(Objects::nonNull)
+                .map(registration -> registration.getTaskExecutorContainerDefinitionId().orElse(null))
+                .filter(Objects::nonNull)
+                .collect(groupingBy(ContainerSkuID::getResourceID, Collectors.counting()))
+                .forEach((sku, count) -> metrics.setGauge(
+                    metricName,
+                    count,
+                    TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", sku))));
+        } catch (Exception e) {
+            log.warn("Error while publishing resource cluster metrics by sku. RC: {}, Metric: {}.", clusterID.getResourceID(), metricName, e);
+        }
     }
 
     private ResourceOverview getResourceOverview() {
