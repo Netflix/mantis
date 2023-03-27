@@ -321,8 +321,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     @Override
     public void postStop() throws Exception {
         LOGGER.info("Job Actor {} stopped invoking cleanup logic", jobId);
-        if (jobId != null && mantisJobMetaData != null) {
-            MetricsRegistry.getInstance().remove(getMetricGroupId(jobId.getId(), getResourceCluster()));
+        if (metricsGroupId != null) {
+            MetricsRegistry.getInstance().remove(metricsGroupId);
         }
         //shutdown();
     }
