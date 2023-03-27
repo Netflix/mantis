@@ -27,6 +27,7 @@ import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
@@ -155,7 +156,8 @@ public abstract class PushServer<T, R> {
 
         port = config.getPort();
         writeRetryCount = config.getWriteRetryCount();
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(10);
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(10,
+            new ThreadFactoryBuilder().setNameFormat("netty-channel-checker-%d").build());
     }
 
     private void registerMetrics(MetricsRegistry registry, Metrics serverMetrics,
@@ -311,6 +313,7 @@ public abstract class PushServer<T, R> {
             public void operationComplete(io.netty.util.concurrent.Future<Void> future) throws Exception {
                 connectionManager.remove(connection);
                 connectionCleanup(heartbeatSubscription, connectionClosedCallback, metaMsgSubscription);
+                // Callback from the channel is closed, we don't need to check channel status anymore.
                 if (writableCheck != null) {
                     writableCheck.cancel(false);
                 }
