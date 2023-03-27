@@ -263,6 +263,7 @@ public abstract class PushServer<T, R> {
                     );
         }
 
+        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(groupId).orElse("none"));
         Metrics writableMetrics = new Metrics.Builder()
             .id("PushServer", clientIdTag)
             .addCounter("channelWritable")
