@@ -144,6 +144,16 @@ public class ParameterUtils {
                 .build();
         systemParams.put(sse_numConsumerThreads.getName(), sse_numConsumerThreads);
 
+        // mantis.sse.maxNotWritableTimeSec", "-1"
+
+        ParameterDefinition<Integer> maxNotWritableTimeSec = new IntParameter()
+            .name("mantis.sse.maxNotWritableTimeSec")
+            .validator(Validators.range(-1, 100000))
+            .description("maximum time the SSE connection can remain not writable before we proactively terminated it on server side. <= 0 means unlimited.")
+            .defaultValue(-1)
+            .build();
+        systemParams.put(maxNotWritableTimeSec.getName(), maxNotWritableTimeSec);
+
         // mantis.jobmaster.autoscale.metric
         ParameterDefinition<String> jobMasterAutoScaleMetric = new StringParameter()
                 .name(JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM)

@@ -31,6 +31,7 @@ public class ServerConfig<T> {
     private int writeRetryCount = 2; // num retries before fail to write
     private int maxChunkSize = 25;  // max items to read from queue, for a single chunk
     private int maxChunkTimeMSec = 100; // max time to read from queue, for a single chunk
+    private int maxNotWritableTimeSec = -1; // max time the channel can stay not writable, <= 0 means unlimited
     private ChunkProcessor<T> chunkProcessor; // logic to process chunk
     private MetricsRegistry metricsRegistry; // registry used to store metrics
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
@@ -48,6 +49,7 @@ public class ServerConfig<T> {
         this.numQueueConsumers = builder.numQueueConsumers;
         this.predicate = builder.predicate;
         this.useSpscQueue = builder.useSpscQueue;
+        this.maxNotWritableTimeSec = builder.maxNotWritableTimeSec;
     }
 
     public Func1<Map<String, List<String>>, Func1<T, Boolean>> getPredicate() {
@@ -82,6 +84,10 @@ public class ServerConfig<T> {
         return maxChunkTimeMSec;
     }
 
+    public int getMaxNotWritableTimeSec() {
+        return maxNotWritableTimeSec;
+    }
+
     public ChunkProcessor<T> getChunkProcessor() {
         return chunkProcessor;
     }
@@ -103,6 +109,7 @@ public class ServerConfig<T> {
         private int writeRetryCount = 2; // num retries before fail to write
         private int maxChunkSize = 25;  // max items to read from queue, for a single chunk
         private int maxChunkTimeMSec = 100; // max time to read from queue, for a single chunk
+        private int maxNotWritableTimeSec = -1; // max time the channel can stay not writable, <= 0 means unlimited
         private ChunkProcessor<T> chunkProcessor; // logic to process chunk
         private MetricsRegistry metricsRegistry; // registry used to store metrics
         private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
@@ -150,6 +157,11 @@ public class ServerConfig<T> {
 
         public Builder<T> maxChunkTimeMSec(int maxChunkTimeMSec) {
             this.maxChunkTimeMSec = maxChunkTimeMSec;
+            return this;
+        }
+
+        public Builder<T> maxNotWritableTimeSec(int maxNotWritableTimeSec) {
+            this.maxNotWritableTimeSec = maxNotWritableTimeSec;
             return this;
         }
 

@@ -28,13 +28,18 @@ public class MantisProperties {
         env = System.getenv();
     }
 
+    @Deprecated
     public static MantisProperties getInstance() {
         return instance;
     }
 
+    @Deprecated
+    /**
+     * Use {@link #getProperty(String)} instead.
+     */
     public String getStringValue(String name) {
-        if (name != null && env.containsKey(name)) {
-            return System.getProperty(name, env.get(name));
+        if (name != null) {
+            return getProperty(name, env.get(name));
         } else {
             return null;
         }
@@ -42,10 +47,21 @@ public class MantisProperties {
     }
 
     public static String getProperty(String key) {
-        return System.getProperty(key, System.getenv(key));
+        return getProperty(key, null);
     }
 
     public static String getProperty(String key, String defaultVal) {
-        return System.getProperty(key, defaultVal);
+        if (key == null) {
+            return null;
+        }
+        String value = System.getProperty(key);
+        if (value != null) {
+            return value;
+        }
+        value = System.getenv(key);
+        if (value != null) {
+            return value;
+        }
+        return defaultVal;
     }
 }
