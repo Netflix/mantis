@@ -46,21 +46,14 @@ dependencies {
     // Exclude in case there are differences in SHAs between 0.7.0 incubation versions.
     shadow "org.apache.iceberg:iceberg-api:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-core:$icebergVersion"
-    shadow "org.apache.iceberg:iceberg-data:$icebergVersion"
     shadow "org.apache.iceberg:iceberg-parquet:$icebergVersion"
-    shadow "org.apache.avro:avro:$avroVersion"
     shadow "org.apache.parquet:parquet-hadoop:${parquetVersion}"
-
     // We only need this for local mains(). Users bring their own implementation.
-    shadow libraries.slf4jLog4j12
 
     testImplementation project(":mantis-runtime").sourceSets.test.output
     testImplementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
-    testImplementation "org.apache.iceberg:iceberg-data:$icebergVersion" 
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
-    testImplementation libraries.spectatorApi
-    testImplementation libraries.slf4jLog4j12
 }
 
 tasks.jar.dependsOn tasks.shadowJar

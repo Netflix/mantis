@@ -57,12 +57,9 @@ dependencies {
     implementation project(":mantis-publish:mantis-publish-netty-guice")
 
     implementation libraries.rxJava
-    implementation "com.netflix.spectator:spectator-ext-ipc:$spectatorVersion"
-    implementation "com.netflix.archaius:archaius2-core:$archaiusVersion"
     implementation "com.netflix.archaius:archaius2-guice:$archaiusVersion"
     implementation "com.google.inject:guice:$guiceVersion"
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
     implementation libraries.mockneat
 
-    implementation libraries.slf4jLog4j12
 }

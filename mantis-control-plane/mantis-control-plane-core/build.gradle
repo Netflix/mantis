@@ -46,7 +46,6 @@ dependencies {
 
     testFixturesImplementation libraries.flinkRpcImpl
     testImplementation libraries.junit4
-    testImplementation libraries.mockitoAll
 }
 
 // This task makes flink-rpc-akka.jar available in mantis-control-plane-core classpath,

@@ -29,11 +29,8 @@ dependencies {
     implementation "com.google.inject:guice:$guiceVersion"
     implementation "com.netflix.spectator:spectator-nflx-plugin:$spectatorVersion"
 
-    implementation libraries.slf4jApi
 
     testImplementation libraries.junitJupiter
-    testImplementation libraries.mockitoCore
-    testImplementation libraries.slf4jLog4j12
 }
 
 test {

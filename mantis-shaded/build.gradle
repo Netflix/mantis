@@ -64,7 +64,6 @@ dependencies {
     shaded "jline:jline:$jlineVersion"
     shaded "io.netty:netty:$nettyVersion"
 
-    implementation libraries.vavr
 }
 
 shadowJar {

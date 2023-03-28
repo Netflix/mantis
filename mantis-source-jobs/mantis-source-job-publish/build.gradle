@@ -23,7 +23,6 @@ dependencies {
     implementation libraries.slf4jApi
 
     testImplementation libraries.junitJupiter
-    testImplementation libraries.mockitoCore
 }
 
 test {
