@@ -22,6 +22,7 @@ nav:
       - 'Writing Your First Job': 'develop/writing-jobs/word-count.md'
       - 'Writing Your Second Job': 'develop/writing-jobs/twitter.md'
       - 'Writing Your Third Job': 'develop/writing-jobs/group-by.md'
+
     - 'Connectors':
       - 'Iceberg (Beta)': 'develop/connectors/iceberg.md'
   - 'Deploy':
@@ -50,6 +51,11 @@ nav:
   - 'Updates':
       - 'GSOC 2023 Application Guidelines': 'updates/gsoc2023-application-guidelines.md'
       - 'GSOC 2023 Ideas': 'updates/gsoc2023-ideas.md'
+  - 'Archives':
+      - 'Legacy Sample Jobs':
+        - 'First Job': 'develop/writing-jobs/legacy/word-count.md'
+        - 'Second Job': 'develop/writing-jobs/legacy/twitter.md'
+        - 'Third Job': 'develop/writing-jobs/legacy/group-by.md'
   - 'FAQ': 'faq.md'
   - 'Glossary': 'glossary.md'
 theme:

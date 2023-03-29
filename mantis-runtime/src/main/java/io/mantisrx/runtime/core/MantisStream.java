@@ -114,6 +114,9 @@ public interface MantisStream<T> {
     /**
      * Partitions the elements of the stream based on the key extracted by
      * {@link KeyByFunction}. Elements with the same key are assigned to the same partition.
+     * This keyBy is distributed and each key is handled on a single worker possibly
+     * handling many key groups.
+     *
      * @param keyFn the function to extract the key from each element in the stream.
      * @param <K> the type of the key.
      * @return a new {@link KeyedMantisStream} with elements partitioned based on the keys.

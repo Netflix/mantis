@@ -1,4 +1,8 @@
-# Writing Your Second Mantis Job
+# [Legacy, RxJava] Mantis Job - Writing Custom Source
+
+!!! note
+
+    There is an alternate implementation that allows writing a Mantis Job as a series of operators operating directly on a `MantisStream` instance which abstracts information about RxJava, Observables from the user and offers a simpler way (hopefully 🤞) to write mantis jobs. Please see [Mantis DSL docs](../../../../reference/dsl) for more details or [this documentation](../../twitter) for the sample job.
 
 Our first tutorial primed us for writing and executing a job end-to-end but it wasn't particularly interesting from a data perspective because it just repeatedly looped over the contents of a book. In this example we'll explore writing a more involved source which reads an infinite stream of data from Twitter and performs the same word count in real-time. Mantis jobs can easily subscribe to one another using some built in sources but the technique in this tutorial can be used to pull external data into the Mantis ecosystem.
 
@@ -118,58 +122,37 @@ You may have noticed that our `init` method is pulling a bunch of parameters out
     }
 ```
 
-Now our primary class `TwitterDslJob` which implements `MantisJobProvider` needs to specify our new source so change the source line to match the following.
+Now our primary class `TwitterJob` which implements `MantisJobProvider` needs to specify our new source so change the source line to match the following.
 
 ```java
-        .source(new ObservableSourceImpl<>(new TwitterSource()))
+.source(new TwitterSource())
 ```
 
-## Operators
+## The Stage
 
-The operators thereafter are nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.
+The stage is nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.
 
 
 ```java
-        .map(event -> {
-            try {
-                return jsonSerializer.toMap(event);
-            } catch (Exception e) {
-                log.error("Failed to deserialize event {}", event, e);
-                return null;
-            }
-        })
-        // filter out english tweets
-        .filter((eventMap) -> {
-            if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
-                String lang = (String)eventMap.get("lang");
-                return "en".equalsIgnoreCase(lang);
-            }
-            return false;
-        }).map((eventMap) -> (String) eventMap.get("text"))
-        // tokenize the tweets into words
-        .flatMap(this::tokenize)
-        .keyBy(WordCountPair::getWord)
-        // On a hopping window of 10 seconds
-        .window(WindowSpec.timed(Duration.ofSeconds(10)))
-        .reduce((ReduceFunctionImpl<WordCountPair>) (acc, item) -> {
-            if (acc.getWord() != null && !acc.getWord().isEmpty() && !acc.getWord().equals(item.getWord())) {
-                log.warn("keys dont match: acc ({}) vs item ({})", acc.getWord(), item.getWord());
-            }
-            return new WordCountPair(acc.getWord(), acc.getCount() + item.getCount());
-        })
-        .map(WordCountPair::toString)
-        // Same from here...
+            .stage((context, dataO) -> dataO
+
+                    // Deserialize data
+                    .map(JsonUtility::jsonToMap)
+
+                    // Filter for English Tweets
+                    .filter((eventMap) -> {
+                        if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
+                            String lang = (String)eventMap.get("lang");
+                            return "en".equalsIgnoreCase(lang);
+                        }
+                        return false;
+                    })
+
+                    // Extract Tweet body
+                    .map((eventMap) -> (String)eventMap.get("text"))
+
+                    // Same from here...
 ```
-
-### Old Implementation
-If you find the new [DSL] limiting, please use old RxJava based interface. It's documentation moved to [legacy/Twitter](../legacy/twitter) with sourcecode at
-[WordCountJob.java](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-twitter-sample/src/main/java/com/netflix/mantis/examples/wordcount/TwitterJob.java).
-
-A few callouts using the old approach are:
-
-1. keyBy is local (not distributed across workers) limiting job scaling. Please see [legacy/distributed-group-by](../legacy/group-by) on creating new stage.
-2. supports specifying concurrency param for each stage
-3. also supports custom (de)serialization formats in addition to java.io.Serializable
 
 # Conclusion
 We've learned how to create a parameterized source which reads from Twitter and pulls data into the ecosystem. With some slight modifications our previous example's stage deserializes the messages and extracts the data to perform the same word count.

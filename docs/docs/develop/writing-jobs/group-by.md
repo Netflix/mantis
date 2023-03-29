@@ -1,8 +1,6 @@
 # Writing Your Third Mantis Job: Group By / Aggregate
 
-NOTE: This tutorial is a work in progress.
-
-Until now we've run single stage Mantis jobs which a can run in a single process / container. Much of the power provided by Mantis is that we can design and implement a distributed job. Let's take a look at the [groupby-sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-groupby-sample) job definition and then break it down stage by stage. 
+Until now we've run single stage Mantis jobs which a can run in a single process / container. Much of the power provided by Mantis is that we can design and implement a distributed job. Let's take a look at the [groupby-sample](https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-groupby-sample) job definition and then break it down stage by stage.
 
 ```java
 
@@ -75,10 +73,20 @@ Until now we've run single stage Mantis jobs which a can run in a single process
 The job definition above first applies a keyBy on path or ipaddress. This is followed by a parallel aggregation per key every 5 secs (window + reduce). These aggregations are happening in parallel and we need to collect the results together so we do another keyBy on empty key this time to collect records. This is executed only in 1 stage and 1 thread which collects these results in a single concurrent map every 5 sec. Notice we don't need to merge the contents of the map since the previous operator doesn't distribute one key across multiple nodes.
 
 Physically, this job would create 4 stages:
+
 1. `ScalarToGroupStage` -- reads from the source and applies `keyBy` path
 2. `GroupToScalarStage` -- applies window and reduce on `RequestEvent` and  aggregates `requestEvent.getLatency()`
 3. `ScalarToGroupStage` -- `keyBy` on empty key
 4. `GroupToScalarStage` -- 1 thread, 1 worker stage that collects results into a single map and emit
+
+### Old Implementation
+If you find the new [DSL] limiting or hard to reason about wrt stages, please use old RxJava based interface. It's documentation moved to [legacy/distributed-group-by](../legacy/group-by) with sourcecode at
+[WordCountJob.java](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-groupby-sample/src/main/java/com/netflix/mantis/samples/RequestAggregationJob.java).
+
+A few callouts using the old approach are:
+
+1. supports specifying concurrency param for each stage
+2. supports custom (de)serialization formats in addition to java.io.Serializable
 
 # Conclusion
 

@@ -79,7 +79,7 @@ There are several things going on here, let's examine them one at a time...
 
 We specify our source in the line `.source(new ObservableSourceImpl<>(new IlliadSource()))`. The source handles data ingestion and it is very common to use a pre-existing parameterized source when writing jobs. Mantis provides several sources which handle managing connections and queries to other jobs. The newer DSL api allows reusing existing sources and sinks with this custom `ObservableSourceImpl` wrapper that's unboxed during job graph building phase.
 
-In the next tutorial we'll learn how to implement our own source which ingests data from Twitter. 
+In the next tutorial we'll learn how to implement our own source which ingests data from Twitter.
 
 ### Operators
 
@@ -112,9 +112,12 @@ $ ../../gradlew execute
 ```
 
 ### Old Implementation
-If you find the new operator API limiting, you can continue using existing RxJava based implementation. It's available in [WordCountJob.java](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-wordcount/src/main/java/com/netflix/mantis/examples/wordcount/WordCountJob.java).
-A few callouts using this approach are 
-1. keyBy is not distributed and is local to the worker
+If you find the new [DSL] limiting, please use old RxJava based interface. It's documentation moved to [legacy/WordCount](../legacy/word-count) with sourcecode at
+[WordCountJob.java](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-wordcount/src/main/java/com/netflix/mantis/examples/wordcount/WordCountJob.java).
+
+A few callouts using the old approach are:
+
+1. keyBy is not distributed and is local to the worker, pl create a new ScalarToGroupStage (example 3) to process in distributed stage.
 2. supports specifying concurrency param for each stage
 3. also supports custom (de)serialization formats in addition to java.io.Serializable
 
@@ -122,4 +125,4 @@ A few callouts using this approach are
 
 We've implemented a complete end-to-end Mantis job which counts words from The Illiad repeatedly. This leaves much to be desired. If you inspect our source we're really just iterating over the same data set every ten seconds. In the next tutorial we'll explore the task of writing our own custom source to pull external data from Twitter into Mantis and designing this source in a templated fashion so that it can be used with different queries and API keys.
 
-As an extra credit task see if you can modify the stage in this job to print the top 10 words instead of the entire list.
+As an extra credit task see if you can modify the job to print the top 10 words instead of the entire list.
