@@ -148,6 +148,19 @@ subprojects {
         options.compilerArgs << "-Xlint:deprecation"
     }
 
+    if(JavaVersion.current() != JavaVersion.VERSION_1_8) {
+        targetCompatibility = JavaVersion.VERSION_17
+        tasks.withType(JavaCompile) {
+            options.compilerArgs += [
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED'
+            ]
+        }
+    }
+
     project.plugins.withType(MavenPublishPlugin) {
         def printReleasedArtifact = project.tasks.create('printReleasedArtifact')
         printReleasedArtifact.doLast {
