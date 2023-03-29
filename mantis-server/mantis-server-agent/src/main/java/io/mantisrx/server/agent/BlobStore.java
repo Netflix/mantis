@@ -16,8 +16,8 @@
 package io.mantisrx.server.agent;
 
 import com.netflix.spectator.api.Id;
-import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.Spectator;
+import com.netflix.spectator.api.histogram.PercentileTimer;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -139,19 +139,17 @@ public interface BlobStore extends Closeable {
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     class TrackingBlobStore implements BlobStore {
         private final BlobStore blobStore;
-        private final Registry registry = Spectator.globalRegistry();
-        private final Id baseId = registry.createId("mantisArtifactSyncDurationMillis");
 
+        private final Id ARTIFACT_SYNC_TIMER = Spectator.globalRegistry().createId("mantisArtifactSyncDurationMillis");
 
         @Override
         public File get(URI blobUrl) throws IOException {
-            final long start = registry.clock().monotonicTime();
+            final long startTime = System.currentTimeMillis();
             try {
                 return blobStore.get(blobUrl);
             } finally {
-                final long end = registry.clock().monotonicTime();
-                Id reqId = baseId.withTag("artifactName", FilenameUtils.getName(blobUrl.getPath()));
-                registry.timer(reqId).record(end - start, TimeUnit.MILLISECONDS);
+                final PercentileTimer timer = PercentileTimer.get(Spectator.globalRegistry(), ARTIFACT_SYNC_TIMER.withTag("artifactName", FilenameUtils.getName(blobUrl.getPath())));
+                timer.record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             }
         }
 
