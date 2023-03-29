@@ -22,7 +22,7 @@ dependencies {
     implementation libraries.zip4j
     implementation libraries.commonsIo
     // We only need the org.apache.hadoop.fs.FileSystem interface. Users can bring their own hadoop-common version.
-    compileOnly libraries.hadoopCommon
+    implementation libraries.hadoopCommon
     implementation libraries.spotifyFutures
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12

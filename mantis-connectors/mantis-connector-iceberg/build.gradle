@@ -36,8 +36,8 @@ dependencies {
     api project(":mantis-runtime")
     implementation libraries.slf4jApi
 
-    // We only need the Configuration interface. Users can bring their own hadoop-common version.
-    compileOnly "org.apache.hadoop:hadoop-common:$hadoopVersion"
+    // We only need the Configuration interface.
+    api "org.apache.hadoop:hadoop-common:$hadoopVersion"
 
     // Exclude in case there are differences in SHAs between 0.7.0 incubation versions.
     compileOnly "org.apache.iceberg:iceberg-api:$icebergVersion"
