@@ -15,10 +15,14 @@
  */
 package io.mantisrx.server.agent;
 
+import com.netflix.spectator.api.Id;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.Spectator;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
@@ -50,6 +54,16 @@ public interface BlobStore extends Closeable {
         return new ZipHandlingBlobStore(this);
     }
 
+    /**
+     * blob store that when downloading zip files, also unpacks them and returns the unpacked file/directory to the caller.
+     *
+     * @return blob store that can effectively deal with zip files
+     */
+    default BlobStore withTracing() {
+        return new TrackingBlobStore(this);
+    }
+
+
     static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws Exception {
         final org.apache.hadoop.fs.FileSystem fileSystem =
             FileSystemInitializer.create(clusterStoragePath);
@@ -57,7 +71,8 @@ public interface BlobStore extends Closeable {
         return
             new HadoopFileSystemBlobStore(fileSystem, localStoreDir)
                 .withPrefix(clusterStoragePath)
-                .withZipCapabilities();
+                .withZipCapabilities()
+                .withTracing();
     }
 
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
@@ -118,6 +133,31 @@ public interface BlobStore extends Closeable {
             } else {
                 return null;
             }
+        }
+    }
+
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+    class TrackingBlobStore implements BlobStore {
+        private final BlobStore blobStore;
+        private final Registry registry = Spectator.globalRegistry();
+        private final Id baseId = registry.createId("mantisArtifactSyncDurationMillis");
+
+
+        @Override
+        public File get(URI blobUrl) throws IOException {
+            final long start = registry.clock().monotonicTime();
+            try {
+                return blobStore.get(blobUrl);
+            } finally {
+                final long end = registry.clock().monotonicTime();
+                Id reqId = baseId.withTag("artifactName", FilenameUtils.getName(blobUrl.getPath()));
+                registry.timer(reqId).record(end - start, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            blobStore.close();
         }
     }
 }

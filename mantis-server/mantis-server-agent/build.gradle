@@ -25,6 +25,7 @@ dependencies {
     implementation libraries.spotifyFutures
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
+    implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
