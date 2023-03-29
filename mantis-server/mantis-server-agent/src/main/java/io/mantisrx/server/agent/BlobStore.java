@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -140,7 +141,8 @@ public interface BlobStore extends Closeable {
     class TrackingBlobStore implements BlobStore {
         private final BlobStore blobStore;
 
-        private final Id ARTIFACT_SYNC_TIMER = Spectator.globalRegistry().createId("mantisArtifactSyncDurationMillis");
+        @Getter(lazy = true, value = AccessLevel.PRIVATE)
+        private final Id metricId = Spectator.globalRegistry().createId("mantisArtifactSyncDurationMillis");
 
         @Override
         public File get(URI blobUrl) throws IOException {
@@ -148,7 +150,7 @@ public interface BlobStore extends Closeable {
             try {
                 return blobStore.get(blobUrl);
             } finally {
-                final PercentileTimer timer = PercentileTimer.get(Spectator.globalRegistry(), ARTIFACT_SYNC_TIMER.withTag("artifactName", FilenameUtils.getName(blobUrl.getPath())));
+                final PercentileTimer timer = PercentileTimer.get(Spectator.globalRegistry(), getMetricId().withTag("artifactName", FilenameUtils.getName(blobUrl.getPath())));
                 timer.record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             }
         }
