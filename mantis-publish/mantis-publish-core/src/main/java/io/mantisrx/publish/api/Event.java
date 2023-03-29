@@ -21,7 +21,13 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonValue;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
-import java.util.*;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +41,10 @@ public class Event {
 
     private static final ObjectMapper JACKSON_MAPPER = new ObjectMapper();
     static {
-        JACKSON_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        JACKSON_MAPPER
+            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule());
     }
 
     private final Map<String, Object> attributes;
