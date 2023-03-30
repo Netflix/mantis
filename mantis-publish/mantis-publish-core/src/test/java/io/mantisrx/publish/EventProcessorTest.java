@@ -35,6 +35,7 @@ import io.mantisrx.publish.config.MrePublishConfiguration;
 import io.mantisrx.publish.config.SampleArchaiusMrePublishConfiguration;
 import io.mantisrx.publish.core.Subscription;
 import io.mantisrx.publish.internal.mql.MQLSubscription;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,5 +114,15 @@ class EventProcessorTest {
         eventProcessor.maskSensitiveFields(re);
         assertSame("***", re.get("param.password"));
         assertEquals(re.get("myname"), "mantis");
+    }
+
+    @Test
+    void shouldHandleJava8Time() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("myname", "mantis");
+        data.put("time", Instant.parse("2000-01-01T00:01:00.00Z"));
+        Event re = new Event(data);
+
+        assertEquals("{\"myname\":\"mantis\",\"time\":946684860.000000000}", re.toJsonString());
     }
 }
