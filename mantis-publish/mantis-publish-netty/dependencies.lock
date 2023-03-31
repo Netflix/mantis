@@ -18,10 +18,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "io.mantisrx:mantis-discovery-proto": {
             "firstLevelTransitive": [
@@ -76,10 +76,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "io.mantisrx:mantis-discovery-proto": {
             "firstLevelTransitive": [
@@ -128,13 +128,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "io.mantisrx:mantis-common-serde": {
             "firstLevelTransitive": [
@@ -199,10 +199,10 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "io.mantisrx:mantis-discovery-proto": {
             "firstLevelTransitive": [
@@ -261,13 +261,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "io.mantisrx:mantis-common-serde": {
             "firstLevelTransitive": [

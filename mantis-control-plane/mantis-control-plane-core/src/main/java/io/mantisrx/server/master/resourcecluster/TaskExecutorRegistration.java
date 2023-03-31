@@ -128,4 +128,17 @@ public class TaskExecutorRegistration {
 
         return Optional.empty();
     }
+
+    @JsonIgnore
+    public Optional<String> getAttributeByKey(String attributeKey) {
+        if (this.taskExecutorAttributes.containsKey(attributeKey.toLowerCase())) {
+            return Optional.ofNullable(this.getTaskExecutorAttributes().get(attributeKey.toLowerCase()));
+        }
+
+        if (this.taskExecutorAttributes.containsKey(attributeKey)) {
+            return Optional.ofNullable(this.getTaskExecutorAttributes().get(attributeKey));
+        }
+
+        return Optional.empty();
+    }
 }

@@ -48,6 +48,8 @@ dependencies {
     api "com.github.spullara.cli-parser:cli-parser:$cliParserVersion"
     api "org.skife.config:config-magic:$configMagicVersion"
 
+    implementation libraries.vavr
+
     // todo: separate worker entrypoint and move this to testImplementation instead.
     implementation libraries.spectatorApi
 
