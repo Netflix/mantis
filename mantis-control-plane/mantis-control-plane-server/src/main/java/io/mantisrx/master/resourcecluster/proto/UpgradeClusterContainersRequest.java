@@ -34,4 +34,6 @@ public class UpgradeClusterContainersRequest {
     MantisResourceClusterEnvType optionalEnvType;
 
     int optionalBatchMaxSize;
+
+    boolean forceUpgradeOnSameImage;
 }
