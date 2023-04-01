@@ -172,14 +172,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         log.info("Starting executor registration: {}", this.taskExecutorRegistration);
 
         this.ioExecutor =
-            Executors.newFixedThreadPool(
-                Hardware.getNumberCPUCores(),
+            Executors.newCachedThreadPool(
                 new ExecutorThreadFactory("taskexecutor-io"));
 
         this.runtimeTaskExecutor =
-            Executors.newFixedThreadPool(
-                1,
+            Executors.newCachedThreadPool(
                 new ExecutorThreadFactory("taskexecutor-runtime"));
+
         this.resourceManagerCxnIdx = 0;
         this.taskFactory = taskFactory == null ? new SingleTaskOnlyFactory() : taskFactory;
     }
