@@ -558,6 +558,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private void onTaskExecutorHeartbeatTimeout(HeartbeatTimeout timeout) {
         setupTaskExecutorStateIfNecessary(timeout.getTaskExecutorID());
         try {
+            metrics.incrementCounter(
+                ResourceClusterActorMetrics.HEARTBEAT_TIMEOUT,
+                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "taskExecutorID", timeout.getTaskExecutorID().getResourceId())));
             log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
             final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);

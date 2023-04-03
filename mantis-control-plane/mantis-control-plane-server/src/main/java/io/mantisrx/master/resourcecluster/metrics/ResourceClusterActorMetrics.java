@@ -34,6 +34,7 @@ public class ResourceClusterActorMetrics {
     public static final String NUM_UNREGISTERED_TE = "numUnregisteredTaskExecutors";
     public static final String NUM_ASSIGNED_TE = "numAssignedTaskExecutors";
     public static final String NO_RESOURCES_AVAILABLE = "noResourcesAvailable";
+    public static final String HEARTBEAT_TIMEOUT = "taskExecutorHeartbeatTimeout";
 
     private final Registry registry;
 
