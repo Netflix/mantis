@@ -454,6 +454,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 assignmentTimeout);
             sender().tell(matchedExecutor.get().getKey(), self());
         } else {
+            metrics.incrementCounter(
+                ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
+                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "workerId", request.getWorkerId().getId(), "jobCluster", request.getWorkerId().getJobCluster(), "jobId", request.getWorkerId().getJobId())));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
