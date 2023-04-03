@@ -103,7 +103,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -303,7 +303,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
@@ -539,7 +539,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -772,7 +772,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -1020,7 +1020,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "junit:junit": {
             "locked": "4.11"

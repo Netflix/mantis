@@ -25,6 +25,7 @@ import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.TagList;
 import io.mantisrx.common.Ack;
+import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.metrics.ResourceClusterActorMetrics;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
@@ -32,7 +33,6 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
@@ -50,6 +50,7 @@ import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.vavr.Tuple;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -496,13 +497,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .filter(Objects::nonNull)
                 .map(TaskExecutorStatus::getRegistration)
                 .filter(Objects::nonNull)
-                .map(registration -> registration.getTaskExecutorContainerDefinitionId().orElse(null))
-                .filter(Objects::nonNull)
-                .collect(groupingBy(ContainerSkuID::getResourceID, Collectors.counting()))
-                .forEach((sku, count) -> metrics.setGauge(
+                .filter(registration -> registration.getTaskExecutorContainerDefinitionId().isPresent() && registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).isPresent())
+                .collect(groupingBy(registration -> Tuple.of(registration.getTaskExecutorContainerDefinitionId().get(), registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).get()), Collectors.counting()))
+                .forEach((keys, count) -> metrics.setGauge(
                     metricName,
                     count,
-                    TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", sku))));
+                    TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", keys._1.getResourceID(), "autoScaleGroup", keys._2))));
         } catch (Exception e) {
             log.warn("Error while publishing resource cluster metrics by sku. RC: {}, Metric: {}.", clusterID.getResourceID(), metricName, e);
         }

@@ -126,14 +126,14 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-nflx-plugin": {
             "locked": "0.96.0"
@@ -289,14 +289,14 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-ext-ipc": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core",
                 "io.mantisrx:mantis-publish-netty"
             ],
-            "locked": "1.6.0"
+            "locked": "1.6.1"
         },
         "com.netflix.spectator:spectator-nflx-plugin": {
             "locked": "0.96.0"

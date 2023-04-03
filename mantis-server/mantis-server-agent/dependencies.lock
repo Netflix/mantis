@@ -152,7 +152,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -320,7 +320,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "net.lingala.zip4j:zip4j": {
             "locked": "2.9.0"
@@ -515,7 +515,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
@@ -737,7 +737,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "junit:junit": {
             "locked": "4.11"
@@ -999,7 +999,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
             ],
-            "locked": "2.12.4"
+            "locked": "2.12.5"
         },
         "junit:junit": {
             "locked": "4.11"
