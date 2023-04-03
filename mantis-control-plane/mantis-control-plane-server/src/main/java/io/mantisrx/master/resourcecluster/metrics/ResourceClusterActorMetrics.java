@@ -33,6 +33,7 @@ public class ResourceClusterActorMetrics {
     public static final String NUM_DISABLED_TE = "numDisabledTaskExecutors";
     public static final String NUM_UNREGISTERED_TE = "numUnregisteredTaskExecutors";
     public static final String NUM_ASSIGNED_TE = "numAssignedTaskExecutors";
+    public static final String NO_RESOURCES_AVAILABLE = "noResourcesAvailable";
 
     private final Registry registry;
 
@@ -42,5 +43,9 @@ public class ResourceClusterActorMetrics {
 
     public void setGauge(final String metric, final long value, final Iterable<Tag> tags) {
         registry.gauge(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry)).set(value);
+    }
+
+    public void incrementCounter(final String metric, final Iterable<Tag> tags) {
+        registry.counter(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry)).increment();
     }
 }
