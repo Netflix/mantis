@@ -25,9 +25,11 @@ dependencies {
     implementation libraries.spotifyFutures
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
+    implementation 'org.jetbrains:annotations:16.0.2'
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
     testImplementation project(":mantis-server:mantis-server-worker")
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
+    testImplementation 'com.google.code.findbugs:jsr305:3.0.2'
 }

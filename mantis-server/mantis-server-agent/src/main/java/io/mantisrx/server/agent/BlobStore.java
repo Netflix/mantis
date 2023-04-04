@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
@@ -37,7 +38,7 @@ public interface BlobStore extends Closeable {
      * @param prefixUri prefix that needs to be prepended to every requested resource.
      * @return blob store with the prefix patterns baked in.
      */
-    default BlobStore withPrefix(URI prefixUri) {
+    default BlobStore withPrefix(final URI prefixUri) {
         return new PrefixedBlobStore(prefixUri, this);
     }
 
@@ -50,8 +51,8 @@ public interface BlobStore extends Closeable {
         return new ZipHandlingBlobStore(this);
     }
 
-    static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws Exception {
-        final org.apache.hadoop.fs.FileSystem fileSystem =
+    static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws IOException {
+        org.apache.hadoop.fs.FileSystem fileSystem =
             FileSystemInitializer.create(clusterStoragePath);
 
         return
@@ -111,7 +112,7 @@ public interface BlobStore extends Closeable {
             return zipFile.getFile().getPath() + "-unzipped";
         }
 
-        private ZipFile getZipFile(File file) {
+        private static @Nullable ZipFile getZipFile(File file) {
             ZipFile file1 = new ZipFile(file);
             if (file1.isValidZipFile()) {
                 return file1;
