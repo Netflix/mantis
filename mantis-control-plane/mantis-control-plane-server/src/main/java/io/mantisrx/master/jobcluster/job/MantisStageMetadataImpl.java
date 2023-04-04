@@ -31,13 +31,22 @@ import io.mantisrx.server.master.WorkerRequest;
 import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
+import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
@@ -554,7 +563,12 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
     public Optional<JobWorker> processWorkerEvent(WorkerEvent event, MantisJobStore jobStore) {
         try {
             JobWorker worker = getWorkerByIndex(event.getWorkerId().getWorkerIndex());
-            worker.processEvent(event, jobStore);
+            try {
+                worker.processEvent(event, jobStore);
+            } catch (InvalidWorkerStateChangeException wex) {
+                LOGGER.warn("InvalidWorkerStateChangeException from {}: {}", wex);
+            }
+
             return of(worker);
         } catch (Exception e) {
             LOGGER.warn("Exception saving worker update", e);
