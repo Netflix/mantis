@@ -499,7 +499,8 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
             if (rw.getStageNum() == rw.getTotalStagesNet()) {
                 // last+sink stage
-                logger.info("JobId: " + rw.getJobId() + ", executing sink stage: " + rw.getStageNum());
+                logger.info(
+                    "JobId: {}, executing sink stage: {}, signaling started", rw.getJobId(), rw.getStageNum());
                 rw.getJobStatus().onNext(new Status(rw.getJobId(), rw.getStageNum(), rw.getWorkerIndex(),
                         rw.getWorkerNum(),
                         TYPE.INFO, getWorkerStringPrefix(rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum()) + " running",

@@ -136,7 +136,7 @@ public class RunningWorker {
         requestSubject.onNext(true);
         requestSubject.onCompleted();
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum
-                , TYPE.DEBUG, "Beginning job execution " +
+                , TYPE.INFO, "Beginning job execution " +
                 workerIndex, MantisJobState.StartInitiated));
     }
 
