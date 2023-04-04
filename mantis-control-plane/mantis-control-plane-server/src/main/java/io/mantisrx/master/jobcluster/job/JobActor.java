@@ -77,6 +77,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import rx.Observable;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
@@ -236,6 +237,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @throws InvalidJobException
      */
     void initialize(boolean isSubmit) throws Exception {
+        MDC.put("jobId", jobId.toString());
         LOGGER.info("Initializing Job {}", jobId);
 
         if (isSubmit) {
@@ -1758,6 +1760,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             jobSchedulingInfoBehaviorSubject.onCompleted();
 
             LOGGER.trace("Exit shutdown for Job {}", jobId);
+            MDC.remove("jobId");
         }
 
         private void terminateAllWorkersAsync() {
