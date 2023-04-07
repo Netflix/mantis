@@ -368,7 +368,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                 final MantisJobMetadataWritable jobMeta = readJobStageData(jobId, jobInfo.getValue());
                 if (CollectionUtils.isEmpty(workersByJobId.get(jobId))) {
                     logger.warn("No workers found for job {}, skipping", jobId);
-                    continue;
+//                    continue;
                 }
                 for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
                     Preconditions.checkState(
