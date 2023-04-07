@@ -251,6 +251,11 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager{
                 return;
             }
 
+            // do not count the disabled TEs.
+            if (value.isDisabled()) {
+                return;
+            }
+
             Optional<String> groupKeyO =
                 req.getGroupKeyFunc().apply(value.getRegistration());
 
