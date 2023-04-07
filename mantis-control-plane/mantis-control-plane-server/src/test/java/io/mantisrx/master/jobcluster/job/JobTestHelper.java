@@ -134,7 +134,7 @@ public class JobTestHelper {
     }
 
     public static IJobClusterDefinition generateJobClusterDefinition(String name) {
-        return generateJobClusterDefinition(name, new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(0, 0, 0, 0, 0), Lists.newArrayList(), Lists.newArrayList()).build());
+        return generateJobClusterDefinition(name, new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(new MachineDefinition(0, 0, 0, 0, 0), Lists.newArrayList(), Lists.newArrayList()).build());
     }
 
     public static JobDefinition generateJobDefinition(String clusterName, SchedulingInfo schedInfo) throws InvalidJobException {
@@ -152,7 +152,7 @@ public class JobTestHelper {
     }
 
     public static JobDefinition generateJobDefinition(String clusterName) throws InvalidJobException {
-        return generateJobDefinition(clusterName, new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(new MachineDefinition(1.0, 1.0, 1.0, 1.0, 3), Lists.newArrayList(), Lists.newArrayList()).build());
+        return generateJobDefinition(clusterName, new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(new MachineDefinition(1.0, 1.0, 1.0, 1.0, 3), Lists.newArrayList(), Lists.newArrayList()).build());
     }
 
     public static void sendCheckHeartBeat(final TestKit probe, final ActorRef jobActor, Instant now) {

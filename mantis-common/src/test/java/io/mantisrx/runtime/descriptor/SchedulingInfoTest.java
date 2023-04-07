@@ -149,13 +149,13 @@ public class SchedulingInfoTest {
         smap.put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, 0.1, 0.6, null));
         Builder builder = new Builder()
             .numberOfStages(2)
-            .multiWorkerScalableStageWithConstraints(
+            .addMultiScalableStagesWithConstraints(
                 2,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
                 new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
             )
-            .multiWorkerScalableStageWithConstraints(
+            .addMultiScalableStagesWithConstraints(
                 3,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
@@ -260,14 +260,14 @@ public class SchedulingInfoTest {
         smap.put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, 0.1, 0.6, null));
         Builder builder = new Builder()
             .numberOfStages(2)
-            .multiWorkerScalableStageWithConstraints(
+            .addMultiScalableStagesWithConstraints(
                 2,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,
                 new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap),
                 ImmutableMap.of("containerSkuID", "sku1")
             )
-            .multiWorkerScalableStageWithConstraints(
+            .addMultiScalableStagesWithConstraints(
                 3,
                 new MachineDefinition(1, 1.24, 0.0, 1, 1),
                 null, null,

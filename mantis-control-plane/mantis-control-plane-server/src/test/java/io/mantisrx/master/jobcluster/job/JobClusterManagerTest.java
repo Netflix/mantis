@@ -190,7 +190,7 @@ public class JobClusterManagerTest {
                 .withArtifactName("myart")
 
                 .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
-                                                                .singleWorkerStageWithConstraints(
+                                                                .addStageWithConstraints(
                                                                         new MachineDefinition(
                                                                                 0,
                                                                                 0,
@@ -224,7 +224,7 @@ public class JobClusterManagerTest {
                 .withParameters(Lists.newArrayList())
                 .withLabels(Lists.newArrayList())
                 .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
-                                                                .singleWorkerStageWithConstraints(
+                                                                .addStageWithConstraints(
                                                                         new MachineDefinition(
                                                                                 1,
                                                                                 10,

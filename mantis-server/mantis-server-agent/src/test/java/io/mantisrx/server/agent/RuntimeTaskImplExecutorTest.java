@@ -208,7 +208,7 @@ public class RuntimeTaskImplExecutorTest {
                 1, 1,
                 ports, 100L, 1, ImmutableList.of(),
                 new SchedulingInfo.Builder().numberOfStages(1)
-                    .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
+                    .addStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                         Lists.newArrayList(), Lists.newArrayList()).build(),
                 MantisJobDurationType.Transient,
                 1000L,

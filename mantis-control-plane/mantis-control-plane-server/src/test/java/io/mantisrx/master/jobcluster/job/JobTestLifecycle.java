@@ -223,7 +223,7 @@ public class JobTestLifecycle {
             MachineDefinition machineDefinition = new MachineDefinition(1.0, 1.0, 1.0, 1.0, 3);
             SchedulingInfo schedInfo = new SchedulingInfo.Builder()
                     .numberOfStages(1)
-                    .singleWorkerStageWithConstraints(machineDefinition,
+                    .addStageWithConstraints(machineDefinition,
                             Lists.newArrayList(),
                             Lists.newArrayList()).build();
             jobDefn  = new JobDefinition.Builder()
@@ -370,7 +370,7 @@ public class JobTestLifecycle {
 		IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
 		JobDefinition jobDefn;
 		try {
-			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).addMultiStagesWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -467,13 +467,13 @@ public class JobTestLifecycle {
             smap.put(StageScalingPolicy.ScalingReason.Memory, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.Memory, 0.1, 0.6, null));
             SchedulingInfo.Builder builder = new SchedulingInfo.Builder()
                     .numberOfStages(2)
-                    .multiWorkerScalableStageWithConstraints(
+                    .addMultiScalableStagesWithConstraints(
                             2,
                             new MachineDefinition(1, 1.24, 0.0, 1, 1),
                             null, null,
                             new StageScalingPolicy(1, 1, 3, 1, 1, 60, smap)
                     )
-                    .multiWorkerScalableStageWithConstraints(
+                    .addMultiScalableStagesWithConstraints(
                             3,
                             new MachineDefinition(1, 1.24, 0.0, 1, 1),
                             null, null,
@@ -590,7 +590,7 @@ public class JobTestLifecycle {
 		IJobClusterDefinition jobClusterDefn = JobTestHelper.generateJobClusterDefinition(clusterName);
 		JobDefinition jobDefn;
 		try {
-			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).addMultiStagesWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -737,7 +737,7 @@ public class JobTestLifecycle {
 
 		JobDefinition jobDefn;
 		try {
-			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).addMultiStagesWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 
@@ -833,7 +833,7 @@ public class JobTestLifecycle {
 		 ActorRef jobActor = null;
 		JobDefinition jobDefn;
 		try {
-			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStageWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
+			SchedulingInfo sInfo = new SchedulingInfo.Builder().numberOfStages(1).addMultiStagesWithConstraints(2, new MachineDefinition(1.0,1.0,1.0,3), Lists.newArrayList(), Lists.newArrayList()).build();
 
 			jobDefn = JobTestHelper.generateJobDefinition(clusterName, sInfo);
 			MantisScheduler schedulerMock = mock(MantisScheduler.class);

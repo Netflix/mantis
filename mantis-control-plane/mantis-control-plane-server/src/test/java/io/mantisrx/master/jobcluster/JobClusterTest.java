@@ -149,8 +149,8 @@ public class JobClusterTest {
     public static final SLA NO_OP_SLA = new SLA(0, 0, null, null);
 
     public static final MachineDefinition DEFAULT_MACHINE_DEFINITION = new MachineDefinition(1, 10, 10, 10, 2);
-    public static final SchedulingInfo SINGLE_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).singleWorkerStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), Lists.newArrayList()).build();
-    public static final SchedulingInfo TWO_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION).build();
+    public static final SchedulingInfo SINGLE_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).addStageWithConstraints(DEFAULT_MACHINE_DEFINITION, Lists.newArrayList(), Lists.newArrayList()).build();
+    public static final SchedulingInfo TWO_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1).addMultiStages(2, DEFAULT_MACHINE_DEFINITION).build();
     public static final JobOwner DEFAULT_JOB_OWNER = new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo");
     final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
     static ActorSystem system;
@@ -1568,7 +1568,7 @@ public class JobClusterTest {
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo = new SchedulingInfo.Builder()
                     .numberOfStages(1)
-                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(3, DEFAULT_MACHINE_DEFINITION)
                     .build();
             final JobDefinition jobDefn2Workers = createJob(clusterName, MantisJobDurationType.Transient, schedulingInfo);
             JobTestHelper.submitJobAndVerifySuccess(probe, clusterName, jobClusterActor, jobDefn2Workers, jobId2);
@@ -1620,7 +1620,7 @@ public class JobClusterTest {
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo = new SchedulingInfo.Builder()
                     .numberOfStages(1)
-                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(3, DEFAULT_MACHINE_DEFINITION)
                     .build();
             final DeploymentStrategy deploymentStrategy = DeploymentStrategy.builder()
                     .stage(1, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
@@ -1661,10 +1661,10 @@ public class JobClusterTest {
         // default job with 3 stage == (2 worker)
         final SchedulingInfo schedulingInfo1 = new SchedulingInfo.Builder()
                 .numberOfStages(4)
-                .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
-                .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
-                .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
-                .multiWorkerStage(2, DEFAULT_MACHINE_DEFINITION)
+                .addMultiStages(2, DEFAULT_MACHINE_DEFINITION)
+                .addMultiStages(2, DEFAULT_MACHINE_DEFINITION)
+                .addMultiStages(2, DEFAULT_MACHINE_DEFINITION)
+                .addMultiStages(2, DEFAULT_MACHINE_DEFINITION)
                 .build();
         final JobClusterDefinitionImpl fakeJobCluster =
                 createFakeJobClusterDefn(clusterName, Lists.newArrayList(), NO_OP_SLA, schedulingInfo1);
@@ -1686,10 +1686,10 @@ public class JobClusterTest {
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo2 = new SchedulingInfo.Builder()
                     .numberOfStages(4)
-                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
-                    .multiWorkerStage(4, DEFAULT_MACHINE_DEFINITION)
-                    .multiWorkerStage(5, DEFAULT_MACHINE_DEFINITION)
-                    .multiWorkerStage(6, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(3, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(4, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(5, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(6, DEFAULT_MACHINE_DEFINITION)
                     .build();
             final DeploymentStrategy deploymentStrategy =  DeploymentStrategy.builder()
                     .stage(1, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
@@ -1739,8 +1739,8 @@ public class JobClusterTest {
         // default job with 3 stage == (2 worker)
         final SchedulingInfo schedulingInfo1 = new SchedulingInfo.Builder()
                 .numberOfStages(2)
-                .multiWorkerStage(1, DEFAULT_MACHINE_DEFINITION, true)
-                .multiWorkerStage(1, DEFAULT_MACHINE_DEFINITION, true)
+                .addMultiStages(1, DEFAULT_MACHINE_DEFINITION, true)
+                .addMultiStages(1, DEFAULT_MACHINE_DEFINITION, true)
                 .build();
         final JobClusterDefinitionImpl fakeJobCluster =
                 createFakeJobClusterDefn(clusterName, Lists.newArrayList(), NO_OP_SLA, schedulingInfo1);
@@ -1768,8 +1768,8 @@ public class JobClusterTest {
             final String jobId2 = clusterName + "-2";
             final SchedulingInfo schedulingInfo2 = new SchedulingInfo.Builder()
                     .numberOfStages(2)
-                    .multiWorkerStage(3, DEFAULT_MACHINE_DEFINITION)
-                    .multiWorkerStage(4, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(3, DEFAULT_MACHINE_DEFINITION)
+                    .addMultiStages(4, DEFAULT_MACHINE_DEFINITION)
                     .build();
             final DeploymentStrategy deploymentStrategy = DeploymentStrategy.builder()
                     .stage(1, StageDeploymentStrategy.builder().inheritInstanceCount(true).build())
@@ -2413,7 +2413,7 @@ public class JobClusterTest {
             smap.put(StageScalingPolicy.ScalingReason.DataDrop, new StageScalingPolicy.Strategy(StageScalingPolicy.ScalingReason.DataDrop, 0.0, 2.0, null));
 
             SchedulingInfo SINGLE_WORKER_SCHED_INFO = new SchedulingInfo.Builder().numberOfStages(1)
-                    .multiWorkerScalableStageWithConstraints(1,DEFAULT_MACHINE_DEFINITION,Lists.newArrayList(),Lists.newArrayList(),new StageScalingPolicy(1,1,10,1,1,1, smap)).build();
+                    .addMultiScalableStagesWithConstraints(1,DEFAULT_MACHINE_DEFINITION,Lists.newArrayList(),Lists.newArrayList(),new StageScalingPolicy(1,1,10,1,1,1, smap)).build();
 
             final JobDefinition jobDefn = createJob(clusterName, 1, MantisJobDurationType.Transient, "USER_TYPE", SINGLE_WORKER_SCHED_INFO, Lists.newArrayList());
 
