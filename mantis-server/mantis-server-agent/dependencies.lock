@@ -154,12 +154,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -195,6 +189,15 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "20180813"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-all": {
             "locked": "2.0.2-beta"
@@ -739,12 +742,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "net.lingala.zip4j:zip4j": {
             "locked": "2.9.0"
         },
@@ -786,6 +783,15 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "20180813"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-all": {
             "locked": "2.0.2-beta"
@@ -1001,12 +1007,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -1085,6 +1085,15 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "20180813"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-all": {
             "locked": "2.0.2-beta"

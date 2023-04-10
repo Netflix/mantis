@@ -172,11 +172,14 @@
         }
     },
     "baseline-exact-dependencies-test": {
-        "junit:junit": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
         },
-        "junit:junit-dep": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
             "locked": "2.0.111-beta"
@@ -681,12 +684,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -722,6 +719,15 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "20180813"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
             "locked": "2.0.111-beta"
@@ -893,12 +899,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -946,6 +946,15 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "20180813"
+        },
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
             "locked": "2.0.111-beta"
