@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 
 public class JacksonTest {

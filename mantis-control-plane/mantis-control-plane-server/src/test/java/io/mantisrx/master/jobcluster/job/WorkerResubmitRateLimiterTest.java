@@ -16,11 +16,11 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
 import io.mantisrx.server.core.domain.WorkerId;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class WorkerResubmitRateLimiterTest {
 

@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import akka.actor.ActorSystem;
 import akka.http.javadsl.Http;
@@ -37,8 +37,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.util.Strings;
@@ -54,7 +54,7 @@ public abstract class RouteTestBase {
 
     static ResponseValidatorFunc EMPTY_RESPONSE_VALIDATOR = (msg) -> {
 
-        assertTrue(Strings.isNullOrEmpty(msg), String.format("response [%s] is not empty", msg));
+        assertTrue(String.format("response [%s] is not empty", msg), Strings.isNullOrEmpty(msg));
     };
 
     RouteTestBase(String testName, int port) {
@@ -65,14 +65,14 @@ public abstract class RouteTestBase {
         this.serverPort = port;
     }
 
-    @BeforeAll
+    @BeforeClass
     public static void setupActorSystem() {
         system = ActorSystem.create();
         materializer = Materializer.createMaterializer(system);
         http = Http.get(system);
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDownActorSystem() {
         try {
             http.shutdownAllConnectionPools();

@@ -16,33 +16,30 @@
 
 package io.mantisrx.master.api.akka.route.pagination;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import scala.Tuple1;
 
 public class ListObjectTests {
 
     private static final Random rnd = new Random(System.currentTimeMillis());
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testSortingByInvalidFieldName() {
-        assertThrows(RuntimeException.class, () -> {
-            try {
-                ListObject<TestObject> listobject = new ListObject.Builder<TestObject>()
-                    .withObjects(generateList(10), TestObject.class)
-                    .withSortField("invalidValue")
-                    .withSortAscending(true)
-                    .build();
-            } catch (Exception e) {
-                assertTrue(e.getMessage().contains("Specified sort field is invalid."));
-                throw e;
-            }
-        });
+        try {
+            ListObject<TestObject> listobject = new ListObject.Builder<TestObject>()
+                .withObjects(generateList(10), TestObject.class)
+                .withSortField("invalidValue")
+                .withSortAscending(true)
+                .build();
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Specified sort field is invalid."));
+            throw e;
+        }
     }
 
     @Test
@@ -113,20 +110,18 @@ public class ListObjectTests {
         }
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testSortingByPrivateValueFieldName() {
-        assertThrows(RuntimeException.class, () -> {
-            try {
-                ListObject<TestObject> listobject = new ListObject.Builder<TestObject>()
-                    .withObjects(generateList(10), TestObject.class)
-                    .withSortField("privateValue")
-                    .withSortAscending(true)
-                    .build();
-            } catch (Exception e) {
-                assertTrue(e.getMessage().contains("Cannot access sort field."));
-                throw e;
-            }
-        });
+        try {
+            ListObject<TestObject> listobject = new ListObject.Builder<TestObject>()
+                .withObjects(generateList(10), TestObject.class)
+                .withSortField("privateValue")
+                .withSortAscending(true)
+                .build();
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Cannot access sort field."));
+            throw e;
+        }
     }
 
     @Test
@@ -179,19 +174,17 @@ public class ListObjectTests {
                 .build().list.size() == 5);
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testPaginationInvalidLimit() {
-        assertThrows(IllegalStateException.class, () -> {
-            try {
-                int size = new ListObject.Builder<TestObject>()
-                    .withObjects(generateList(10), TestObject.class)
-                    .withLimit(-1)
-                    .build().list.size();
-            } catch (Exception e) {
-                assertTrue(e.getMessage().contains("limit needs to be greater than 0"));
-                throw e;
-            }
-        });
+        try {
+            int size = new ListObject.Builder<TestObject>()
+                .withObjects(generateList(10), TestObject.class)
+                .withLimit(-1)
+                .build().list.size();
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("limit needs to be greater than 0"));
+            throw e;
+        }
     }
 
     @Test

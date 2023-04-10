@@ -26,11 +26,11 @@ import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCC
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS_CREATED;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -101,7 +101,6 @@ import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.time.Duration;
@@ -110,11 +109,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.rules.Timeout;
 import org.mockito.Mockito;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
@@ -131,10 +132,13 @@ public class JobClusterManagerTest {
             new WorkerEventSubscriberLoggingImpl());
     private static final String user = "nj";
 
-    @TempDir
-    File rootDir;
+    @Rule
+    public TemporaryFolder rootDir = new TemporaryFolder();
 
-    @BeforeAll
+    @Rule
+    public Timeout globalTimeout = new Timeout(2000);
+
+    @BeforeClass
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
                                                   "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
@@ -149,7 +153,7 @@ public class JobClusterManagerTest {
         TestHelpers.setupMasterConfig();
     }
 
-    @BeforeEach
+    @Before
     public void setupState() {
         jobStoreMock = mock(MantisJobStore.class);
         schedulerMockFactory = mock(MantisSchedulerFactory.class);
@@ -163,7 +167,7 @@ public class JobClusterManagerTest {
             true), ActorRef.noSender());
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         JobTestHelper.deleteAllFiles();
         TestKit.shutdownActorSystem(system);
@@ -259,7 +263,7 @@ public class JobClusterManagerTest {
                 "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
                 JobClusterManagerProto.CreateJobClusterResponse.class);
-        assertEquals(SUCCESS_CREATED, resp.responseCode, resp.toString());
+        assertEquals(resp.toString(), SUCCESS_CREATED, resp.responseCode);
     }
 
     private void submitJobAndAssert(ActorRef jobClusterManagerActor, String cluster) {
@@ -291,7 +295,7 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir),
+                new FileBasedStore(rootDir.getRoot()),
                 eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
@@ -389,7 +393,7 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir),
+                new FileBasedStore(rootDir.getRoot()),
                 eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
@@ -636,7 +640,7 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir),
+                new FileBasedStore(rootDir.getRoot()),
                 eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);

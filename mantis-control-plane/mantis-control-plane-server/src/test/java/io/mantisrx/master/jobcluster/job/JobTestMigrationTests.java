@@ -17,8 +17,8 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import akka.actor.ActorRef;
@@ -53,9 +53,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 
 
@@ -68,7 +68,7 @@ public class JobTestMigrationTests {
     final LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         system = ActorSystem.create();
 
@@ -76,7 +76,7 @@ public class JobTestMigrationTests {
 
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         //((SimpleCachedFileStorageProvider)storageProvider).deleteAllFiles();
         TestKit.shutdownActorSystem(system);

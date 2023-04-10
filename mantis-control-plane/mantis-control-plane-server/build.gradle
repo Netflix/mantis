@@ -55,7 +55,7 @@ dependencies {
 
     testImplementation "com.typesafe.akka:akka-testkit_$scalaBinaryVersion:$akkaVersion"
     testImplementation "com.typesafe.akka:akka-http-testkit_$scalaBinaryVersion:$akkaHttpVersion"
-    testImplementation libraries.junitJupiter
+    testImplementation libraries.junit4
     testImplementation libraries.mockitoCore3
     testImplementation "org.testng:testng:$testngVersion"
     testImplementation testFixtures(project(":mantis-common"))

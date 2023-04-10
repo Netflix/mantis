@@ -17,9 +17,9 @@
 package io.mantisrx.master.jobcluster.job;
 
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -61,7 +61,7 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 
 public class JobTestHelper {

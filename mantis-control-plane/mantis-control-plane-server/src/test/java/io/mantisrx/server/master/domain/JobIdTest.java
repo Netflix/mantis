@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.master.domain;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class JobIdTest {
     @Test

@@ -16,7 +16,7 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.server.core.domain.ArtifactID;
@@ -29,7 +29,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Instant;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class JobArtifactSerdeTest {
 

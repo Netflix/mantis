@@ -17,9 +17,9 @@
 package io.mantisrx.server.master.persistence;
 
 import static io.mantisrx.master.jobcluster.job.worker.MantisWorkerMetadataImpl.MANTIS_SYSTEM_ALLOCATED_NUM_PORTS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.common.WorkerPorts;
@@ -61,8 +61,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Test;
 
 public class FileBasedStoreTest {
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -70,7 +70,7 @@ public class FileBasedStoreTest {
 
     private final FileBasedStore fileProvider = new FileBasedStore();
 
-    @AfterEach
+    @After
     public void tearDown() {
         fileProvider.reset();
     }

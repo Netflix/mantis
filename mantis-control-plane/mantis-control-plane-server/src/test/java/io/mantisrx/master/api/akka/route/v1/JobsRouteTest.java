@@ -79,9 +79,9 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.util.Strings;
@@ -100,7 +100,7 @@ public class JobsRouteTest extends RouteTestBase {
         super("JobsRoute", SERVER_PORT);
     }
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
@@ -237,7 +237,7 @@ public class JobsRouteTest extends RouteTestBase {
         latch.await();
     }
 
-    @AfterAll
+    @AfterClass
     public static void teardown() {
         logger.info("V1JobsRouteTest teardown");
         binding.thenCompose(ServerBinding::unbind) // trigger unbinding from the port

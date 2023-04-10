@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.jobcluster;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.mantisrx.master.jobcluster.JobClusterActor.JobInfo;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -28,7 +28,7 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
 import org.joda.time.Instant;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class SLAEnforcerTest {
 

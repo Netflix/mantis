@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route.v0;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -71,9 +71,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +112,7 @@ public class JobClusterRouteTest {
     private static CompletionStage<ServerBinding> binding;
     private static ActorSystem system = ActorSystem.create("JobClusterRoutes");
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -152,7 +152,7 @@ public class JobClusterRouteTest {
         latch.await();
     }
 
-    @AfterAll
+    @AfterClass
     public static void teardown() {
         logger.info("V0JobClusterRouteTest teardown");
         binding

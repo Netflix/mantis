@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import akka.NotUsed;
 import akka.http.javadsl.ConnectHttp;
@@ -38,9 +38,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,7 @@ public class AdminMasterRouteTest extends RouteTestBase {
         super("MasterDescriptionRouteTest", 8205);
     }
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
@@ -98,7 +98,7 @@ public class AdminMasterRouteTest extends RouteTestBase {
         latch.await();
     }
 
-    @AfterAll
+    @AfterClass
     public static void teardown() {
         logger.info("MasterDescriptionRouteTest teardown");
         binding

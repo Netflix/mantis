@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import io.mantisrx.common.WorkerPorts;
@@ -42,8 +42,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TaskExecutorStateTest {
     private final AtomicReference<Clock> actual =
@@ -68,7 +68,7 @@ public class TaskExecutorStateTest {
         ImmutableMap.of("attr1", "attr2");
     private static final WorkerId WORKER_ID = WorkerId.fromIdUnsafe("late-sine-function-tutorial-1-worker-0-1");
 
-    @BeforeEach
+    @Before
     public void setup() {
         rpc.registerGateway(TASK_EXECUTOR_ADDRESS, gateway);
     }

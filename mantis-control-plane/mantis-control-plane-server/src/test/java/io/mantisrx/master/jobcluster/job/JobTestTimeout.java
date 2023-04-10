@@ -15,15 +15,15 @@
  */
 //package io.mantisrx.master.jobcluster.job;
 //
-//import static org.junit.jupiter.api.Assertions.assertFalse;
-//import static org.junit.jupiter.api.Assertions.assertTrue;
-//import static org.junit.jupiter.api.Assertions.fail;
+//import static org.junit.Assert.assertFalse;
+//import static org.junit.Assert.assertTrue;
+//import static org.junit.Assert.fail;
 //
 //import java.time.Instant;
 //
-//import org.junit.jupiter.api.AfterAll;
-//import org.junit.jupiter.api.BeforeAll;
-//import org.junit.jupiter.api.Test;
+//import org.junit.AfterClass;
+//import org.junit.BeforeClass;
+//import org.junit.Test;
 //
 //import com.google.common.collect.Lists;
 //
@@ -51,7 +51,7 @@
 //	private static final String user = "mantis";
 //	private static IJobClusterDefinition jobClusterDefn ;
 //
-//	@BeforeAll
+//	@BeforeClass
 //	public static void setup() {
 //		system = ActorSystem.create();
 //
@@ -87,7 +87,7 @@
 //
 //	}
 //
-//	@AfterAll
+//	@AfterClass
 //	public static void tearDown() {
 //		((SimpleCachedFileStorageProvider)storageProvider).deleteAllFiles();
 //		TestKit.shutdownActorSystem(system);

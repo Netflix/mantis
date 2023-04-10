@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.api.akka.route;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
@@ -27,7 +27,7 @@ import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class LeaderRedirectionFilterTest extends AllDirectives {
 

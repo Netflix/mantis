@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import io.mantisrx.master.api.akka.payloads.PayloadUtils;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
@@ -27,7 +27,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.SerializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.util.Collections;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

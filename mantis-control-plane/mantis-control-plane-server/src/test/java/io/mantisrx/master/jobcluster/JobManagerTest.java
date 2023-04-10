@@ -17,10 +17,10 @@
 package io.mantisrx.master.jobcluster;
 
 import static java.util.Optional.empty;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 import akka.actor.AbstractActor;
@@ -39,8 +39,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class JobManagerTest {
 
@@ -48,7 +48,7 @@ public class JobManagerTest {
     private static AbstractActor.ActorContext context;
     private static MantisSchedulerFactory schedulerFactory;
     private static LifecycleEventPublisher publisher;
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         jobStore = mock(MantisJobStore.class);
 		context = mock(AbstractActor.ActorContext.class);

@@ -52,9 +52,9 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -72,7 +72,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
         super("JobDiscoveryRoute", SERVER_PORT);
     }
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws Exception {
         JobTestHelper.deleteAllFiles();
         JobTestHelper.createDirsIfRequired();
@@ -117,7 +117,7 @@ public class JobDiscoveryStreamRouteTest extends RouteTestBase {
         latch.await();
     }
 
-    @AfterAll
+    @AfterClass
     public static void teardown() {
         logger.info("JobDiscoveryRouteTest teardown");
         if (binding != null) {

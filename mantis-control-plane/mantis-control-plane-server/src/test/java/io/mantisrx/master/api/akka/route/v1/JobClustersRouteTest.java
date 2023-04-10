@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.api.akka.route.v1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -60,9 +60,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +80,7 @@ public class JobClustersRouteTest extends RouteTestBase {
         super("JobClustersRouteTest", SERVER_PORT);
     }
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws Exception {
         TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -133,7 +133,7 @@ public class JobClustersRouteTest extends RouteTestBase {
         latch.await();
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() throws Exception {
         logger.info("V1JobClusterRouteTest teardown");
         binding.thenCompose(ServerBinding::unbind) // trigger unbinding from the port

@@ -52,10 +52,10 @@ import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJ
 import static io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -133,12 +133,13 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import rx.schedulers.Schedulers;
@@ -159,10 +160,10 @@ public class JobClusterTest {
     private IMantisPersistenceProvider storageProvider;
     private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
     private static final String user = "mantis";
-    @TempDir
-    File rootDir;
+    @Rule
+    public TemporaryFolder rootDir = new TemporaryFolder();
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
             "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
@@ -177,17 +178,17 @@ public class JobClusterTest {
         TestHelpers.setupMasterConfig();
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         JobTestHelper.deleteAllFiles();
         TestKit.shutdownActorSystem(system);
         system = null;
     }
 
-    @BeforeEach
+    @Before
     public void setupStorageProvider() {
         storageProvider = new KeyValueBasedPersistenceProvider(
-            new FileBasedStore(rootDir),
+            new FileBasedStore(rootDir.getRoot()),
             eventPublisher);
         jobStore = new MantisJobStore(storageProvider);
     }
@@ -1180,7 +1181,7 @@ public class JobClusterTest {
     }
 
 
-    @Disabled
+    @Ignore
     @Test
     public void testJobComplete() {
         TestKit probe = new TestKit(system);
@@ -1441,7 +1442,7 @@ public class JobClusterTest {
     /**
      * {@see <a href="https://github.com/Netflix/mantis/issues/195">Github issue</a> for more context}
      */
-    @Disabled
+    @Ignore
     @Test
     public void testCronTriggersSLAToKillOld() {
         TestKit probe = new TestKit(system);

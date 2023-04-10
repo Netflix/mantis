@@ -16,16 +16,15 @@
 
 package io.mantisrx.server.master.domain;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.mantisrx.runtime.JobOwner;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 
 public class JobClusterConfigTest {
@@ -56,18 +55,17 @@ public class JobClusterConfigTest {
             fail();
         }
     }
-    @Test
+    @Test(expected = Exception.class)
     public void noSchedInfoFails() {
-        assertThrows(Exception.class, () -> {
-            String name = "noSchedInfoFails";
+        String name = "noSchedInfoFails";
 
-            JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
+        JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
                 .withArtifactName("myart")
 
                 .withSchedulingInfo(null)
                 .withVersion("0.0.1")
                 .build();
-            final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
+        final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
                 .withJobClusterConfig(clusterConfig)
                 .withName(name)
                 .withParameters(Lists.newArrayList())
@@ -76,21 +74,19 @@ public class JobClusterConfigTest {
                 .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
                 .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
                 .build();
-        });
     }
 
-    @Test
+    @Test(expected = Exception.class)
     public void noArtifactNameFails() {
-        assertThrows(Exception.class, () -> {
-            String name = "noArtifactNameFails";
+        String name = "noArtifactNameFails";
 
-            JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
+        JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
                 .withArtifactName(null)
 
                 .withSchedulingInfo(DEFAULT_SCHED_INFO)
                 .withVersion("0.0.1")
                 .build();
-            final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
+        final JobClusterDefinitionImpl fakeJobCluster = new JobClusterDefinitionImpl.Builder()
                 .withJobClusterConfig(clusterConfig)
                 .withName(name)
                 .withUser("nj")
@@ -99,7 +95,6 @@ public class JobClusterConfigTest {
                 .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
                 .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
                 .build();
-        });
     }
     @Test
     public void noVersionAutogenerate() {

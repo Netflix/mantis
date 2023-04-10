@@ -16,14 +16,14 @@
 
 package io.mantisrx.master.jobcluster;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.server.master.domain.JobId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class LabelCacheTest {
 

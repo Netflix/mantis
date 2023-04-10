@@ -16,8 +16,8 @@
 
 package io.mantisrx.master.resourcecluster.resourceprovider;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import akka.actor.ActorSystem;
 import com.typesafe.config.Config;
@@ -37,18 +37,19 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 @Slf4j
 public class SimpleFileResourceStorageProviderTests {
     static ActorSystem system;
 
-    @TempDir
-    File storageDirectory;
+    @Rule
+    public TemporaryFolder storageDirectory = new TemporaryFolder();
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws IOException {
         Config config = ConfigFactory.parseString("akka {\n" +
                 "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
@@ -63,7 +64,7 @@ public class SimpleFileResourceStorageProviderTests {
     public void testResourceClusterRules() throws ExecutionException, InterruptedException, IOException {
         final ClusterID clusterId = ClusterID.of("mantisRCMTest2");
         final ContainerSkuID smallSkuId = ContainerSkuID.of("small");
-        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory);
+        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory.newFolder("test"));
 
         ResourceClusterScaleSpec rule1 = ResourceClusterScaleSpec.builder()
             .clusterId(clusterId)
@@ -160,7 +161,7 @@ public class SimpleFileResourceStorageProviderTests {
                 .id(spec.getId())
                 .build();
 
-        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory);
+        SimpleFileResourceClusterStorageProvider prov = new SimpleFileResourceClusterStorageProvider(system, storageDirectory.newFolder("test"));
 
         CompletionStage<ResourceClusterSpecWritable> updateFut = prov.registerAndUpdateClusterSpec(specWritable);
         log.info("res: " + updateFut.toCompletableFuture().get());

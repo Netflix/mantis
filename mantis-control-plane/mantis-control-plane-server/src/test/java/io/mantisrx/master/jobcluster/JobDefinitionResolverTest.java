@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.jobcluster;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.mantisrx.common.Label;
 import io.mantisrx.runtime.JobConstraints;
@@ -36,7 +36,7 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class JobDefinitionResolverTest {
 

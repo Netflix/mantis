@@ -17,9 +17,9 @@
 package io.mantisrx.master.scheduler;
 
 import static io.mantisrx.master.scheduler.AgentsErrorMonitorActor.props;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,9 +33,9 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import rx.functions.Action1;
 
 public class AgentsErrorMonitorTest {
@@ -44,13 +44,13 @@ public class AgentsErrorMonitorTest {
     private static TestKit probe;
 
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         system = ActorSystem.create();
         probe = new TestKit(system);
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         TestKit.shutdownActorSystem(system);
         system = null;
