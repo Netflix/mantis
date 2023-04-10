@@ -2,15 +2,13 @@ FROM azul/zulu-openjdk:8u345
 
 MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 
-RUN apt-get -o Acquire::Check-Valid-Until=false -y update && \
-    apt-get install -y gnupg && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
-    apt-get install -y libevent-openssl-2.1.7 && \
-    apt-get install -y libcurl4 && \
-    echo "deb http://repos.mesosphere.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/mesosphere.list && \
-    apt-get -o Acquire::Check-Valid-Until=false -y update && \
-    apt-get install -y mesos=1.3.2-2.0.1 && \
-    apt-get clean
+# Since Mantis 2.0, we don't use Mesos
+# RUN apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
+#    echo "deb http://repos.mesosphere.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/mesosphere.list && \
+#    apt-get -o Acquire::Check-Valid-Until=false -y update && \
+#    apt-get install -y libevent-openssl-2.0-5 && \
+#    apt-get install -y mesos=1.3.2-2.0.1 && \
+#    apt-get clean
 
 COPY ./mantis-control-plane-server/build/install/mantis-control-plane-server/bin/* /apps/mantis/mantis-control-plane-server/bin/
 COPY ./mantis-control-plane-server/build/install/mantis-control-plane-server/lib/* /apps/mantis/mantis-control-plane-server/lib/

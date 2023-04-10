@@ -199,30 +199,40 @@ public class MasterMain implements Service {
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;
 
-            final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, vmLeaseRescindedSubject,
+            if (config.getMesosEnabled()) {
+                final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, vmLeaseRescindedSubject,
                     jobMessageRouter,
                     workerRegistry);
-            final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
+
+                final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
                     this.config,
                     getDescriptionJson(),
                     mesosDriverSupplier);
-            schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
 
-            final MantisSchedulerFactory mantisSchedulerFactory =
-                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance());
-            mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
+                schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
 
-            // initialize agents error monitor
-            agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(schedulingService), ActorRef.noSender());
 
-            final boolean loadJobsFromStoreOnInit = true;
-            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
+                mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
 
-            this.agentClusterOps = new AgentClusterOperationsImpl(storageProvider,
+                // initialize agents error monitor
+                agentsErrorMonitorActor.tell(new AgentsErrorMonitorActor.InitializeAgentsErrorMonitor(schedulingService), ActorRef.noSender());
+                this.agentClusterOps = new AgentClusterOperationsImpl(storageProvider,
                     jobMessageRouter,
                     schedulingService,
                     lifecycleEventPublisher,
                     ConfigurationProvider.getConfig().getActiveSlaveAttributeName());
+
+                // services
+                mantisServices.addService(vmService);
+                mantisServices.addService(schedulingService);
+                mantisServices.addService(agentClusterOps);
+            }
+
+            final MantisSchedulerFactory mantisSchedulerFactory =
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance());
+
+            final boolean loadJobsFromStoreOnInit = true;
+            final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
 
             // start serving metrics
             if (config.getMasterMetricsPort() > 0) {
@@ -232,10 +242,8 @@ public class MasterMain implements Service {
                     new HashMap<>()).start();
 
             // services
-            mantisServices.addService(vmService);
-            mantisServices.addService(schedulingService);
             mantisServices.addService(jobClustersManagerService);
-            mantisServices.addService(agentClusterOps);
+
             if (this.config.isLocalMode()) {
                 leadershipManager.becomeLeader();
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
@@ -420,7 +428,11 @@ public class MasterMain implements Service {
     }
 
     public Consumer<String> getAgentVMEnabler() {
-        return schedulingService::enableVM;
+        if (schedulingService != null) {
+            return schedulingService::enableVM;
+        } else {
+            return null;
+        }
     }
 
     public Observable<MasterDescription> getMasterObservable() {
