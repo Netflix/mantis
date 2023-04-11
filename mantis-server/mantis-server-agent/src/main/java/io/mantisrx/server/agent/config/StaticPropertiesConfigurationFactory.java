@@ -18,6 +18,7 @@ package io.mantisrx.server.agent.config;
 
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+
 import java.util.Properties;
 
 public class StaticPropertiesConfigurationFactory implements ConfigurationFactory {
