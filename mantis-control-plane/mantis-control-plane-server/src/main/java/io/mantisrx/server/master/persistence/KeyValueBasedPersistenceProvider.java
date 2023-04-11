@@ -123,6 +123,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private final KeyValueStore kvStore;
     private final LifecycleEventPublisher eventPublisher;
     private final Counter noWorkersFoundCounter;
+    private final Counter workersFoundCounter;
 
     public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
         this.kvStore = kvStore;
@@ -130,10 +131,12 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         Metrics m = new Metrics.Builder()
             .id("storage")
             .addCounter("noWorkersFound")
+            .addCounter("workersFound")
             .build();
 
         m = MetricsRegistry.getInstance().registerAndGet(m);
         this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
+        this.workersFoundCounter = m.getCounter("workersFound");
     }
 
     protected String getJobMetadataFieldName() {
@@ -383,6 +386,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     continue;
                 }
 
+                workersFoundCounter.increment();
                 for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
                     Preconditions.checkState(
                         jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null),
