@@ -24,9 +24,9 @@ jobs:
           - dockerfile: ./mantis-control-plane/Dockerfile
             image: netflixoss/mantiscontrolplaneserver
             workingDirectory: ./mantis-control-plane
-          - dockerfile: ./mantis-server/mantis-server-worker/Dockerfile
+          - dockerfile: ./mantis-server/mantis-server-agent/Dockerfile
             image: netflixoss/mantisagent
-            workingDirectory: ./mantis-server/mantis-server-worker
+            workingDirectory: ./mantis-server/mantis-server-agent
     permissions:
       contents: read
       packages: write
