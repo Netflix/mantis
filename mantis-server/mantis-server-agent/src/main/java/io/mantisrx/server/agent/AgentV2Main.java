@@ -24,10 +24,6 @@ import io.mantisrx.server.agent.config.ConfigurationFactory;
 import io.mantisrx.server.agent.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,6 +32,9 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AgentV2Main implements Service {
     private static final Logger logger = LoggerFactory.getLogger(AgentV2Main.class);
