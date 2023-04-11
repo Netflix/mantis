@@ -16,6 +16,9 @@
 
 package io.mantisrx.server.master.persistence;
 
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
@@ -119,10 +122,18 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
 
     private final KeyValueStore kvStore;
     private final LifecycleEventPublisher eventPublisher;
+    private final Counter noWorkersFoundCounter;
 
     public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
         this.kvStore = kvStore;
         this.eventPublisher = eventPublisher;
+        Metrics m = new Metrics.Builder()
+            .id("storage")
+            .addCounter("noWorkerFound")
+            .build();
+
+        m = MetricsRegistry.getInstance().registerAndGet(m);
+        this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
     }
 
     protected String getJobMetadataFieldName() {
@@ -368,8 +379,10 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                 final MantisJobMetadataWritable jobMeta = readJobStageData(jobId, jobInfo.getValue());
                 if (CollectionUtils.isEmpty(workersByJobId.get(jobId))) {
                     logger.warn("No workers found for job {}, skipping", jobId);
-//                    continue;
+                    noWorkersFoundCounter.increment();
+                    continue;
                 }
+
                 for (MantisWorkerMetadataWritable workerMeta : workersByJobId.get(jobId)) {
                     Preconditions.checkState(
                         jobMeta.addWorkerMedata(workerMeta.getStageNum(), workerMeta, null),
