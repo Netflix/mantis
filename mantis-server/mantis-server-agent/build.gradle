@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+apply plugin: 'application'
+
 dependencies {
     api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
@@ -32,4 +34,11 @@ dependencies {
     testImplementation libraries.mockitoAll
     testImplementation project(":mantis-server:mantis-server-worker")
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
+}
+
+
+mainClassName = "io.mantisrx.server.agent.AgentV2Main"
+
+run {
+    standardInput = System.in
 }
