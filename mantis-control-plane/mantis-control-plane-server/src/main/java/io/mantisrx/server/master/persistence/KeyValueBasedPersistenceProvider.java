@@ -129,7 +129,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         this.eventPublisher = eventPublisher;
         Metrics m = new Metrics.Builder()
             .id("storage")
-            .addCounter("noWorkerFound")
+            .addCounter("noWorkersFound")
             .build();
 
         m = MetricsRegistry.getInstance().registerAndGet(m);
