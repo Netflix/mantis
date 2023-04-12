@@ -115,7 +115,8 @@ public class AgentsErrorMonitorActor extends AbstractActorWithTimers implements 
         slaveDisabler = hostName -> mantisSchedulerOptional.get().disableVM(hostName,disableDurationMillis);
         slaveEnabler = hostName -> mantisSchedulerOptional.get().enableVM(hostName);
         getContext().become(initializedBehavior);
-        getTimers().startPeriodicTimer(CHECK_HOST_TIMER_KEY, new CheckHostHealthMessage(), scala.concurrent.duration.Duration.create(error_check_window_millis, TimeUnit.MILLISECONDS));
+        getTimers().startTimerAtFixedRate(CHECK_HOST_TIMER_KEY, new CheckHostHealthMessage(),
+            scala.concurrent.duration.Duration.create(error_check_window_millis, TimeUnit.MILLISECONDS));
     }
 
     @Override

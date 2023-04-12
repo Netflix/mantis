@@ -19,21 +19,19 @@ package io.mantisrx.master.api.akka.route.v0;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import akka.NotUsed;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.stream.ActorMaterializer;
-import akka.stream.javadsl.Flow;
+import akka.http.javadsl.server.Route;
+import akka.stream.Materializer;
 import akka.util.ByteString;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
@@ -77,7 +75,7 @@ import rx.Observer;
 
 public class AgentClusterRouteTest {
     private final static Logger logger = LoggerFactory.getLogger(AgentClusterRouteTest.class);
-    private final ActorMaterializer materializer = ActorMaterializer.create(system);
+    private final Materializer materializer = Materializer.createMaterializer(system);
     private final Http http = Http.get(system);
     private static Thread t;
     private static final int serverPort = 8209;
@@ -119,7 +117,6 @@ public class AgentClusterRouteTest {
                 // boot up server using the route as defined below
                 TestHelpers.setupMasterConfig();
                 final Http http = Http.get(system);
-                final ActorMaterializer materializer = ActorMaterializer.create(system);
                 IMantisPersistenceProvider storageProvider = new FileBasedPersistenceProvider(true);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(new AuditEventSubscriberLoggingImpl(), new StatusEventSubscriberLoggingImpl(), new WorkerEventSubscriberLoggingImpl());
 
@@ -140,10 +137,11 @@ public class AgentClusterRouteTest {
                         "cluster"),
                     system);
 
-                final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = v0AgentClusterRoute.createRoute(Function.identity()).flow(system, materializer);
+                final Route route = v0AgentClusterRoute.createRoute(Function.identity());
                 logger.info("test server starting on port {}", serverPort);
-                binding = http.bindAndHandle(routeFlow,
-                    ConnectHttp.toHost("localhost", serverPort), materializer);
+                binding = http
+                    .newServerAt("localhost", serverPort)
+                    .bind(route);
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);

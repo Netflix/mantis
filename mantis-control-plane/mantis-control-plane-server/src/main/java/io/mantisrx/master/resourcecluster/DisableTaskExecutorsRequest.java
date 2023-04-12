@@ -25,8 +25,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
-import javax.xml.bind.DatatypeConverter;
 import lombok.Value;
+import org.apache.flink.shaded.guava30.com.google.common.io.BaseEncoding;
 
 @Value
 public class DisableTaskExecutorsRequest {
@@ -57,7 +57,7 @@ public class DisableTaskExecutorsRequest {
                 messageDigest.update(key.getBytes(StandardCharsets.UTF_8));
                 messageDigest.update(value.getBytes(StandardCharsets.UTF_8));
             });
-            return DatatypeConverter.printHexBinary(messageDigest.digest());
+            return BaseEncoding.base16().encode(messageDigest.digest());
         } catch (NoSuchAlgorithmException exception) {
             // don't expect this to happen
             // let's just throw a runtime exception in this case

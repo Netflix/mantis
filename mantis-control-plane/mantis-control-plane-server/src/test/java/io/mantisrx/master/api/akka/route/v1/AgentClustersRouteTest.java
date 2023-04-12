@@ -19,21 +19,18 @@ package io.mantisrx.master.api.akka.route.v1;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import akka.NotUsed;
 import akka.actor.ActorRef;
-import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.stream.ActorMaterializer;
-import akka.stream.javadsl.Flow;
+import akka.http.javadsl.server.Route;
 import com.netflix.fenzo.AutoScaleAction;
 import com.netflix.fenzo.AutoScaleRule;
 import com.netflix.fenzo.VirtualMachineLease;
@@ -100,7 +97,6 @@ public class AgentClustersRouteTest extends RouteTestBase {
             try {
                 // boot up server using the route as defined below
                 final Http http = Http.get(system);
-                final ActorMaterializer materializer = ActorMaterializer.create(system);
                 IMantisPersistenceProvider storageProvider = new FileBasedPersistenceProvider(true);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(
                         new AuditEventSubscriberLoggingImpl(),
@@ -132,12 +128,11 @@ public class AgentClustersRouteTest extends RouteTestBase {
                                 lifecycleEventPublisher,
                                 "cluster"));
 
-                final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = agentClusterV2Route.createRoute(
-                        Function.identity()).flow(system, materializer);
+                final Route route = agentClusterV2Route.createRoute(Function.identity());
                 logger.info("test server starting on port {}", serverPort);
-                binding = http.bindAndHandle(routeFlow,
-                                             ConnectHttp.toHost("localhost", serverPort),
-                                             materializer);
+                binding = http
+                    .newServerAt("localhost", serverPort)
+                    .bind(route);;
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);

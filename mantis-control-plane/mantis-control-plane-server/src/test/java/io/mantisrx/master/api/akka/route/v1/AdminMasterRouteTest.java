@@ -20,14 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import akka.NotUsed;
-import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.stream.Materializer;
-import akka.stream.javadsl.Flow;
+import akka.http.javadsl.server.Route;
 import com.netflix.mantis.master.scheduler.TestHelpers;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.jobcluster.job.JobTestHelper;
@@ -80,12 +77,12 @@ public class AdminMasterRouteTest extends RouteTestBase {
             try {
                 // boot up server using the route as defined below
                 final Http http = Http.get(system);
-                final Materializer materializer = Materializer.createMaterializer(system);
 
-                final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = masterDescRoute.createRoute(Function.identity()).flow(system, materializer);
+                final Route route = masterDescRoute.createRoute(Function.identity());
                 logger.info("starting test server on port {}", ADMIN_MASTER_PORT);
-                binding = http.bindAndHandle(routeFlow,
-                    ConnectHttp.toHost("localhost", ADMIN_MASTER_PORT), materializer);
+                binding = http
+                    .newServerAt("localhost", ADMIN_MASTER_PORT)
+                    .bind(route);
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);

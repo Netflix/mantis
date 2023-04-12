@@ -67,16 +67,16 @@ public class JacksonTest {
         mwm.setCluster(Optional.of("test"));
 
         final String out = objectMapper.writer(Jackson.DEFAULT_FILTER_PROVIDER).writeValueAsString(mwm);
-        assertTrue(out.contains("\"cluster\":{\"present\":true},"));
+        assertTrue(out.contains("\"cluster\":{\"empty\":false,\"present\":true}"));
         final String serializeAgain = objectMapper.writeValueAsString(objectMapper.readValue(out, MantisWorkerMetadataWritable.class));
-        assertFalse(serializeAgain.contains("\"cluster\":{\"present\":true},"));
-        assertTrue(serializeAgain.contains("\"cluster\":{\"present\":false},"));
+        assertFalse(serializeAgain.contains("\"cluster\":{\"empty\":false,\"present\":true},"));
+        assertTrue(serializeAgain.contains("\"cluster\":{\"empty\":true,\"present\":false},"));
     }
 
     @Test
     public void testOptionalSerialization() throws JsonProcessingException {
-        assertEquals("{\"present\":false}", objectMapper.writeValueAsString(Optional.empty()));
-        assertEquals("{\"present\":true}", objectMapper.writeValueAsString(Optional.of("test")));
+         assertEquals("{\"empty\":true,\"present\":false}", objectMapper.writeValueAsString(Optional.empty()));
+         assertEquals("{\"empty\":false,\"present\":true}", objectMapper.writeValueAsString(Optional.of("empty")));
     }
 
     @Test
