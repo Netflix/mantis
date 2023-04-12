@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - ./mantis-control-plane/Dockerfile
-      - ./mantis-server/mantis-server-worker/Dockerfile
+      - ./mantis-server/mantis-server-agent/Dockerfile
       - .github/workflows/push-docker-image.yml
   push:
     tags:
