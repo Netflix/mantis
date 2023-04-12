@@ -8,7 +8,7 @@ configurations.all {
 }
 
 task execute(type: JavaExec) {
-    main = "com.netflix.mantis.samples.RequestAggregationJob"
+    main = "com.netflix.mantis.samples.RequestAggregationDslJob"
     classpath = sourceSets.main.runtimeClasspath
 }
 

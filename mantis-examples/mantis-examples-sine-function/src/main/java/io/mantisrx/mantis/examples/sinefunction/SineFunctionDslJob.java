@@ -27,7 +27,7 @@ import io.mantisrx.runtime.Config;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.core.MantisStream;
 import io.mantisrx.runtime.core.WindowSpec;
-import io.mantisrx.runtime.core.functions.ReduceFunctionImpl;
+import io.mantisrx.runtime.core.functions.SimpleReduceFunction;
 import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
 import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
@@ -50,7 +50,7 @@ public class SineFunctionDslJob {
             .map(x -> new Point(x, amplitude * Math.sin((frequency * x) + phase)))
             .keyBy(x -> x.getX() % 10)
             .window(WindowSpec.count(2))
-            .reduce((ReduceFunctionImpl<Point>) (acc, i) -> new Point(acc.getX() + i.getX(), i.getY()))
+            .reduce((SimpleReduceFunction<Point>) (acc, i) -> new Point(acc.getX() + i.getX(), i.getY()))
             .sink(new ObservableSinkImpl<>(SineFunctionJob.sseSink));
 
         Job<Point> pointJob = jobConfig.parameterDefinition(

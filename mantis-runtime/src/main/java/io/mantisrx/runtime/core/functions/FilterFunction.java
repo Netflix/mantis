@@ -16,7 +16,20 @@
 
 package io.mantisrx.runtime.core.functions;
 
+/**
+ *
+ * A functional interface that defines a filter operation on a stream of
+ * input elements of type {@code IN}.
+ * @param <IN> the type of the input elements.
+ */
 @FunctionalInterface
 public interface FilterFunction<IN> extends MantisFunction {
+    /**
+     *
+     * Tests whether an input element should be included in the output stream.
+     * @param in the input element.
+     * @return {@code true} if the input element should be included in the
+     * output stream, {@code false} otherwise.
+     */
     boolean apply(IN in);
 }

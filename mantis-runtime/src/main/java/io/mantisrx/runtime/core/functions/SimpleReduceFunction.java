@@ -16,16 +16,35 @@
 
 package io.mantisrx.runtime.core.functions;
 
+/**
+ * Functional interface for reducing a collection of input values of type {@code IN}
+ * to a single output value of type {@code IN}.
+ *
+ * This implementation extends the {@link ReduceFunction} interface and provides a
+ * single method for reducing the given input value using the accumulator.
+ */
 @FunctionalInterface
-public interface ReduceFunctionImpl<IN> extends ReduceFunction<IN, IN> {
+public interface SimpleReduceFunction<IN> extends ReduceFunction<IN, IN> {
     Object EMPTY = new Object();
+
+    /**
+     * Applies the reduce operation to the given accumulator and input value.
+     *
+     * If no values are to be returned, returns {@link SimpleReduceFunction#EMPTY}
+     * instead. This means {@link SimpleReduceFunction#apply(IN, IN)} isn't
+     * called for the first item which is returned as-is. For subsequent items,
+     * apply is called normally.
+     *
+     * @param acc current accumulator value
+     * @param item the input value to reduce
+     * @return the reduced output value
+     */
+    IN apply(IN acc, IN item);
 
     @Override
     default IN initialValue() {
         return (IN) EMPTY;
     }
-
-    IN apply(IN acc, IN item);
 
     @Override
     default IN reduce(IN acc, IN item) {
