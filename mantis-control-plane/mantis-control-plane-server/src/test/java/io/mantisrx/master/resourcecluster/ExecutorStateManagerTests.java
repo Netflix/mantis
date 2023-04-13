@@ -28,6 +28,7 @@ import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.TestingRpcService;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
@@ -119,7 +120,9 @@ public class ExecutorStateManagerTests {
     @Test
     public void testGetBestFit() {
         Optional<Pair<TaskExecutorID, TaskExecutorState>> bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(MACHINE_DEFINITION_2, WORKER_ID, CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2),
+                CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
 
@@ -141,17 +144,27 @@ public class ExecutorStateManagerTests {
 
         // test machine def 1
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(MACHINE_DEFINITION_1, WORKER_ID, CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1), CLUSTER_ID));
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_1, bestFitO.get().getLeft());
         assertEquals(state1, bestFitO.get().getRight());
 
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(MACHINE_DEFINITION_2, WORKER_ID, CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_2, bestFitO.get().getLeft());
         assertEquals(state2, bestFitO.get().getRight());
+
+        // disable e1 and should get nothing
+        state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_1, CLUSTER_ID,
+            TaskExecutorReport.occupied(WORKER_ID)));
+        bestFitO =
+            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_1), CLUSTER_ID));
+        assertFalse(bestFitO.isPresent());
 
         // enable e3 and disable e2
         state3.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_3, CLUSTER_ID,
@@ -160,7 +173,8 @@ public class ExecutorStateManagerTests {
             TaskExecutorReport.occupied(WORKER_ID)));
 
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(MACHINE_DEFINITION_2, WORKER_ID, CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2), CLUSTER_ID));
 
         assertTrue(bestFitO.isPresent());
         assertEquals(TASK_EXECUTOR_ID_3, bestFitO.get().getLeft());
@@ -169,7 +183,8 @@ public class ExecutorStateManagerTests {
         // test mark as unavailable
         stateManager.markUnavailable(TASK_EXECUTOR_ID_3);
         bestFitO =
-            stateManager.findBestFit(new TaskExecutorAssignmentRequest(MACHINE_DEFINITION_2, WORKER_ID, CLUSTER_ID));
+            stateManager.findBestFit(new TaskExecutorAssignmentRequest(
+                TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2), CLUSTER_ID));
 
         assertFalse(bestFitO.isPresent());
     }

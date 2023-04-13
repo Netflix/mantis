@@ -29,6 +29,7 @@ import io.mantisrx.common.metrics.Timer;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
@@ -118,8 +119,9 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
 
         CompletableFuture<Object> assignedFuture =
             resourceCluster
-                .getTaskExecutorFor(event.request.getMachineDefinition(),
-                    event.request.getWorkerId())
+                .getTaskExecutorFor(
+                    TaskExecutorAllocationRequest.of(
+                        event.getRequest().getWorkerId(), event.getRequest().getMachineDefinition()))
                 .<Object>thenApply(event::onAssignment)
                 .exceptionally(event::onFailure);
 
