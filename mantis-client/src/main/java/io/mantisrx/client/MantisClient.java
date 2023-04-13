@@ -16,6 +16,7 @@
 
 package io.mantisrx.client;
 
+import com.mantisrx.common.utils.Services;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
@@ -101,6 +102,8 @@ public class MantisClient {
         HighAvailabilityServices haServices =
             HighAvailabilityServicesUtil.createHAServices(
                 Configurations.frmProperties(properties, CoreConfiguration.class));
+
+        Services.startAndWait(haServices);
         clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         this.disablePingFiltering = Boolean.parseBoolean(properties.getProperty(ENABLE_PINGS_KEY));
     }
