@@ -28,7 +28,6 @@ import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
-import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.List;
 import java.util.Properties;
