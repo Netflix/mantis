@@ -17,7 +17,6 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.Ack;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Instant;
@@ -72,7 +71,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @param workerId          worker id of the task that's going to run on the node.
      * @return task executor assigned for the particular task.
      */
-    CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition, WorkerId workerId);
+    CompletableFuture<TaskExecutorID> getTaskExecutorFor(TaskExecutorAllocationRequest allocationRequest);
 
     CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(TaskExecutorID taskExecutorID);
 

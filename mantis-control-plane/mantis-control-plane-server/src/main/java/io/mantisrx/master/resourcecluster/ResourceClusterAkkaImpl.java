@@ -34,12 +34,12 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatew
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
@@ -133,11 +133,10 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition,
-                                                                WorkerId workerId) {
+    public CompletableFuture<TaskExecutorID> getTaskExecutorFor(TaskExecutorAllocationRequest allocationRequest) {
         return
             Patterns
-                .ask(resourceClusterManagerActor, new TaskExecutorAssignmentRequest(machineDefinition, workerId, clusterID), askTimeout)
+                .ask(resourceClusterManagerActor, new TaskExecutorAssignmentRequest(allocationRequest, clusterID), askTimeout)
                 .thenApply(TaskExecutorID.class::cast)
                 .toCompletableFuture();
     }

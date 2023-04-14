@@ -208,29 +208,32 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager{
 
     @Override
     public Optional<Pair<TaskExecutorID, TaskExecutorState>> findBestFit(TaskExecutorAssignmentRequest request) {
-        for (Entry<Double, Set<TaskExecutorID>> entry :
-            this.executorByCores.tailMap(request.getMachineDefinition().getCpuCores()).entrySet()) {
+        // only allow allocation in the lowest CPU cores matching group.
+        SortedMap<Double, Set<TaskExecutorID>> targetMap =
+            this.executorByCores.tailMap(request.getAllocationRequest().getMachineDefinition().getCpuCores());
 
-            Optional<TaskExecutorID> executorO = entry.getValue()
-                .stream()
-                .filter(tid -> {
-                    if (!this.taskExecutorStateMap.containsKey(tid)) {
-                        return false;
-                    }
-
-                    TaskExecutorState st = this.taskExecutorStateMap.get(tid);
-                    return st.isAvailable() &&
-                        st.getRegistration() != null &&
-                        st.getRegistration().getMachineDefinition().canFit(request.getMachineDefinition());
-                })
-                .findAny();
-
-            if (executorO.isPresent()) {
-                return Optional.of(Pair.of(executorO.get(), this.taskExecutorStateMap.get(executorO.get())));
-            }
+        if (targetMap.size() < 1) {
+            log.warn("Cannot find any executor for request: {}", request);
+            return Optional.empty();
         }
+        Double targetCoreCount = targetMap.firstKey();
+        log.trace("Applying assignmentReq: {} to {} cores.", request, targetCoreCount);
 
-        return Optional.empty();
+        return this.executorByCores.get(targetCoreCount)
+            .stream()
+            .filter(tid -> {
+                if (!this.taskExecutorStateMap.containsKey(tid)) {
+                    return false;
+                }
+
+                TaskExecutorState st = this.taskExecutorStateMap.get(tid);
+                return st.isAvailable() &&
+                    st.getRegistration() != null &&
+                    st.getRegistration().getMachineDefinition().canFit(
+                        request.getAllocationRequest().getMachineDefinition());
+            })
+            .findAny()
+            .map(taskExecutorID -> Pair.of(taskExecutorID, this.taskExecutorStateMap.get(taskExecutorID)));
     }
 
     @Override
