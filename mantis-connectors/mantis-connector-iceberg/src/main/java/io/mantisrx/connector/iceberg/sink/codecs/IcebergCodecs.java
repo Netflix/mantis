@@ -22,13 +22,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.IcebergDecoder;
 import org.apache.iceberg.data.avro.IcebergEncoder;
-import org.apache.iceberg.exceptions.RuntimeIOException;
-
 /**
  * Encoders and decoders for working with Iceberg objects
  * such as {@link Record}s and {@link DataFile}s.
@@ -64,7 +63,7 @@ public class IcebergCodecs {
             try {
                 return decoder.decode(bytes);
             } catch (IOException e) {
-                throw new RuntimeIOException("problem decoding Iceberg record", e);
+                throw new UncheckedIOException("problem decoding Iceberg record", e);
             }
         }
 
@@ -73,7 +72,7 @@ public class IcebergCodecs {
             try {
                 return encoder.encode(value).array();
             } catch (IOException e) {
-                throw new RuntimeIOException("problem encoding encoding Iceberg record", e);
+                throw new UncheckedIOException("problem encoding encoding Iceberg record", e);
             }
         }
     }
