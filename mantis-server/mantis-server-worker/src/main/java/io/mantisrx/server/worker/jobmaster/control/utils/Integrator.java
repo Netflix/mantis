@@ -53,8 +53,8 @@ public class Integrator extends Controller {
     @Override
     protected Double processStep(Double input) {
         sum += input;
-        sum = (sum > max) ? max : sum;
-        sum = (sum < min) ? min : sum;
+        sum = Math.min(sum, max);
+        sum = Math.max(sum, min);
         return sum;
     }
 }

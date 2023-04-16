@@ -25,7 +25,7 @@ import rx.Observable;
 
 public class ClutchMantisStageActuator implements Observable.Transformer<Tuple3<String, Double, Integer>, Double> {
 
-    private static Logger logger = LoggerFactory.getLogger(MantisStageActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(MantisStageActuator.class);
     private final JobAutoScaler.StageScaler scaler;
 
     public ClutchMantisStageActuator(JobAutoScaler.StageScaler scaler) {
@@ -41,7 +41,6 @@ public class ClutchMantisStageActuator implements Observable.Transformer<Tuple3<
             scaler.scaleDownStage(tup._3, desiredNumWorkers, reason);
         } else if (desiredNumWorkers > tup._3) {
             scaler.scaleUpStage(tup._3, desiredNumWorkers, reason);
-        } else {
         }
 
         return desiredNumWorkers * 1.0;
