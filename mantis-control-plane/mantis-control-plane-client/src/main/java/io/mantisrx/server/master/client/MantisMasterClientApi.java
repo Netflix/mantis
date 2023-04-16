@@ -27,7 +27,7 @@ import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDefinition;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
-import io.mantisrx.runtime.codec.JsonCodec;
+import io.mantisrx.runtime.codec.JacksonCodecs;
 import io.mantisrx.runtime.descriptor.DeploymentStrategy;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
@@ -775,7 +775,8 @@ public class MantisMasterClientApi implements MantisMasterGateway {
                 new ConnectToObservable.Builder<JobAssignmentResult>()
                         .subscribeAttempts(subscribeAttemptsToMaster)
                         .name("/v1/api/master/assignmentresults")
-                        .decoder(new JsonCodec<JobAssignmentResult>(JobAssignmentResult.class));
+                        .decoder(JacksonCodecs.pojo(JobAssignmentResult.class));
+
         if (jobId != null && !jobId.isEmpty()) {
             Map<String, String> subscriptionParams = new HashMap<>();
             subscriptionParams.put("jobId", jobId);
