@@ -21,9 +21,9 @@ import io.mantisrx.server.core.WorkerHost;
 
 public class WorkerIndexChange {
 
-    private int workerIndex;
-    private WorkerHost newState;
-    private WorkerHost oldState;
+    private final int workerIndex;
+    private final WorkerHost newState;
+    private final WorkerHost oldState;
 
     public WorkerIndexChange(int workerIndex, WorkerHost newState,
                              WorkerHost oldState) {
