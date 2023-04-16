@@ -41,7 +41,7 @@ import rx.subjects.PublishSubject;
 public class MesosExecutorCallbackHandler implements Executor {
 
     private static final Logger logger = LoggerFactory.getLogger(MesosExecutorCallbackHandler.class);
-    private Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
+    private final Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
     private final JsonSerializer serializer = new JsonSerializer();
 
     public MesosExecutorCallbackHandler(Observer<WrappedExecuteStageRequest> executeStageRequestObserver) {
@@ -76,13 +76,11 @@ public class MesosExecutorCallbackHandler implements Executor {
         // Allow some time for clean up and the completion report to be sent out before exiting.
         // Until we define a better way to exit than to assume that the time we wait here is
         // sufficient before a hard exit, we will live with it.
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {sleep(2000);} catch (InterruptedException ie) {}
-                System.exit(0);
-            }
-        };
+        Thread t = new Thread(() -> {
+            try {
+                Thread.sleep(2000);} catch (InterruptedException ie) {}
+            System.exit(0);
+        });
         t.setDaemon(true);
         t.start();
     }
@@ -141,12 +139,7 @@ public class MesosExecutorCallbackHandler implements Executor {
         logger.info("Worker for task [" + task.getTaskId().getValue() + "] with startTimeout=" +
                 request.getRequest().getTimeoutToReportStart());
         setupRequestFailureHandler(request.getRequest().getTimeoutToReportStart(), request.getRequestSubject(),
-                new Action0() {
-                    @Override
-                    public void call() {
-                        sendLaunchError(driver, task);
-                    }
-                });
+            () -> sendLaunchError(driver, task));
         executeStageRequestObserver.onNext(request);
 
     }

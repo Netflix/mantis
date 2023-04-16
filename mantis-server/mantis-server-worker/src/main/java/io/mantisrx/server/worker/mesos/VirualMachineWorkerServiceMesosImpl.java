@@ -22,7 +22,6 @@ import io.mantisrx.server.worker.VirtualMachineWorkerService;
 import io.mantisrx.server.worker.mesos.VirtualMachineTaskStatus.TYPE;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskID;
@@ -32,28 +31,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
-import rx.functions.Action1;
 
 
 public class VirualMachineWorkerServiceMesosImpl extends BaseService implements VirtualMachineWorkerService {
 
     private static final Logger logger = LoggerFactory.getLogger(VirualMachineWorkerServiceMesosImpl.class);
     private MesosExecutorDriver mesosDriver;
-    private ExecutorService executor;
-    private Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
-    private Observable<VirtualMachineTaskStatus> vmTaskStatusObservable;
+    private final ExecutorService executor;
+    private final Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
+    private final Observable<VirtualMachineTaskStatus> vmTaskStatusObservable;
 
     public VirualMachineWorkerServiceMesosImpl(Observer<WrappedExecuteStageRequest> executeStageRequestObserver,
                                                Observable<VirtualMachineTaskStatus> vmTaskStatusObservable) {
         this.executeStageRequestObserver = executeStageRequestObserver;
         this.vmTaskStatusObservable = vmTaskStatusObservable;
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "vm_worker_mesos_executor_thread");
-                t.setDaemon(true);
-                return t;
-            }
+        executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "vm_worker_mesos_executor_thread");
+            t.setDaemon(true);
+            return t;
         });
     }
 
@@ -63,33 +58,27 @@ public class VirualMachineWorkerServiceMesosImpl extends BaseService implements 
         mesosDriver = new MesosExecutorDriver(new MesosExecutorCallbackHandler(executeStageRequestObserver));
         // launch driver on background thread
         logger.info("launch driver on background thread");
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    mesosDriver.run();
-                } catch (Exception e) {
-                    logger.error("Failed to register Mantis Worker with Mesos executor callbacks", e);
-                }
+        executor.execute(() -> {
+            try {
+                mesosDriver.run();
+            } catch (Exception e) {
+                logger.error("Failed to register Mantis Worker with Mesos executor callbacks", e);
             }
         });
         // subscribe to vm task updates on current thread
         logger.info("subscribe to vm task updates on current thread");
-        vmTaskStatusObservable.subscribe(new Action1<VirtualMachineTaskStatus>() {
-            @Override
-            public void call(VirtualMachineTaskStatus vmTaskStatus) {
-                TYPE type = vmTaskStatus.getType();
-                if (type == TYPE.COMPLETED) {
-                    Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
-                            .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
-                            .setState(TaskState.TASK_FINISHED).build());
-                    logger.info("Sent COMPLETED state to mesos, driver status=" + status);
-                } else if (type == TYPE.STARTED) {
-                    Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
-                            .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
-                            .setState(TaskState.TASK_RUNNING).build());
-                    logger.info("Sent RUNNING state to mesos, driver status=" + status);
-                }
+        vmTaskStatusObservable.subscribe(vmTaskStatus -> {
+            TYPE type = vmTaskStatus.getType();
+            if (type == TYPE.COMPLETED) {
+                Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
+                        .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
+                        .setState(TaskState.TASK_FINISHED).build());
+                logger.info("Sent COMPLETED state to mesos, driver status=" + status);
+            } else if (type == TYPE.STARTED) {
+                Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
+                        .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
+                        .setState(TaskState.TASK_RUNNING).build());
+                logger.info("Sent RUNNING state to mesos, driver status=" + status);
             }
         });
     }
