@@ -17,6 +17,7 @@
 package io.mantisrx.server.worker.jobmaster.clutch;
 
 import io.vavr.Tuple2;
+import java.util.Objects;
 
 
 public class ClutchPIDConfig {
@@ -59,7 +60,7 @@ public class ClutchPIDConfig {
         if (Double.compare(this.getSetPoint(), other.getSetPoint()) != 0) return false;
         final Object this$rope = this.getRope();
         final Object other$rope = other.getRope();
-        if (this$rope == null ? other$rope != null : !this$rope.equals(other$rope)) return false;
+        if (!Objects.equals(this$rope, other$rope)) return false;
         if (Double.compare(this.getKp(), other.getKp()) != 0) return false;
         if (Double.compare(this.getKd(), other.getKd()) != 0) return false;
         return true;

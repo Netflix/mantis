@@ -77,11 +77,11 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         // Sanity checking against mins / maxes
 
         if (setPoint < minRps) {
-          logger.info("Setpoint {} was less than minimum {}. Setting to {}.", minRps, minRps);
+          logger.info("Setpoint {} was less than minimum {}. Setting to {}.", setPoint, minRps, minRps);
           setPoint = minRps;
         }
         if (setPoint > maxRps) {
-          logger.info("Setpoint {} was greater than maximum {}. Setting to {}.", maxRps, maxRps);
+          logger.info("Setpoint {} was greater than maximum {}. Setting to {}.", setPoint, maxRps, maxRps);
           setPoint = maxRps;
         }
 
@@ -101,7 +101,7 @@ public class MantisClutchConfigurationSelector implements Function1<Map<Clutch.M
         Tuple2<Double, Double> rope = Tuple.of(setPoint * 0.3, 0.0);
 
         // Gain
-        long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30l;
+        long deltaT = stageSchedulingInfo.getScalingPolicy().getCoolDownSecs() / 30L;
         //double minMaxMidPoint = stageSchedulingInfo.getScalingPolicy().getMax() - stageSchedulingInfo.getScalingPolicy().getMin();
         double dampeningFactor = 0.33; // 0.4 caused a little oscillation too. We'll try 1/3 across each.
 

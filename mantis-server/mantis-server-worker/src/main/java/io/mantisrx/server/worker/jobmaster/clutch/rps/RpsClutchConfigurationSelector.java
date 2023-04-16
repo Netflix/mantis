@@ -45,7 +45,7 @@ public class RpsClutchConfigurationSelector implements Function1<Map<Clutch.Metr
 
         // Gain - number of ticks within the cooldown period. This is the minimum number of times PID output will accumulate
         // before an action is taken.
-        long deltaT = getCooldownSecs() / 30l;
+        long deltaT = getCooldownSecs() / 30L;
 
         double kp = 1.0 / Math.max(setPoint, 1.0) / Math.max(getCumulativeIntegralDivisor(getIntegralScaler(), deltaT), 1.0);
         double ki = 0.0;
