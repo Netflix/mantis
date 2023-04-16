@@ -42,6 +42,7 @@ import io.vavr.control.Option;
 import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -99,7 +100,7 @@ public class JobAutoScaler {
 
     public static void main(String[] args) {
         Observable.interval(1, TimeUnit.DAYS)
-                .doOnNext(x -> System.out.println(x))
+                .doOnNext(System.out::println)
                 .take(1)
                 .toBlocking()
                 .last();
@@ -116,19 +117,17 @@ public class JobAutoScaler {
 
     void start() {
         subject
-                .onBackpressureBuffer(100, () -> {
-                    logger.info("onOverflow triggered, dropping old events");
-                }, BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
+                .onBackpressureBuffer(
+                    100, () -> logger.info("onOverflow triggered, dropping old events"),
+                    BackpressureOverflow.ON_OVERFLOW_DROP_OLDEST)
                 .doOnRequest(x -> logger.info("Scaler requested {} metrics.", x))
-                .groupBy(event -> event.getStage())
+                .groupBy(Event::getStage)
                 .flatMap(go -> {
                     Integer stage = Optional.ofNullable(go.getKey()).orElse(-1);
 
                     final StageSchedulingInfo stageSchedulingInfo = schedulingInfo.forStage(stage);
                     logger.info("System Environment:");
-                    System.getenv().forEach((key, value) -> {
-                        logger.info("{} = {}", key, value);
-                    });
+                    System.getenv().forEach((key, value) -> logger.info("{} = {}", key, value));
 
                     Optional<String> clutchCustomConfiguration =
                             Optional.ofNullable(
@@ -253,9 +252,7 @@ public class JobAutoScaler {
                 .doOnCompleted(() -> logger.info("onComplete on JobAutoScaler subject"))
                   .doOnError(t -> logger.error("got onError in JobAutoScaler", t))
                   .doOnSubscribe(() -> logger.info("onSubscribe JobAutoScaler"))
-                  .doOnUnsubscribe(() -> {
-                    logger.info("Unsubscribing for JobAutoScaler of job " + jobId);
-                  })
+                  .doOnUnsubscribe(() -> logger.info("Unsubscribing for JobAutoScaler of job " + jobId))
                 .retry()
                   .subscribe();
     }
@@ -270,7 +267,7 @@ public class JobAutoScaler {
      * @return A map of stage -> config for Clutch.
      */
     protected Map<Integer, ClutchConfiguration> getClutchConfiguration(String jsonConfig) {
-      return Try.<Map<Integer, ClutchConfiguration>>of(() -> objectMapper.readValue(jsonConfig, new TypeReference<Map<Integer, ClutchConfiguration>>() {}))
+      return Try.of(() -> objectMapper.readValue(jsonConfig, new TypeReference<Map<Integer, ClutchConfiguration>>() {}))
         .getOrElseGet(t -> Try.of(() -> {
           ClutchConfiguration config = objectMapper.readValue(jsonConfig, new TypeReference<ClutchConfiguration>() {});
           Map<Integer, ClutchConfiguration> configs = new HashMap<>();
@@ -326,7 +323,7 @@ public class JobAutoScaler {
         if (Double.compare(event.value, value) != 0) return false;
         if (numWorkers != event.numWorkers) return false;
         if (type != event.type) return false;
-        return message != null ? message.equals(event.message) : event.message == null;
+        return Objects.equals(message, event.message);
 
       }
 
@@ -487,7 +484,7 @@ public class JobAutoScaler {
             long coolDownSecs = scalingPolicy == null ? Long.MAX_VALUE : scalingPolicy.getCoolDownSecs();
             boolean scalable = stageSchedulingInfo.getScalable() && scalingPolicy != null && scalingPolicy.isEnabled();
             logger.debug("Will check for autoscaling job " + jobId + " stage " + stage + " due to event: " + event);
-            if (scalable && scalingPolicy != null) {
+            if (scalable) {
               final StageScalingPolicy.Strategy strategy = scalingPolicy.getStrategies().get(event.getType());
               if (strategy != null) {
                 double effectiveValue = Util.getEffectiveValue(stageSchedulingInfo, event.getType(), event.getValue());

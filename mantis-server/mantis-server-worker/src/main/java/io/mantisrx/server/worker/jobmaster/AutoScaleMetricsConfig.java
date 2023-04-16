@@ -22,6 +22,7 @@ import static io.reactivex.mantis.network.push.PushServerSse.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -166,7 +167,7 @@ public class AutoScaleMetricsConfig {
     public boolean isSourceJobDropMetric(String metricGroupName, String metricName) {
         for (Map.Entry<String, Pattern> entry : sourceJobMetricsPatterns.entrySet()) {
             if (entry.getValue().matcher(metricGroupName).matches()) {
-                return sourceJobMetrics.get(entry.getKey()).keySet().contains(metricName);
+                return sourceJobMetrics.get(entry.getKey()).containsKey(metricName);
             }
         }
         return false;
@@ -183,7 +184,7 @@ public class AutoScaleMetricsConfig {
 
         AutoScaleMetricsConfig that = (AutoScaleMetricsConfig) o;
 
-        return userDefinedAutoScaleMetrics != null ? userDefinedAutoScaleMetrics.equals(that.userDefinedAutoScaleMetrics) : that.userDefinedAutoScaleMetrics == null;
+        return Objects.equals(userDefinedAutoScaleMetrics, that.userDefinedAutoScaleMetrics);
 
     }
 
