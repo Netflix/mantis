@@ -18,6 +18,7 @@ package io.mantisrx.master.resourcecluster;
 
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
+import io.mantisrx.shaded.com.google.common.io.BaseEncoding;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
 import lombok.Value;
-import org.apache.flink.shaded.guava30.com.google.common.io.BaseEncoding;
 
 @Value
 public class DisableTaskExecutorsRequest {
