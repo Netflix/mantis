@@ -16,17 +16,18 @@
 
 package io.mantisrx.server.worker;
 
+import static org.junit.Assert.assertEquals;
+
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.StatusPayloads;
 import java.util.List;
-import junit.framework.Assert;
 import org.junit.Test;
 
 
 public class HeartbeatTest {
 
     @Test
-    public void testSingleUsePayloads() throws Exception {
+    public void testSingleUsePayloads() {
         Heartbeat heartbeat = new Heartbeat("Jobcluster-123", 1, 0, 0);
         heartbeat.setPayload("" + StatusPayloads.Type.SubscriptionState, "true");
         int val1 = 10;
@@ -35,14 +36,14 @@ public class HeartbeatTest {
         heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, "" + val2);
         final Status currentHeartbeatStatus = heartbeat.getCurrentHeartbeatStatus();
         List<Status.Payload> payloads = currentHeartbeatStatus.getPayloads();
-        Assert.assertEquals(2, payloads.size());
+        assertEquals(2, payloads.size());
         int value = 0;
         for (Status.Payload p : payloads) {
             if (StatusPayloads.Type.valueOf(p.getType()) == StatusPayloads.Type.IncomingDataDrop)
                 value = Integer.parseInt(p.getData());
         }
-        Assert.assertEquals(val2, value);
+        assertEquals(val2, value);
         payloads = heartbeat.getCurrentHeartbeatStatus().getPayloads();
-        Assert.assertEquals(1, payloads.size());
+        assertEquals(1, payloads.size());
     }
 }
