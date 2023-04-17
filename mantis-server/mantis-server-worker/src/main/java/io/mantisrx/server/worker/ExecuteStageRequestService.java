@@ -70,14 +70,10 @@ public class ExecuteStageRequestService extends BaseService {
     public void start() {
         subscription = executeStageRequestObservable
                 // map to request with status observer
-                .map(new Func1<WrappedExecuteStageRequest, TrackedExecuteStageRequest>() {
-                    @Override
-                    public TrackedExecuteStageRequest call(
-                            WrappedExecuteStageRequest executeRequest) {
-                        PublishSubject<Status> statusSubject = PublishSubject.create();
-                        tasksStatusObserver.onNext(statusSubject);
-                        return new TrackedExecuteStageRequest(executeRequest, statusSubject);
-                    }
+                .map(executeRequest -> {
+                    PublishSubject<Status> statusSubject = PublishSubject.create();
+                    tasksStatusObserver.onNext(statusSubject);
+                    return new TrackedExecuteStageRequest(executeRequest, statusSubject);
                 })
                 // get provider from jar, return tracked MantisJob
                 .flatMap(new Func1<TrackedExecuteStageRequest, Observable<ExecutionDetails>>() {

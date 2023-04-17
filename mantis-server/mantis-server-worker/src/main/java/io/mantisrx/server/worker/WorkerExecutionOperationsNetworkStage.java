@@ -129,7 +129,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
         String locateSpectatorRegistry =
             ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.worker.locate.spectator.registry", "true");
-        lookupSpectatorRegistry = Boolean.valueOf(locateSpectatorRegistry);
+        lookupSpectatorRegistry = Boolean.parseBoolean(locateSpectatorRegistry);
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
     }
 
@@ -137,12 +137,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
      * Converts a JobSchedulingInfo object to a simple WorkerMap to be used from within the context.
      * Static for easier testing.
      *
-     * @param jobName
-     * @param jobId
-     * @param durationType
-     * @param js
+     * @param jobName name of the job.
+     * @param jobId id of the job.
+     * @param durationType duration type of the job.
+     * @param js job scheduling info.
      *
-     * @return
+     * @return WorkerMap to be used within the context.
      */
     static WorkerMap convertJobSchedulingInfoToWorkerMap(String jobName, String jobId, MantisJobDurationType durationType, JobSchedulingInfo js) {
         Map<Integer, List<WorkerInfo>> stageToWorkerInfoMap = new HashMap<>();
@@ -169,10 +169,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
                 if (hosts != null) {
 
-                    List<WorkerInfo> workerInfoList = hosts.values().stream().map((workerHost) -> {
-
-                        return generateWorkerInfo(jobName, jobId, stageNo, workerHost.getWorkerIndex(), workerHost.getWorkerNumber(), durationType, workerHost.getHost(), workerHost);
-                    }).collect(Collectors.toList());
+                    List<WorkerInfo> workerInfoList = hosts.values().stream()
+                        .map((workerHost) -> generateWorkerInfo(jobName, jobId, stageNo, workerHost.getWorkerIndex(), workerHost.getWorkerNumber(), durationType, workerHost.getHost(), workerHost))
+                        .collect(Collectors.toList());
                     stageToWorkerInfoMap.put(stageNo, workerInfoList);
                 }
 
@@ -230,12 +229,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     /**
      * Converts JobSchedulingInfo to a simpler WorkerMap object to be used within Context
      *
-     * @param selfSchedulingInfo
-     * @param jobName
-     * @param jobId
-     * @param durationType
+     * @param selfSchedulingInfo Observable of JobSchedulingInfo.
+     * @param jobName name of the job.
+     * @param jobId  id of the job.
+     * @param durationType duration type of the job.
      *
-     * @return
+     * @return Observable of WorkerMap to be used within the context.
      */
     private Observable<WorkerMap> createWorkerMapObservable(Observable<JobSchedulingInfo> selfSchedulingInfo, String jobName, String jobId, MantisJobDurationType durationType) {
 
@@ -384,7 +383,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         } catch (IllegalArgumentException e) {
                             final String errorMsg = String.format("ERROR: Invalid algorithm value %s for param %s (algo should be one of %s)",
                                     autoScaleMetricsConfig, JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM,
-                                    Arrays.stream(AutoScaleMetricsConfig.AggregationAlgo.values()).map(a -> a.name()).collect(Collectors.toList()));
+                                    Arrays.stream(AutoScaleMetricsConfig.AggregationAlgo.values()).map(Enum::name).collect(Collectors.toList()));
                             logger.error(errorMsg);
                             throw new RuntimeException(errorMsg);
                         }
@@ -408,12 +407,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             } else if (rw.getStageNum() == 1 && rw.getTotalStagesNet() == 1) {
                 logger.info("JobId: " + rw.getJobId() + ", single stage job, executing entire job");
                 // single stage, execute entire job on this machine
-                PortSelector portSelector = new PortSelector() {
-                    @Override
-                    public int acquirePort() {
-                        return rw.getPorts().next();
-                    }
-                };
+                PortSelector portSelector = () -> rw.getPorts().next();
                 RxMetrics rxMetrics = new RxMetrics();
                 closeables.add(StageExecutors.executeSingleStageJob(rw.getJob().getSource(), rw.getStage(),
                         rw.getJob().getSink(), portSelector, rxMetrics, rw.getContext(),
@@ -506,21 +500,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         TYPE.INFO, getWorkerStringPrefix(rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum()) + " running",
                         MantisJobState.Started));
 
-                PortSelector portSelector = new PortSelector() {
-                    @Override
-                    public int acquirePort() {
-                        return workerPort;
-                    }
-                };
+                PortSelector portSelector = () -> workerPort;
                 RxMetrics rxMetrics = new RxMetrics();
                 MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 final CountDownLatch blockUntilComplete = new CountDownLatch(1);
-                Action0 countDownLatch = new Action0() {
-                    @Override
-                    public void call() {
-                        blockUntilComplete.countDown();
-                    }
-                };
+                Action0 countDownLatch = blockUntilComplete::countDown;
                 closeables.add(StageExecutors.executeSink(consumer, rw.getStage(),
                         rw.getJob().getSink(), portSelector, rxMetrics,
                         rw.getContext(), countDownLatch, onSinkSubscribe, onSinkUnsubscribe,
@@ -563,7 +547,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private Observable<Integer> numWorkersAtStage(Observable<JobSchedulingInfo> selfSchedulingInfo, String jobId, final int stageNum) {
         //return mantisMasterApi.schedulingChanges(jobId)
         return selfSchedulingInfo
-                .distinctUntilChanged((prevJobSchedInfo, currentJobSchedInfo) -> (!prevJobSchedInfo.equals(currentJobSchedInfo)) ? false : true)
+                .distinctUntilChanged(JobSchedulingInfo::equals)
                 .flatMap((Func1<JobSchedulingInfo, Observable<WorkerAssignments>>) schedulingChange -> {
                     Map<Integer, WorkerAssignments> assignments = schedulingChange.getWorkerAssignments();
                     if (assignments != null && !assignments.isEmpty()) {
@@ -604,7 +588,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                             logger.info("Received scheduling update from master, connect request for host: " + host.getHost() + " port: " + host.getPort() + " state: " + host.getState() +
                                     " adding: " + connectionsPerEndpoint + " connections to host");
                             for (int i = 1; i <= connectionsPerEndpoint; i++) {
-                                final String endpointId = "stage_" + stageNumToExecute + "_index_" + Integer.toString(workerIndex) + "_partition_" + i;
+                                final String endpointId = "stage_" + stageNumToExecute + "_index_" + workerIndex + "_partition_" + i;
                                 logger.info("Adding endpoint to endpoint injector to be considered for add, with id: " + endpointId);
                                 endpoints.add(new Endpoint(host.getHost(), host.getPort().get(0),
                                         endpointId));

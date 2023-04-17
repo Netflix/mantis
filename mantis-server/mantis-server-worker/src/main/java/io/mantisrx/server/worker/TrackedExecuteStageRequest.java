@@ -23,8 +23,8 @@ import rx.Observer;
 
 public class TrackedExecuteStageRequest {
 
-    private WrappedExecuteStageRequest executeRequest;
-    private Observer<Status> status;
+    private final WrappedExecuteStageRequest executeRequest;
+    private final Observer<Status> status;
 
     public TrackedExecuteStageRequest(WrappedExecuteStageRequest executeRequest,
                                       Observer<Status> status) {

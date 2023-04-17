@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.mesos.MesosExecutorDriver;
 import org.slf4j.Logger;
@@ -48,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Action0;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
@@ -59,9 +57,9 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
     private static final Logger logger = LoggerFactory.getLogger(VirtualMachineWorkerServiceLocalImpl.class);
     private final WorkerTopologyInfo.Data workerInfo;
     private MesosExecutorDriver mesosDriver;
-    private ExecutorService executor;
-    private Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
-    private Observable<VirtualMachineTaskStatus> vmTaskStatusObservable;
+    private final ExecutorService executor;
+    private final Observer<WrappedExecuteStageRequest> executeStageRequestObserver;
+    private final Observable<VirtualMachineTaskStatus> vmTaskStatusObservable;
 
     public VirtualMachineWorkerServiceLocalImpl(final WorkerTopologyInfo.Data workerInfo,
                                                 Observer<WrappedExecuteStageRequest> executeStageRequestObserver,
@@ -69,13 +67,10 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
         this.workerInfo = workerInfo;
         this.executeStageRequestObserver = executeStageRequestObserver;
         this.vmTaskStatusObservable = vmTaskStatusObservable;
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, "vm_worker_mesos_executor_thread");
-                t.setDaemon(true);
-                return t;
-            }
+        executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "vm_worker_mesos_executor_thread");
+            t.setDaemon(true);
+            return t;
         });
     }
 
@@ -113,7 +108,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
                 jobJarUrl, workerInfo.getStageNumber(), workerInfo.getNumStages(), ports, timeoutToReportStartSec, workerInfo.getMetricsPort(), params, schedInfo, MantisJobDurationType.Transient,
                 0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)), Optional.empty());
 
-        return new WrappedExecuteStageRequest(PublishSubject.<Boolean>create(), executeStageRequest);
+        return new WrappedExecuteStageRequest(PublishSubject.create(), executeStageRequest);
     }
 
     private void setupRequestFailureHandler(long waitSeconds, Observable<Boolean> requestObservable,
@@ -145,38 +140,27 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
     @Override
     public void start() {
         logger.info("Starting VirtualMachineWorkerServiceLocalImpl");
-        Schedulers.newThread().createWorker().schedule(new Action0() {
-            @Override
-            public void call() {
-                try {
-                    WrappedExecuteStageRequest request = null;
-                    request = createExecuteStageRequest();
-                    setupRequestFailureHandler(request.getRequest().getTimeoutToReportStart(), request.getRequestSubject(),
-                            new Action0() {
-                                @Override
-                                public void call() {
-                                    logger.error("launch error");
-                                }
-                            });
-                    logger.info("onNext'ing WrappedExecuteStageRequest: {}", request.toString());
-                    executeStageRequestObserver.onNext(request);
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
+        Schedulers.newThread().createWorker().schedule(() -> {
+            try {
+                WrappedExecuteStageRequest request;
+                request = createExecuteStageRequest();
+                setupRequestFailureHandler(request.getRequest().getTimeoutToReportStart(), request.getRequestSubject(),
+                    () -> logger.error("launch error"));
+                logger.info("onNext'ing WrappedExecuteStageRequest: {}", request);
+                executeStageRequestObserver.onNext(request);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
         }, 2, TimeUnit.SECONDS);
 
 
         // subscribe to vm task updates on current thread
-        vmTaskStatusObservable.subscribe(new Action1<VirtualMachineTaskStatus>() {
-            @Override
-            public void call(VirtualMachineTaskStatus vmTaskStatus) {
-                TYPE type = vmTaskStatus.getType();
-                if (type == TYPE.COMPLETED) {
-                    logger.info("Got COMPLETED state for " + vmTaskStatus.getTaskId());
-                } else if (type == TYPE.STARTED) {
-                    logger.info("Would send RUNNING state to mesos, worker started for " + vmTaskStatus.getTaskId());
-                }
+        vmTaskStatusObservable.subscribe(vmTaskStatus -> {
+            TYPE type = vmTaskStatus.getType();
+            if (type == TYPE.COMPLETED) {
+                logger.info("Got COMPLETED state for " + vmTaskStatus.getTaskId());
+            } else if (type == TYPE.STARTED) {
+                logger.info("Would send RUNNING state to mesos, worker started for " + vmTaskStatus.getTaskId());
             }
         });
     }

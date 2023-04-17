@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 public class DownloadJob {
 
     private static final Logger logger = LoggerFactory.getLogger(DownloadJob.class);
-    private URL jobArtifactUrl;
-    private String jobName;
-    private String locationToStore;
+    private final URL jobArtifactUrl;
+    private final String jobName;
+    private final String locationToStore;
 
     public DownloadJob(
             URL jobArtifactUrl, String jobName,
@@ -69,7 +69,7 @@ public class DownloadJob {
             Files.createDirectories(path);
             try (OutputStream os = Files.newOutputStream(Paths.get(path.toString(), jarName))) {
                 byte[] bytes = new byte[2048];
-                int read = 0;
+                int read;
                 while ((read = is.read(bytes)) >= 0) {
                     os.write(bytes, 0, read);
                 }
