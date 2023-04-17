@@ -1,0 +1,1764 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../twitter/">
+      
+      
+        <link rel="next" href="../../../../faq/">
+      
+      <link rel="icon" href="../../../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.4">
+    
+    
+      
+        <title>Third Job - Mantis</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.240905d7.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../css/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#legacy-rxjava-mantis-job-group-by-aggregate" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="Mantis" class="md-header__button md-logo" aria-label="Mantis" data-md-component="logo">
+      
+  <img src="../../../../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Mantis
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Third Job
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/netflix/mantis" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="Mantis" class="md-nav__button md-logo" aria-label="Mantis" data-md-component="logo">
+      
+  <img src="../../../../images/logo.png" alt="logo">
+
+    </a>
+    Mantis
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/netflix/mantis" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        Welcome
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Getting Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/use-cases/" class="md-nav__link">
+        Use Cases
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+          Tutorials
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/tutorials/local/" class="md-nav__link">
+        Explore Locally
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/tutorials/docker/" class="md-nav__link">
+        Explore Using Docker
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/tutorials/cloud/" class="md-nav__link">
+        Explore in the Cloud
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+          Samples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Samples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/samples/sine-function/" class="md-nav__link">
+        Sine Function
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/samples/twitter/" class="md-nav__link">
+        Twitter
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../getting-started/samples/on-demand/" class="md-nav__link">
+        On-Demand
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Develop
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Develop
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+          Ingestion
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_1">
+          <span class="md-nav__icon md-icon"></span>
+          Ingestion
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ingestion/netty/" class="md-nav__link">
+        Netty
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+          Querying
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_2">
+          <span class="md-nav__icon md-icon"></span>
+          Querying
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../querying/mql/" class="md-nav__link">
+        Mantis Query Language
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../querying/sampling/" class="md-nav__link">
+        Sampling
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+          Writing Jobs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_3">
+          <span class="md-nav__icon md-icon"></span>
+          Writing Jobs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../word-count/" class="md-nav__link">
+        Writing Your First Job
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../twitter/" class="md-nav__link">
+        Writing Your Second Job
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../group-by/" class="md-nav__link">
+        Writing Your Third Job
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+          Connectors
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3_4">
+          <span class="md-nav__icon md-icon"></span>
+          Connectors
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../connectors/iceberg/" class="md-nav__link">
+        Iceberg (Beta)
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Deploy
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Deploy
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Operate
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Operate
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../operate/tuning/" class="md-nav__link">
+        Tuning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../operate/autoscaling/" class="md-nav__link">
+        Autoscaling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../operate/autoscalingstrategies/" class="md-nav__link">
+        Autoscaling Strategies
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../operate/profiling/" class="md-nav__link">
+        Memory and CPU Profiling
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/mql/" class="md-nav__link">
+        MQL
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/dsl/" class="md-nav__link">
+        Job DSL
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/api/" class="md-nav__link">
+        API
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/cli/" class="md-nav__link">
+        CLI
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          Internals
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Internals
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/infrastructure-overview/" class="md-nav__link">
+        Infrastructure Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
+          Mantis Jobs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7_2">
+          <span class="md-nav__icon md-icon"></span>
+          Mantis Jobs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/mantis-jobs/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/mantis-jobs/source/" class="md-nav__link">
+        Source
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/mantis-jobs/processing-stage/" class="md-nav__link">
+        Processing Stage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/mantis-jobs/sink/" class="md-nav__link">
+        Sink
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/source-jobs/" class="md-nav__link">
+        Source Jobs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/runtime/" class="md-nav__link">
+        Runtime
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../internals/mantis-publish/" class="md-nav__link">
+        Mantis Publish
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../community/" class="md-nav__link">
+        Community
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          Updates
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9">
+          <span class="md-nav__icon md-icon"></span>
+          Updates
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../updates/gsoc2023-application-guidelines/" class="md-nav__link">
+        GSOC 2023 Application Guidelines
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../updates/gsoc2023-ideas/" class="md-nav__link">
+        GSOC 2023 Ideas
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          Archives
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_10">
+          <span class="md-nav__icon md-icon"></span>
+          Archives
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_1" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_10_1" id="__nav_10_1_label" tabindex="0">
+          Legacy Sample Jobs
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_1_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_10_1">
+          <span class="md-nav__icon md-icon"></span>
+          Legacy Sample Jobs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../word-count/" class="md-nav__link">
+        First Job
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../twitter/" class="md-nav__link">
+        Second Job
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Third Job
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Third Job
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#stage-1-group-by-stage" class="md-nav__link">
+    Stage 1: Group By Stage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-2-aggregation-stage" class="md-nav__link">
+    Stage 2: Aggregation Stage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-3-collect-stage" class="md-nav__link">
+    Stage 3: Collect Stage
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../glossary/" class="md-nav__link">
+        Glossary
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#stage-1-group-by-stage" class="md-nav__link">
+    Stage 1: Group By Stage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-2-aggregation-stage" class="md-nav__link">
+    Stage 2: Aggregation Stage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-3-collect-stage" class="md-nav__link">
+    Stage 3: Collect Stage
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="legacy-rxjava-mantis-job-group-by-aggregate">[Legacy, RxJava] Mantis Job - Group By / Aggregate<a class="headerlink" href="#legacy-rxjava-mantis-job-group-by-aggregate" title="Permanent link">&para;</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There is an alternate implementation that allows writing a Mantis Job as a series of operators operating directly on a <code>MantisStream</code> instance which abstracts information about RxJava, Observables from the user and offers a simpler way (hopefully 🤞) to write mantis jobs. Please see <a href="../../../../reference/dsl">Mantis DSL docs</a> for more details or <a href="../../group-by">this documentation</a> for the sample job.</p>
+</div>
+<p>Until now we've run single stage Mantis jobs which a can run in a single process / container. Much of the power provided by Mantis is that we can design and implement a distributed job. Let's take a look at the <a href="https://github.com/Netflix/mantis/tree/master/mantis-examples/mantis-examples-groupby-sample">groupby-sample</a> job definition and then break it down stage by stage.</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Job</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getJobInstance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">MantisJob</span>
+<span class="w">                </span><span class="c1">// Stream Request Events from our random data generator source</span>
+<span class="w">                </span><span class="p">.</span><span class="na">source</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">RandomRequestSource</span><span class="p">())</span>
+
+<span class="w">                </span><span class="c1">// Groups requests by path</span>
+<span class="w">                </span><span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">GroupByStage</span><span class="p">(),</span><span class="w"> </span><span class="n">GroupByStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
+
+<span class="w">                </span><span class="c1">// Computes count per path over a window</span>
+<span class="w">                </span><span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">AggregationStage</span><span class="p">(),</span><span class="w"> </span><span class="n">AggregationStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
+
+<span class="w">                </span><span class="c1">// Collects the data and makes it availabe over SSE</span>
+<span class="w">                </span><span class="p">.</span><span class="na">stage</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">CollectStage</span><span class="p">(),</span><span class="w"> </span><span class="n">CollectStage</span><span class="p">.</span><span class="na">config</span><span class="p">())</span>
+
+<span class="w">                </span><span class="c1">// Reuse built in sink that eagerly subscribes and delivers data over SSE</span>
+<span class="w">                </span><span class="p">.</span><span class="na">sink</span><span class="p">(</span><span class="n">Sinks</span><span class="p">.</span><span class="na">eagerSubscribe</span><span class="p">(</span>
+<span class="w">                        </span><span class="n">Sinks</span><span class="p">.</span><span class="na">sse</span><span class="p">((</span><span class="n">String</span><span class="w"> </span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">data</span><span class="p">)))</span>
+
+<span class="w">                </span><span class="p">.</span><span class="na">metadata</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Metadata</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;GroupByPath&quot;</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Connects to a random data generator source&quot;</span>
+<span class="w">                                </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; and counts the number of requests for each uri within a window&quot;</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">build</span><span class="p">())</span>
+<span class="w">                </span><span class="p">.</span><span class="na">create</span><span class="p">();</span>
+
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p>The job definition above should look relatively familiar with the exception of the fact that our job has three stages. These stages and their configurations are all relatively simple but take advantage of the scalability of Mantis when used in conjunction with each other;</p>
+<ul>
+<li>The <code>GroupByStage</code> will group events according to some user specified criteria.</li>
+<li>The <code>AggregationStage</code> will perform an aggregation on a per-group basis.</li>
+<li>The <code>CollectStage</code> will collect all aggregations and create a report.</li>
+</ul>
+<p>Let's explore each of these stages in sequence.</p>
+<h2 id="stage-1-group-by-stage">Stage 1: Group By Stage<a class="headerlink" href="#stage-1-group-by-stage" title="Permanent link">&para;</a></h2>
+<p>The GroupByStage implements <code>ToGroupComputation&lt;RequestEvent, String, RequestEvent&gt;</code> which tells Mantis that the <code>call</code> method will be returning <code>MantisGroup&lt;String, RequestEvent&gt;</code> which represents a group key and the data. You may recall in the previous tutorials we used the reactive <code>groupBy</code> operator to group data. The reactive operator performs an in-memory group by which has some scaling limitations. Grouping data using a Mantis stage does not have the same limitations and allows us to scale the group by operation across multiple containers.</p>
+<p>The <code>config()</code> method also changes to specify this different stage type. It also allows us to specify <code>concurrentInput()</code> on the config allowing the <code>call</code> method to be run concurrently in this container. Also note the result of <code>getParameters()</code> is added to the config via the <code>withParameters</code> method, it isn't an interface method for stages but we're specifying parameters this way for convenience.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">GroupByStage</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ToGroupComputation</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">GROUPBY_FIELD_PARAM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;groupByField&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="n">groupByPath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">MantisGroup</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="n">Context</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="o">&gt;</span><span class="w"> </span><span class="n">requestEventO</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">requestEventO</span>
+<span class="w">                </span><span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">requestEvent</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">if</span><span class="p">(</span><span class="n">groupByPath</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MantisGroup</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">requestEvent</span><span class="p">.</span><span class="na">getRequestPath</span><span class="p">(),</span><span class="w"> </span><span class="n">requestEvent</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MantisGroup</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">requestEvent</span><span class="p">.</span><span class="na">getIpAddress</span><span class="p">(),</span><span class="w"> </span><span class="n">requestEvent</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="n">Context</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">String</span><span class="w"> </span><span class="n">groupByField</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">String</span><span class="p">)</span><span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">GROUPBY_FIELD_PARAM</span><span class="p">,</span><span class="s">&quot;path&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">groupByPath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">groupByField</span><span class="p">.</span><span class="na">equalsIgnoreCase</span><span class="p">(</span><span class="s">&quot;path&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/**</span>
+<span class="cm">     * Here we declare stage specific parameters.</span>
+<span class="cm">     * @return</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span><span class="w"> </span><span class="n">getParameters</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+
+<span class="w">        </span><span class="c1">// Group by field</span>
+<span class="w">        </span><span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">StringParameter</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">GROUPBY_FIELD_PARAM</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;The key to group events by&quot;</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">notNullOrEmpty</span><span class="p">())</span>
+<span class="w">                </span><span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="s">&quot;path&quot;</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">build</span><span class="p">())</span><span class="w">   </span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">params</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">ScalarToGroup</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">config</span><span class="p">(){</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ScalarToGroup</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestEvent</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;Group event data by path/ip&quot;</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">concurrentInput</span><span class="p">()</span><span class="w"> </span><span class="c1">// signifies events can be processed in parallel</span>
+<span class="w">                </span><span class="p">.</span><span class="na">withParameters</span><span class="p">(</span><span class="n">getParameters</span><span class="p">())</span>
+<span class="w">                </span><span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">RequestEvent</span><span class="p">.</span><span class="na">requestEventCodec</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>We should note that this stage is horizontally scalable. We can run as many of these as necessary to handle the inflow of data which is how Mantis allows us to run a scalable group by operation.</p>
+<h2 id="stage-2-aggregation-stage">Stage 2: Aggregation Stage<a class="headerlink" href="#stage-2-aggregation-stage" title="Permanent link">&para;</a></h2>
+<p>The previous stage produces <code>MantisGroup&lt;String, RequestEvent&gt;</code> by implementing <code>ToGroupComputation</code>. If we think of <code>ToGroupComputation</code> producing groups of data we can think of <code>GroupToScalarComputation&lt;K, T, R&gt;</code> as the inverse computing a scalar value from a group.</p>
+<p>The <code>init()</code>, <code>config()</code> and <code>getParameters()</code> methods should be familiar by now but let's take a closer look at the <code>call()</code> method. We're performing the same operation the stream as we did in the first two tutorials. Notice how we still group by <code>MantisGroup::getKeyValue</code>. This is because while Mantis guarantees that all data for an individual group from the previous stage will land on the same container in this stage, it does not invoke the <code>call()</code> method for each individual group and thus we need to handle the groups ourselves.</p>
+<div class="codehilite"><pre><span></span><code><span class="nd">@Slf4j</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">AggregationStage</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">GroupToScalarComputation</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="p">,</span><span class="w"> </span><span class="n">RequestAggregation</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;AggregationDurationMsec&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">aggregationDurationMsec</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/**</span>
+<span class="cm">     * The call method is invoked by the Mantis runtime while executing the job.</span>
+<span class="cm">     * @param context Provides metadata information related to the current job.</span>
+<span class="cm">     * @param mantisGroupO This is an Observable of {@link MantisGroup} events. Each event is a pair of the Key -&gt; uri Path and</span>
+<span class="cm">     *                     the {@link RequestEvent} event itself.</span>
+<span class="cm">     * @return</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="n">Context</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">MantisGroup</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">mantisGroupO</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">mantisGroupO</span>
+<span class="w">                </span><span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="n">aggregationDurationMsec</span><span class="p">,</span><span class="w"> </span><span class="n">TimeUnit</span><span class="p">.</span><span class="na">MILLISECONDS</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">omg</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">omg</span><span class="p">.</span><span class="na">groupBy</span><span class="p">(</span><span class="n">MantisGroup</span><span class="p">::</span><span class="n">getKeyValue</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">go</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">go</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">accumulator</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">  </span><span class="n">accumulator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accumulator</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">RequestAggregation</span><span class="p">.</span><span class="na">builder</span><span class="p">().</span><span class="na">count</span><span class="p">(</span><span class="n">count</span><span class="p">).</span><span class="na">path</span><span class="p">(</span><span class="n">go</span><span class="p">.</span><span class="na">getKey</span><span class="p">()).</span><span class="na">build</span><span class="p">())</span>
+<span class="w">                                </span><span class="p">.</span><span class="na">doOnNext</span><span class="p">((</span><span class="n">aggregate</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                                    </span><span class="n">log</span><span class="p">.</span><span class="na">debug</span><span class="p">(</span><span class="s">&quot;Generated aggregate {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">aggregate</span><span class="p">);</span>
+<span class="w">                                </span><span class="p">})</span>
+<span class="w">                        </span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/**</span>
+<span class="cm">     * Invoked only once during job startup. A good place to add one time initialization actions.</span>
+<span class="cm">     * @param context</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="n">Context</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">aggregationDurationMsec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">context</span><span class="p">.</span><span class="na">getParameters</span><span class="p">().</span><span class="na">get</span><span class="p">(</span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="p">,</span><span class="w"> </span><span class="mi">1000</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/**</span>
+<span class="cm">     * Provides the Mantis runtime configuration information about the type of computation done by this stage.</span>
+<span class="cm">     * E.g in this case it specifies this is a GroupToScalar computation and also provides a {@link Codec} on how to</span>
+<span class="cm">     * serialize the {@link RequestAggregation} events before sending it to the {@link CollectStage}</span>
+<span class="cm">     * @return</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">GroupToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="p">,</span><span class="w"> </span><span class="n">RequestAggregation</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">config</span><span class="p">(){</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">GroupToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">RequestEvent</span><span class="p">,</span><span class="n">RequestAggregation</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;sum events for a path&quot;</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">RequestAggregation</span><span class="p">.</span><span class="na">requestAggregationCodec</span><span class="p">())</span>
+<span class="w">                </span><span class="p">.</span><span class="na">withParameters</span><span class="p">(</span><span class="n">getParameters</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/**</span>
+<span class="cm">     * Here we declare stage specific parameters.</span>
+<span class="cm">     * @return</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span><span class="w"> </span><span class="n">getParameters</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">List</span><span class="o">&lt;</span><span class="n">ParameterDefinition</span><span class="o">&lt;?&gt;&gt;</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+
+<span class="w">        </span><span class="c1">// Aggregation duration</span>
+<span class="w">        </span><span class="n">params</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">IntParameter</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="n">AGGREGATION_DURATION_MSEC_PARAM</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">description</span><span class="p">(</span><span class="s">&quot;window size for aggregation&quot;</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">validator</span><span class="p">(</span><span class="n">Validators</span><span class="p">.</span><span class="na">range</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">10000</span><span class="p">))</span>
+<span class="w">                </span><span class="p">.</span><span class="na">defaultValue</span><span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">build</span><span class="p">())</span><span class="w">   </span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">params</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Much like the previous stage this stage is also horizontally scalable up to the cardinality of our group by. Allowing us to individually (or automatically via autoscaling) scale these two stages ensures this job can be correctly sized for the workload.</p>
+<h2 id="stage-3-collect-stage">Stage 3: Collect Stage<a class="headerlink" href="#stage-3-collect-stage" title="Permanent link">&para;</a></h2>
+<p>The third stage collects data from all of the upstream workers and generates a report. We can see in the code below the stream is windowed for five seconds, then we flatmap a reduce over the window and invoke the <code>RequestAggregationAccumulator#generateReport()</code> method on the reduced value.</p>
+<div class="codehilite"><pre><span></span><code><span class="nd">@Slf4j</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">CollectStage</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ScalarComputation</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="p">,</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ObjectMapper</span><span class="w"> </span><span class="n">mapper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ObjectMapper</span><span class="p">();</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="n">Context</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="o">&gt;</span><span class="w"> </span><span class="n">requestAggregationO</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">requestAggregationO</span>
+<span class="w">                </span><span class="p">.</span><span class="na">window</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">TimeUnit</span><span class="p">.</span><span class="na">SECONDS</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">flatMap</span><span class="p">((</span><span class="n">requestAggO</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">requestAggO</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">RequestAggregationAccumulator</span><span class="p">(),(</span><span class="n">acc</span><span class="p">,</span><span class="w"> </span><span class="n">requestAgg</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="na">addAggregation</span><span class="p">(</span><span class="n">requestAgg</span><span class="p">))</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">RequestAggregationAccumulator</span><span class="p">::</span><span class="n">generateReport</span><span class="p">)</span>
+<span class="w">                        </span><span class="p">.</span><span class="na">doOnNext</span><span class="p">((</span><span class="n">report</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                            </span><span class="n">log</span><span class="p">.</span><span class="na">debug</span><span class="p">(</span><span class="s">&quot;Generated Collection report {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">report</span><span class="p">);</span>
+<span class="w">                        </span><span class="p">})</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">map</span><span class="p">((</span><span class="n">report</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="k">return</span><span class="w"> </span><span class="n">mapper</span><span class="p">.</span><span class="na">writeValueAsString</span><span class="p">(</span><span class="n">report</span><span class="p">);</span>
+<span class="w">                    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">JsonProcessingException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                        </span><span class="n">log</span><span class="p">.</span><span class="na">error</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="na">getMessage</span><span class="p">());</span>
+<span class="w">                        </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                </span><span class="p">}).</span><span class="na">filter</span><span class="p">(</span><span class="n">Objects</span><span class="p">::</span><span class="n">nonNull</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="n">Context</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="p">,</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">config</span><span class="p">(){</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ScalarToScalar</span><span class="p">.</span><span class="na">Config</span><span class="o">&lt;</span><span class="n">RequestAggregation</span><span class="p">,</span><span class="n">String</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">                </span><span class="p">.</span><span class="na">codec</span><span class="p">(</span><span class="n">Codecs</span><span class="p">.</span><span class="na">string</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/**</span>
+<span class="cm">     * The accumulator class as the name suggests accumulates all aggregates seen during a window and</span>
+<span class="cm">     * generates a consolidated report at the end.</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RequestAggregationAccumulator</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pathToCountMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HashMap</span><span class="o">&lt;&gt;</span><span class="p">();</span>
+
+<span class="w">        </span><span class="kd">public</span><span class="w"> </span><span class="nf">RequestAggregationAccumulator</span><span class="p">()</span><span class="w">  </span><span class="p">{}</span>
+
+<span class="w">        </span><span class="kd">public</span><span class="w"> </span><span class="n">RequestAggregationAccumulator</span><span class="w"> </span><span class="nf">addAggregation</span><span class="p">(</span><span class="n">RequestAggregation</span><span class="w"> </span><span class="n">agg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">pathToCountMap</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="n">agg</span><span class="p">.</span><span class="na">getPath</span><span class="p">(),</span><span class="w"> </span><span class="n">agg</span><span class="p">.</span><span class="na">getCount</span><span class="p">());</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="kd">public</span><span class="w"> </span><span class="n">AggregationReport</span><span class="w"> </span><span class="nf">generateReport</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">log</span><span class="p">.</span><span class="na">info</span><span class="p">(</span><span class="s">&quot;Generated report from=&gt; {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pathToCountMap</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AggregationReport</span><span class="p">(</span><span class="n">pathToCountMap</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Unlike the previous stages we only run a single collect stage which gathers all the data in five second batches and generates a report to be output on the sink.</p>
+<h1 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h1>
+<p>We've now explored the concept of a multi-stage Mantis job which allows us to horizontally scale individual stages and express group by and aggregate semantics as a Mantis topology.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/NetflixOSS" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://netflix.github.io/" target="_blank" rel="noopener" title="netflix.github.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../../../..", "features": [], "search": "../../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.19047be9.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
