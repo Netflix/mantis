@@ -44,13 +44,11 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
-import rx.functions.Func1;
 
 
 public class WorkerMetricHandlerTest {
@@ -220,30 +218,24 @@ public class WorkerMetricHandlerTest {
         final CountDownLatch autoScaleLatch = new CountDownLatch(1);
 
         when(mockMasterClientApi.schedulingChanges(jobId)).thenReturn(Observable.just(new JobSchedulingInfo(jobId, assignmentsMap)));
-        when(mockMasterClientApi.resubmitJobWorker(anyString(), anyString(), anyInt(), anyString())).thenAnswer(new Answer<Observable<Boolean>>() {
-            @Override
-            public Observable<Boolean> answer(InvocationOnMock invocation) throws Throwable {
+        when(mockMasterClientApi.resubmitJobWorker(anyString(), anyString(), anyInt(), anyString())).thenAnswer((Answer<Observable<Boolean>>) invocation -> {
 
-                final Object[] arguments = invocation.getArguments();
-                final String jobIdRecv = (String) arguments[0];
-                final String user = (String) arguments[1];
-                final int resubmittedWorkerNum = (Integer) arguments[2];
-                //                final String reason = (String)arguments[3];
+            final Object[] arguments = invocation.getArguments();
+            final String jobIdRecv = (String) arguments[0];
+            final String user = (String) arguments[1];
+            final int resubmittedWorkerNum = (Integer) arguments[2];
+            //                final String reason = (String)arguments[3];
 
-                final Observable<Boolean> result = Observable.just(1).map(new Func1<Integer, Boolean>() {
-                    @Override
-                    public Boolean call(Integer integer) {
-                        logger.info("resubmitting worker {} of jobId {}", resubmittedWorkerNum, jobId);
-                        assertEquals(workerNum, resubmittedWorkerNum);
-                        assertEquals(user, "JobMaster");
-                        assertEquals(jobId, jobIdRecv);
+            final Observable<Boolean> result = Observable.just(1).map(integer -> {
+                logger.info("resubmitting worker {} of jobId {}", resubmittedWorkerNum, jobId);
+                assertEquals(workerNum, resubmittedWorkerNum);
+                assertEquals(user, "JobMaster");
+                assertEquals(jobId, jobIdRecv);
 
-                        resubmitLatch.countDown();
-                        return true;
-                    }
-                });
-                return result;
-            }
+                resubmitLatch.countDown();
+                return true;
+            });
+            return result;
         });
 
 

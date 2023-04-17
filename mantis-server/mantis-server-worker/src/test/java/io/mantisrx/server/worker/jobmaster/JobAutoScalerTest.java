@@ -44,13 +44,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
-import rx.functions.Func1;
 
 
 public class JobAutoScalerTest {
@@ -107,12 +105,13 @@ public class JobAutoScalerTest {
         // retry sending auto scale event till scaleJobStage request sent to master, as there is possible a race between the sleep for coolDownSecs in the Test and the event being processed before coolDownSecs
         final CountDownLatch retryLatch = new CountDownLatch(1);
 
-        when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + 2 * increment), anyString())).thenAnswer(new Answer<Observable<Void>>() {
-            @Override
-            public Observable<Void> answer(InvocationOnMock invocation) throws Throwable {
-                retryLatch.countDown();
-                return Observable.just(null);
-            }
+        when(mockMasterClientApi.scaleJobStage(
+            eq(jobId), eq(scalingStageNum),
+            eq(numStage1Workers + 2 * increment),
+            anyString()))
+            .thenAnswer((Answer<Observable<Void>>) invocation -> {
+            retryLatch.countDown();
+            return Observable.just(null);
         });
         do {
             logger.info("sending Job auto scale Event");
@@ -152,15 +151,12 @@ public class JobAutoScalerTest {
 
         final CountDownLatch scaleJobStageSuccessLatch = new CountDownLatch(1);
         final AtomicInteger count = new AtomicInteger(0);
-        final Observable<Boolean> simulateScaleJobStageFailureResp = Observable.just(1).map(new Func1<Integer, Boolean>() {
-            @Override
-            public Boolean call(Integer integer) {
-                if (count.incrementAndGet() < 3) {
-                    throw new IllegalStateException("fake connection exception");
-                } else {
-                    scaleJobStageSuccessLatch.countDown();
-                    return true;
-                }
+        final Observable<Boolean> simulateScaleJobStageFailureResp = Observable.just(1).map(integer -> {
+            if (count.incrementAndGet() < 3) {
+                throw new IllegalStateException("fake connection exception");
+            } else {
+                scaleJobStageSuccessLatch.countDown();
+                return true;
             }
         });
         when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + increment), anyString())).thenReturn(simulateScaleJobStageFailureResp);
@@ -235,7 +231,7 @@ public class JobAutoScalerTest {
     }
 
     @Test
-    public void testScaleDownNotLessThanMin() throws InterruptedException {
+    public void testScaleDownNotLessThanMin() {
         final String jobId = "test-job-1";
         final int coolDownSec = 2;
         final int scalingStageNum = 1;
@@ -329,13 +325,15 @@ public class JobAutoScalerTest {
 
             // retry sending auto scale event till scaleJobStage request sent to master, as there is possible a race between the sleep for coolDownSecs in the Test and the event being processed before coolDownSecs
             final CountDownLatch retryLatch = new CountDownLatch(1);
-            when(mockMasterClientApi.scaleJobStage(eq(jobId), eq(scalingStageNum), eq(numStage1Workers + 2 * increment), anyString())).thenAnswer(new Answer<Observable<Void>>() {
-                @Override
-                public Observable<Void> answer(InvocationOnMock invocation) throws Throwable {
+            when(mockMasterClientApi.scaleJobStage(
+                eq(jobId),
+                eq(scalingStageNum),
+                eq(numStage1Workers + 2 * increment),
+                anyString()))
+                .thenAnswer((Answer<Observable<Void>>) invocation -> {
                     retryLatch.countDown();
                     return Observable.just(null);
-                }
-            });
+                });
 
             do {
                 logger.info("sending Job auto scale Event");
@@ -348,7 +346,7 @@ public class JobAutoScalerTest {
     }
 
     @Test
-    public void testGetClutchConfigurationFromJson() throws Exception {
+    public void testGetClutchConfigurationFromJson() {
         String json = "{" +
                 "  \"cooldownSeconds\": 100," +
                 "  \"integralDecay\": 0.7," +
