@@ -35,6 +35,7 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByGroupKey;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
+import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -153,6 +154,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .match(GetClusterIdleInstancesResponse.class, this::onGetClusterIdleInstancesResponse)
                 .match(GetRuleSetResponse.class,
                     s -> log.info("[{}] Refreshed rule size: {}", s.getClusterID(), s.getRules().size()))
+                .match(SetResourceClusterScalerStatusRequest.class, this::onSetScalerStatus)
+                .match(ExpireSetScalerStatusRequest.class, this::onExpireSetScalerStatus)
                 .match(Ack.class, ack -> log.info("Received ack from {}", sender()))
                 .build();
     }
@@ -189,7 +192,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         usageResponse.getUsages().forEach(usage -> {
             ContainerSkuID skuId = ContainerSkuID.of(usage.getUsageGroupKey());
 
-            if (this.skuToRuleMap.containsKey(skuId)) {
+            if (this.skuToRuleMap.containsKey(skuId) && skuToRuleMap.get(skuId).isEnabled()) {
                 Optional<ScaleDecision> decisionO = this.skuToRuleMap.get(skuId).apply(usage);
                 if (decisionO.isPresent()) {
                     log.info("Informing scale decision: {}", decisionO.get());
@@ -222,9 +225,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                             throw new RuntimeException("Invalid scale type: " + decisionO);
                     }
                 }
-            }
-            else {
-                log.info("No sku rule is available for {}: {}", this.clusterId, usage.getUsageGroupKey());
+            } else {
+                log.info("Either scaling is disabled for sku or no sku rule is available for {}: {}", this.clusterId, usage.getUsageGroupKey());
             }
         });
 
@@ -286,6 +288,28 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         pipe(fetchFut, getContext().getDispatcher()).to(getSelf());
     }
 
+    private void onSetScalerStatus(SetResourceClusterScalerStatusRequest req) {
+        if (skuToRuleMap.containsKey(req.getSkuId())) {
+            skuToRuleMap.get(req.getSkuId()).setEnabled(req.getEnabled());
+
+            if (!req.getEnabled()) {
+                // setup a timer to re-enable autoscaling after a given period
+                getTimers().startSingleTimer(
+                    "ExpireSetScalerStatusRequest-" + clusterId,
+                    new ExpireSetScalerStatusRequest(req),
+                    Duration.ofSeconds(req.getExpirationDurationInSeconds()));
+            }
+        }
+    }
+
+    private void onExpireSetScalerStatus(ExpireSetScalerStatusRequest req) {
+        // re-enable autoscaling if it's been disabled for longer than threshold
+        final ContainerSkuID skuID = req.request.getSkuId();
+        if (skuToRuleMap.containsKey(skuID) && skuToRuleMap.get(skuID).isLastActionOlderThan(req.getRequest().getExpirationDurationInSeconds())) {
+            skuToRuleMap.get(skuID).setEnabled(true);
+        }
+    }
+
     private ScaleResourceRequest translateScaleDecision(ScaleDecision decision) {
         return ScaleResourceRequest.builder()
             .clusterId(this.clusterId)
@@ -298,6 +322,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     @Builder
     static class TriggerClusterUsageRequest {
         ClusterID clusterID;
+    }
+
+    @Value
+    static class ExpireSetScalerStatusRequest {
+        SetResourceClusterScalerStatusRequest request;
     }
 
     @Value
@@ -323,24 +352,41 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         private final ResourceClusterScaleSpec scaleSpec;
         private final Clock clock;
         private Instant lastActionInstant;
+        private boolean enabled;
 
         public ClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, Clock clock) {
             this.scaleSpec = scaleSpec;
             this.clock = clock;
 
+            // TODO: probably we should use current time
             this.lastActionInstant = Instant.MIN;
+            this.enabled = true;
         }
+
+        private void resetLastActionInstant() {
+            lastActionInstant = clock.instant();
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+            resetLastActionInstant();
+        }
+
+        public boolean isEnabled() { return enabled; }
+
+        public boolean isLastActionOlderThan(long secondsSinceLastAction) {
+            return lastActionInstant.plusSeconds(secondsSinceLastAction).compareTo(clock.instant()) > 0;
+        }
+
         public Optional<ScaleDecision> apply(UsageByGroupKey usage) {
-            // Cool down check
-            if (this.lastActionInstant.plusSeconds(this.scaleSpec.getCoolDownSecs()).compareTo(clock.instant()) > 0) {
-                log.debug("Scale CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
-                return Optional.empty();
-            }
-
-            this.lastActionInstant = clock.instant();
-
             Optional<ScaleDecision> decision = Optional.empty();
             if (usage.getIdleCount() > scaleSpec.getMaxIdleToKeep()) {
+                // Cool down check
+                if (isLastActionOlderThan(scaleSpec.getCoolDownSecs())) {
+                    log.debug("Scale Down CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+                    return Optional.empty();
+                }
+
                 // too many idle agents, scale down.
                 int step = usage.getIdleCount() - scaleSpec.getMaxIdleToKeep();
                 int newSize = Math.max(
@@ -356,6 +402,12 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .build());
             }
             else if (usage.getIdleCount() < scaleSpec.getMinIdleToKeep()) {
+                // Cool down check: for scaling down we want to wait 5x the nominal cool down period
+                if (isLastActionOlderThan(scaleSpec.getCoolDownSecs() * 5)) {
+                    log.debug("Scale Up CoolDown skip: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+                    return Optional.empty();
+                }
+
                 // scale up
                 int step = scaleSpec.getMinIdleToKeep() - usage.getIdleCount();
                 int newSize = Math.min(
@@ -373,6 +425,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
             log.info("Scale Decision for {}-{}: {}",
                 this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision);
+
+            if (decision.isPresent() && (decision.get().type.equals(ScaleType.ScaleDown) || decision.get().type.equals(ScaleType.ScaleDown))) {
+                // reset last action only if we decided to scale up or down
+                resetLastActionInstant();
+            }
             return decision;
         }
     }

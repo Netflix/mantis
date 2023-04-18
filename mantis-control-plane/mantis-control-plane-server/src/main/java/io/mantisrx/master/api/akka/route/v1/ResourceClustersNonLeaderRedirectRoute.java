@@ -42,6 +42,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -75,6 +76,7 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
  * /api/v1/resourceClusters/{}/upgrade                                (POST)
  * /api/v1/resourceClusters/{}/disableTaskExecutors                   (POST)
+ * /api/v1/resourceClusters/{}/setScalerStatus                        (POST)
  * <p>
  * <p>
  * /api/v1/resourceClusters/{}/scaleRule                              (POST)
@@ -154,10 +156,17 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         post(() -> scaleClusterSku(clusterName))
                     ))
                 ),
+                // /{}/disableTaskExecutors
                 path(
                     PathMatchers.segment().slash("disableTaskExecutors"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
                         post(() -> disableTaskExecutors(getClusterID(clusterName)))))
+                ),
+                // /{}/setScalerStatus
+                path(
+                    PathMatchers.segment().slash("setScalerStatus"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        post(() -> setScalerStatus(clusterName))))
                 ),
                 // /{}/upgrade
                 path(
@@ -266,6 +275,13 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(
                 request.getAttributes(),
                 Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
+        });
+    }
+
+    private Route setScalerStatus(String clusterID) {
+        return entity(Jackson.unmarshaller(SetResourceClusterScalerStatusRequest.class), request -> {
+            log.info("POST /api/v1/resourceClusters/{}/setScalerStatus called with body {}", clusterID, request);
+            return withFuture(resourceClusterRouteHandler.setScalerStatus(request));
         });
     }
 

@@ -34,6 +34,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssig
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
+import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.MantisJobStore;
@@ -142,6 +143,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                 .match(DisableTaskExecutorsRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(TriggerClusterRuleRefreshRequest.class, req ->
+                    getRCScalerActor(req.getClusterID()).forward(req, context()))
+                .match(SetResourceClusterScalerStatusRequest.class, req ->
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
                 .build();
     }
