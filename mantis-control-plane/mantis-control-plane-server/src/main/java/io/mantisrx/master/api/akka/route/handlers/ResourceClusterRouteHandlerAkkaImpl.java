@@ -19,6 +19,7 @@ package io.mantisrx.master.api.akka.route.handlers;
 import static akka.pattern.Patterns.ask;
 
 import akka.actor.ActorRef;
+import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
@@ -32,11 +33,13 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -124,5 +127,12 @@ public class ResourceClusterRouteHandlerAkkaImpl implements ResourceClusterRoute
         GetResourceClusterScaleRulesRequest request) {
         return ask(this.resourceClustersHostManagerActor, request, timeout)
             .thenApply(GetResourceClusterScaleRulesResponse.class::cast);
+    }
+
+    @Override
+    public CompletableFuture<Ack> setScalerStatus(SetResourceClusterScalerStatusRequest request) {
+        return ask(resourceClustersHostManagerActor, request,timeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
     }
 }
