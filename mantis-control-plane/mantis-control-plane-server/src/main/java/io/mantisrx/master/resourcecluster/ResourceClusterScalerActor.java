@@ -51,6 +51,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -271,16 +272,16 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             this.storageProvider.getResourceClusterScaleRules(this.clusterId)
                 .thenApply(rules -> {
                     Set<ContainerSkuID> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
-                    removedKeys.removeAll(rules.getScaleRules().keySet());
+                    final Set<ContainerSkuID> preservedKeys = rules.getScaleRules().keySet().stream().map(ContainerSkuID::of).collect(Collectors.toSet());
+                    removedKeys.removeAll(preservedKeys);
                     removedKeys.forEach(this.skuToRuleMap::remove);
 
                     rules
                         .getScaleRules().values()
-                        .forEach(rule -> {
-                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, rule);
-                            this.skuToRuleMap.put(
-                                rule.getSkuId(),
-                                new ClusterAvailabilityRule(rule, this.clock));
+                        .forEach(scaleRule -> {
+                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, scaleRule);
+                            final ClusterAvailabilityRule clusterAvailabilityRule = createClusterAvailabilityRule(scaleRule, this.skuToRuleMap.get(scaleRule.getSkuId()));
+                            this.skuToRuleMap.put(scaleRule.getSkuId(), clusterAvailabilityRule);
                         });
                     return GetRuleSetResponse.builder()
                         .rules(ImmutableMap.copyOf(this.skuToRuleMap))
@@ -289,6 +290,14 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 });
 
         pipe(fetchFut, getContext().getDispatcher()).to(getSelf());
+    }
+
+    private ClusterAvailabilityRule createClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, ClusterAvailabilityRule existingRule) {
+        if (existingRule == null) {
+            return new ClusterAvailabilityRule(scaleSpec, this.clock, Instant.MIN, true);
+        }
+        // If rule exists already, port over lastActionInstant and enabled from existing rule
+        return new ClusterAvailabilityRule(scaleSpec, this.clock, existingRule.lastActionInstant, existingRule.enabled);
     }
 
     private void onSetScalerStatus(SetResourceClusterScalerStatusRequest req) {
@@ -357,20 +366,24 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         private Instant lastActionInstant;
         private boolean enabled;
 
-        public ClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, Clock clock) {
+        public ClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, Clock clock, Instant lastActionInstant, Boolean enabled) {
             this.scaleSpec = scaleSpec;
             this.clock = clock;
 
             // TODO: probably we should use current time
-            this.lastActionInstant = Instant.MIN;
-            this.enabled = true;
+            this.lastActionInstant = lastActionInstant;
+            this.enabled = enabled;
         }
 
         private void resetLastActionInstant() {
+            log.debug("resetLastActionInstant: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+
             lastActionInstant = clock.instant();
         }
 
         public void setEnabled(boolean enabled) {
+            log.debug("setEnabled: {}, {}, {}", enabled, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+
             this.enabled = enabled;
             resetLastActionInstant();
         }
@@ -378,6 +391,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         public boolean isEnabled() { return enabled; }
 
         public boolean isLastActionOlderThan(long secondsSinceLastAction) {
+            log.debug("[isLastActionOlderThan] secondsSinceLastAction: {}, {}, {}", secondsSinceLastAction, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("[isLastActionOlderThan] lastActionInstant: {}, {}, {}", lastActionInstant, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("[isLastActionOlderThan] lastActionInstant + secondsSinceLastAction: {}, {}, {}", lastActionInstant.plusSeconds(secondsSinceLastAction), this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("[isLastActionOlderThan] comp: {}, {}, {}", lastActionInstant.plusSeconds(secondsSinceLastAction).compareTo(clock.instant()) > 0, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+
             return lastActionInstant.plusSeconds(secondsSinceLastAction).compareTo(clock.instant()) > 0;
         }
 
@@ -430,7 +448,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision);
 
             // reset last action only if we decided to scale up or down
-            resetLastActionInstant();
+            if (decision.isPresent() && (decision.get().type.equals(ScaleType.ScaleDown) || decision.get().type.equals(ScaleType.ScaleUp))) {
+                log.debug("Ongoing scale operation. Resetting last action timer: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+                resetLastActionInstant();
+            }
             return decision;
         }
     }
