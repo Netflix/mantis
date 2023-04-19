@@ -281,7 +281,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route setScalerStatus(String clusterID) {
         return entity(Jackson.unmarshaller(SetResourceClusterScalerStatusRequest.class), request -> {
             log.info("POST /api/v1/resourceClusters/{}/setScalerStatus called with body {}", clusterID, request);
-            return withFuture(resourceClusterRouteHandler.setScalerStatus(request));
+            return withFuture(gateway.getClusterFor(request.getClusterID()).setScalerStatus(request.getClusterID(), request.getSkuId(), request.getEnabled(), request.getExpirationDurationInSeconds()));
         });
     }
 

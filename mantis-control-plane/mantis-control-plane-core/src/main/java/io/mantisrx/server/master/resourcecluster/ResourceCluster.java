@@ -103,6 +103,15 @@ public interface ResourceCluster extends ResourceClusterGateway {
     CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
 
     /**
+     * Enables/Disables scaler for a given skuID of a given clusterID
+     *
+     * @param skuID skuID whom scaler will be enabled/disabled.
+     * @param enabled whether the scaler will be enabled/disabled.
+     * @return a future that completes when the underlying operation is registered by the system
+     */
+    CompletableFuture<Ack> setScalerStatus(ClusterID clusterID, ContainerSkuID skuID, Boolean enabled, Long expirationDurationInSeconds);
+
+    /**
      * Get a paged result of all active jobs associated with this resource cluster.
      * @param startingIndex Starting index for the paged list of all the active jobs.
      * @param pageSize Max size of returned paged list.

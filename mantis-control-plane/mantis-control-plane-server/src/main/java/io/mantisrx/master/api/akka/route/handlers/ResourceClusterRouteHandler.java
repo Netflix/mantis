@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.api.akka.route.handlers;
 
-import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
@@ -29,11 +28,9 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
-import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 public interface ResourceClusterRouteHandler {
@@ -57,13 +54,4 @@ public interface ResourceClusterRouteHandler {
 
     CompletionStage<GetResourceClusterScaleRulesResponse> getClusterScaleRules(
         GetResourceClusterScaleRulesRequest request);
-
-    /**
-     * Enables/Disables scaler for a given skuID of a given clusterID
-     *
-     * @param skuID skuID whom scaler will be enabled/disabled.
-     * @param enabled whether the scaler will be enabled/disabled.
-     * @return a future that completes when the underlying operation is registered by the system
-     */
-    CompletableFuture<Ack> setScalerStatus(final SetResourceClusterScalerStatusRequest request);
 }
