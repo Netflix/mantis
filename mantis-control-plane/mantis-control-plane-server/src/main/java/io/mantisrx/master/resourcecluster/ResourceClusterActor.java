@@ -483,7 +483,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     this.executorStateManager.markAvailable(request.getTaskExecutorID());
                 }
             } catch (IllegalStateException e) {
-                log.warn("Failed to un-assign taskExecutor {}", request.getTaskExecutorID(), e);
+                if (state.isRegistered()) {
+                    log.error("Failed to un-assign registered taskExecutor {}", request.getTaskExecutorID(), e);
+                } else {
+                    log.debug("Failed to un-assign unRegistered taskExecutor {}", request.getTaskExecutorID(), e);
+                }
             }
         }
     }
