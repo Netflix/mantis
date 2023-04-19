@@ -22,10 +22,10 @@ jobs:
       matrix:
         include:
           - dockerfile: ./mantis-control-plane/Dockerfile
-            image: netflixoss/mantiscontrolplaneserver
+            image: "netflixoss/mantiscontrolplaneserver"
             workingDirectory: ./mantis-control-plane
           - dockerfile: ./mantis-server/mantis-server-agent/Dockerfile
-            image: netflixoss/mantisagent
+            image: "netflixoss/mantisagent"
             workingDirectory: ./mantis-server/mantis-server-agent
     permissions:
       contents: read
