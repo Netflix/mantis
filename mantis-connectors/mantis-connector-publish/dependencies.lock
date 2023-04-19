@@ -124,7 +124,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.20"
+            "locked": "2.3.21"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -304,13 +304,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.20"
+            "locked": "2.3.21"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.20"
+            "locked": "2.3.21"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -531,7 +531,7 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.20"
+            "locked": "2.3.21"
         },
         "com.netflix.spectator:spectator-api": {
             "firstLevelTransitive": [
@@ -715,13 +715,13 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.20"
+            "locked": "2.3.21"
         },
         "com.netflix.archaius:archaius2-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-publish-core"
             ],
-            "locked": "2.3.20"
+            "locked": "2.3.21"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
