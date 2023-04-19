@@ -51,6 +51,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -271,10 +272,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             this.storageProvider.getResourceClusterScaleRules(this.clusterId)
                 .thenApply(rules -> {
                     Set<ContainerSkuID> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
-                    removedKeys.removeAll(rules.getScaleRules().keySet());
+                    final Set<ContainerSkuID> preservedKeys = rules.getScaleRules().keySet().stream().map(ContainerSkuID::of).collect(Collectors.toSet());
+                    removedKeys.removeAll(preservedKeys);
                     removedKeys.forEach(this.skuToRuleMap::remove);
 
-                    log.debug("skuToRuleMap keys: {}", skuToRuleMap.keySet());
+                    log.debug("skuToRuleMap keys: {}, {}", skuToRuleMap.keySet(), clusterId);
 
                     rules
                         .getScaleRules().values()
