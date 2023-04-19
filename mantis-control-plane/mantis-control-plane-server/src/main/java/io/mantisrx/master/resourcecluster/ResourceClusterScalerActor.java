@@ -274,6 +274,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                     removedKeys.removeAll(rules.getScaleRules().keySet());
                     removedKeys.forEach(this.skuToRuleMap::remove);
 
+                    log.debug("skuToRuleMap keys: {}", skuToRuleMap.keySet());
+
                     rules
                         .getScaleRules().values()
                         .forEach(scaleRule -> {
@@ -292,8 +294,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private ClusterAvailabilityRule createClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, ClusterAvailabilityRule existingRule) {
         if (existingRule == null) {
+            log.debug("createClusterAvailabilityRule 2: {}, {}", scaleSpec.getClusterId(), scaleSpec.getSkuId());
             return new ClusterAvailabilityRule(scaleSpec, this.clock, Instant.MIN, true);
         }
+        log.debug("createClusterAvailabilityRule 1: {}, {}", scaleSpec.getClusterId(), scaleSpec.getSkuId());
         // If rule exists already, port over lastActionInstant and enabled from existing rule
         return new ClusterAvailabilityRule(scaleSpec, this.clock, existingRule.lastActionInstant, existingRule.enabled);
     }
