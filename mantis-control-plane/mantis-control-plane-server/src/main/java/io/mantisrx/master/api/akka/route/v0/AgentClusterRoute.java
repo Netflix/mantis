@@ -33,7 +33,6 @@ import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
-import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.Jackson;
