@@ -245,15 +245,15 @@ public class MasterMain implements Service {
             mantisServices.addService(jobClustersManagerService);
 
             if (this.config.isLocalMode()) {
-                leadershipManager.becomeLeader();
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                leadershipManager.becomeLeader();
             } else {
                 curatorService = new CuratorService(this.config);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, schedulingService, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             }
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {

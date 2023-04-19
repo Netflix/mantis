@@ -20,6 +20,8 @@ RUN mkdir -p /apps/mantis/mantis-control-plane-server/logs
 RUN mkdir -p /tmp/MantisSpool/namedJobs
 RUN mkdir -p /tmp/MantisArchive
 
+RUN touch /tmp/MantisSpool/clusterscalerulespec-DEFAULT_CLUSTER
+
 COPY docker/SharedMrePublishEventSource /tmp/MantisSpool/namedJobs
 COPY docker/SineFunction /tmp/MantisSpool/namedJobs
 COPY docker/SyntheticSourceJob /tmp/MantisSpool/namedJobs
