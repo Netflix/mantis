@@ -472,18 +472,19 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
-        try {
-            TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-            if (state.isRunningTask()) {
-                log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
-            } else {
+        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
+        if (state.isRunningTask()) {
+            log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
+        } else {
+            try
+            {
                 boolean stateChange = state.onUnassignment();
                 if (stateChange) {
                     this.executorStateManager.markAvailable(request.getTaskExecutorID());
                 }
+            } catch (IllegalStateException e) {
+                log.warn("Failed to un-assign taskExecutor {}", request.getTaskExecutorID(), e);
             }
-        } catch (IllegalStateException e) {
-            log.error("Failed to un-assign taskExecutor {}", request.getTaskExecutorID(), e);
         }
     }
 
