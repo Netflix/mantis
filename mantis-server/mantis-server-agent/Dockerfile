@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:8u345
+FROM azul/zulu-openjdk:8-latest
 
 MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 
