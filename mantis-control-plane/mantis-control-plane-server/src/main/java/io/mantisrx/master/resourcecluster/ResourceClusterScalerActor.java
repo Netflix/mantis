@@ -276,11 +276,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
                     rules
                         .getScaleRules().values()
-                        .forEach(rule -> {
-                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, rule);
-                            this.skuToRuleMap.put(
-                                rule.getSkuId(),
-                                new ClusterAvailabilityRule(rule, this.clock));
+                        .forEach(scaleRule -> {
+                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, scaleRule);
+                            final ClusterAvailabilityRule clusterAvailabilityRule = createClusterAvailabilityRule(scaleRule, this.skuToRuleMap.get(scaleRule.getSkuId()));
+                            this.skuToRuleMap.put(scaleRule.getSkuId(), clusterAvailabilityRule);
                         });
                     return GetRuleSetResponse.builder()
                         .rules(ImmutableMap.copyOf(this.skuToRuleMap))
@@ -289,6 +288,14 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 });
 
         pipe(fetchFut, getContext().getDispatcher()).to(getSelf());
+    }
+
+    private ClusterAvailabilityRule createClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, ClusterAvailabilityRule existingRule) {
+        if (existingRule == null) {
+            return new ClusterAvailabilityRule(scaleSpec, this.clock, Instant.MIN, true);
+        }
+        // If rule exists already, port over lastActionInstant and enabled from existing rule
+        return new ClusterAvailabilityRule(scaleSpec, this.clock, existingRule.lastActionInstant, existingRule.enabled);
     }
 
     private void onSetScalerStatus(SetResourceClusterScalerStatusRequest req) {
@@ -357,13 +364,13 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         private Instant lastActionInstant;
         private boolean enabled;
 
-        public ClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, Clock clock) {
+        public ClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, Clock clock, Instant lastActionInstant, Boolean enabled) {
             this.scaleSpec = scaleSpec;
             this.clock = clock;
 
             // TODO: probably we should use current time
-            this.lastActionInstant = Instant.MIN;
-            this.enabled = true;
+            this.lastActionInstant = lastActionInstant;
+            this.enabled = enabled;
         }
 
         private void resetLastActionInstant() {
