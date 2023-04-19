@@ -367,7 +367,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         }
 
         private void resetLastActionInstant() {
-            log.debug("resetLastActionInstant: {}, {}", enabled, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("resetLastActionInstant: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
 
             lastActionInstant = clock.instant();
         }
