@@ -252,7 +252,9 @@ public class ResourceClusterScalerActorTests {
                 .minSize(11)
                 .maxSize(15)
                 .build(),
-            Clock.fixed(Clock.systemUTC().instant(), ZoneId.systemDefault()));
+            Clock.fixed(Clock.systemUTC().instant(), ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
 
         // Test scale up
         UsageByGroupKey usage = UsageByGroupKey.builder()
@@ -302,7 +304,9 @@ public class ResourceClusterScalerActorTests {
                 .minSize(11)
                 .maxSize(15)
                 .build(),
-            Clock.systemUTC());
+            Clock.systemUTC(),
+            Instant.MIN,
+            true);
 
         // Test scale up
         UsageByGroupKey usage =
@@ -353,7 +357,9 @@ public class ResourceClusterScalerActorTests {
                 .minSize(11)
                 .maxSize(15)
                 .build(),
-            Clock.fixed(Instant.MIN, ZoneId.systemDefault()));
+            Clock.fixed(Instant.MIN, ZoneId.systemDefault()),
+            Instant.MIN,
+            true);
 
         // Test scale up
         UsageByGroupKey usage = UsageByGroupKey.builder()
