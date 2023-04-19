@@ -16,11 +16,10 @@
 
 package io.mantisrx.server.agent;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-
 import java.io.IOException;
 import java.net.URI;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 
 public class LocalFileSystemFactory implements FileSystemFactory {
     @Override
