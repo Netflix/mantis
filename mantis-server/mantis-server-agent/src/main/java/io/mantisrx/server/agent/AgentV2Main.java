@@ -98,7 +98,10 @@ public class AgentV2Main implements Service {
         }
 
         try {
-            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(loadProperties(propFile));
+            Properties props = new Properties();
+            props.putAll(System.getenv());
+            props.putAll(loadProperties(propFile));
+            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             AgentV2Main agent = new AgentV2Main(factory);
             agent.start(); // blocks until shutdown hook (ctrl-c)
         } catch (Exception e) {
