@@ -378,11 +378,18 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         public boolean isEnabled() { return enabled; }
 
         public boolean isLastActionOlderThan(long secondsSinceLastAction) {
+            log.debug("isLastActionOlderThan: secondsSinceLastAction: {}, {}, {}", secondsSinceLastAction, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("isLastActionOlderThan: lastActionInstant: {}, {}, {}", lastActionInstant, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("isLastActionOlderThan: lastActionInstant + secondsSinceLastAction: {}, {}, {}", lastActionInstant.plusSeconds(secondsSinceLastAction), this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+            log.debug("isLastActionOlderThan: comp: {}, {}, {}", lastActionInstant.plusSeconds(secondsSinceLastAction).compareTo(clock.instant()) > 0, this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+
             return lastActionInstant.plusSeconds(secondsSinceLastAction).compareTo(clock.instant()) > 0;
         }
 
         public Optional<ScaleDecision> apply(UsageByGroupKey usage) {
             Optional<ScaleDecision> decision = Optional.empty();
+            // TODO: maybe we should not scale the first time the condition is met
+            // TODO: maybe we should include into this condition the queued requests
             if (usage.getIdleCount() > scaleSpec.getMaxIdleToKeep()) {
                 // Cool down check: for scaling down we want to wait 5x the nominal cool down period
                 if (isLastActionOlderThan(scaleSpec.getCoolDownSecs() * 5)) {
@@ -430,7 +437,10 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId(), decision);
 
             // reset last action only if we decided to scale up or down
-            resetLastActionInstant();
+            if (decision.isPresent() && (decision.get().type.equals(ScaleType.ScaleDown) || decision.get().type.equals(ScaleType.ScaleDown))) {
+                log.debug("Ongoing scale operation. Resetting last action timer: {}, {}", this.scaleSpec.getClusterId(), this.scaleSpec.getSkuId());
+                resetLastActionInstant();
+            }
             return decision;
         }
     }
