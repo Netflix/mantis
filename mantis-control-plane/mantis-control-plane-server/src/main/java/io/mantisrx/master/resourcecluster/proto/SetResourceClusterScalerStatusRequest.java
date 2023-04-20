@@ -14,19 +14,27 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.core.functions;
+package io.mantisrx.master.resourcecluster.proto;
 
-/**
- * Functional interface for extracting a key of type {@code K} from an input value
- * of type {@code IN}.
- */
-@FunctionalInterface
-public interface KeyByFunction<K, IN> extends MantisFunction {
-    /**
-     * Extracts a key from the given input value.
-     *
-     * @param in the input value
-     * @return the extracted key
-     */
-    K getKey(IN in);
+import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
+
+
+@Builder
+@Value
+public class SetResourceClusterScalerStatusRequest {
+    @NonNull
+    ContainerSkuID skuId;
+
+    @NonNull
+    Boolean enabled;
+
+    @NonNull
+    ClusterID clusterID;
+
+    @NonNull
+    Long expirationDurationInSeconds;
 }

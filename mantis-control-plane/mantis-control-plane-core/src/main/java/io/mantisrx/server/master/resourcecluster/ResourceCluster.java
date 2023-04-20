@@ -17,7 +17,6 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.Ack;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Instant;
@@ -72,7 +71,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @param workerId          worker id of the task that's going to run on the node.
      * @return task executor assigned for the particular task.
      */
-    CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition, WorkerId workerId);
+    CompletableFuture<TaskExecutorID> getTaskExecutorFor(TaskExecutorAllocationRequest allocationRequest);
 
     CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(TaskExecutorID taskExecutorID);
 
@@ -102,6 +101,15 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @return a future that completes when the underlying operation is registered by the system
      */
     CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
+
+    /**
+     * Enables/Disables scaler for a given skuID of a given clusterID
+     *
+     * @param skuID skuID whom scaler will be enabled/disabled.
+     * @param enabled whether the scaler will be enabled/disabled.
+     * @return a future that completes when the underlying operation is registered by the system
+     */
+    CompletableFuture<Ack> setScalerStatus(ClusterID clusterID, ContainerSkuID skuID, Boolean enabled, Long expirationDurationInSeconds);
 
     /**
      * Get a paged result of all active jobs associated with this resource cluster.

@@ -23,7 +23,7 @@ import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.core.MantisStream;
 import io.mantisrx.runtime.core.WindowSpec;
-import io.mantisrx.runtime.core.functions.ReduceFunctionImpl;
+import io.mantisrx.runtime.core.functions.SimpleReduceFunction;
 import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
 import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
@@ -64,7 +64,7 @@ public class WordCountDslJob extends MantisJobProvider<String> {
             })
             .keyBy(WordCountPair::getWord)
             .window(WindowSpec.timed(Duration.ofSeconds(10)))
-            .reduce((ReduceFunctionImpl<WordCountPair>) (acc, item) -> {
+            .reduce((SimpleReduceFunction<WordCountPair>) (acc, item) -> {
                 if (acc.getWord() != null && !acc.getWord().isEmpty() && !acc.getWord().equals(item.getWord())) {
                     log.warn("keys dont match: acc ({}) vs item ({})", acc.getWord(), item.getWord());
                 }

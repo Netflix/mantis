@@ -3,11 +3,13 @@ it in some way. You can combine multiple Processing Stages into a single Job, or
 Job that consists of a single Processing Stage.
 
 In its simplest form, a Processing Stage is a chain of [RxJava]
-[operators](http://reactivex.io/documentation/operators.html) operating on the [Observable] provided
-by the [Source] component.
+[operators](http://reactivex.io/documentation/operators.html) operating on the [Observable] provided by the [Source] component.
 
-Transformations can be broadly categorized into two types: [Scalar] or [Grouped]. There are four
-varieties of Processing Stage, based on what type of transformation they accomplish:
+!!! note
+
+    There is an alternate implementation that allows writing a Mantis Job as a series of operators operating directly on a `MantisStream` instance which abstracts information about RxJava, Observables from the user and offers a simpler way (hopefully 🤞) to write mantis jobs. Please see [Mantis DSL docs](../../../reference/dsl) for more details
+
+Transformations can be broadly categorized into two types: [Scalar] or [Grouped]. There are four varieties of Processing Stage, based on what type of transformation they accomplish:
 
 1. **Scalar-to-Scalar** — Also known as “narrow transformation,” this variety of Stage converts an `Observable<T>` into an `Observable<R>`. Such a Stage extends [the `ScalarToScalar` class](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/ScalarToScalar.java). <br />![the Scalar-to-Scalar stage](../../images/scalarToScalar.svg)
 1. **Scalar-to-Key**/**Scalar-to-Group** — Also known as “widening transformation,” this variety of Stage groups each element emitted by the source Observable by key. Typically you use such a Stage when you build a map/reduce-style job in which you need to perform stateful computations but the volume of data is too large to fit on a single worker. In such a model, the incoming data is divided into multiple streams, one per group. A subsequent State will typically to the stateful computation (for instance, calculating percentiles for the group). The purpose of this Scalar-to-Key State is to tag each incoming element with the group that it belongs to. Mantis then takes care of routing all traffic for the same group to the same [worker] in the subsequent stage.<br />![the Scalar-to-Key stage](../../images/scalarToKey.svg)
@@ -17,6 +19,7 @@ varieties of Processing Stage, based on what type of transformation they accompl
     1. **Key-to-Scalar** — This is the legacy method and is designed for streams that have been split via a `ScalarToKey` Stage. You extend [the `KeyToScalar` class](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/KeyToScalar.java) and transform a `GroupedObservable<K,T>` into an `Observable<T>`.
     1. **Group-to-Scalar** — This is the newer, faster method. It is less elegant, in that you must transform an `Observable<MantisGroup>` that contains payloads from all groups, and you must therefore manage the per-group state. Typically you would do this via a map that holds per-group state and evicts entries that haven’t been touched recently. This method has much better performance than the Key-to-Scalar method because it omits the overhead around RxJava’s `GroupedObservable`.
 1. **Key-to-Key**/**Group-to-Group** — You can further split a keyed stream by grouping it again if you have some use case that requires this.<br />![the Key-to-Key stage](../../images/keyToKey.svg)
+
 
 <!-- Do not edit below this line -->
 <!-- START -->

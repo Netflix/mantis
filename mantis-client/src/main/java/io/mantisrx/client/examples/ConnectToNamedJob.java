@@ -16,6 +16,7 @@
 
 package io.mantisrx.client.examples;
 
+import com.mantisrx.common.utils.Services;
 import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 import io.mantisrx.client.MantisSSEJob;
@@ -80,6 +81,7 @@ public class ConnectToNamedJob {
         }
         HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
             Configurations.frmProperties(properties, CoreConfiguration.class));
+        Services.startAndWait(haServices);
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
                 .doOnNext(new Action1<MantisMasterGateway>() {

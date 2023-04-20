@@ -16,7 +16,16 @@
 
 package io.mantisrx.runtime.core.functions;
 
+/**
+ * Functional interface for mapping an input value of type {@code IN}
+ * to an output value of type {@code OUT}.
+ */
 @FunctionalInterface
 public interface MapFunction<IN, OUT> extends MantisFunction {
+    /**
+     * Applies the map function to the given input value.
+     * @param in the input value
+     * @return the output value
+     */
     OUT apply(IN in);
 }

@@ -29,7 +29,6 @@ import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.metrics.ResourceClusterActorMetrics;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
-import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
@@ -37,6 +36,7 @@ import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -445,7 +445,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         if (matchedExecutor.isPresent()) {
             log.info("matched executor {} for request {}", matchedExecutor.get().getKey(), request);
-            matchedExecutor.get().getValue().onAssignment(request.getWorkerId());
+            matchedExecutor.get().getValue().onAssignment(request.getAllocationRequest().getWorkerId());
             // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
             // will be returned back to the pool.
             getTimers().startSingleTimer(
@@ -456,7 +456,15 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
-                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "workerId", request.getWorkerId().getId(), "jobCluster", request.getWorkerId().getJobCluster(), "jobId", request.getWorkerId().getJobId())));
+                TagList.create(ImmutableMap.of(
+                    "resourceCluster",
+                    clusterID.getResourceID(),
+                    "workerId",
+                    request.getAllocationRequest().getWorkerId().getId(),
+                    "jobCluster",
+                    request.getAllocationRequest().getWorkerId().getJobCluster(),
+                    "jobId",
+                    request.getAllocationRequest().getWorkerId().getJobId())));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
@@ -464,18 +472,23 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
-        try {
-            TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-            if (state.isRunningTask()) {
-                log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
-            } else {
+        TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
+        if (state.isRunningTask()) {
+            log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
+        } else {
+            try
+            {
                 boolean stateChange = state.onUnassignment();
                 if (stateChange) {
                     this.executorStateManager.markAvailable(request.getTaskExecutorID());
                 }
+            } catch (IllegalStateException e) {
+                if (state.isRegistered()) {
+                    log.error("Failed to un-assign registered taskExecutor {}", request.getTaskExecutorID(), e);
+                } else {
+                    log.debug("Failed to un-assign unRegistered taskExecutor {}", request.getTaskExecutorID(), e);
+                }
             }
-        } catch (IllegalStateException e) {
-            log.error("Failed to un-assign taskExecutor {}", request.getTaskExecutorID(), e);
         }
     }
 
@@ -596,8 +609,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     @Value
     static class TaskExecutorAssignmentRequest {
-        MachineDefinition machineDefinition;
-        WorkerId workerId;
+        TaskExecutorAllocationRequest allocationRequest;
         ClusterID clusterID;
     }
 
