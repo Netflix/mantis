@@ -28,7 +28,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 public class DefaultObjectMapper extends ObjectMapper {
 
-    private static DefaultObjectMapper INSTANCE = new DefaultObjectMapper();
+    private static final DefaultObjectMapper INSTANCE = new DefaultObjectMapper();
 
     private DefaultObjectMapper() {
         this(null);
@@ -36,7 +36,7 @@ public class DefaultObjectMapper extends ObjectMapper {
 
     public DefaultObjectMapper(JsonFactory factory) {
         super(factory);
-        SimpleModule serializerModule = new SimpleModule("Mantis Default JSON Serializer", new Version(1, 0, 0, null));
+        SimpleModule serializerModule = new SimpleModule("Mantis Default JSON Serializer", new Version(1, 0, 0, null, null, null));
         registerModule(serializerModule);
 
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
