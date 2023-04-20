@@ -28,8 +28,6 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.framework.imps.GzipCompressionProvider;
-import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
-import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
 import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
@@ -72,17 +70,14 @@ public class CuratorService extends BaseService {
 
     private void setupCuratorListener() {
         LOG.info("Setting up curator state change listener");
-        curator.getConnectionStateListenable().addListener(new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework client, ConnectionState newState) {
-                if (newState.isConnected()) {
-                    LOG.info("Curator connected");
-                    isConnectedGauge.set(1L);
-                } else {
-                    // ToDo: determine if it is safe to restart our service instead of committing suicide
-                    LOG.error("Curator connection lost");
-                    isConnectedGauge.set(0L);
-                }
+        curator.getConnectionStateListenable().addListener((client, newState) -> {
+            if (newState.isConnected()) {
+                LOG.info("Curator connected");
+                isConnectedGauge.set(1L);
+            } else {
+                // ToDo: determine if it is safe to restart our service instead of committing suicide
+                LOG.error("Curator connection lost");
+                isConnectedGauge.set(0L);
             }
         }, MoreExecutors.newDirectExecutorService());
     }
