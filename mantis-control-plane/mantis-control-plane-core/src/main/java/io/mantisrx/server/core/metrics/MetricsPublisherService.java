@@ -24,9 +24,9 @@ import java.util.Map;
 
 public class MetricsPublisherService implements Service {
 
-    private MetricsPublisher publisher;
-    private int publishFrequency;
-    private Map<String, String> commonTags = new HashMap<>();
+    private final MetricsPublisher publisher;
+    private final int publishFrequency;
+    private final Map<String, String> commonTags = new HashMap<>();
 
     public MetricsPublisherService(MetricsPublisher publisher, int publishFrequency,
                                    Map<String, String> commonTags) {
@@ -36,7 +36,7 @@ public class MetricsPublisherService implements Service {
     }
 
     public MetricsPublisherService(MetricsPublisher publisher, int publishFrequency) {
-        this(publisher, publishFrequency, new HashMap<String, String>());
+        this(publisher, publishFrequency, new HashMap<>());
     }
 
     @Override

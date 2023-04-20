@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class MetricsServerService implements Service {
 
-    private MetricsServer server;
+    private final MetricsServer server;
 
     public MetricsServerService(final int port, final int publishRateInSeconds,
                                 final Map<String, String> tags) {
