@@ -21,8 +21,8 @@ import rx.subjects.PublishSubject;
 
 public class WrappedExecuteStageRequest {
 
-    private PublishSubject<Boolean> requestSubject;
-    private ExecuteStageRequest request;
+    private final PublishSubject<Boolean> requestSubject;
+    private final ExecuteStageRequest request;
 
     public WrappedExecuteStageRequest(PublishSubject<Boolean> subject, ExecuteStageRequest request) {
         this.requestSubject = subject;

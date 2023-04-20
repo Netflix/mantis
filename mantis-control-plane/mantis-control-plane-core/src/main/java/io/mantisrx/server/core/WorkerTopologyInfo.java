@@ -36,12 +36,12 @@ public class WorkerTopologyInfo {
 
     public static class Data {
 
-        private String jobName;
-        private String JobId;
-        private int workerIndex;
-        private int workerNumber;
-        private int stageNumber;
-        private int numStages;
+        private final String jobName;
+        private final String JobId;
+        private final int workerIndex;
+        private final int workerNumber;
+        private final int stageNumber;
+        private final int numStages;
         private int prevStageInitialNumWorkers = -1;
         private int nextStageInitialNumWorkers = -1;
         private int metricsPort;
@@ -139,7 +139,7 @@ public class WorkerTopologyInfo {
 
     public static class Reader {
 
-        private static Data data;
+        private static final Data data;
 
         static {
             data = new Data(

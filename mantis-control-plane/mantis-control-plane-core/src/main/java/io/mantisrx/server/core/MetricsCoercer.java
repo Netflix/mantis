@@ -25,7 +25,7 @@ import org.skife.config.Coercible;
 
 public class MetricsCoercer implements Coercible<MetricsPublisher> {
 
-    private Properties props;
+    private final Properties props;
 
     public MetricsCoercer(Properties props) {
         this.props = props;
@@ -34,32 +34,29 @@ public class MetricsCoercer implements Coercible<MetricsPublisher> {
     @Override
     public Coercer<MetricsPublisher> accept(Class<?> clazz) {
         if (MetricsPublisher.class.isAssignableFrom(clazz)) {
-            return new Coercer<MetricsPublisher>() {
-                @Override
-                public MetricsPublisher coerce(String className) {
-                    try {
-                        // get properties for publisher
-                        Properties publishProperties = new Properties();
-                        String configPrefix =
-                                (String) props.get("mantis.metricsPublisher.config.prefix");
-                        if (configPrefix != null && configPrefix.length() > 0) {
-                            for (Entry<Object, Object> entry : props.entrySet()) {
-                                if (entry.getKey() instanceof String &&
-                                        ((String) entry.getKey()).startsWith(configPrefix)) {
-                                    publishProperties.put(entry.getKey(), entry.getValue());
-                                }
+            return className -> {
+                try {
+                    // get properties for publisher
+                    Properties publishProperties = new Properties();
+                    String configPrefix =
+                            (String) props.get("mantis.metricsPublisher.config.prefix");
+                    if (configPrefix != null && configPrefix.length() > 0) {
+                        for (Entry<Object, Object> entry : props.entrySet()) {
+                            if (entry.getKey() instanceof String &&
+                                    ((String) entry.getKey()).startsWith(configPrefix)) {
+                                publishProperties.put(entry.getKey(), entry.getValue());
                             }
                         }
-                        return (MetricsPublisher) Class.forName(className).getConstructor(Properties.class)
-                                .newInstance(publishProperties);
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException(
-                                String.format(
-                                        "The value %s is not a valid class name for %s implementation. ",
-                                        className,
-                                        MetricsPublisher.class.getName()
-                                ), e);
                     }
+                    return (MetricsPublisher) Class.forName(className).getConstructor(Properties.class)
+                            .newInstance(publishProperties);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "The value %s is not a valid class name for %s implementation. ",
+                                    className,
+                                    MetricsPublisher.class.getName()
+                            ), e);
                 }
             };
         }
