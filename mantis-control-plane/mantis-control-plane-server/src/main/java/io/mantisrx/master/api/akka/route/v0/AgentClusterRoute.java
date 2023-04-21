@@ -33,7 +33,6 @@ import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
-import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -44,6 +43,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -72,7 +72,6 @@ public class AgentClusterRoute extends BaseRoute {
 
 
     public AgentClusterRoute(final AgentClusterOperations agentClusterOperations, final ActorSystem actorSystem) {
-        Preconditions.checkNotNull(agentClusterOperations, "agentClusterOperations");
         this.agentClusterOps = agentClusterOperations;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
@@ -113,22 +112,22 @@ public class AgentClusterRoute extends BaseRoute {
                     logger.debug("/api/vm/activems/{} called", LISTACTIVE);
                     listActiveCount.increment();
                     return complete(StatusCodes.OK,
-                                    agentClusterOps.getActiveVMsAttributeValues(),
-                                    Jackson.marshaller());
+                        agentClusterOps != null ? agentClusterOps.getActiveVMsAttributeValues() : Collections.emptySet(),
+                        Jackson.marshaller());
                 }),
                 path(API_VM_ACTIVEVMS.slash(LISTJOBSONVMS), () -> {
                     logger.debug("/api/vm/activems/{} called", LISTJOBSONVMS);
                     listJobsOnVMsCount.increment();
                     return alwaysCache(cache, requestUriKeyer, () ->
                         extractUri(uri -> complete(StatusCodes.OK,
-                        agentClusterOps.getJobsOnVMs(),
-                        Jackson.marshaller())));
+                            agentClusterOps != null ? agentClusterOps.getJobsOnVMs() : Collections.emptyMap(),
+                            Jackson.marshaller())));
                 }),
                 path(API_VM_ACTIVEVMS.slash(LISTAGENTCLUSTERS), () -> {
                     logger.debug("/api/vm/activems/{} called", LISTAGENTCLUSTERS);
                     listAgentClustersCount.increment();
                     return complete(StatusCodes.OK,
-                        agentClusterOps.getAgentClusterAutoScaleRules(),
+                        agentClusterOps != null ? agentClusterOps.getAgentClusterAutoScaleRules() : Collections.emptyMap(),
                         Jackson.marshaller());
                 })
             )),
@@ -140,7 +139,9 @@ public class AgentClusterRoute extends BaseRoute {
                                 setActiveCount.increment();
                                 List<String> activeClustersList = Jackson.fromJSON(req, new TypeReference<List<String>>() {});
                                 logger.info("POST /api/vm/activems/{} called {}", SETACTIVE, activeClustersList);
-                                agentClusterOps.setActiveVMsAttributeValues(activeClustersList);
+                                if (agentClusterOps != null) {
+                                    agentClusterOps.setActiveVMsAttributeValues(activeClustersList);
+                                }
                             } catch (IOException e) {
                                 return complete(StatusCodes.INTERNAL_SERVER_ERROR,
                                     "Failed to set active clusters to "+req);

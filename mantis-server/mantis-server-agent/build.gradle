@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+apply plugin: 'application'
+
 dependencies {
     api project(":mantis-runtime-loader")
     api project(":mantis-server:mantis-server-worker-client")
@@ -26,10 +28,16 @@ dependencies {
     implementation libraries.spotifyFutures
     implementation libraries.slf4jApi
     implementation libraries.slf4jLog4j12
-    implementation libraries.spectatorApi
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll
     testImplementation project(":mantis-server:mantis-server-worker")
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
+}
+
+
+mainClassName = "io.mantisrx.server.agent.AgentV2Main"
+
+run {
+    standardInput = System.in
 }
