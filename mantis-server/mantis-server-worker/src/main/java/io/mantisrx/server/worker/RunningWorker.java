@@ -90,14 +90,14 @@ public class RunningWorker {
 
         this.onTerminateCallback = blockUntilTerminate::countDown;
         this.onCompleteCallback = () -> {
-            logger.info("JobId: " + jobId + " stage: " + stageNum + ", completed");
+            logger.info("JobId: {}  stage: {}, completed", jobId, stageNum);
             // setup a timeout to call forced exit as sure way to exit
             new Thread(() -> {
                 try {
                     Thread.sleep(3000);
                     System.exit(1);
                 } catch (Exception e) {
-                    logger.error("Ignoring exception during exit: " + e.getMessage(), e);
+                    logger.error("Ignoring exception during exit: {}", e.getMessage(), e);
                 }
             }).start();
             signalCompleted();
@@ -110,8 +110,7 @@ public class RunningWorker {
     }
 
     public void signalStartedInitiated() {
-        logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
-                + " signaling started initiated");
+        logger.info("JobId: {}, stage: {} workerIndex: {} workerNumber: {}, signaling started initiated", jobId, stageNum, workerIndex, workerNum);
         vmTaskStatusObserver.onNext(new VirtualMachineTaskStatus(
                 new WorkerId(jobId, workerIndex, workerNum).getId(),
                 VirtualMachineTaskStatus.TYPE.STARTED, jobName + ", " +
@@ -125,16 +124,14 @@ public class RunningWorker {
     }
 
     public void signalStarted() {
-        logger.info("JobId: " + jobId + ", " + getWorkerStringPrefix(stageNum, workerIndex, workerNum)
-                + " signaling started");
+        logger.info("JobId: {}, {} signaling started", jobId, getWorkerStringPrefix(stageNum, workerIndex, workerNum));
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " running",
                 MantisJobState.Started));
     }
 
     public void signalCompleted() {
-        logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
-                + " signaling completed");
+        logger.info("JobId: {}, stage: {} workerIndex: {} workerNumber: {}, signaling completed", jobId, stageNum, workerIndex, workerNum);
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " completed",
                 MantisJobState.Completed));
@@ -148,8 +145,7 @@ public class RunningWorker {
     }
 
     public void signalFailed(Throwable t) {
-        logger.info("JobId: " + jobId + ", stage: " + stageNum + " workerIndex: " + workerIndex + " workerNumber: " + workerNum + ","
-                + " signaling failed");
+        logger.info("JobId: {}, stage: {} workerIndex: {} workerNumber: {}, signaling failed", jobId, stageNum, workerIndex, workerNum);
         logger.error("Worker failure detected, shutting down job", t);
         jobStatus.onNext(new Status(jobId, stageNum, workerIndex, workerNum,
                 TYPE.INFO, getWorkerStringPrefix(stageNum, workerIndex, workerNum) + " failed. error: " + t.getMessage(),

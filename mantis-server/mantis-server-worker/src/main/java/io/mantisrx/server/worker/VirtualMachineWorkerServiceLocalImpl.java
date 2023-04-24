@@ -129,8 +129,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
                     @Override
                     public void onNext(List<Boolean> booleans) {
-                        logger.info("onNext called for request failure handler with items: " +
-                                ((booleans == null) ? "-1" : booleans.size()));
+                        logger.info("onNext called for request failure handler with items: {}", (booleans == null) ? "-1" : booleans.size());
                         if ((booleans == null) || booleans.isEmpty())
                             errorHandler.call();
                     }
@@ -158,9 +157,9 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
         vmTaskStatusObservable.subscribe(vmTaskStatus -> {
             TYPE type = vmTaskStatus.getType();
             if (type == TYPE.COMPLETED) {
-                logger.info("Got COMPLETED state for " + vmTaskStatus.getTaskId());
+                logger.info("Got COMPLETED state for {}", vmTaskStatus.getTaskId());
             } else if (type == TYPE.STARTED) {
-                logger.info("Would send RUNNING state to mesos, worker started for " + vmTaskStatus.getTaskId());
+                logger.info("Would send RUNNING state to mesos, worker started for {}", vmTaskStatus.getTaskId());
             }
         });
     }

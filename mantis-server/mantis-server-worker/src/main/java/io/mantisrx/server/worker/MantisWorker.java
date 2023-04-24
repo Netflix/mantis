@@ -237,7 +237,7 @@ public class MantisWorker extends BaseService {
             worker.start();
         } catch (Exception e) {
             // unexpected to get runtime exception, will exit
-            logger.error("Unexpected error: " + e.getMessage(), e);
+            logger.error("Unexpected error: {}", e.getMessage(), e);
             System.exit(2);
         }
     }
@@ -259,14 +259,14 @@ public class MantisWorker extends BaseService {
         logger.info("Starting Mantis Worker");
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         for (Service service : mantisServices) {
-            logger.info("Starting service: " + service);
+            logger.info("Starting service: {}", service);
             try {
                 service.start();
             } catch (Throwable e) {
-                logger.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
+                logger.error("Failed to start service {}: {}", service, e.getMessage(), e);
                 throw e;
             }
-            logger.info("Started service: " + service);
+            logger.info("Started service: {}", service);
         }
 
         logger.info("Started Mantis Worker successfully");

@@ -73,12 +73,12 @@ public class VirualMachineWorkerServiceMesosImpl extends BaseService implements 
                 Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
                         .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
                         .setState(TaskState.TASK_FINISHED).build());
-                logger.info("Sent COMPLETED state to mesos, driver status=" + status);
+                logger.info("Sent COMPLETED state to mesos, driver status={}", status);
             } else if (type == TYPE.STARTED) {
                 Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
                         .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
                         .setState(TaskState.TASK_RUNNING).build());
-                logger.info("Sent RUNNING state to mesos, driver status=" + status);
+                logger.info("Sent RUNNING state to mesos, driver status={}", status);
             }
         });
     }

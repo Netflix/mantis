@@ -178,7 +178,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             }
             workerMap = new WorkerMap(stageToWorkerInfoMap);
         } catch (Exception e) {
-            logger.warn("Exception converting JobSchedulingInfo " + js + " to worker Map " + e.getMessage());
+            logger.warn("Exception converting JobSchedulingInfo {} to worker Map {}", js, e.getMessage());
             return workerMap;
         }
         return workerMap;
@@ -316,7 +316,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             setupSubscriptionStateHandler(setup.getExecuteStageRequest().getRequest());
         }
 
-        logger.info("Running worker info: " + rw);
+        logger.info("Running worker info: {}", rw);
 
         rw.signalStartedInitiated();
 
@@ -345,7 +345,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         rw.signalCompleted();
                         // wait for completion signal to go to the master and us getting killed. Upon timeout, exit.
                         try {Thread.sleep(60000);} catch (InterruptedException ie) {
-                            logger.warn("Unexpected exception sleeping: " + ie.getMessage());
+                            logger.warn("Unexpected exception sleeping: {}", ie.getMessage());
                         }
                         System.exit(0);
                     }, createWorkerMapObservable(selfSchedulingInfo, executionRequest.getJobName(), executionRequest.getJobId(), executionRequest.getDurationType()),
@@ -363,7 +363,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
             // execute stage
             if (rw.getStageNum() == 0) {
-                logger.info("JobId: " + rw.getJobId() + ", executing Job Master");
+                logger.info("JobId: {}, executing Job Master", rw.getJobId());
 
                 final AutoScaleMetricsConfig autoScaleMetricsConfig = new AutoScaleMetricsConfig();
 
@@ -405,7 +405,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else if (rw.getStageNum() == 1 && rw.getTotalStagesNet() == 1) {
-                logger.info("JobId: " + rw.getJobId() + ", single stage job, executing entire job");
+                logger.info("JobId: {}, single stage job, executing entire job", rw.getJobId());
                 // single stage, execute entire job on this machine
                 PortSelector portSelector = () -> rw.getPorts().next();
                 RxMetrics rxMetrics = new RxMetrics();
@@ -419,7 +419,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 // block until worker terminates
                 rw.waitUntilTerminate();
             } else {
-                logger.info("JobId: " + rw.getJobId() + ", executing a multi-stage job, stage: " + rw.getStageNum());
+                logger.info("JobId: {}, executing a multi-stage job, stage: {}", rw.getJobId(), rw.getStageNum());
                 if (rw.getStageNum() == 1) {
 
                     // execute source stage
@@ -434,13 +434,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     closeables.add(StageExecutors.executeSource(rw.getWorkerIndex(), rw.getJob().getSource(),
                             rw.getStage(), publisher, rw.getContext(), rw.getSourceStageTotalWorkersObservable()));
 
-                    logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", serving remote observable for source with name: " + remoteObservableName);
+                    logger.info("JobId: {} stage: {}, serving remote observable for source with name: {}", rw.getJobId(), rw.getStageNum(), remoteObservableName);
                     RemoteRxServer server = publisher.getServer();
                     RxMetrics rxMetrics = server.getMetrics();
                     MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
 
                     signalStarted(rw);
-                    logger.info("JobId: " + rw.getJobId() + " stage: " + rw.getStageNum() + ", blocking until source observable completes");
+                    logger.info("JobId: {} stage: {}, blocking until source observable completes", rw.getJobId(), rw.getStageNum());
                     server.blockUntilServerShutdown();
                 } else {
                     // execute intermediate stage or last stage plus sink
@@ -518,7 +518,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                 acceptSchedulingChanges.set(false);
             } else {
                 // intermediate stage
-                logger.info("JobId: " + rw.getJobId() + ", executing intermediate stage: " + rw.getStageNum());
+                logger.info("JobId: {}, executing intermediate stage: {}", rw.getJobId(), rw.getStageNum());
 
 
                 int stageNumToExecute = rw.getStageNum();
@@ -532,12 +532,12 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                         rw.getContext()));
                 RemoteRxServer server = publisher.getServer();
 
-                logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", serving intermediate remote observable with name: " + remoteObservableName);
+                logger.info("JobId: {} stage: {}, serving intermediate remote observable with name: {}", jobId, stageNumToExecute, remoteObservableName);
                 RxMetrics rxMetrics = server.getMetrics();
                 MetricsRegistry.getInstance().registerAndGet(rxMetrics.getCountersAndGauges());
                 // send running signal only after server is started
                 signalStarted(rw);
-                logger.info("JobId: " + jobId + " stage: " + stageNumToExecute + ", blocking until intermediate observable completes");
+                logger.info("JobId: {} stage: {}, blocking until intermediate observable completes", jobId, stageNumToExecute);
                 server.blockUntilServerShutdown();
                 acceptSchedulingChanges.set(false);
             }
@@ -585,11 +585,11 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     List<Endpoint> endpoints = new LinkedList<>();
                     for (WorkerHost host : assignments.getHosts().values()) {
                         if (host.getState() == MantisJobState.Started) {
-                            logger.info("Received scheduling update from master, connect request for host: " + host.getHost() + " port: " + host.getPort() + " state: " + host.getState() +
-                                    " adding: " + connectionsPerEndpoint + " connections to host");
+                            logger.info("Received scheduling update from master, connect request for host: {} port: {} state: {} adding: {} connections to host",
+                                host.getHost(), host.getPort(), host.getState(), connectionsPerEndpoint);
                             for (int i = 1; i <= connectionsPerEndpoint; i++) {
                                 final String endpointId = "stage_" + stageNumToExecute + "_index_" + workerIndex + "_partition_" + i;
-                                logger.info("Adding endpoint to endpoint injector to be considered for add, with id: " + endpointId);
+                                logger.info("Adding endpoint to endpoint injector to be considered for add, with id: {}", endpointId);
                                 endpoints.add(new Endpoint(host.getHost(), host.getPort().get(0),
                                         endpointId));
                             }

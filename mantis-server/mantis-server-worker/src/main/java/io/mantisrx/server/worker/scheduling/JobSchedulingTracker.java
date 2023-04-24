@@ -49,7 +49,7 @@ public class JobSchedulingTracker {
                 workerChangesForStage(stageNumber, schedulingChangesForJobId)
                         // flatmap over all numbered workers
                         .flatMap((Func1<WorkerAssignments, Observable<WorkerHost>>) assignments -> {
-                            logger.info("Received scheduling update from master: " + assignments);
+                            logger.info("Received scheduling update from master: {}", assignments);
                             return Observable.from(assignments.getHosts().values());
                         })
                         // group by index

@@ -54,7 +54,7 @@ public class WorkerMetricSubscription {
 
         metricsClient = workerMetricsClient.getMetricsClientByJobId(jobId,
                 new SseWorkerConnectionFunction(true, throwable -> {
-                    logger.error("Metric connection error: " + throwable.getMessage());
+                    logger.error("Metric connection error: {}", throwable.getMessage());
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException ie) {

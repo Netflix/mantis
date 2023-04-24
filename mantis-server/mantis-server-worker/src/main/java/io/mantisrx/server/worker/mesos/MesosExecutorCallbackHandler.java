@@ -67,7 +67,7 @@ public class MesosExecutorCallbackHandler implements Executor {
 
     @Override
     public void killTask(ExecutorDriver arg0, TaskID task) {
-        logger.info("Executor going to kill task " + task.getValue());
+        logger.info("Executor going to kill task {}", task.getValue());
         executeStageRequestObserver.onCompleted();
         waitAndExit();
     }
@@ -125,8 +125,8 @@ public class MesosExecutorCallbackHandler implements Executor {
 
                     @Override
                     public void onNext(List<Boolean> booleans) {
-                        logger.info("onNext called for request failure handler with items: " +
-                                ((booleans == null) ? "-1" : booleans.size()));
+                        logger.info("onNext called for request failure handler with items: {}",
+                            (booleans == null) ? "-1" : booleans.size());
                         if ((booleans == null) || booleans.isEmpty())
                             errorHandler.call();
                     }
@@ -136,8 +136,9 @@ public class MesosExecutorCallbackHandler implements Executor {
     @Override
     public void launchTask(final ExecutorDriver driver, final TaskInfo task) {
         WrappedExecuteStageRequest request = createExecuteStageRequest(task);
-        logger.info("Worker for task [" + task.getTaskId().getValue() + "] with startTimeout=" +
-                request.getRequest().getTimeoutToReportStart());
+        logger.info("Worker for task [{}] with startTimeout={}",
+            task.getTaskId().getValue(), request.getRequest().getTimeoutToReportStart());
+
         setupRequestFailureHandler(request.getRequest().getTimeoutToReportStart(), request.getRequestSubject(),
             () -> sendLaunchError(driver, task));
         executeStageRequestObserver.onNext(request);

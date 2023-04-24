@@ -94,7 +94,7 @@ public class ExecuteStageRequestService extends BaseService {
 
                                 cl = userCodeClassLoader.asClassLoader();
                                 if (jobProviderClass.isPresent()) {
-                                    logger.info("loading job main class " + jobProviderClass.get());
+                                    logger.info("loading job main class {}", jobProviderClass.get());
                                     final MantisJobProvider jobProvider = InstantiationUtil.instantiate(
                                         jobProviderClass.get(), MantisJobProvider.class, cl);
                                     mantisJob = jobProvider.getJobInstance();
@@ -139,7 +139,7 @@ public class ExecuteStageRequestService extends BaseService {
 
                     @Override
                     public void onNext(final ExecutionDetails executionDetails) {
-                        logger.info("Executing stage for job ID: " + executionDetails.getExecuteStageRequest().getRequest().getJobId());
+                        logger.info("Executing stage for job ID: {}", executionDetails.getExecuteStageRequest().getRequest().getJobId());
                         Thread t = new Thread("mantis-worker-thread-" + executionDetails.getExecuteStageRequest().getRequest().getJobId()) {
                             @Override
                             public void run() {

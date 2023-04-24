@@ -125,7 +125,7 @@ import rx.subjects.PublishSubject;
         public StageMetricDataOperator(final int stage,
                                        final Func1<Integer, Integer> numStageWorkersFn,
                                        final AutoScaleMetricsConfig autoScaleMetricsConfig) {
-            logger.debug("setting operator for stage " + stage);
+            logger.debug("setting operator for stage {}", stage);
             this.stage = stage;
             this.numStageWorkersFn = numStageWorkersFn;
             this.autoScaleMetricsConfig = autoScaleMetricsConfig;
@@ -273,8 +273,7 @@ import rx.subjects.PublishSubject;
                     final int numWorkers = numStageWorkersFn.call(stage);
                     // get the aggregate metric values by metric group for all workers in stage
                     Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
-                    logger.info("Job stage " + stage + " avgResUsage from " +
-                            workersMap.size() + " workers: " + allWorkerAggregates.toString());
+                    logger.info("Job stage {} avgResUsage from {} workers: {}", stage, workersMap.size(), allWorkerAggregates.toString());
 
                     for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
                         final String metricGrp = userDefinedMetric.getKey();
@@ -374,13 +373,14 @@ import rx.subjects.PublishSubject;
 
                 @Override
                 public void onError(Throwable e) {
-                    logger.error("Unexpected error: " + e.getMessage(), e);
+                    logger.error("Unexpected error: {}", e.getMessage(), e);
                 }
 
                 @Override
                 public void onNext(MetricData metricData) {
-                    logger.debug("Got metric metricData for job " + jobId + " stage " + stage +
-                            ", worker " + metricData.getWorkerNumber() + ": " + metricData);
+                    logger.debug("Got metric metricData for job {} stage {}, worker {}: {}",
+                        jobId, stage, metricData.getWorkerNumber(), metricData);
+
                     if (jobId.equals(metricData.getJobId())) {
                         addDataPoint(metricData);
                     } else {

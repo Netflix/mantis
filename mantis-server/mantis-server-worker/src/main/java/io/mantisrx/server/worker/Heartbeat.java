@@ -57,7 +57,7 @@ class Heartbeat {
     }
 
     void setPayload(String name, String value) {
-        logger.info("Setting payload " + name);
+        logger.info("Setting payload {}", name);
         if (name != null && !name.isEmpty() && value != null)
             payloads.put(name, value);
     }
@@ -73,9 +73,9 @@ class Heartbeat {
 
     Status getCurrentHeartbeatStatus() {
         List<Status.Payload> payloadList = new ArrayList<>();
-        logger.debug("#Payloads = " + payloads.size());
+        logger.debug("#Payloads = {}", payloads.size());
         for (Map.Entry<String, String> entry : payloads.entrySet()) {
-            logger.debug("Adding payload " + entry.getKey() + " with value " + entry.getValue());
+            logger.debug("Adding payload {} with value {}", entry.getKey(), entry.getValue());
             payloadList.add(new Status.Payload(entry.getKey(), entry.getValue()));
         }
         List<PayloadPair> singleUsePlds = new ArrayList<>();

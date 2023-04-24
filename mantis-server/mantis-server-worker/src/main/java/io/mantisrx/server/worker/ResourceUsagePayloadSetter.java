@@ -145,7 +145,7 @@ public class ResourceUsagePayloadSetter implements Closeable {
                 try {
                     heartbeat.addSingleUsePayload("" + StatusPayloads.Type.ResourceUsage, objectMapper.writeValueAsString(usage));
                 } catch (JsonProcessingException e) {
-                    logger.warn("Error writing json for resourceUsage payload: " + e.getMessage());
+                    logger.warn("Error writing json for resourceUsage payload: {}", e.getMessage());
                 }
                 cpuLimitGauge.set(Math.round(usage.getCpuLimit() * 100.0));
                 cpuUsageCurrGauge.set(Math.round(usage.getCpuUsageCurrent() * 100.0));
@@ -168,7 +168,7 @@ public class ResourceUsagePayloadSetter implements Closeable {
         } catch (Exception e) {
             logger.error("Failed to compute resource usage", e);
         } finally {
-            logger.debug("scheduling next metrics report with delay=" + delay);
+            logger.debug("scheduling next metrics report with delay = {}", delay);
             executor.schedule(this::setPayloadAndMetrics, delay, TimeUnit.SECONDS);
         }
 

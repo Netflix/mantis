@@ -49,9 +49,9 @@ public class DownloadJob {
             System.exit(1);
         }
 
-        logger.info("parameters, jobArtifactUrl: " + args[0]);
-        logger.info("parameters, jobName: " + args[1]);
-        logger.info("parameters, locationToStore: " + args[2]);
+        logger.info("parameters, jobArtifactUrl: {}", args[0]);
+        logger.info("parameters, jobName: {}", args[1]);
+        logger.info("parameters, locationToStore: {}", args[2]);
 
         new DownloadJob(new URL(args[0]), args[1], args[2]).execute();
     }
@@ -63,7 +63,7 @@ public class DownloadJob {
         Path path = Paths.get(locationToStore, jobName,
                 "lib");
 
-        logger.info("Started writing job to tmp directory: " + path);
+        logger.info("Started writing job to tmp directory: {}", path);
         // download file to /tmp, then add file location
         try (InputStream is = jobArtifactUrl.openStream()) {
             Files.createDirectories(path);
@@ -75,9 +75,9 @@ public class DownloadJob {
                 }
             }
         } catch (IOException e1) {
-            logger.error("Failed to write job to local store at path: " + path, e1);
+            logger.error("Failed to write job to local store at path: {}", path, e1);
             throw new RuntimeException(e1);
         }
-        logger.info("Finished writing job to tmp directory: " + path);
+        logger.info("Finished writing job to tmp directory: {}", path);
     }
 }
