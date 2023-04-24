@@ -31,7 +31,6 @@ import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
-import io.mantisrx.runtime.parameter.type.BooleanParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
@@ -115,9 +114,7 @@ public class IcebergWriterStage implements ScalarComputation<MantisRecord, Manti
                     .description(WriterProperties.WRITER_MAXIMUM_POOL_SIZE_DESCRIPTION)
                     .validator(Validators.alwaysPass())
                     .defaultValue(WriterProperties.WRITER_MAXIMUM_POOL_SIZE_DEFAULT)
-                    .build(),
-                // todo
-                new BooleanParameter().name("watermarkEnabled").defaultValue(false).build()
+                    .build()
         );
     }
 

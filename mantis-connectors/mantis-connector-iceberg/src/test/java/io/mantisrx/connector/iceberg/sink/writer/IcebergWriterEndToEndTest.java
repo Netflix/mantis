@@ -104,8 +104,8 @@ public class IcebergWriterEndToEndTest {
                 100L,
                 WRITER_FILE_FORMAT_DEFAULT,
                 WRITER_MAXIMUM_POOL_SIZE_DEFAULT,
-                new Configuration(),
-                false);
+                new Configuration()
+        );
 
         final IcebergWriterFactory writerFactory =
                 new DefaultIcebergWriterFactory(writerConfig, WORKER_INFO, tableExtension.getTable(),

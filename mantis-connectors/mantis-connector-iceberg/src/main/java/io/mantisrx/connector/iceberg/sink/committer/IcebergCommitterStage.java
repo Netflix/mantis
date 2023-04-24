@@ -85,7 +85,11 @@ public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, 
                         .description(CommitterProperties.COMMIT_FREQUENCY_DESCRIPTION)
                         .validator(Validators.alwaysPass())
                         .defaultValue(CommitterProperties.COMMIT_FREQUENCY_MS_DEFAULT)
-                        .build()
+                        .build(),
+                new StringParameter().name(CommitterProperties.WATERMARK_PROPERTY_KEY)
+                    .description(CommitterProperties.WATERMARK_PROPERTY_DESCRIPTION)
+                    .validator(Validators.alwaysPass())
+                    .build()
         );
     }
 

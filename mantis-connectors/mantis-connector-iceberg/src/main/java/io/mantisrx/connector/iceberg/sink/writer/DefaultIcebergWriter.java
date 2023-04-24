@@ -145,9 +145,7 @@ public class DefaultIcebergWriter implements IcebergWriter {
     @Override
     public void write(MantisRecord record) {
         appender.add(record.getRecord());
-        if (config.isWatermarkEnabled()) {
-            lowWatermark = minNullSafe(lowWatermark, record.getTimestamp());
-        }
+        lowWatermark = minNullSafe(lowWatermark, record.getTimestamp());
     }
 
     /**
