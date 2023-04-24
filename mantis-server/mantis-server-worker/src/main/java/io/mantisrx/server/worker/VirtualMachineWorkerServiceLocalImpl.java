@@ -148,7 +148,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
                 logger.info("onNext'ing WrappedExecuteStageRequest: {}", request);
                 executeStageRequestObserver.onNext(request);
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                logger.error("Error creating WrappedExecuteStageRequest: {}", e.getMessage(), e);
             }
         }, 2, TimeUnit.SECONDS);
 
@@ -156,10 +156,13 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
         // subscribe to vm task updates on current thread
         vmTaskStatusObservable.subscribe(vmTaskStatus -> {
             TYPE type = vmTaskStatus.getType();
-            if (type == TYPE.COMPLETED) {
-                logger.info("Got COMPLETED state for {}", vmTaskStatus.getTaskId());
-            } else if (type == TYPE.STARTED) {
-                logger.info("Would send RUNNING state to mesos, worker started for {}", vmTaskStatus.getTaskId());
+            switch (type) {
+                case COMPLETED:
+                    logger.info("Got COMPLETED state for {}", vmTaskStatus.getTaskId());
+                    break;
+                case STARTED:
+                    logger.info("Would send RUNNING state to mesos, worker started for {}", vmTaskStatus.getTaskId());
+                    break;
             }
         });
     }
