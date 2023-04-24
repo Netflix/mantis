@@ -65,7 +65,6 @@ import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
-import io.mantisrx.server.master.scheduler.MantisScheduler;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -87,7 +86,6 @@ public class MasterApiAkkaService extends BaseService {
     private final ActorRef statusEventBrokerActor;
     private final int port;
     private final IMantisPersistenceProvider storageProvider;
-    private final MantisScheduler scheduler;
     private final LifecycleEventPublisher lifecycleEventPublisher;
     private final MantisMasterRoute mantisMasterRoute;
     private final ILeadershipManager leadershipManager;
@@ -104,7 +102,6 @@ public class MasterApiAkkaService extends BaseService {
                                 final ActorRef resourceClustersHostManagerActor,
                                 final int serverPort,
                                 final IMantisPersistenceProvider mantisStorageProvider,
-                                final MantisScheduler scheduler,
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
                                 final AgentClusterOperations agentClusterOperations) {
@@ -114,10 +111,8 @@ public class MasterApiAkkaService extends BaseService {
         Preconditions.checkNotNull(jobClustersManagerActor, "jobClustersManagerActor");
         Preconditions.checkNotNull(statusEventBrokerActor, "statusEventBrokerActor");
         Preconditions.checkNotNull(mantisStorageProvider, "mantisStorageProvider");
-        Preconditions.checkNotNull(scheduler, "scheduler");
         Preconditions.checkNotNull(lifecycleEventPublisher, "lifecycleEventPublisher");
         Preconditions.checkNotNull(leadershipManager, "leadershipManager");
-        Preconditions.checkNotNull(agentClusterOperations, "agentClusterOperations");
         this.masterMonitor = masterMonitor;
         this.masterDescription = masterDescription;
         this.jobClustersManagerActor = jobClustersManagerActor;
@@ -126,7 +121,6 @@ public class MasterApiAkkaService extends BaseService {
         this.resourceClusters = resourceClusters;
         this.port = serverPort;
         this.storageProvider = mantisStorageProvider;
-        this.scheduler = scheduler;
         this.lifecycleEventPublisher = lifecycleEventPublisher;
         this.leadershipManager = leadershipManager;
         this.system = ActorSystem.create("MasterApiActorSystem");
