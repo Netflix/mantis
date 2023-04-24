@@ -68,17 +68,21 @@ public class VirualMachineWorkerServiceMesosImpl extends BaseService implements 
         // subscribe to vm task updates on current thread
         logger.info("subscribe to vm task updates on current thread");
         vmTaskStatusObservable.subscribe(vmTaskStatus -> {
+            Protos.Status status;
             TYPE type = vmTaskStatus.getType();
-            if (type == TYPE.COMPLETED) {
-                Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
+            switch (type) {
+                case COMPLETED:
+                     status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
                         .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
                         .setState(TaskState.TASK_FINISHED).build());
-                logger.info("Sent COMPLETED state to mesos, driver status={}", status);
-            } else if (type == TYPE.STARTED) {
-                Protos.Status status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
+                    logger.info("Sent COMPLETED state to mesos, driver status={}", status);
+                    break;
+                case STARTED:
+                    status = mesosDriver.sendStatusUpdate(TaskStatus.newBuilder()
                         .setTaskId(TaskID.newBuilder().setValue(vmTaskStatus.getTaskId()).build())
                         .setState(TaskState.TASK_RUNNING).build());
-                logger.info("Sent RUNNING state to mesos, driver status={}", status);
+                    logger.info("Sent RUNNING state to mesos, driver status={}", status);
+                    break;
             }
         });
     }
