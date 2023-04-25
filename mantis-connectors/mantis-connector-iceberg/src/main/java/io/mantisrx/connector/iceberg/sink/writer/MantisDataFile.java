@@ -16,10 +16,15 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
+import java.io.Serializable;
+import javax.annotation.Nullable;
+import lombok.Value;
 import org.apache.iceberg.DataFile;
 
-public interface MantisDataFile {
-    DataFile getDataFile();
+@Value
+public class MantisDataFile implements Serializable {
+    DataFile dataFile;
 
-    Long getLowWatermark();
+    @Nullable
+    Long lowWatermark;
 }

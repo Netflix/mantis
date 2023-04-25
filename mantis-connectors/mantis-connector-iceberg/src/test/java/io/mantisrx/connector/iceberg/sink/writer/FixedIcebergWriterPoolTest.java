@@ -71,7 +71,7 @@ class FixedIcebergWriterPoolTest {
         // Identity partitioning (without explicitly using a Partitioner).
         this.partition = icebergRecord.copy();
 
-        record = new SimpleMantisRecord(icebergRecord, null);
+        record = new MantisRecord(icebergRecord, null);
     }
 
     @Test

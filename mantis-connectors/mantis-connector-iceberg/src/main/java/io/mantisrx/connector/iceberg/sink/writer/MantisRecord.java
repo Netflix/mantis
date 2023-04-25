@@ -17,11 +17,14 @@
 package io.mantisrx.connector.iceberg.sink.writer;
 
 import javax.annotation.Nullable;
+import lombok.Value;
 import org.apache.iceberg.data.Record;
 
-public interface MantisRecord {
-    Record getRecord();
+@Value
+public class MantisRecord {
+
+    Record record;
 
     @Nullable
-    Long getTimestamp();
+    Long timestamp;
 }

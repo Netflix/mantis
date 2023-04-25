@@ -84,7 +84,7 @@ class IcebergWriterStageTest {
         Record icebergRecord = GenericRecord.create(SCHEMA);
         icebergRecord.setField("id", 1);
 
-        record = new SimpleMantisRecord(icebergRecord, null);
+        record = new MantisRecord(icebergRecord, null);
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
 
@@ -145,7 +145,7 @@ class IcebergWriterStageTest {
         // Identity partitioning.
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
 
-        Observable<MantisRecord> source = Observable.just(record, record, new SimpleMantisRecord(recordWithNewPartition, null), record)
+        Observable<MantisRecord> source = Observable.just(record, record, new MantisRecord(recordWithNewPartition, null), record)
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler));
         flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
@@ -200,7 +200,7 @@ class IcebergWriterStageTest {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
 
-        Observable<MantisRecord> source = Observable.just(record, new SimpleMantisRecord(recordWithNewPartition, null))
+        Observable<MantisRecord> source = Observable.just(record, new MantisRecord(recordWithNewPartition, null))
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
         flow = source.compose(transformer);
@@ -225,7 +225,7 @@ class IcebergWriterStageTest {
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
         doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         // Low volume stream.
-        Observable<MantisRecord> source = Observable.just(record, new SimpleMantisRecord(recordWithNewPartition, null))
+        Observable<MantisRecord> source = Observable.just(record, new MantisRecord(recordWithNewPartition, null))
                 .concatMap(r -> Observable.just(r).delay(50, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
         flow = source.compose(transformer);
@@ -250,7 +250,7 @@ class IcebergWriterStageTest {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
         doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
-        Observable<MantisRecord> source = Observable.just(record, new SimpleMantisRecord(recordWithNewPartition, null))
+        Observable<MantisRecord> source = Observable.just(record, new MantisRecord(recordWithNewPartition, null))
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
         flow = source.compose(transformer);

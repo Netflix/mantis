@@ -149,7 +149,7 @@ public class IcebergWriterEndToEndTest {
 
         Observable<Record> recordObservable = Observable.merge(oddObservable, evenObservable);
 
-        Observable<MantisDataFile> dataFileObservable = transformer.call(recordObservable.map(s -> new SimpleMantisRecord(s, null)));
+        Observable<MantisDataFile> dataFileObservable = transformer.call(recordObservable.map(s -> new MantisRecord(s, null)));
 
         AtomicReference<Throwable> failure = new AtomicReference<>();
         List<MantisDataFile> dataFileList = new ArrayList<>();

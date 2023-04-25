@@ -202,7 +202,7 @@ public class IcebergWriterStage implements ScalarComputation<MantisRecord, Manti
             Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()));
 
         private static final MantisRecord TIMEOUT_RECORD =
-            new SimpleMantisRecord(GenericRecord.create(TIMEOUT_SCHEMA), null);
+            new MantisRecord(GenericRecord.create(TIMEOUT_SCHEMA), null);
 
         private final WriterConfig config;
         private final WriterMetrics metrics;
