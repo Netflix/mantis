@@ -48,6 +48,7 @@ public final class ObservableTrigger {
 
     private static <T> PushTrigger<T> trigger(final String name, final Observable<T> o, final Action0 doOnComplete,
                                               final Action1<Throwable> doOnError) {
+        logger.info("ObservableTrigger trigger called. {}", o);
         final AtomicReference<Subscription> subRef = new AtomicReference<>();
         final Gauge subscriptionActive;
 
@@ -55,12 +56,13 @@ public final class ObservableTrigger {
                 .name("ObservableTrigger_" + name)
                 .addGauge("subscriptionActive")
                 .build();
+        final Observable<T> sharedO = o.share();
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
         Action1<MonitoredQueue<T>> doOnStart = queue -> {
             Subscription oldSub = subRef.getAndSet(
-                o
+                sharedO
                     .filter((T t1) -> t1 != null)
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);

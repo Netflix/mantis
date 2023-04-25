@@ -81,7 +81,7 @@ public class WorkerConsumerRemoteObservable<T, R> implements WorkerConsumer<T> {
 
         registerMetrics(reconciliator.getMetrics());
         registerMetrics(connectionSet.getConnectionMetrics());
-        return reconciliator.observables().share();
+        return reconciliator.observables();
     }
 
     private void registerMetrics(Metrics metrics) {
