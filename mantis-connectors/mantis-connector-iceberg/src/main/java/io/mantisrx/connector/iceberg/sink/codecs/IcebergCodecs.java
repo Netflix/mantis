@@ -17,6 +17,8 @@
 package io.mantisrx.connector.iceberg.sink.codecs;
 
 import io.mantisrx.common.codec.Codec;
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
+import io.mantisrx.connector.iceberg.sink.writer.MantisRecord;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,6 +30,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.IcebergDecoder;
 import org.apache.iceberg.data.avro.IcebergEncoder;
 import org.apache.iceberg.exceptions.RuntimeIOException;
+import org.apache.iceberg.types.Types;
 
 /**
  * Encoders and decoders for working with Iceberg objects
@@ -42,11 +45,51 @@ public class IcebergCodecs {
         return new RecordCodec<>(schema);
     }
 
+    public static Codec<MantisRecord> mantisRecord(Schema schema) {
+        return new MantisRecordCodec<>(schema);
+    }
+
     /**
      * @return a codec for encoding/decoding DataFiles.
      */
     public static Codec<DataFile> dataFile() {
-        return new DataFileCodec();
+        return new ObjectCodec<>(DataFile.class);
+    }
+
+    public static Codec<MantisDataFile> mantisDataFile() {
+        return new ObjectCodec<>(MantisDataFile.class);
+    }
+
+    private static class MantisRecordCodec<T extends MantisRecord> implements Codec<T> {
+
+        private final IcebergEncoder<T> encoder;
+        private final IcebergDecoder<T> decoder;
+
+        private MantisRecordCodec(Schema schema) {
+            Schema newSchema = new Schema(
+                Types.NestedField.of(500, false, "record", schema.asStruct()),
+                Types.NestedField.of(501, true, "timestamp", Types.LongType.get()));
+            this.encoder = new IcebergEncoder<>(newSchema);
+            this.decoder = new IcebergDecoder<>(newSchema);
+        }
+
+        @Override
+        public T decode(byte[] bytes) {
+            try {
+                return decoder.decode(bytes);
+            } catch (IOException e) {
+                throw new RuntimeIOException("problem decoding Iceberg record", e);
+            }
+        }
+
+        @Override
+        public byte[] encode(T value) {
+            try {
+                return encoder.encode(value).array();
+            } catch (IOException e) {
+                throw new RuntimeIOException("problem encoding encoding Iceberg record", e);
+            }
+        }
     }
 
     private static class RecordCodec<T> implements Codec<T> {
@@ -78,19 +121,25 @@ public class IcebergCodecs {
         }
     }
 
-    private static class DataFileCodec implements Codec<DataFile> {
+    private static class ObjectCodec<T> implements Codec<T> {
+
+        private final Class<T> tClass;
+
+        private ObjectCodec(Class<T> tClass) {
+            this.tClass = tClass;
+        }
 
         @Override
-        public DataFile decode(byte[] bytes) {
+        public T decode(byte[] bytes) {
             try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-                return (DataFile) in.readObject();
+                return tClass.cast(in.readObject());
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException("Failed to convert bytes to DataFile", e);
             }
         }
 
         @Override
-        public byte[] encode(DataFile value) {
+        public byte[] encode(T value) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
                 out.writeObject(value);

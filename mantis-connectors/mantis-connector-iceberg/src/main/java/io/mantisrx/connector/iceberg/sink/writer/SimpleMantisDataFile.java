@@ -16,10 +16,12 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
+import lombok.Value;
 import org.apache.iceberg.DataFile;
 
-public interface MantisDataFile {
-    DataFile getDataFile();
+@Value
+public class SimpleMantisDataFile implements MantisDataFile {
+    DataFile dataFile;
 
-    Long getLowWatermark();
+    Long lowWatermark;
 }
