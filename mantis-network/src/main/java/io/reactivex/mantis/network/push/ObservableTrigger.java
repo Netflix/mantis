@@ -58,9 +58,11 @@ public final class ObservableTrigger {
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
+        // Share the Observable so we don't create a new Observable on every subscription.
+        final Observable<T> sharedO = o.share();
         Action1<MonitoredQueue<T>> doOnStart = queue -> {
             Subscription oldSub = subRef.getAndSet(
-                o
+                sharedO
                     .filter((T t1) -> t1 != null)
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
@@ -166,9 +168,11 @@ public final class ObservableTrigger {
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
+        // Share the Observable so we don't create a new Observable on every subscription.
+        final Observable<GroupedObservable<K, V>> sharedO = o.share();
         Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> {
             Subscription oldSub = subRef.getAndSet(
-                o
+                sharedO
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
                         subscriptionActive.increment();
@@ -247,9 +251,11 @@ public final class ObservableTrigger {
 
         subscriptionActive = metrics.getGauge("subscriptionActive");
 
+        // Share the Observable so we don't create a new Observable on every subscription.
+        final Observable<MantisGroup<K, V>> sharedO = o.share();
         Action1<MonitoredQueue<KeyValuePair<K, V>>> doOnStart = queue -> {
             Subscription oldSub = subRef.getAndSet(
-                o
+                sharedO
                     .doOnSubscribe(() -> {
                         logger.info("Subscription is ACTIVE for observable trigger with name: " + name);
                         subscriptionActive.increment();
