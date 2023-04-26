@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.core;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
@@ -30,7 +30,7 @@ public class WorkerHostTest {
         WorkerHost w2 = new WorkerHost("localhost", 1, ImmutableList.of(7001, 7002), MantisJobState.Accepted, 2, 7003, 7004);
         WorkerHost w3 = new WorkerHost("localhost", 1, ImmutableList.of(7001, 7002), MantisJobState.Accepted, 2, 7003, 7005);
 
-        assertTrue(w1.equals(w2));
-        assertFalse(w1.equals(w3));
+        assertEquals(w1, w2);
+        assertNotEquals(w1, w3);
     }
 }

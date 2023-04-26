@@ -70,7 +70,7 @@ public class ExecuteStageRequestTest {
     }
 
     @Test
-    public void testSerialization() throws Exception {
+    public void testSerialization() {
         byte[] serializedBytes = SerializationUtils.serialize(example1);
         assertTrue(serializedBytes.length > 0);
     }
