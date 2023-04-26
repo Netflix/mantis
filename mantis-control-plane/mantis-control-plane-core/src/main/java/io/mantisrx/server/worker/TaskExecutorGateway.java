@@ -31,8 +31,6 @@ public interface TaskExecutorGateway extends RpcGateway {
      *
      * @param request Task that needs to be run on the executor.
      * @return Ack to indicate that the gateway was able to receive the task.
-     * @throws TaskAlreadyRunningException wrapped inside {@link java.util.concurrent.CompletionException}
-     *                                     in case there's already an existing task that's running on the task executor.
      */
     CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
 
@@ -42,8 +40,6 @@ public interface TaskExecutorGateway extends RpcGateway {
      * @param workerId of the task that needs to be cancelled.
      * @return Ack to indicate that the gateway was able to receive the request and the worker ID represents the currently
      * running task.
-     * @throws TaskNotFoundException wrapped inside a {@link java.util.concurrent.CompletionException} in case
-     *                               workerId is not running on the executor.
      */
     CompletableFuture<Ack> cancelTask(WorkerId workerId);
 
