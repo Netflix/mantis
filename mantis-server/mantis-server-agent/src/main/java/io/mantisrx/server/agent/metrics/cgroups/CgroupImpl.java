@@ -34,7 +34,7 @@ public class CgroupImpl implements Cgroup {
     public Long getMetric(String subsystem, String metricName) throws IOException {
         Path metricPath = Paths.get(path, subsystem, metricName);
         try {
-            return Files.readAllLines(metricPath).stream().findFirst().map(Long::valueOf).get();
+            return Files.readAllLines(metricPath).stream().findFirst().map(CgroupImpl::convertStringToLong).get();
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -59,8 +59,25 @@ public class CgroupImpl implements Cgroup {
                 .map(l -> {
                     String[] parts = l.split("\\s+");
                     Preconditions.checkArgument(parts.length == 2, "Expected two parts only but was {} parts", parts.length);
-                    return new Tuple2<>(parts[0], Long.parseLong(parts[1]));
+                    return new Tuple2<>(parts[0], convertStringToLong(parts[1]));
                 })
                 .collect(Collectors.toMap(t -> t._1, t -> t._2));
+    }
+
+    /**
+     * Convert a number from its string representation to a long.
+     *
+     * @param strval: value to convert
+     * @return The converted long value. Long max value is returned if the
+     *         string representation exceeds the range of type long.
+     */
+    private static long convertStringToLong(String strval) {
+        try {
+            return Long.parseLong(strval);
+        } catch (NumberFormatException e) {
+            // For some properties (e.g. memory.limit_in_bytes, cgroups v1) we may overflow
+            // the range of signed long. In this case, return Long max value.
+            return Long.MAX_VALUE;
+        }
     }
 }

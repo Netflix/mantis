@@ -42,4 +42,12 @@ public class TestCgroup {
             cgroup.getMetric("cpuacct", "cpu.cfs_quota_us").longValue()
         );
     }
+
+    @Test
+    public void testLongOverflow() throws IOException {
+        assertEquals(
+            Long.MAX_VALUE,
+            cgroup.getMetric("testlongoverflow", "verylongvalue").longValue()
+        );
+    }
 }
