@@ -97,9 +97,7 @@ public class TestingRpcService implements RpcService {
         final CompletableFuture<Void> terminationFuture = backingRpcService.stopService();
 
         terminationFuture.whenComplete(
-            (Void ignored, Throwable throwable) -> {
-                registeredConnections.clear();
-            });
+            (Void ignored, Throwable throwable) -> registeredConnections.clear());
 
         return terminationFuture;
     }
