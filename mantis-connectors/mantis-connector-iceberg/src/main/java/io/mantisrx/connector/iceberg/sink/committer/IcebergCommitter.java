@@ -20,17 +20,16 @@ import static io.mantisrx.connector.iceberg.sink.writer.DefaultIcebergWriter.max
 import static io.mantisrx.connector.iceberg.sink.writer.DefaultIcebergWriter.minNullSafe;
 
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
+import io.mantisrx.connector.iceberg.sink.committer.watermarks.WatermarkExtractor;
 import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
-import org.apache.iceberg.UpdateProperties;
 
 
 /**
@@ -43,10 +42,15 @@ public class IcebergCommitter {
 
     private final Table table;
     private final CommitterConfig config;
+    private final WatermarkExtractor watermarkExtractor;
 
-    public IcebergCommitter(Table table, CommitterConfig committerConfig) {
+    public IcebergCommitter(
+        Table table,
+        CommitterConfig committerConfig,
+        WatermarkExtractor watermarkExtractor) {
         this.table = table;
         this.config = committerConfig;
+        this.watermarkExtractor = watermarkExtractor;
     }
 
     /**
@@ -66,7 +70,7 @@ public class IcebergCommitter {
             config.getTable(),
             dataFiles.size());
 
-        Long currentWatermark = getCurrentWatermark(transaction.table());
+        Long currentWatermark = watermarkExtractor.getWatermark(transaction);
         Long lowWatermark = null;
         for (MantisDataFile flinkDataFile : dataFiles) {
             lowWatermark = minNullSafe(lowWatermark, flinkDataFile.getLowWatermark());
@@ -74,24 +78,10 @@ public class IcebergCommitter {
         final Long finalWatermark = maxNullSafe(currentWatermark, lowWatermark);
 
         if (finalWatermark != null) {
-            UpdateProperties updateProperties = transaction.updateProperties();
-            updateProperties.set(config.getWatermarkPropertyKey(), Long.toString(finalWatermark));
-            updateProperties.commit();
-            log.info("Iceberg committer for table={} set VTTS watermark to {}", config.getTable(), finalWatermark);
+            watermarkExtractor.setWatermark(transaction, finalWatermark);
         }
-
 
         transaction.commitTransaction();
         return table.currentSnapshot() == null ? new HashMap<>() : new HashMap<>(table.currentSnapshot().summary());
-    }
-
-    @Nullable
-    private Long getCurrentWatermark(Table table) {
-        try {
-            return Long.parseLong(table.properties().get(config.getWatermarkPropertyKey()));
-        } catch (Exception e) {
-            log.error("Failed to extract watermark from the table", e);
-            return null;
-        }
     }
 }

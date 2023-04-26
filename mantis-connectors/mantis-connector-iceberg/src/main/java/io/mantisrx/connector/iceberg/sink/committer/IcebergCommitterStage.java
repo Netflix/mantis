@@ -19,6 +19,7 @@ package io.mantisrx.connector.iceberg.sink.committer;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterProperties;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
+import io.mantisrx.connector.iceberg.sink.committer.watermarks.WatermarkExtractor;
 import io.mantisrx.connector.iceberg.sink.config.SinkProperties;
 import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
 import io.mantisrx.runtime.Context;
@@ -102,7 +103,9 @@ public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, 
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
         Table table = catalog.loadTable(id);
-        IcebergCommitter committer = new IcebergCommitter(table, config);
+
+        WatermarkExtractor watermarkExtractor = context.getServiceLocator().service(WatermarkExtractor.class);
+        IcebergCommitter committer = new IcebergCommitter(table, config, watermarkExtractor);
 
         return new Transformer(config, metrics, committer, Schedulers.computation());
     }
