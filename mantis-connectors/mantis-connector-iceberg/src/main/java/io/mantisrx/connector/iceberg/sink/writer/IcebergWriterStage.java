@@ -48,14 +48,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
@@ -77,10 +75,10 @@ public class IcebergWriterStage implements ScalarComputation<MantisRecord, Manti
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
      */
-    public static ScalarToScalar.Config<Record, DataFile> config() {
-        return new ScalarToScalar.Config<Record, DataFile>()
+    public static ScalarToScalar.Config<MantisRecord, MantisDataFile> config() {
+        return new ScalarToScalar.Config<MantisRecord, MantisDataFile>()
                 .description("")
-                .codec(IcebergCodecs.dataFile())
+                .codec(IcebergCodecs.mantisDataFile())
                 .serialInput()
                 .withParameters(parameters());
     }

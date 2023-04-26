@@ -153,6 +153,7 @@ public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, 
             this.metrics = metrics;
             this.committer = committer;
             this.scheduler = scheduler;
+            logger.info("Initialized IcebergCommitterStage with config: {}", config);
         }
 
         /**

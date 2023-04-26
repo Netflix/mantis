@@ -24,13 +24,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import javax.annotation.Nullable;
+import lombok.Value;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.IcebergDecoder;
 import org.apache.iceberg.data.avro.IcebergEncoder;
 import org.apache.iceberg.exceptions.RuntimeIOException;
-import org.apache.iceberg.types.Types;
 
 /**
  * Encoders and decoders for working with Iceberg objects
@@ -46,7 +48,7 @@ public class IcebergCodecs {
     }
 
     public static Codec<MantisRecord> mantisRecord(Schema schema) {
-        return new MantisRecordCodec<>(schema);
+        return new MantisRecordCodec(schema);
     }
 
     /**
@@ -60,36 +62,50 @@ public class IcebergCodecs {
         return new ObjectCodec<>(MantisDataFile.class);
     }
 
-    private static class MantisRecordCodec<T extends MantisRecord> implements Codec<T> {
+    private static class MantisRecordCodec implements Codec<MantisRecord> {
 
-        private final IcebergEncoder<T> encoder;
-        private final IcebergDecoder<T> decoder;
+        private final IcebergEncoder<Record> encoder;
+        private final IcebergDecoder<Record> decoder;
+        private final ObjectCodec<SerializableMantisRecord> objectCodec;
 
         private MantisRecordCodec(Schema schema) {
-            Schema newSchema = new Schema(
-                Types.NestedField.of(500, false, "record", schema.asStruct()),
-                Types.NestedField.of(501, true, "timestamp", Types.LongType.get()));
-            this.encoder = new IcebergEncoder<>(newSchema);
-            this.decoder = new IcebergDecoder<>(newSchema);
+            this.encoder = new IcebergEncoder<>(schema);
+            this.decoder = new IcebergDecoder<>(schema);
+            this.objectCodec = new ObjectCodec<>(SerializableMantisRecord.class);
         }
 
         @Override
-        public T decode(byte[] bytes) {
+        public MantisRecord decode(byte[] bytes) {
             try {
-                return decoder.decode(bytes);
+                SerializableMantisRecord serializableMantisRecord = objectCodec.decode(bytes);
+                return new MantisRecord(
+                    decoder.decode(serializableMantisRecord.getRecord()),
+                    serializableMantisRecord.getTimestamp());
             } catch (IOException e) {
                 throw new RuntimeIOException("problem decoding Iceberg record", e);
             }
         }
 
         @Override
-        public byte[] encode(T value) {
+        public byte[] encode(MantisRecord value) {
             try {
-                return encoder.encode(value).array();
+                SerializableMantisRecord r =
+                    new SerializableMantisRecord(
+                        encoder.encode(value.getRecord()).array(),
+                        value.getTimestamp());
+                return objectCodec.encode(r);
             } catch (IOException e) {
                 throw new RuntimeIOException("problem encoding encoding Iceberg record", e);
             }
         }
+    }
+
+    @Value
+    private static class SerializableMantisRecord implements Serializable {
+        byte[] record;
+
+        @Nullable
+        Long timestamp;
     }
 
     private static class RecordCodec<T> implements Codec<T> {
