@@ -22,10 +22,12 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.netflix.spectator.api.Tag;
+import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.Timer;
+import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -57,6 +59,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     private final Duration intervalBetweenRetries;
     private final Timer schedulingLatency;
     private final Counter schedulingFailures;
+    private final JsonSerializer jsonSerializer;
 
     public static Props props(
         int maxScheduleRetries,
@@ -94,6 +97,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         metricsRegistry.registerAndGet(metrics);
         this.schedulingLatency = metrics.getTimer("schedulingLatency");
         this.schedulingFailures = metrics.getCounter("schedulingFailures");
+        this.jsonSerializer = new JsonSerializer();
     }
 
     @Override
@@ -142,9 +146,13 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
             TaskExecutorRegistration info =
                 resourceCluster.getTaskExecutorInfo(event.getTaskExecutorID()).join();
 
+            ExecuteStageRequest request =
+                executeStageRequestFactory.of(event.getScheduleRequestEvent().getRequest(), info);
+
+            String serializedRequest = jsonSerializer.toJson(request);
             CompletableFuture<Object> ackFuture =
                 gateway
-                    .submitTask(executeStageRequestFactory.of(event.getScheduleRequestEvent().getRequest(), info))
+                    .submitTask(serializedRequest)
                     .<Object>thenApply(
                         dontCare -> new SubmittedScheduleRequestEvent(event.getScheduleRequestEvent(),
                             event.getTaskExecutorID()))

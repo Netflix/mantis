@@ -22,7 +22,6 @@ import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.runtime.WorkerInfo;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.Status.TYPE;
@@ -190,14 +189,6 @@ public class RunningWorker {
 
     public WorkerInfo getWorkerInfo() {
         return workerInfo;
-    }
-
-    public StageSchedulingInfo stageSchedulingInfo(int stageNum) {
-        return schedulingInfo.forStage(stageNum);
-    }
-
-    public StageSchedulingInfo stageSchedulingInfo() {
-        return schedulingInfo.forStage(stageNum);
     }
 
     public Observable<Integer> getSourceStageTotalWorkersObservable() {

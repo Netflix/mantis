@@ -37,6 +37,15 @@ public interface TaskExecutorGateway extends RpcGateway {
     CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
 
     /**
+     * submit a new task to be run on the task executor.
+     * @param taskJson json representation of the task that needs to be run on the executor.
+     * @return Ack to indicate that the gateway was able to receive the task.
+     * @throws TaskAlreadyRunningException wrapped inside {@link java.util.concurrent.CompletionException}
+     * in case there's already an existing task that's running on the task executor.
+     */
+    CompletableFuture<Ack> submitTask(String taskJson);
+
+    /**
      * cancel the currently running task and get rid of all of the associated resources.
      *
      * @param workerId of the task that needs to be cancelled.
