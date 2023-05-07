@@ -270,6 +270,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     new JobProto.SendWorkerAssignementsIfChanged(),
                     Duration.ofMillis(refreshStageAssignementsDurationMs));
         }
+        // todo(sundaram): What is this line for if we are not using it's output?
         mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
         LOGGER.info("Job {} initialized", this.jobId);
     }
@@ -1403,6 +1404,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     stageAssignments.put(stageMeta.getStageNum(), new WorkerAssignments(stageMeta.getStageNum(),
                             stageMeta.getNumWorkers(), workerHosts));
                 }
+
+                if (stageMeta.getNumWorkers() != stageMeta.getAllWorkers().size()) {
+                    scaleStage((MantisStageMetadataImpl) stageMeta, stageMeta.getNumWorkers(), "reconciliation");
+                }
             }
 
             // publish another update after queuing tasks to Fenzo (in case some workers were marked Started
@@ -2271,7 +2276,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public int scaleStage(MantisStageMetadataImpl stageMetaData, int numWorkers, String reason) {
             LOGGER.info("Scaling stage {} to {} workers", stageMetaData.getStageNum(), numWorkers);
-            final int oldNumWorkers = stageMetaData.getNumWorkers();
+            final int oldNumWorkers = stageMetaData.getAllWorkers().size();
             int max = ConfigurationProvider.getConfig().getMaxWorkersPerStage();
             int min = 0;
             if (stageMetaData.getScalingPolicy() != null) {
