@@ -30,6 +30,7 @@ import io.mantisrx.master.jobcluster.job.MantisJobMetadataView;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.WorkerState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl;
@@ -50,6 +51,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import rx.subjects.BehaviorSubject;
@@ -505,6 +507,21 @@ public class JobClusterManagerProto {
         }
     }
 
+    @ToString
+    @EqualsAndHashCode
+    @Getter
+    public static final class UpdateSchedulingInfoRequest extends BaseRequest {
+        private final SchedulingInfo schedulingInfo;
+        private final String version;
+
+        public UpdateSchedulingInfoRequest(
+            @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
+            @JsonProperty("version") final String version) {
+            this.schedulingInfo = schedulingInfo;
+            this.version = version;
+        }
+    }
+
     public static final class UpdateJobClusterArtifactRequest extends BaseRequest {
         private final String artifactName;
         private final String version;
@@ -568,6 +585,17 @@ public class JobClusterManagerProto {
                    ", clusterName='" + clusterName + '\'' +
                    ", requestId=" + requestId +
                    '}';
+        }
+    }
+
+    @EqualsAndHashCode
+    @ToString
+    public static final class UpdateSchedulingInfoResponse extends BaseResponse {
+        public UpdateSchedulingInfoResponse(
+            final long requestId,
+            final ResponseCode responseCode,
+            final String message) {
+            super(requestId, responseCode, message);
         }
     }
 

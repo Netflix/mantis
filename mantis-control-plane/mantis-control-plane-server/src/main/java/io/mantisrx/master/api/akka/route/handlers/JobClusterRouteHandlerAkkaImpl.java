@@ -22,7 +22,10 @@ import akka.actor.ActorRef;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import java.time.Duration;
 import java.util.Optional;
@@ -88,6 +91,18 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     public CompletionStage<JobClusterManagerProto.UpdateJobClusterArtifactResponse> updateArtifact(JobClusterManagerProto.UpdateJobClusterArtifactRequest request) {
         CompletionStage<JobClusterManagerProto.UpdateJobClusterArtifactResponse> response = ask(jobClustersManagerActor, request, timeout)
             .thenApply(JobClusterManagerProto.UpdateJobClusterArtifactResponse.class::cast);
+        return response;
+    }
+
+    @Override
+    public CompletionStage<UpdateSchedulingInfoResponse> updateSchedulingInfo(String clusterName, UpdateSchedulingInfoRequest request) {
+        CompletionStage<UpdateSchedulingInfoResponse> response =
+            ask(
+                jobClustersManagerActor,
+                new UpdateSchedulingInfo(request.requestId, clusterName, request.getSchedulingInfo(),
+                    request.getVersion()),
+                timeout)
+            .thenApply(UpdateSchedulingInfoResponse.class::cast);
         return response;
     }
 

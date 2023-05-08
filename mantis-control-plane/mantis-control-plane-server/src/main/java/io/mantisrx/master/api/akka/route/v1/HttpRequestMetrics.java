@@ -39,6 +39,8 @@ public class HttpRequestMetrics {
         public static final String JOB_CLUSTER_INSTANCE = "api.v1.jobClusters.instance";
         public static final String JOB_CLUSTER_INSTANCE_LATEST_JOB_DISCOVERY_INFO = "api.v1.jobClusters.instance.latestJobDiscoveryInfo";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_ARTIFACT = "api.v1.jobClusters.instance.actions.updateArtifact";
+
+        public static final String JOB_CLUSTER_INSTANCE_SCHEDULING_INFO_UPDATE = "api.v1.jobClusters.instance.actions.updateSchedulingInfo";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_SLA = "api.v1.jobClusters.instance.actions.updateSla";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_MIGRATION_STRATEGY = "api.v1.jobClusters.instance.actions.updateMigrationStrategy";
         public static final String JOB_CLUSTER_INSTANCE_ACTION_UPDATE_LABEL = "api.v1.jobClusters.instance.actions.updateLabel";

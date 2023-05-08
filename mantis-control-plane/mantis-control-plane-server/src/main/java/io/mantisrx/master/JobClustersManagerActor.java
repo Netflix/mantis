@@ -96,7 +96,9 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLARequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
@@ -119,6 +121,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -220,6 +223,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(UpdateJobClusterRequest.class, this::onJobClusterUpdate)
                 .match(UpdateJobClusterSLARequest.class, this::onJobClusterUpdateSLA)
                 .match(UpdateJobClusterArtifactRequest.class, this::onJobClusterUpdateArtifact)
+                .match(UpdateSchedulingInfo.class, this::onJobClusterUpdateSchedulingInfo)
                 .match(UpdateJobClusterLabelsRequest.class, this::onJobClusterUpdateLabels)
                 .match(UpdateJobClusterWorkerMigrationStrategyRequest.class, this::onJobClusterUpdateWorkerMigrationConfig)
                 .match(EnableJobClusterRequest.class, this::onJobClusterEnable)
@@ -276,6 +280,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(UpdateJobClusterRequest.class, (x) -> getSender().tell(new UpdateJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterSLARequest.class, (x) -> getSender().tell(new UpdateJobClusterSLAResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterArtifactRequest.class, (x) -> getSender().tell(new UpdateJobClusterArtifactResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
+                .match(UpdateSchedulingInfo.class, (x) -> getSender().tell(new UpdateSchedulingInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterLabelsRequest.class, (x) -> getSender().tell(new UpdateJobClusterLabelsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterWorkerMigrationStrategyRequest.class, (x) -> getSender().tell(new UpdateJobClusterWorkerMigrationStrategyResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(EnableJobClusterRequest.class, (x) -> getSender().tell(new EnableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
@@ -646,6 +651,22 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     }
 
     @Override
+    public void onJobClusterUpdateSchedulingInfo(UpdateSchedulingInfo request) {
+        ActorRef sender = getSender();
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getClusterName());
+        if(jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            sender.tell(
+                new UpdateJobClusterArtifactResponse(
+                    request.getRequestId(),
+                    CLIENT_ERROR_NOT_FOUND,
+                    "JobCluster " + request.getClusterName() + " doesn't exist"),
+                getSelf());
+        }
+    }
+
+    @Override
     public void onJobClusterUpdateLabels(UpdateJobClusterLabelsRequest request) {
         Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getClusterName());
         ActorRef sender = getSender();
@@ -968,6 +989,14 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                      , getSelf());
 
          }
+     }
+
+     @Value
+     public static class UpdateSchedulingInfo {
+         long requestId;
+         String clusterName;
+         SchedulingInfo schedulingInfo;
+         String version;
      }
 
     static class JobClusterInfo {
