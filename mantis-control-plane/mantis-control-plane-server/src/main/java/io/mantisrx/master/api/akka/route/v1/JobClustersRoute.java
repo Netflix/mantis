@@ -60,6 +60,7 @@ import org.slf4j.LoggerFactory;
  *  api/v1/jobClusters/{}/actions/updateLabel                   (POST)
  *  api/v1/jobClusters/{}/actions/enableCluster                 (POST)
  *  api/v1/jobClusters/{}/actions/disableCluster                (POST)
+ *  api/v1/jobClusters/{}/actions/updateSchedulingInfo          (POST)
  */
 public class JobClustersRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobClustersRoute.class);
@@ -124,6 +125,15 @@ public class JobClustersRoute extends BaseRoute {
                                         // POST
                                         post(() -> updateClusterArtifactRoute(clusterName))
                                 ))
+                        ),
+                        // api/v1/jobClusters/{}/actions/updateSchedulingInfo
+                        path(
+                            PathMatchers.segment().slash("actions").slash("updateSchedulingInfo"),
+                            (clusterName) -> pathEndOrSingleSlash(() -> concat(
+
+                                // POST
+                                post(() -> updateClusterSchedulingInfo(clusterName))
+                            ))
                         ),
 
                         // api/v1/jobClusters/{}/actions/updateSla
@@ -437,6 +447,25 @@ public class JobClustersRoute extends BaseRoute {
                     resp -> complete(StatusCodes.NO_CONTENT, ""),
                     HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_ACTION_UPDATE_ARTIFACT,
                     HttpRequestMetrics.HttpVerb.POST
+            );
+        });
+    }
+
+    private Route updateClusterSchedulingInfo(String clusterName) {
+        return entity(Jackson.unmarshaller(UpdateSchedulingInfoRequest.class), request -> {
+            logger.info(
+                "POST /api/v1/jobClusters/{}/actions/updateSchedulingInfo called {}",
+                clusterName,
+                request);
+
+            CompletionStage<UpdateSchedulingInfoResponse> updateResponse =
+                jobClusterRouteHandler.updateSchedulingInfo(clusterName, request);
+
+            return completeAsync(
+                updateResponse,
+                resp -> complete(StatusCodes.NO_CONTENT, ""),
+                HttpRequestMetrics.Endpoints.JOB_CLUSTER_INSTANCE_ACTION_UPDATE_ARTIFACT,
+                HttpRequestMetrics.HttpVerb.POST
             );
         });
     }

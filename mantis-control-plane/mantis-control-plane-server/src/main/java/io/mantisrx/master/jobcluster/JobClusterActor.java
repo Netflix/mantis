@@ -44,6 +44,7 @@ import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -102,6 +103,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLAResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.JobStartedEvent;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
@@ -374,6 +376,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(UpdateJobClusterLabelsRequest.class, this::onJobClusterUpdateLabels)
             .match(UpdateJobClusterSLARequest.class, this::onJobClusterUpdateSLA)
             .match(UpdateJobClusterArtifactRequest.class, this::onJobClusterUpdateArtifact)
+            .match(UpdateSchedulingInfo.class, this::onJobClusterUpdateSchedulingInfo)
             .match(UpdateJobClusterWorkerMigrationStrategyRequest.class, this::onJobClusterUpdateWorkerMigrationConfig)
             .match(GetJobClusterRequest.class   , this::onJobClusterGet)
             .match(JobClusterProto.DeleteJobClusterRequest.class, this::onJobClusterDelete)
@@ -476,6 +479,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             .match(UpdateJobClusterLabelsRequest.class, (x) -> getSender().tell(new UpdateJobClusterLabelsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(UpdateJobClusterSLARequest.class, (x) -> getSender().tell(new UpdateJobClusterSLAResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(UpdateJobClusterArtifactRequest.class, (x) -> getSender().tell(new UpdateJobClusterArtifactResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
+            .match(UpdateSchedulingInfo.class, (x) -> getSender().tell(new UpdateSchedulingInfoResponse(x.getRequestId(), CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(UpdateJobClusterWorkerMigrationStrategyRequest.class, (x) -> getSender().tell(new UpdateJobClusterWorkerMigrationStrategyResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
             .match(GetJobClusterRequest.class, (x) -> getSender().tell(new GetJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state), empty() ), getSelf()))
             .match(JobClusterProto.DeleteJobClusterRequest.class, (x) -> getSender().tell(new DeleteJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), this.name, state)), getSelf()))
@@ -562,6 +566,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .match(UpdateJobClusterLabelsRequest.class, this::onJobClusterUpdateLabels)
                 .match(UpdateJobClusterSLARequest.class, this::onJobClusterUpdateSLA)
                 .match(UpdateJobClusterArtifactRequest.class, this::onJobClusterUpdateArtifact)
+                .match(UpdateSchedulingInfo.class, this::onJobClusterUpdateSchedulingInfo)
                 .match(UpdateJobClusterWorkerMigrationStrategyRequest.class,
                         this::onJobClusterUpdateWorkerMigrationConfig)
                 .match(EnableJobClusterRequest.class, (x) -> getSender().tell(
@@ -2180,33 +2185,66 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .withUploadedAt(System.currentTimeMillis())
                     .build();
 
-            JobClusterDefinitionImpl updatedDefn = new JobClusterDefinitionImpl.Builder().from(jobClusterMetadata.getJobClusterDefinition())
-                    .withJobClusterConfig(newConfig)
-                    .build();
-            IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder()
-                    .withIsDisabled(jobClusterMetadata.isDisabled())
-                    .withLastJobCount(jobClusterMetadata.getLastJobCount())
-                    .withJobClusterDefinition(updatedDefn)
-                    .build();
-
-            updateAndSaveJobCluster(jobCluster);
-
-            sender.tell(new UpdateJobClusterArtifactResponse(artifactReq.requestId, SUCCESS, name + " artifact updated"), getSelf());
-
-            eventPublisher.publishAuditEvent(
-                    new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_UPDATE,
-                        jobClusterMetadata.getJobClusterDefinition().getName(),
-                        name + " artifact update")
-            );
+            updateJobClusterConfig(newConfig);
             if(!artifactReq.isSkipSubmit()) {
                 getSelf().tell(new SubmitJobRequest(name,artifactReq.getUser(), (empty())), getSelf());
             }
-
+            sender.tell(new UpdateJobClusterArtifactResponse(artifactReq.requestId, SUCCESS, name + " artifact updated"), getSelf());
         } catch(Exception e) {
             logger.error("job cluster not updated ", e);
             sender.tell(new UpdateJobClusterArtifactResponse(artifactReq.requestId, SERVER_ERROR, name + " Job cluster artifact updation failed " + e.getMessage()), getSelf());
         }
         if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:onJobClusterUpdateArtifact"); }
+    }
+
+    private void updateJobClusterConfig(JobClusterConfig newConfig) throws Exception {
+        JobClusterDefinitionImpl updatedDefn = new JobClusterDefinitionImpl.Builder().from(jobClusterMetadata.getJobClusterDefinition())
+            .withJobClusterConfig(newConfig)
+            .build();
+        IJobClusterMetadata jobCluster = new JobClusterMetadataImpl.Builder()
+            .withIsDisabled(jobClusterMetadata.isDisabled())
+            .withLastJobCount(jobClusterMetadata.getLastJobCount())
+            .withJobClusterDefinition(updatedDefn)
+            .build();
+
+        updateAndSaveJobCluster(jobCluster);
+
+        eventPublisher.publishAuditEvent(
+            new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_CLUSTER_UPDATE,
+                jobClusterMetadata.getJobClusterDefinition().getName(),
+                name + " artifact update")
+        );
+    }
+
+    @Override
+    public void onJobClusterUpdateSchedulingInfo(UpdateSchedulingInfo request) {
+        ActorRef sender = getSender();
+        try {
+            if (!isVersionUnique(request.getVersion(), jobClusterMetadata.getJobClusterDefinition().getJobClusterConfigs())) {
+                String msg = String.format(
+                    "job cluster %s not updated as the version %s is not unique", name,
+                    request.getVersion());
+                logger.error(msg);
+                sender.tell(
+                    new UpdateSchedulingInfoResponse(request.getRequestId(), CLIENT_ERROR, msg),
+                    getSelf());
+                return;
+            }
+
+            JobClusterConfig newConfig = new JobClusterConfig.Builder().from(
+                    jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig())
+                .withVersion(request.getVersion())
+                .withSchedulingInfo(request.getSchedulingInfo())
+                .withUploadedAt(System.currentTimeMillis())
+                .build();
+            updateJobClusterConfig(newConfig);
+            sender.tell(
+                new UpdateSchedulingInfoResponse(request.getRequestId(), SUCCESS,
+                    name + " schedulingInfo updated"), getSelf());
+        } catch (Exception e) {
+            logger.error("job cluster not updated ", e);
+            sender.tell(new UpdateSchedulingInfoResponse(request.getRequestId(), SERVER_ERROR, name + " Job cluster schedulingInfo update failed " + e.getMessage()), getSelf());
+        }
     }
 
     boolean isVersionUnique(String artifactVersion, List<JobClusterConfig> existingConfigs) {

@@ -26,6 +26,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Singular;
 
@@ -38,6 +39,7 @@ public class StageSchedulingInfo implements Serializable {
     private final MachineDefinition machineDefinition;
     @Singular(ignoreNullCollections = true) private final List<JobConstraints> hardConstraints;
     @Singular(ignoreNullCollections = true) private final List<JobConstraints> softConstraints;
+    @Nullable
     private final StageScalingPolicy scalingPolicy;
     private final boolean scalable;
 
@@ -82,6 +84,7 @@ public class StageSchedulingInfo implements Serializable {
         return softConstraints;
     }
 
+    @Nullable
     public StageScalingPolicy getScalingPolicy() {
         return scalingPolicy;
     }

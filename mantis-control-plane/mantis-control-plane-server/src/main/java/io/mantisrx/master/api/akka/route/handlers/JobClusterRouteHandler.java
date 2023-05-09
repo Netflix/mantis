@@ -17,6 +17,8 @@
 package io.mantisrx.master.api.akka.route.handlers;
 
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import java.util.concurrent.CompletionStage;
 
 public interface JobClusterRouteHandler {
@@ -31,6 +33,10 @@ public interface JobClusterRouteHandler {
     CompletionStage<JobClusterManagerProto.EnableJobClusterResponse> enable(final JobClusterManagerProto.EnableJobClusterRequest request);
 
     CompletionStage<JobClusterManagerProto.UpdateJobClusterArtifactResponse> updateArtifact(final JobClusterManagerProto.UpdateJobClusterArtifactRequest request);
+
+    CompletionStage<UpdateSchedulingInfoResponse> updateSchedulingInfo(
+            String clusterName,
+            final UpdateSchedulingInfoRequest request);
 
     CompletionStage<JobClusterManagerProto.UpdateJobClusterSLAResponse> updateSLA(final JobClusterManagerProto.UpdateJobClusterSLARequest request);
 
