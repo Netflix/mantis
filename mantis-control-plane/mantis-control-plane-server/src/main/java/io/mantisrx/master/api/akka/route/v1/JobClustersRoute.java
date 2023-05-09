@@ -128,7 +128,7 @@ public class JobClustersRoute extends BaseRoute {
                         ),
                         // api/v1/jobClusters/{}/actions/updateSchedulingInfo
                         path(
-                            PathMatchers.segment().slash("actions").slash("updateScheduleInfo"),
+                            PathMatchers.segment().slash("actions").slash("updateSchedulingInfo"),
                             (clusterName) -> pathEndOrSingleSlash(() -> concat(
 
                                 // POST
