@@ -33,6 +33,7 @@ dependencies {
     // spectatorApi should be packaged at entry point level to avoid version conflicts.
     compileOnly libraries.spectatorApi
 
+    api libraries.jsr305
     api libraries.mantisShaded
     api libraries.rxNettyShaded
     api libraries.rxJava

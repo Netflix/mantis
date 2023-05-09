@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.jobcluster.proto;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import io.mantisrx.master.api.akka.route.Jackson;
@@ -91,5 +92,12 @@ public class JobClusterManagerProtoTest {
         UpdateSchedulingInfoRequest result =
             Jackson.fromJSON(json, UpdateSchedulingInfoRequest.class);
         assertNotNull(result);
+        assertEquals(result.getVersion(), "0.0.1-snapshot.202303220002+fdichiara.runtimeV2.d16a200 2023-05-09 09:10:42");
+
+        result.getSchedulingInfo().getStages().values().forEach(stage -> {
+            assertNotNull(stage.getMachineDefinition());
+            assertNotNull(stage.getHardConstraints());
+            assertNotNull(stage.getSoftConstraints());
+        });
     }
 }
