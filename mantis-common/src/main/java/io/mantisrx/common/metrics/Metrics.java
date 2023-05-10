@@ -25,7 +25,6 @@ import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.mantisrx.common.metrics.spectator.TimerImpl;
-import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,11 +97,11 @@ public class Metrics {
     @Override
     public String toString() {
         return "Metrics{" +
-                "metricGroup=" + metricGroup +
-                ", counters=" + counters.keySet() +
-                ", gauges=" + gauges.keySet() +
-                ", timers=" + timers.keySet() +
-                '}';
+            "metricGroup=" + metricGroup +
+            ", counters=" + counters.keySet() +
+            ", gauges=" + gauges.keySet() +
+            ", timers=" + timers.keySet() +
+            '}';
     }
 
     public Counter getCounter(String metricName) {
@@ -180,7 +179,6 @@ public class Metrics {
     }
 
     public static class Builder {
-        private static Iterable<Tag> CommonTags = Collections.emptyList();
 
         private final Registry registry;
         private final Set<Gauge> callbackGauges = new HashSet<>();
@@ -188,10 +186,6 @@ public class Metrics {
         private final Set<MetricId> gaugeIds = new HashSet<>();
         private final Set<MetricId> timerIds = new HashSet<>();
         private MetricGroupId metricGroup;
-
-        public static void setCommonTags(Iterable<Tag> tags) {
-            CommonTags = tags;
-        }
 
         public Builder() {
             this(SpectatorRegistryFactory.getRegistry());
@@ -202,28 +196,22 @@ public class Metrics {
         }
 
         public Builder name(final String metricGroup) {
-            this.metricGroup = new MetricGroupId(metricGroup, CommonTags);
+            this.metricGroup = new MetricGroupId(metricGroup);
             return this;
         }
 
         public Builder id(final MetricGroupId metricGroup) {
-            this.metricGroup = new MetricGroupId(
-                metricGroup.name(),
-                ImmutableList.<Tag>builder().addAll(metricGroup.tags()).addAll(CommonTags).build());
+            this.metricGroup = metricGroup;
             return this;
         }
 
         public Builder id(final String metricGroup, final Collection<Tag> groupTags) {
-            this.metricGroup = new MetricGroupId(
-                metricGroup,
-                ImmutableList.<Tag>builder().addAll(groupTags).addAll(CommonTags).build());
+            this.metricGroup = new MetricGroupId(metricGroup, groupTags);
             return this;
         }
 
         public Builder id(final String metricGroup, final Tag... groupTags) {
-            this.metricGroup = new MetricGroupId(
-                metricGroup,
-                ImmutableList.<Tag>builder().add(groupTags).addAll(CommonTags).build());
+            this.metricGroup = new MetricGroupId(metricGroup, groupTags);
             return this;
         }
 
