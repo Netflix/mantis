@@ -15,11 +15,16 @@
  */
 package io.mantisrx.server.agent;
 
+import com.netflix.spectator.api.Id;
+import com.netflix.spectator.api.Spectator;
+import com.netflix.spectator.api.histogram.PercentileTimer;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -50,6 +55,16 @@ public interface BlobStore extends Closeable {
         return new ZipHandlingBlobStore(this);
     }
 
+    /**
+     * blob store that when downloading zip files, also unpacks them and returns the unpacked file/directory to the caller.
+     *
+     * @return blob store that can effectively deal with zip files
+     */
+    default BlobStore withTracing() {
+        return new TrackingBlobStore(this);
+    }
+
+
     static BlobStore forHadoopFileSystem(URI clusterStoragePath, File localStoreDir) throws Exception {
         final org.apache.hadoop.fs.FileSystem fileSystem =
             FileSystemInitializer.create(clusterStoragePath);
@@ -57,7 +72,8 @@ public interface BlobStore extends Closeable {
         return
             new HadoopFileSystemBlobStore(fileSystem, localStoreDir)
                 .withPrefix(clusterStoragePath)
-                .withZipCapabilities();
+                .withZipCapabilities()
+                .withTracing();
     }
 
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
@@ -118,6 +134,30 @@ public interface BlobStore extends Closeable {
             } else {
                 return null;
             }
+        }
+    }
+
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+    class TrackingBlobStore implements BlobStore {
+        private final BlobStore blobStore;
+
+        @Getter(lazy = true, value = AccessLevel.PRIVATE)
+        private final Id metricId = Spectator.globalRegistry().createId("mantisArtifactSyncDurationMillis");
+
+        @Override
+        public File get(URI blobUrl) throws IOException {
+            final long startTime = System.currentTimeMillis();
+            try {
+                return blobStore.get(blobUrl);
+            } finally {
+                final PercentileTimer timer = PercentileTimer.get(Spectator.globalRegistry(), getMetricId().withTag("artifactName", FilenameUtils.getName(blobUrl.getPath())));
+                timer.record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            blobStore.close();
         }
     }
 }
