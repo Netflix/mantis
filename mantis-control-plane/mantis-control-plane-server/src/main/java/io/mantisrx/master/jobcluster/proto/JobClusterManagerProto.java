@@ -1554,18 +1554,21 @@ public class JobClusterManagerProto {
         }
     }
 
+    @ToString
     public static final class SubmitJobRequest extends BaseRequest {
         private final Optional<JobDefinition> jobDefinition;
         private final String submitter;
         private final String clusterName;
         private final boolean isAutoResubmit;
+        private final boolean submitLatest;
 
         @JsonCreator
         @JsonIgnoreProperties(ignoreUnknown = true)
         public SubmitJobRequest(
                 @JsonProperty("name") final String clusterName,
                 @JsonProperty("user") final String user,
-                @JsonProperty(value = "jobDefinition") final Optional<JobDefinition> jobDefinition) {
+                @JsonProperty(value = "jobDefinition") final Optional<JobDefinition> jobDefinition,
+                @JsonProperty("submitLatest") final boolean submitLatest) {
             super();
             Preconditions.checkArg(user != null & !user.isEmpty(), "Must provide user in request");
             Preconditions.checkArg(
@@ -1576,7 +1579,16 @@ public class JobClusterManagerProto {
             this.jobDefinition = jobDefinition;
             this.submitter = user;
             this.clusterName = clusterName;
-            isAutoResubmit = false;
+            this.isAutoResubmit = false;
+            this.submitLatest = submitLatest;
+        }
+
+        public SubmitJobRequest(String clusterName, String submitter, JobDefinition jobDefinition) {
+            this.clusterName = clusterName;
+            this.submitter = submitter;
+            this.jobDefinition = Optional.of(jobDefinition);
+            this.submitLatest = false;
+            this.isAutoResubmit = false;
         }
 
         //quick submit
@@ -1589,7 +1601,8 @@ public class JobClusterManagerProto {
             this.jobDefinition = Optional.empty();
             this.submitter = user;
             this.clusterName = clusterName;
-            isAutoResubmit = false;
+            this.isAutoResubmit = false;
+            this.submitLatest = false;
         }
 
         // used to during sla enforcement
@@ -1607,6 +1620,7 @@ public class JobClusterManagerProto {
             this.submitter = user;
             this.clusterName = clusterName;
             this.isAutoResubmit = isAutoResubmit;
+            this.submitLatest = false;
         }
 
         public Optional<JobDefinition> getJobDefinition() {
@@ -1625,14 +1639,8 @@ public class JobClusterManagerProto {
             return isAutoResubmit;
         }
 
-        @Override
-        public String toString() {
-            return "SubmitJobRequest{" +
-                   "jobDefinition=" + jobDefinition +
-                   ", submitter='" + submitter + '\'' +
-                   ", clusterName='" + clusterName + '\'' +
-                   ", isAutoResubmit=" + isAutoResubmit +
-                   '}';
+        public boolean isSubmitLatest() {
+            return submitLatest;
         }
     }
 

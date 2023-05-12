@@ -284,7 +284,7 @@ public class JobTestHelper {
 
     public static void submitJobAndVerifyStatus(final TestKit probe, String clusterName, ActorRef jobClusterActor, final JobDefinition jobDefn,
                                                 String jobId, ResponseCode code) {
-        jobClusterActor.tell(new JobClusterManagerProto.SubmitJobRequest(clusterName, "user", Optional.ofNullable(jobDefn)), probe.getRef());
+        jobClusterActor.tell(new JobClusterManagerProto.SubmitJobRequest(clusterName, "user", jobDefn), probe.getRef());
         JobClusterManagerProto.SubmitJobResponse submitResponse = probe.expectMsgClass(JobClusterManagerProto.SubmitJobResponse.class);
         assertEquals(code, submitResponse.responseCode);
         if (jobId == null) {

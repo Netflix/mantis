@@ -110,6 +110,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterProto.KillJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobSla;
+import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
@@ -1325,7 +1326,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 return;
             }
 
-            JobDefinition resolvedJobDefn = getResolvedJobDefinition(request.getSubmitter(),request.getJobDefinition());
+            JobDefinition resolvedJobDefn;
+            if (request.isSubmitLatest()) {
+                resolvedJobDefn = fromJobClusterDefinitnion(request.getSubmitter(), jobClusterMetadata.getJobClusterDefinition());
+            } else {
+                resolvedJobDefn = getResolvedJobDefinition(request.getSubmitter(), request.getJobDefinition());
+            }
             eventPublisher.publishStatusEvent(new LifecycleEventsProto.JobClusterStatusEvent(LifecycleEventsProto.StatusEvent.StatusEventType.INFO,
                 "Job submit request received", jobClusterMetadata.getJobClusterDefinition().getName()));
             resolvedJobDefn = LabelManager.insertSystemLabels(resolvedJobDefn, request.isAutoResubmit());
@@ -1472,16 +1478,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 JobClusterConfig clusterConfig =
                         this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig();
 
-                resolvedJobDefn = new JobDefinition.Builder()
-                        .withJobSla(new JobSla.Builder().build())
-                        .withArtifactName(clusterConfig.getArtifactName())
-                        .withVersion(clusterConfig.getVersion())
-                        .withLabels(clusterDefinition.getLabels())
-                        .withName(this.name)
-                        .withParameters(clusterDefinition.getParameters())
-                        .withSchedulingInfo(clusterConfig.getSchedulingInfo())
-                        .withUser(user)
-                        .build();
+                resolvedJobDefn = fromJobClusterDefinitnion(user, clusterDefinition);
                 logger.info("Built job definition from cluster definition: {}", resolvedJobDefn);
             }
             else {
@@ -1492,6 +1489,21 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         logger.info("Resolved JobDefn {}", resolvedJobDefn);
         return this.jobDefinitionResolver.getResolvedJobDefinition(user,resolvedJobDefn,this.jobClusterMetadata);
+    }
+
+    private JobDefinition fromJobClusterDefinitnion(String user, IJobClusterDefinition clusterDefinition) throws InvalidJobException {
+        JobClusterConfig clusterConfig = clusterDefinition.getJobClusterConfig();
+        return
+            new JobDefinition.Builder()
+                .withJobSla(new JobSla.Builder().build())
+                .withArtifactName(clusterConfig.getArtifactName())
+                .withVersion(clusterConfig.getVersion())
+                .withLabels(clusterDefinition.getLabels())
+                .withName(this.name)
+                .withParameters(clusterDefinition.getParameters())
+                .withSchedulingInfo(clusterConfig.getSchedulingInfo())
+                .withUser(user)
+                .build();
     }
 
 
@@ -2079,7 +2091,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             if(jobClusterMetadata.getJobClusterDefinition().getSLA().getCronPolicy() == CronPolicy.KEEP_NEW ||
                     this.jobManager.getAllNonTerminalJobsList().size() == 0) {
-                getSelf().tell(new SubmitJobRequest(name, MANTIS_MASTER_USER, empty()), getSelf());
+                getSelf().tell(new SubmitJobRequest(name, MANTIS_MASTER_USER, empty(), false), getSelf());
             } else {
 
                     // A job is already running skip resubmiting
@@ -2187,7 +2199,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             updateJobClusterConfig(newConfig);
             if(!artifactReq.isSkipSubmit()) {
-                getSelf().tell(new SubmitJobRequest(name,artifactReq.getUser(), (empty())), getSelf());
+                getSelf().tell(new SubmitJobRequest(name,artifactReq.getUser(), (empty()), false), getSelf());
             }
             sender.tell(new UpdateJobClusterArtifactResponse(artifactReq.requestId, SUCCESS, name + " artifact updated"), getSelf());
         } catch(Exception e) {
@@ -2298,7 +2310,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             getContext().become(initializedBehavior);
         }
         slaEnforcer = new SLAEnforcer(jobClusterMetadata.getJobClusterDefinition().getSLA());
-        logger.info("succeesfully saved job cluster");
+        logger.info("successfully saved job cluster");
         if(logger.isTraceEnabled()) { logger.trace("Exit JobClusterActor:updateAndSaveJobCluster {}", jobCluster.getJobClusterDefinition().getName()); }
     }
 
