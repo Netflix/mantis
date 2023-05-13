@@ -1328,7 +1328,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
             JobDefinition resolvedJobDefn;
             if (request.isSubmitLatest()) {
-                resolvedJobDefn = fromJobClusterDefinitnion(request.getSubmitter(), jobClusterMetadata.getJobClusterDefinition());
+                resolvedJobDefn = fromJobClusterDefinition(request.getSubmitter(), jobClusterMetadata.getJobClusterDefinition());
             } else {
                 resolvedJobDefn = getResolvedJobDefinition(request.getSubmitter(), request.getJobDefinition());
             }
@@ -1478,7 +1478,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 JobClusterConfig clusterConfig =
                         this.jobClusterMetadata.getJobClusterDefinition().getJobClusterConfig();
 
-                resolvedJobDefn = fromJobClusterDefinitnion(user, clusterDefinition);
+                resolvedJobDefn = fromJobClusterDefinition(user, clusterDefinition);
                 logger.info("Built job definition from cluster definition: {}", resolvedJobDefn);
             }
             else {
@@ -1491,7 +1491,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         return this.jobDefinitionResolver.getResolvedJobDefinition(user,resolvedJobDefn,this.jobClusterMetadata);
     }
 
-    private JobDefinition fromJobClusterDefinitnion(String user, IJobClusterDefinition clusterDefinition) throws InvalidJobException {
+    private JobDefinition fromJobClusterDefinition(String user, IJobClusterDefinition clusterDefinition) throws InvalidJobException {
         JobClusterConfig clusterConfig = clusterDefinition.getJobClusterConfig();
         return
             new JobDefinition.Builder()

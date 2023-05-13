@@ -1568,7 +1568,7 @@ public class JobClusterManagerProto {
                 @JsonProperty("name") final String clusterName,
                 @JsonProperty("user") final String user,
                 @JsonProperty(value = "jobDefinition") final Optional<JobDefinition> jobDefinition,
-                @JsonProperty("submitLatest") final boolean submitLatest) {
+                @JsonProperty("submitLatestJobCluster") final boolean submitLatest) {
             super();
             Preconditions.checkArg(user != null & !user.isEmpty(), "Must provide user in request");
             Preconditions.checkArg(
