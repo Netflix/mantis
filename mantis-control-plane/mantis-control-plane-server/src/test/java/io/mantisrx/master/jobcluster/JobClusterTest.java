@@ -1520,7 +1520,7 @@ public class JobClusterTest {
 
             JobTestHelper.getJobDetailsAndVerify(probe, jobClusterActor, jobId, SUCCESS, JobState.Launched);
 
-            jobClusterActor.tell(new SubmitJobRequest(clusterName,"user", Optional.ofNullable(jobDefn)), probe.getRef());
+            jobClusterActor.tell(new SubmitJobRequest(clusterName,"user", jobDefn), probe.getRef());
             SubmitJobResponse submitResponse = probe.expectMsgClass(SubmitJobResponse.class);
 
             // Get the same job id back
@@ -2038,7 +2038,7 @@ public class JobClusterTest {
 
             String jobId = clusterName + "-1";
 
-            jobClusterActor.tell(new SubmitJobRequest(clusterName,"user", Optional.ofNullable(jobDefn)), probe.getRef());
+            jobClusterActor.tell(new SubmitJobRequest(clusterName,"user", jobDefn), probe.getRef());
             SubmitJobResponse submitResponse = probe.expectMsgClass(SubmitJobResponse.class);
 
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe,jobClusterActor,jobId,1,new WorkerId(clusterName,jobId,0,1));
@@ -2100,7 +2100,7 @@ public class JobClusterTest {
             final JobDefinition jobDefn = createJob(clusterName,1, MantisJobDurationType.Transient);
             String jobId = clusterName + "-1";
 
-            jobClusterActor.tell(new SubmitJobRequest(clusterName,"user", Optional.ofNullable(jobDefn)), probe.getRef());
+            jobClusterActor.tell(new SubmitJobRequest(clusterName,"user", jobDefn), probe.getRef());
             SubmitJobResponse submitResponse = probe.expectMsgClass(SubmitJobResponse.class);
 
             assertEquals(SERVER_ERROR, submitResponse.responseCode);
@@ -2419,7 +2419,7 @@ public class JobClusterTest {
 
             String jobId = clusterName + "-1";
 
-            jobClusterActor.tell(new SubmitJobRequest(clusterName, "user", Optional.ofNullable(jobDefn)), probe.getRef());
+            jobClusterActor.tell(new SubmitJobRequest(clusterName, "user", jobDefn), probe.getRef());
             SubmitJobResponse submitResponse = probe.expectMsgClass(SubmitJobResponse.class);
 
             JobTestHelper.sendLaunchedInitiatedStartedEventsToWorker(probe, jobClusterActor, jobId, 0, new WorkerId(clusterName, jobId, 0, 1));

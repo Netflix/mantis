@@ -25,7 +25,6 @@ import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIE
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.SUCCESS_CREATED;
 import static java.util.Optional.empty;
-import static java.util.Optional.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -275,7 +274,7 @@ public class JobClusterManagerTest {
                     new JobClusterManagerProto.SubmitJobRequest(
                             cluster,
                             "me",
-                            Optional.ofNullable(jobDefn)),
+                            jobDefn),
                     probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                     JobClusterManagerProto.SubmitJobResponse.class);
@@ -924,7 +923,7 @@ public class JobClusterManagerTest {
                 new JobClusterManagerProto.SubmitJobRequest(
                         clusterName,
                         "me",
-                        Optional.ofNullable(jobDefn)),
+                        jobDefn),
                 probe.getRef());
         JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                 JobClusterManagerProto.SubmitJobResponse.class);
@@ -945,7 +944,7 @@ public class JobClusterManagerTest {
                 new JobClusterManagerProto.SubmitJobRequest(
                         clusterName2,
                         "me",
-                        Optional.ofNullable(jobDefn)),
+                        jobDefn),
                 probe.getRef());
         submitResp = probe.expectMsgClass(JobClusterManagerProto.SubmitJobResponse.class);
         assertEquals(SUCCESS, submitResp.responseCode);
@@ -1272,7 +1271,7 @@ public class JobClusterManagerTest {
                     new JobClusterManagerProto.SubmitJobRequest(
                             clusterName,
                             "me",
-                            Optional.ofNullable(jobDefn)),
+                            jobDefn),
                     probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                     JobClusterManagerProto.SubmitJobResponse.class);
@@ -1318,7 +1317,7 @@ public class JobClusterManagerTest {
                     new JobClusterManagerProto.SubmitJobRequest(
                             clusterName,
                             "me",
-                            Optional.ofNullable(jobDefn)),
+                            jobDefn),
                     probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                     JobClusterManagerProto.SubmitJobResponse.class);
@@ -1405,7 +1404,7 @@ public class JobClusterManagerTest {
                     new JobClusterManagerProto.SubmitJobRequest(
                             clusterName,
                             "me",
-                            of(jobDefn)),
+                            jobDefn),
                     probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                     JobClusterManagerProto.SubmitJobResponse.class);
@@ -1459,7 +1458,7 @@ public class JobClusterManagerTest {
                     new JobClusterManagerProto.SubmitJobRequest(
                             clusterName,
                             "me",
-                            Optional.ofNullable(jobDefn)),
+                            jobDefn),
                     probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
                     JobClusterManagerProto.SubmitJobResponse.class);
