@@ -33,6 +33,7 @@ import io.mantisrx.master.jobcluster.job.worker.WorkerTerminate;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.SubmitJobRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
 import io.mantisrx.master.jobcluster.proto.JobProto;
 import io.mantisrx.runtime.JobOwner;
@@ -61,6 +62,7 @@ import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.junit.Test;
 
 
@@ -282,9 +284,15 @@ public class JobTestHelper {
         submitJobAndVerifyStatus(probe, clusterName, jobClusterActor, jobDefn, jobId, SUCCESS);
     }
 
-    public static void submitJobAndVerifyStatus(final TestKit probe, String clusterName, ActorRef jobClusterActor, final JobDefinition jobDefn,
+    public static void submitJobAndVerifyStatus(final TestKit probe, String clusterName, ActorRef jobClusterActor, @Nullable final JobDefinition jobDefn,
                                                 String jobId, ResponseCode code) {
-        jobClusterActor.tell(new JobClusterManagerProto.SubmitJobRequest(clusterName, "user", jobDefn), probe.getRef());
+        final SubmitJobRequest request;
+        if (jobDefn == null) {
+            request = new SubmitJobRequest(clusterName, "user");
+        } else {
+            request = new JobClusterManagerProto.SubmitJobRequest(clusterName, "user", jobDefn);
+        }
+        jobClusterActor.tell(request, probe.getRef());
         JobClusterManagerProto.SubmitJobResponse submitResponse = probe.expectMsgClass(JobClusterManagerProto.SubmitJobResponse.class);
         assertEquals(code, submitResponse.responseCode);
         if (jobId == null) {
