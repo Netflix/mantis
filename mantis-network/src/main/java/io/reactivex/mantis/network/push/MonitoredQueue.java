@@ -37,6 +37,8 @@ public class MonitoredQueue<T> {
     private Metrics metrics;
     private Counter numSuccessEnqueu;
     private Counter numFailedEnqueu;
+    private Gauge queueDepthAll;
+    private Gauge queueDepthRejected;
 
     public MonitoredQueue(String name, int capacity) {
         this(name, capacity, true);
@@ -60,19 +62,25 @@ public class MonitoredQueue<T> {
                 .id(metricGroup)
                 .addCounter("numFailedToQueue")
                 .addCounter("numSuccessQueued")
+            .addGauge("queueDepthAll")
+            .addGauge("queueDepthRejected")
                 .addGauge(queueDepth)
                 .build();
 
         numSuccessEnqueu = metrics.getCounter("numSuccessQueued");
         numFailedEnqueu = metrics.getCounter("numFailedToQueue");
+        queueDepthAll = metrics.getGauge("queueDepthAll");
+        queueDepthRejected = metrics.getGauge("queueDepthRejected");
     }
 
     public boolean write(T data) {
         boolean offer = queue.offer(data);
+        queueDepthAll.set(queue.size());
         if (offer) {
             numSuccessEnqueu.increment();
         } else {
             numFailedEnqueu.increment();
+            queueDepthRejected.set(queue.size());
         }
         return offer;
     }

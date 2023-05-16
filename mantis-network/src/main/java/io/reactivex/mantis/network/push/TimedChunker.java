@@ -42,6 +42,8 @@ public class TimedChunker<T> implements Callable<Void> {
 
     private Counter interrupted;
     private Counter numEventsDrained;
+    private Counter drainTriggeredByTimer;
+    private Counter drainTriggeredByBatch;
 
     public TimedChunker(MonitoredQueue<T> buffer, int maxBufferLength,
                         int maxTimeMSec, ChunkProcessor<T> processor,
@@ -58,15 +60,22 @@ public class TimedChunker<T> implements Callable<Void> {
                 .id(metricsGroup)
                 .addCounter("interrupted")
                 .addCounter("numEventsDrained")
+            .addCounter("drainTriggeredByTimer")
+            .addCounter("drainTriggeredByBatch")
                 .build();
         interrupted = metrics.getCounter("interrupted");
         numEventsDrained = metrics.getCounter("numEventsDrained");
+        drainTriggeredByTimer = metrics.getCounter("drainTriggeredByTimer");
+        drainTriggeredByBatch = metrics.getCounter("drainTriggeredByBatch");
         MetricsRegistry.getInstance().registerAndGet(metrics);
     }
 
     @Override
     public Void call() throws Exception {
-        ScheduledFuture periodicDrain = scheduledService.scheduleAtFixedRate(this::drain, maxTimeMSec, maxTimeMSec,
+        ScheduledFuture periodicDrain = scheduledService.scheduleAtFixedRate(() -> {
+            drainTriggeredByTimer.increment();
+            this.drain();
+            }, maxTimeMSec, maxTimeMSec,
                 TimeUnit.MILLISECONDS);
         while (!stopCondition()) {
             try {
@@ -75,6 +84,7 @@ public class TimedChunker<T> implements Callable<Void> {
                     internalBuffer.add(data);
                 }
                 if (internalBuffer.size() >= maxBufferLength) {
+                    drainTriggeredByBatch.increment();
                     drain();
                 }
             } catch (InterruptedException ex) {
