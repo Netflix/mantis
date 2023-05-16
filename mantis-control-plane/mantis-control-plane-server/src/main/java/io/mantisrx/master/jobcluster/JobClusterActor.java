@@ -1420,8 +1420,10 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         if (!jobInfoForNonTerminalJob.isPresent()) {
             logger.info("Last job id doesn't map to job info instance, skip job actor process. {}", lastJobId.get());
             return false;
-        }
-        else if (!givenJobDefn.isPresent()) {
+        } else if (request.isSubmitLatest()) {
+            logger.info("Submit latest job request, skip job actor process. {}", request);
+            return false;
+        } else if (!givenJobDefn.isPresent()) {
             logger.info("[QuickSubmit] pass to job actor to process job definition: {}", lastJobId.get());
             jobInfoForNonTerminalJob.get().jobActor.tell(
                     new GetJobDefinitionUpdatedFromJobActorRequest(
@@ -1429,8 +1431,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                             true, request.isAutoResubmit(), getSender()),
                     getSelf());
             return true;
-        }
-        else if (givenJobDefn.get().requireInheritInstanceCheck()) {
+        } else if (givenJobDefn.get().requireInheritInstanceCheck()) {
             logger.info("[Inherit request] pass to job actor to process job definition: {}", lastJobId.get());
             jobInfoForNonTerminalJob.get().jobActor.tell(
                     new GetJobDefinitionUpdatedFromJobActorRequest(
