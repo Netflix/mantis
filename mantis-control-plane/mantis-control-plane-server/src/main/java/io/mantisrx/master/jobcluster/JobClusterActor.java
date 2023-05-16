@@ -1421,7 +1421,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             logger.info("Last job id doesn't map to job info instance, skip job actor process. {}", lastJobId.get());
             return false;
         } else if (request.isSubmitLatest()) {
-            logger.info("Submit latest job request, skip job actor process. {}", lastJobId.get());
+            logger.info("Submit latest job request, skip job actor process. {}", request);
             return false;
         } else if (!givenJobDefn.isPresent()) {
             logger.info("[QuickSubmit] pass to job actor to process job definition: {}", lastJobId.get());
