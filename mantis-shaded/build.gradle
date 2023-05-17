@@ -61,6 +61,7 @@ dependencies {
     shaded "org.apache.curator:curator-framework:$curatorVersion"
     shaded "org.apache.curator:curator-client:$curatorVersion"
     shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
+    shaded "org.apache.zookeeper:zookeeper-jute:$zookeeperVersion"
     shaded "jline:jline:$jlineVersion"
     shaded "io.netty:netty-handler:$nettyVersion"
     shaded "io.netty:netty-transport-native-epoll:$nettyVersion"
