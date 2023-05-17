@@ -42,6 +42,8 @@ public class TimedChunker<T> implements Callable<Void> {
 
     private Counter interrupted;
     private Counter numEventsDrained;
+    private Counter drainTriggeredByTimer;
+    private Counter drainTriggeredByBatch;
 
     public TimedChunker(MonitoredQueue<T> buffer, int maxBufferLength,
                         int maxTimeMSec, ChunkProcessor<T> processor,
@@ -55,19 +57,25 @@ public class TimedChunker<T> implements Callable<Void> {
 
         MetricGroupId metricsGroup = new MetricGroupId("TimedChunker");
         Metrics metrics = new Metrics.Builder()
-                .id(metricsGroup)
-                .addCounter("interrupted")
-                .addCounter("numEventsDrained")
-                .build();
+            .id(metricsGroup)
+            .addCounter("interrupted")
+            .addCounter("numEventsDrained")
+            .addCounter("drainTriggeredByTimer")
+            .addCounter("drainTriggeredByBatch")
+            .build();
         interrupted = metrics.getCounter("interrupted");
         numEventsDrained = metrics.getCounter("numEventsDrained");
+        drainTriggeredByTimer = metrics.getCounter("drainTriggeredByTimer");
+        drainTriggeredByBatch = metrics.getCounter("drainTriggeredByBatch");
         MetricsRegistry.getInstance().registerAndGet(metrics);
     }
 
     @Override
     public Void call() throws Exception {
-        ScheduledFuture periodicDrain = scheduledService.scheduleAtFixedRate(this::drain, maxTimeMSec, maxTimeMSec,
-                TimeUnit.MILLISECONDS);
+        ScheduledFuture periodicDrain = scheduledService.scheduleAtFixedRate(() -> {
+            drainTriggeredByTimer.increment();
+            drain();
+            }, maxTimeMSec, maxTimeMSec, TimeUnit.MILLISECONDS);
         while (!stopCondition()) {
             try {
                 T data = buffer.get();
@@ -75,6 +83,7 @@ public class TimedChunker<T> implements Callable<Void> {
                     internalBuffer.add(data);
                 }
                 if (internalBuffer.size() >= maxBufferLength) {
+                    drainTriggeredByBatch.increment();
                     drain();
                 }
             } catch (InterruptedException ex) {
