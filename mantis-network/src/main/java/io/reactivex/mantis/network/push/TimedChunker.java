@@ -74,9 +74,8 @@ public class TimedChunker<T> implements Callable<Void> {
     public Void call() throws Exception {
         ScheduledFuture periodicDrain = scheduledService.scheduleAtFixedRate(() -> {
             drainTriggeredByTimer.increment();
-            this.drain();
-            }, maxTimeMSec, maxTimeMSec,
-                TimeUnit.MILLISECONDS);
+            drain();
+            }, maxTimeMSec, maxTimeMSec, TimeUnit.MILLISECONDS);
         while (!stopCondition()) {
             try {
                 T data = buffer.get();
