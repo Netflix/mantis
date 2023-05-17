@@ -5,6 +5,12 @@
         }
     },
     "baseline-exact-dependencies-main": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.rxjava:rxjava-math": {
             "locked": "0.20.6"
         },
@@ -91,6 +97,12 @@
         }
     },
     "compileClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.rxjava:rxjava-math": {
             "locked": "0.20.6"
         },
@@ -177,6 +189,12 @@
         }
     },
     "runtimeClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.rxjava:rxjava-math": {
             "locked": "0.20.6"
         },
@@ -278,6 +296,12 @@
         }
     },
     "testCompileClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.rxjava:rxjava-math": {
             "locked": "0.20.6"
         },
@@ -365,6 +389,12 @@
         }
     },
     "testRuntimeClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.rxjava:rxjava-math": {
             "locked": "0.20.6"
         },

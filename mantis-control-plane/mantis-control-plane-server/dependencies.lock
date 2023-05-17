@@ -19,6 +19,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -169,6 +175,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
@@ -336,6 +348,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
@@ -516,6 +534,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"
@@ -703,6 +727,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.fenzo:fenzo-core": {
             "locked": "0.13.8"

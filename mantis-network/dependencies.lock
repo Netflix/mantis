@@ -30,6 +30,12 @@
         }
     },
     "compileClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
         },
@@ -119,6 +125,12 @@
         }
     },
     "runtimeClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix:mantis-rxnetty": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -220,6 +232,12 @@
         }
     },
     "testCompileClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
         },
@@ -316,6 +334,12 @@
         }
     },
     "testRuntimeClasspath": {
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
         },

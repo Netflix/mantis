@@ -28,10 +28,10 @@ ext {
     jacksonVersion = '2.12.+'
     guavaFailureAccessVersion = '1.0.1'
     guavaVersion = '31.1-jre'
-    curatorVersion = '2.12.+'
-    zookeeperVersion = '3.4.+'
+    curatorVersion = '5.2.0'
+    zookeeperVersion = '3.5.9'
     jlineVersion = '0.9.94'
-    nettyVersion = '3.7.0.Final'
+    nettyVersion = '4.1.70.Final'
 }
 
 configurations {
@@ -62,7 +62,8 @@ dependencies {
     shaded "org.apache.curator:curator-client:$curatorVersion"
     shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
     shaded "jline:jline:$jlineVersion"
-    shaded "io.netty:netty:$nettyVersion"
+    shaded "io.netty:netty-handler:$nettyVersion"
+    shaded "io.netty:netty-transport-native-epoll:$nettyVersion"
 
     implementation libraries.vavr
 }

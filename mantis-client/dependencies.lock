@@ -11,6 +11,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
         },
@@ -189,6 +195,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
         },
@@ -363,6 +375,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
@@ -583,6 +601,12 @@
             ],
             "locked": "1.1.1"
         },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
+        },
         "com.netflix.spectator:spectator-api": {
             "locked": "1.3.10"
         },
@@ -761,6 +785,12 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "1.1.1"
+        },
+        "com.google.code.findbugs:jsr305": {
+            "firstLevelTransitive": [
+                "io.mantisrx:mantis-common"
+            ],
+            "locked": "3.0.1"
         },
         "com.netflix.rxjava:rxjava-math": {
             "firstLevelTransitive": [
