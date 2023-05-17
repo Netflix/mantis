@@ -57,12 +57,12 @@ public class TimedChunker<T> implements Callable<Void> {
 
         MetricGroupId metricsGroup = new MetricGroupId("TimedChunker");
         Metrics metrics = new Metrics.Builder()
-                .id(metricsGroup)
-                .addCounter("interrupted")
-                .addCounter("numEventsDrained")
+            .id(metricsGroup)
+            .addCounter("interrupted")
+            .addCounter("numEventsDrained")
             .addCounter("drainTriggeredByTimer")
             .addCounter("drainTriggeredByBatch")
-                .build();
+            .build();
         interrupted = metrics.getCounter("interrupted");
         numEventsDrained = metrics.getCounter("numEventsDrained");
         drainTriggeredByTimer = metrics.getCounter("drainTriggeredByTimer");
