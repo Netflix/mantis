@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-ext {
-    mqlVersion = '3.4.+'
-    nettyVersion = '4.1.17.Final'
-}
-
 dependencies {
-    api "io.netty:netty-handler:$nettyVersion"
-    implementation "io.mantisrx:mql-jvm:$mqlVersion"
+    api "io.netty:netty-handler:${versions.netty}"
+    implementation "io.mantisrx:mql-jvm:${versions.mql}"
     api project(':mantis-common')
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
-    
+
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12

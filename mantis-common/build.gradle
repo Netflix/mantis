@@ -18,15 +18,14 @@ apply plugin: 'java-test-fixtures'
 
 ext {
     jctoolsVersion = '1.+'
-    nettyVersion = '4.1.17.Final'
     snappyVersion = '1.1.+'
 }
 
 dependencies {
     api project(":mantis-common-serde")
-    api "io.netty:netty-codec-http:$nettyVersion"
-    api "io.netty:netty-buffer:$nettyVersion"
-    api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: nettyVersion
+    api "io.netty:netty-codec-http:${versions.netty}"
+    api "io.netty:netty-buffer:${versions.netty}"
+    api group: 'io.netty', name: 'netty-transport-native-epoll', classifier: 'linux-x86_64', version: versions.netty
     api "org.xerial.snappy:snappy-java:$snappyVersion"
     api "org.jctools:jctools-core:$jctoolsVersion"
 

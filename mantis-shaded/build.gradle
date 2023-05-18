@@ -31,7 +31,6 @@ ext {
     curatorVersion = '2.12.+'
     zookeeperVersion = '3.4.+'
     jlineVersion = '0.9.94'
-    nettyVersion = '3.7.0.Final'
 }
 
 configurations {
@@ -62,7 +61,7 @@ dependencies {
     shaded "org.apache.curator:curator-client:$curatorVersion"
     shaded "org.apache.zookeeper:zookeeper:$zookeeperVersion"
     shaded "jline:jline:$jlineVersion"
-    shaded "io.netty:netty:$nettyVersion"
+    shaded "io.netty:netty:${versions.netty3}"
 
     implementation libraries.vavr
 }

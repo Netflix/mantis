@@ -77,25 +77,25 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -255,25 +255,25 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -456,26 +456,26 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -649,25 +649,25 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.17.Final"
+            "locked": "4.1.92.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
@@ -854,26 +854,26 @@
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-codec-http": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-handler": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-network",
                 "io.mantisrx:mantis-remote-observable"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.netty:netty-transport-native-epoll": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
             ],
-            "locked": "4.1.60.Final"
+            "locked": "4.1.92.Final"
         },
         "io.reactivex:rxjava": {
             "firstLevelTransitive": [
