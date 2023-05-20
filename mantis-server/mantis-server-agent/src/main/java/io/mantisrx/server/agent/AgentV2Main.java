@@ -100,6 +100,7 @@ public class AgentV2Main implements Service {
         try {
             Properties props = new Properties();
             props.putAll(System.getenv());
+            props.putAll(System.getProperties());
             props.putAll(loadProperties(propFile));
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             AgentV2Main agent = new AgentV2Main(factory);
