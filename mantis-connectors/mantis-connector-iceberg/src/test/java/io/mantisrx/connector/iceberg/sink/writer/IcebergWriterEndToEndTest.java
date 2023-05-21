@@ -77,13 +77,13 @@ public class IcebergWriterEndToEndTest {
             new TestWorkerInfo("testJobName", "jobId", 1, 1, 1, MantisJobDurationType.Perpetual,
                     "host");
 
-    private Partitioner partitioner = record -> {
+    private final Partitioner partitioner = record -> {
         GenericRecord partitionRecord = GenericRecord.create(SPEC.schema());
         partitionRecord.setField("partition", 1);
         return partitionRecord;
     };
 
-    private Context stageContext = mock(Context.class);
+    private final Context stageContext = mock(Context.class);
 
     @BeforeEach
     public void initStageContext() {

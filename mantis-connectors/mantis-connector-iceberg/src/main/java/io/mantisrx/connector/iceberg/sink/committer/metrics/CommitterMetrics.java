@@ -60,22 +60,14 @@ public class CommitterMetrics {
     }
 
     public void setGauge(final String metric, final long value) {
-        switch (metric) {
-            case COMMIT_BATCH_SIZE:
-                commitBatchSize.set(value);
-                break;
-            default:
-                break;
+        if (COMMIT_BATCH_SIZE.equals(metric)) {
+            commitBatchSize.set(value);
         }
     }
 
     public void record(final String metric, final long amount, TimeUnit unit) {
-        switch (metric) {
-            case COMMIT_LATENCY_MSEC:
-                commitLatencyMsec.record(amount, unit);
-                break;
-            default:
-                break;
+        if (COMMIT_LATENCY_MSEC.equals(metric)) {
+            commitLatencyMsec.record(amount, unit);
         }
     }
 

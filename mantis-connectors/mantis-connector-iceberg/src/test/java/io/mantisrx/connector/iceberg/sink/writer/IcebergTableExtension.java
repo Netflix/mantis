@@ -16,8 +16,9 @@
 
 package io.mantisrx.connector.iceberg.sink.writer;
 
-import io.mantisrx.shaded.com.google.common.io.Files;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -77,15 +78,15 @@ public class IcebergTableExtension implements BeforeAllCallback, BeforeEachCallb
     private Table table;
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         log.info("Before All");
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) throws IOException {
         log.info("Before Each");
         if (rootDir == null) {
-            rootDir = Files.createTempDir();
+            rootDir = Files.createTempDirectory("iceberg-table").toFile();
         }
 
         final File tableDir = new File(rootDir, getTableIdentifier().toString());

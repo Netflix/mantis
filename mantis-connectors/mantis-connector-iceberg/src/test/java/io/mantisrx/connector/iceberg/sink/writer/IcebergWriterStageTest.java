@@ -378,12 +378,12 @@ class IcebergWriterStageTest {
         }
 
         @Override
-        public void open() throws IOException {
+        public void open() {
             open(null);
         }
 
         @Override
-        public void open(StructLike newPartitionKey) throws IOException {
+        public void open(StructLike newPartitionKey) {
             fileAppender = object;
             partitionKey = newPartitionKey;
         }
@@ -393,7 +393,7 @@ class IcebergWriterStageTest {
         }
 
         @Override
-        public DataFile close() throws IOException {
+        public DataFile close() {
             if (fileAppender != null) {
                 fileAppender = null;
                 return DATA_FILE;
