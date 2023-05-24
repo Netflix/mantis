@@ -21,6 +21,7 @@ import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
@@ -164,6 +165,10 @@ public interface IMantisPersistenceProvider {
     JobArtifact getArtifactById(String resourceId) throws IOException;
 
     List<JobArtifact> listJobArtifacts(String name, String version) throws IOException;
+
+    void addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException;
+
+    List<String> listJobArtifactsToCache(ClusterID clusterID) throws IOException;
 
     List<String> listJobArtifactsByName(String prefix, String contains) throws IOException;
 

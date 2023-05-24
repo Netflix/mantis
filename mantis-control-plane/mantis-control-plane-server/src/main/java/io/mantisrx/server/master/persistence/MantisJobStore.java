@@ -23,6 +23,7 @@ import io.mantisrx.master.jobcluster.job.MantisStageMetadataImpl;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
@@ -260,6 +261,14 @@ public class MantisJobStore {
 
     public List<IMantisWorkerMetadata> getArchivedWorkers(String jobId) throws Exception {
         return ImmutableList.copyOf(archivedWorkersCache.getArchivedWorkerMap(jobId).values());
+    }
+
+    public void addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException {
+        storageProvider.addNewJobArtifactsToCache(clusterID, artifacts);
+    }
+
+    public List<String> getJobArtifactsToCache(ClusterID clusterID) throws IOException {
+        return storageProvider.listJobArtifactsToCache(clusterID);
     }
 
     private static class TerminatedJob implements Comparable<TerminatedJob> {
