@@ -463,8 +463,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     request.getAllocationRequest().getWorkerId().getId(),
                     "jobCluster",
                     request.getAllocationRequest().getWorkerId().getJobCluster(),
-                    "jobId",
-                    request.getAllocationRequest().getWorkerId().getJobId())));
+                    "cpuCores",
+                    String.valueOf(request.getAllocationRequest().getMachineDefinition().getCpuCores()))));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
