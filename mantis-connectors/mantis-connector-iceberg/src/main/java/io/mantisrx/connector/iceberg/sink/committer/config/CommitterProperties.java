@@ -28,9 +28,13 @@ public class CommitterProperties {
      * Iceberg committer frequency by time in milliseconds.
      */
     public static final String COMMIT_FREQUENCY_MS = "commitFrequencyMs";
+    public static final String WATERMARK_PROPERTY_KEY = "watermarkPropertyKey";
     // TODO: Change to long.
     public static final String COMMIT_FREQUENCY_MS_DEFAULT = "300000";    // 5 min
     public static final String COMMIT_FREQUENCY_DESCRIPTION =
             String.format("Iceberg Committer frequency by time in milliseconds (default: %s)",
                     COMMIT_FREQUENCY_MS_DEFAULT);
+
+    public static final String WATERMARK_PROPERTY_DESCRIPTION =
+            "Property key name for watermark value (default: null)";
 }

@@ -49,7 +49,7 @@ class FixedIcebergWriterPoolTest {
     private IcebergWriter writer;
     private IcebergWriterPool writerPool;
 
-    private Record record;
+    private MantisRecord record;
     private StructLike partition;
 
     @BeforeEach
@@ -66,15 +66,17 @@ class FixedIcebergWriterPoolTest {
                 config.getWriterFlushFrequencyBytes(),
                 config.getWriterMaximumPoolSize()));
 
-        this.record = GenericRecord.create(SCHEMA);
-        this.record.setField("id", 1);
+        Record icebergRecord = GenericRecord.create(SCHEMA);
+        icebergRecord.setField("id", 1);
         // Identity partitioning (without explicitly using a Partitioner).
-        this.partition = this.record.copy();
+        this.partition = icebergRecord.copy();
+
+        record = new MantisRecord(icebergRecord, null);
     }
 
     @Test
     void shouldOpenNewWriter() {
-        assertDoesNotThrow(() -> writerPool.open(record));
+        assertDoesNotThrow(() -> writerPool.open(record.getRecord()));
     }
 
     @Test
@@ -85,8 +87,8 @@ class FixedIcebergWriterPoolTest {
 
     @Test
     void shouldOpenWhenWriterExists() {
-        assertDoesNotThrow(() -> writerPool.open(record));
-        assertDoesNotThrow(() -> writerPool.open(record));
+        assertDoesNotThrow(() -> writerPool.open(record.getRecord()));
+        assertDoesNotThrow(() -> writerPool.open(record.getRecord()));
     }
 
     @Test
@@ -102,7 +104,7 @@ class FixedIcebergWriterPoolTest {
 
     @Test
     void shouldFailToCloseWhenNoWriterExists() {
-        assertThrows(RuntimeException.class, () -> writerPool.close(record));
+        assertThrows(RuntimeException.class, () -> writerPool.close(record.getRecord()));
     }
 
     @Test

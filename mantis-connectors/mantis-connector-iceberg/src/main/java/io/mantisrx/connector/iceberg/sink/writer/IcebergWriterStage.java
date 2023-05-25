@@ -39,18 +39,21 @@ import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
@@ -63,7 +66,7 @@ import rx.schedulers.Schedulers;
 /**
  * Processing stage which writes records to Iceberg through a backing file store.
  */
-public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
+public class IcebergWriterStage implements ScalarComputation<MantisRecord, MantisDataFile> {
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergWriterStage.class);
 
@@ -72,10 +75,10 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     /**
      * Returns a config for this stage which has encoding/decoding semantics and parameter definitions.
      */
-    public static ScalarToScalar.Config<Record, DataFile> config() {
-        return new ScalarToScalar.Config<Record, DataFile>()
+    public static ScalarToScalar.Config<MantisRecord, MantisDataFile> config() {
+        return new ScalarToScalar.Config<MantisRecord, MantisDataFile>()
                 .description("")
-                .codec(IcebergCodecs.dataFile())
+                .codec(IcebergCodecs.mantisDataFile())
                 .serialInput()
                 .withParameters(parameters());
     }
@@ -179,7 +182,7 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
     }
 
     @Override
-    public Observable<DataFile> call(Context context, Observable<Record> recordObservable) {
+    public Observable<MantisDataFile> call(Context context, Observable<MantisRecord> recordObservable) {
         return recordObservable.compose(transformer);
     }
 
@@ -191,12 +194,13 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
      * an existing Stage. One benefit of this co-location is to avoid extra network
      * cost from worker-to-worker communication, trading off debuggability.
      */
-    public static class Transformer implements Observable.Transformer<Record, DataFile> {
+    public static class Transformer implements Observable.Transformer<MantisRecord, MantisDataFile> {
 
         private static final Schema TIMEOUT_SCHEMA = new Schema(
-                Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()));
+            Types.NestedField.required(1, "ts_utc_msec", Types.LongType.get()));
 
-        private static final Record TIMEOUT_RECORD = GenericRecord.create(TIMEOUT_SCHEMA);
+        private static final MantisRecord TIMEOUT_RECORD =
+            new MantisRecord(GenericRecord.create(TIMEOUT_SCHEMA), null);
 
         private final WriterConfig config;
         private final WriterMetrics metrics;
@@ -206,12 +210,12 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
         private final Scheduler transformerScheduler;
 
         public Transformer(
-                WriterConfig config,
-                WriterMetrics metrics,
-                IcebergWriterPool writerPool,
-                Partitioner partitioner,
-                Scheduler timerScheduler,
-                Scheduler transformerScheduler) {
+            WriterConfig config,
+            WriterMetrics metrics,
+            IcebergWriterPool writerPool,
+            Partitioner partitioner,
+            Scheduler timerScheduler,
+            Scheduler transformerScheduler) {
             this.config = config;
             this.metrics = metrics;
             this.writerPool = writerPool;
@@ -241,87 +245,87 @@ public class IcebergWriterStage implements ScalarComputation<Record, DataFile> {
          * Pair this writer with a progressive multipart file uploader backend for better latencies.
          */
         @Override
-        public Observable<DataFile> call(Observable<Record> source) {
-            Observable<Record> timer = Observable.interval(
+        public Observable<MantisDataFile> call(Observable<MantisRecord> source) {
+            Observable<MantisRecord> timer = Observable.interval(
                     config.getWriterFlushFrequencyMsec(), TimeUnit.MILLISECONDS, timerScheduler)
-                    .map(i -> TIMEOUT_RECORD);
+                .map(i -> TIMEOUT_RECORD);
 
             return source.mergeWith(timer)
-                    .observeOn(transformerScheduler)
-                    .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
-                        if (record.struct().fields().equals(TIMEOUT_SCHEMA.columns())) {
-                            // Timeout; track all writers even if they're not yet ready to be flushed.
-                            trigger.trackAll(writerPool.getWriters());
-                        } else {
-                            StructLike partition = partitioner.partition(record);
+                .observeOn(transformerScheduler)
+                .scan(new Trigger(config.getWriterRowGroupSize()), (trigger, record) -> {
+                    if (record.getRecord().struct().fields().equals(TIMEOUT_SCHEMA.columns())) {
+                        // Timeout; track all writers even if they're not yet ready to be flushed.
+                        trigger.trackAll(writerPool.getWriters());
+                    } else {
+                        StructLike partition = partitioner.partition(record.getRecord());
 
-                            if (writerPool.isClosed(partition)) {
-                                try {
-                                    logger.info("opening file for partition {}", partition);
-                                    writerPool.open(partition);
-                                    metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
-                                } catch (IOException e) {
-                                    metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
-                                    throw Exceptions.propagate(e);
-                                }
-                            }
-
+                        if (writerPool.isClosed(partition)) {
                             try {
-                                writerPool.write(partition, record);
-                                trigger.increment();
-                                // Check all writers to see if any are flushable and track them if so.
-                                // We should check _all_ writers because a writer that should be flushable
-                                // may not be flushed if an event for its partition doesn't show up for
-                                // a period of time. This could cause a longer delay for that partition,
-                                // especially since we only check at the trigger's count threshold.
-                                if (trigger.isOverCountThreshold()) {
-                                    trigger.trackAll(writerPool.getFlushableWriters());
-                                }
-                                metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
-                            } catch (RuntimeException e) {
-                                metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
-                                logger.debug("error writing record {}", record);
+                                logger.info("opening file for partition {}", partition);
+                                writerPool.open(partition);
+                                metrics.increment(WriterMetrics.OPEN_SUCCESS_COUNT);
+                            } catch (IOException e) {
+                                metrics.increment(WriterMetrics.OPEN_FAILURE_COUNT);
+                                throw Exceptions.propagate(e);
                             }
                         }
 
-                        return trigger;
-                    })
-                    .filter(Trigger::shouldFlush)
-                    .map(trigger -> {
-                        List<DataFile> dataFiles = new ArrayList<>();
-
-                        // Timer can still tick while no writers are open (i.e., no events), which means
-                        // there won't be any tracked writers.
-                        for (StructLike partition : trigger.getTrackedWriters()) {
-                            try {
-                                DataFile dataFile = writerPool.close(partition);
-                                dataFiles.add(dataFile);
-                            } catch (IOException | RuntimeException e) {
-                                metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
-                                logger.error("error writing DataFile", e);
-                            }
-                        }
-                        trigger.reset();
-
-                        return dataFiles;
-                    })
-                    .filter(dataFiles -> !dataFiles.isEmpty())
-                    .flatMapIterable(t -> t)
-                    .doOnNext(dataFile -> {
-                        metrics.increment(WriterMetrics.BATCH_SUCCESS_COUNT);
-                        logger.info("writing DataFile: {}", dataFile);
-                        metrics.setGauge(WriterMetrics.BATCH_SIZE, dataFile.recordCount());
-                        metrics.setGauge(WriterMetrics.BATCH_SIZE_BYTES, dataFile.fileSizeInBytes());
-                    })
-                    .doOnTerminate(() -> {
                         try {
-                            logger.info("closing writer on rx terminate signal");
-                            writerPool.closeAll();
-                        } catch (IOException e) {
-                            throw Exceptions.propagate(e);
+                            writerPool.write(partition, record);
+                            trigger.increment();
+                            // Check all writers to see if any are flushable and track them if so.
+                            // We should check _all_ writers because a writer that should be flushable
+                            // may not be flushed if an event for its partition doesn't show up for
+                            // a period of time. This could cause a longer delay for that partition,
+                            // especially since we only check at the trigger's count threshold.
+                            if (trigger.isOverCountThreshold()) {
+                                trigger.trackAll(writerPool.getFlushableWriters());
+                            }
+                            metrics.increment(WriterMetrics.WRITE_SUCCESS_COUNT);
+                        } catch (RuntimeException e) {
+                            metrics.increment(WriterMetrics.WRITE_FAILURE_COUNT);
+                            logger.debug("error writing record {}", record);
                         }
-                    })
-                    .share();
+                    }
+
+                    return trigger;
+                })
+                .filter(Trigger::shouldFlush)
+                .map(trigger -> {
+                    List<MantisDataFile> dataFiles = new ArrayList<>();
+
+                    // Timer can still tick while no writers are open (i.e., no events), which means
+                    // there won't be any tracked writers.
+                    for (StructLike partition : trigger.getTrackedWriters()) {
+                        try {
+                            MantisDataFile dataFile = writerPool.close(partition);
+                            dataFiles.add(dataFile);
+                        } catch (IOException | RuntimeException e) {
+                            metrics.increment(WriterMetrics.BATCH_FAILURE_COUNT);
+                            logger.error("error writing DataFile", e);
+                        }
+                    }
+                    trigger.reset();
+
+                    return dataFiles;
+                })
+                .filter(dataFiles -> !dataFiles.isEmpty())
+                .flatMapIterable(t -> t)
+                .doOnNext(dataFile -> {
+                    metrics.increment(WriterMetrics.BATCH_SUCCESS_COUNT);
+                    logger.info("writing DataFile: {}", dataFile);
+                    metrics.setGauge(WriterMetrics.BATCH_SIZE, dataFile.getDataFile().recordCount());
+                    metrics.setGauge(WriterMetrics.BATCH_SIZE_BYTES, dataFile.getDataFile().fileSizeInBytes());
+                })
+                .doOnTerminate(() -> {
+                    try {
+                        logger.info("closing writer on rx terminate signal");
+                        writerPool.closeAll();
+                    } catch (IOException e) {
+                        throw Exceptions.propagate(e);
+                    }
+                })
+                .share();
         }
 
         private static class Trigger {

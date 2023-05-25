@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import io.mantisrx.connector.iceberg.sink.StageOverrideParameters;
 import io.mantisrx.connector.iceberg.sink.committer.config.CommitterConfig;
 import io.mantisrx.connector.iceberg.sink.committer.metrics.CommitterMetrics;
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -84,8 +85,8 @@ class IcebergCommitterStageTest {
         summary.put("test", "test");
         when(committer.commit(any())).thenReturn(summary);
 
-        Observable<DataFile> source = Observable.interval(1, TimeUnit.MINUTES, scheduler)
-                .map(i -> mock(DataFile.class));
+        Observable<MantisDataFile> source = Observable.interval(1, TimeUnit.MINUTES, scheduler)
+                .map(i -> new MantisDataFile(mock(DataFile.class), Long.MIN_VALUE));
         Observable<Map<String, Object>> flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
@@ -110,8 +111,8 @@ class IcebergCommitterStageTest {
     void shouldContinueOnCommitFailure() {
         doThrow(new RuntimeException()).when(committer).commit(any());
 
-        Observable<DataFile> source = Observable.interval(1, TimeUnit.MINUTES, scheduler)
-                .map(i -> mock(DataFile.class));
+        Observable<MantisDataFile> source = Observable.interval(1, TimeUnit.MINUTES, scheduler)
+                .map(i -> new MantisDataFile(mock(DataFile.class), Long.MIN_VALUE));
         Observable<Map<String, Object>> flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
