@@ -25,8 +25,8 @@ dependencies {
     api project(':mantis-common')
     api libraries.slf4jApi
     compileOnly libraries.jsr305
-
-
+    implementation libraries.spectatorApi
+    testImplementation libraries.spectatorApi
     testImplementation libraries.junit4
     testImplementation libraries.mockitoCore
 
