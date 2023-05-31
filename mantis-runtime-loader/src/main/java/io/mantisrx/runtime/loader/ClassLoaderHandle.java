@@ -47,6 +47,8 @@ public interface ClassLoaderHandle extends Closeable {
     UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredJarFiles,
                                                 Collection<URL> requiredClasspaths) throws IOException;
 
+    void cacheJobArtifacts(Collection<URI> artifacts);
+
     /**
      * ClassLoaderHandle that just returns the classloader field that's assigned at the time of construction
      * on query for any new handles.
@@ -59,6 +61,9 @@ public interface ClassLoaderHandle extends Closeable {
             public UserCodeClassLoader getOrResolveClassLoader(Collection<URI> requiredJarFiles, Collection<URL> requiredClasspaths) throws IOException {
                 return SimpleUserCodeClassLoader.create(classLoader);
             }
+
+            @Override
+            public void cacheJobArtifacts(Collection<URI> artifacts) {}
 
             @Override
             public void close() throws IOException {

@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Instant;
@@ -62,6 +63,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
     CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors();
 
     CompletableFuture<ResourceOverview> resourceOverview();
+
+    CompletableFuture<Ack> addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts);
 
     /**
      * Can throw {@link NoResourceAvailableException} wrapped within the CompletableFuture in case there

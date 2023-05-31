@@ -26,6 +26,7 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
@@ -103,6 +104,7 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private static final String DISABLE_TASK_EXECUTOR_REQUESTS = "MantisDisableTaskExecutorRequests";
     private static final String CONTROLPLANE_NS = "mantis_controlplane";
     private static final String JOB_ARTIFACTS_NS = "mantis_global_job_artifacts";
+    private static final String JOB_ARTIFACTS_TO_CACHE_PER_CLUSTER_ID_NS = "mantis_global_cached_artifacts";
 
     private static final String JOB_METADATA_SECONDARY_KEY = "jobMetadata";
     private static final String JOB_STAGE_METADATA_SECONDARY_KEY_PREFIX = "stageMetadata";
@@ -687,6 +689,23 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    @Override
+    public void addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException {
+        for (ArtifactID artifact: artifacts) {
+            kvStore.upsert(
+                JOB_ARTIFACTS_TO_CACHE_PER_CLUSTER_ID_NS,
+                clusterID.getResourceID(),
+                artifact.getResourceID(),
+                artifact.getResourceID());
+        }
+    }
+
+    @Override
+    public List<String> listJobArtifactsToCache(ClusterID clusterID) throws IOException {
+        return new ArrayList<>(kvStore.getAll(JOB_ARTIFACTS_TO_CACHE_PER_CLUSTER_ID_NS, clusterID.getResourceID())
+            .values());
     }
 
     @Override

@@ -19,6 +19,7 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
@@ -35,6 +36,7 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoR
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorsList;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
@@ -132,6 +134,17 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 .ask(resourceClusterManagerActor, new ResourceOverviewRequest(clusterID), askTimeout)
                 .thenApply(ResourceOverview.class::cast)
                 .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) {
+        return Patterns
+            .ask(
+                resourceClusterManagerActor,
+                new AddNewJobArtifactsToCacheRequest(clusterID, artifacts),
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
     }
 
     @Override
