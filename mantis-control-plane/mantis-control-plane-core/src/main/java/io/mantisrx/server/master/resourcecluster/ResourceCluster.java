@@ -147,6 +147,14 @@ public interface ResourceCluster extends ResourceClusterGateway {
         }
     }
 
+    static class ConnectionFailedException extends Exception {
+        private static final long serialVersionUID = 1L;
+
+        public ConnectionFailedException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     @Value
     class ResourceOverview {
         long numRegisteredTaskExecutors;
