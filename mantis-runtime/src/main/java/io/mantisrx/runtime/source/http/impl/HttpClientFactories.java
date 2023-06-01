@@ -41,6 +41,15 @@ public class HttpClientFactories {
         return new SSEClientFactory();
     }
 
+    /**
+     * [Deprecated] read timeouts is not longer supported in SSE client factory.
+     * @param readTimeout
+     */
+    @Deprecated
+    public static HttpClientFactory<ByteBuf, ServerSentEvent> sseClientFactory(int readTimeout) {
+        return new SSEClientFactory(readTimeout);
+    }
+
     public static HttpClientFactory<ByteBuf, ServerSentEvent> sseClientFactory(
         boolean enableConnectionPooling,
         boolean enableIdleConnectionCleanup) {
@@ -85,13 +94,16 @@ public class HttpClientFactories {
 
     private static class SSEClientFactory implements HttpClientFactory<ByteBuf, ServerSentEvent> {
 
-        public static final int DEFAULT_READ_TIMEOUT_SECS = 5;
         private final boolean enableConnectionPooling;
         private final boolean enableIdleConnectionCleanup;
 
         public SSEClientFactory(boolean enableConnectionPooling, boolean enableIdleConnectionCleanup) {
             this.enableConnectionPooling = enableConnectionPooling;
             this.enableIdleConnectionCleanup = enableIdleConnectionCleanup;
+        }
+
+        public SSEClientFactory(int readTimeout) {
+            this();
         }
 
         public SSEClientFactory() {
