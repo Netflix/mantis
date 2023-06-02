@@ -298,10 +298,24 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     sender().tell(new Status.Failure(new Exception("")), self());
                 }
             } catch (Exception e) {
+                metrics.incrementCounter(
+                    ResourceClusterActorMetrics.TE_CONNECTION_FAILURE,
+                    TagList.create(ImmutableMap.of(
+                        "resourceCluster",
+                        clusterID.getResourceID(),
+                        "taskExecutor",
+                        request.getTaskExecutorID().getResourceId())));
                 try {
-                    // let's try one more by reconnecting with the gateway.
+                    // let's try one more time by reconnecting with the gateway.
                     sender().tell(state.reconnect().join(), self());
                 } catch (Exception e1) {
+                    metrics.incrementCounter(
+                        ResourceClusterActorMetrics.TE_RECONNECTION_FAILURE,
+                        TagList.create(ImmutableMap.of(
+                            "resourceCluster",
+                            clusterID.getResourceID(),
+                            "taskExecutor",
+                            request.getTaskExecutorID().getResourceId())));
                     sender().tell(new Status.Failure(new ConnectionFailedException(e)), self());
                 }
             }
