@@ -35,6 +35,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.ConnectionFailedException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
@@ -290,10 +291,33 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         if (state == null) {
             sender().tell(new Exception(), self());
         } else {
-            if (state.isRegistered() && state.getGateway().isDone()) {
-                sender().tell(state.getGateway().join(), self());
-            } else {
-                sender().tell(new Status.Failure(new Exception("")), self());
+            try {
+                if (state.isRegistered()) {
+                    sender().tell(state.getGateway().join(), self());
+                } else {
+                    sender().tell(new Status.Failure(new Exception("")), self());
+                }
+            } catch (Exception e) {
+                metrics.incrementCounter(
+                    ResourceClusterActorMetrics.TE_CONNECTION_FAILURE,
+                    TagList.create(ImmutableMap.of(
+                        "resourceCluster",
+                        clusterID.getResourceID(),
+                        "taskExecutor",
+                        request.getTaskExecutorID().getResourceId())));
+                try {
+                    // let's try one more time by reconnecting with the gateway.
+                    sender().tell(state.reconnect().join(), self());
+                } catch (Exception e1) {
+                    metrics.incrementCounter(
+                        ResourceClusterActorMetrics.TE_RECONNECTION_FAILURE,
+                        TagList.create(ImmutableMap.of(
+                            "resourceCluster",
+                            clusterID.getResourceID(),
+                            "taskExecutor",
+                            request.getTaskExecutorID().getResourceId())));
+                    sender().tell(new Status.Failure(new ConnectionFailedException(e)), self());
+                }
             }
         }
     }
