@@ -15,7 +15,6 @@
  */
 
 ext {
-    nettyVersion = '4.1.17.Final'
     rxJavaMathVersion = '0.20.6'
 }
 
@@ -25,7 +24,7 @@ test {
 
 dependencies {
     implementation project(':mantis-common')
-    implementation "io.netty:netty-handler:$nettyVersion"
+    implementation "io.netty:netty-handler:${versions.netty}"
     implementation("com.netflix.rxjava:rxjava-math:$rxJavaMathVersion") {
         exclude module: 'rxjava-core'
     }
