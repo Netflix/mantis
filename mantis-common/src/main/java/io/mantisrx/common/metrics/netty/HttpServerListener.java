@@ -45,7 +45,7 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
     protected HttpServerListener(String monitorId) {
         super(monitorId);
 
-        String groupName = "httpServer_" + monitorId;
+        String groupName = "httpServer-" + monitorId;
 
         requestBacklog = Gauge.builder(groupName + "_requestBacklog", this::getRequestBacklog)
             .register(Metrics.globalRegistry);
