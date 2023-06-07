@@ -41,6 +41,7 @@ dependencies {
     api libraries.slf4jLog4j12
     implementation libraries.commonsIo
     implementation 'net.jcip:jcip-annotations:1.0'
+    implementation 'io.micrometer:micrometer-core:1.11.0'
 
     testImplementation libraries.spectatorApi
     testImplementation libraries.commonsLang3
