@@ -118,7 +118,7 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
 
         @Override
         protected void onResponseContentWriteSuccess(long duration, TimeUnit timeUnit) {
-
+            // responseWriteTimes.record(duration, timeUnit);
         }
 
         @Override
