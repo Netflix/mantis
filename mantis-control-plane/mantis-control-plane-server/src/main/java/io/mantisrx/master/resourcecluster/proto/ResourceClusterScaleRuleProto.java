@@ -95,14 +95,14 @@ public class ResourceClusterScaleRuleProto {
 
     @EqualsAndHashCode(callSuper = true)
     @Value
-    public static class JobArtifactToCacheRequest extends BaseRequest {
+    public static class JobArtifactsToCacheRequest extends BaseRequest {
         ClusterID clusterID;
 
         @Singular
         @NonNull
         List<ArtifactID> artifacts;
 
-        public JobArtifactToCacheRequest(@JsonProperty("clusterID") ClusterID clusterID, @JsonProperty("artifacts") List<ArtifactID> artifacts) {
+        public JobArtifactsToCacheRequest(@JsonProperty("clusterID") ClusterID clusterID, @JsonProperty("artifacts") List<ArtifactID> artifacts) {
             super();
             Preconditions.checkNotNull(clusterID, "clusterID cannot be null");
             Preconditions.checkNotNull(artifacts, "artifacts cannot be null");

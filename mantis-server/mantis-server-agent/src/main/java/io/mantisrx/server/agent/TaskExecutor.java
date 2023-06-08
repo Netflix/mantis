@@ -54,6 +54,8 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractScheduledSer
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import io.mantisrx.shaded.org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -477,6 +479,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         log.info("Received request {} for downloading artifact", request);
         getIOExecutor().execute(() -> this.classLoaderHandle.cacheJobArtifacts(request.getArtifacts()));
         return CompletableFuture.completedFuture(Ack.getInstance());
+    }
+
+    @Override
+    public CompletableFuture<List<String>> listJobArtifactsRequest() {
+        return CompletableFuture.completedFuture(Arrays.asList("Hello", "World", "Java"));
     }
 
     private void prepareTask(WrappedExecuteStageRequest wrappedRequest) {

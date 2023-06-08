@@ -20,15 +20,19 @@ import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.ArtifactList;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorWorkerMappingRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.InitializeTaskExecutorRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.ListJobArtifactsOnTaskExecutorRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
@@ -145,6 +149,41 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
                 askTimeout)
             .thenApply(Ack.class::cast)
             .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> removeJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) {
+        return Patterns
+            .ask(
+                resourceClusterManagerActor,
+                new RemoveJobArtifactsToCacheRequest(clusterID, artifacts),
+                askTimeout)
+            .thenApply(Ack.class::cast)
+            .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<List<ArtifactID>> getJobArtifactsToCache() {
+        return Patterns
+            .ask(
+                resourceClusterManagerActor,
+                new GetJobArtifactsToCacheRequest(clusterID),
+                askTimeout)
+            .thenApply(ArtifactList.class::cast)
+            .toCompletableFuture()
+            .thenApply(ArtifactList::getArtifacts);
+    }
+
+    @Override
+    public CompletableFuture<List<ArtifactID>> listJobArtifactsOnTaskExecutor(TaskExecutorID taskExecutorID) {
+        return Patterns
+            .ask(
+                resourceClusterManagerActor,
+                new ListJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID),
+                askTimeout)
+            .thenApply(ArtifactList.class::cast)
+            .toCompletableFuture()
+            .thenApply(ArtifactList::getArtifacts);
     }
 
     @Override

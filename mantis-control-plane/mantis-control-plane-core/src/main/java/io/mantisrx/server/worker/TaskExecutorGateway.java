@@ -19,6 +19,7 @@ import io.mantisrx.common.Ack;
 import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.domain.WorkerId;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.runtime.rpc.RpcGateway;
 
@@ -38,12 +39,20 @@ public interface TaskExecutorGateway extends RpcGateway {
     CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
 
     /**
-     * instruct the task executor on which job artifact to cache in order to speed up job initialization time.
+     * instruct the task executor on which job artifacts to cache in order to speed up job initialization time.
      *
      * @param request List of job artifacts that need to be cached.
      * @return Ack in any case (this task is best effort).
      */
     CompletableFuture<Ack> cacheJobArtifacts(CacheJobArtifactsRequest request);
+
+    /**
+     * enumerate the job artifacts stored by the task executor.
+     *
+     * @param request List of job artifacts that need to be cached.
+     * @return Ack in any case (this task is best effort).
+     */
+    CompletableFuture<List<String>> listJobArtifactsRequest();
 
     /**
      * cancel the currently running task and get rid of all of the associated resources.

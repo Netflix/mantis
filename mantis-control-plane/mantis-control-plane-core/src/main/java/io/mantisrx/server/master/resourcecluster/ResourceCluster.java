@@ -66,6 +66,12 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     CompletableFuture<Ack> addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts);
 
+    CompletableFuture<Ack> removeJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts);
+
+    CompletableFuture<List<ArtifactID>> getJobArtifactsToCache();
+
+    CompletableFuture<List<ArtifactID>> listJobArtifactsOnTaskExecutor(TaskExecutorID taskExecutorID);
+
     /**
      * Can throw {@link NoResourceAvailableException} wrapped within the CompletableFuture in case there
      * are no task executors.
