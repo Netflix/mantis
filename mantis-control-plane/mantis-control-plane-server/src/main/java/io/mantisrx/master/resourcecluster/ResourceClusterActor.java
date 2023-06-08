@@ -60,6 +60,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -197,6 +198,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(PublishResourceOverviewMetricsRequest.class, this::onPublishResourceOverviewMetricsRequest)
                 .match(CacheJobArtifactsOnTaskExecutorRequest.class, this::onCacheJobArtifactsOnTaskExecutorRequest)
                 .match(AddNewJobArtifactsToCacheRequest.class, this::onAddNewJobArtifactsToCacheRequest)
+                .match(RemoveJobArtifactsToCacheRequest.class, this::onRemoveJobArtifactsToCacheRequest)
+                .match(GetJobArtifactsToCacheRequest.class, req -> sender().tell(new ArtifactList(new ArrayList<>(jobArtifactsToCache)), self()))
                 .build();
     }
 
@@ -204,8 +207,19 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             mantisJobStore.addNewJobArtifactsToCache(req.getClusterID(), req.getArtifacts());
             jobArtifactsToCache.addAll(req.artifacts);
+            sender().tell(Ack.getInstance(), self());
         } catch (IOException e) {
             log.warn("Cannot add new job artifacts {} to cache in cluster: {}", req.getArtifacts(), req.getClusterID(), e);
+        }
+    }
+
+    private void onRemoveJobArtifactsToCacheRequest(RemoveJobArtifactsToCacheRequest req) {
+        try {
+            mantisJobStore.removeJobArtifactsToCache(req.getClusterID(), req.getArtifacts());
+            req.artifacts.forEach(jobArtifactsToCache::remove);
+            sender().tell(Ack.getInstance(), self());
+        } catch (IOException e) {
+            log.warn("Cannot remove job artifacts {} to cache in cluster: {}", req.getArtifacts(), req.getClusterID(), e);
         }
     }
 
@@ -776,6 +790,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
+    static class ArtifactList {
+        List<ArtifactID> artifacts;
+    }
+
+    @Value
     static class GetClusterUsageRequest {
         ClusterID clusterID;
         Function<TaskExecutorRegistration, Optional<String>> groupKeyFunc;
@@ -806,6 +825,19 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     static class AddNewJobArtifactsToCacheRequest {
         ClusterID clusterID;
         List<ArtifactID> artifacts;
+    }
+
+    @Value
+    @Builder
+    static class RemoveJobArtifactsToCacheRequest {
+        ClusterID clusterID;
+        List<ArtifactID> artifacts;
+    }
+
+    @Value
+    @Builder
+    static class GetJobArtifactsToCacheRequest {
+        ClusterID clusterID;
     }
 
     /**

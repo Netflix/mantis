@@ -267,6 +267,10 @@ public class MantisJobStore {
         storageProvider.addNewJobArtifactsToCache(clusterID, artifacts);
     }
 
+    public void removeJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException {
+        storageProvider.removeJobArtifactsToCache(clusterID, artifacts);
+    }
+
     public List<String> getJobArtifactsToCache(ClusterID clusterID) throws IOException {
         return storageProvider.listJobArtifactsToCache(clusterID);
     }

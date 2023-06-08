@@ -168,6 +168,8 @@ public interface IMantisPersistenceProvider {
 
     void addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException;
 
+    void removeJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException;
+
     List<String> listJobArtifactsToCache(ClusterID clusterID) throws IOException;
 
     List<String> listJobArtifactsByName(String prefix, String contains) throws IOException;

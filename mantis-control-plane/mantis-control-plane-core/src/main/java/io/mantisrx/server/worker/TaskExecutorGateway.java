@@ -38,7 +38,7 @@ public interface TaskExecutorGateway extends RpcGateway {
     CompletableFuture<Ack> submitTask(ExecuteStageRequest request);
 
     /**
-     * instruct the task executor on which job artifact to cache in order to speed up job initialization time.
+     * instruct the task executor on which job artifacts to cache in order to speed up job initialization time.
      *
      * @param request List of job artifacts that need to be cached.
      * @return Ack in any case (this task is best effort).
