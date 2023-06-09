@@ -30,7 +30,6 @@ import mantis.io.reactivex.netty.server.ServerMetricsEvent;
  */
 public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>> {
 
-
     private final Gauge requestBacklog;
     private final Gauge inflightRequests;
     private final Counter processedRequests;
@@ -47,9 +46,9 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
 
         String groupName = "httpServer-" + monitorId;
 
-        requestBacklog = Gauge.builder(groupName + "_requestBacklog", this::getRequestBacklog)
+        requestBacklog = Gauge.builder(groupName + "_requestBacklog", requestBacklogValue::get)
             .register(Metrics.globalRegistry);
-        inflightRequests = Gauge.builder(groupName +"_inflightRequests", this::getInflightRequests)
+        inflightRequests = Gauge.builder(groupName +"_inflightRequests", inflightRequestsValue::get)
             .register(Metrics.globalRegistry);
         failedRequests = Counter.builder(groupName + "_failedRequests")
             .register(Metrics.globalRegistry);
@@ -71,13 +70,6 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
         delegate.onEvent(event, duration, timeUnit, throwable, value);
     }
 
-    public long getRequestBacklog() {
-        return requestBacklogValue.get();
-    }
-
-    public long getInflightRequests() {
-        return inflightRequestsValue.get();
-    }
 
     public double getProcessedRequests() {
         return processedRequests.count();
@@ -106,13 +98,13 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
         @Override
         protected void onRequestHandlingFailed(long duration, TimeUnit timeUnit, Throwable throwable) {
             processedRequests.increment();
-            inflightRequestsValue = new AtomicLong(inflightRequestsValue.get() - 1);
+            inflightRequestsValue.getAndDecrement();
             failedRequests.increment();
         }
 
         @Override
         protected void onRequestHandlingSuccess(long duration, TimeUnit timeUnit) {
-            inflightRequestsValue = new AtomicLong(inflightRequestsValue.get() - 1);
+            inflightRequestsValue.getAndDecrement();
             processedRequests.increment();
         }
 
@@ -143,13 +135,13 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
 
         @Override
         protected void onRequestHandlingStart(long duration, TimeUnit timeUnit) {
-            requestBacklogValue = new AtomicLong(requestBacklogValue.get() - 1);
+            requestBacklogValue.getAndDecrement();
         }
 
         @Override
         protected void onNewRequestReceived() {
-            requestBacklogValue = new AtomicLong(requestBacklogValue.get() + 1);
-            inflightRequestsValue = new AtomicLong(inflightRequestsValue.get() + 1);
+            requestBacklogValue.getAndIncrement();
+            inflightRequestsValue.getAndIncrement();
         }
 
         @Override
