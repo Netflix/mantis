@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -100,6 +101,11 @@ public class BlobStoreAwareClassLoaderHandle implements ClassLoaderHandle {
         } catch (IOException | URISyntaxException e) {
             log.warn("Failed to download artifacts: {}", artifacts);
         }
+    }
+
+    @Override
+    public List<URI> listJobArtifacts() {
+        return blobStore.getAll().stream().map(f -> URI.create(f.getName())).collect(Collectors.toList());
     }
 
     public static class ParentFirstClassLoader extends FlinkUserCodeClassLoader {

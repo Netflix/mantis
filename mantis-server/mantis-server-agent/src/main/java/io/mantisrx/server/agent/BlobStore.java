@@ -19,6 +19,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
@@ -30,6 +32,8 @@ import org.apache.commons.io.FilenameUtils;
  */
 public interface BlobStore extends Closeable {
     File get(URI blobUrl) throws IOException;
+
+    default List<File> getAll() { return Collections.emptyList(); };
 
     /**
      * blob store that adds a prefix to every requested URI.

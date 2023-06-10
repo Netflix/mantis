@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 
@@ -49,6 +52,8 @@ public interface ClassLoaderHandle extends Closeable {
 
     void cacheJobArtifacts(Collection<URI> artifacts);
 
+    List<URI> listJobArtifacts();
+
     /**
      * ClassLoaderHandle that just returns the classloader field that's assigned at the time of construction
      * on query for any new handles.
@@ -64,6 +69,9 @@ public interface ClassLoaderHandle extends Closeable {
 
             @Override
             public void cacheJobArtifacts(Collection<URI> artifacts) {}
+
+            @Override
+            public List<URI> listJobArtifacts() { return Collections.emptyList(); }
 
             @Override
             public void close() throws IOException {

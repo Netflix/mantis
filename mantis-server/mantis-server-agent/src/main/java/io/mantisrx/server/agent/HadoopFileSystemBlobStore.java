@@ -18,6 +18,9 @@ package io.mantisrx.server.agent;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -46,6 +49,15 @@ public class HadoopFileSystemBlobStore implements BlobStore {
             fileSystem.copyToLocalFile(src, dest);
         }
         return destFile;
+    }
+
+    @Override
+    public List<File> getAll() {
+        final File[] files = localStoreDir.listFiles();
+        if (files != null) {
+            return Arrays.asList(files);
+        }
+        return Collections.emptyList();
     }
 
     @Override
