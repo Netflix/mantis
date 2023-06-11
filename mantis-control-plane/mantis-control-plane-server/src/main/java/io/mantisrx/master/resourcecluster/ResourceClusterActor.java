@@ -426,10 +426,27 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     private void onTaskExecutorRegistration(TaskExecutorRegistration registration) {
-        setupTaskExecutorStateIfNecessary(registration.getTaskExecutorID());
+
         log.info("Request for registering on resource cluster {}: {}.", this, registration);
+
+        final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
+
+        if (!registration.getForceRegistration() && !jobArtifactsToCache.isEmpty() && isJobArtifactCachingEnabled()) {
+            log.info("Caching job artifacts before registering TE {}.", registration.getTaskExecutorID());
+            self().tell(new CacheJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID), self());
+        } else {
+            registerTaskExecutor(registration);
+        }
+    }
+
+    private void registerTaskExecutor(TaskExecutorRegistration registration) {
+        setupTaskExecutorStateIfNecessary(registration.getTaskExecutorID());
+
+        log.info("Registering task executor {}: {}.", registration.getTaskExecutorID(), registration);
+
         try {
             final TaskExecutorID taskExecutorID = registration.getTaskExecutorID();
+
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             boolean stateChange = state.onRegistration(registration);
             mantisJobStore.storeNewTaskExecutor(registration);
@@ -447,9 +464,6 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 updateHeartbeatTimeout(registration.getTaskExecutorID());
             }
             log.info("Successfully registered {} with the resource cluster {}", registration.getTaskExecutorID(), this);
-            if (!jobArtifactsToCache.isEmpty() && isJobArtifactCachingEnabled()) {
-                self().tell(new CacheJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID), self());
-            }
             sender().tell(Ack.getInstance(), self());
         } catch (Exception e) {
             sender().tell(new Status.Failure(e), self());

@@ -372,26 +372,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         @Override
         public void startUp() throws Exception {
-            log.info("Trying to register with resource manager {}", gateway);
-            try {
-                gateway
-                    .registerTaskExecutor(taskExecutorRegistration)
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-            } catch (Exception e) {
-                // the registration may or may not have succeeded. Since we don't know let's just
-                // do the disconnection just to be safe.
-                log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
-                    e);
-                try {
-                    gateway.disconnectTaskExecutor(
-                            new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                                taskExecutorRegistration.getClusterID()))
-                        .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-                } catch (Exception inner) {
-                    log.error("Disconnection has also failed", inner);
-                }
-                throw e;
-            }
+            registerTaskExecutor(false);
         }
 
         @Override
@@ -428,6 +409,39 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
                         taskExecutorRegistration.getClusterID()))
                 .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+        }
+
+        public void registerTaskExecutor(Boolean force) throws Exception {
+            log.info("Trying to register with resource manager {}", gateway);
+            try {
+                final TaskExecutorRegistration registration = TaskExecutorRegistration.builder()
+                    .machineDefinition(taskExecutorRegistration.getMachineDefinition())
+                    .taskExecutorID(taskExecutorRegistration.getTaskExecutorID())
+                    .clusterID(taskExecutorRegistration.getClusterID())
+                    .hostname(taskExecutorRegistration.getHostname())
+                    .taskExecutorAddress(taskExecutorRegistration.getTaskExecutorAddress())
+                    .workerPorts(taskExecutorRegistration.getWorkerPorts())
+                    .taskExecutorAttributes(taskExecutorRegistration.getTaskExecutorAttributes())
+                    .forceRegistration(force)
+                    .build();
+                gateway
+                    .registerTaskExecutor(registration)
+                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+            } catch (Exception e) {
+                // the registration may or may not have succeeded. Since we don't know let's just
+                // do the disconnection just to be safe.
+                log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
+                    e);
+                try {
+                    gateway.disconnectTaskExecutor(
+                            new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
+                                taskExecutorRegistration.getClusterID()))
+                        .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                } catch (Exception inner) {
+                    log.error("Disconnection has also failed", inner);
+                }
+                throw e;
+            }
         }
     }
 
@@ -475,7 +489,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public CompletableFuture<Ack> cacheJobArtifacts(CacheJobArtifactsRequest request) {
 
         log.info("Received request {} for downloading artifact", request);
-        getIOExecutor().execute(() -> this.classLoaderHandle.cacheJobArtifacts(request.getArtifacts()));
+
+        CompletableFuture.runAsync(() -> {
+            log.info("Caching job artifacts {} on {}", request.getArtifacts(), this);
+            this.classLoaderHandle.cacheJobArtifacts(request.getArtifacts());
+        }, getIOExecutor()).thenAccept(unused -> {
+            try  {
+                log.info("Final task executor registration: {}", this);
+                currentResourceManagerCxn.registerTaskExecutor(true);
+            } catch (Exception e) {
+                log.error("Not sure how to handle this. Maybe system.exit()?");
+            }
+        });
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 

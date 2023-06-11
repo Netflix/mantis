@@ -64,6 +64,9 @@ public class TaskExecutorRegistration {
     @NonNull
     MachineDefinition machineDefinition;
 
+    @NonNull
+    Boolean forceRegistration;
+
     /** custom attributes describing the task executor
     * [Note] all keys/values need to be save as lower-case to avoid mismatch.
     * TODO make this field non-null once no back-compat required.
@@ -79,6 +82,19 @@ public class TaskExecutorRegistration {
         @JsonProperty("workerPorts") WorkerPorts workerPorts,
         @JsonProperty("machineDefinition") MachineDefinition machineDefinition,
         @JsonProperty("taskExecutorAttributes") Map<String, String> taskExecutorAttributes) {
+        this(taskExecutorID, clusterID, taskExecutorAddress, hostname, workerPorts, machineDefinition, true, taskExecutorAttributes);
+    }
+
+    @JsonCreator
+    public TaskExecutorRegistration(
+        @JsonProperty("taskExecutorID") TaskExecutorID taskExecutorID,
+        @JsonProperty("clusterID") ClusterID clusterID,
+        @JsonProperty("taskExecutorAddress") String taskExecutorAddress,
+        @JsonProperty("hostname") String hostname,
+        @JsonProperty("workerPorts") WorkerPorts workerPorts,
+        @JsonProperty("machineDefinition") MachineDefinition machineDefinition,
+        @JsonProperty("forceRegistration") Boolean forceRegistration,
+        @JsonProperty("taskExecutorAttributes") Map<String, String> taskExecutorAttributes) {
         this.taskExecutorID = taskExecutorID;
         this.clusterID = clusterID;
         this.taskExecutorAddress = taskExecutorAddress;
@@ -86,6 +102,7 @@ public class TaskExecutorRegistration {
         this.workerPorts = workerPorts;
         this.machineDefinition = machineDefinition;
         this.taskExecutorAttributes = (taskExecutorAttributes == null) ? ImmutableMap.of() : taskExecutorAttributes;
+        this.forceRegistration = forceRegistration;
     }
 
     /**
