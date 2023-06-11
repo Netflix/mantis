@@ -64,7 +64,6 @@ public class TaskExecutorRegistration {
     @NonNull
     MachineDefinition machineDefinition;
 
-    @NonNull
     Boolean forceRegistration;
 
     /** custom attributes describing the task executor
@@ -72,18 +71,6 @@ public class TaskExecutorRegistration {
     * TODO make this field non-null once no back-compat required.
     **/
     Map<String, String> taskExecutorAttributes;
-
-    @JsonCreator
-    public TaskExecutorRegistration(
-        @JsonProperty("taskExecutorID") TaskExecutorID taskExecutorID,
-        @JsonProperty("clusterID") ClusterID clusterID,
-        @JsonProperty("taskExecutorAddress") String taskExecutorAddress,
-        @JsonProperty("hostname") String hostname,
-        @JsonProperty("workerPorts") WorkerPorts workerPorts,
-        @JsonProperty("machineDefinition") MachineDefinition machineDefinition,
-        @JsonProperty("taskExecutorAttributes") Map<String, String> taskExecutorAttributes) {
-        this(taskExecutorID, clusterID, taskExecutorAddress, hostname, workerPorts, machineDefinition, true, taskExecutorAttributes);
-    }
 
     @JsonCreator
     public TaskExecutorRegistration(
@@ -102,7 +89,7 @@ public class TaskExecutorRegistration {
         this.workerPorts = workerPorts;
         this.machineDefinition = machineDefinition;
         this.taskExecutorAttributes = (taskExecutorAttributes == null) ? ImmutableMap.of() : taskExecutorAttributes;
-        this.forceRegistration = forceRegistration;
+        this.forceRegistration = forceRegistration == null || forceRegistration;
     }
 
     /**
