@@ -96,6 +96,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private final ClassLoaderHandle classLoaderHandle;
     private final SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory;
     private final TaskExecutorRegistration taskExecutorRegistration;
+    private final TaskExecutorRegistration forceTaskExecutorRegistration;
     private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final ExecutorService ioExecutor;
     private final ExecutorService runtimeTaskExecutor;
@@ -162,6 +163,24 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
                 .forceRegistration(false)
+                .taskExecutorAttributes(ImmutableMap.copyOf(
+                    workerConfiguration
+                        .getTaskExecutorAttributes()
+                        .entrySet()
+                        .stream()
+                        .collect(Collectors.<Map.Entry<String, String>, String, String>toMap(
+                            kv -> kv.getKey().toLowerCase(),
+                            kv -> kv.getValue().toLowerCase()))))
+                .build();
+        this.forceTaskExecutorRegistration =
+            TaskExecutorRegistration.builder()
+                .machineDefinition(machineDefinition)
+                .taskExecutorID(taskExecutorID)
+                .clusterID(clusterID)
+                .hostname(hostName)
+                .taskExecutorAddress(getAddress())
+                .workerPorts(workerPorts)
+                .forceRegistration(true)
                 .taskExecutorAttributes(ImmutableMap.copyOf(
                     workerConfiguration
                         .getTaskExecutorAttributes()
@@ -317,6 +336,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         return new ResourceManagerGatewayCxn(
             resourceManagerCxnIdx++,
             taskExecutorRegistration,
+            forceTaskExecutorRegistration,
             resourceManagerGateway,
             workerConfiguration.getHeartbeatInterval(),
             workerConfiguration.getHeartbeatTimeout(),
@@ -349,6 +369,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         private final int idx;
         private final TaskExecutorRegistration taskExecutorRegistration;
+        private final TaskExecutorRegistration forceTaskExecutorRegistration;
         private final ResourceClusterGateway gateway;
         private final Time heartBeatInterval;
         private final Time heartBeatTimeout;
@@ -373,7 +394,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         @Override
         public void startUp() throws Exception {
-            registerTaskExecutor(false);
+            registerTE(false);
         }
 
         @Override
@@ -412,28 +433,26 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
         }
 
-        public void registerTaskExecutor(Boolean force) throws Exception {
+        public void registerTE(Boolean force) throws Exception {
             log.info("Trying to register with resource manager {}", gateway);
             try {
-                final TaskExecutorRegistration registration = TaskExecutorRegistration.builder()
-                    .machineDefinition(taskExecutorRegistration.getMachineDefinition())
-                    .taskExecutorID(taskExecutorRegistration.getTaskExecutorID())
-                    .clusterID(taskExecutorRegistration.getClusterID())
-                    .hostname(taskExecutorRegistration.getHostname())
-                    .taskExecutorAddress(taskExecutorRegistration.getTaskExecutorAddress())
-                    .workerPorts(taskExecutorRegistration.getWorkerPorts())
-                    .taskExecutorAttributes(taskExecutorRegistration.getTaskExecutorAttributes())
-                    .forceRegistration(force)
-                    .build();
-                gateway
-                    .registerTaskExecutor(registration)
-                    .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                if (force) {
+                    gateway
+                        .registerTaskExecutor(forceTaskExecutorRegistration)
+                        .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                } else {
+                    gateway
+                        .registerTaskExecutor(taskExecutorRegistration)
+                        .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                }
             } catch (Exception e) {
                 // the registration may or may not have succeeded. Since we don't know let's just
                 // do the disconnection just to be safe.
                 log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
                     e);
                 try {
+                    System.out.println("2registration " + taskExecutorRegistration + " heartBeatTimeout " + heartBeatTimeout + " gateway " + gateway);
+
                     gateway.disconnectTaskExecutor(
                             new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
                                 taskExecutorRegistration.getClusterID()))
@@ -497,7 +516,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }, getIOExecutor()).thenAccept(unused -> {
             try  {
                 log.info("Final task executor registration: {}", this);
-                currentResourceManagerCxn.registerTaskExecutor(true);
+                currentResourceManagerCxn.registerTE(true);
             } catch (Exception e) {
                 log.error("Not sure how to handle this. Maybe system.exit()?");
             }

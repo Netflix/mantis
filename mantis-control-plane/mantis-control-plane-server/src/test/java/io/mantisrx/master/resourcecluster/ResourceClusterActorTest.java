@@ -108,6 +108,7 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION)
+            .forceRegistration(true)
             .taskExecutorAttributes(
                 ImmutableMap.of(
                     WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_1.getResourceID(),
@@ -122,6 +123,7 @@ public class ResourceClusterActorTest {
             .hostname(HOST_NAME)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION)
+            .forceRegistration(true)
             .taskExecutorAttributes(
                 ImmutableMap.of(
                     WorkerConstants.WORKER_CONTAINER_DEFINITION_ID, CONTAINER_DEF_ID_2.getResourceID(),
@@ -134,6 +136,7 @@ public class ResourceClusterActorTest {
             .clusterID(CLUSTER_ID)
             .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
             .hostname(HOST_NAME)
+            .forceRegistration(true)
             .workerPorts(WORKER_PORTS)
             .machineDefinition(MACHINE_DEFINITION_2)
             .taskExecutorAttributes(
@@ -421,6 +424,7 @@ public class ResourceClusterActorTest {
                     .taskExecutorID(taskExecutorID)
                     .clusterID(CLUSTER_ID)
                     .taskExecutorAddress(TASK_EXECUTOR_ADDRESS)
+                    .forceRegistration(true)
                     .hostname(HOST_NAME + i)
                     .workerPorts(WORKER_PORTS)
                     .machineDefinition(MACHINE_DEFINITION)

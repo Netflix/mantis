@@ -88,6 +88,7 @@ public class ExecutorStateManagerTests {
                 .workerPorts(WORKER_PORTS)
                 .machineDefinition(MACHINE_DEFINITION_1)
                 .taskExecutorAttributes(ATTRIBUTES)
+                .forceRegistration(true)
                 .build();
 
     private final TaskExecutorRegistration registration2 = TaskExecutorRegistration.builder()
@@ -98,6 +99,7 @@ public class ExecutorStateManagerTests {
         .workerPorts(WORKER_PORTS)
         .machineDefinition(MACHINE_DEFINITION_2)
         .taskExecutorAttributes(ATTRIBUTES)
+        .forceRegistration(true)
         .build();
 
     private final TaskExecutorRegistration registration3 = TaskExecutorRegistration.builder()
@@ -108,6 +110,7 @@ public class ExecutorStateManagerTests {
         .workerPorts(WORKER_PORTS)
         .machineDefinition(MACHINE_DEFINITION_2)
         .taskExecutorAttributes(ATTRIBUTES)
+        .forceRegistration(true)
         .build();
 
     private final ExecutorStateManager stateManager = new ExecutorStateManagerImpl();

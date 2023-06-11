@@ -64,6 +64,7 @@ public class TaskExecutorRegistration {
     @NonNull
     MachineDefinition machineDefinition;
 
+    @NonNull
     Boolean forceRegistration;
 
     /** custom attributes describing the task executor
@@ -89,7 +90,7 @@ public class TaskExecutorRegistration {
         this.workerPorts = workerPorts;
         this.machineDefinition = machineDefinition;
         this.taskExecutorAttributes = (taskExecutorAttributes == null) ? ImmutableMap.of() : taskExecutorAttributes;
-        this.forceRegistration = forceRegistration == null || forceRegistration;
+        this.forceRegistration = forceRegistration;
     }
 
     /**

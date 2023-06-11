@@ -130,6 +130,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
                 .workerPorts(new WorkerPorts(1, 2, 3, 4, 5))
                 .machineDefinition(new MachineDefinition(1, 1, 1, 1, 1))
                 .taskExecutorAttributes(ImmutableMap.of())
+                .forceRegistration(true)
                 .build();
 
         TaskExecutorStatus status =

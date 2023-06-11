@@ -69,13 +69,25 @@ public class ResourceManagerGatewayCxnTest {
                 .workerPorts(workerPorts)
                 .machineDefinition(new MachineDefinition(1, 1, 1, 1, 5))
                 .taskExecutorAttributes(ImmutableMap.of())
+                .forceRegistration(false)
                 .build();
+
+        final TaskExecutorRegistration forceRegistration = TaskExecutorRegistration.builder()
+            .taskExecutorID(taskExecutorID)
+            .clusterID(clusterID)
+            .hostname("host")
+            .taskExecutorAddress("localhost")
+            .workerPorts(workerPorts)
+            .machineDefinition(new MachineDefinition(1, 1, 1, 1, 5))
+            .taskExecutorAttributes(ImmutableMap.of())
+            .forceRegistration(true)
+            .build();
 
         disconnection = new TaskExecutorDisconnection(taskExecutorID, clusterID);
         gateway = mock(ResourceClusterGateway.class);
         report = TaskExecutorReport.available();
         heartbeat = new TaskExecutorHeartbeat(taskExecutorID, clusterID, report);
-        cxn = new ResourceManagerGatewayCxn(0, registration, gateway, Time.milliseconds(10),
+        cxn = new ResourceManagerGatewayCxn(0, registration, forceRegistration, gateway, Time.milliseconds(10),
             Time.milliseconds(100), dontCare -> CompletableFuture.completedFuture(report), 3);
     }
 
