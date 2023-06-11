@@ -165,6 +165,7 @@ public class TaskExecutorRegistrationTest {
             "        \"diskMB\": 8.8969576448E10,\n" +
             "        \"numPorts\": 5\n" +
             "    },\n" +
+            "    \"forceRegistration\": true,\n" +
             "    \"taskExecutorAttributes\":\n" +
             "    {}\n" +
             "}";
