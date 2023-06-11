@@ -161,6 +161,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 .hostname(hostName)
                 .taskExecutorAddress(getAddress())
                 .workerPorts(workerPorts)
+                .forceRegistration(false)
                 .taskExecutorAttributes(ImmutableMap.copyOf(
                     workerConfiguration
                         .getTaskExecutorAttributes()
