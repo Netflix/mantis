@@ -17,11 +17,12 @@
 package io.mantisrx.master.resourcecluster.proto;
 
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class UpgradeClusterContainersRequest {
     ClusterID clusterId;
 
@@ -36,4 +37,9 @@ public class UpgradeClusterContainersRequest {
     int optionalBatchMaxSize;
 
     boolean forceUpgradeOnSameImage;
+
+    boolean enableSkuSpecUpgrade;
+
+    @Nullable
+    MantisResourceClusterSpec resourceClusterSpec;
 }
