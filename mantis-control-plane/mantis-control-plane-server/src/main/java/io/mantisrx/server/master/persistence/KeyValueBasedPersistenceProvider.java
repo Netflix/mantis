@@ -703,6 +703,16 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     }
 
     @Override
+    public void removeJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException {
+        for (ArtifactID artifact: artifacts) {
+            kvStore.delete(
+                JOB_ARTIFACTS_TO_CACHE_PER_CLUSTER_ID_NS,
+                clusterID.getResourceID(),
+                artifact.getResourceID());
+        }
+    }
+
+    @Override
     public List<String> listJobArtifactsToCache(ClusterID clusterID) throws IOException {
         return new ArrayList<>(kvStore.getAll(JOB_ARTIFACTS_TO_CACHE_PER_CLUSTER_ID_NS, clusterID.getResourceID())
             .values());

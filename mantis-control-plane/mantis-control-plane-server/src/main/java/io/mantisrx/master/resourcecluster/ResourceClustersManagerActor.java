@@ -27,9 +27,11 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequ
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetBusyTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetRegisteredTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetUnregisteredTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.RemoveJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ResourceOverviewRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatewayRequest;
@@ -144,6 +146,10 @@ class ResourceClustersManagerActor extends AbstractActor {
                 .match(DisableTaskExecutorsRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(AddNewJobArtifactsToCacheRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
+                .match(RemoveJobArtifactsToCacheRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
+                .match(GetJobArtifactsToCacheRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(TriggerClusterRuleRefreshRequest.class, req ->
                     getRCScalerActor(req.getClusterID()).forward(req, context()))
