@@ -38,8 +38,10 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Ge
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
+import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderUpgradeRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder;
@@ -328,10 +330,37 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     private void onUpgradeClusterContainersRequest(UpgradeClusterContainersRequest req) {
         log.info("Entering onScaleResourceClusterRequest: " + req);
         // [Notes] for scaling-up the request can go straight into provider to increase desire size.
-        // FOr scaling-down the decision requires getting idle hosts first.
+        // For scaling-down the decision requires getting idle hosts first.
+        // if enableSkuSpecUpgrade is true, first fetch the latest spec to override the sku spec during upgrade
+        // workflow.
 
-        pipe(this.resourceClusterProvider.upgradeContainerResource(req), getContext().dispatcher()).to(getSender());
+        CompletionStage<UpgradeClusterContainersResponse> upgradeFut;
+        if (req.isEnableSkuSpecUpgrade()) {
+            upgradeFut = this.resourceClusterStorageProvider.getResourceClusterSpecWritable(req.getClusterId())
+                .thenCompose(specW -> {
+                    if (specW == null) {
+                        return CompletableFuture.completedFuture(UpgradeClusterContainersResponse.builder()
+                            .responseCode(ResponseCode.CLIENT_ERROR_NOT_FOUND)
+                            .build());
+                    }
 
+                    ResourceClusterProviderUpgradeRequest enrichedReq =
+                        ResourceClusterProviderUpgradeRequest.from(req, specW.getClusterSpec());
+                    return this.resourceClusterProvider.upgradeContainerResource(enrichedReq);
+                })
+                .exceptionally(err ->
+                    UpgradeClusterContainersResponse.builder()
+                        .responseCode(ResponseCode.SERVER_ERROR)
+                        .message(err.getMessage())
+                        .build());
+        }
+        else {
+            log.info("Upgrading cluster image only: {}", req.getClusterId());
+            upgradeFut =
+                this.resourceClusterProvider.upgradeContainerResource(ResourceClusterProviderUpgradeRequest.from(req));
+        }
+
+        pipe(upgradeFut, getContext().dispatcher()).to(getSender());
     }
 
     private static boolean validateClusterSpec(ProvisionResourceClusterRequest req) {

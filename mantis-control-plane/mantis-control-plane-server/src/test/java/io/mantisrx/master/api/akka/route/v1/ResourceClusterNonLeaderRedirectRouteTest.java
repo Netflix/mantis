@@ -57,6 +57,7 @@ import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceC
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderUpgradeRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -468,7 +469,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
         @Override
         public CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(
-            UpgradeClusterContainersRequest request) {
+            ResourceClusterProviderUpgradeRequest request) {
             return CompletableFuture.completedFuture(
                 UpgradeClusterContainersResponse.builder()
                     .message("test scale resp")

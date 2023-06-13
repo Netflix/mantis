@@ -44,6 +44,7 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import java.util.concurrent.CompletableFuture;
@@ -457,6 +458,46 @@ public class ResourceClustersHostManagerActorTests {
 
         UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
             .clusterId(ClusterID.of("mantisTestResCluster1"))
+            .build();
+
+        resourceClusterActor.tell(request, probe.getRef());
+        UpgradeClusterContainersResponse createResp = probe.expectMsgClass(UpgradeClusterContainersResponse.class);
+
+        assertEquals(ResponseCode.SUCCESS, createResp.responseCode);
+
+        verify(resProvider, times(1)).upgradeContainerResource(any());
+        probe.getSystem().stop(resourceClusterActor);
+    }
+
+    @Test
+    public void testUpgradeRequestEnableSkuSpecUpgrade() {
+        TestKit probe = new TestKit(system);
+        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
+        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
+        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
+
+        UpgradeClusterContainersResponse upgradeRes =
+            UpgradeClusterContainersResponse.builder().responseCode(ResponseCode.SUCCESS).build();
+        when(resProvider.upgradeContainerResource(any())).thenReturn(CompletableFuture.completedFuture(
+            upgradeRes
+        ));
+
+        ProvisionResourceClusterRequest provisionReq = buildProvisionRequest();
+        when(resStorageProvider.getResourceClusterSpecWritable(any()))
+            .thenReturn(CompletableFuture.completedFuture(
+                ResourceClusterSpecWritable.builder()
+                    .clusterSpec(provisionReq.getClusterSpec())
+                    .id(provisionReq.getClusterId())
+                    .build()));
+
+        when(resProvider.getResponseHandler()).thenReturn(responseHandler);
+
+        ActorRef resourceClusterActor = system.actorOf(
+            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
+
+        UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
+            .clusterId(provisionReq.getClusterId())
+            .enableSkuSpecUpgrade(true)
             .build();
 
         resourceClusterActor.tell(request, probe.getRef());
