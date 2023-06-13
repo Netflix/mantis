@@ -423,6 +423,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         @Override
         public void shutDown() throws Exception {
+            log.info("[fdc-91] ResourceManagerGatewayCxn shutDown");
             gateway
                 .disconnectTaskExecutor(
                     new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
