@@ -41,6 +41,7 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderUpgradeRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder;
@@ -335,20 +336,6 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
         CompletionStage<UpgradeClusterContainersResponse> upgradeFut;
         if (req.isEnableSkuSpecUpgrade()) {
-            if (req.getResourceClusterSpec() != null) {
-                pipe(CompletableFuture.completedFuture(
-                    UpgradeClusterContainersResponse
-                        .builder()
-                        .message("Sku Spec from upgrade request is not supported. Please upgrade spec via Register "
-                            + "API first")
-                    .responseCode(ResponseCode.CLIENT_ERROR_CONFLICT)
-                    .build()),
-                    getContext().dispatcher())
-                    .to(getSender());
-                log.info("Invalid req containing custom sku spec: {}", req.getClusterId());
-                return;
-            }
-
             upgradeFut = this.resourceClusterStorageProvider.getResourceClusterSpecWritable(req.getClusterId())
                 .thenCompose(specW -> {
                     if (specW == null) {
@@ -357,10 +344,8 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                             .build());
                     }
 
-                    UpgradeClusterContainersRequest enrichedReq =
-                        req.toBuilder()
-                            .resourceClusterSpec(specW.getClusterSpec())
-                            .build();
+                    ResourceClusterProviderUpgradeRequest enrichedReq =
+                        ResourceClusterProviderUpgradeRequest.from(req, specW.getClusterSpec());
                     return this.resourceClusterProvider.upgradeContainerResource(enrichedReq);
                 })
                 .exceptionally(err ->
@@ -371,7 +356,8 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
         }
         else {
             log.info("Upgrading cluster image only: {}", req.getClusterId());
-            upgradeFut = this.resourceClusterProvider.upgradeContainerResource(req);
+            upgradeFut =
+                this.resourceClusterProvider.upgradeContainerResource(ResourceClusterProviderUpgradeRequest.from(req));
         }
 
         pipe(upgradeFut, getContext().dispatcher()).to(getSender());

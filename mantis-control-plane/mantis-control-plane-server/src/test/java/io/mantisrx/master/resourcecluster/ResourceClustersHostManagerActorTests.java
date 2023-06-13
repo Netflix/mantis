@@ -509,41 +509,6 @@ public class ResourceClustersHostManagerActorTests {
         probe.getSystem().stop(resourceClusterActor);
     }
 
-    @Test
-    public void testUpgradeRequestEnableSkuSpecUpgradeConflictSpec() {
-        TestKit probe = new TestKit(system);
-        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
-        ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
-        ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
-
-        ProvisionResourceClusterRequest provisionReq = buildProvisionRequest();
-        when(resStorageProvider.getResourceClusterSpecWritable(any()))
-            .thenReturn(CompletableFuture.completedFuture(
-                ResourceClusterSpecWritable.builder()
-                    .clusterSpec(provisionReq.getClusterSpec())
-                    .id(provisionReq.getClusterId())
-                    .build()));
-
-        when(resProvider.getResponseHandler()).thenReturn(responseHandler);
-
-        ActorRef resourceClusterActor = system.actorOf(
-            ResourceClustersHostManagerActor.props(resProvider, resStorageProvider));
-
-        UpgradeClusterContainersRequest request = UpgradeClusterContainersRequest.builder()
-            .clusterId(provisionReq.getClusterId())
-            .enableSkuSpecUpgrade(true)
-            .resourceClusterSpec(provisionReq.getClusterSpec())
-            .build();
-
-        resourceClusterActor.tell(request, probe.getRef());
-        UpgradeClusterContainersResponse createResp = probe.expectMsgClass(UpgradeClusterContainersResponse.class);
-
-        assertEquals(ResponseCode.CLIENT_ERROR_CONFLICT, createResp.responseCode);
-
-        verify(resProvider, times(0)).upgradeContainerResource(any());
-        probe.getSystem().stop(resourceClusterActor);
-    }
-
     private ProvisionResourceClusterRequest buildProvisionRequest() {
         return buildProvisionRequest("mantisTestResCluster1", "dev@mantisrx.io");
     }
