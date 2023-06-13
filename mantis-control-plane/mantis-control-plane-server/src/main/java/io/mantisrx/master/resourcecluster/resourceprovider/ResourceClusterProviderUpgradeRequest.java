@@ -31,8 +31,10 @@ public class ResourceClusterProviderUpgradeRequest {
 
     String region;
 
+    @Nullable
     String optionalImageId;
 
+    @Nullable
     String optionalSkuId;
 
     MantisResourceClusterEnvType optionalEnvType;
