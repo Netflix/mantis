@@ -24,7 +24,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.mantisrx.common.metrics.measurement.CounterMeasurement;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
-//import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,7 +70,6 @@ public class MetricsServer {
     private Observable<Measurements> measurements(long timeFrequency) {
 
         final MeterRegistry globalRegistry = Metrics.globalRegistry;
-//        final MetricsRegistry registry = MetricsRegistry.getInstance();
         return
                 Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
                         .flatMap(new Func1<Long, Observable<Measurements>>() {
@@ -80,10 +78,8 @@ public class MetricsServer {
                                 long timestamp = System.currentTimeMillis();
                                 List<Measurements> measurements = new ArrayList<>();
 
-                                //group meters by group name
                                 Map<String, List<Meter>> meterGroups = new HashMap<>();
                                 for (Meter meter : globalRegistry.getMeters()) {
-                                    //Get the group name from the meter name
                                     String meterName = meter.getId().getName();
                                     String groupName = getGroupName(meterName);
                                     if(groupName != null) {
@@ -106,20 +102,6 @@ public class MetricsServer {
                                         }
                                     }
                                     measurements.add(new Measurements(groupName, timestamp,counters, gauges, tags));
-
-//                                for (Metrics metrics : registry.metrics()) {
-//                                    Collection<CounterMeasurement> counters = new LinkedList<>();
-//                                    Collection<GaugeMeasurement> gauges = new LinkedList<>();
-//
-//                                    for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
-//                                        Counter counter = counterEntry.getValue();
-//                                        counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
-//                                    }
-//                                    for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
-//                                        gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
-//                                    }
-//                                    measurements.add(new Measurements(metrics.getMetricGroupId().name(),
-//                                            timestamp, counters, gauges, tags));
                                 }
                                 return Observable.from(measurements);
                             }
