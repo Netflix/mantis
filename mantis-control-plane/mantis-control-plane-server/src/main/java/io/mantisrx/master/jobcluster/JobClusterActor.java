@@ -150,6 +150,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -606,6 +607,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 // UNEXPECTED MESSAGES END //
                 .match(Terminated.class, this::onTerminated)
                 .matchAny(x -> {
+                    MDC.put("name", name);
                     logger.info("unexpected message '{}' received by JobCluster actor {} in Initialized State."
                             + "from class {}", x, this.name, x.getClass().getCanonicalName());
                     // TODO getSender().tell();
@@ -619,6 +621,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void preStart() throws Exception {
+        MDC.put("name", name);
         logger.info("JobClusterActor {} started", name);
         super.preStart();
     }
@@ -631,10 +634,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             // de-register metrics from MetricsRegistry
             MetricsRegistry.getInstance().remove(getMetricGroupId(name));
         }
+        MDC.remove("name");
     }
 
     @Override
     public void preRestart(Throwable t, Optional<Object> m) throws Exception {
+        MDC.put("name", name);
         logger.info("{} preRestart {} (exc: {})", name, m, t.getMessage());
         // do not kill all children, which is the default here
         // super.preRestart(t, m);
@@ -642,6 +647,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
     @Override
     public void postRestart(Throwable reason) throws Exception {
+        MDC.put("name", name);
         logger.info("{} postRestart (exc={})", name, reason.getMessage());
         super.postRestart(reason);
     }
@@ -678,6 +684,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     @Override
     public void onJobClusterInitialize(JobClusterProto.InitializeJobClusterRequest initReq) {
         ActorRef sender = getSender();
+        MDC.put("name", name);
         logger.info("In onJobClusterInitialize {}", this.name);
         if (logger.isDebugEnabled()) {
             logger.debug("Init Request {}", initReq);
