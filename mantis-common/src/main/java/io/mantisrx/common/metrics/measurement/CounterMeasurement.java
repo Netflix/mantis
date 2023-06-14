@@ -24,12 +24,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 public class CounterMeasurement {
 
     private String event;
-    private long count;
+    private double count;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public CounterMeasurement(@JsonProperty("event") String event,
-                              @JsonProperty("count") long count) {
+                              @JsonProperty("count") double count) {
         this.event = event;
         this.count = count;
     }
@@ -38,7 +38,7 @@ public class CounterMeasurement {
         return event;
     }
 
-    public long getCount() {
+    public double getCount() {
         return count;
     }
 

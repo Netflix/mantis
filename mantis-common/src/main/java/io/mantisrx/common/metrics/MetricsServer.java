@@ -16,10 +16,15 @@
 
 package io.mantisrx.common.metrics;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.mantisrx.common.metrics.measurement.CounterMeasurement;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
-import io.mantisrx.common.metrics.spectator.MetricId;
+//import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +32,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +69,9 @@ public class MetricsServer {
     }
 
     private Observable<Measurements> measurements(long timeFrequency) {
-        final MetricsRegistry registry = MetricsRegistry.getInstance();
+
+        final MeterRegistry globalRegistry = Metrics.globalRegistry;
+//        final MetricsRegistry registry = MetricsRegistry.getInstance();
         return
                 Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
                         .flatMap(new Func1<Long, Observable<Measurements>>() {
@@ -71,19 +79,47 @@ public class MetricsServer {
                             public Observable<Measurements> call(Long t1) {
                                 long timestamp = System.currentTimeMillis();
                                 List<Measurements> measurements = new ArrayList<>();
-                                for (Metrics metrics : registry.metrics()) {
+
+                                //group meters by group name
+                                Map<String, List<Meter>> meterGroups = new HashMap<>();
+                                for (Meter meter : globalRegistry.getMeters()) {
+                                    //Get the group name from the meter name
+                                    String meterName = meter.getId().getName();
+                                    String groupName = getGroupName(meterName);
+                                    if(groupName != null) {
+                                        List<Meter> group = meterGroups.computeIfAbsent(groupName, k -> new ArrayList<>());
+                                        group.add(meter);
+                                    }
+                                }
+
+                                for(String groupName: meterGroups.keySet()) {
                                     Collection<CounterMeasurement> counters = new LinkedList<>();
                                     Collection<GaugeMeasurement> gauges = new LinkedList<>();
 
-                                    for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
-                                        Counter counter = counterEntry.getValue();
-                                        counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
+                                    for(Meter meter: meterGroups.get(groupName)) {
+                                        if (meter instanceof Counter) {
+                                            Counter counter = (Counter) meter;
+                                            counters.add(new CounterMeasurement(getEventName(counter.getId().getName()), counter.count()));
+                                        } if (meter instanceof Gauge) {
+                                            Gauge gauge = (Gauge) meter;
+                                            gauges.add(new GaugeMeasurement(getEventName(gauge.getId().getName()), gauge.value()));
+                                        }
                                     }
-                                    for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
-                                        gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
-                                    }
-                                    measurements.add(new Measurements(metrics.getMetricGroupId().name(),
-                                            timestamp, counters, gauges, tags));
+                                    measurements.add(new Measurements(groupName, timestamp,counters, gauges, tags));
+
+//                                for (Metrics metrics : registry.metrics()) {
+//                                    Collection<CounterMeasurement> counters = new LinkedList<>();
+//                                    Collection<GaugeMeasurement> gauges = new LinkedList<>();
+//
+//                                    for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
+//                                        Counter counter = counterEntry.getValue();
+//                                        counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
+//                                    }
+//                                    for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
+//                                        gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
+//                                    }
+//                                    measurements.add(new Measurements(metrics.getMetricGroupId().name(),
+//                                            timestamp, counters, gauges, tags));
                                 }
                                 return Observable.from(measurements);
                             }
@@ -174,4 +210,15 @@ public class MetricsServer {
             }
         }
     }
+
+    public String getGroupName(String meterName){
+        int underscoreIndex = meterName.indexOf('_');
+            return meterName.substring(0, underscoreIndex);
+    }
+
+    public String getEventName(String meterName){
+        int underscoreIndex = meterName.indexOf('_');
+            return meterName.substring(underscoreIndex+1);
+    }
+
 }
