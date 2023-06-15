@@ -46,15 +46,15 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
 
         String groupName = "httpServer-" + monitorId;
 
-        requestBacklog = Gauge.builder(groupName + "_requestBacklog", requestBacklogValue::get)
+        requestBacklog = Gauge.builder(groupName + ":requestBacklog", requestBacklogValue::get)
             .register(Metrics.globalRegistry);
-        inflightRequests = Gauge.builder(groupName +"_inflightRequests", inflightRequestsValue::get)
+        inflightRequests = Gauge.builder(groupName +":inflightRequests", inflightRequestsValue::get)
             .register(Metrics.globalRegistry);
-        failedRequests = Counter.builder(groupName + "_failedRequests")
+        failedRequests = Counter.builder(groupName + ":failedRequests")
             .register(Metrics.globalRegistry);
-        processedRequests = Counter.builder(groupName + "_processedRequests")
+        processedRequests = Counter.builder(groupName + ":processedRequests")
             .register(Metrics.globalRegistry);
-        responseWriteFailed = Counter.builder(groupName + "_responseWriteFailed")
+        responseWriteFailed = Counter.builder(groupName + ":responseWriteFailed")
             .register(Metrics.globalRegistry);
 
         delegate = new HttpServerMetricEventsListenerImpl();
