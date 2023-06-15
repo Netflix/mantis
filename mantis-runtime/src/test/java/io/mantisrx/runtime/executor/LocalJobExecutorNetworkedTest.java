@@ -19,8 +19,8 @@ package io.mantisrx.runtime.executor;
 import io.mantisrx.runtime.MachineDefinitions;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import java.util.Iterator;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 
 public class LocalJobExecutorNetworkedTest {
@@ -38,7 +38,7 @@ public class LocalJobExecutorNetworkedTest {
             iter.next();
             count++;
         }
-        Assert.assertEquals(10, count);
+        Assertions.assertEquals(10, count);
     }
 
     @Test
@@ -58,7 +58,7 @@ public class LocalJobExecutorNetworkedTest {
             iter.next();
             count++;
         }
-        Assert.assertEquals(20, count);
+        Assertions.assertEquals(20, count);
 
     }
 
@@ -68,9 +68,9 @@ public class LocalJobExecutorNetworkedTest {
         LocalJobExecutorNetworked.execute(provider.getJobInstance());
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(4, iter.next().intValue());
-        Assert.assertEquals(16, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(4, iter.next().intValue());
+        Assertions.assertEquals(16, iter.next().intValue());
     }
 
     @Test
@@ -85,9 +85,9 @@ public class LocalJobExecutorNetworkedTest {
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(16, iter.next().intValue());
-        Assert.assertEquals(256, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(16, iter.next().intValue());
+        Assertions.assertEquals(256, iter.next().intValue());
     }
 
     @Test
@@ -102,9 +102,9 @@ public class LocalJobExecutorNetworkedTest {
         LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(16, iter.next().intValue());
-        Assert.assertEquals(256, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(16, iter.next().intValue());
+        Assertions.assertEquals(256, iter.next().intValue());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class LocalJobExecutorNetworkedTest {
 
         // with two source instances, should have double the expected
         // input
-        Assert.assertEquals(10, provider.getItemsWritten().size());
+        Assertions.assertEquals(10, provider.getItemsWritten().size());
     }
 
     @Test
@@ -137,6 +137,6 @@ public class LocalJobExecutorNetworkedTest {
 
         // with two source instances, should have double the expected
         // input
-        Assert.assertEquals(10, provider.getItemsWritten().size());
+        Assertions.assertEquals(10, provider.getItemsWritten().size());
     }
 }

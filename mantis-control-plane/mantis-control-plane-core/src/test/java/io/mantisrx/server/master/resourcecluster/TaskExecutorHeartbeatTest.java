@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.master.resourcecluster;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.common.JsonSerializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TaskExecutorHeartbeatTest {
     private final JsonSerializer serializer = new JsonSerializer();

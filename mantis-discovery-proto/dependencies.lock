@@ -5,11 +5,14 @@
         }
     },
     "baseline-exact-dependencies-test": {
-        "junit:junit": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
         },
-        "junit:junit-dep": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         }
     },
     "compileClasspath": {
@@ -45,11 +48,14 @@
         "io.mantisrx:mantis-shaded": {
             "project": true
         },
-        "junit:junit": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
         },
-        "junit:junit-dep": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.20"
@@ -65,11 +71,14 @@
             ],
             "locked": "0.9.2"
         },
-        "junit:junit": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
         },
-        "junit:junit-dep": {
-            "locked": "4.11"
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
         }
     }
 }

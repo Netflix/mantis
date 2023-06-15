@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.master.client;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.mantisrx.server.core.Configurations;
 import io.mantisrx.server.core.CoreConfiguration;
@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;

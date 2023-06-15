@@ -21,7 +21,7 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METR
 import static io.mantisrx.server.core.stats.MetricStringConstants.DROP_COUNT;
 import static io.mantisrx.server.core.stats.MetricStringConstants.ON_NEXT_COUNT;
 import static io.reactivx.mantis.operators.DropOperator.METRIC_GROUP;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.common.metrics.Metrics;
@@ -29,7 +29,7 @@ import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
 import io.reactivx.mantis.operators.DropOperator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

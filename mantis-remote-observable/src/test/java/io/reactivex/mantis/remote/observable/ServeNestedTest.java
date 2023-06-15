@@ -17,8 +17,8 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Codecs;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.functions.Action1;
 import rx.observables.MathObservable;
@@ -57,7 +57,7 @@ public class ServeNestedTest {
         MathObservable.sumInteger(ro).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -112,7 +112,7 @@ public class ServeNestedTest {
         MathObservable.sumInteger(ro2).toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
             }
         });
     }

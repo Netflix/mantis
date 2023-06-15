@@ -16,11 +16,11 @@
 
 package io.mantisrx.server.core.domain;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.common.JsonSerializer;
 import org.apache.commons.lang3.SerializationUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class WorkerIdTest {
     private final JsonSerializer serializer = new JsonSerializer();

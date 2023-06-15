@@ -15,8 +15,8 @@
  */
 package io.mantisrx.server.agent;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -89,11 +89,11 @@ import lombok.extern.slf4j.Slf4j;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.rpc.RpcService;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Subscription;
 
@@ -116,7 +116,7 @@ public class RuntimeTaskImplExecutorTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private CollectingTaskLifecycleListener listener;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         final Properties props = new Properties();
         props.setProperty("mantis.zookeeper.root", "");
@@ -178,13 +178,13 @@ public class RuntimeTaskImplExecutorTest {
         taskExecutor.awaitRunning().get(2, TimeUnit.SECONDS);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         taskExecutor.close();
         this.localApiServer.stop(0);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testTaskExecutorEndToEndWithASingleStageJobByLoadingFromClassLoader()
         throws Exception {
@@ -216,7 +216,7 @@ public class RuntimeTaskImplExecutorTest {
                 new WorkerPorts(2, 3, 4, 5, 6),
                 Optional.of(SineFunctionJobProvider.class.getName()))), Time.seconds(1));
         wait.get();
-        Assert.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
+        Assertions.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
         Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),
                 HttpRequestFactories.createGetFactory("/"))
             .withServerProvider(new HttpServerProvider() {
@@ -244,7 +244,7 @@ public class RuntimeTaskImplExecutorTest {
             .takeUntil(point -> point.getX() > threshold)
             .subscribe(point -> log.info("point={}", point), error -> log.error("failed", error),
                 () -> doneSignal.countDown());
-        Assert.assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
+        Assertions.assertTrue(doneSignal.await(10, TimeUnit.SECONDS));
         subscription.unsubscribe();
         verify(resourceManagerGateway, times(1)).notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(taskExecutor.getTaskExecutorID(), taskExecutor.getClusterID(),
@@ -327,7 +327,7 @@ public class RuntimeTaskImplExecutorTest {
         start();
         Thread.sleep(1000);
         verify(resourceManagerGateway, times(2)).registerTaskExecutor(any());
-        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assertions.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     @Test
@@ -353,7 +353,7 @@ public class RuntimeTaskImplExecutorTest {
         verify(newResourceClusterGateway, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
-        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assertions.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     @Test
@@ -388,7 +388,7 @@ public class RuntimeTaskImplExecutorTest {
         verify(newResourceManagerGateway2, atLeastOnce()).heartBeatFromTaskExecutor(any());
 
         // check if the task executor is registered
-        Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
+        Assertions.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
     private static ResourceClusterGateway getHealthyGateway(String name) {

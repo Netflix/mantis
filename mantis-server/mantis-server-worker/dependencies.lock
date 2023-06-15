@@ -105,12 +105,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "org.apache.flink:flink-core": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-control-plane-core"
@@ -150,8 +144,17 @@
             ],
             "locked": "20180813"
         },
-        "org.mockito:mockito-all": {
-            "locked": "2.0.2-beta"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "4.8.1"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [
@@ -777,12 +780,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "nz.ac.waikato.cms.moa:moa": {
             "locked": "2017.06"
         },
@@ -828,8 +825,17 @@
             ],
             "locked": "20180813"
         },
-        "org.mockito:mockito-all": {
-            "locked": "2.0.2-beta"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "4.8.1"
         },
         "org.projectlombok:lombok": {
             "locked": "1.18.20"
@@ -1028,12 +1034,6 @@
             ],
             "locked": "2.12.5"
         },
-        "junit:junit": {
-            "locked": "4.11"
-        },
-        "junit:junit-dep": {
-            "locked": "4.11"
-        },
         "net.jcip:jcip-annotations": {
             "firstLevelTransitive": [
                 "io.mantisrx:mantis-common"
@@ -1109,8 +1109,17 @@
             ],
             "locked": "20180813"
         },
-        "org.mockito:mockito-all": {
-            "locked": "2.0.2-beta"
+        "org.junit.jupiter:junit-jupiter-api": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-engine": {
+            "locked": "5.4.2"
+        },
+        "org.junit.jupiter:junit-jupiter-params": {
+            "locked": "5.4.2"
+        },
+        "org.mockito:mockito-core": {
+            "locked": "4.8.1"
         },
         "org.skife.config:config-magic": {
             "firstLevelTransitive": [

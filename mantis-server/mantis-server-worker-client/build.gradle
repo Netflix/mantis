@@ -18,7 +18,7 @@ dependencies {
     api project(":mantis-control-plane:mantis-control-plane-core")
     api project(":mantis-control-plane:mantis-control-plane-client")
 
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoAll
     testImplementation libraries.spectatorApi
     testImplementation 'org.hamcrest:hamcrest-all:1.3'

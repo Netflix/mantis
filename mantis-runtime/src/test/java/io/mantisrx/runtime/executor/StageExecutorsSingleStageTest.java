@@ -21,8 +21,8 @@ import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.StageConfig;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import java.util.Iterator;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
@@ -53,10 +53,10 @@ public class StageExecutorsSingleStageTest {
                 noOpAction, 0, workersInStageOneObservable, null, null, noOpAction, noOpError);
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(1, iter.next().intValue());
-        Assert.assertEquals(4, iter.next().intValue());
-        Assert.assertEquals(9, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(1, iter.next().intValue());
+        Assertions.assertEquals(4, iter.next().intValue());
+        Assertions.assertEquals(9, iter.next().intValue());
 
     }
 }

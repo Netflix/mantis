@@ -17,8 +17,8 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Codecs;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -33,9 +33,9 @@ public class MergedObservableTest {
     public void testMergeCount() {
         MergeCounts counts = new MergeCounts(3);
 
-        Assert.assertEquals(false, counts.incrementTerminalCountAndCheck());
-        Assert.assertEquals(false, counts.incrementTerminalCountAndCheck());
-        Assert.assertEquals(true, counts.incrementTerminalCountAndCheck());
+        Assertions.assertEquals(false, counts.incrementTerminalCountAndCheck());
+        Assertions.assertEquals(false, counts.incrementTerminalCountAndCheck());
+        Assertions.assertEquals(true, counts.incrementTerminalCountAndCheck());
     }
 
 
@@ -51,64 +51,65 @@ public class MergedObservableTest {
                 .forEach(new Action1<Integer>() {
                     @Override
                     public void call(Integer t1) {
-                        Assert.assertEquals(5050, t1.intValue());
-                    }
-                });
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testMergeInBadObservable() throws InterruptedException {
-
-        MergedObservable<Integer> merged = MergedObservable.createWithReplay(2);
-        merged.mergeIn("t1", Observable.range(1, 50));
-
-        Observable<Integer> badObservable = Observable.create(new OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                for (int i = 100; i < 200; i++) {
-                    subscriber.onNext(i);
-                    if (i == 150) {
-                        subscriber.onError(new Exception("bad"));
-                    }
-                }
-            }
-        });
-        merged.mergeIn("t2", badObservable);
-
-        MathObservable.sumInteger(Observable.merge(merged.get()))
-                .toBlocking()
-                .forEach(new Action1<Integer>() {
-                    @Override
-                    public void call(Integer t1) {
-                        Assert.assertEquals(5050, t1.intValue());
+                        Assertions.assertEquals(5050, t1.intValue());
                     }
                 });
     }
 
     @Test
-    public void testSingleRemoteObservableMerge() {
-        // setup
-        Observable<Integer> os = Observable.range(0, 101);
-        // serve
-        PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
-        int serverPort = portSelector.acquirePort();
-        RemoteRxServer server = RemoteObservable.serve(serverPort, os, Codecs.integer());
-        server.start();
-        // connect
-        Observable<Integer> ro = RemoteObservable.connect("localhost", serverPort, Codecs.integer());
+    public void testMergeInBadObservable() throws InterruptedException {
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            MergedObservable<Integer> merged = MergedObservable.createWithReplay(2);
+            merged.mergeIn("t1", Observable.range(1, 50));
 
-        MergedObservable<Integer> merged = MergedObservable.createWithReplay(1);
-        merged.mergeIn("t1", ro);
+            Observable<Integer> badObservable = Observable.create(new OnSubscribe<Integer>() {
+                @Override
+                public void call(Subscriber<? super Integer> subscriber) {
+                    for (int i = 100; i < 200; i++) {
+                        subscriber.onNext(i);
+                        if (i == 150) {
+                            subscriber.onError(new Exception("bad"));
+                        }
+                    }
+                }
+            });
+            merged.mergeIn("t2", badObservable);
 
-        // assert
-        MathObservable.sumInteger(Observable.merge(merged.get()))
-                .toBlocking().forEach(new Action1<Integer>() {
-            @Override
-            public void call(Integer t1) {
-                Assert.assertEquals(5050, t1.intValue()); // sum of number 0-100
-            }
+            MathObservable.sumInteger(Observable.merge(merged.get()))
+                .toBlocking()
+                .forEach(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer t1) {
+                        Assertions.assertEquals(5050, t1.intValue());
+                    }
+                });
         });
     }
+
+        @Test
+        public void testSingleRemoteObservableMerge() {
+            // setup
+            Observable<Integer> os = Observable.range(0, 101);
+            // serve
+            PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
+            int serverPort = portSelector.acquirePort();
+            RemoteRxServer server = RemoteObservable.serve(serverPort, os, Codecs.integer());
+            server.start();
+            // connect
+            Observable<Integer> ro = RemoteObservable.connect("localhost", serverPort, Codecs.integer());
+
+            MergedObservable<Integer> merged = MergedObservable.createWithReplay(1);
+            merged.mergeIn("t1", ro);
+
+            // assert
+            MathObservable.sumInteger(Observable.merge(merged.get()))
+                .toBlocking().forEach(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer t1) {
+                        Assertions.assertEquals(5050, t1.intValue()); // sum of number 0-100
+                    }
+                });
+        }
 
     @Test
     public void testThreeRemoteObservablesMerge() {
@@ -134,7 +135,7 @@ public class MergedObservableTest {
                 .toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(15150, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(15150, t1.intValue()); // sum of number 0-100
             }
         });
     }
@@ -169,7 +170,7 @@ public class MergedObservableTest {
                 .toBlocking().forEach(new Action1<Integer>() {
             @Override
             public void call(Integer t1) {
-                Assert.assertEquals(20100, t1.intValue()); // sum of number 0-100
+                Assertions.assertEquals(20100, t1.intValue()); // sum of number 0-100
             }
         });
     }

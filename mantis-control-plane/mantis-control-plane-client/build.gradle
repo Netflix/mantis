@@ -21,7 +21,7 @@ dependencies {
 
     api project(":mantis-remote-observable")
 
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoAll
     testImplementation libraries.spectatorApi
     testImplementation(testFixtures(project(":mantis-common")))

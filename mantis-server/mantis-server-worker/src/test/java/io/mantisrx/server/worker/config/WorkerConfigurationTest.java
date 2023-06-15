@@ -16,12 +16,12 @@
 
 package io.mantisrx.server.worker.config;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.Properties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class WorkerConfigurationTest {
 

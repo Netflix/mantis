@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.agent;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
@@ -27,7 +27,7 @@ import io.mantisrx.runtime.loader.config.WorkerConfigurationWritable;
 import io.mantisrx.server.worker.config.StaticPropertiesConfigurationFactory;
 import java.io.IOException;
 import java.util.Properties;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class WorkerConfigurationWritableTest {
     static String ConfigWritableToString(WorkerConfigurationWritable configurationWritable) throws IOException {

@@ -16,14 +16,14 @@
 
 package io.mantisrx.server.worker.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.server.worker.TestSseServerFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;

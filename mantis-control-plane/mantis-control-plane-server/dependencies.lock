@@ -132,6 +132,9 @@
             ],
             "locked": "20180813"
         },
+        "org.junit.vintage:junit-vintage-engine": {
+            "locked": "5.4.2"
+        },
         "org.mockito:mockito-core": {
             "locked": "3.12.4"
         },
@@ -663,6 +666,9 @@
             ],
             "locked": "20180813"
         },
+        "org.junit.vintage:junit-vintage-engine": {
+            "locked": "5.4.2"
+        },
         "org.mockito:mockito-core": {
             "locked": "3.12.4"
         },
@@ -816,7 +822,7 @@
             "locked": "2.12.5"
         },
         "junit:junit": {
-            "locked": "4.11"
+            "locked": "4.12"
         },
         "junit:junit-dep": {
             "locked": "4.11"
@@ -868,6 +874,9 @@
                 "io.mantisrx:mantis-control-plane-core"
             ],
             "locked": "20180813"
+        },
+        "org.junit.vintage:junit-vintage-engine": {
+            "locked": "5.4.2"
         },
         "org.mockito:mockito-core": {
             "locked": "3.12.4"

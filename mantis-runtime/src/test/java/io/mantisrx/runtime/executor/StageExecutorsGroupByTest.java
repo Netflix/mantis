@@ -30,8 +30,8 @@ import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.ServeGroupedObservable;
 import java.util.Iterator;
 import java.util.List;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -75,25 +75,25 @@ public class StageExecutorsGroupByTest {
                         .toBlocking()
                         .getIterator();
 
-        Assert.assertTrue(iter.hasNext());
+        Assertions.assertTrue(iter.hasNext());
         // verify numbers are grouped by even/odd
         GroupedObservable<String, Integer> even = iter.next(); // even is first due to zero
-        Assert.assertEquals("even", even.getKey());
+        Assertions.assertEquals("even", even.getKey());
         Iterator<Integer> evenIter = even.toBlocking().getIterator();
-        Assert.assertEquals(0, evenIter.next().intValue());
-        Assert.assertEquals(2, evenIter.next().intValue());
-        Assert.assertEquals(4, evenIter.next().intValue());
-        Assert.assertEquals(6, evenIter.next().intValue());
+        Assertions.assertEquals(0, evenIter.next().intValue());
+        Assertions.assertEquals(2, evenIter.next().intValue());
+        Assertions.assertEquals(4, evenIter.next().intValue());
+        Assertions.assertEquals(6, evenIter.next().intValue());
 
         GroupedObservable<String, Integer> odd = iter.next();
-        Assert.assertEquals("odd", odd.getKey());
+        Assertions.assertEquals("odd", odd.getKey());
         Iterator<Integer> oddIter = odd.toBlocking().getIterator();
-        Assert.assertEquals(1, oddIter.next().intValue());
-        Assert.assertEquals(3, oddIter.next().intValue());
-        Assert.assertEquals(5, oddIter.next().intValue());
-        Assert.assertEquals(7, oddIter.next().intValue());
+        Assertions.assertEquals(1, oddIter.next().intValue());
+        Assertions.assertEquals(3, oddIter.next().intValue());
+        Assertions.assertEquals(5, oddIter.next().intValue());
+        Assertions.assertEquals(7, oddIter.next().intValue());
 
-        Assert.assertEquals(false, iter.hasNext());  // should only have two groups
+        Assertions.assertEquals(false, iter.hasNext());  // should only have two groups
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -173,21 +173,21 @@ public class StageExecutorsGroupByTest {
 
         // verify numbers are grouped by even/odd
         GroupedObservable<String, Integer> even = iter.next(); // even is first due to zero
-        Assert.assertEquals("even", even.getKey());
+        Assertions.assertEquals("even", even.getKey());
         Iterator<Integer> evenIter = even.toBlocking().getIterator();
-        Assert.assertEquals(0, evenIter.next().intValue());
-        Assert.assertEquals(4, evenIter.next().intValue());
-        Assert.assertEquals(16, evenIter.next().intValue());
-        Assert.assertEquals(36, evenIter.next().intValue());
+        Assertions.assertEquals(0, evenIter.next().intValue());
+        Assertions.assertEquals(4, evenIter.next().intValue());
+        Assertions.assertEquals(16, evenIter.next().intValue());
+        Assertions.assertEquals(36, evenIter.next().intValue());
 
         GroupedObservable<String, Integer> odd = iter.next();
-        Assert.assertEquals("odd", odd.getKey());
+        Assertions.assertEquals("odd", odd.getKey());
         Iterator<Integer> oddIter = odd.toBlocking().getIterator();
-        Assert.assertEquals(1, oddIter.next().intValue());
-        Assert.assertEquals(9, oddIter.next().intValue());
-        Assert.assertEquals(25, oddIter.next().intValue());
-        Assert.assertEquals(49, oddIter.next().intValue());
+        Assertions.assertEquals(1, oddIter.next().intValue());
+        Assertions.assertEquals(9, oddIter.next().intValue());
+        Assertions.assertEquals(25, oddIter.next().intValue());
+        Assertions.assertEquals(49, oddIter.next().intValue());
 
-        Assert.assertEquals(false, iter.hasNext());  // should only have two groups
+        Assertions.assertEquals(false, iter.hasNext());  // should only have two groups
     }
 }

@@ -16,13 +16,13 @@
 
 package io.mantisrx.runtime.parameter;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SourceJobParametersTest {
     @Test

@@ -16,9 +16,9 @@
 
 package io.mantisrx.publish;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,8 +38,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 public class MantisEventPublisherTest {
@@ -53,7 +53,7 @@ public class MantisEventPublisherTest {
 
     private StreamManager streamManager;
 
-    @Before
+    @BeforeEach
     public void setup() {
         streamManager = mock(StreamManager.class);
     }
@@ -70,7 +70,7 @@ public class MantisEventPublisherTest {
             }
         });
         try {
-            assertTrue("timed out waiting for status callback", latch.await(1, TimeUnit.SECONDS));
+            assertTrue(latch.await(1, TimeUnit.SECONDS), "timed out waiting for status callback");
         } catch (InterruptedException e) {
             e.printStackTrace();
             fail(e.getMessage());

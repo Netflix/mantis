@@ -16,8 +16,8 @@
 
 package io.mantisrx.runtime.source.http;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mantisrx.runtime.source.http.impl.StaticServerPoller;
 import java.util.HashSet;
@@ -25,9 +25,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import rx.functions.Action1;
 
 
@@ -36,7 +36,7 @@ public class StaticServerPollerTest {
     private Set<ServerInfo> servers;
     private int pollingInterval = 1;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         servers = new HashSet<>();
         for (int i = 0; i < 5; ++i) {
@@ -44,7 +44,7 @@ public class StaticServerPollerTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
 
     }
@@ -59,7 +59,7 @@ public class StaticServerPollerTest {
                 .doOnNext(new Action1<Set<ServerInfo>>() {
                     @Override
                     public void call(Set<ServerInfo> data) {
-                        assertEquals("We should always see the same set of servers", servers, data);
+                        assertEquals(servers, data, "We should always see the same set of servers");
                         count.incrementAndGet();
                         done.countDown();
                     }
@@ -70,6 +70,6 @@ public class StaticServerPollerTest {
         long elapsed = (System.currentTimeMillis() - start) / 1000;
 
         System.out.println(elapsed);
-        assertTrue("The poller should have polled 5 times and the elaspsed time should be greater than 3", count.get() == 5 && elapsed <= 6);
+        assertTrue(count.get() == 5 && elapsed <= 6, "The poller should have polled 5 times and the elaspsed time should be greater than 3");
     }
 }

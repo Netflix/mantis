@@ -44,7 +44,6 @@ import io.mantisrx.publish.proto.MantisServerSubscriptionEnvelope;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -56,12 +55,7 @@ public class DefaultSubscriptionTrackerTest {
 
     private static final int subscriptionExpiryIntervalSec = 3;
     private final Map<String, String> streamJobClusterMap = new HashMap<>();
-    @Rule
-    public WireMockRule mantisWorker1 = new WireMockRule(options().dynamicPort());
-    @Rule
-    public WireMockRule mantisWorker2 = new WireMockRule(options().dynamicPort());
-    @Rule
-    public WireMockRule mantisWorker3 = new WireMockRule(options().dynamicPort());
+    public WireMockRule mantisWorker1 = new WireMockRule(options().dynamicPort()), mantisWorker2 = new WireMockRule(options().dynamicPort()), mantisWorker3 = new WireMockRule(options().dynamicPort());
     private DefaultSubscriptionTracker subscriptionTracker;
     private MantisJobDiscovery mockJobDiscovery;
     private StreamManager mockStreamManager;
@@ -132,7 +126,7 @@ public class DefaultSubscriptionTrackerTest {
         MantisServerSubscriptionEnvelope w1Subs = SubscriptionsHelper.createSubsEnvelope(2, 0);
         mantisWorker1.stubFor(get(urlMatching("/\\?jobId=.*"))
                 .willReturn(aResponse()
-                        .withStatus(200)
+                        .withStatus(400)
                         .withBody(DefaultObjectMapper.getInstance().writeValueAsBytes(w1Subs)))
         );
 

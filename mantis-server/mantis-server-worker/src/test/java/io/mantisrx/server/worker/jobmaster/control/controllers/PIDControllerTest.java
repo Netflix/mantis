@@ -16,10 +16,10 @@
 
 package io.mantisrx.server.worker.jobmaster.control.controllers;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.server.worker.jobmaster.control.Controller;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 
 

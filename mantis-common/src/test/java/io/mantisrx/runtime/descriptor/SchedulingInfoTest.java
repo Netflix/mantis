@@ -18,7 +18,7 @@ package io.mantisrx.runtime.descriptor;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.runtime.MachineDefinition;
@@ -26,7 +26,7 @@ import io.mantisrx.runtime.descriptor.SchedulingInfo.Builder;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SchedulingInfoTest {
     @Test

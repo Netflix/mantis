@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.mantisrx.client.MantisClient;
 import io.mantisrx.client.MantisSSEJob;

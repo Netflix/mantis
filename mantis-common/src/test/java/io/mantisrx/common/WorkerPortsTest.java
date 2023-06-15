@@ -15,12 +15,13 @@
  */
 package io.mantisrx.common;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.SerializationUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class WorkerPortsTest {
 
@@ -29,10 +30,12 @@ public class WorkerPortsTest {
      * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} which expects
      * at least 5 ports: metrics, debug, console, custom.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldNotConstructWorkerPorts() {
-        // Not enough ports.
-        new WorkerPorts(Arrays.asList(1, 1, 1, 1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            // Not enough ports.
+            new WorkerPorts(Arrays.asList(1, 1, 1, 1));
+        });
     }
 
     /**
@@ -40,20 +43,24 @@ public class WorkerPortsTest {
      * a WorkerPorts object, because a worker needs a sink to be useful.
      * Otherwise, other workers can't connect to it.
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void shouldNotConstructWorkerPortsWithDuplicatePorts() {
-        // Enough ports, but has duplicate ports.
-        new WorkerPorts(Arrays.asList(1, 1, 1, 1, 1));
+        assertThrows(IllegalStateException.class, () -> {
+            // Enough ports, but has duplicate ports.
+            new WorkerPorts(Arrays.asList(1, 1, 1, 1, 1));
+        });
     }
 
     /**
      * Uses legacy constructor {@link WorkerPorts#WorkerPorts(List)} but was given a port
      * out of range.
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void shouldNotConstructWorkerPortsWithInvalidPortRange() {
-        // Enough ports, but given an invalid port range
-        new WorkerPorts(Arrays.asList(1, 1, 1, 1, 65536));
+        assertThrows(IllegalStateException.class, () -> {
+            // Enough ports, but given an invalid port range
+            new WorkerPorts(Arrays.asList(1, 1, 1, 1, 65536));
+        });
     }
 
     /**

@@ -16,13 +16,13 @@
 
 package io.mantisrx.server.agent.metrics.cgroups;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestMemorySubsystemProcess {
     private final Cgroup cgroup = mock(Cgroup.class);

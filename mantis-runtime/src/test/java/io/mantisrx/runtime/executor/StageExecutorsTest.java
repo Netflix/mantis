@@ -30,8 +30,8 @@ import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import java.util.Iterator;
 import java.util.List;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -71,10 +71,10 @@ public class StageExecutorsTest {
                 .getIterator();
 
         // verify numbers are doubled
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(1, iter.next().intValue());
-        Assert.assertEquals(4, iter.next().intValue());
-        Assert.assertEquals(9, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(1, iter.next().intValue());
+        Assertions.assertEquals(4, iter.next().intValue());
+        Assertions.assertEquals(9, iter.next().intValue());
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -125,9 +125,9 @@ public class StageExecutorsTest {
                 .getIterator();
 
         // verify numbers are even
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(2, iter.next().intValue());
-        Assert.assertEquals(4, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(2, iter.next().intValue());
+        Assertions.assertEquals(4, iter.next().intValue());
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -178,9 +178,9 @@ public class StageExecutorsTest {
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
 
         // verify numbers are even
-        Assert.assertEquals(0, iter.next().intValue());
-        Assert.assertEquals(2, iter.next().intValue());
-        Assert.assertEquals(4, iter.next().intValue());
+        Assertions.assertEquals(0, iter.next().intValue());
+        Assertions.assertEquals(2, iter.next().intValue());
+        Assertions.assertEquals(4, iter.next().intValue());
     }
 
 

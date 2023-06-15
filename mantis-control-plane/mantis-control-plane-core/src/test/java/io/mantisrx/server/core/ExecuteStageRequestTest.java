@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
@@ -30,8 +30,8 @@ import io.mantisrx.shaded.com.google.common.collect.Lists;
 import java.net.URL;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ExecuteStageRequestTest {
     private ExecuteStageRequest example1;
@@ -39,7 +39,7 @@ public class ExecuteStageRequestTest {
 
     private final JsonSerializer serializer = new JsonSerializer();
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         example1 = new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
             new URL("http://datamesh/whatever"),

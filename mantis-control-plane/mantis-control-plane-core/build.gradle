@@ -45,7 +45,7 @@ dependencies {
     api "joda-time:joda-time:$jodaTimeVersion"
 
     testFixturesImplementation libraries.flinkRpcImpl
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoAll
 }
 

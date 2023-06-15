@@ -24,7 +24,7 @@ import java.io.File;
 import java.net.URI;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Matchers;
 
 public class TestHadoopFileSystemBlobStore {

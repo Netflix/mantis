@@ -27,7 +27,7 @@ dependencies {
     compileOnly libraries.jsr305
     compileOnly libraries.spectatorApi
     testImplementation libraries.spectatorApi
-    testImplementation libraries.junit4
+    testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
 
 }

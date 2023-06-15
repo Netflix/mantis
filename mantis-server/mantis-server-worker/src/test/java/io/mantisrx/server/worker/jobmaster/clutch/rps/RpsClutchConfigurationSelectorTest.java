@@ -16,8 +16,8 @@
 
 package io.mantisrx.server.worker.jobmaster.clutch.rps;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchConfiguration;
@@ -28,7 +28,7 @@ import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import io.vavr.control.Option;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

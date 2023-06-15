@@ -20,8 +20,8 @@ import io.mantisrx.common.codec.Codecs;
 import io.mantisrx.common.network.Endpoint;
 import java.util.LinkedList;
 import java.util.List;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
@@ -67,7 +67,7 @@ public class FixedConnectionSetTest {
         int sum = MathObservable.sumInteger(Observable.merge(cm.getObservables()))
                 .toBlocking()
                 .last();
-        Assert.assertEquals(5050, sum);
+        Assertions.assertEquals(5050, sum);
 
     }
 
@@ -98,60 +98,61 @@ public class FixedConnectionSetTest {
         int sum = MathObservable.sumInteger(Observable.merge(cm.getObservables()))
                 .toBlocking()
                 .last();
-        Assert.assertEquals(5050, sum);
+        Assertions.assertEquals(5050, sum);
 
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testMergeInBadObservable() throws InterruptedException {
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
+            final int server1Port = portSelector.acquirePort();
+            final int server2Port = portSelector.acquirePort();
 
-        PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
-        final int server1Port = portSelector.acquirePort();
-        final int server2Port = portSelector.acquirePort();
-
-        Observable<Integer> badObservable = Observable.create(new OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                for (int i = 100; i < 200; i++) {
-                    subscriber.onNext(i);
-                    if (i == 150) {
-                        subscriber.onError(new Exception("error"));
+            Observable<Integer> badObservable = Observable.create(new OnSubscribe<Integer>() {
+                @Override
+                public void call(Subscriber<? super Integer> subscriber) {
+                    for (int i = 100; i < 200; i++) {
+                        subscriber.onNext(i);
+                        if (i == 150) {
+                            subscriber.onError(new Exception("error"));
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        // setup servers
-        RemoteRxServer server1 = RemoteObservable.serve(server1Port, Observable.range(1, 50), Codecs.integer());
-        RemoteRxServer server2 = RemoteObservable.serve(server2Port, badObservable, Codecs.integer());
+            // setup servers
+            RemoteRxServer server1 = RemoteObservable.serve(server1Port, Observable.range(1, 50), Codecs.integer());
+            RemoteRxServer server2 = RemoteObservable.serve(server2Port, badObservable, Codecs.integer());
 
-        server1.start();
-        server2.start();
+            server1.start();
+            server2.start();
 
-        EndpointInjector staticEndpoints = new EndpointInjector() {
-            @Override
-            public Observable<EndpointChange> deltas() {
-                return Observable.create(new OnSubscribe<EndpointChange>() {
-                    @Override
-                    public void call(Subscriber<? super EndpointChange> subscriber) {
-                        subscriber.onNext(new EndpointChange(EndpointChange.Type.add, new Endpoint("localhost", server1Port, "1")));
-                        subscriber.onNext(new EndpointChange(EndpointChange.Type.add, new Endpoint("localhost", server2Port, "2")));
-                        subscriber.onCompleted();
-                    }
-                });
-            }
-        };
+            EndpointInjector staticEndpoints = new EndpointInjector() {
+                @Override
+                public Observable<EndpointChange> deltas() {
+                    return Observable.create(new OnSubscribe<EndpointChange>() {
+                        @Override
+                        public void call(Subscriber<? super EndpointChange> subscriber) {
+                            subscriber.onNext(new EndpointChange(EndpointChange.Type.add, new Endpoint("localhost", server1Port, "1")));
+                            subscriber.onNext(new EndpointChange(EndpointChange.Type.add, new Endpoint("localhost", server2Port, "2")));
+                            subscriber.onCompleted();
+                        }
+                    });
+                }
+            };
 
-        FixedConnectionSet<Integer> cm
+            FixedConnectionSet<Integer> cm
                 = FixedConnectionSet.create(2, new ConnectToObservable.Builder<Integer>()
-                        .decoder(Codecs.integer()),
+                    .decoder(Codecs.integer()),
                 staticEndpoints);
 
-        int sum = MathObservable.sumInteger(Observable.merge(cm.getObservables()))
+            int sum = MathObservable.sumInteger(Observable.merge(cm.getObservables()))
                 .toBlocking()
                 .last();
 
-        Assert.assertEquals(5050, sum);
+            Assertions.assertEquals(5050, sum);
+        });
     }
 
 }

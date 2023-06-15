@@ -26,8 +26,8 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 
 public class ParameterDefinitionTest {
@@ -41,18 +41,19 @@ public class ParameterDefinitionTest {
         ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void missingRequiredParameter() {
-
-        Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
-        parameterDefinitions.put("foo", new StringParameter()
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
+            parameterDefinitions.put("foo", new StringParameter()
                 .name("foo")
                 .required()
                 .validator(Validators.<String>alwaysPass())
                 .build());
 
-        Map<String, Parameter> parameters = new HashMap<>();
-        ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
+            Map<String, Parameter> parameters = new HashMap<>();
+            ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
+        });
     }
 
     @Test
@@ -69,9 +70,9 @@ public class ParameterDefinitionTest {
         Map<String, Parameter> parameters = new HashMap<>();
         parameters.put("foo", new Parameter("foo", "test"));
         parameterState = ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
-        Assert.assertEquals(1, parameterState.size());
-        Assert.assertEquals(true, parameterState.containsKey("foo"));
-        Assert.assertEquals("test", parameterState.get("foo"));
+        Assertions.assertEquals(1, parameterState.size());
+        Assertions.assertEquals(true, parameterState.containsKey("foo"));
+        Assertions.assertEquals("test", parameterState.get("foo"));
     }
 
     @Test
@@ -92,9 +93,9 @@ public class ParameterDefinitionTest {
         Map<String, Parameter> parameters = new HashMap<>();
         parameters.put("required", new Parameter("required", "test"));
         parameterState = ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
-        Assert.assertEquals(1, parameterState.size());
-        Assert.assertEquals(true, parameterState.containsKey("required"));
-        Assert.assertEquals("test", parameterState.get("required"));
+        Assertions.assertEquals(1, parameterState.size());
+        Assertions.assertEquals(true, parameterState.containsKey("required"));
+        Assertions.assertEquals("test", parameterState.get("required"));
     }
 
     @Test
@@ -109,7 +110,7 @@ public class ParameterDefinitionTest {
         Map<String, Parameter> parameters = new HashMap<>();
         parameters.put("foo", new Parameter("foo", "A"));
         Map<String, Object> parameterState = ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
-        Assert.assertEquals(TestEnum.A, parameterState.get("foo"));
+        Assertions.assertEquals(TestEnum.A, parameterState.get("foo"));
     }
 
     ;
@@ -127,23 +128,25 @@ public class ParameterDefinitionTest {
         parameters.put("foo", new Parameter("foo", "   A   ,  C   "));
         Map<String, Object> parameterState = ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
         EnumSet<TestEnum> foo = (EnumSet<TestEnum>) parameterState.get("foo");
-        Assert.assertTrue(foo.contains(TestEnum.A));
-        Assert.assertTrue(foo.contains(TestEnum.C));
-        Assert.assertFalse(foo.contains(TestEnum.B));
+        Assertions.assertTrue(foo.contains(TestEnum.A));
+        Assertions.assertTrue(foo.contains(TestEnum.C));
+        Assertions.assertFalse(foo.contains(TestEnum.B));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void emptyEnumCSVListValidation() {
-        Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
-        parameterDefinitions.put("foo", new EnumCSVParameter<>(TestEnum.class)
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
+            parameterDefinitions.put("foo", new EnumCSVParameter<>(TestEnum.class)
                 .name("foo")
                 .required()
                 .validator(Validators.notNullOrEmptyEnumCSV())
                 .build());
 
-        Map<String, Parameter> parameters = new HashMap<>();
-        parameters.put("foo", new Parameter("foo", "  "));
-        ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
+            Map<String, Parameter> parameters = new HashMap<>();
+            parameters.put("foo", new Parameter("foo", "  "));
+            ParameterUtils.checkThenCreateState(parameterDefinitions, parameters);
+        });
     }
 
     enum TestEnum {A, B, C}

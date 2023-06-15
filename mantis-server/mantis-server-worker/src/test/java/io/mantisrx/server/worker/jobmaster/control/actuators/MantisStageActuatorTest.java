@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import io.mantisrx.server.worker.jobmaster.JobAutoScaler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 

@@ -15,16 +15,18 @@
  */
 package io.reactivx.mantis.operators;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,8 +37,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Matchers;
 import org.mockito.MockitoAnnotations;
 import rx.Notification;
@@ -552,11 +554,12 @@ public class OperatorGroupByTest {
         assertEquals(100, eventCounter.get());
     }
 
-    @Test(timeout = 1000)
+    @Test
     public void testCompletionIfInnerNotSubscribed() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicInteger eventCounter = new AtomicInteger();
-        Observable.range(0, 100)
+        assertTimeout(Duration.ofMillis(1000), () -> {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicInteger eventCounter = new AtomicInteger();
+            Observable.range(0, 100)
                 .groupBy(new Func1<Integer, Integer>() {
 
                     @Override
@@ -583,10 +586,11 @@ public class OperatorGroupByTest {
                         System.out.println("=> " + s);
                     }
                 });
-        if (!latch.await(500, TimeUnit.MILLISECONDS)) {
-            fail("timed out - never got completion");
-        }
-        assertEquals(2, eventCounter.get());
+            if (!latch.await(500, TimeUnit.MILLISECONDS)) {
+                fail("timed out - never got completion");
+            }
+            assertEquals(2, eventCounter.get());
+        });
     }
 
     @Test
@@ -1110,7 +1114,7 @@ public class OperatorGroupByTest {
         };
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
     }
