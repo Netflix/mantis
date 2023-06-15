@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
@@ -194,12 +193,18 @@ public class MetricsServer {
     }
 
     public String getGroupName(String meterName){
-        int underscoreIndex = meterName.indexOf('_');
+        if (meterName.indexOf(':') == -1) {
+            return meterName;
+        }
+        int underscoreIndex = meterName.indexOf(':');
             return meterName.substring(0, underscoreIndex);
     }
 
     public String getEventName(String meterName){
-        int underscoreIndex = meterName.indexOf('_');
+        if (meterName.indexOf(':') == -1) {
+            return meterName;
+        }
+        int underscoreIndex = meterName.indexOf(':');
             return meterName.substring(underscoreIndex+1);
     }
 
