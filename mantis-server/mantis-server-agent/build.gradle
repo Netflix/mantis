@@ -40,5 +40,5 @@ dependencies {
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"
 
 run {
-    standardInput = System.in
+//    standardInput = System.in
 }

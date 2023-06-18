@@ -66,7 +66,8 @@ dependencies {
 mainClassName = "io.mantisrx.server.master.MasterMain"
 
 run {
-    standardInput = System.in
+//    standardInput = System.in
+    args = ["-p", "master-local.properties"]
 }
 
 test {
