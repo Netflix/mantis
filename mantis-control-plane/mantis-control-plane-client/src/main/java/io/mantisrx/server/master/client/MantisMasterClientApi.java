@@ -47,6 +47,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.logging.LogLevel;
 import io.reactivex.mantis.remote.observable.ConnectToObservable;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
@@ -668,6 +669,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
 
     private WebSocketClient<TextWebSocketFrame, TextWebSocketFrame> getRxnettyWebSocketClient(String host,
                                                                                               int port, String uri) {
+        logger.info("Creating websocket client for " + host + ":" + port + " uri " + uri + " ...");
         return
                 RxNetty.<TextWebSocketFrame, TextWebSocketFrame>newWebSocketClientBuilder(host, port)
                         .withWebSocketURI(uri)
