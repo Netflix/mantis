@@ -178,14 +178,22 @@ public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, 
                             return summary;
                         } catch (RuntimeException e) {
                             metrics.increment(CommitterMetrics.COMMIT_FAILURE_COUNT);
-                            logger.error("error committing to Iceberg", e);
+                            logger.error("error committing to Iceberg table {}.{}.{}",
+                                config.getCatalog(),
+                                config.getDatabase(),
+                                config.getTable(),
+                                e);
                             return new HashMap<String, Object>();
                         }
                     })
                     .filter(summary -> !summary.isEmpty())
                     .doOnNext(summary -> {
                         metrics.increment(CommitterMetrics.COMMIT_SUCCESS_COUNT);
-                        logger.info("committed {}", summary);
+                        logger.info("committed to table {}.{}.{} with summary: {}",
+                            config.getCatalog(),
+                            config.getDatabase(),
+                            config.getTable(),
+                            summary);
                     });
         }
     }
