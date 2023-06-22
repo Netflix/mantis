@@ -29,7 +29,6 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteRe
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
-import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
@@ -39,15 +38,15 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
-import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderUpgradeRequest;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable.ResourceClusterScaleRulesWritableBuilder;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
-import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.shaded.com.google.common.base.Strings;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -61,28 +60,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
-    @VisibleForTesting
-    static Props props(
-            final ResourceClusterProvider resourceClusterProvider) {
-        return Props.create(
-                ResourceClustersHostManagerActor.class,
-                resourceClusterProvider,
-                new InMemoryOnlyResourceClusterStorageProvider());
-    }
-
     public static Props props(
             final ResourceClusterProvider resourceClusterProvider,
-            final ResourceClusterStorageProvider resourceStorageProvider) {
+            final IMantisPersistenceProvider persistenceProvider) {
         // TODO(andyz): investigate atlas metered-mailbox.
-        return Props.create(ResourceClustersHostManagerActor.class, resourceClusterProvider, resourceStorageProvider);
+        return Props.create(ResourceClustersHostManagerActor.class, resourceClusterProvider, persistenceProvider);
     }
 
     private final ResourceClusterProvider resourceClusterProvider;
-    private final ResourceClusterStorageProvider resourceClusterStorageProvider;
+    private final IMantisPersistenceProvider resourceClusterStorageProvider;
 
     public ResourceClustersHostManagerActor(
             final ResourceClusterProvider resourceClusterProvider,
-            final ResourceClusterStorageProvider resourceStorageProvider) {
+            final IMantisPersistenceProvider resourceStorageProvider) {
         this.resourceClusterProvider = resourceClusterProvider;
         this.resourceClusterStorageProvider = resourceStorageProvider;
     }
@@ -93,7 +83,6 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
             .match(ProvisionResourceClusterRequest.class, this::onProvisionResourceClusterRequest)
             .match(ListResourceClusterRequest.class, this::onListResourceClusterRequest)
             .match(GetResourceClusterSpecRequest.class, this::onGetResourceClusterSpecRequest)
-            .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
             .match(DeleteResourceClusterRequest.class, this::onDeleteResourceCluster)
 
             // Scale rule section
@@ -109,39 +98,46 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     }
 
     private void onCreateResourceClusterScaleRuleRequest(CreateResourceClusterScaleRuleRequest req) {
-        ResourceClusterScaleSpec ruleSpec = ResourceClusterScaleSpec.builder()
-            .maxSize(req.getRule().getMaxSize())
-            .minSize(req.getRule().getMinSize())
-            .minIdleToKeep(req.getRule().getMinIdleToKeep())
-            .maxIdleToKeep(req.getRule().getMaxIdleToKeep())
-            .coolDownSecs(req.getRule().getCoolDownSecs())
-            .skuId(req.getRule().getSkuId())
-            .clusterId(req.getRule().getClusterId())
-            .build();
+        try {
+            ResourceClusterScaleSpec ruleSpec = ResourceClusterScaleSpec.builder()
+                .maxSize(req.getRule().getMaxSize())
+                .minSize(req.getRule().getMinSize())
+                .minIdleToKeep(req.getRule().getMinIdleToKeep())
+                .maxIdleToKeep(req.getRule().getMaxIdleToKeep())
+                .coolDownSecs(req.getRule().getCoolDownSecs())
+                .skuId(req.getRule().getSkuId())
+                .clusterId(req.getRule().getClusterId())
+                .build();
 
-        pipe(this.resourceClusterStorageProvider.registerResourceClusterScaleRule(ruleSpec)
-                .thenApply(this::toGetResourceClusterScaleRulesResponse)
-                .exceptionally(err -> {
-                    log.error("Error from registerResourceClusterScaleRule: {}, {}", err.getMessage(), req);
-                    return GetResourceClusterScaleRulesResponse.builder()
-                        .message(err.getMessage())
-                        .responseCode(ResponseCode.SERVER_ERROR).build();
-                }),
-            getContext().dispatcher())
-            .to(getSender());
+            self().tell(toGetResourceClusterScaleRulesResponse(resourceClusterStorageProvider.registerResourceClusterScaleRule(ruleSpec)), getSender());
+        } catch (Exception err) {
+            log.error("Error from registerResourceClusterScaleRule: {}", req, err);
+            GetResourceClusterScaleRulesResponse response =
+                GetResourceClusterScaleRulesResponse
+                    .builder()
+                    .message(err.getMessage())
+                    .responseCode(ResponseCode.SERVER_ERROR)
+                    .build();
+            getSender().tell(response, getSelf());
+        }
     }
 
     private void onGetResourceClusterScaleRulesRequest(GetResourceClusterScaleRulesRequest req) {
-        pipe(this.resourceClusterStorageProvider.getResourceClusterScaleRules(req.getClusterId())
-                .thenApply(this::toGetResourceClusterScaleRulesResponse)
-                .exceptionally(err -> {
-                    log.error("Error from getResourceClusterScaleRules: {}, {}", err, req);
-                    return GetResourceClusterScaleRulesResponse.builder()
-                        .message(err.getMessage())
-                        .responseCode(ResponseCode.SERVER_ERROR).build();
-                }),
-            getContext().dispatcher())
-            .to(getSender());
+        try {
+            final GetResourceClusterScaleRulesResponse response =
+                toGetResourceClusterScaleRulesResponse(
+                    resourceClusterStorageProvider.getResourceClusterScaleRules(req.getClusterId()));
+            getSender().tell(response, getSelf());
+        } catch (IOException e) {
+            log.error("Error from getResourceClusterScaleRules: {}", req, e);
+            GetResourceClusterScaleRulesResponse errorResponse =
+                GetResourceClusterScaleRulesResponse
+                    .builder()
+                    .message(e.getMessage())
+                    .responseCode(ResponseCode.SERVER_ERROR)
+                    .build();
+            getSender().tell(errorResponse, getSelf());
+        }
     }
 
     private void onCreateAllResourceClusterScaleRulesRequest(CreateAllResourceClusterScaleRulesRequest req) {
@@ -159,19 +155,23 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .clusterId(r.getClusterId())
                 .build()));
 
-        pipe(this.resourceClusterStorageProvider.registerResourceClusterScaleRule(rulesBuilder.build())
-            .thenApply(this::toGetResourceClusterScaleRulesResponse)
-                .exceptionally(err -> {
-                    log.error("Error from registerResourceClusterScaleRule: {}, {}", err, req);
-                    return GetResourceClusterScaleRulesResponse.builder()
-                        .message(err.getMessage())
-                        .responseCode(ResponseCode.SERVER_ERROR).build();
-                }),
-            getContext().dispatcher())
-            .to(getSender());
+        GetResourceClusterScaleRulesResponse response;
+        try {
+             response =
+                 toGetResourceClusterScaleRulesResponse(
+                     resourceClusterStorageProvider.registerResourceClusterScaleRule(rulesBuilder.build()));
+        } catch (IOException e) {
+            log.error("Error from registerResourceClusterScaleRule: {}", req, e);
+            response =
+                GetResourceClusterScaleRulesResponse.builder()
+                    .message(e.getMessage())
+                    .responseCode(ResponseCode.SERVER_ERROR)
+                    .build();
+        }
+        sender().tell(response, self());
     }
 
-    private ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse toGetResourceClusterScaleRulesResponse(
+    private static ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse toGetResourceClusterScaleRulesResponse(
         ResourceClusterScaleRulesWritable rules) {
         return GetResourceClusterScaleRulesResponse.builder()
             .responseCode(ResponseCode.SUCCESS)
@@ -191,71 +191,82 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
     }
 
     private void onDeleteResourceCluster(DeleteResourceClusterRequest req) {
-        /**
-         * Proper cluster deletion requires handling various cleanups e.g.:
-         * * Migrate existing jobs.
-         * * Un-provision cluster resources (nodes, network, storage e.g.).
-         * * Update internal tracking state and persistent data.
-         * For now this API will only serve the persistence layer update.
+        /*
+          Proper cluster deletion requires handling various cleanups e.g.:
+          * Migrate existing jobs.
+          * Un-provision cluster resources (nodes, network, storage e.g.).
+          * Update internal tracking state and persistent data.
+          For now this API will only serve the persistence layer update.
          */
 
-        pipe(this.resourceClusterStorageProvider.deregisterCluster(req.getClusterId())
-                .thenApply(clustersW ->
-                    DeleteResourceClusterResponse.builder()
-                        .responseCode(ResponseCode.SUCCESS)
-                        .build())
-                .exceptionally(err ->
-                    DeleteResourceClusterResponse.builder()
-                        .message(err.getMessage())
-                        .responseCode(ResponseCode.SERVER_ERROR).build()),
-            getContext().dispatcher())
-            .to(getSender());
-    }
-
-    private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
-        this.resourceClusterProvider.getResponseHandler().handleProvisionResponse(resp);
+        try {
+            this.resourceClusterStorageProvider.deregisterCluster(req.getClusterId());
+            DeleteResourceClusterResponse response =
+                DeleteResourceClusterResponse
+                    .builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .build();
+            getSender().tell(response, getSelf());
+        } catch (IOException err) {
+            DeleteResourceClusterResponse response =
+                DeleteResourceClusterResponse
+                    .builder()
+                    .message(err.getMessage())
+                    .responseCode(ResponseCode.SERVER_ERROR)
+                    .build();
+            getSender().tell(response, getSelf());
+        }
     }
 
     private void onListResourceClusterRequest(ListResourceClusterRequest req) {
-        pipe(this.resourceClusterStorageProvider.getRegisteredResourceClustersWritable()
-                .thenApply(clustersW ->
-                        ListResourceClustersResponse.builder()
-                                .responseCode(ResponseCode.SUCCESS)
-                                .registeredResourceClusters(clustersW.getClusters().entrySet().stream().map(
-                                        kv -> ListResourceClustersResponse.RegisteredResourceCluster.builder()
-                                                .id(kv.getValue().getClusterId())
-                                                .version(kv.getValue().getVersion())
-                                                .build())
-                                        .collect(Collectors.toList()))
-                                .build()
-                ).exceptionally(err ->
-                                ListResourceClustersResponse.builder()
-                                        .message(err.getMessage())
-                                        .responseCode(ResponseCode.SERVER_ERROR).build()),
-                getContext().dispatcher())
-                .to(getSender());
+        try {
+            RegisteredResourceClustersWritable clustersW =
+                this.resourceClusterStorageProvider.getRegisteredResourceClustersWritable();
+            ListResourceClustersResponse response =
+                ListResourceClustersResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .registeredResourceClusters(clustersW.getClusters().entrySet().stream().map(
+                            kv -> ListResourceClustersResponse.RegisteredResourceCluster.builder()
+                                .id(kv.getValue().getClusterId())
+                                .version(kv.getValue().getVersion())
+                                .build())
+                        .collect(Collectors.toList()))
+                    .build();
+            getSender().tell(response, getSelf());
+        } catch (IOException err) {
+            ListResourceClustersResponse response =
+                ListResourceClustersResponse
+                    .builder()
+                    .message(err.getMessage())
+                    .responseCode(ResponseCode.SERVER_ERROR)
+                    .build();
+            getSender().tell(response, getSelf());
+        }
     }
 
     private void onGetResourceClusterSpecRequest(GetResourceClusterSpecRequest req) {
-        pipe(this.resourceClusterStorageProvider.getResourceClusterSpecWritable(req.getId())
-                        .thenApply(specW -> {
-                            if (specW == null) {
-                                return GetResourceClusterResponse.builder()
-                                        .responseCode(ResponseCode.CLIENT_ERROR_NOT_FOUND)
-                                        .build();
-                            }
-                            return GetResourceClusterResponse.builder()
-                                    .responseCode(ResponseCode.SUCCESS)
-                                    .clusterSpec(specW.getClusterSpec())
-                                    .build();
-                        })
-                        .exceptionally(err ->
-                                GetResourceClusterResponse.builder()
-                                        .responseCode(ResponseCode.SERVER_ERROR)
-                                        .message(err.getMessage())
-                                        .build()),
-                getContext().dispatcher())
-                .to(getSender());
+        try {
+            ResourceClusterSpecWritable specW =
+                this.resourceClusterStorageProvider.getResourceClusterSpecWritable(req.getId());
+            final GetResourceClusterResponse response;
+            if (specW == null) {
+                response = GetResourceClusterResponse.builder()
+                    .responseCode(ResponseCode.CLIENT_ERROR_NOT_FOUND)
+                    .build();
+            } else {
+                response = GetResourceClusterResponse.builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .clusterSpec(specW.getClusterSpec())
+                    .build();
+            }
+            getSender().tell(response, getSelf());
+        } catch (IOException err) {
+            GetResourceClusterResponse response = GetResourceClusterResponse.builder()
+                .responseCode(ResponseCode.SERVER_ERROR)
+                .message(err.getMessage())
+                .build();
+            getSender().tell(response, getSelf());
+        }
     }
 
     private void onProvisionResourceClusterRequest(ProvisionResourceClusterRequest req) {
@@ -290,32 +301,38 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .build();
 
         // Cluster spec is returned for API request.
-        CompletionStage<GetResourceClusterResponse> updateSpecToStoreFut =
-                this.resourceClusterStorageProvider.registerAndUpdateClusterSpec(specWritable)
-                        .thenApply(specW -> GetResourceClusterResponse.builder()
-                                        .responseCode(ResponseCode.SUCCESS)
-                                        .clusterSpec(specW.getClusterSpec())
-                                        .build())
-                        .exceptionally(err ->
-                                GetResourceClusterResponse.builder()
-                                .responseCode(ResponseCode.SERVER_ERROR)
-                                .message(err.getMessage())
-                                .build());
-        pipe(updateSpecToStoreFut, getContext().dispatcher()).to(getSender());
+        try {
+            ResourceClusterSpecWritable specW = this.resourceClusterStorageProvider.registerAndUpdateClusterSpec(specWritable);
+            GetResourceClusterResponse response =
+                GetResourceClusterResponse
+                    .builder()
+                    .responseCode(ResponseCode.SUCCESS)
+                    .clusterSpec(specW.getClusterSpec())
+                    .build();
+            getSender().tell(response, getSelf());
+            this.resourceClusterProvider.provisionClusterIfNotPresent(req);
+        } catch (IOException err) {
+            GetResourceClusterResponse response = GetResourceClusterResponse.builder()
+                .responseCode(ResponseCode.SERVER_ERROR)
+                .message(err.getMessage())
+                .build();
+            getSender().tell(response, getSelf());
+        }
+//        pipe(updateSpecToStoreFut, getContext().dispatcher()).to(getSender());
         log.debug("[Pipe finish] storing cluster spec.");
 
         // Provision response is directed back to this actor to handle its submission result.
-        CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionFut =
-                updateSpecToStoreFut
-                        .thenCompose(resp -> {
-                            if (resp.responseCode.equals(ResponseCode.SUCCESS)) {
-                                return this.resourceClusterProvider.provisionClusterIfNotPresent(req);
-                            }
-                            return CompletableFuture.completedFuture(
-                                ResourceClusterProvisionSubmissionResponse.builder().response(resp.message).build());
-                        })
-                        .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
-        pipe(provisionFut, getContext().dispatcher()).to(getSelf());
+//        CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionFut =
+//                updateSpecToStoreFut
+//                        .thenCompose(resp -> {
+//                            if (resp.responseCode.equals(ResponseCode.SUCCESS)) {
+//                                return
+//                            }
+//                            return CompletableFuture.completedFuture(
+//                                ResourceClusterProvisionSubmissionResponse.builder().response(resp.message).build());
+//                        })
+//                        .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
+//        pipe(provisionFut, getContext().dispatcher()).to(getSelf());
         log.debug("[Pipe finish 2]: returned provision fut.");
     }
 
@@ -336,23 +353,27 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
 
         CompletionStage<UpgradeClusterContainersResponse> upgradeFut;
         if (req.isEnableSkuSpecUpgrade()) {
-            upgradeFut = this.resourceClusterStorageProvider.getResourceClusterSpecWritable(req.getClusterId())
-                .thenCompose(specW -> {
-                    if (specW == null) {
-                        return CompletableFuture.completedFuture(UpgradeClusterContainersResponse.builder()
+            try {
+                ResourceClusterSpecWritable specW = this.resourceClusterStorageProvider.getResourceClusterSpecWritable(req.getClusterId());
+                if (specW == null) {
+                    upgradeFut =
+                        CompletableFuture.completedFuture(UpgradeClusterContainersResponse
+                            .builder()
                             .responseCode(ResponseCode.CLIENT_ERROR_NOT_FOUND)
                             .build());
-                    }
-
+                } else {
                     ResourceClusterProviderUpgradeRequest enrichedReq =
                         ResourceClusterProviderUpgradeRequest.from(req, specW.getClusterSpec());
-                    return this.resourceClusterProvider.upgradeContainerResource(enrichedReq);
-                })
-                .exceptionally(err ->
-                    UpgradeClusterContainersResponse.builder()
+                    upgradeFut = this.resourceClusterProvider.upgradeContainerResource(enrichedReq);
+                }
+            } catch (IOException err) {
+                upgradeFut = CompletableFuture.completedFuture(
+                    UpgradeClusterContainersResponse
+                        .builder()
                         .responseCode(ResponseCode.SERVER_ERROR)
                         .message(err.getMessage())
                         .build());
+            }
         }
         else {
             log.info("Upgrading cluster image only: {}", req.getClusterId());

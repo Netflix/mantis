@@ -16,8 +16,6 @@
 
 package io.mantisrx.master.resourcecluster;
 
-import static akka.pattern.Patterns.pipe;
-
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -36,18 +34,19 @@ import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse.UsageByG
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -74,7 +73,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
     private final ActorRef resourceClusterActor;
     private final ActorRef resourceClusterHostActor;
-    private final ResourceClusterStorageProvider storageProvider;
+    private final IMantisPersistenceProvider storageProvider;
 
     private final ConcurrentMap<ContainerSkuID, ClusterAvailabilityRule> skuToRuleMap = new ConcurrentHashMap<>();
 
@@ -91,7 +90,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Clock clock,
         Duration scalerPullThreshold,
         Duration ruleRefreshThreshold,
-        ResourceClusterStorageProvider storageProvider,
+        IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
         return Props.create(
@@ -110,7 +109,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Clock clock,
         Duration scalerPullThreshold,
         Duration ruleRefreshThreshold,
-        ResourceClusterStorageProvider storageProvider,
+        IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
         ActorRef resourceClusterActor) {
         this.clusterId = clusterId;
@@ -268,28 +267,33 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     }
 
     private void fetchRuleSet() {
-        CompletionStage<GetRuleSetResponse> fetchFut =
-            this.storageProvider.getResourceClusterScaleRules(this.clusterId)
-                .thenApply(rules -> {
-                    Set<ContainerSkuID> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
-                    final Set<ContainerSkuID> preservedKeys = rules.getScaleRules().keySet().stream().map(ContainerSkuID::of).collect(Collectors.toSet());
-                    removedKeys.removeAll(preservedKeys);
-                    removedKeys.forEach(this.skuToRuleMap::remove);
+        try {
+            ResourceClusterScaleRulesWritable rules =
+                this.storageProvider.getResourceClusterScaleRules(this.clusterId);
+            Set<ContainerSkuID> removedKeys = new HashSet<>(this.skuToRuleMap.keySet());
+            final Set<ContainerSkuID> preservedKeys = rules.getScaleRules().keySet().stream()
+                .map(ContainerSkuID::of).collect(Collectors.toSet());
+            removedKeys.removeAll(preservedKeys);
+            removedKeys.forEach(this.skuToRuleMap::remove);
 
-                    rules
-                        .getScaleRules().values()
-                        .forEach(scaleRule -> {
-                            log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, scaleRule);
-                            final ClusterAvailabilityRule clusterAvailabilityRule = createClusterAvailabilityRule(scaleRule, this.skuToRuleMap.get(scaleRule.getSkuId()));
-                            this.skuToRuleMap.put(scaleRule.getSkuId(), clusterAvailabilityRule);
-                        });
-                    return GetRuleSetResponse.builder()
-                        .rules(ImmutableMap.copyOf(this.skuToRuleMap))
-                        .clusterID(this.clusterId)
-                        .build();
+            rules
+                .getScaleRules().values()
+                .forEach(scaleRule -> {
+                    log.info("Cluster [{}]: Adding scaleRule: {}", this.clusterId, scaleRule);
+                    final ClusterAvailabilityRule clusterAvailabilityRule = createClusterAvailabilityRule(
+                        scaleRule, this.skuToRuleMap.get(scaleRule.getSkuId()));
+                    this.skuToRuleMap.put(scaleRule.getSkuId(), clusterAvailabilityRule);
                 });
+            GetRuleSetResponse fetchFut =
+                GetRuleSetResponse.builder()
+                    .rules(ImmutableMap.copyOf(this.skuToRuleMap))
+                    .clusterID(this.clusterId)
+                    .build();
 
-        pipe(fetchFut, getContext().getDispatcher()).to(getSelf());
+            self().tell(fetchFut, self());
+        } catch (IOException e) {
+            log.error("Failed to fetch rule set for cluster: {}", this.clusterId, e);
+        }
     }
 
     private ClusterAvailabilityRule createClusterAvailabilityRule(ResourceClusterScaleSpec scaleSpec, ClusterAvailabilityRule existingRule) {

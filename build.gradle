@@ -21,6 +21,7 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven { url 'https://artifacts-oss.netflix.net/maven-oss-releases' }
     }
     dependencies {
         classpath 'com.netflix.nebula:gradle-netflixoss-project-plugin:10.6.0'

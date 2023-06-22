@@ -177,7 +177,7 @@ public class MasterMain implements Service {
             final ActorRef resourceClustersHostActor = system.actorOf(
                 ResourceClustersHostManagerActor.props(
                     new ResourceClusterProviderAdapter(this.config.getResourceClusterProvider(), system),
-                    config.getResourceClusterStorageProvider()),
+                    storageProvider),
                 "ResourceClusterHostActor");
 
             final RpcSystem rpcSystem =
@@ -194,7 +194,7 @@ public class MasterMain implements Service {
                     mantisJobStore,
                     jobMessageRouter,
                     resourceClustersHostActor,
-                    config.getResourceClusterStorageProvider());
+                    storageProvider);
 
             // end of new stuff
             final WorkerRegistry workerRegistry = WorkerRegistryV2.INSTANCE;

@@ -38,8 +38,8 @@ import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorGatew
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorInfoRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterScalerActor.TriggerClusterRuleRefreshRequest;
 import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -72,7 +72,7 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final Map<ClusterID, ActorHolder> resourceClusterActorMap;
 
     private final ActorRef resourceClusterHostActor;
-    private final ResourceClusterStorageProvider resourceStorageProvider;
+    private final IMantisPersistenceProvider mantisPersistenceProvider;
     private final JobMessageRouter jobMessageRouter;
 
     public static Props props(
@@ -81,7 +81,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         RpcService rpcService,
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
-        ResourceClusterStorageProvider resourceStorageProvider,
+        IMantisPersistenceProvider mantisPersistenceProvider,
         JobMessageRouter jobMessageRouter) {
         return Props.create(
             ResourceClustersManagerActor.class,
@@ -90,7 +90,7 @@ class ResourceClustersManagerActor extends AbstractActor {
             rpcService,
             mantisJobStore,
             resourceClusterHostActorRef,
-            resourceStorageProvider,
+            mantisPersistenceProvider,
             jobMessageRouter);
     }
 
@@ -99,14 +99,14 @@ class ResourceClustersManagerActor extends AbstractActor {
         RpcService rpcService,
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
-        ResourceClusterStorageProvider resourceStorageProvider,
+        IMantisPersistenceProvider mantisPersistenceProvider,
         JobMessageRouter jobMessageRouter) {
         this.masterConfiguration = masterConfiguration;
         this.clock = clock;
         this.rpcService = rpcService;
         this.mantisJobStore = mantisJobStore;
         this.resourceClusterHostActor = resourceClusterHostActorRef;
-        this.resourceStorageProvider = resourceStorageProvider;
+        this.mantisPersistenceProvider = mantisPersistenceProvider;
         this.jobMessageRouter = jobMessageRouter;
 
         this.resourceClusterActorMap = new HashMap<>();
@@ -185,7 +185,7 @@ class ResourceClustersManagerActor extends AbstractActor {
                     clock,
                     Duration.ofSeconds(masterConfiguration.getScalerTriggerThresholdInSecs()),
                     Duration.ofSeconds(masterConfiguration.getScalerRuleSetRefreshThresholdInSecs()),
-                    this.resourceStorageProvider,
+                    this.mantisPersistenceProvider,
                     this.resourceClusterHostActor,
                     rcActor
                 ),
