@@ -16,6 +16,10 @@
 
 package io.mantisrx.common.metrics;
 
+import io.mantisrx.common.metrics.measurement.MicrometerMeasurements;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.mantisrx.common.metrics.measurement.CounterMeasurement;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
@@ -62,29 +66,36 @@ public class MetricsServer {
         mapper.registerModule(new Jdk8Module());
     }
 
-    private Observable<Measurements> measurements(long timeFrequency) {
-        final MetricsRegistry registry = MetricsRegistry.getInstance();
+    private Observable<MicrometerMeasurements> measurements(long timeFrequency) {
+        final MeterRegistry registry = Metrics.globalRegistry;
+//        final MetricsRegistry registry = MetricsRegistry.getInstance();
         return
                 Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
-                        .flatMap(new Func1<Long, Observable<Measurements>>() {
+                        .flatMap(new Func1<Long, Observable<MicrometerMeasurements>>() {
                             @Override
-                            public Observable<Measurements> call(Long t1) {
+                            public Observable<MicrometerMeasurements> call(Long t1) {
                                 long timestamp = System.currentTimeMillis();
-                                List<Measurements> measurements = new ArrayList<>();
-                                for (Metrics metrics : registry.metrics()) {
-                                    Collection<CounterMeasurement> counters = new LinkedList<>();
-                                    Collection<GaugeMeasurement> gauges = new LinkedList<>();
-
-                                    for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
-                                        Counter counter = counterEntry.getValue();
-                                        counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
-                                    }
-                                    for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
-                                        gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
-                                    }
-                                    measurements.add(new Measurements(metrics.getMetricGroupId().name(),
-                                            timestamp, counters, gauges, tags));
+                                List<MicrometerMeasurements> measurements = new ArrayList<>();
+                                for (Meter meter: registry.getMeters()) {
+                                    measurements.add(new MicrometerMeasurements(meter.getId().getName(),
+                                            timestamp,
+                                            meter.getId().getType(),
+                                            tags));
                                 }
+//                                for (Metrics metrics : registry.metrics()) {
+//                                    Collection<CounterMeasurement> counters = new LinkedList<>();
+//                                    Collection<GaugeMeasurement> gauges = new LinkedList<>();
+//
+//                                    for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
+//                                        Counter counter = counterEntry.getValue();
+//                                        counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
+//                                    }
+//                                    for (Entry<MetricId, Gauge> gaugeEntry : metrics.gauges().entrySet()) {
+//                                        gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
+//                                    }
+//                                    measurements.add(new Measurements(metrics.getMetricGroupId().name(),
+//                                            timestamp, counters, gauges, tags));
+//                                }
                                 return Observable.from(measurements);
                             }
                         });
@@ -92,7 +103,7 @@ public class MetricsServer {
 
     public void start() {
 
-        final Observable<Measurements> measurements = measurements(publishRateInSeconds);
+        final Observable<MicrometerMeasurements> measurements = measurements(publishRateInSeconds);
 
         logger.info("Starting metrics server on port: " + port);
         server = RxNetty.createHttpServer(
@@ -109,10 +120,10 @@ public class MetricsServer {
                             namesToFilter.addAll(queryParameters.get("name"));
                         }
 
-                        Observable<Measurements> filteredObservable = measurements
-                                .filter(new Func1<Measurements, Boolean>() {
+                        Observable<MicrometerMeasurements> filteredObservable = measurements
+                                .filter(new Func1<MicrometerMeasurements, Boolean>() {
                                     @Override
-                                    public Boolean call(Measurements measurements) {
+                                    public Boolean call(MicrometerMeasurements measurements) {
                                         if (!namesToFilter.isEmpty()) {
                                             // check filters
                                             for (String name : namesToFilter) {
@@ -136,9 +147,9 @@ public class MetricsServer {
                                     }
                                 });
 
-                        return filteredObservable.flatMap(new Func1<Measurements, Observable<Void>>() {
+                        return filteredObservable.flatMap(new Func1<MicrometerMeasurements, Observable<Void>>() {
                             @Override
-                            public Observable<Void> call(Measurements metrics) {
+                            public Observable<Void> call(MicrometerMeasurements metrics) {
                                 response.getHeaders().set("Access-Control-Allow-Origin", "*");
                                 response.getHeaders().set("content-type", "text/event-stream");
                                 ServerSentEvent event = null;
