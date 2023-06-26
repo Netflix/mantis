@@ -61,7 +61,7 @@ import org.junit.Test;
 public class ResourceClustersHostManagerActorTests {
     static ActorSystem system;
 
-    private final IMantisPersistenceProvider storageProvider = mock(InMemoryPersistenceProvider.class);
+    private final IMantisPersistenceProvider storageProvider = mock(IMantisPersistenceProvider.class);
 
 
     @BeforeClass
@@ -93,7 +93,7 @@ public class ResourceClustersHostManagerActorTests {
         ));
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
-        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider, storageProvider));
+        ActorRef resourceClusterActor = system.actorOf(ResourceClustersHostManagerActor.props(resProvider, new InMemoryPersistenceProvider()));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 

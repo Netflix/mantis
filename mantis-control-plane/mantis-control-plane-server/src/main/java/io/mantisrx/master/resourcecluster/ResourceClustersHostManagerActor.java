@@ -307,27 +307,30 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .build();
 
         // Cluster spec is returned for API request.
+        GetResourceClusterResponse response;
         try {
             ResourceClusterSpecWritable specW = this.resourceClusterStorageProvider.registerAndUpdateClusterSpec(specWritable);
-            GetResourceClusterResponse response =
+            response =
                 GetResourceClusterResponse
                     .builder()
                     .responseCode(ResponseCode.SUCCESS)
                     .clusterSpec(specW.getClusterSpec())
                     .build();
-            getSender().tell(response, getSelf());
+        } catch (IOException err) {
+            response = GetResourceClusterResponse.builder()
+                .responseCode(ResponseCode.SERVER_ERROR)
+                .message(err.getMessage())
+                .build();
+        }
+        getSender().tell(response, getSelf());
+
+        if (response.responseCode.equals(ResponseCode.SUCCESS)) {
             // Provision response is directed back to this actor to handle its submission result.
             CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionFut =
                 this.resourceClusterProvider
                     .provisionClusterIfNotPresent(req)
                     .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
             pipe(provisionFut, getContext().dispatcher()).to(getSelf());
-        } catch (IOException err) {
-            GetResourceClusterResponse response = GetResourceClusterResponse.builder()
-                .responseCode(ResponseCode.SERVER_ERROR)
-                .message(err.getMessage())
-                .build();
-            getSender().tell(response, getSelf());
         }
     }
 
