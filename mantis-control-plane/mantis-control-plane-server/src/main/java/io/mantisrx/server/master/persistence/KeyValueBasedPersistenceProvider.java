@@ -26,6 +26,10 @@ import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
@@ -79,10 +83,10 @@ import rx.Observable;
  * This has all the table-models and mantis specific logic for how
  * mantis master should store job, cluster and related metadata
  * assuming the underlying storage provides key based lookups.
- *
+ * <p>
  * The instance of this class needs an actual key-value storage
  * implementation (implements KeyValueStorageProvider) to function.
- *
+ * <p>
  * Look at {@code io.mantisrx.server.master.store.KeyValueStorageProvider}
  * to see the features needed from the storage.
  *   Effectively, an apache-cassandra like storage with primary key made
@@ -765,5 +769,137 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
             logger.error("Error while storing job artifact {} to Cassandra Storage Provider.", jobArtifact, e);
             throw new IOException(e);
         }
+    }
+
+    @Override
+    public ResourceClusterSpecWritable registerAndUpdateClusterSpec(
+        ResourceClusterSpecWritable clusterSpecW) throws IOException {
+        RegisteredResourceClustersWritable oldValue = getRegisteredResourceClustersWritable();
+        RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder rcBuilder =
+            (oldValue == null) ? RegisteredResourceClustersWritable.builder()
+                : oldValue.toBuilder();
+        RegisteredResourceClustersWritable newValue = rcBuilder
+            .cluster(
+                clusterSpecW.getId().getResourceID(),
+                RegisteredResourceClustersWritable.ClusterRegistration
+                    .builder()
+                    .clusterId(clusterSpecW.getId())
+                    .version(clusterSpecW.getVersion())
+                    .build())
+            .build();
+        // todo(sundaram): Check if this will work
+        kvStore.upsert(
+            CONTROLPLANE_NS,
+            getClusterKeyFromId(clusterSpecW.getId()), //partition key
+            "", //secondary key
+            mapper.writeValueAsString(clusterSpecW));
+        kvStore.upsert(CONTROLPLANE_NS, CLUSTER_REGISTRATION_KEY, "", mapper.writeValueAsString(newValue));
+        return getResourceClusterSpecWritable(clusterSpecW.getId());
+    }
+
+    @Override
+    public RegisteredResourceClustersWritable deregisterCluster(ClusterID clusterId)
+        throws IOException {
+        RegisteredResourceClustersWritable oldValue = getRegisteredResourceClustersWritable();
+        RegisteredResourceClustersWritable.RegisteredResourceClustersWritableBuilder rcBuilder =
+            RegisteredResourceClustersWritable.builder();
+
+        oldValue
+            .getClusters()
+            .entrySet()
+            .stream()
+            .filter(kv -> !Objects.equals(clusterId.getResourceID(), kv.getKey()))
+            .forEach(kv -> rcBuilder.cluster(kv.getKey(), kv.getValue()));
+        RegisteredResourceClustersWritable newValue = rcBuilder.build();
+        kvStore.upsert(
+            CONTROLPLANE_NS,
+            CLUSTER_REGISTRATION_KEY, //partition key
+            "", //secondary key
+            mapper.writeValueAsString(newValue));
+
+        kvStore.delete(CONTROLPLANE_NS, getClusterKeyFromId(clusterId), "");
+        return newValue;
+    }
+
+    @Override
+    public RegisteredResourceClustersWritable getRegisteredResourceClustersWritable()
+        throws IOException {
+        String values =
+            kvStore.get(CONTROLPLANE_NS, CLUSTER_REGISTRATION_KEY, "");
+        if (values == null) {
+            return RegisteredResourceClustersWritable.builder().build();
+        } else {
+            return mapper.readValue(values, RegisteredResourceClustersWritable.class);
+        }
+    }
+
+    @Override
+    public ResourceClusterSpecWritable getResourceClusterSpecWritable(ClusterID clusterID)
+        throws IOException {
+        String result = kvStore.get(
+            CONTROLPLANE_NS,
+            getClusterKeyFromId(clusterID), //partition key
+            "");
+        if (result == null) {
+            return null;
+        } else {
+            return mapper.readValue(result, ResourceClusterSpecWritable.class);
+        }
+    }
+
+    @Override
+    public ResourceClusterScaleRulesWritable getResourceClusterScaleRules(ClusterID clusterId)
+        throws IOException {
+        String res = kvStore.get(CONTROLPLANE_NS, getClusterRuleKeyFromId(clusterId), "");
+        if (res == null) {
+            return ResourceClusterScaleRulesWritable.builder().clusterId(clusterId).build();
+        } else {
+            return mapper.readValue(res, ResourceClusterScaleRulesWritable.class);
+        }
+    }
+
+    @Override
+    public ResourceClusterScaleRulesWritable registerResourceClusterScaleRule(
+        ResourceClusterScaleRulesWritable ruleSpec) throws IOException {
+        kvStore.upsert(
+            CONTROLPLANE_NS,
+            getClusterRuleKeyFromId(ruleSpec.getClusterId()), //partition key
+            "", //secondary key
+            mapper.writeValueAsString(ruleSpec));
+        return getResourceClusterScaleRules(ruleSpec.getClusterId());
+    }
+
+    @Override
+    public ResourceClusterScaleRulesWritable registerResourceClusterScaleRule(
+        ResourceClusterScaleSpec rule) throws IOException {
+        ResourceClusterScaleRulesWritable existing =
+            getResourceClusterScaleRules(rule.getClusterId());
+        final ResourceClusterScaleRulesWritable newSpec;
+        if (existing == null) {
+            newSpec =
+                ResourceClusterScaleRulesWritable.builder()
+                    .clusterId(rule.getClusterId())
+                    .scaleRule(rule.getSkuId().getResourceID(), rule)
+                    .build();
+        } else {
+            newSpec =
+                existing
+                    .toBuilder()
+                    .scaleRule(rule.getSkuId().getResourceID(), rule)
+                    .build();
+        }
+        return registerResourceClusterScaleRule(newSpec);
+    }
+
+    private static final String RESOURCE_CLUSTER_REGISTRATION = "ResourceClusterRegistration";
+    private static String getClusterKeyFromId(ClusterID id) {
+        return RESOURCE_CLUSTER_REGISTRATION + "_" + id.getResourceID();
+    }
+
+    private static final String CLUSTER_REGISTRATION_KEY = "resource_cluster_registrations";
+
+    private static final String RESOURCE_CLUSTER_RULE_PREFIX = "ResourceClusterRulePrefix";
+    private static String getClusterRuleKeyFromId(ClusterID id) {
+        return RESOURCE_CLUSTER_RULE_PREFIX + "_" + id.getResourceID();
     }
 }
