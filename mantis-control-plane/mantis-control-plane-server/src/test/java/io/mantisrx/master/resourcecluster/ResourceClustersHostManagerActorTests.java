@@ -43,7 +43,6 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
 import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
@@ -471,9 +470,9 @@ public class ResourceClustersHostManagerActorTests {
     }
 
     @Test
-    public void testUpgradeRequestEnableSkuSpecUpgrade() {
+    public void testUpgradeRequestEnableSkuSpecUpgrade() throws IOException {
         TestKit probe = new TestKit(system);
-        ResourceClusterStorageProvider resStorageProvider = mock(ResourceClusterStorageProvider.class);
+        IMantisPersistenceProvider resStorageProvider = mock(IMantisPersistenceProvider.class);
         ResourceClusterProvider resProvider = mock(ResourceClusterProvider.class);
         ResourceClusterResponseHandler responseHandler = mock(ResourceClusterResponseHandler.class);
 
@@ -485,11 +484,11 @@ public class ResourceClustersHostManagerActorTests {
 
         ProvisionResourceClusterRequest provisionReq = buildProvisionRequest();
         when(resStorageProvider.getResourceClusterSpecWritable(any()))
-            .thenReturn(CompletableFuture.completedFuture(
+            .thenReturn(
                 ResourceClusterSpecWritable.builder()
                     .clusterSpec(provisionReq.getClusterSpec())
                     .id(provisionReq.getClusterId())
-                    .build()));
+                    .build());
 
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
