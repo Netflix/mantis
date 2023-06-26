@@ -19,6 +19,7 @@ package io.mantisrx.server.master.store;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -231,11 +232,11 @@ public interface KeyValueStore {
         private final Map<String, Map<String, Map<String, String>>> store = new ConcurrentHashMap<>();
 
         @Override
-        public List<String> getAllPartitionKeys(String tableName) throws IOException {
-            try {
-                return store.get(tableName).keySet().stream().collect(Collectors.toList());
-            } catch (Exception e) {
-                throw new IOException(e);
+        public List<String> getAllPartitionKeys(String tableName) {
+            if (store.get(tableName) == null) {
+                return Collections.emptyList();
+            } else{
+                return new ArrayList<>(store.get(tableName).keySet());
             }
         }
 
