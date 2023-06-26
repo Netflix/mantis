@@ -378,7 +378,7 @@ public class ResourceClustersHostManagerActorTests {
         when(resProvider.getResponseHandler()).thenReturn(responseHandler);
 
         ActorRef resourceClusterActor = system.actorOf(
-                ResourceClustersHostManagerActor.props(resProvider, new FileBasedPersistenceProvider(false)));
+                ResourceClustersHostManagerActor.props(resProvider, storageProvider));
 
         ProvisionResourceClusterRequest request = buildProvisionRequest();
 

@@ -60,8 +60,8 @@ import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvid
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.InMemoryPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -91,7 +91,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private final ActorSystem system =
         ActorSystem.create(ResourceClusterNonLeaderRedirectRouteTest.class.getSimpleName());
 
-    private final IMantisPersistenceProvider storageProvider = new FileBasedPersistenceProvider(true);
+    private final IMantisPersistenceProvider storageProvider = new InMemoryPersistenceProvider();
 
     private final ActorRef resourceClustersHostManagerActorWithNoopAdapter = system.actorOf(
         ResourceClustersHostManagerActor.props(

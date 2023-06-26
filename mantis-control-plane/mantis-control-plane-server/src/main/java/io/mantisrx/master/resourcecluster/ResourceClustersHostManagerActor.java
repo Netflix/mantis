@@ -29,6 +29,7 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteRe
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.DeleteResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.GetResourceClusterResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterAPIProto.ListResourceClustersResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateAllResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
@@ -89,6 +90,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
             .match(CreateAllResourceClusterScaleRulesRequest.class, this::onCreateAllResourceClusterScaleRulesRequest)
             .match(CreateResourceClusterScaleRuleRequest.class, this::onCreateResourceClusterScaleRuleRequest)
             .match(GetResourceClusterScaleRulesRequest.class, this::onGetResourceClusterScaleRulesRequest)
+            .match(ResourceClusterProvisionSubmissionResponse.class, this::onResourceClusterProvisionResponse)
             .match(ScaleResourceRequest.class, this::onScaleResourceClusterRequest)
 
             // Upgrade section
@@ -188,6 +190,10 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                     .build())
                 .collect(Collectors.toList()))
             .build();
+    }
+
+    private void onResourceClusterProvisionResponse(ResourceClusterProvisionSubmissionResponse resp) {
+        this.resourceClusterProvider.getResponseHandler().handleProvisionResponse(resp);
     }
 
     private void onDeleteResourceCluster(DeleteResourceClusterRequest req) {
@@ -310,7 +316,12 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                     .clusterSpec(specW.getClusterSpec())
                     .build();
             getSender().tell(response, getSelf());
-            this.resourceClusterProvider.provisionClusterIfNotPresent(req);
+            // Provision response is directed back to this actor to handle its submission result.
+            CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionFut =
+                this.resourceClusterProvider
+                    .provisionClusterIfNotPresent(req)
+                    .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
+            pipe(provisionFut, getContext().dispatcher()).to(getSelf());
         } catch (IOException err) {
             GetResourceClusterResponse response = GetResourceClusterResponse.builder()
                 .responseCode(ResponseCode.SERVER_ERROR)
@@ -318,22 +329,6 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .build();
             getSender().tell(response, getSelf());
         }
-//        pipe(updateSpecToStoreFut, getContext().dispatcher()).to(getSender());
-        log.debug("[Pipe finish] storing cluster spec.");
-
-        // Provision response is directed back to this actor to handle its submission result.
-//        CompletionStage<ResourceClusterProvisionSubmissionResponse> provisionFut =
-//                updateSpecToStoreFut
-//                        .thenCompose(resp -> {
-//                            if (resp.responseCode.equals(ResponseCode.SUCCESS)) {
-//                                return
-//                            }
-//                            return CompletableFuture.completedFuture(
-//                                ResourceClusterProvisionSubmissionResponse.builder().response(resp.message).build());
-//                        })
-//                        .exceptionally(err -> ResourceClusterProvisionSubmissionResponse.builder().error(err).build());
-//        pipe(provisionFut, getContext().dispatcher()).to(getSelf());
-        log.debug("[Pipe finish 2]: returned provision fut.");
     }
 
     private void onScaleResourceClusterRequest(ScaleResourceRequest req) {

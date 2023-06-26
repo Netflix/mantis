@@ -19,6 +19,7 @@ package io.mantisrx.server.master.store;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -241,10 +242,12 @@ public interface KeyValueStore {
         @Override
         public Map<String, String> getAll(String tableName, String partitionKey)
             throws IOException {
-            try {
+            if (store.get(tableName) == null) {
+                return Collections.emptyMap();
+            } else if (store.get(tableName).get(partitionKey) == null) {
+                return Collections.emptyMap();
+            } else {
                 return store.get(tableName).get(partitionKey);
-            } catch (Exception e) {
-                throw new IOException(e);
             }
         }
 
