@@ -44,7 +44,6 @@ import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
-import io.mantisrx.server.master.persistence.FileBasedPersistenceProvider;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.persistence.InMemoryPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
