@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import rx.Observable;
 
 
@@ -190,6 +191,7 @@ public interface IMantisPersistenceProvider {
 
     RegisteredResourceClustersWritable getRegisteredResourceClustersWritable() throws IOException;
 
+    @Nullable
     ResourceClusterSpecWritable getResourceClusterSpecWritable(ClusterID id) throws IOException;
 
     ResourceClusterScaleRulesWritable getResourceClusterScaleRules(ClusterID clusterId) throws IOException;

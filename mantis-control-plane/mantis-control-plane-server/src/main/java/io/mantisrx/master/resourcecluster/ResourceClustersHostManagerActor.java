@@ -111,7 +111,7 @@ public class ResourceClustersHostManagerActor extends AbstractActorWithTimers {
                 .clusterId(req.getRule().getClusterId())
                 .build();
 
-            self().tell(toGetResourceClusterScaleRulesResponse(resourceClusterStorageProvider.registerResourceClusterScaleRule(ruleSpec)), getSender());
+            getSender().tell(toGetResourceClusterScaleRulesResponse(resourceClusterStorageProvider.registerResourceClusterScaleRule(ruleSpec)), getSelf());
         } catch (Exception err) {
             log.error("Error from registerResourceClusterScaleRule: {}", req, err);
             GetResourceClusterScaleRulesResponse response =

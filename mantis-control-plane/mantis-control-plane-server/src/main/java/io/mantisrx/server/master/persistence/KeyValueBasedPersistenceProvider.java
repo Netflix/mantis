@@ -813,9 +813,11 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         RegisteredResourceClustersWritable newValue = rcBuilder.build();
         kvStore.upsert(
             CONTROLPLANE_NS,
-            getClusterKeyFromId(clusterId), //partition key
+            CLUSTER_REGISTRATION_KEY, //partition key
             "", //secondary key
             mapper.writeValueAsString(newValue));
+
+        kvStore.delete(CONTROLPLANE_NS, getClusterKeyFromId(clusterId), "");
         return newValue;
     }
 
@@ -838,15 +840,22 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
             CONTROLPLANE_NS,
             getClusterKeyFromId(clusterID), //partition key
             "");
-        return mapper.readValue(result, ResourceClusterSpecWritable.class);
+        if (result == null) {
+            return null;
+        } else {
+            return mapper.readValue(result, ResourceClusterSpecWritable.class);
+        }
     }
 
     @Override
     public ResourceClusterScaleRulesWritable getResourceClusterScaleRules(ClusterID clusterId)
         throws IOException {
-        return mapper.readValue(
-            kvStore.get(CONTROLPLANE_NS, getClusterRuleKeyFromId(clusterId), ""),
-            ResourceClusterScaleRulesWritable.class);
+        String res = kvStore.get(CONTROLPLANE_NS, getClusterRuleKeyFromId(clusterId), "");
+        if (res == null) {
+            return ResourceClusterScaleRulesWritable.builder().clusterId(clusterId).build();
+        } else {
+            return mapper.readValue(res, ResourceClusterScaleRulesWritable.class);
+        }
     }
 
     @Override
