@@ -16,6 +16,9 @@
 
 package io.mantisrx.common.metrics.measurement;
 
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonUnwrapped;
+import io.micrometer.core.instrument.Measurement;
+import io.micrometer.core.instrument.Meter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,17 +34,24 @@ public class MicrometerMeasurements {
     private String name;
     private long timestamp;
     private Meter.Type type;
+    private String model;
+    private String measurement;
+
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public MicrometerMeasurements(
-            @JsonProperty("name") String name,
-            @JsonProperty("timestamp") long timestamp,
-            @JsonProperty("type") Meter.Type type,
-            @JsonProperty("tags") Map<String, String> tags) {
+        @JsonProperty("name") String name,
+        @JsonProperty("timestamp") long timestamp,
+        @JsonProperty("type")Meter.Type type,
+        @JsonProperty("model") String model,
+        @JsonProperty("measurement") String measurement,
+        @JsonProperty("tags") Map<String, String> tags) {
         this.name = name;
         this.timestamp = timestamp;
         this.type = type;
+        this.model = model;
+        this.measurement = measurement;
         this.tags = tags;
     }
 
@@ -56,6 +66,14 @@ public class MicrometerMeasurements {
     public Meter.Type getType() {
         return type;
     }
+
+    public String getModel() {
+        return model;
+    }
+
+    public String getMeasurement() {
+        return measurement;
+    }
     public Map<String, String> getTags() {
         return tags;
     }
@@ -66,7 +84,8 @@ public class MicrometerMeasurements {
                 "name='" + name + '\'' +
                 ", timestamp=" + timestamp +
                 ", type=" + type + "" +
-                ", model = v2" +
+                ", model=" + model + "" +
+                ", measurement=" + measurement + "" +
                 ", tags=" + tags +
                 '}';
     }

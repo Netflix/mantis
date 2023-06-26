@@ -17,6 +17,7 @@
 package io.mantisrx.common.metrics;
 
 import io.mantisrx.common.metrics.measurement.MicrometerMeasurements;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -80,6 +81,8 @@ public class MetricsServer {
                                     measurements.add(new MicrometerMeasurements(meter.getId().getName(),
                                             timestamp,
                                             meter.getId().getType(),
+                                            "v2",
+                                            meter.measure().toString(),
                                             tags));
                                 }
 //                                for (Metrics metrics : registry.metrics()) {
