@@ -28,8 +28,11 @@ import io.mantisrx.server.master.domain.JobId;
 import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobStateChangeException;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
@@ -55,6 +58,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private JobState state;
     private int nextWorkerNumberToUse;
     private final JobDefinition jobDefinition;
+    private Costs jobCosts;
 
     @JsonIgnore
     private final Map<Integer, IMantisStageMetadata> stageMetadataMap = new HashMap<>();
@@ -181,7 +185,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 	}
 
     void setJobCosts(Costs jobCosts) {
-        this.jobCost = jobCosts;
+        this.jobCosts = jobCosts;
     }
 
 
@@ -473,6 +477,6 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 
     @Override
     public Costs getJobCosts() {
-        return jobCost;
+        return jobCosts;
     }
 }
