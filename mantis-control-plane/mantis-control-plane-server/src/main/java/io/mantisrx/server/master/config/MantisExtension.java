@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,7 @@ package io.mantisrx.server.master.config;
 
 import java.util.Properties;
 
-/**
- * An implementation of this class should return an instance of {@link io.mantisrx.server.master.config.MasterConfiguration}.
- * We create this factory because it's possible that the logic of creating a {@link io.mantisrx.server.master.config.MasterConfiguration}
- * can change depending on the user or environment.
- *
- * @see ConfigurationProvider
- */
-public interface ConfigurationFactory {
-
-    MasterConfiguration getConfig();
-
-    Properties getProperties();
+@FunctionalInterface
+public interface MantisExtension<T> {
+    T createObject(Properties properties);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package io.mantisrx.server.master.config;
+package io.mantisrx.server.master.domain;
 
-import java.util.Properties;
+import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Value;
 
-/**
- * An implementation of this class should return an instance of {@link io.mantisrx.server.master.config.MasterConfiguration}.
- * We create this factory because it's possible that the logic of creating a {@link io.mantisrx.server.master.config.MasterConfiguration}
- * can change depending on the user or environment.
- *
- * @see ConfigurationProvider
- */
-public interface ConfigurationFactory {
+@Value
+public class Costs {
 
-    MasterConfiguration getConfig();
+    Double dailyCost;
 
-    Properties getProperties();
+    @JsonIgnore
+    public static final Costs ZERO = new Costs(0.0);
+
+    public Costs multipliedBy(double multiplier) {
+        return new Costs(dailyCost * multiplier);
+    }
+
+    public Costs plus(Costs other) {
+        return new Costs(dailyCost + other.dailyCost);
+    }
 }

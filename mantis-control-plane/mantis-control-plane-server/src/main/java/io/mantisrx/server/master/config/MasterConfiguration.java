@@ -360,6 +360,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("60000") // 1 minute
     int getAssignmentIntervalInMs();
 
+    @Config("mantis.job.costsCalculator.class")
+    @Default("io.mantisrx.master.jobcluster.job.CostsCalculator")
+    String getCostsCalculatorClass();
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }

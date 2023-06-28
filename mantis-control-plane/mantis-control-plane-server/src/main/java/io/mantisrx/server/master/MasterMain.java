@@ -45,6 +45,7 @@ import io.mantisrx.master.events.StatusEventSubscriberAkkaImpl;
 import io.mantisrx.master.events.WorkerEventSubscriber;
 import io.mantisrx.master.events.WorkerMetricsCollector;
 import io.mantisrx.master.events.WorkerRegistryV2;
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.resourcecluster.ResourceClustersAkkaImpl;
 import io.mantisrx.master.resourcecluster.ResourceClustersHostManagerActor;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
@@ -63,6 +64,7 @@ import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.config.MantisExtensionFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
@@ -168,7 +170,10 @@ public class MasterMain implements Service {
 
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
-            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher), "JobClustersManager");
+            final CostsCalculator costsCalculator =
+                MantisExtensionFactory.createObject(this.config.getCostsCalculatorClass(),
+                    configFactory.getProperties());
+            final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, costsCalculator), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
 
             // Beginning of new stuff
