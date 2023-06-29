@@ -361,7 +361,7 @@ public interface MasterConfiguration extends CoreConfiguration {
     int getAssignmentIntervalInMs();
 
     @Config("mantis.job.costsCalculator.class")
-    @Default("io.mantisrx.master.jobcluster.job.CostsCalculator")
+    @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculatorFactory")
     String getCostsCalculatorClass();
 
     default Duration getHeartbeatInterval() {

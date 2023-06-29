@@ -19,6 +19,15 @@ package io.mantisrx.server.master.domain;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Value;
 
+/**
+ * Represents the cost of running a job. Currently, this only tracks the daily cost of running a
+ * job. But in the future, we may want to track other costs such as the cost of running a job for an
+ * hour.
+ * <p>
+ * Similarly, we can also break up the cost into different components such as the cost of CPUs and
+ * the cost of memory.
+ * </p>
+ */
 @Value
 public class Costs {
 

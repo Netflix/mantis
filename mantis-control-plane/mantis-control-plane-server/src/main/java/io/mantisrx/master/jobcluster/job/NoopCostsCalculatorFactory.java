@@ -16,13 +16,11 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import io.mantisrx.server.master.config.MantisExtension;
 import io.mantisrx.server.master.domain.Costs;
 import java.util.Properties;
 
-public class NoopCostsCalculatorFactory implements MantisExtension<CostsCalculator> {
+public class NoopCostsCalculatorFactory {
 
-    @Override
     public CostsCalculator createObject(Properties properties) {
         return new NoopCostsCalculator();
     }

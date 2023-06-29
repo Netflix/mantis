@@ -16,14 +16,18 @@
 
 package io.mantisrx.server.master.config;
 
+import java.lang.reflect.Method;
 import java.util.Properties;
-import lombok.val;
 
-public class MantisExtensionFactory {
+public class ExtensionFactory {
 
     @SuppressWarnings({"unchecked"})
-    public static <T extends MantisExtension> T createObject(String className, Properties properties) throws Exception {
-        val extension = (MantisExtension<T>) Class.forName(className).newInstance();
-        return extension.createObject(properties);
+    public static <T> T createObject(String className, Properties properties) throws Exception {
+        Object extension = Class.forName(className).newInstance();
+        // check if extension has a method named createObject
+        Method method = extension.getClass().getMethod("createObject", Properties.class);
+        Object ret = method.invoke(extension, properties);
+        // cast the object to type T
+        return (T) ret;
     }
 }

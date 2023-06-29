@@ -64,7 +64,7 @@ import io.mantisrx.server.core.metrics.MetricsServerService;
 import io.mantisrx.server.core.zookeeper.CuratorService;
 import io.mantisrx.server.master.config.ConfigurationFactory;
 import io.mantisrx.server.master.config.ConfigurationProvider;
-import io.mantisrx.server.master.config.MantisExtensionFactory;
+import io.mantisrx.server.master.config.ExtensionFactory;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.config.StaticPropertiesConfigurationFactory;
 import io.mantisrx.server.master.mesos.MesosDriverSupplier;
@@ -171,7 +171,7 @@ public class MasterMain implements Service {
             storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final CostsCalculator costsCalculator =
-                MantisExtensionFactory.createObject(this.config.getCostsCalculatorClass(),
+                ExtensionFactory.createObject(this.config.getCostsCalculatorClass(),
                     configFactory.getProperties());
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, costsCalculator), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
