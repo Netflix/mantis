@@ -120,15 +120,17 @@ import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
 public class JobClusterManagerTest {
+
     static ActorSystem system;
     private MantisJobStore jobStoreMock;
     private ActorRef jobClusterManagerActor;
     private MantisSchedulerFactory schedulerMockFactory;
     private MantisScheduler schedulerMock;
     private static LifecycleEventPublisher eventPublisher = new LifecycleEventPublisherImpl(
-            new AuditEventSubscriberLoggingImpl(),
-            new StatusEventSubscriberLoggingImpl(),
-            new WorkerEventSubscriberLoggingImpl());
+        new AuditEventSubscriberLoggingImpl(),
+        new StatusEventSubscriberLoggingImpl(),
+        new WorkerEventSubscriberLoggingImpl());
+    private final CostsCalculator costsCalculator = CostsCalculator.noop();
     private static final String user = "nj";
 
     @Rule
@@ -140,14 +142,13 @@ public class JobClusterManagerTest {
     @BeforeClass
     public static void setup() {
         Config config = ConfigFactory.parseString("akka {\n" +
-                                                  "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
-                                                  "  loglevel = \"WARNING\"\n" +
-                                                  "  stdout-loglevel = \"WARNING\"\n" +
-                                                  "}\n");
+            "  loggers = [\"akka.testkit.TestEventListener\"]\n" +
+            "  loglevel = \"WARNING\"\n" +
+            "  stdout-loglevel = \"WARNING\"\n" +
+            "}\n");
         system = ActorSystem.create(
-                "JobClusterManagerTest",
-                config.withFallback(ConfigFactory.load()));
-
+            "JobClusterManagerTest",
+            config.withFallback(ConfigFactory.load()));
 
         TestHelpers.setupMasterConfig();
     }
@@ -160,7 +161,8 @@ public class JobClusterManagerTest {
         when(schedulerMockFactory.forJob(any())).thenReturn(schedulerMock);
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreMock,
-            eventPublisher));
+            eventPublisher,
+            costsCalculator));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
             schedulerMockFactory,
             true), ActorRef.noSender());
@@ -174,94 +176,93 @@ public class JobClusterManagerTest {
     }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(
-            final String name,
-            List<Label> labels) {
+        final String name,
+        List<Label> labels) {
         return createFakeJobClusterDefn(name, labels, WorkerMigrationConfig.DEFAULT);
     }
 
     private JobClusterDefinitionImpl createFakeJobClusterDefn(
-            final String name,
-            List<Label> labels,
-            WorkerMigrationConfig migrationConfig) {
-
+        final String name,
+        List<Label> labels,
+        WorkerMigrationConfig migrationConfig) {
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart")
+            .withArtifactName("myart")
 
-                .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
-                                                                .singleWorkerStageWithConstraints(
-                                                                        new MachineDefinition(
-                                                                                0,
-                                                                                0,
-                                                                                0,
-                                                                                0,
-                                                                                0),
-                                                                        Lists.newArrayList(),
-                                                                        Lists.newArrayList())
-                                                                .build())
-                .withVersion("0.0.1")
+            .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
+                .singleWorkerStageWithConstraints(
+                    new MachineDefinition(
+                        0,
+                        0,
+                        0,
+                        0,
+                        0),
+                    Lists.newArrayList(),
+                    Lists.newArrayList())
+                .build())
+            .withVersion("0.0.1")
 
-                .build();
+            .build();
         return new JobClusterDefinitionImpl.Builder()
-                .withName(name)
-                .withUser(user)
-                .withJobClusterConfig(clusterConfig)
-                .withParameters(Lists.newArrayList())
-                .withLabels(labels)
-                .withSla(new SLA(0, 1, null, IJobClusterDefinition.CronPolicy.KEEP_EXISTING))
-                .withIsReadyForJobMaster(true)
-                .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
-                .withMigrationConfig(migrationConfig)
-                .build();
+            .withName(name)
+            .withUser(user)
+            .withJobClusterConfig(clusterConfig)
+            .withParameters(Lists.newArrayList())
+            .withLabels(labels)
+            .withSla(new SLA(0, 1, null, IJobClusterDefinition.CronPolicy.KEEP_EXISTING))
+            .withIsReadyForJobMaster(true)
+            .withOwner(new JobOwner("Nick", "Mantis", "desc", "nma@netflix.com", "repo"))
+            .withMigrationConfig(migrationConfig)
+            .build();
 
 
     }
 
     private JobDefinition createJob(String name2) throws InvalidJobException {
         return new JobDefinition.Builder()
-                .withName(name2)
-                .withParameters(Lists.newArrayList())
-                .withLabels(Lists.newArrayList())
-                .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
-                                                                .singleWorkerStageWithConstraints(
-                                                                        new MachineDefinition(
-                                                                                1,
-                                                                                10,
-                                                                                10,
-                                                                                10,
-                                                                                2),
-                                                                        Lists.newArrayList(),
-                                                                        Lists.newArrayList())
-                                                                .build())
-                .withArtifactName("myart")
-                .withSubscriptionTimeoutSecs(0)
-                .withUser("njoshi")
-                .withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Transient, null))
-                .build();
+            .withName(name2)
+            .withParameters(Lists.newArrayList())
+            .withLabels(Lists.newArrayList())
+            .withSchedulingInfo(new SchedulingInfo.Builder().numberOfStages(1)
+                .singleWorkerStageWithConstraints(
+                    new MachineDefinition(
+                        1,
+                        10,
+                        10,
+                        10,
+                        2),
+                    Lists.newArrayList(),
+                    Lists.newArrayList())
+                .build())
+            .withArtifactName("myart")
+            .withSubscriptionTimeoutSecs(0)
+            .withUser("njoshi")
+            .withJobSla(new JobSla(0, 0, null, MantisJobDurationType.Transient, null))
+            .build();
 
     }
 
     private void createJobClusterAndAssert(ActorRef jobClusterManagerActor, String clusterName) {
         createJobClusterAndAssert(
-                jobClusterManagerActor,
-                clusterName,
-                WorkerMigrationConfig.DEFAULT);
+            jobClusterManagerActor,
+            clusterName,
+            WorkerMigrationConfig.DEFAULT);
     }
 
     private void createJobClusterAndAssert(
-            ActorRef jobClusterManagerActor,
-            String clusterName,
-            WorkerMigrationConfig migrationConfig) {
+        ActorRef jobClusterManagerActor,
+        String clusterName,
+        WorkerMigrationConfig migrationConfig) {
         TestKit probe = new TestKit(system);
         JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList(),
-                migrationConfig);
+            clusterName,
+            Lists.newArrayList(),
+            migrationConfig);
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(resp.toString(), SUCCESS_CREATED, resp.responseCode);
     }
 
@@ -271,13 +272,13 @@ public class JobClusterManagerTest {
         try {
             jobDefn = createJob(cluster);
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.SubmitJobRequest(
-                            cluster,
-                            "me",
-                            jobDefn),
-                    probe.getRef());
+                new JobClusterManagerProto.SubmitJobRequest(
+                    cluster,
+                    "me",
+                    jobDefn),
+                probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
-                    JobClusterManagerProto.SubmitJobResponse.class);
+                JobClusterManagerProto.SubmitJobResponse.class);
             assertEquals(SUCCESS, submitResp.responseCode);
 
         } catch (InvalidJobException e) {
@@ -294,20 +295,21 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+            new FileBasedStore(rootDir.getRoot()),
+            eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStoreSpied,
-                eventPublisher));
+            jobStoreSpied,
+            eventPublisher,
+            costsCalculator));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                true), probe.getRef());
+            schedulerMockFactory,
+            true), probe.getRef());
         JobClustersManagerInitializeResponse iResponse = probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                                                                              JobClustersManagerInitializeResponse.class);
+            JobClustersManagerInitializeResponse.class);
         //List<String> clusterNames = Lists.newArrayList("testBootStrapJobClustersAndJobs1");
         String clusterWithNoJob = "testBootStrapJobClusterWithNoJob";
         createJobClusterAndAssert(jobClusterManagerActor, clusterWithNoJob);
@@ -318,17 +320,18 @@ public class JobClusterManagerTest {
 
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStore,
-                eventPublisher));
+            jobStore,
+            eventPublisher,
+            costsCalculator));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                true), probe.getRef());
+            schedulerMockFactory,
+            true), probe.getRef());
 
         //JobClusterManagerProto.JobClustersManagerInitializeResponse initializeResponse = probe.expectMsgClass(JobClusterManagerProto.JobClustersManagerInitializeResponse.class);
         JobClustersManagerInitializeResponse initializeResponse = probe.expectMsgClass(Duration.of(
-                10,
-                ChronoUnit.MINUTES), JobClustersManagerInitializeResponse.class);
+            10,
+            ChronoUnit.MINUTES), JobClustersManagerInitializeResponse.class);
 
         assertEquals(SUCCESS, initializeResponse.responseCode);
 
@@ -336,7 +339,7 @@ public class JobClusterManagerTest {
         GetJobClusterResponse jobClusterResponse = probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                                                                        GetJobClusterResponse.class);
+            GetJobClusterResponse.class);
 
         assertEquals(SUCCESS, jobClusterResponse.responseCode);
         assertTrue(jobClusterResponse.getJobCluster().isPresent());
@@ -364,22 +367,24 @@ public class JobClusterManagerTest {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
-        KeyValueBasedPersistenceProvider storageProviderAdapter = mock(KeyValueBasedPersistenceProvider.class);
+        KeyValueBasedPersistenceProvider storageProviderAdapter = mock(
+            KeyValueBasedPersistenceProvider.class);
         when(storageProviderAdapter.loadAllJobClusters()).thenThrow(new IOException(
-                "StorageException"));
+            "StorageException"));
         MantisJobStore jobStore = new MantisJobStore(storageProviderAdapter);
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStoreSpied,
-                eventPublisher));
+            jobStoreSpied,
+            eventPublisher,
+            costsCalculator));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                true), probe.getRef());
+            schedulerMockFactory,
+            true), probe.getRef());
         JobClustersManagerInitializeResponse iResponse = probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                                                                              JobClustersManagerInitializeResponse.class);
+            JobClustersManagerInitializeResponse.class);
 
         assertEquals(BaseResponse.ResponseCode.SERVER_ERROR, iResponse.responseCode);
 
@@ -392,27 +397,29 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+            new FileBasedStore(rootDir.getRoot()),
+            eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStoreSpied,
-                eventPublisher));
+            jobStoreSpied,
+            eventPublisher,
+            costsCalculator));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                false), probe.getRef());
+            schedulerMockFactory,
+            false), probe.getRef());
         JobClustersManagerInitializeResponse iResponse = probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                JobClustersManagerInitializeResponse.class);
+            JobClustersManagerInitializeResponse.class);
         List<String> clusterNames = Lists.newArrayList("testBootStrapJobClustersAndJobs1",
-                                                       "testBootStrapJobClustersAndJobs2",
-                                                       "testBootStrapJobClustersAndJobs3");
+            "testBootStrapJobClustersAndJobs2",
+            "testBootStrapJobClustersAndJobs3");
         String clusterWithNoJob = "testBootStrapJobClusterWithNoJob";
         createJobClusterAndAssert(jobClusterManagerActor, clusterWithNoJob);
 
-        WorkerMigrationConfig migrationConfig = new WorkerMigrationConfig(MigrationStrategyEnum.PERCENTAGE,
-                                                                          "{\"percentToMove\":60, \"intervalMs\":30000}");
+        WorkerMigrationConfig migrationConfig = new WorkerMigrationConfig(
+            MigrationStrategyEnum.PERCENTAGE,
+            "{\"percentToMove\":60, \"intervalMs\":30000}");
         // Create 3 clusters and submit 1 job each
         for (String cluster : clusterNames) {
 
@@ -425,42 +432,42 @@ public class JobClusterManagerTest {
                 String jobId = "testBootStrapJobClustersAndJobs1-1";
                 WorkerId workerId = new WorkerId(jobId, 0, 1);
                 WorkerEvent launchedEvent = new WorkerLaunched(
-                        workerId,
-                        0,
-                        "host1",
-                        "vm1",
-                        empty(),
-                        Optional.empty(),
-                        new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+                    workerId,
+                    0,
+                    "host1",
+                    "vm1",
+                    empty(),
+                    Optional.empty(),
+                    new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
                 jobClusterManagerActor.tell(launchedEvent, probe.getRef());
 
                 WorkerEvent startInitEvent = new WorkerStatus(new Status(
-                        workerId.getJobId(),
-                        1,
-                        workerId.getWorkerIndex(),
-                        workerId.getWorkerNum(),
-                        TYPE.INFO,
-                        "test START_INIT",
-                        MantisJobState.StartInitiated));
+                    workerId.getJobId(),
+                    1,
+                    workerId.getWorkerIndex(),
+                    workerId.getWorkerNum(),
+                    TYPE.INFO,
+                    "test START_INIT",
+                    MantisJobState.StartInitiated));
                 jobClusterManagerActor.tell(startInitEvent, probe.getRef());
 
                 WorkerEvent heartBeat = new WorkerHeartbeat(new Status(
-                        jobId,
-                        1,
-                        workerId.getWorkerIndex(),
-                        workerId.getWorkerNum(),
-                        TYPE.HEARTBEAT,
-                        "",
-                        MantisJobState.Started));
+                    jobId,
+                    1,
+                    workerId.getWorkerIndex(),
+                    workerId.getWorkerNum(),
+                    TYPE.HEARTBEAT,
+                    "",
+                    MantisJobState.Started));
                 jobClusterManagerActor.tell(heartBeat, probe.getRef());
 
                 // get Job status
                 jobClusterManagerActor.tell(
-                        new GetJobDetailsRequest(
-                                "user",
-                                JobId.fromId(jobId).get()),
-                        probe.getRef());
+                    new GetJobDetailsRequest(
+                        "user",
+                        JobId.fromId(jobId).get()),
+                    probe.getRef());
                 GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
 
                 // Ensure its launched
@@ -472,22 +479,22 @@ public class JobClusterManagerTest {
         }
 // kill 1 of the jobs to test archive path
         JobClusterManagerProto.KillJobRequest killRequest = new JobClusterManagerProto.KillJobRequest(
-                "testBootStrapJobClustersAndJobs2-1",
-                JobCompletedReason.Killed.toString(),
-                "njoshi");
+            "testBootStrapJobClustersAndJobs2-1",
+            JobCompletedReason.Killed.toString(),
+            "njoshi");
         jobClusterManagerActor.tell(killRequest, probe.getRef());
 
         JobClusterManagerProto.KillJobResponse killJobResponse = probe.expectMsgClass(
-                JobClusterManagerProto.KillJobResponse.class);
+            JobClusterManagerProto.KillJobResponse.class);
         assertEquals(SUCCESS, killJobResponse.responseCode);
 
         JobTestHelper.sendWorkerTerminatedEvent(
-                probe,
-                jobClusterManagerActor,
-                "testBootStrapJobClustersAndJobs2-1",
-                new WorkerId("testBootStrapJobClustersAndJobs2-1",
-                             0,
-                             1));
+            probe,
+            jobClusterManagerActor,
+            "testBootStrapJobClustersAndJobs2-1",
+            new WorkerId("testBootStrapJobClustersAndJobs2-1",
+                0,
+                1));
 
         try {
             Thread.sleep(500);
@@ -500,23 +507,23 @@ public class JobClusterManagerTest {
 
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStoreSpied,
-                eventPublisher));
+            jobStoreSpied,
+            eventPublisher,
+            costsCalculator));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                true), probe.getRef());
+            schedulerMockFactory,
+            true), probe.getRef());
 
         JobClustersManagerInitializeResponse initializeResponse = probe.expectMsgClass(
-                JobClustersManagerInitializeResponse.class);
+            JobClustersManagerInitializeResponse.class);
         //probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),JobClusterManagerProto.JobClustersManagerInitializeResponse.class);
         //probe.expectMsgClass(JobClusterManagerProto.JobClustersManagerInitializeResponse.class);
         assertEquals(SUCCESS, initializeResponse.responseCode);
 
-
         // Get Cluster Config
         jobClusterManagerActor.tell(new GetJobClusterRequest("testBootStrapJobClustersAndJobs1"),
-                                    probe.getRef());
+            probe.getRef());
         GetJobClusterResponse clusterResponse = probe.expectMsgClass(GetJobClusterResponse.class);
 
         assertEquals(SUCCESS, clusterResponse.responseCode);
@@ -528,9 +535,9 @@ public class JobClusterManagerTest {
         // get Job status
 
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
-                "user",
-                JobId.fromId("testBootStrapJobClustersAndJobs1-1")
-                     .get()), probe.getRef());
+            "user",
+            JobId.fromId("testBootStrapJobClustersAndJobs1-1")
+                .get()), probe.getRef());
         GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
 
         // Ensure its launched
@@ -538,14 +545,13 @@ public class JobClusterManagerTest {
         assertEquals(SUCCESS, resp2.responseCode);
         assertEquals(JobState.Launched, resp2.getJobMetadata().get().getState());
 
-
         // 1 jobs should be in completed state
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
-                "user",
-                JobId.fromId("testBootStrapJobClustersAndJobs2-1")
-                     .get()), probe.getRef());
+            "user",
+            JobId.fromId("testBootStrapJobClustersAndJobs2-1")
+                .get()), probe.getRef());
         resp2 = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
-                                     GetJobDetailsResponse.class);
+            GetJobDetailsResponse.class);
 
         //TODO(hmitnflx): Need to fix this test after support completed jobs async loading
         // Ensure its completed
@@ -553,11 +559,11 @@ public class JobClusterManagerTest {
         // assertEquals(JobState.Completed, resp2.getJobMetadata().get().getState());
 
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
-                "user",
-                JobId.fromId("testBootStrapJobClustersAndJobs3-1")
-                     .get()), probe.getRef());
+            "user",
+            JobId.fromId("testBootStrapJobClustersAndJobs3-1")
+                .get()), probe.getRef());
         resp2 = probe.expectMsgClass(Duration.of(10, ChronoUnit.MINUTES),
-                                     GetJobDetailsResponse.class);
+            GetJobDetailsResponse.class);
 
         // Ensure its Accepted
         assertEquals(SUCCESS, resp2.responseCode);
@@ -568,8 +574,8 @@ public class JobClusterManagerTest {
             assertTrue(workerByIndex.isPresent());
 
             Optional<IMantisStageMetadata> stageMetadata = resp2.getJobMetadata()
-                                                                .get()
-                                                                .getStageMetadata(1);
+                .get()
+                .getStageMetadata(1);
             assertTrue(stageMetadata.isPresent());
 
             JobWorker workerByIndex1 = stageMetadata.get().getWorkerByIndex(0);
@@ -584,34 +590,33 @@ public class JobClusterManagerTest {
         }
 
         jobClusterManagerActor.tell(new GetLastSubmittedJobIdStreamRequest(
-                "testBootStrapJobClustersAndJobs1"), probe.getRef());
+            "testBootStrapJobClustersAndJobs1"), probe.getRef());
         GetLastSubmittedJobIdStreamResponse lastSubmittedJobIdStreamResponse = probe.expectMsgClass(
-                Duration.of(10, ChronoUnit.MINUTES),
-                GetLastSubmittedJobIdStreamResponse.class);
+            Duration.of(10, ChronoUnit.MINUTES),
+            GetLastSubmittedJobIdStreamResponse.class);
         lastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject()
-                                        .get()
-                                        .take(1)
-                                        .toBlocking()
-                                        .subscribe((jId) -> {
-                                            assertEquals(new JobId(
-                                                    "testBootStrapJobClustersAndJobs1",
-                                                    1), jId);
-                                        });
-
+            .get()
+            .take(1)
+            .toBlocking()
+            .subscribe((jId) -> {
+                assertEquals(new JobId(
+                    "testBootStrapJobClustersAndJobs1",
+                    1), jId);
+            });
 
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterWithNoJob), probe.getRef());
         GetJobClusterResponse jobClusterResponse = probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                                                                        GetJobClusterResponse.class);
+            GetJobClusterResponse.class);
 
         assertEquals(SUCCESS, jobClusterResponse.responseCode);
         assertTrue(jobClusterResponse.getJobCluster().isPresent());
         assertEquals(clusterWithNoJob, jobClusterResponse.getJobCluster().get().getName());
 
-
         // 1 running worker
-        verify(schedulerMock, timeout(100_1000).times(1)).initializeRunningWorker(any(), any(), any());
+        verify(schedulerMock, timeout(100_1000).times(1)).initializeRunningWorker(any(), any(),
+            any());
 
         // 2 worker schedule requests
         verify(schedulerMock, timeout(100_000).times(4)).scheduleWorker(any());
@@ -630,89 +635,92 @@ public class JobClusterManagerTest {
     }
 
     /**
-     * Case for a master leader re-election when a new master re-hydrates corrupted job worker metadata.
+     * Case for a master leader re-election when a new master re-hydrates corrupted job worker
+     * metadata.
      */
     @Test
     public void testBootstrapJobClusterAndJobsWithCorruptedWorkerPorts()
-            throws IOException, io.mantisrx.server.master.persistence.exceptions.InvalidJobException {
+        throws IOException, io.mantisrx.server.master.persistence.exceptions.InvalidJobException {
 
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
-                new FileBasedStore(rootDir.getRoot()),
-                eventPublisher));
+            new FileBasedStore(rootDir.getRoot()),
+            eventPublisher));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStoreSpied,
-                eventPublisher));
+            jobStoreSpied,
+            eventPublisher,
+            costsCalculator));
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                false), probe.getRef());
+            schedulerMockFactory,
+            false), probe.getRef());
         probe.expectMsgClass(Duration.of(
                 10,
                 ChronoUnit.MINUTES),
-                JobClustersManagerInitializeResponse.class);
+            JobClustersManagerInitializeResponse.class);
         String jobClusterName = "testBootStrapJobClustersAndJobs1";
-        WorkerMigrationConfig migrationConfig = new WorkerMigrationConfig(MigrationStrategyEnum.PERCENTAGE,
-                "{\"percentToMove\":60, \"intervalMs\":30000}");
+        WorkerMigrationConfig migrationConfig = new WorkerMigrationConfig(
+            MigrationStrategyEnum.PERCENTAGE,
+            "{\"percentToMove\":60, \"intervalMs\":30000}");
 
         createJobClusterAndAssert(jobClusterManagerActor, jobClusterName, migrationConfig);
         submitJobAndAssert(jobClusterManagerActor, jobClusterName);
         String jobId = "testBootStrapJobClustersAndJobs1-1";
         WorkerId workerId = new WorkerId(jobId, 0, 1);
         WorkerEvent launchedEvent = new WorkerLaunched(
-                workerId,
-                0,
-                "host1",
-                "vm1",
-                empty(),
-                Optional.empty(),
-                new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+            workerId,
+            0,
+            "host1",
+            "vm1",
+            empty(),
+            Optional.empty(),
+            new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
 
         jobClusterManagerActor.tell(launchedEvent, probe.getRef());
 
         WorkerEvent startInitEvent = new WorkerStatus(new Status(
-                workerId.getJobId(),
-                1,
-                workerId.getWorkerIndex(),
-                workerId.getWorkerNum(),
-                TYPE.INFO,
-                "test START_INIT",
-                MantisJobState.StartInitiated));
+            workerId.getJobId(),
+            1,
+            workerId.getWorkerIndex(),
+            workerId.getWorkerNum(),
+            TYPE.INFO,
+            "test START_INIT",
+            MantisJobState.StartInitiated));
         jobClusterManagerActor.tell(startInitEvent, probe.getRef());
 
         WorkerEvent heartBeat = new WorkerHeartbeat(new Status(
-                jobId,
-                1,
-                workerId.getWorkerIndex(),
-                workerId.getWorkerNum(),
-                TYPE.HEARTBEAT,
-                "",
-                MantisJobState.Started));
+            jobId,
+            1,
+            workerId.getWorkerIndex(),
+            workerId.getWorkerNum(),
+            TYPE.HEARTBEAT,
+            "",
+            MantisJobState.Started));
         jobClusterManagerActor.tell(heartBeat, probe.getRef());
 
         // get Job status
         jobClusterManagerActor.tell(
-                new GetJobDetailsRequest(
-                        "user",
-                        JobId.fromId(jobId).get()),
-                probe.getRef());
+            new GetJobDetailsRequest(
+                "user",
+                JobId.fromId(jobId).get()),
+            probe.getRef());
         GetJobDetailsResponse resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
 
         // Ensure its launched
         assertEquals(SUCCESS, resp2.responseCode);
 
         JobWorker worker = new JobWorker.Builder()
-                .withWorkerIndex(0)
-                .withWorkerNumber(1)
-                .withJobId(jobId)
-                .withStageNum(1)
-                .withNumberOfPorts(5)
-                .withWorkerPorts(null)
-                .withState(WorkerState.Started)
-                .withLifecycleEventsPublisher(eventPublisher)
-                .build();
+            .withWorkerIndex(0)
+            .withWorkerNumber(1)
+            .withJobId(jobId)
+            .withStageNum(1)
+            .withNumberOfPorts(5)
+            .withWorkerPorts(null)
+            .withState(WorkerState.Started)
+            .withLifecycleEventsPublisher(eventPublisher)
+            .build();
         jobStoreSpied.updateWorker(worker.getMetadata());
 
         // Stop job cluster Manager Actor
@@ -720,30 +728,31 @@ public class JobClusterManagerTest {
 
         // create new instance
         jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
-                jobStoreSpied,
-                eventPublisher));
+            jobStoreSpied,
+            eventPublisher,
+            costsCalculator));
         // initialize it
         jobClusterManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(
-                schedulerMockFactory,
-                true), probe.getRef());
+            schedulerMockFactory,
+            true), probe.getRef());
 
         JobClustersManagerInitializeResponse initializeResponse = probe.expectMsgClass(
-                JobClustersManagerInitializeResponse.class);
+            JobClustersManagerInitializeResponse.class);
         assertEquals(SUCCESS, initializeResponse.responseCode);
 
         WorkerId newWorkerId = new WorkerId(jobId, 0, 11);
         launchedEvent = new WorkerLaunched(
-                newWorkerId,
-                0,
-                "host1",
-                "vm1",
-                empty(),
-                Optional.empty(),
-                new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
+            newWorkerId,
+            0,
+            "host1",
+            "vm1",
+            empty(),
+            Optional.empty(),
+            new WorkerPorts(Lists.newArrayList(8000, 9000, 9010, 9020, 9030)));
         jobClusterManagerActor.tell(launchedEvent, probe.getRef());
         // Get Cluster Config
         jobClusterManagerActor.tell(new GetJobClusterRequest("testBootStrapJobClustersAndJobs1"),
-                                    probe.getRef());
+            probe.getRef());
         GetJobClusterResponse clusterResponse = probe.expectMsgClass(GetJobClusterResponse.class);
 
         assertEquals(SUCCESS, clusterResponse.responseCode);
@@ -754,9 +763,9 @@ public class JobClusterManagerTest {
 
         // get Job status
         jobClusterManagerActor.tell(new GetJobDetailsRequest(
-                "user",
-                JobId.fromId("testBootStrapJobClustersAndJobs1-1")
-                     .get()), probe.getRef());
+            "user",
+            JobId.fromId("testBootStrapJobClustersAndJobs1-1")
+                .get()), probe.getRef());
         resp2 = probe.expectMsgClass(GetJobDetailsResponse.class);
 
         // Ensure its launched
@@ -764,26 +773,26 @@ public class JobClusterManagerTest {
         assertEquals(JobState.Launched, resp2.getJobMetadata().get().getState());
 
         IMantisWorkerMetadata mantisWorkerMetadata = resp2.getJobMetadata().get()
-                .getWorkerByIndex(1, 0).get()
-                .getMetadata();
+            .getWorkerByIndex(1, 0).get()
+            .getMetadata();
         assertNotNull(mantisWorkerMetadata.getWorkerPorts());
         assertEquals(11, mantisWorkerMetadata.getWorkerNumber());
         assertEquals(1, mantisWorkerMetadata.getTotalResubmitCount());
 
         jobClusterManagerActor.tell(new GetLastSubmittedJobIdStreamRequest(
-                "testBootStrapJobClustersAndJobs1"), probe.getRef());
+            "testBootStrapJobClustersAndJobs1"), probe.getRef());
         GetLastSubmittedJobIdStreamResponse lastSubmittedJobIdStreamResponse = probe.expectMsgClass(
-                Duration.of(10, ChronoUnit.MINUTES),
-                GetLastSubmittedJobIdStreamResponse.class);
+            Duration.of(10, ChronoUnit.MINUTES),
+            GetLastSubmittedJobIdStreamResponse.class);
         lastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject()
-                                        .get()
-                                        .take(1)
-                                        .toBlocking()
-                                        .subscribe((jId) -> {
-                                            assertEquals(new JobId(
-                                                    "testBootStrapJobClustersAndJobs1",
-                                                    1), jId);
-                                        });
+            .get()
+            .take(1)
+            .toBlocking()
+            .subscribe((jId) -> {
+                assertEquals(new JobId(
+                    "testBootStrapJobClustersAndJobs1",
+                    1), jId);
+            });
 
         // Two schedules: one for the initial success, one for a resubmit from corrupted worker ports.
         verify(schedulerMock, times(2)).scheduleWorker(any());
@@ -806,13 +815,13 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterCreateCluster";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -829,13 +838,13 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobClusterCreateDupFails";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -844,10 +853,10 @@ public class JobClusterManagerTest {
         assertEquals(clusterName, resp2.getJobCluster().get().getName());
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp3 = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         System.out.println("Got resp -> " + resp3);
         assertEquals(CLIENT_ERROR_CONFLICT, resp3.responseCode);
 
@@ -856,7 +865,6 @@ public class JobClusterManagerTest {
         GetJobClusterResponse resp4 = probe.expectMsgClass(GetJobClusterResponse.class);
         assertEquals(SUCCESS, resp4.responseCode);
         assertEquals(clusterName, resp4.getJobCluster().get().getName());
-
 
         //assertEquals(jobClusterManagerActor, probe.getLastSender().path());
 
@@ -867,28 +875,28 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testListJobClusters";
         JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         String clusterName2 = "testListJobClusters2";
         fakeJobCluster = createFakeJobClusterDefn(clusterName2, Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         resp = probe.expectMsgClass(JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         jobClusterManagerActor.tell(
-                new JobClusterManagerProto.ListJobClustersRequest(),
-                probe.getRef());
+            new JobClusterManagerProto.ListJobClustersRequest(),
+            probe.getRef());
         JobClusterManagerProto.ListJobClustersResponse resp2 = probe.expectMsgClass(
-                JobClusterManagerProto.ListJobClustersResponse.class);
+            JobClusterManagerProto.ListJobClustersResponse.class);
 
         assertTrue(2 <= resp2.getJobClusters().size());
         List<MantisJobClusterMetadataView> jClusters = resp2.getJobClusters();
@@ -908,50 +916,50 @@ public class JobClusterManagerTest {
         //create cluster 1
         String clusterName = "testListJobs";
         JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         // submit job to this cluster
         JobDefinition jobDefn = createJob(clusterName);
         jobClusterManagerActor.tell(
-                new JobClusterManagerProto.SubmitJobRequest(
-                        clusterName,
-                        "me",
-                        jobDefn),
-                probe.getRef());
+            new JobClusterManagerProto.SubmitJobRequest(
+                clusterName,
+                "me",
+                jobDefn),
+            probe.getRef());
         JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
-                JobClusterManagerProto.SubmitJobResponse.class);
+            JobClusterManagerProto.SubmitJobResponse.class);
         assertEquals(SUCCESS, submitResp.responseCode);
 
         // create cluster 2
         String clusterName2 = "testListJobs2";
         fakeJobCluster = createFakeJobClusterDefn(clusterName2, Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         resp = probe.expectMsgClass(JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         // submit job to this cluster
         jobDefn = createJob(clusterName2);
         jobClusterManagerActor.tell(
-                new JobClusterManagerProto.SubmitJobRequest(
-                        clusterName2,
-                        "me",
-                        jobDefn),
-                probe.getRef());
+            new JobClusterManagerProto.SubmitJobRequest(
+                clusterName2,
+                "me",
+                jobDefn),
+            probe.getRef());
         submitResp = probe.expectMsgClass(JobClusterManagerProto.SubmitJobResponse.class);
         assertEquals(SUCCESS, submitResp.responseCode);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.ListJobsRequest(), probe.getRef());
         JobClusterManagerProto.ListJobsResponse listResp = probe.expectMsgClass(
-                JobClusterManagerProto.ListJobsResponse.class);
+            JobClusterManagerProto.ListJobsResponse.class);
 
         System.out.println("Got " + listResp.getJobList().size());
         boolean foundJob1 = false;
@@ -980,39 +988,39 @@ public class JobClusterManagerTest {
         Label l = new Label("labelname", "labelvalue");
         labels.add(l);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
         JobClusterConfig clusterConfig = new JobClusterConfig.Builder()
-                .withArtifactName("myart2")
-                .withSchedulingInfo(TWO_WORKER_SCHED_INFO)
-                .withVersion("0.0.2")
-                .build();
+            .withArtifactName("myart2")
+            .withSchedulingInfo(TWO_WORKER_SCHED_INFO)
+            .withVersion("0.0.2")
+            .build();
 
         final JobClusterDefinitionImpl updatedFakeJobCluster = new JobClusterDefinitionImpl.Builder()
-                .withJobClusterConfig(clusterConfig)
-                .withName(clusterName)
-                .withParameters(Lists.newArrayList())
+            .withJobClusterConfig(clusterConfig)
+            .withName(clusterName)
+            .withParameters(Lists.newArrayList())
 
-                .withUser(user)
-                .withIsReadyForJobMaster(true)
-                .withOwner(DEFAULT_JOB_OWNER)
-                .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
-                .withSla(NO_OP_SLA)
-                .build();
+            .withUser(user)
+            .withIsReadyForJobMaster(true)
+            .withOwner(DEFAULT_JOB_OWNER)
+            .withMigrationConfig(WorkerMigrationConfig.DEFAULT)
+            .withSla(NO_OP_SLA)
+            .build();
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.UpdateJobClusterRequest(
-                updatedFakeJobCluster,
-                "user"), probe.getRef());
+            updatedFakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.UpdateJobClusterResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.UpdateJobClusterResponse.class);
+            JobClusterManagerProto.UpdateJobClusterResponse.class);
 
         if (SUCCESS != updateResp.responseCode) {
             System.out.println("Update cluster response: " + updateResp);
@@ -1021,11 +1029,11 @@ public class JobClusterManagerTest {
         // assertEquals(jobClusterManagerActor, probe.getLastSender());
 
         jobClusterManagerActor.tell(
-                new JobClusterManagerProto.DeleteJobClusterRequest(user,
-                                                                   clusterName),
-                probe.getRef());
+            new JobClusterManagerProto.DeleteJobClusterRequest(user,
+                clusterName),
+            probe.getRef());
         JobClusterManagerProto.DeleteJobClusterResponse deleteResp = probe.expectMsgClass(
-                JobClusterManagerProto.DeleteJobClusterResponse.class);
+            JobClusterManagerProto.DeleteJobClusterResponse.class);
         assertEquals(SUCCESS, deleteResp.responseCode);
         // assertEquals(jobClusterManagerActor, probe.getLastSender());
 
@@ -1039,23 +1047,23 @@ public class JobClusterManagerTest {
         Label l = new Label("labelname", "labelvalue");
         labels.add(l);
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
         UpdateJobClusterSLARequest req = new JobClusterManagerProto.UpdateJobClusterSLARequest(
-                clusterName,
-                1,
-                2,
-                "user");
+            clusterName,
+            1,
+            2,
+            "user");
         jobClusterManagerActor.tell(req, probe.getRef());
         JobClusterManagerProto.UpdateJobClusterSLAResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.UpdateJobClusterSLAResponse.class);
+            JobClusterManagerProto.UpdateJobClusterSLAResponse.class);
 
         assertEquals(SUCCESS, updateResp.responseCode);
         // assertEquals(jobClusterManagerActor, probe.getLastSender());
@@ -1075,14 +1083,14 @@ public class JobClusterManagerTest {
         String clusterName = "testJobClusterLabelUpdate";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
         List<Label> labels2 = Lists.newLinkedList();
@@ -1090,12 +1098,12 @@ public class JobClusterManagerTest {
         labels2.add(l);
 
         UpdateJobClusterLabelsRequest req = new JobClusterManagerProto.UpdateJobClusterLabelsRequest(
-                clusterName,
-                labels2,
-                "user");
+            clusterName,
+            labels2,
+            "user");
         jobClusterManagerActor.tell(req, probe.getRef());
         JobClusterManagerProto.UpdateJobClusterLabelsResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.UpdateJobClusterLabelsResponse.class);
+            JobClusterManagerProto.UpdateJobClusterLabelsResponse.class);
 
         assertEquals(SUCCESS, updateResp.responseCode);
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -1111,25 +1119,25 @@ public class JobClusterManagerTest {
         String clusterName = "testJobClusterArtifactUpdate";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
         UpdateJobClusterArtifactRequest req = new JobClusterManagerProto.UpdateJobClusterArtifactRequest(
-                clusterName,
-                "myjar",
-                "1.0.1",
-                true,
-                "user");
+            clusterName,
+            "myjar",
+            "1.0.1",
+            true,
+            "user");
         jobClusterManagerActor.tell(req, probe.getRef());
         JobClusterManagerProto.UpdateJobClusterArtifactResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.UpdateJobClusterArtifactResponse.class);
+            JobClusterManagerProto.UpdateJobClusterArtifactResponse.class);
 
         assertEquals(SUCCESS, updateResp.responseCode);
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -1145,31 +1153,31 @@ public class JobClusterManagerTest {
         String clusterName = "testJobClusterWorkerMigrationUpdate";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
         UpdateJobClusterWorkerMigrationStrategyRequest req = new JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest(
-                clusterName,
-                new WorkerMigrationConfig(MigrationStrategyEnum.ONE_WORKER, "{}"),
-                clusterName);
+            clusterName,
+            new WorkerMigrationConfig(MigrationStrategyEnum.ONE_WORKER, "{}"),
+            clusterName);
         jobClusterManagerActor.tell(req, probe.getRef());
         JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse.class);
+            JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyResponse.class);
 
         assertEquals(SUCCESS, updateResp.responseCode);
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
         GetJobClusterResponse getResp = probe.expectMsgClass(GetJobClusterResponse.class);
         assertEquals(SUCCESS, getResp.responseCode);
         assertEquals(
-                MigrationStrategyEnum.ONE_WORKER,
-                getResp.getJobCluster().get().getMigrationConfig().getStrategy());
+            MigrationStrategyEnum.ONE_WORKER,
+            getResp.getJobCluster().get().getMigrationConfig().getStrategy());
 
     }
 
@@ -1179,22 +1187,22 @@ public class JobClusterManagerTest {
         String clusterName = "testJobClusterDisable";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
         DisableJobClusterRequest req = new JobClusterManagerProto.DisableJobClusterRequest(
-                clusterName,
-                "user");
+            clusterName,
+            "user");
         jobClusterManagerActor.tell(req, probe.getRef());
         JobClusterManagerProto.DisableJobClusterResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.DisableJobClusterResponse.class);
+            JobClusterManagerProto.DisableJobClusterResponse.class);
 
         assertEquals(SUCCESS, updateResp.responseCode);
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -1210,22 +1218,22 @@ public class JobClusterManagerTest {
         String clusterName = "testJobClusterEnable";
         List<Label> labels = Lists.newLinkedList();
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                labels);
+            clusterName,
+            labels);
 
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse createResp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         assertEquals(SUCCESS_CREATED, createResp.responseCode);
 
         DisableJobClusterRequest req = new JobClusterManagerProto.DisableJobClusterRequest(
-                clusterName,
-                "user");
+            clusterName,
+            "user");
         jobClusterManagerActor.tell(req, probe.getRef());
         JobClusterManagerProto.DisableJobClusterResponse updateResp = probe.expectMsgClass(
-                JobClusterManagerProto.DisableJobClusterResponse.class);
+            JobClusterManagerProto.DisableJobClusterResponse.class);
 
         assertEquals(SUCCESS, updateResp.responseCode);
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -1234,11 +1242,11 @@ public class JobClusterManagerTest {
         assertTrue(getResp.getJobCluster().get().isDisabled());
 
         EnableJobClusterRequest req2 = new JobClusterManagerProto.EnableJobClusterRequest(
-                clusterName,
-                "user");
+            clusterName,
+            "user");
         jobClusterManagerActor.tell(req2, probe.getRef());
         JobClusterManagerProto.EnableJobClusterResponse updateResp2 = probe.expectMsgClass(
-                JobClusterManagerProto.EnableJobClusterResponse.class);
+            JobClusterManagerProto.EnableJobClusterResponse.class);
 
         assertEquals(SUCCESS, updateResp2.responseCode);
         jobClusterManagerActor.tell(new GetJobClusterRequest(clusterName), probe.getRef());
@@ -1254,13 +1262,13 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmit";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         System.out.println("response----->" + resp);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
@@ -1268,23 +1276,23 @@ public class JobClusterManagerTest {
         try {
             jobDefn = createJob(clusterName);
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.SubmitJobRequest(
-                            clusterName,
-                            "me",
-                            jobDefn),
-                    probe.getRef());
+                new JobClusterManagerProto.SubmitJobRequest(
+                    clusterName,
+                    "me",
+                    jobDefn),
+                probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
-                    JobClusterManagerProto.SubmitJobResponse.class);
+                JobClusterManagerProto.SubmitJobResponse.class);
             assertEquals(SUCCESS, submitResp.responseCode);
 
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.KillJobRequest(
-                            clusterName + "-1",
-                            "",
-                            clusterName),
-                    probe.getRef());
+                new JobClusterManagerProto.KillJobRequest(
+                    clusterName + "-1",
+                    "",
+                    clusterName),
+                probe.getRef());
             JobClusterManagerProto.KillJobResponse kill = probe.expectMsgClass(
-                    JobClusterManagerProto.KillJobResponse.class);
+                JobClusterManagerProto.KillJobResponse.class);
         } catch (InvalidJobException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -1300,13 +1308,13 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testWorkerList";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         System.out.println("response----->" + resp);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
@@ -1314,20 +1322,20 @@ public class JobClusterManagerTest {
         try {
             jobDefn = createJob(clusterName);
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.SubmitJobRequest(
-                            clusterName,
-                            "me",
-                            jobDefn),
-                    probe.getRef());
+                new JobClusterManagerProto.SubmitJobRequest(
+                    clusterName,
+                    "me",
+                    jobDefn),
+                probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
-                    JobClusterManagerProto.SubmitJobResponse.class);
+                JobClusterManagerProto.SubmitJobResponse.class);
             assertEquals(SUCCESS, submitResp.responseCode);
 
             jobClusterManagerActor.tell(new JobClusterManagerProto.ListWorkersRequest(new JobId(
-                    clusterName,
-                    1)), probe.getRef());
+                clusterName,
+                1)), probe.getRef());
             JobClusterManagerProto.ListWorkersResponse listWorkersResponse = probe.expectMsgClass(
-                    JobClusterManagerProto.ListWorkersResponse.class);
+                JobClusterManagerProto.ListWorkersResponse.class);
 
             assertEquals(SUCCESS, listWorkersResponse.responseCode);
             assertEquals(1, listWorkersResponse.getWorkerMetadata().size());
@@ -1335,23 +1343,22 @@ public class JobClusterManagerTest {
             // send list workers request to non existent cluster
 
             jobClusterManagerActor.tell(new JobClusterManagerProto.ListWorkersRequest(new JobId(
-                    "randomCluster",
-                    1)), probe.getRef());
+                "randomCluster",
+                1)), probe.getRef());
             JobClusterManagerProto.ListWorkersResponse listWorkersResponse2 = probe.expectMsgClass(
-                    JobClusterManagerProto.ListWorkersResponse.class);
+                JobClusterManagerProto.ListWorkersResponse.class);
 
             assertEquals(CLIENT_ERROR, listWorkersResponse2.responseCode);
             assertEquals(0, listWorkersResponse2.getWorkerMetadata().size());
 
-
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.KillJobRequest(
-                            clusterName + "-1",
-                            "",
-                            clusterName),
-                    probe.getRef());
+                new JobClusterManagerProto.KillJobRequest(
+                    clusterName + "-1",
+                    "",
+                    clusterName),
+                probe.getRef());
             JobClusterManagerProto.KillJobResponse kill = probe.expectMsgClass(
-                    JobClusterManagerProto.KillJobResponse.class);
+                JobClusterManagerProto.KillJobResponse.class);
         } catch (InvalidJobException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -1367,13 +1374,13 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testGetJobIdSubject";
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         System.out.println("response----->" + resp);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
@@ -1381,17 +1388,17 @@ public class JobClusterManagerTest {
         try {
 
             jobClusterManagerActor.tell(
-                    new GetLastSubmittedJobIdStreamRequest(clusterName),
-                    probe.getRef());
+                new GetLastSubmittedJobIdStreamRequest(clusterName),
+                probe.getRef());
             JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse getLastSubmittedJobIdStreamResponse = probe
-                    .expectMsgClass(JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse.class);
+                .expectMsgClass(JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse.class);
 
             assertEquals(SUCCESS, getLastSubmittedJobIdStreamResponse.responseCode);
 
             CountDownLatch jobIdLatch = new CountDownLatch(1);
             assertTrue(getLastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject().isPresent());
             BehaviorSubject<JobId> jobIdBehaviorSubject =
-                    getLastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject().get();
+                getLastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject().get();
 
             jobIdBehaviorSubject.subscribeOn(Schedulers.io()).subscribe((jId) -> {
                 System.out.println("Got Jid -> " + jId);
@@ -1401,38 +1408,36 @@ public class JobClusterManagerTest {
 
             jobDefn = createJob(clusterName);
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.SubmitJobRequest(
-                            clusterName,
-                            "me",
-                            jobDefn),
-                    probe.getRef());
+                new JobClusterManagerProto.SubmitJobRequest(
+                    clusterName,
+                    "me",
+                    jobDefn),
+                probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
-                    JobClusterManagerProto.SubmitJobResponse.class);
+                JobClusterManagerProto.SubmitJobResponse.class);
             assertEquals(SUCCESS, submitResp.responseCode);
 
             jobIdLatch.await(1, TimeUnit.SECONDS);
 
-
             // try a non existent cluster
             jobClusterManagerActor.tell(
-                    new GetLastSubmittedJobIdStreamRequest("randomC"),
-                    probe.getRef());
-            getLastSubmittedJobIdStreamResponse = probe.expectMsgClass(JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse.class);
+                new GetLastSubmittedJobIdStreamRequest("randomC"),
+                probe.getRef());
+            getLastSubmittedJobIdStreamResponse = probe.expectMsgClass(
+                JobClusterManagerProto.GetLastSubmittedJobIdStreamResponse.class);
 
             assertEquals(CLIENT_ERROR_NOT_FOUND, getLastSubmittedJobIdStreamResponse.responseCode);
 
-
             assertTrue(!getLastSubmittedJobIdStreamResponse.getjobIdBehaviorSubject().isPresent());
 
-
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.KillJobRequest(
-                            clusterName + "-1",
-                            "",
-                            clusterName),
-                    probe.getRef());
+                new JobClusterManagerProto.KillJobRequest(
+                    clusterName + "-1",
+                    "",
+                    clusterName),
+                probe.getRef());
             JobClusterManagerProto.KillJobResponse kill = probe.expectMsgClass(
-                    JobClusterManagerProto.KillJobResponse.class);
+                JobClusterManagerProto.KillJobResponse.class);
         } catch (InvalidJobException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -1450,18 +1455,17 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testJobSubmitToNonExistentClusterCluster";
 
-
         JobDefinition jobDefn;
         try {
             jobDefn = createJob(clusterName);
             jobClusterManagerActor.tell(
-                    new JobClusterManagerProto.SubmitJobRequest(
-                            clusterName,
-                            "me",
-                            jobDefn),
-                    probe.getRef());
+                new JobClusterManagerProto.SubmitJobRequest(
+                    clusterName,
+                    "me",
+                    jobDefn),
+                probe.getRef());
             JobClusterManagerProto.SubmitJobResponse submitResp = probe.expectMsgClass(
-                    JobClusterManagerProto.SubmitJobResponse.class);
+                JobClusterManagerProto.SubmitJobResponse.class);
             assertEquals(CLIENT_ERROR_NOT_FOUND, submitResp.responseCode);
 
         } catch (InvalidJobException e) {
@@ -1479,26 +1483,25 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testZombieWorkerHandling";
 
-
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         System.out.println("response----->" + resp);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         WorkerId zWorker1 = new WorkerId("randomCluster2", "randomCluster2-1", 0, 1);
         JobTestHelper.sendWorkerTerminatedEvent(probe,
-                                                jobClusterManagerActor,
-                                                "randomCluster2-1",
-                                                zWorker1);
+            jobClusterManagerActor,
+            "randomCluster2-1",
+            zWorker1);
 
         verify(schedulerMock, timeout(1_000).times(0)).unscheduleAndTerminateWorker(zWorker1,
-                                                                                    empty());
+            empty());
 
 
     }
@@ -1508,26 +1511,26 @@ public class JobClusterManagerTest {
         TestKit probe = new TestKit(system);
         String clusterName = "testNonTerminalEventFromZombieWorkerLeadsToTermination";
 
-
         final JobClusterDefinitionImpl fakeJobCluster = createFakeJobClusterDefn(
-                clusterName,
-                Lists.newArrayList());
+            clusterName,
+            Lists.newArrayList());
         jobClusterManagerActor.tell(new JobClusterManagerProto.CreateJobClusterRequest(
-                fakeJobCluster,
-                "user"), probe.getRef());
+            fakeJobCluster,
+            "user"), probe.getRef());
         JobClusterManagerProto.CreateJobClusterResponse resp = probe.expectMsgClass(
-                JobClusterManagerProto.CreateJobClusterResponse.class);
+            JobClusterManagerProto.CreateJobClusterResponse.class);
         System.out.println("response----->" + resp);
         assertEquals(SUCCESS_CREATED, resp.responseCode);
 
         WorkerId zWorker1 = new WorkerId("randomCluster", "randomCluster-1", 0, 1);
         when(jobStoreMock.getArchivedJob(zWorker1.getJobId()))
             .thenReturn(Optional.of(
-                new MantisJobMetadataImpl.Builder().withJobDefinition(mock(JobDefinition.class)).build()));
+                new MantisJobMetadataImpl.Builder().withJobDefinition(mock(JobDefinition.class))
+                    .build()));
         JobTestHelper.sendStartInitiatedEvent(probe, jobClusterManagerActor, 1, zWorker1);
 
         verify(schedulerMock, timeout(1_000).times(1)).unscheduleAndTerminateWorker(zWorker1,
-                                                                                    empty());
+            empty());
 
 
     }

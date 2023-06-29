@@ -21,6 +21,7 @@ import io.mantisrx.master.jobcluster.job.worker.JobWorker;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.server.master.domain.Costs;
 import io.mantisrx.server.master.domain.DataFormatAdapter;
 import io.mantisrx.server.master.domain.JobDefinition;
 import io.mantisrx.server.master.domain.JobId;
@@ -35,7 +36,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +58,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private JobState state;
     private int nextWorkerNumberToUse;
     private final JobDefinition jobDefinition;
+    private Costs jobCosts;
 
     @JsonIgnore
     private final Map<Integer, IMantisStageMetadata> stageMetadataMap = new HashMap<>();
@@ -176,6 +183,10 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 		store.updateJob(this);
 
 	}
+
+    void setJobCosts(Costs jobCosts) {
+        this.jobCosts = jobCosts;
+    }
 
 
     /**
@@ -360,10 +371,21 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         JobState state;
 
         int nextWorkerNumberToUse = 1;
+        Costs jobCosts;
 
-    	public Builder() {
-
+        public Builder() {
     	}
+
+        public Builder(MantisJobMetadataImpl mJob) {
+            this.jobId = mJob.getJobId();
+
+            this.jobDefinition = mJob.getJobDefinition();
+            this.submittedAt = mJob.getSubmittedAt();
+            this.state = mJob.getState();
+
+            this.nextWorkerNumberToUse = mJob.getNextWorkerNumberToUse();
+            this.jobCosts = mJob.getJobCosts();
+        }
 
     	public Builder withJobId(JobId jobId) {
     		this.jobId = jobId;
@@ -404,16 +426,10 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     		return this;
     	}
 
-    	public Builder from(MantisJobMetadataImpl mJob) {
-    		this.jobId = mJob.getJobId();
-
-    		this.jobDefinition = mJob.getJobDefinition();
-    		this.submittedAt = mJob.getSubmittedAt();
-    		this.state = mJob.getState();
-
-    		this.nextWorkerNumberToUse = mJob.getNextWorkerNumberToUse();
-    		return this;
-    	}
+        public Builder withJobCost(Costs costs) {
+            this.jobCosts = costs;
+            return this;
+        }
 
     	public MantisJobMetadataImpl build() {
     		return new MantisJobMetadataImpl(jobId, submittedAt, startedAt, jobDefinition, state, nextWorkerNumberToUse);
@@ -459,9 +475,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         return Objects.hash(jobId, submittedAt, startedAt, endedAt, state, nextWorkerNumberToUse, jobDefinition);
     }
 
-
-
-
-
-
+    @Override
+    public Costs getJobCosts() {
+        return jobCosts;
+    }
 }
