@@ -16,9 +16,18 @@
 
 package io.mantisrx.server.master.config;
 
+import io.mantisrx.master.jobcluster.job.NoopCostsCalculatorFactory;
 import java.lang.reflect.Method;
 import java.util.Properties;
 
+/**
+ * A factory class that creates an object of type T from a class name and a set of properties.
+ * <p>
+ * The extension class is expected to have a method named createObject that takes a Properties
+ * object as an argument. The method is expected to return an object of type T. For example, see
+ * {@link NoopCostsCalculatorFactory}.
+ * </p>
+ */
 public class ExtensionFactory {
 
     @SuppressWarnings({"unchecked"})
