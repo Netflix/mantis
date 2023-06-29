@@ -19,7 +19,6 @@ package io.mantisrx.runtime.descriptor;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -29,7 +28,7 @@ public class JobInfo extends MetadataInfo {
     private final MetadataInfo sourceInfo;
     private final MetadataInfo sinkInfo;
     private final Map<Integer, StageInfo> stages;
-    private Map<String, ParameterInfo> parameterInfo = new HashMap<>();
+    private final Map<String, ParameterInfo> parameterInfo;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

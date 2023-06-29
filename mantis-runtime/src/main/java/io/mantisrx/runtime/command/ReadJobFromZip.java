@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -31,10 +32,10 @@ import org.slf4j.LoggerFactory;
 
 public class ReadJobFromZip implements Command {
 
-    private static Logger logger = LoggerFactory.getLogger(ReadJobFromZip.class);
-    private String jobZipFile;
-    private String artifactName;
-    private String version;
+    private static final Logger logger = LoggerFactory.getLogger(ReadJobFromZip.class);
+    private final String jobZipFile;
+    private final String artifactName;
+    private final String version;
     @SuppressWarnings("rawtypes")
     private Job job;
 
@@ -70,7 +71,7 @@ public class ReadJobFromZip implements Command {
                     final String jobProviderClassName = bufferedReader.readLine();
                     logger.info("loading MantisJobProvider from " + jobProviderClassName);
                     final Class<?> clazz = Class.forName(jobProviderClassName);
-                    final MantisJobProvider jobProvider = (MantisJobProvider) clazz.newInstance();
+                    final MantisJobProvider jobProvider = (MantisJobProvider)  clazz.getDeclaredConstructor().newInstance();
                     job = jobProvider.getJobInstance();
                     break;
                 }
@@ -84,6 +85,8 @@ public class ReadJobFromZip implements Command {
 
         } catch (IOException | IllegalAccessException | ClassNotFoundException | InstantiationException e) {
             throw new ReadJobFromZipException(e);
+        } catch (InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
         }
 
     }

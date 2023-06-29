@@ -18,5 +18,5 @@ package io.mantisrx.runtime.command;
 
 public interface Command {
 
-    public void execute() throws CommandException;
+    void execute() throws CommandException;
 }

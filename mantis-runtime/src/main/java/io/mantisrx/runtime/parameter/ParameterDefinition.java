@@ -21,13 +21,13 @@ import io.mantisrx.runtime.parameter.validator.Validator;
 
 public class ParameterDefinition<T> {
 
-    private String name;
-    private String description;
-    private T defaultValue;
-    private String typeDescription;
-    private Validator<? super T> validator;
-    private boolean required;
-    private ParameterDecoder<T> decoder;
+    private final String name;
+    private final String description;
+    private final T defaultValue;
+    private final String typeDescription;
+    private final Validator<? super T> validator;
+    private final boolean required;
+    private final ParameterDecoder<T> decoder;
 
     ParameterDefinition(Builder<T> builder) {
         this.name = builder.name;

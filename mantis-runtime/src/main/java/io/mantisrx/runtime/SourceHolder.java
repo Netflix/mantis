@@ -27,12 +27,12 @@ import io.mantisrx.runtime.source.Source;
 public class SourceHolder<T> {
 
     private Metadata metadata;
-    private Source<T> sourceFunction;
+    private final Source<T> sourceFunction;
 
     // There is no need for input codec
     // for a source, if called
     // throw exception to detect error
-    private Codec<T> failCodec = new Codec<T>() {
+    private final Codec<T> failCodec = new Codec<T>() {
         @Override
         public byte[] encode(T value) {
             throw new RuntimeException("Attempting to encode source data");
@@ -72,7 +72,7 @@ public class SourceHolder<T> {
      * @param computation The computation that transforms a scalar to a group
      * @param config      stage config
      *
-     * @return
+     * @return KeyedStages
      */
     public <K, R> KeyedStages<K, R> stage(ToGroupComputation<T, K, R> computation,
                                     ScalarToGroup.Config<T, K, R> config) {

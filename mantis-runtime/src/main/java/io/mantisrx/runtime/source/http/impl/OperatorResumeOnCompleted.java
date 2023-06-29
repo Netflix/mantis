@@ -28,7 +28,7 @@ import rx.subscriptions.SerialSubscription;
 
 public class OperatorResumeOnCompleted<T> implements Operator<T, T> {
 
-    private static Scheduler scheduler = Schedulers.trampoline();
+    private static final Scheduler scheduler = Schedulers.trampoline();
     private final ResumeOnCompletedPolicy<T> resumePolicy;
     private final int currentAttempts;
 

@@ -23,8 +23,8 @@ import rx.functions.Func1;
 
 public class Predicate<T> {
 
-    private String description;
-    private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
+    private final String description;
+    private final Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
 
     public Predicate(String description,
                      Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate) {

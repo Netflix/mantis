@@ -48,8 +48,8 @@ public class ParameterUtils {
     public static final String STAGE_CONCURRENCY = "mantis.stageConcurrency";
     public static final int MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE = 5;
     static final ConcurrentHashMap<String, ParameterDefinition<?>> systemParams
-            = new ConcurrentHashMap<String, ParameterDefinition<?>>();
-    private static Logger logger = LoggerFactory.getLogger(ParameterUtils.class);
+            = new ConcurrentHashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(ParameterUtils.class);
 
     static {
         ParameterDefinition<Integer> keyBuffer = new IntParameter()
@@ -285,7 +285,7 @@ public class ParameterUtils {
         if (validator == null) {
             throw new IllegalArgumentException("Validator for parameter definition: " + name + " is null");
         }
-        Validation validatorOutcome = null;
+        Validation validatorOutcome;
         try {
             validatorOutcome = (Validation) validator.call(value);
         } catch (Throwable t) {
@@ -328,8 +328,8 @@ public class ParameterUtils {
         // run all validators
         for (Parameter parameter : parameters.values()) {
             String name = parameter.getName();
-            Object value = null;
-            ParameterDefinition<?> definition = null;
+            Object value;
+            ParameterDefinition<?> definition;
 
             definition = parameterDefinitions.get(name);
 

@@ -35,9 +35,9 @@ import rx.Subscription;
 public class DefaultHttpServerProvider implements HttpServerProvider {
 
     private final ServerPoller serverPoller;
-    private Gauge discoveryActiveGauge;
-    private Gauge newServersGauge;
-    private Gauge removedServersGauge;
+    private final Gauge discoveryActiveGauge;
+    private final Gauge newServersGauge;
+    private final Gauge removedServersGauge;
 
     protected DefaultHttpServerProvider(ServerPoller serverPoller) {
         this.serverPoller = serverPoller;
@@ -69,7 +69,7 @@ public class DefaultHttpServerProvider implements HttpServerProvider {
 
     @Override
     public final Observable<ServerInfo> getServersToAdd() {
-        // We use a Observable.create instead of a simple serverPoller.servers().flatMap(...)
+        // We use an Observable.create instead of a simple serverPoller.servers().flatMap(...)
         // because we want to create an activeServers object for each subscription
         return Observable.create(new OnSubscribe<ServerInfo>() {
             @Override

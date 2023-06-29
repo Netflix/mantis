@@ -28,13 +28,13 @@ public abstract class StageConfig<T, R> {
     // Note: the default of -1 implies the concurrency is not explicitly configured. This defaults to
     // the behaviour of relying on the number of inner observables for concurrency in the system
     public static final int DEFAULT_STAGE_CONCURRENCY = -1;
-    private String description;
+    private final String description;
     // holds the codec for the key datatype if there is one in the stage
-    private Codec<?> inputKeyCodec;
-    private Codec<T> inputCodec;
-    private Codec<R> outputCodec;
-    private INPUT_STRATEGY inputStrategy;
-    private List<ParameterDefinition<?>> parameters;
+    private final Codec<?> inputKeyCodec;
+    private final Codec<T> inputCodec;
+    private final Codec<R> outputCodec;
+    private final INPUT_STRATEGY inputStrategy;
+    private final List<ParameterDefinition<?>> parameters;
 
     // this number determines the number of New Threads created for concurrent Stage processing irrespective of the
     // number of inner observables processed

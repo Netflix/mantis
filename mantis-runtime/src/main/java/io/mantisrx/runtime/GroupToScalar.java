@@ -38,8 +38,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
 
-    private GroupToScalarComputation<K, T, R> computation;
-    private long keyExpireTimeSeconds;
+    private final GroupToScalarComputation<K, T, R> computation;
+    private final long keyExpireTimeSeconds;
 
     /**
      * @deprecated As of release 0.603, use {@link #GroupToScalar(GroupToScalarComputation, Config, Codec)} instead
@@ -81,9 +81,9 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
-         * @param codec
+         * @param codec is netty reactivex Codec
          *
-         * @return
+         * @return Config
          *
          * @deprecated As of release 0.603, use {@link #codec(io.mantisrx.common.codec.Codec)} instead
          */
@@ -100,9 +100,9 @@ public class GroupToScalar<K, T, R> extends StageConfig<T, R> {
         /**
          * Not used. As we are not generating GroupedObservables
          *
-         * @param seconds
+         * @param seconds is a long
          *
-         * @return
+         * @return Config
          */
         public Config<K, T, R> keyExpireTimeSeconds(long seconds) {
             this.keyExpireTimeSeconds = seconds;
