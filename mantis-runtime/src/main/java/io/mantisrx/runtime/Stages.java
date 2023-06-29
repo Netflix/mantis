@@ -26,8 +26,8 @@ public class Stages<T> {
 
     final Codec<?> inputKeyCodec;
     final Codec<T> inputCodec;
-    private SourceHolder<?> source;
-    private List<StageConfig<?, ?>> stages;
+    private final SourceHolder<?> source;
+    private final List<StageConfig<?, ?>> stages;
 
     Stages(SourceHolder<?> source, StageConfig<?, ?> stage, Codec<T> inputCodec) {
         this(source, stage, null, inputCodec);

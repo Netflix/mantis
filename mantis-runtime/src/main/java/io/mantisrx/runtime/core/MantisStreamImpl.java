@@ -129,8 +129,8 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
         MantisJobBuilder jobBuilder = new MantisJobBuilder();
         final AtomicReference<FunctionCombinator<?, ?>> composite = new AtomicReference<>(new FunctionCombinator<>(false));
         for (OperandNode<?> n : operandNodes) {
-            Set<OperandNode<?>> nbrs = graphDag.successors(n);
-            if (nbrs.size() == 0) {
+            Set<OperandNode<?>> successorsNodes = graphDag.successors(n);
+            if (successorsNodes.size() == 0) {
                 continue;
             }
             // remove self-loop
@@ -145,14 +145,14 @@ public class MantisStreamImpl<T> implements MantisStream<T> {
                 }
                 // No other types of self-edges are possible
             });
-            if (nbrs.size() - numSelfEdges > 1) {
-                log.warn("Found multi-output node {} with nbrs {}. Not supported yet!", n, nbrs);
+            if (successorsNodes.size() - numSelfEdges > 1) {
+                log.warn("Found multi-output node {} with nbrs {}. Not supported yet!", n, successorsNodes);
             }
-            for (OperandNode<?> nbr : nbrs) {
-                if (nbr == n) {
+            for (OperandNode<?> successorsNode : successorsNodes) {
+                if (successorsNode == n) {
                     continue;
                 }
-                graphDag.edgeValue(n, nbr).ifPresent(mantisFn -> {
+                graphDag.edgeValue(n, successorsNode).ifPresent(mantisFn -> {
                     if (mantisFn instanceof SourceFunction) {
                         if (mantisFn instanceof ObservableSourceImpl) {
                             jobBuilder.addStage(((ObservableSourceImpl) mantisFn).getSource());

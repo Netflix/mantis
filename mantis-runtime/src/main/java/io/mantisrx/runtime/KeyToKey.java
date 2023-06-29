@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
 
-    private KeyComputation<K1, T, K2, R> computation;
-    private long keyExpireTimeSeconds;
+    private final KeyComputation<K1, T, K2, R> computation;
+    private final long keyExpireTimeSeconds;
 
 
     /**
@@ -77,13 +77,13 @@ public class KeyToKey<K1, T, K2, R> extends KeyValueStageConfig<T, K2, R> {
         // input type for keyToKey is serial
         // always assume a stateful calculation is being made
         // do not allow config to override
-        private INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
+        private final INPUT_STRATEGY inputStrategy = INPUT_STRATEGY.SERIAL;
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
-         * @param codec
+         * @param codec is a netty reactivex codec
          *
-         * @return
+         * @return Config
          *
          * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
          */

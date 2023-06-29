@@ -32,12 +32,7 @@ public class Groups {
         Observable<GroupedObservable<K, T>> flattenedGroups = Observable.merge(groups);
         return flattenedGroups
                 //				// re-group by key
-                .groupBy(new Func1<GroupedObservable<K, T>, K>() {
-                    @Override
-                    public K call(GroupedObservable<K, T> group) {
-                        return group.getKey();
-                    }
-                })
+                .groupBy(GroupedObservable::getKey)
 
                 // flatten, with merged group
                 .flatMap(new Func1<GroupedObservable<K, GroupedObservable<K, T>>, Observable<GroupedObservable<K, T>>>() {
@@ -53,29 +48,17 @@ public class Groups {
     /**
      * Convert O O MantisGroup  to  O GroupedObservable
      *
-     * @param groups
+     * @param <K> MantisGroup<K, T> groups keyValue
      *
-     * @return
+     * @param <T> MantisGroup<K, T>> groups value
+     *
+     * @return Observable
      */
 
     public static <K, T> Observable<GroupedObservable<K, T>> flattenMantisGroupsToGroupedObservables(
             Observable<Observable<MantisGroup<K, T>>> groups) {
         Observable<MantisGroup<K, T>> flattenedGroups = Observable.merge(groups);
-        return flattenedGroups.groupBy(new Func1<MantisGroup<K, T>, K>() {
-
-            @Override
-            public K call(MantisGroup<K, T> t) {
-                return t.getKeyValue();
-            }
-
-        }, new Func1<MantisGroup<K, T>, T>() {
-
-            @Override
-            public T call(MantisGroup<K, T> t) {
-                return t.getValue();
-            }
-
-        });
+        return flattenedGroups.groupBy(MantisGroup::getKeyValue, MantisGroup::getValue);
 
 
     }

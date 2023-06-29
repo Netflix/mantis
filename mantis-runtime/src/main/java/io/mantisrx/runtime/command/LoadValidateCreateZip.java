@@ -51,7 +51,7 @@ public class LoadValidateCreateZip implements Command {
         String outputLocation = args[3];
         boolean readyForJobMaster = false;
         if (args.length == 5) {
-            readyForJobMaster = Boolean.valueOf(args[4]);
+            readyForJobMaster = Boolean.parseBoolean(args[4]);
         }
 
         new LoadValidateCreateZip(jobZipFile, name, version, outputLocation, readyForJobMaster).execute();

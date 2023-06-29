@@ -23,7 +23,7 @@ import io.mantisrx.shaded.com.google.common.graph.ValueGraphBuilder;
 import java.util.Set;
 
 class MantisGraph {
-    private MutableValueGraph<OperandNode<?>, MantisFunction> graph;
+    private final MutableValueGraph<OperandNode<?>, MantisFunction> graph;
 
     MantisGraph() {
         this(ValueGraphBuilder.directed().allowsSelfLoops(true).build());

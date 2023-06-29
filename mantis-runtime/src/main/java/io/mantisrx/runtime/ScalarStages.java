@@ -46,7 +46,7 @@ public class ScalarStages<T> extends Stages<T> {
      * @param computation The computation that transforms a scalar to a group
      * @param config      stage config
      *
-     * @return
+     * @return KeyedStages
      */
     public <K, R> KeyedStages<K, R> stage(ToGroupComputation<T, K, R> computation,
                                     ScalarToGroup.Config<T, K, R> config) {

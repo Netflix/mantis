@@ -389,7 +389,7 @@ public class LocalJobExecutorNetworked {
         return Observable.create(new OnSubscribe<Set<Endpoint>>() {
             @Override
             public void call(Subscriber<? super Set<Endpoint>> subscriber) {
-                Set<Endpoint> endpoints = new HashSet<Endpoint>();
+                Set<Endpoint> endpoints = new HashSet<>();
                 for (int i = 0; i < ports.length; i++) {
                     int port = ports[i];
                     for (int j = 1; j <= numPartitions; j++) {

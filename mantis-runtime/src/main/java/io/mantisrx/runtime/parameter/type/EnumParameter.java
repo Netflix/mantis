@@ -43,7 +43,7 @@ public class EnumParameter<T extends Enum<T>> extends ParameterDefinition.Builde
 
     @Override
     public String getTypeDescription() {
-        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(x -> x.name()).collect(Collectors.toList());
+        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(Enum::name).collect(Collectors.toList());
         return "One of (" + String.join(",", ts) + ")";
     }
 
