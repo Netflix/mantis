@@ -129,7 +129,9 @@ public class ServerSentEventRequestHandler<T> implements
 
         // decouple the observable on a separate thread and add backpressure handling
         String decoupleSSE = "false";//ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("sse.decouple", "false");
-        //Todo Note: Below condition would be always false during if condition.
+        //TODO Below condition would be always false during if condition.
+        // Since decoupleSSE would be false and matching with true as string
+        // would always ignore code inside if block
         if ("true".equals(decoupleSSE)) {
             final BasicTag sockAddrTag = new BasicTag("sockAddr", Optional.ofNullable(socketAddrStr).orElse("none"));
             requestObservable = requestObservable
@@ -214,7 +216,8 @@ public class ServerSentEventRequestHandler<T> implements
         if (queryParameters != null && queryParameters.containsKey(ENABLE_PINGS_PARAM)) {
             // enablePings
             String enablePings = queryParameters.get(ENABLE_PINGS_PARAM).get(0);
-            //Todo Note: Code logic can be improved here.
+            //TODO Note: Code logic can be improved here.
+            // since if condition check returns same true or false which can equated to pingsEnabled value.
             if ("true".equalsIgnoreCase(enablePings)) {
                 pingsEnabled = true;
             } else {
