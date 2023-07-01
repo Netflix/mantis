@@ -29,6 +29,7 @@ import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
 import io.mantisrx.runtime.loader.TaskFactory;
 import io.mantisrx.runtime.loader.config.WorkerConfiguration;
 import io.mantisrx.runtime.loader.config.WorkerConfigurationUtils;
+import io.mantisrx.server.core.CacheJobArtifactsRequest;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.WrappedExecuteStageRequest;
@@ -398,7 +399,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             try {
                 currentReportSupplier.apply(timeout)
                     .thenComposeAsync(report -> {
-                        log.info("Sending heartbeat to resource manager {} with report {}", gateway, report);
+                        log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
                         return gateway.heartBeatFromTaskExecutor(
                             new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(),
                                 taskExecutorRegistration.getClusterID(), report));
@@ -467,6 +468,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         // do not wait for task processing (e.g. artifact download).
         getIOExecutor().execute(() -> this.prepareTask(wrappedRequest));
+        return CompletableFuture.completedFuture(Ack.getInstance());
+    }
+
+    @Override
+    public CompletableFuture<Ack> cacheJobArtifacts(CacheJobArtifactsRequest request) {
+
+        log.info("Received request {} for downloading artifact", request);
+        getIOExecutor().execute(() -> this.classLoaderHandle.cacheJobArtifacts(request.getArtifacts()));
         return CompletableFuture.completedFuture(Ack.getInstance());
     }
 

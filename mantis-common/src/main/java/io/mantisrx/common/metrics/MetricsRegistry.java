@@ -44,8 +44,9 @@ public class MetricsRegistry {
      */
     public Metrics registerAndGet(Metrics metrics) {
         final Metrics old = metricsRegistered.putIfAbsent(metrics.getMetricGroupId().id(), metrics);
-        if (old == null)
+        if (old == null) {
             return metrics;
+        }
         return old;
     }
 

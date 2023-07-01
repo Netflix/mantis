@@ -17,6 +17,7 @@
 package io.mantisrx.master;
 
 
+import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.CreateJobClusterRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.DeleteJobClusterRequest;
@@ -48,6 +49,8 @@ public interface IJobClustersManager {
     void onJobClusterUpdateSLA(JobClusterManagerProto.UpdateJobClusterSLARequest r);
 
     void onJobClusterUpdateArtifact(JobClusterManagerProto.UpdateJobClusterArtifactRequest r);
+
+    void onJobClusterUpdateSchedulingInfo(UpdateSchedulingInfo r);
 
     void onJobClusterUpdateLabels(JobClusterManagerProto.UpdateJobClusterLabelsRequest r);
 

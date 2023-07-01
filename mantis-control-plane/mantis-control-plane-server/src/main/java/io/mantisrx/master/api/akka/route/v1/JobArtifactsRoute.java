@@ -116,8 +116,6 @@ public class JobArtifactsRoute extends BaseRoute {
                 try {
                     final CompletionStage<UpsertJobArtifactResponse> response = jobArtifactRouteHandler.upsert(new JobArtifactProto.UpsertJobArtifactRequest(jobArtifact));
 
-                    // TODO(fdichiara): introduce job artifact pre-fetching in task executors.
-
                     return completeAsync(
                         response,
                         resp -> complete(

@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.master.config;
 
-import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterStorageProvider;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.KeyValueStore;
 import java.time.Duration;
@@ -47,9 +46,6 @@ public interface MasterConfiguration extends CoreConfiguration {
 
     @Config("mantis.master.storageProvider")
     KeyValueStore getStorageProvider();
-
-    @Config("mantis.master.resourceClusterStorageProvider")
-    ResourceClusterStorageProvider getResourceClusterStorageProvider();
 
     @Config("mantis.master.resourceClusterProvider")
     String getResourceClusterProvider();
@@ -90,6 +86,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.master.api.route.ask.longOperation.timeout.millis")
     @Default("2500")
     long getMasterApiLongOperationAskTimeoutMs();
+
+    @Config("mantis.mesos.enabled")
+    @Default("true")
+    boolean getMesosEnabled();
 
     @Config("mesos.master.location")
     @Default("localhost:5050")
@@ -359,6 +359,10 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.agent.assignment.interval.ms")
     @Default("60000") // 1 minute
     int getAssignmentIntervalInMs();
+
+    @Config("mantis.job.costsCalculator.class")
+    @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculatorFactory")
+    String getCostsCalculatorClass();
 
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());

@@ -15,6 +15,9 @@
  */
 package io.mantisrx.server.master.client;
 
+import io.mantisrx.common.metrics.Counter;
+import io.mantisrx.common.metrics.Metrics;
+import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -124,10 +127,19 @@ public class HighAvailabilityServicesUtil {
       HighAvailabilityServices {
 
     private final CuratorService curatorService;
+    private final Counter resourceLeaderChangeCounter;
+    private final Counter resourceLeaderAlreadyRegisteredCounter;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
 
     public ZkHighAvailabilityServices(CoreConfiguration configuration) {
       curatorService = new CuratorService(configuration);
+      final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
+        .name("ZkHighAvailabilityServices")
+        .addCounter("resourceLeaderChangeCounter")
+        .addCounter("resourceLeaderAlreadyRegisteredCounter")
+        .build());
+      resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
+      resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
     }
 
     @Override
@@ -182,9 +194,15 @@ public class HighAvailabilityServicesUtil {
               .observeOn(scheduler)
               .subscribe(nextDescription -> {
                 log.info("nextDescription={}", nextDescription);
+
+                if (nextDescription.equals(((ResourceClusterGatewayClient)currentResourceClusterGateway).getMasterDescription())) {
+                    resourceLeaderAlreadyRegisteredCounter.increment();
+                    return;
+                }
                 ResourceClusterGateway previous = currentResourceClusterGateway;
-                currentResourceClusterGateway =
-                    new ResourceClusterGatewayClient(clusterID, nextDescription);
+                currentResourceClusterGateway = new ResourceClusterGatewayClient(clusterID, nextDescription);
+
+                resourceLeaderChangeCounter.increment();
                 changeListener.onResourceLeaderChanged(previous, currentResourceClusterGateway);
               });
 

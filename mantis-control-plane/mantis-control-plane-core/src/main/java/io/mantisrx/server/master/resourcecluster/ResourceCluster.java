@@ -17,7 +17,7 @@
 package io.mantisrx.server.master.resourcecluster;
 
 import io.mantisrx.common.Ack;
-import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Instant;
@@ -64,6 +64,12 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     CompletableFuture<ResourceOverview> resourceOverview();
 
+    CompletableFuture<Ack> addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts);
+
+    CompletableFuture<Ack> removeJobArtifactsToCache(List<ArtifactID> artifacts);
+
+    CompletableFuture<List<ArtifactID>> getJobArtifactsToCache();
+
     /**
      * Can throw {@link NoResourceAvailableException} wrapped within the CompletableFuture in case there
      * are no task executors.
@@ -72,14 +78,24 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @param workerId          worker id of the task that's going to run on the node.
      * @return task executor assigned for the particular task.
      */
-    CompletableFuture<TaskExecutorID> getTaskExecutorFor(MachineDefinition machineDefinition, WorkerId workerId);
+    CompletableFuture<TaskExecutorID> getTaskExecutorFor(
+        TaskExecutorAllocationRequest allocationRequest);
 
+    /**
+     * Returns the Gateway instance to talk to the task executor. If unable to make connection with
+     * the task executor, then a ConnectionFailedException is thrown wrapped inside the future.
+     *
+     * @param taskExecutorID executor for which the gateway is requested
+     * @return gateway corresponding to the executor wrapped inside a future.
+     */
     CompletableFuture<TaskExecutorGateway> getTaskExecutorGateway(TaskExecutorID taskExecutorID);
 
     CompletableFuture<TaskExecutorRegistration> getTaskExecutorInfo(String hostName);
 
     /**
-     * Gets the task executor's ID that's currently either running or is assigned for the given workerId
+     * Gets the task executor's ID that's currently either running or is assigned for the given
+     * workerId
+     *
      * @param workerId workerId whose current task executor is needed
      * @return TaskExecutorID
      */
@@ -97,16 +113,30 @@ public interface ResourceCluster extends ResourceClusterGateway {
     /**
      * Disables task executors that match the passed set of attributes
      *
-     * @param attributes attributes that need to be present in the task executor's set of attributes.
-     * @param expiry     instant at which the request can be marked as complete. this is important because we cannot be constantly checking if new task executors match the disabled criteria or not.
+     * @param attributes attributes that need to be present in the task executor's set of
+     *                   attributes.
+     * @param expiry     instant at which the request can be marked as complete. this is important
+     *                   because we cannot be constantly checking if new task executors match the
+     *                   disabled criteria or not.
      * @return a future that completes when the underlying operation is registered by the system
      */
     CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry);
 
     /**
+     * Enables/Disables scaler for a given skuID of a given clusterID
+     *
+     * @param skuID   skuID whom scaler will be enabled/disabled.
+     * @param enabled whether the scaler will be enabled/disabled.
+     * @return a future that completes when the underlying operation is registered by the system
+     */
+    CompletableFuture<Ack> setScalerStatus(ClusterID clusterID, ContainerSkuID skuID,
+        Boolean enabled, Long expirationDurationInSeconds);
+
+    /**
      * Get a paged result of all active jobs associated with this resource cluster.
+     *
      * @param startingIndex Starting index for the paged list of all the active jobs.
-     * @param pageSize Max size of returned paged list.
+     * @param pageSize      Max size of returned paged list.
      * @return PagedActiveJobOverview instance.
      */
     CompletableFuture<PagedActiveJobOverview> getActiveJobOverview(
@@ -121,13 +151,14 @@ public interface ResourceCluster extends ResourceClusterGateway {
     CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping();
 
     /**
-     * Gets the task executors to worker mapping for all task executors in the resource cluster that match the
-     * filtering criteria as represented by the attributes.
+     * Gets the task executors to worker mapping for all task executors in the resource cluster that
+     * match the filtering criteria as represented by the attributes.
      *
      * @param attributes filtering criteria
      * @return a future mapping task executor IDs to the work they are doing
      */
-    CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(Map<String, String> attributes);
+    CompletableFuture<Map<TaskExecutorID, WorkerId>> getTaskExecutorWorkerMapping(
+        Map<String, String> attributes);
 
     class NoResourceAvailableException extends Exception {
 
@@ -136,8 +167,21 @@ public interface ResourceCluster extends ResourceClusterGateway {
         }
     }
 
+    /**
+     * Exception thrown to indicate unable to make a connection
+     */
+    static class ConnectionFailedException extends Exception {
+
+        private static final long serialVersionUID = 1L;
+
+        public ConnectionFailedException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     @Value
     class ResourceOverview {
+
         long numRegisteredTaskExecutors;
         long numAvailableTaskExecutors;
         long numOccupiedTaskExecutors;
@@ -147,6 +191,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
 
     @Value
     class TaskExecutorStatus {
+
         TaskExecutorRegistration registration;
         boolean registered;
         boolean runningTask;

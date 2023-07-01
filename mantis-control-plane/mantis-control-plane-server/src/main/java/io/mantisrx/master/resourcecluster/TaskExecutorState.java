@@ -253,4 +253,14 @@ class TaskExecutorState {
     protected CompletableFuture<TaskExecutorGateway> getGateway() {
         return this.gateway;
     }
+
+    protected CompletableFuture<TaskExecutorGateway> reconnect() {
+        this.gateway = rpcService.connect(registration.getTaskExecutorAddress(), TaskExecutorGateway.class)
+            .whenComplete((gateway, throwable) -> {
+                if (throwable != null) {
+                    log.error("Failed to connect to the gateway", throwable);
+                }
+            });
+        return this.gateway;
+    }
 }

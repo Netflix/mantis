@@ -21,20 +21,23 @@ import io.mantisrx.shaded.com.google.common.util.concurrent.Service.Listener;
 import io.mantisrx.shaded.com.google.common.util.concurrent.Service.State;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class Services {
 
     /**
-     * Equivalent of service.startAsync().awaitRunning() except that this provides a future that completes when
-     * the service reaches the RUNNING state. if the service on the other hand fails to start, then the future is completed
-     * exceptionally with the Throwable cause.
+     * Equivalent of service.startAsync().awaitRunning() except that this provides a future that
+     * completes when the service reaches the RUNNING state. if the service on the other hand fails
+     * to start, then the future is completed exceptionally with the Throwable cause.
      *
-     * @param service service that needs to be started
+     * @param service  service that needs to be started
      * @param executor executor to be used for notifying the caller.
      * @return a future
      */
     public static CompletableFuture<Void> startAsync(Service service, Executor executor) {
-        Preconditions.checkArgument(service.state() == State.NEW, "Assumes the service has not been started yet");
+        Preconditions.checkArgument(service.state() == State.NEW,
+            "Assumes the service has not been started yet");
         final CompletableFuture<Void> result = new CompletableFuture<>();
         service.addListener(new Listener() {
             @Override
@@ -55,10 +58,10 @@ public class Services {
     }
 
     /**
-     * Equivalent service.stopAsync().awaitTerminated() except that this method returns a future that gets completed
-     * when the service terminated successfully.
+     * Equivalent service.stopAsync().awaitTerminated() except that this method returns a future
+     * that gets completed when the service terminated successfully.
      *
-     * @param service service to be stopped
+     * @param service  service to be stopped
      * @param executor executor on which the caller needs to be notified.
      * @return future
      */
@@ -88,5 +91,20 @@ public class Services {
         CompletableFuture<Void> result = awaitAsync(service, executor);
         service.stopAsync();
         return result;
+    }
+
+    /**
+     * Attempts to start the service and waits for it to reach the RUNNING state. If the service has
+     * already started, then this method returns immediately.
+     *
+     * @param service
+     */
+    public static void startAndWait(Service service) {
+        try {
+            service.startAsync();
+        } catch (IllegalStateException e) {
+            log.warn("Service already started: {}", service);
+        }
+        service.awaitRunning();
     }
 }

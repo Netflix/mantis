@@ -144,6 +144,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     // Used to schedule and unschedule workers
     private final MantisScheduler mantisScheduler;
     private final LifecycleEventPublisher eventPublisher;
+    private final CostsCalculator costsCalculator;
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
 
@@ -163,9 +164,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             final MantisJobMetadataImpl jobMetadata,
             final MantisJobStore jobStore,
             final MantisScheduler mantisScheduler,
-            final LifecycleEventPublisher eventPublisher) {
+            final LifecycleEventPublisher eventPublisher,
+            final CostsCalculator costsCalculator) {
         return Props.create(JobActor.class, jobClusterDefinition, jobMetadata, jobStore,
-                mantisScheduler, eventPublisher);
+                mantisScheduler, eventPublisher, costsCalculator);
     }
 
     /**
@@ -178,9 +180,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param eventPublisher
      */
     public JobActor(
-            final IJobClusterDefinition jobClusterDefinition, final MantisJobMetadataImpl jobMetadata,
-            MantisJobStore jobStore, final MantisScheduler scheduler,
-            final LifecycleEventPublisher eventPublisher) {
+        final IJobClusterDefinition jobClusterDefinition,
+        final MantisJobMetadataImpl jobMetadata,
+        final MantisJobStore jobStore,
+        final MantisScheduler scheduler,
+        final LifecycleEventPublisher eventPublisher,
+        final CostsCalculator costsCalculator) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -189,6 +194,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.mantisScheduler = scheduler;
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
+        this.costsCalculator = costsCalculator;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -286,9 +292,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                     .build());
 
             // Update jobMetadata with the new stage added
-            mantisJobMetaData = new MantisJobMetadataImpl.Builder()
-                    .from(mantisJobMetaData)
-                    .withJobDefinition(new JobDefinition.Builder()
+            mantisJobMetaData = new MantisJobMetadataImpl.Builder(mantisJobMetaData)
+                    .withJobDefinition(
+                        new JobDefinition.Builder()
                             .from(mantisJobMetaData.getJobDefinition())
                             .withSchedulingInfo(schedulingInfo)
                             .withNumberOfStages(schedulingInfo.getStages().size())
@@ -1341,6 +1347,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             } else {
                 initializeRunningWorkers();
             }
+            mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
             LOGGER.trace("Exit initialize WorkerManager for Job {}", jobId);
         }
 
@@ -1739,6 +1746,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                     + workerIndex + "doesn't exist "));
                 }
             }
+            mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
 
             LOGGER.trace("Exit addWorker for index {} for Job {} with sched info", workerIndex, jobId, schedulingInfo);
 
@@ -1850,6 +1858,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                     //remove from workerNumber to stage map
                     mantisJobMetaData.removeWorkerMetadata(workerMeta.getWorkerNumber());
+                    mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
 
                     LOGGER.info("Terminated worker {}", workerMeta);
                     markStageAssignmentsChanged(true);
@@ -2239,6 +2248,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
                 mantisJobMetaData.replaceWorkerMetaData(oldWorkerMetadata.getStageNum(), newWorker, oldWorker,
                         jobStore);
+                mantisJobMetaData.setJobCosts(costsCalculator.calculateCosts(mantisJobMetaData));
 
                 // kill the task if it is still running
                 scheduler.unscheduleAndTerminateWorker(

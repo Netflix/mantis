@@ -21,7 +21,6 @@ import io.mantisrx.master.resourcecluster.proto.ProvisionResourceClusterRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterProvisionSubmissionResponse;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
-import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
@@ -76,7 +75,7 @@ public class ResourceClusterProviderAdapter implements ResourceClusterProvider {
 
     @Override
     public CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(
-        UpgradeClusterContainersRequest request) {
+        ResourceClusterProviderUpgradeRequest request) {
         return providerImpl.upgradeContainerResource(request);
     }
 

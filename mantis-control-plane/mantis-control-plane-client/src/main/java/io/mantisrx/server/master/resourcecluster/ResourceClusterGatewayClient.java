@@ -26,6 +26,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.asynchttpclient.AsyncHttpClient;
@@ -40,6 +41,7 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
   private final int connectionRequestTimeout = 1000;
   private final int socketTimeout = 2000;
   private final ClusterID clusterID;
+  @Getter
   private final MasterDescription masterDescription;
   private AsyncHttpClient client;
   private final ObjectMapper mapper;

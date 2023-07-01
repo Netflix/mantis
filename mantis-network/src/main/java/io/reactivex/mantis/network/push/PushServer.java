@@ -116,6 +116,9 @@ public abstract class PushServer<T, R> {
             new ThreadPoolExecutor(numQueueProcessingThreads, numQueueProcessingThreads, 5, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<Runnable>(numQueueProcessingThreads), new NamedThreadFactory("QueueConsumerPool")));
 
+        logger.info("PushServer create consumer threads, use spsc: {}, num threads: {}, buffer capacity: {}, " +
+                "chunk size: {}, chunk time ms: {}", config.useSpscQueue(), numQueueProcessingThreads,
+            config.getBufferCapacity(), config.getMaxChunkSize(), config.getMaxChunkTimeMSec());
         if (config.useSpscQueue()) {
             consumerThreadFutures.add(consumerThreads.submit(new SingleThreadedChunker<T>(
                 config.getChunkProcessor(),

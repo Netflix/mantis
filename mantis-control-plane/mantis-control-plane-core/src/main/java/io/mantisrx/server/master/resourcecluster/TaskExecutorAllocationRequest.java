@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Netflix, Inc.
+ * Copyright 2023 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-package io.mantisrx.runtime.core.functions;
+package io.mantisrx.server.master.resourcecluster;
 
-@FunctionalInterface
-public interface ReduceFunctionImpl<IN> extends ReduceFunction<IN, IN> {
-    Object EMPTY = new Object();
+import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.server.core.domain.WorkerId;
+import lombok.AllArgsConstructor;
+import lombok.Value;
 
-    @Override
-    default IN initialValue() {
-        return (IN) EMPTY;
-    }
-
-    IN apply(IN acc, IN item);
-
-    @Override
-    default IN reduce(IN acc, IN item) {
-        if (acc == EMPTY) {
-            return item;
-        } else {
-            return apply(acc, item);
-        }
-    }
+@Value
+@AllArgsConstructor(staticName = "of")
+public class TaskExecutorAllocationRequest {
+    WorkerId workerId;
+    MachineDefinition machineDefinition;
 }

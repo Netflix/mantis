@@ -21,6 +21,11 @@ import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisStageMetadata;
 import io.mantisrx.master.jobcluster.job.worker.IMantisWorkerMetadata;
 import io.mantisrx.master.resourcecluster.DisableTaskExecutorsRequest;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleSpec;
+import io.mantisrx.master.resourcecluster.writable.RegisteredResourceClustersWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterScaleRulesWritable;
+import io.mantisrx.master.resourcecluster.writable.ResourceClusterSpecWritable;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.JobArtifact;
 import io.mantisrx.server.master.domain.JobClusterDefinitionImpl.CompletedJob;
 import io.mantisrx.server.master.persistence.exceptions.InvalidJobException;
@@ -31,6 +36,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import rx.Observable;
 
 
@@ -165,7 +171,33 @@ public interface IMantisPersistenceProvider {
 
     List<JobArtifact> listJobArtifacts(String name, String version) throws IOException;
 
+    void addNewJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException;
+
+    void removeJobArtifactsToCache(ClusterID clusterID, List<ArtifactID> artifacts) throws IOException;
+
+    List<String> listJobArtifactsToCache(ClusterID clusterID) throws IOException;
+
     List<String> listJobArtifactsByName(String prefix, String contains) throws IOException;
 
     void addNewJobArtifact(JobArtifact jobArtifact) throws IOException;
+
+    /**
+     * Register and save the given cluster spec. Once the returned CompletionStage
+     * finishes successfully the given cluster should be available in list cluster response.
+     */
+    ResourceClusterSpecWritable registerAndUpdateClusterSpec(ResourceClusterSpecWritable spec) throws IOException;
+
+    RegisteredResourceClustersWritable deregisterCluster(ClusterID clusterId) throws IOException;
+
+    RegisteredResourceClustersWritable getRegisteredResourceClustersWritable() throws IOException;
+
+    @Nullable
+    ResourceClusterSpecWritable getResourceClusterSpecWritable(ClusterID id) throws IOException;
+
+    ResourceClusterScaleRulesWritable getResourceClusterScaleRules(ClusterID clusterId) throws IOException;
+
+    ResourceClusterScaleRulesWritable registerResourceClusterScaleRule(
+        ResourceClusterScaleRulesWritable ruleSpec) throws IOException;
+
+    ResourceClusterScaleRulesWritable registerResourceClusterScaleRule(ResourceClusterScaleSpec rule) throws IOException;
 }

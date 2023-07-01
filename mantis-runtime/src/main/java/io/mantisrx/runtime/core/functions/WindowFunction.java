@@ -19,11 +19,23 @@ package io.mantisrx.runtime.core.functions;
 import io.mantisrx.runtime.core.WindowSpec;
 import lombok.Getter;
 
+/**
+ * A function that defines a window for grouping and processing elements of type
+ * {@code IN}. The window is defined by a {@link WindowSpec} object.
+ */
 public class WindowFunction<IN> implements MantisFunction {
 
+    /**
+     * The window specification defining window boundaries and triggers.
+     */
     @Getter
     private final WindowSpec spec;
 
+    /**
+     *
+     * Constructs a new window function with the given window specification.
+     * @param spec the window specification
+     */
     public WindowFunction(WindowSpec spec) {
         this.spec = spec;
     }

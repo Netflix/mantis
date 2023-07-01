@@ -86,6 +86,7 @@ import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.JobClusterActor;
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
 import io.mantisrx.master.jobcluster.job.JobHelper;
 import io.mantisrx.master.jobcluster.job.JobState;
@@ -96,7 +97,9 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClust
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterLabelsRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterSLARequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateJobClusterWorkerMigrationStrategyRequest;
+import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
+import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.IJobClusterDefinition;
@@ -119,6 +122,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -136,21 +140,23 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     private final Counter numJobClusterInitFailures;
     private final Counter numJobClusterInitSuccesses;
     private Receive initializedBehavior;
-    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher) {
-        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher)
+    public static Props props(final MantisJobStore jobStore, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
+        return Props.create(JobClustersManagerActor.class, jobStore, eventPublisher, costsCalculator)
             .withMailbox("akka.actor.metered-mailbox");
     }
 
     private final MantisJobStore jobStore;
     private final LifecycleEventPublisher eventPublisher;
+    private final CostsCalculator costsCalculator;
     private MantisSchedulerFactory mantisSchedulerFactory = null;
 
     JobClusterInfoManager jobClusterInfoManager;
 
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher) {
+    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
+        this.costsCalculator = costsCalculator;
 
         MetricGroupId metricGroupId = getMetricGroupId();
         Metrics m = new Metrics.Builder()
@@ -220,6 +226,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(UpdateJobClusterRequest.class, this::onJobClusterUpdate)
                 .match(UpdateJobClusterSLARequest.class, this::onJobClusterUpdateSLA)
                 .match(UpdateJobClusterArtifactRequest.class, this::onJobClusterUpdateArtifact)
+                .match(UpdateSchedulingInfo.class, this::onJobClusterUpdateSchedulingInfo)
                 .match(UpdateJobClusterLabelsRequest.class, this::onJobClusterUpdateLabels)
                 .match(UpdateJobClusterWorkerMigrationStrategyRequest.class, this::onJobClusterUpdateWorkerMigrationConfig)
                 .match(EnableJobClusterRequest.class, this::onJobClusterEnable)
@@ -276,6 +283,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 .match(UpdateJobClusterRequest.class, (x) -> getSender().tell(new UpdateJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterSLARequest.class, (x) -> getSender().tell(new UpdateJobClusterSLAResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterArtifactRequest.class, (x) -> getSender().tell(new UpdateJobClusterArtifactResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
+                .match(UpdateSchedulingInfo.class, (x) -> getSender().tell(new UpdateSchedulingInfoResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterLabelsRequest.class, (x) -> getSender().tell(new UpdateJobClusterLabelsResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(UpdateJobClusterWorkerMigrationStrategyRequest.class, (x) -> getSender().tell(new UpdateJobClusterWorkerMigrationStrategyResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
                 .match(EnableJobClusterRequest.class, (x) -> getSender().tell(new EnableJobClusterResponse(x.requestId, CLIENT_ERROR, genUnexpectedMsg(x.toString(), state)), getSelf()))
@@ -315,7 +323,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             mantisSchedulerFactory = initMsg.getScheduler();
             Map<String, IJobClusterMetadata> jobClusterMap = new HashMap<>();
 
-            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher);
+            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
 
             if (!initMsg.isLoadJobsFromStore()) {
                 getContext().become(initializedBehavior);
@@ -646,6 +654,22 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     }
 
     @Override
+    public void onJobClusterUpdateSchedulingInfo(UpdateSchedulingInfo request) {
+        ActorRef sender = getSender();
+        Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getClusterName());
+        if(jobClusterInfo.isPresent()) {
+            jobClusterInfo.get().jobClusterActor.forward(request, getContext());
+        } else {
+            sender.tell(
+                new UpdateJobClusterArtifactResponse(
+                    request.getRequestId(),
+                    CLIENT_ERROR_NOT_FOUND,
+                    "JobCluster " + request.getClusterName() + " doesn't exist"),
+                getSelf());
+        }
+    }
+
+    @Override
     public void onJobClusterUpdateLabels(UpdateJobClusterLabelsRequest request) {
         Optional<JobClusterInfo> jobClusterInfo = jobClusterInfoManager.getJobClusterInfo(request.getClusterName());
         ActorRef sender = getSender();
@@ -800,11 +824,13 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         private MantisSchedulerFactory mantisSchedulerFactory;
         private final MantisJobStore jobStore;
         private final Metrics metrics;
+        private final CostsCalculator costsCalculator;
 
-        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher) {
+        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator) {
             this.eventPublisher = eventPublisher;
             this.mantisSchedulerFactory  = mantisSchedulerFactory;
             this.jobStore = jobStore;
+            this.costsCalculator = costsCalculator;
 
 
             MetricGroupId metricGroupId = new MetricGroupId("JobClusterInfoManager");
@@ -832,7 +858,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                 }
                 ActorRef jobClusterActor =
                     getContext().actorOf(
-                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher),
+                        JobClusterActor.props(clusterName, this.jobStore, this.mantisSchedulerFactory, this.eventPublisher, this.costsCalculator),
                         "JobClusterActor-" + clusterName);
                 getContext().watch(jobClusterActor);
 
@@ -968,6 +994,14 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
                      , getSelf());
 
          }
+     }
+
+     @Value
+     public static class UpdateSchedulingInfo {
+         long requestId;
+         String clusterName;
+         SchedulingInfo schedulingInfo;
+         String version;
      }
 
     static class JobClusterInfo {

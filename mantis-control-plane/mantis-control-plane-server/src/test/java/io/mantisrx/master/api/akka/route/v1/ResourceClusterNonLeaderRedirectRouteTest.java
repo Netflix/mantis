@@ -53,13 +53,15 @@ import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
-import io.mantisrx.master.resourcecluster.resourceprovider.InMemoryOnlyResourceClusterStorageProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.NoopResourceClusterResponseHandler;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProvider;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderAdapter;
+import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterProviderUpgradeRequest;
 import io.mantisrx.master.resourcecluster.resourceprovider.ResourceClusterResponseHandler;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
+import io.mantisrx.server.master.persistence.InMemoryPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -89,15 +91,16 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
     private final ActorSystem system =
         ActorSystem.create(ResourceClusterNonLeaderRedirectRouteTest.class.getSimpleName());
 
+    private final IMantisPersistenceProvider storageProvider = new InMemoryPersistenceProvider();
+
     private final ActorRef resourceClustersHostManagerActorWithNoopAdapter = system.actorOf(
         ResourceClustersHostManagerActor.props(
             new ResourceClusterProviderAdapter(ConfigurationProvider.getConfig().getResourceClusterProvider(), system),
-            ConfigurationProvider.getConfig().getResourceClusterStorageProvider()),
+            storageProvider),
         "jobClustersManagerNoop");
 
     private final ActorRef resourceClustersHostManagerActorWithTestAdapter = system.actorOf(
-        ResourceClustersHostManagerActor.props(
-            resourceProviderAdapter, new InMemoryOnlyResourceClusterStorageProvider()),
+        ResourceClustersHostManagerActor.props(resourceProviderAdapter, storageProvider),
         "jobClustersManagerTest");
 
     private final ResourceClusterRouteHandler resourceClusterRouteHandlerWithNoopAdapter =
@@ -468,7 +471,7 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
 
         @Override
         public CompletionStage<UpgradeClusterContainersResponse> upgradeContainerResource(
-            UpgradeClusterContainersRequest request) {
+            ResourceClusterProviderUpgradeRequest request) {
             return CompletableFuture.completedFuture(
                 UpgradeClusterContainersResponse.builder()
                     .message("test scale resp")

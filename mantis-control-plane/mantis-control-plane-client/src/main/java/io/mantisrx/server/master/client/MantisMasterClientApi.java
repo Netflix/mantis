@@ -668,6 +668,7 @@ public class MantisMasterClientApi implements MantisMasterGateway {
 
     private WebSocketClient<TextWebSocketFrame, TextWebSocketFrame> getRxnettyWebSocketClient(String host,
                                                                                               int port, String uri) {
+        logger.debug("Creating websocket client for " + host + ":" + port + " uri " + uri + " ...");
         return
                 RxNetty.<TextWebSocketFrame, TextWebSocketFrame>newWebSocketClientBuilder(host, port)
                         .withWebSocketURI(uri)

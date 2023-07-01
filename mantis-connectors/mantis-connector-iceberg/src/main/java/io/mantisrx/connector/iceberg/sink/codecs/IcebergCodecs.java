@@ -17,11 +17,16 @@
 package io.mantisrx.connector.iceberg.sink.codecs;
 
 import io.mantisrx.common.codec.Codec;
+import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
+import io.mantisrx.connector.iceberg.sink.writer.MantisRecord;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import javax.annotation.Nullable;
+import lombok.Value;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -42,11 +47,65 @@ public class IcebergCodecs {
         return new RecordCodec<>(schema);
     }
 
+    public static Codec<MantisRecord> mantisRecord(Schema schema) {
+        return new MantisRecordCodec(schema);
+    }
+
     /**
      * @return a codec for encoding/decoding DataFiles.
      */
     public static Codec<DataFile> dataFile() {
-        return new DataFileCodec();
+        return new ObjectCodec<>(DataFile.class);
+    }
+
+    public static Codec<MantisDataFile> mantisDataFile() {
+        return new ObjectCodec<>(MantisDataFile.class);
+    }
+
+    private static class MantisRecordCodec implements Codec<MantisRecord> {
+
+        private final IcebergEncoder<Record> encoder;
+        private final IcebergDecoder<Record> decoder;
+        private final ObjectCodec<SerializableMantisRecord> objectCodec;
+
+        private MantisRecordCodec(Schema schema) {
+            this.encoder = new IcebergEncoder<>(schema);
+            this.decoder = new IcebergDecoder<>(schema);
+            this.objectCodec = new ObjectCodec<>(SerializableMantisRecord.class);
+        }
+
+        @Override
+        public MantisRecord decode(byte[] bytes) {
+            try {
+                SerializableMantisRecord serializableMantisRecord = objectCodec.decode(bytes);
+                return new MantisRecord(
+                    decoder.decode(serializableMantisRecord.getRecord()),
+                    serializableMantisRecord.getTimestamp());
+            } catch (IOException e) {
+                throw new RuntimeIOException("problem decoding Iceberg record", e);
+            }
+        }
+
+        @Override
+        public byte[] encode(MantisRecord value) {
+            try {
+                SerializableMantisRecord r =
+                    new SerializableMantisRecord(
+                        encoder.encode(value.getRecord()).array(),
+                        value.getTimestamp());
+                return objectCodec.encode(r);
+            } catch (IOException e) {
+                throw new RuntimeIOException("problem encoding encoding Iceberg record", e);
+            }
+        }
+    }
+
+    @Value
+    private static class SerializableMantisRecord implements Serializable {
+        byte[] record;
+
+        @Nullable
+        Long timestamp;
     }
 
     private static class RecordCodec<T> implements Codec<T> {
@@ -78,19 +137,25 @@ public class IcebergCodecs {
         }
     }
 
-    private static class DataFileCodec implements Codec<DataFile> {
+    private static class ObjectCodec<T> implements Codec<T> {
+
+        private final Class<T> tClass;
+
+        private ObjectCodec(Class<T> tClass) {
+            this.tClass = tClass;
+        }
 
         @Override
-        public DataFile decode(byte[] bytes) {
+        public T decode(byte[] bytes) {
             try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-                return (DataFile) in.readObject();
+                return tClass.cast(in.readObject());
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException("Failed to convert bytes to DataFile", e);
             }
         }
 
         @Override
-        public byte[] encode(DataFile value) {
+        public byte[] encode(T value) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
                 out.writeObject(value);

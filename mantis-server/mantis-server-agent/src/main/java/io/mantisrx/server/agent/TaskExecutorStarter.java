@@ -57,6 +57,14 @@ public class TaskExecutorStarter extends AbstractIdleService {
 
     @Override
     protected void startUp() {
+        // RxJava 1.x’s  rx.ring-buffer.size property stores the size of any in-memory ring buffers that RxJava
+        // uses when an Observable cannot keep up with rate of event emissions. The ring buffer size is explicitly
+        // set to a low number (8) because different platforms have different defaults for this value. While the
+        // Java Virtual Machine (JVM) default is 128 items per ring buffer, Android has a much lower limit of 16.
+        // 1024 is a well-tested value in Netflix on many production use cases.
+        // source: From https://www.uber.com/blog/rxjava-backpressure/
+        System.setProperty("rx.ring-buffer.size", "1024");
+
         highAvailabilityServices.startAsync().awaitRunning();
 
         taskExecutor.start();

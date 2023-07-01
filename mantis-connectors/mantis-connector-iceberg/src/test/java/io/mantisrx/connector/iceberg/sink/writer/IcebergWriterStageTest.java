@@ -69,20 +69,22 @@ class IcebergWriterStageTest {
             new Schema(Types.NestedField.required(1, "id", Types.IntegerType.get()));
 
     private TestScheduler scheduler;
-    private TestSubscriber<DataFile> subscriber;
+    private TestSubscriber<MantisDataFile> subscriber;
     private IcebergWriterStage.Transformer transformer;
     private Catalog catalog;
     private Context context;
     private IcebergWriterPool writerPool;
     private Partitioner partitioner;
-    private Observable<DataFile> flow;
+    private Observable<MantisDataFile> flow;
 
-    private Record record;
+    private MantisRecord record;
 
     @BeforeEach
     void setUp() {
-        record = GenericRecord.create(SCHEMA);
-        record.setField("id", 1);
+        Record icebergRecord = GenericRecord.create(SCHEMA);
+        icebergRecord.setField("id", 1);
+
+        record = new MantisRecord(icebergRecord, null);
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
 
@@ -96,10 +98,10 @@ class IcebergWriterStageTest {
                 factory,
                 config.getWriterFlushFrequencyBytes(),
                 config.getWriterMaximumPoolSize()));
-        doReturn(Collections.singleton(record)).when(writerPool).getFlushableWriters();
+        doReturn(Collections.singleton(record.getRecord())).when(writerPool).getFlushableWriters();
 
         this.partitioner = mock(Partitioner.class);
-        when(partitioner.partition(record)).thenReturn(record);
+        when(partitioner.partition(icebergRecord)).thenReturn(icebergRecord);
 
         this.transformer = new IcebergWriterStage.Transformer(
                 config,
@@ -131,7 +133,7 @@ class IcebergWriterStageTest {
                 "host"));
 
         // Flow
-        Observable<Record> source = Observable.interval(1, TimeUnit.MILLISECONDS, this.scheduler)
+        Observable<MantisRecord> source = Observable.interval(1, TimeUnit.MILLISECONDS, this.scheduler)
                 .map(i -> record);
         this.flow = source.compose(this.transformer);
     }
@@ -143,7 +145,7 @@ class IcebergWriterStageTest {
         // Identity partitioning.
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
 
-        Observable<Record> source = Observable.just(record, record, recordWithNewPartition, record)
+        Observable<MantisRecord> source = Observable.just(record, record, new MantisRecord(recordWithNewPartition, null), record)
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler));
         flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
@@ -160,9 +162,9 @@ class IcebergWriterStageTest {
         scheduler.advanceTimeBy(1, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
 
-        verify(writerPool, times(1)).open(record);
+        verify(writerPool, times(1)).open(record.getRecord());
         verify(writerPool, times(1)).open(recordWithNewPartition);
-        verify(writerPool, times(3)).write(eq(record), any());
+        verify(writerPool, times(3)).write(eq(record.getRecord()), any());
         verify(writerPool, times(1)).write(eq(recordWithNewPartition), any());
         verify(writerPool, times(0)).close(any());
     }
@@ -175,7 +177,7 @@ class IcebergWriterStageTest {
         subscriber.assertValueCount(1);
 
         verify(writerPool, times(100)).write(any(), any());
-        verify(writerPool, times(1)).close(record);
+        verify(writerPool, times(1)).close(record.getRecord());
     }
 
     @Test
@@ -189,7 +191,7 @@ class IcebergWriterStageTest {
 
         subscriber.assertNoTerminalEvent();
 
-        verify(writerPool, times(100)).write(eq(record), any());
+        verify(writerPool, times(100)).write(eq(record.getRecord()), any());
         verify(writerPool, times(0)).close(any());
     }
 
@@ -198,7 +200,7 @@ class IcebergWriterStageTest {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
 
-        Observable<Record> source = Observable.just(record, recordWithNewPartition)
+        Observable<MantisRecord> source = Observable.just(record, new MantisRecord(recordWithNewPartition, null))
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
         flow = source.compose(transformer);
@@ -213,7 +215,7 @@ class IcebergWriterStageTest {
         subscriber.assertNoTerminalEvent();
 
         verify(writerPool, times(101)).write(any(), any());
-        verify(writerPool, times(1)).close(record);
+        verify(writerPool, times(1)).close(record.getRecord());
         verify(writerPool, times(0)).close(recordWithNewPartition);
     }
 
@@ -223,7 +225,7 @@ class IcebergWriterStageTest {
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
         doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         // Low volume stream.
-        Observable<Record> source = Observable.just(record, recordWithNewPartition)
+        Observable<MantisRecord> source = Observable.just(record, new MantisRecord(recordWithNewPartition, null))
                 .concatMap(r -> Observable.just(r).delay(50, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
         flow = source.compose(transformer);
@@ -248,7 +250,7 @@ class IcebergWriterStageTest {
         Record recordWithNewPartition = GenericRecord.create(SCHEMA);
         when(partitioner.partition(recordWithNewPartition)).thenReturn(recordWithNewPartition);
         doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
-        Observable<Record> source = Observable.just(record, recordWithNewPartition)
+        Observable<MantisRecord> source = Observable.just(record, new MantisRecord(recordWithNewPartition, null))
                 .concatMap(r -> Observable.just(r).delay(1, TimeUnit.MILLISECONDS, scheduler))
                 .repeat();
         flow = source.compose(transformer);
@@ -275,7 +277,7 @@ class IcebergWriterStageTest {
     void shouldNoOpOnTimeThresholdWhenNoData() throws IOException {
         doReturn(new HashSet<>()).when(writerPool).getFlushableWriters();
         // Low volume stream.
-        Observable<Record> source = Observable.interval(900, TimeUnit.MILLISECONDS, scheduler)
+        Observable<MantisRecord> source = Observable.interval(900, TimeUnit.MILLISECONDS, scheduler)
                 .map(i -> record);
         flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
@@ -332,17 +334,17 @@ class IcebergWriterStageTest {
     @Test
     @Disabled("Will never terminate: Source terminates, but timer will continue to tick")
     void shouldCloseOnTerminate() throws IOException {
-        Observable<Record> source = Observable.just(record);
-        Observable<DataFile> flow = source.compose(transformer);
+        Observable<MantisRecord> source = Observable.just(record);
+        Observable<MantisDataFile> flow = source.compose(transformer);
         flow.subscribeOn(scheduler).subscribe(subscriber);
 
         scheduler.triggerActions();
         subscriber.assertNoErrors();
 
-        verify(writerPool).open(record);
+        verify(writerPool).open(record.getRecord());
         verify(writerPool).write(any(), any());
-        verify(writerPool, times(2)).isClosed(record);
-        verify(writerPool, times(1)).close(record);
+        verify(writerPool, times(2)).isClosed(record.getRecord());
+        verify(writerPool, times(1)).close(record.getRecord());
     }
 
     @Test
@@ -389,14 +391,14 @@ class IcebergWriterStageTest {
         }
 
         @Override
-        public void write(Record record) {
+        public void write(MantisRecord record) {
         }
 
         @Override
-        public DataFile close() throws IOException {
+        public MantisDataFile close() throws IOException {
             if (fileAppender != null) {
                 fileAppender = null;
-                return DATA_FILE;
+                return new MantisDataFile(DATA_FILE, null);
             }
 
             return null;

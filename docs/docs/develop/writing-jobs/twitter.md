@@ -10,7 +10,7 @@ The source is responsible for ingesting data to be processed within the job. Man
 Our [`TwitterSource`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java) must implement [`io.mantisrx.runtime.source.Source`](https://github.com/Netflix/mantis/blob/master/mantis-runtime/src/main/java/io/mantisrx/runtime/source/Source.java) which requires us to implement `call` and optionally `init`. Mantis provides some guarantees here in that `init` will be invoked exactly once and before `call` which will be invoked at least once. This makes `init` the ideal location to perform one time setup and configuration for the source and `call` the ideal location for performing work on the incoming stream. The objective of this entire class is to have `call` return an `Observable<Observable<T>>` which will be passed as a parameter to the first stage of our job.
 
 Let's deconstruct the `init` method first. Here we will extract our parameters from the `Context` -- this allows us to write more generic sources which can be templatized and reused across many jobs. This is a very common pattern for writing Mantis jobs and allows you to iterate quickly testing various configurations as jobs can be resubmitted easily with new parameters.
-  
+
 ```java
 /**
   * Init method is called only once during initialization. It is the ideal place to perform one time
@@ -118,37 +118,58 @@ You may have noticed that our `init` method is pulling a bunch of parameters out
     }
 ```
 
-Now our primary class `TwitterJob` which implements `MantisJobProvider` needs to specify our new source so change the source line to match the following.
+Now our primary class `TwitterDslJob` which implements `MantisJobProvider` needs to specify our new source so change the source line to match the following.
 
 ```java
-.source(new TwitterSource())
+        .source(new ObservableSourceImpl<>(new TwitterSource()))
 ```
 
-## The Stage
+## Operators
 
-The stage is nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.
+The operators thereafter are nearly equivalent to the previous tutorial. We need to add a few lines to the beginning of the chain of operations to deserialize the string, filter for English Tweets and pluck out the text.
 
 
 ```java
-            .stage((context, dataO) -> dataO
-
-                    // Deserialize data
-                    .map(JsonUtility::jsonToMap)
-
-                    // Filter for English Tweets
-                    .filter((eventMap) -> {
-                        if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
-                            String lang = (String)eventMap.get("lang");
-                            return "en".equalsIgnoreCase(lang);
-                        }
-                        return false;
-                    })
-
-                    // Extract Tweet body
-                    .map((eventMap) -> (String)eventMap.get("text"))
-
-                    // Same from here...
+        .map(event -> {
+            try {
+                return jsonSerializer.toMap(event);
+            } catch (Exception e) {
+                log.error("Failed to deserialize event {}", event, e);
+                return null;
+            }
+        })
+        // filter out english tweets
+        .filter((eventMap) -> {
+            if(eventMap.containsKey("lang") && eventMap.containsKey("text")) {
+                String lang = (String)eventMap.get("lang");
+                return "en".equalsIgnoreCase(lang);
+            }
+            return false;
+        }).map((eventMap) -> (String) eventMap.get("text"))
+        // tokenize the tweets into words
+        .flatMap(this::tokenize)
+        .keyBy(WordCountPair::getWord)
+        // On a hopping window of 10 seconds
+        .window(WindowSpec.timed(Duration.ofSeconds(10)))
+        .reduce((ReduceFunctionImpl<WordCountPair>) (acc, item) -> {
+            if (acc.getWord() != null && !acc.getWord().isEmpty() && !acc.getWord().equals(item.getWord())) {
+                log.warn("keys dont match: acc ({}) vs item ({})", acc.getWord(), item.getWord());
+            }
+            return new WordCountPair(acc.getWord(), acc.getCount() + item.getCount());
+        })
+        .map(WordCountPair::toString)
+        // Same from here...
 ```
+
+### Old Implementation
+If you find the new [DSL] limiting, please use old RxJava based interface. It's documentation moved to [legacy/Twitter](../legacy/twitter) with sourcecode at
+[WordCountJob.java](https://github.com/Netflix/mantis/blob/master/mantis-examples/mantis-examples-twitter-sample/src/main/java/com/netflix/mantis/examples/wordcount/TwitterJob.java).
+
+A few callouts using the old approach are:
+
+1. keyBy is local (not distributed across workers) limiting job scaling. Please see [legacy/distributed-group-by](../legacy/group-by) on creating new stage.
+2. supports specifying concurrency param for each stage
+3. also supports custom (de)serialization formats in addition to java.io.Serializable
 
 # Conclusion
 We've learned how to create a parameterized source which reads from Twitter and pulls data into the ecosystem. With some slight modifications our previous example's stage deserializes the messages and extracts the data to perform the same word count.

@@ -50,7 +50,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class JobClusterProtoAdapter {
     // explicit private constructor to prohibit instantiation
@@ -234,20 +233,18 @@ public class JobClusterProtoAdapter {
         final JobClusterManagerProto.SubmitJobRequest request = new JobClusterManagerProto.SubmitJobRequest(
             jd.getName(),
             jd.getUser(),
-            Optional.of(
-                new JobDefinition(
-                    jd.getName(),
-                    jd.getUser(),
-                    (DataFormatAdapter.extractArtifactName(jd.getJobJarFileLocation())).orElse(""),
-                    jd.getVersion(),
-                    jd.getParameters(),
-                    jd.getJobSla(),
-                    jd.getSubscriptionTimeoutSecs(),
-                    jd.getSchedulingInfo(),
-                    jd.getSchedulingInfo() == null ? -1 : jd.getSchedulingInfo().getStages().size(),
-                    processLabels(jd),
-                    jd.getDeploymentStrategy())
-            ));
+            new JobDefinition(
+                jd.getName(),
+                jd.getUser(),
+                (DataFormatAdapter.extractArtifactName(jd.getJobJarFileLocation())).orElse(""),
+                jd.getVersion(),
+                jd.getParameters(),
+                jd.getJobSla(),
+                jd.getSubscriptionTimeoutSecs(),
+                jd.getSchedulingInfo(),
+                jd.getSchedulingInfo() == null ? -1 : jd.getSchedulingInfo().getStages().size(),
+                processLabels(jd),
+                jd.getDeploymentStrategy()));
 
         return request;
     }

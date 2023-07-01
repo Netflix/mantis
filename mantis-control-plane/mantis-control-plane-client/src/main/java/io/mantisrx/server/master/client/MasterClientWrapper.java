@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.client;
 
+import com.mantisrx.common.utils.Services;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
@@ -80,7 +81,10 @@ public class MasterClientWrapper {
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
         String jobId = "GroupByIPNJ-12";
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class)).getMasterClientApi());
+        HighAvailabilityServices haServices =
+            HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class));
+        Services.startAndWait(haServices);
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
         clientWrapper.getMasterClientApi()
                 .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
                     @Override

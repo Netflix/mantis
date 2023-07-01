@@ -27,10 +27,12 @@ import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
+import io.mantisrx.common.Ack;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.ResourceClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.Endpoints;
 import io.mantisrx.master.api.akka.route.v1.HttpRequestMetrics.HttpVerb;
+import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.resourcecluster.proto.DisableTaskExecutorsRequest;
 import io.mantisrx.master.resourcecluster.proto.GetResourceClusterSpecRequest;
 import io.mantisrx.master.resourcecluster.proto.ListResourceClusterRequest;
@@ -40,8 +42,10 @@ import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.Cr
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.CreateResourceClusterScaleRuleRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesRequest;
 import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.GetResourceClusterScaleRulesResponse;
+import io.mantisrx.master.resourcecluster.proto.ResourceClusterScaleRuleProto.JobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceRequest;
 import io.mantisrx.master.resourcecluster.proto.ScaleResourceResponse;
+import io.mantisrx.master.resourcecluster.proto.SetResourceClusterScalerStatusRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersRequest;
 import io.mantisrx.master.resourcecluster.proto.UpgradeClusterContainersResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -75,12 +79,17 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
  * /api/v1/resourceClusters/{}/upgrade                                (POST)
  * /api/v1/resourceClusters/{}/disableTaskExecutors                   (POST)
+ * /api/v1/resourceClusters/{}/setScalerStatus                        (POST)
  * <p>
  * <p>
  * /api/v1/resourceClusters/{}/scaleRule                              (POST)
  * /api/v1/resourceClusters/{}/scaleRules                             (GET, POST)
  * <p>
  * /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState  (GET)
+ * <p>
+ * /api/v1/resourceClusters/{}/cacheJobArtifacts                       (GET)
+ * /api/v1/resourceClusters/{}/cacheJobArtifacts                       (POST)
+ * /api/v1/resourceClusters/{}/cacheJobArtifacts                       (DELETE)
  *
  * [Notes]
  * To upgrade cluster containers: each container running task executor is using docker image tag based image version.
@@ -154,10 +163,17 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         post(() -> scaleClusterSku(clusterName))
                     ))
                 ),
+                // /{}/disableTaskExecutors
                 path(
                     PathMatchers.segment().slash("disableTaskExecutors"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
                         post(() -> disableTaskExecutors(getClusterID(clusterName)))))
+                ),
+                // /{}/setScalerStatus
+                path(
+                    PathMatchers.segment().slash("setScalerStatus"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        post(() -> setScalerStatus(clusterName))))
                 ),
                 // /{}/upgrade
                 path(
@@ -221,15 +237,30 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         post(() -> createAllScaleRules(clusterName))
                     ))
                 ),
+                // /{}/cacheJobArtifacts
+                path(
+                    PathMatchers.segment().slash("cacheJobArtifacts"),
+                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
+                        // GET
+                        get(() -> withFuture(gateway.getClusterFor(getClusterID(clusterName)).getJobArtifactsToCache())),
+
+                        // POST
+                        post(() -> cacheJobArtifacts(clusterName)),
+
+                        // DELETE
+                        delete(() -> removeJobArtifactsToCache(clusterName))
+                    ))
+                ),
 
                 // /api/v1/resourceClusters/{}/taskExecutors/{}/getTaskExecutorState
                 pathPrefix(
                     PathMatchers.segment().slash("taskExecutors"),
-                    (clusterName) ->
+                    (clusterName) -> concat (
                         path(
                             PathMatchers.segment().slash("getTaskExecutorState"),
                             (taskExecutorId) ->
                                 pathEndOrSingleSlash(() -> concat(get(() -> getTaskExecutorState(getClusterID(clusterName), getTaskExecutorID(taskExecutorId))))))
+                    )
                 )
             ));
 
@@ -266,6 +297,13 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(
                 request.getAttributes(),
                 Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
+        });
+    }
+
+    private Route setScalerStatus(String clusterID) {
+        return entity(Jackson.unmarshaller(SetResourceClusterScalerStatusRequest.class), request -> {
+            log.info("POST /api/v1/resourceClusters/{}/setScalerStatus called with body {}", clusterID, request);
+            return withFuture(gateway.getClusterFor(request.getClusterID()).setScalerStatus(request.getClusterID(), request.getSkuId(), request.getEnabled(), request.getExpirationDurationInSeconds()));
         });
     }
 
@@ -426,5 +464,42 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                         Jackson.marshaller()),
                     Endpoints.RESOURCE_CLUSTERS,
                     HttpVerb.GET))));
+    }
+
+    private Route cacheJobArtifacts(String clusterId) {
+        return entity(Jackson.unmarshaller(JobArtifactsToCacheRequest.class), request -> {
+            log.info("POST /api/v1/resourceClusters/{}/cacheJobArtifacts {}", clusterId, request);
+            final CompletionStage<Ack> response =
+                gateway.getClusterFor(getClusterID(clusterId)).addNewJobArtifactsToCache(request.getClusterID(), request.getArtifacts());
+
+            return completeAsync(
+                response.thenApply(dontCare -> new BaseResponse(request.requestId, BaseResponse.ResponseCode.SUCCESS, "job artifacts stored successfully")),
+                resp -> complete(
+                    StatusCodes.CREATED,
+                    request.getArtifacts(),
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.POST
+            );
+        });
+    }
+
+    private Route removeJobArtifactsToCache(String clusterId) {
+        return entity(Jackson.unmarshaller(JobArtifactsToCacheRequest.class), request -> {
+            log.info("DELETE /api/v1/resourceClusters/{}/cacheJobArtifacts {}", clusterId, request);
+
+            final CompletionStage<Ack> response =
+                gateway.getClusterFor(getClusterID(clusterId)).removeJobArtifactsToCache(request.getArtifacts());
+
+            return completeAsync(
+                response.thenApply(dontCare -> new BaseResponse(request.requestId, BaseResponse.ResponseCode.SUCCESS, "job artifacts removed successfully")),
+                resp -> complete(
+                    StatusCodes.OK,
+                    request.getArtifacts(),
+                    Jackson.marshaller()),
+                Endpoints.RESOURCE_CLUSTERS,
+                HttpRequestMetrics.HttpVerb.DELETE
+            );
+        });
     }
 }

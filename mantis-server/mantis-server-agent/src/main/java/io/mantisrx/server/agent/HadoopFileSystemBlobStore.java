@@ -41,11 +41,11 @@ public class HadoopFileSystemBlobStore implements BlobStore {
     public File get(URI blobUrl) throws IOException {
         final Path src = new Path(blobUrl);
         final Path dest = new Path(getStorageLocation(blobUrl));
-        if (!fileSystem.exists(dest)) {
+        File destFile = new File(dest.toUri().getPath());
+        if (!destFile.exists()) {
             fileSystem.copyToLocalFile(src, dest);
         }
-
-        return new File(dest.toUri().getPath());
+        return destFile;
     }
 
     @Override

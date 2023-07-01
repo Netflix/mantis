@@ -68,6 +68,8 @@ public class WriterProperties {
      * Maximum number of writers that should exist per worker.
      */
     public static final String WRITER_MAXIMUM_POOL_SIZE = "writerMaximumPoolSize";
+
+    public static final String WATERMARK_ENABLED = "watermarkEnabled";
     public static final int WRITER_MAXIMUM_POOL_SIZE_DEFAULT = 5;
     public static final String WRITER_MAXIMUM_POOL_SIZE_DESCRIPTION =
             String.format("Maximum number of writers that should exist per worker (default: %s)",

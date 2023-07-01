@@ -16,13 +16,17 @@
 
 package io.mantisrx.master.resourcecluster.proto;
 
+import com.netflix.spectator.impl.Preconditions;
+import io.mantisrx.master.jobcluster.proto.BaseRequest;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Singular;
 import lombok.Value;
@@ -87,5 +91,23 @@ public class ResourceClusterScaleRuleProto {
         int maxIdleToKeep;
         int maxSize;
         long coolDownSecs;
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    @Value
+    public static class JobArtifactsToCacheRequest extends BaseRequest {
+        ClusterID clusterID;
+
+        @Singular
+        @NonNull
+        List<ArtifactID> artifacts;
+
+        public JobArtifactsToCacheRequest(@JsonProperty("clusterID") ClusterID clusterID, @JsonProperty("artifacts") List<ArtifactID> artifacts) {
+            super();
+            Preconditions.checkNotNull(clusterID, "clusterID cannot be null");
+            Preconditions.checkNotNull(artifacts, "artifacts cannot be null");
+            this.clusterID = clusterID;
+            this.artifacts = artifacts;
+        }
     }
 }

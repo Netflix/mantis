@@ -108,7 +108,7 @@ public class JobTestMigrationTests {
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefn)
                     .build();
-            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher));
+            final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, eventPublisher, CostsCalculator.noop()));
 
             jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());
             JobProto.JobInitialized initMsg = probe.expectMsgClass(JobProto.JobInitialized.class);
