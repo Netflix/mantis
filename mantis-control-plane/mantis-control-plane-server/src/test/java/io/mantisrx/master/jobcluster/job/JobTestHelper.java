@@ -325,7 +325,9 @@ public class JobTestHelper {
             .withNextWorkerNumToUse(1)
             .withJobDefinition(jobDefn)
             .build();
-        final ActorRef jobActor = system.actorOf(JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock, lifecycleEventPublisher));
+        final ActorRef jobActor = system.actorOf(
+            JobActor.props(jobClusterDefn, mantisJobMetaData, jobStoreMock, schedulerMock,
+                lifecycleEventPublisher, CostsCalculator.noop()));
 
 
         jobActor.tell(new JobProto.InitJob(probe.getRef()), probe.getRef());

@@ -45,6 +45,7 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventPublisherImpl;
 import io.mantisrx.master.events.StatusEventSubscriberLoggingImpl;
 import io.mantisrx.master.events.WorkerEventSubscriberLoggingImpl;
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.scheduler.FakeMantisScheduler;
 import io.mantisrx.master.scheduler.JobMessageRouterImpl;
@@ -75,15 +76,16 @@ import org.slf4j.LoggerFactory;
 import rx.Observer;
 
 public class AgentClustersRouteTest extends RouteTestBase {
+
     private final static Logger logger = LoggerFactory.getLogger(AgentClustersRouteTest.class);
     private static Thread t;
     private static final int serverPort = 8202;
     private static final ObjectMapper mapper = new ObjectMapper().configure(
-            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-            false);
+        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+        false);
     private static String SERVER_ENDPOINT = String.format(
-            "http://127.0.0.1:%d/api/v1/agentClusters",
-            serverPort);
+        "http://127.0.0.1:%d/api/v1/agentClusters",
+        serverPort);
 
 
     private static CompletionStage<ServerBinding> binding;
@@ -103,41 +105,41 @@ public class AgentClustersRouteTest extends RouteTestBase {
                 final ActorMaterializer materializer = ActorMaterializer.create(system);
                 IMantisPersistenceProvider storageProvider = new FileBasedPersistenceProvider(true);
                 final LifecycleEventPublisher lifecycleEventPublisher = new LifecycleEventPublisherImpl(
-                        new AuditEventSubscriberLoggingImpl(),
-                        new StatusEventSubscriberLoggingImpl(),
-                        new WorkerEventSubscriberLoggingImpl());
+                    new AuditEventSubscriberLoggingImpl(),
+                    new StatusEventSubscriberLoggingImpl(),
+                    new WorkerEventSubscriberLoggingImpl());
 
                 ActorRef jobClustersManagerActor = system.actorOf(
-                        JobClustersManagerActor.props(
-                                new MantisJobStore(storageProvider),
-                                lifecycleEventPublisher),
-                        "jobClustersManager");
-
+                    JobClustersManagerActor.props(
+                        new MantisJobStore(storageProvider),
+                        lifecycleEventPublisher,
+                        CostsCalculator.noop()),
+                    "jobClustersManager");
 
                 MantisSchedulerFactory fakeSchedulerFactory = mock(MantisSchedulerFactory.class);
                 MantisScheduler fakeScheduler = new FakeMantisScheduler(jobClustersManagerActor);
                 when(fakeSchedulerFactory.forJob(any())).thenReturn(fakeScheduler);
                 jobClustersManagerActor.tell(
-                        new JobClusterManagerProto.JobClustersManagerInitialize(
-                                fakeSchedulerFactory,
-                                false),
-                        ActorRef.noSender());
+                    new JobClusterManagerProto.JobClustersManagerInitialize(
+                        fakeSchedulerFactory,
+                        false),
+                    ActorRef.noSender());
 
                 setupDummyAgentClusterAutoScaler();
                 final AgentClustersRoute agentClusterV2Route = new AgentClustersRoute(
-                        new AgentClusterOperationsImpl(
-                                storageProvider,
-                                new JobMessageRouterImpl(jobClustersManagerActor),
-                                fakeScheduler,
-                                lifecycleEventPublisher,
-                                "cluster"));
+                    new AgentClusterOperationsImpl(
+                        storageProvider,
+                        new JobMessageRouterImpl(jobClustersManagerActor),
+                        fakeScheduler,
+                        lifecycleEventPublisher,
+                        "cluster"));
 
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = agentClusterV2Route.createRoute(
-                        Function.identity()).flow(system, materializer);
+                    Function.identity()).flow(system, materializer);
                 logger.info("test server starting on port {}", serverPort);
                 binding = http.bindAndHandle(routeFlow,
-                                             ConnectHttp.toHost("localhost", serverPort),
-                                             materializer);
+                    ConnectHttp.toHost("localhost", serverPort),
+                    materializer);
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("caught exception", e);
@@ -154,8 +156,8 @@ public class AgentClustersRouteTest extends RouteTestBase {
     public static void teardown() {
         logger.info("V1AgentClusterRouteTest teardown");
         binding
-                .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
-                .thenAccept(unbound -> system.terminate()); // and shutdown when done
+            .thenCompose(ServerBinding::unbind) // trigger unbinding from the port
+            .thenAccept(unbound -> system.terminate()); // and shutdown when done
         t.interrupt();
     }
 
@@ -198,7 +200,7 @@ public class AgentClustersRouteTest extends RouteTestBase {
         };
         try {
             AgentClustersAutoScaler.initialize(() -> new HashSet<>(Collections.singletonList(
-                    dummyAutoScaleRule)), new Observer<AutoScaleAction>() {
+                dummyAutoScaleRule)), new Observer<AutoScaleAction>() {
                 @Override
                 public void onCompleted() {
 
@@ -229,17 +231,17 @@ public class AgentClustersRouteTest extends RouteTestBase {
     private void testSetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
-                HttpRequest.POST(SERVER_ENDPOINT)
-                           .withEntity(HttpEntities.create(
-                                   ContentTypes.APPLICATION_JSON,
-                                   AgentClusterPayloads.SET_ACTIVE)));
+            HttpRequest.POST(SERVER_ENDPOINT)
+                .withEntity(HttpEntities.create(
+                    ContentTypes.APPLICATION_JSON,
+                    AgentClusterPayloads.SET_ACTIVE)));
         responseFuture
-                .thenCompose(r -> processRespFut(r, 200))
-                .whenComplete((msg, t) -> {
-                    String responseMessage = getResponseMessage(msg, t);
-                    logger.info("got response {}", responseMessage);
-                    latch.countDown();
-                });
+            .thenCompose(r -> processRespFut(r, 200))
+            .whenComplete((msg, t) -> {
+                String responseMessage = getResponseMessage(msg, t);
+                logger.info("got response {}", responseMessage);
+                latch.countDown();
+            });
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
@@ -247,63 +249,63 @@ public class AgentClustersRouteTest extends RouteTestBase {
     private void testGetJobsOnAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
-                HttpRequest.GET(SERVER_ENDPOINT + "/jobs"));
+            HttpRequest.GET(SERVER_ENDPOINT + "/jobs"));
         responseFuture
-                .thenCompose(r -> processRespFut(r, 200))
-                .whenComplete((msg, t) -> {
-                    String responseMessage = getResponseMessage(msg, t);
-                    logger.info("got response {}", responseMessage);
-                    // TODO validate jobs on VM response
-                    assertEquals("{}", responseMessage);
-                    latch.countDown();
-                });
+            .thenCompose(r -> processRespFut(r, 200))
+            .whenComplete((msg, t) -> {
+                String responseMessage = getResponseMessage(msg, t);
+                logger.info("got response {}", responseMessage);
+                // TODO validate jobs on VM response
+                assertEquals("{}", responseMessage);
+                latch.countDown();
+            });
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
     private void testGetAutoScalePolicy() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
-                HttpRequest.GET(SERVER_ENDPOINT + "/autoScalePolicy"));
+            HttpRequest.GET(SERVER_ENDPOINT + "/autoScalePolicy"));
         responseFuture
-                .thenCompose(r -> processRespFut(r, 200))
-                .whenComplete((msg, t) -> {
-                    String responseMessage = getResponseMessage(msg, t);
-                    logger.info("got response {}", responseMessage);
-                    try {
-                        Map<String, AgentClusterOperations.AgentClusterAutoScaleRule> agentClusterAutoScaleRule = mapper
-                                .readValue(
-                                        responseMessage,
-                                        new TypeReference<Map<String, AgentClusterOperations.AgentClusterAutoScaleRule>>() {
-                                        });
-                        agentClusterAutoScaleRule.values().forEach(autoScaleRule -> {
-                            assertEquals("test", autoScaleRule.getName());
-                            assertEquals(300, autoScaleRule.getCooldownSecs());
-                            assertEquals(1, autoScaleRule.getMinIdle());
-                            assertEquals(10, autoScaleRule.getMaxIdle());
-                            assertEquals(1, autoScaleRule.getMinSize());
-                            assertEquals(100, autoScaleRule.getMaxSize());
-                        });
-                    } catch (IOException e) {
-                        logger.error("caught error", e);
-                        fail("failed to deserialize response");
-                    }
-                    latch.countDown();
-                });
+            .thenCompose(r -> processRespFut(r, 200))
+            .whenComplete((msg, t) -> {
+                String responseMessage = getResponseMessage(msg, t);
+                logger.info("got response {}", responseMessage);
+                try {
+                    Map<String, AgentClusterOperations.AgentClusterAutoScaleRule> agentClusterAutoScaleRule = mapper
+                        .readValue(
+                            responseMessage,
+                            new TypeReference<Map<String, AgentClusterOperations.AgentClusterAutoScaleRule>>() {
+                            });
+                    agentClusterAutoScaleRule.values().forEach(autoScaleRule -> {
+                        assertEquals("test", autoScaleRule.getName());
+                        assertEquals(300, autoScaleRule.getCooldownSecs());
+                        assertEquals(1, autoScaleRule.getMinIdle());
+                        assertEquals(10, autoScaleRule.getMaxIdle());
+                        assertEquals(1, autoScaleRule.getMinSize());
+                        assertEquals(100, autoScaleRule.getMaxSize());
+                    });
+                } catch (IOException e) {
+                    logger.error("caught error", e);
+                    fail("failed to deserialize response");
+                }
+                latch.countDown();
+            });
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
     private void testGetActiveAgentClusters() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CompletionStage<HttpResponse> responseFuture = http.singleRequest(
-                HttpRequest.GET(SERVER_ENDPOINT));
+            HttpRequest.GET(SERVER_ENDPOINT));
         responseFuture
-                .thenCompose(r -> processRespFut(r, 200))
-                .whenComplete((msg, t) -> {
-                    String responseMessage = getResponseMessage(msg, t);
-                    logger.info("got response {}", responseMessage);
-                    assertEquals(AgentClusterPayloads.SET_ACTIVE, responseMessage);
-                    latch.countDown();
-                });
+            .thenCompose(r -> processRespFut(r, 200))
+            .whenComplete((msg, t) -> {
+                String responseMessage = getResponseMessage(msg, t);
+                logger.info("got response {}", responseMessage);
+                assertEquals(AgentClusterPayloads.SET_ACTIVE, responseMessage);
+                latch.countDown();
+            });
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 }
