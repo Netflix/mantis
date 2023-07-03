@@ -16,15 +16,10 @@
 
 package io.mantisrx.common.metrics.measurement;
 
-import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonUnwrapped;
-import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.micrometer.core.instrument.Meter;
-
 import java.util.Map;
 
 
@@ -77,7 +72,6 @@ public class MicrometerMeasurements {
     public Map<String, String> getTags() {
         return tags;
     }
-
     @Override
     public String toString() {
         return "Measurements{" +
