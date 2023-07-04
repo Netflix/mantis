@@ -22,7 +22,7 @@ import java.io.File;
 
 public class LoadValidateCreateDir implements Command {
 
-    private String jarPath;
+    private final String jarPath;
 
     public LoadValidateCreateDir(String jarPath) {
         this.jarPath = jarPath;
@@ -96,7 +96,7 @@ public class LoadValidateCreateDir implements Command {
                     File jobDescriptor = new File(fileLoop.getParent() + "/" + jsonFile);
                     new CreateJobDescriptorFile(job, jobDescriptor, fileVersion, fileBase).execute();
                 } catch (Exception e) {
-                    System.out.println("Got an error " + e.toString());
+                    System.out.println("Got an error " + e);
                     System.exit(1);
                 }
 

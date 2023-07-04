@@ -30,7 +30,7 @@ import java.util.jar.JarFile;
 
 public class ReadJobFromJar implements Command {
 
-    private String jobJarFile;
+    private final String jobJarFile;
     @SuppressWarnings("rawtypes")
     private Job job;
 

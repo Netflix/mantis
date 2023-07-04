@@ -110,7 +110,7 @@ public class CreateJobDescriptorFile implements Command {
                 }
             }
             return true;
-        }).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         parameterInfo.putAll(sysParams);
         // create source/sink info

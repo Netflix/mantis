@@ -36,6 +36,7 @@ import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
 import io.mantisrx.master.jobcluster.WorkerInfoListHolder;
 import io.mantisrx.master.jobcluster.job.worker.*;
+import io.mantisrx.master.jobcluster.job.worker.WorkerManagerLogger;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.*;
 import io.mantisrx.master.jobcluster.proto.JobClusterProto;
@@ -147,6 +148,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private final CostsCalculator costsCalculator;
     private boolean hasJobMaster;
     private volatile boolean allWorkersCompleted = false;
+
 
     /**
      * Used by the JobCluster Actor to create this Job Actor.
@@ -1292,6 +1294,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 .build();
         private volatile boolean stageAssignmentPotentiallyChanged;
 
+        private WorkerManagerLogger workerLogger;
+
         /**
          * Creates an instance of this class.
          *
@@ -1369,6 +1373,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 for (JobWorker worker : stageMeta.getAllWorkers()) {
                     IMantisWorkerMetadata wm = worker.getMetadata();
 
+                    // Initializing workerLogger
+                    this.workerLogger = new WorkerManagerLogger(wm.getWorkerId());
+
                     if (WorkerState.isRunningState(wm.getState())) {
                         // send fake heartbeat
                         try {
@@ -1420,7 +1427,10 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             for (JobWorker jobWorker : workersToResubmit) {
                 LOGGER.warn("discovered workers with missing ports during initialization: {}", jobWorker);
                 try {
+                    WorkerManagerLogger oldWorkerLogger = this.workerLogger;
+                    this.workerLogger = new WorkerManagerLogger(jobWorker.getMetadata().getWorkerId());
                     resubmitWorker(jobWorker);
+                    this.workerLogger = oldWorkerLogger;
                 } catch (Exception e) {
                     LOGGER.warn("Exception resubmitting worker {} during initializeRunningWorkers due to {}",
                             jobWorker, e.getMessage(), e);
@@ -1558,7 +1568,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         private void queueTask(final IMantisWorkerMetadata workerRequest, final Optional<Long> readyAt) {
             final ScheduleRequest schedulingRequest = createSchedulingRequest(workerRequest, readyAt);
-            LOGGER.info("Queueing up scheduling request {} ", schedulingRequest);
+//            LOGGER.info("Queueing up scheduling request {} ", schedulingRequest);
+            workerLogger.info("Queueing up scheduling request "+ schedulingRequest);
             try {
                 scheduler.scheduleWorker(schedulingRequest);
             } catch (Exception e) {
@@ -1578,6 +1589,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 LOGGER.trace("In createSchedulingRequest for worker {}", workerRequest);
 
                 final WorkerId workerId = workerRequest.getWorkerId();
+
+                this.workerLogger = new WorkerManagerLogger(workerId);
 
                 // setup constraints
                 final List<ConstraintEvaluator> hardConstraints = new ArrayList<>();
@@ -2210,7 +2223,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
 
         private void resubmitWorker(JobWorker oldWorker) throws Exception {
-            LOGGER.info("Resubmitting worker {}", oldWorker.getMetadata());
+//            LOGGER.info("Resubmitting worker {}", oldWorker.getMetadata());
+            workerLogger.info("Resubmitting worker "+oldWorker.getMetadata());
             Map<Integer, Integer> workerToStageMap = mantisJobMetaData.getWorkerNumberToStageMap();
 
             IMantisWorkerMetadata oldWorkerMetadata = oldWorker.getMetadata();
@@ -2260,9 +2274,12 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 Optional<Long> delayDuration = of(workerResubmitTime);
                 // publish a refresh before enqueuing new Task to Scheduler
                 markStageAssignmentsChanged(true);
+
+                this.workerLogger = new WorkerManagerLogger(newWorker.getMetadata().getWorkerId());
                 // queue the new worker for execution
                 queueTask(newWorker.getMetadata(), delayDuration);
-                LOGGER.info("Worker {} successfully queued for scheduling", newWorker);
+//                LOGGER.info("Worker {} successfully queued for scheduling", newWorker);
+                workerLogger.info(String.format("Worker %s successfully queued for scheduling",newWorker));
                 numWorkerResubmissions.increment();
             } else {
 

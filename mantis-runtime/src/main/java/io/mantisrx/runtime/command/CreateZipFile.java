@@ -29,9 +29,9 @@ import java.util.zip.ZipOutputStream;
 
 public class CreateZipFile implements Command {
 
-    private File jobJarFile;
-    private File jobDescriptor;
-    private File zipfileName;
+    private final File jobJarFile;
+    private final File jobDescriptor;
+    private final File zipfileName;
 
     public CreateZipFile(File zipfileName,
                          File jobJarFile, File jobDescriptor) {
@@ -45,7 +45,7 @@ public class CreateZipFile implements Command {
         try {
             is = new BufferedInputStream(Files.newInputStream(Paths.get(file.toURI())));
             byte[] in = new byte[1024];
-            int bytesRead = -1;
+            int bytesRead;
             while ((bytesRead = is.read(in)) > 0) {
                 os.write(in, 0, bytesRead);
             }
@@ -53,7 +53,9 @@ public class CreateZipFile implements Command {
             throw new CommandException(e);
         } finally {
             try {
-                is.close();
+                if (is != null) {
+                    is.close();
+                }
             } catch (IOException e) {
                 throw new CommandException(e);
             }

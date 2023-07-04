@@ -31,10 +31,10 @@ import org.slf4j.LoggerFactory;
 
 public class ReadJobFromZip implements Command {
 
-    private static Logger logger = LoggerFactory.getLogger(ReadJobFromZip.class);
-    private String jobZipFile;
-    private String artifactName;
-    private String version;
+    private static final Logger logger = LoggerFactory.getLogger(ReadJobFromZip.class);
+    private final String jobZipFile;
+    private final String artifactName;
+    private final String version;
     @SuppressWarnings("rawtypes")
     private Job job;
 
