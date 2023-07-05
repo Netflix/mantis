@@ -17,19 +17,11 @@
 package io.mantisrx.master.jobcluster.job;
 
 import io.mantisrx.server.master.domain.Costs;
-import java.util.Properties;
 
-public class NoopCostsCalculatorFactory {
+public class NoopCostsCalculator implements CostsCalculator {
 
-    public CostsCalculator createObject(Properties properties) {
-        return new NoopCostsCalculator();
-    }
-
-    static class NoopCostsCalculator implements CostsCalculator {
-
-        @Override
-        public Costs calculateCosts(IMantisJobMetadata jobMetadata) {
-            return Costs.ZERO;
-        }
+    @Override
+    public Costs calculateCosts(IMantisJobMetadata jobMetadata) {
+        return Costs.ZERO;
     }
 }

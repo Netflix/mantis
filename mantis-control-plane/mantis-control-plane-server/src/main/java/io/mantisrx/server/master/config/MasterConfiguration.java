@@ -16,6 +16,7 @@
 
 package io.mantisrx.server.master.config;
 
+import io.mantisrx.master.jobcluster.job.CostsCalculator;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.master.store.KeyValueStore;
 import java.time.Duration;
@@ -361,8 +362,8 @@ public interface MasterConfiguration extends CoreConfiguration {
     int getAssignmentIntervalInMs();
 
     @Config("mantis.job.costsCalculator.class")
-    @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculatorFactory")
-    String getCostsCalculatorClass();
+    @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculator")
+    CostsCalculator getJobCostsCalculator();
 
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());

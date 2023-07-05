@@ -29,5 +29,4 @@ public interface ConfigurationFactory {
 
     MasterConfiguration getConfig();
 
-    Properties getProperties();
 }
