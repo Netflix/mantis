@@ -1188,6 +1188,15 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     /**
+     * Returns the calculated heartbeat interval (in secs) for a worker
+     *
+     * @param mjmd
+     * @return
+     */
+    static long getHeartbeatIntervalSecs(final IMantisJobMetadata mjmd) {
+        return mjmd.getHeartbeatIntervalSecs();
+    }
+    /**
      * Keeps track of the last used worker number and mints a new one every time a worker is scheduled.
      */
     static class WorkerNumberGenerator {
@@ -1630,6 +1639,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 mantisJobMetaData.getSchedulingInfo(),
                                 mantisJobMetaData.getParameters(),
                                 getSubscriptionTimeoutSecs(mantisJobMetaData),
+                                getHeartbeatIntervalSecs(mantisJobMetaData),
                                 mantisJobMetaData.getMinRuntimeSecs()
                         ),
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),

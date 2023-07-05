@@ -299,7 +299,7 @@ public class JobTestLifecycle {
             verify(schedulerMock,times(1)).scheduleWorker(any());
 
             JobMetadata jobMetadata = new JobMetadata(jobId, new URL("http://myart" +
-                    ""),1,"njoshi",schedInfo,Lists.newArrayList(),0,0);
+                    ""),1,"njoshi",schedInfo,Lists.newArrayList(),0,10, 0);
             ScheduleRequest expectedScheduleRequest = new ScheduleRequest(workerId,
                     1,4, jobMetadata,MantisJobDurationType.Perpetual,machineDefinition,Lists.newArrayList(),Lists.newArrayList(),0,empty());
             verify(schedulerMock).scheduleWorker(expectedScheduleRequest);

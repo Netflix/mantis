@@ -182,4 +182,10 @@ public interface IMantisJobMetadata {
      * @return Costs
      */
     Costs getJobCosts();
+
+    /** Job level heartbeat configuration
+     *
+     * @return
+     */
+    long getHeartbeatIntervalSecs();
 }
