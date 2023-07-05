@@ -16,7 +16,6 @@
 
 package io.mantisrx.master.jobcluster.job;
 
-import io.mantisrx.master.jobcluster.job.NoopCostsCalculatorFactory.NoopCostsCalculator;
 import io.mantisrx.server.master.domain.Costs;
 
 /**

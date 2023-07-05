@@ -63,11 +63,6 @@ public class StaticPropertiesConfigurationFactory implements ConfigurationFactor
     }
 
     @Override
-    public Properties getProperties() {
-        return properties;
-    }
-
-    @Override
     public String toString() {
         return "StaticPropertiesConfigurationFactory{" +
                 "delegate=" + delegate +

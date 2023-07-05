@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.master.config;
 
-import java.util.Properties;
 
 /**
  * An implementation of this class should return an instance of {@link io.mantisrx.server.master.config.MasterConfiguration}.
@@ -29,5 +28,4 @@ public interface ConfigurationFactory {
 
     MasterConfiguration getConfig();
 
-    Properties getProperties();
 }
