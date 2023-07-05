@@ -91,7 +91,6 @@ import rx.schedulers.Schedulers;
 public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkerExecutionOperationsNetworkStage.class);
-    private static final long heartbeatIntervalSecs = 20; // secs ToDo make it configurable from master?
     private final WorkerConfiguration config;
     private final WorkerMetricsClient workerMetricsClient;
     private final AtomicReference<Heartbeat> heartbeatRef = new AtomicReference<>();
@@ -208,15 +207,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     }
 
-    private Closeable startSendingHeartbeats(final Observer<Status> jobStatus, double networkMbps) {
-        heartbeatRef.get().setPayload("" + StatusPayloads.Type.SubscriptionState, "" + false);
-        Future<?> heartbeatFuture =
-            scheduledExecutorService
-                .scheduleWithFixedDelay(
-                    () -> jobStatus.onNext(heartbeatRef.get().getCurrentHeartbeatStatus()),
-                    heartbeatIntervalSecs,
-                    heartbeatIntervalSecs,
-                    TimeUnit.SECONDS);
+    private Closeable startSendingHeartbeats(final Observer<Status> jobStatus, double networkMbps, long heartbeatIntervalSecs) {
+        heartbeatRef.get().setPayload(String.valueOf(StatusPayloads.Type.SubscriptionState), "false");
+        Future<?> heartbeatFuture = scheduledExecutorService.scheduleWithFixedDelay(
+            () -> jobStatus.onNext(heartbeatRef.get().getCurrentHeartbeatStatus()),
+            heartbeatIntervalSecs,
+            heartbeatIntervalSecs,
+            TimeUnit.SECONDS);
         // start heartbeat payload setter for incoming data drops
         DataDroppedPayloadSetter droppedPayloadSetter = new DataDroppedPayloadSetter(heartbeatRef.get());
         droppedPayloadSetter.start(heartbeatIntervalSecs);
@@ -273,7 +270,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     public void executeStage(final ExecutionDetails setup) throws IOException {
 
         ExecuteStageRequest executionRequest = setup.getExecuteStageRequest().getRequest();
-
         // Initialize the schedulingInfo observable for current job and mark it shareable to be reused by anyone interested in this data.
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
 
@@ -359,7 +355,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             heartbeatRef.set(new Heartbeat(rw.getJobId(),
                     rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), config.getTaskExecutorHostName()));
             final double networkMbps = executionRequest.getSchedulingInfo().forStage(rw.getStageNum()).getMachineDefinition().getNetworkMbps();
-            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(), networkMbps);
+            Closeable heartbeatCloseable = startSendingHeartbeats(rw.getJobStatus(), networkMbps, executionRequest.getHeartbeatIntervalSecs());
             closeables.add(heartbeatCloseable);
 
             // execute stage

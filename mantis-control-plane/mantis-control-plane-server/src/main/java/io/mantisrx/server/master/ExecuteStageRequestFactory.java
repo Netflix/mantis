@@ -16,6 +16,8 @@
 
 package io.mantisrx.server.master;
 
+import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
+
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -44,6 +46,7 @@ public class ExecuteStageRequestFactory {
         scheduleRequest.getJobMetadata().getParameters(),
         scheduleRequest.getJobMetadata().getSchedulingInfo(),
         scheduleRequest.getDurationType(),
+        DEFAULT_HEARTBEAT_INTERVAL_SECS,
         scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
         scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
         matchedTaskExecutorInfo.getWorkerPorts(),

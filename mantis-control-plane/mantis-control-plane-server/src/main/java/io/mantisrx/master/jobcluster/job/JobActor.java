@@ -1890,51 +1890,47 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
             // expire worker resubmit entries
             resubmitRateLimiter.expireResubmitRecords(currentTime.toEpochMilli());
             // For each stage
-            for (Iterator<? extends IMantisStageMetadata> stageIt =
-                 mantisJobMetaData.getStageMetadata().values().iterator(); stageIt.hasNext(); ) {
-                IMantisStageMetadata stage = stageIt.next();
+            for (IMantisStageMetadata stage : mantisJobMetaData.getStageMetadata().values()) {
                 // For each worker in the stage
-                for (Iterator<JobWorker> workerIt = stage.getAllWorkers().iterator(); workerIt.hasNext(); ) {
-                    JobWorker worker = workerIt.next();
+                for (JobWorker worker : stage.getAllWorkers()) {
                     IMantisWorkerMetadata workerMeta = worker.getMetadata();
                     if (!workerMeta.getLastHeartbeatAt().isPresent()) {
-                        System.out.println("1");
                         Instant acceptedAt = Instant.ofEpochMilli(workerMeta.getAcceptedAt());
                         if (Duration.between(acceptedAt, currentTime).getSeconds() > stuckInSubmitToleranceSecs) {
                             // worker stuck in accepted
                             workersToResubmit.add(worker);
                             eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(
-                                    WARN,
-                                    "worker stuck in Accepted state, resubmitting worker",
-                                    workerMeta.getStageNum(),
-                                    workerMeta.getWorkerId(),
-                                    workerMeta.getState()));
+                                WARN,
+                                "worker stuck in Accepted state, resubmitting worker",
+                                workerMeta.getStageNum(),
+                                workerMeta.getWorkerId(),
+                                workerMeta.getState()));
                         }
                     } else {
                         LOGGER.debug(
-                                "Duration between last heartbeat and now {} ",
-                                Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds());
+                            "Duration between last heartbeat and now {} ",
+                            Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds());
 
                         if (Duration.between(workerMeta.getLastHeartbeatAt().get(), currentTime).getSeconds()
-                                > missedHeartBeatToleranceSecs) {
+                            > missedHeartBeatToleranceSecs) {
                             // heartbeat too old
                             LOGGER.info("Job {}, Worker {} Duration between last heartbeat and now {} "
-                                            + "missed heart beat threshold {} exceeded", this.jobMgr.getJobId(),
-                                    workerMeta.getWorkerId(), Duration.between(
-                                            workerMeta.getLastHeartbeatAt().get(),
-                                            currentTime).getSeconds(), missedHeartBeatToleranceSecs);
+                                    + "missed heart beat threshold {} exceeded", this.jobMgr.getJobId(),
+                                workerMeta.getWorkerId(), Duration.between(
+                                    workerMeta.getLastHeartbeatAt().get(),
+                                    currentTime).getSeconds(), missedHeartBeatToleranceSecs);
 
                             if (ConfigurationProvider.getConfig().isHeartbeatTerminationEnabled()) {
                                 eventPublisher.publishStatusEvent(new LifecycleEventsProto.WorkerStatusEvent(WARN,
-                                        "heartbeat too old, resubmitting worker", workerMeta.getStageNum(),
-                                        workerMeta.getWorkerId(), workerMeta.getState()));
+                                    "heartbeat too old, resubmitting worker", workerMeta.getStageNum(),
+                                    workerMeta.getWorkerId(), workerMeta.getState()));
 
                                 workersToResubmit.add(worker);
                             } else {
                                 LOGGER.warn(
-                                        "Heart beat based termination is disabled. Skipping termination of "
-                                                + "worker {} Please see mantis.worker.heartbeat.termination.enabled",
-                                        workerMeta);
+                                    "Heart beat based termination is disabled. Skipping termination of "
+                                        + "worker {} Please see mantis.worker.heartbeat.termination.enabled",
+                                    workerMeta);
                             }
                         }
                     }
