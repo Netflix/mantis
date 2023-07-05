@@ -264,7 +264,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.workerManager = new WorkerManager(this, jobClusterDefinition.getWorkerMigrationConfig(),
                 this.mantisScheduler, isSubmit);
 
-        long checkAgainInSeconds = ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
+        long checkAgainInSeconds = getWorkerTimeoutSecs();
         long refreshStageAssignementsDurationMs = ConfigurationProvider.getConfig()
                 .getStageAssignmentRefreshIntervalMs();
         getTimers().startPeriodicTimer(CHECK_HB_TIMER_KEY, new JobProto.CheckHeartBeat(),
@@ -278,6 +278,14 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         }
         mantisJobMetaData.getJobDefinition().getJobSla().getRuntimeLimitSecs();
         LOGGER.info("Job {} initialized", this.jobId);
+    }
+
+    private long getWorkerTimeoutSecs() {
+        if (mantisJobMetaData.getWorkerTimeoutSecs() > 0) {
+            return mantisJobMetaData.getWorkerTimeoutSecs();
+        } else {
+            return ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
+        }
     }
 
     private void setupJobMasterStage(SchedulingInfo schedulingInfo)
@@ -1188,15 +1196,6 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     }
 
     /**
-     * Returns the calculated heartbeat interval (in secs) for a worker
-     *
-     * @param mjmd
-     * @return
-     */
-    static long getHeartbeatIntervalSecs(final IMantisJobMetadata mjmd) {
-        return mjmd.getHeartbeatIntervalSecs();
-    }
-    /**
      * Keeps track of the last used worker number and mints a new one every time a worker is scheduled.
      */
     static class WorkerNumberGenerator {
@@ -1639,7 +1638,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 mantisJobMetaData.getSchedulingInfo(),
                                 mantisJobMetaData.getParameters(),
                                 getSubscriptionTimeoutSecs(mantisJobMetaData),
-                                getHeartbeatIntervalSecs(mantisJobMetaData),
+                                mantisJobMetaData.getHeartbeatIntervalSecs(),
                                 mantisJobMetaData.getMinRuntimeSecs()
                         ),
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),
@@ -1890,8 +1889,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         @Override
         public void checkHeartBeats(Instant currentTime) {
             LOGGER.trace("In WorkerManager::checkHeartBeats");
-            //// heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
-            long missedHeartBeatToleranceSecs = (long) (1.5 * ConfigurationProvider.getConfig().getWorkerTimeoutSecs());
+
+            // heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
+            long missedHeartBeatToleranceSecs = (long) (1.5 * getWorkerTimeoutSecs());
             // Allow more time for workers to start
             long stuckInSubmitToleranceSecs =
                 missedHeartBeatToleranceSecs + ConfigurationProvider.getConfig().getWorkerInitTimeoutSecs();

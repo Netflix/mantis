@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import akka.http.javadsl.model.Uri;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.spectator.impl.Preconditions;
+import com.sun.org.apache.bcel.internal.generic.FSUB;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.api.akka.route.pagination.ListObject;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
@@ -1570,9 +1571,9 @@ public class JobClusterManagerProto {
                 @JsonProperty(value = "jobDefinition") final Optional<JobDefinition> jobDefinition,
                 @JsonProperty("submitLatestJobCluster") final boolean submitLatest) {
             super();
-            Preconditions.checkArg(user != null & !user.isEmpty(), "Must provide user in request");
+            Preconditions.checkArg(user != null && !user.isEmpty(), "Must provide user in request");
             Preconditions.checkArg(
-                    clusterName != null & !clusterName.isEmpty(),
+                    clusterName != null && !clusterName.isEmpty(),
                     "Must provide job cluster name in request");
             Preconditions.checkNotNull(jobDefinition, "jobDefinition");
 
@@ -1584,25 +1585,12 @@ public class JobClusterManagerProto {
         }
 
         public SubmitJobRequest(String clusterName, String submitter, JobDefinition jobDefinition) {
-            this.clusterName = clusterName;
-            this.submitter = submitter;
-            this.jobDefinition = Optional.of(jobDefinition);
-            this.submitLatest = false;
-            this.isAutoResubmit = false;
+            this(clusterName, submitter, false, Optional.of(jobDefinition));
         }
 
         //quick submit
         public SubmitJobRequest(final String clusterName, final String user) {
-            super();
-            Preconditions.checkArg(user != null & !user.isEmpty(), "Must provide user in request");
-            Preconditions.checkArg(
-                    clusterName != null & !clusterName.isEmpty(),
-                    "Must provide job cluster name in request");
-            this.jobDefinition = Optional.empty();
-            this.submitter = user;
-            this.clusterName = clusterName;
-            this.isAutoResubmit = false;
-            this.submitLatest = false;
+            this(clusterName, user, false, Optional.empty());
         }
 
         // used to during sla enforcement
@@ -1612,9 +1600,8 @@ public class JobClusterManagerProto {
                 boolean isAutoResubmit,
                 final Optional<JobDefinition> jobDefinition) {
             super();
-            Preconditions.checkArg(user != null & !user.isEmpty(), "Must provide user in request");
-            Preconditions.checkArg(
-                    clusterName != null & !clusterName.isEmpty(),
+            Preconditions.checkArg(user != null && !user.isEmpty(), "Must provide user in request");
+            Preconditions.checkArg(clusterName != null && !clusterName.isEmpty(),
                     "Must provide job cluster name in request");
             this.jobDefinition = jobDefinition;
             this.submitter = user;
@@ -1686,7 +1673,7 @@ public class JobClusterManagerProto {
             super();
             Preconditions.checkNotNull(user, "user");
             Preconditions.checkArg(
-                    jobId != null & !jobId.isEmpty(),
+                    jobId != null && !jobId.isEmpty(),
                     "Must provide job ID in request");
             Optional<JobId> jOp = JobId.fromId(jobId);
             if (jOp.isPresent()) {

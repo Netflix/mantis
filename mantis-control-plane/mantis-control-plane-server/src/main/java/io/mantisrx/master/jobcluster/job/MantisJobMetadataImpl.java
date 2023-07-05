@@ -53,6 +53,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private final JobId jobId;
     private final long submittedAt;
     private final long heartbeatIntervalSecs;
+    private final long workerTimeoutSecs;
     private long startedAt = DEFAULT_STARTED_AT_EPOCH;
     private long endedAt = DEFAULT_STARTED_AT_EPOCH;
 
@@ -75,7 +76,8 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
                                  @JsonProperty("jobDefinition") JobDefinition jobDefinition,
                                  @JsonProperty("state") JobState state,
                                  @JsonProperty("nextWorkerNumberToUse") int nextWorkerNumberToUse,
-                                 @JsonProperty("heartbeatIntervalSecs") long heartbeatIntervalSecs) {
+                                 @JsonProperty("heartbeatIntervalSecs") long heartbeatIntervalSecs,
+                                 @JsonProperty("workerTimeoutSecs") long workerTimeoutSecs) {
         this.jobId = jobId;
 
         this.submittedAt = submittedAt;
@@ -83,6 +85,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         this.state = state==null? JobState.Accepted : state;
         this.nextWorkerNumberToUse = nextWorkerNumberToUse;
         this.heartbeatIntervalSecs = heartbeatIntervalSecs;
+        this.workerTimeoutSecs = workerTimeoutSecs;
 
         this.jobDefinition = jobDefinition;
     }
@@ -118,6 +121,11 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     @Override
     public long getHeartbeatIntervalSecs() {
         return heartbeatIntervalSecs;
+    }
+
+    @Override
+    public long getWorkerTimeoutSecs() {
+        return workerTimeoutSecs;
     }
 
     public void setNextWorkerNumberToUse(int n, MantisJobStore store) throws Exception{
@@ -367,6 +375,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
         int nextWorkerNumberToUse = 1;
 
         long heartbeatIntervalSecs = 0;
+        long workerTimeoutSecs = 0;
 
         Costs jobCosts;
 
@@ -382,6 +391,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
 
             this.nextWorkerNumberToUse = mJob.getNextWorkerNumberToUse();
             this.heartbeatIntervalSecs = mJob.getHeartbeatIntervalSecs();
+            this.workerTimeoutSecs = mJob.getWorkerTimeoutSecs();
 
             this.jobCosts = mJob.getJobCosts();
         }
@@ -431,6 +441,11 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
             return this;
         }
 
+        public Builder withWorkerTimeoutSecs(long secs) {
+            this.workerTimeoutSecs = secs;
+            return this;
+        }
+
     	public Builder from(MantisJobMetadataImpl mJob) {
     		this.jobId = mJob.getJobId();
 
@@ -440,11 +455,12 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
             this.jobCosts = mJob.getJobCosts();
     		this.nextWorkerNumberToUse = mJob.getNextWorkerNumberToUse();
             this.heartbeatIntervalSecs = mJob.getHeartbeatIntervalSecs();
+            this.workerTimeoutSecs = mJob.getWorkerTimeoutSecs();
     		return this;
     	}
 
     	public MantisJobMetadataImpl build() {
-    		return new MantisJobMetadataImpl(jobId, submittedAt, startedAt, jobDefinition, state, nextWorkerNumberToUse, heartbeatIntervalSecs);
+            return new MantisJobMetadataImpl(jobId, submittedAt, startedAt, jobDefinition, state, nextWorkerNumberToUse, heartbeatIntervalSecs, workerTimeoutSecs);
     	}
     }
 

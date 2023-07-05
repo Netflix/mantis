@@ -183,9 +183,15 @@ public interface IMantisJobMetadata {
      */
     Costs getJobCosts();
 
-    /** Job level heartbeat configuration
-     *
-     * @return
+    /**
+     * Job level heartbeat configuration
      */
     long getHeartbeatIntervalSecs();
+
+    /**
+     * Job level timeout interval for worker
+     * This resubmits a worker if existing worker
+     * is past timeout secs
+     */
+    long getWorkerTimeoutSecs();
 }

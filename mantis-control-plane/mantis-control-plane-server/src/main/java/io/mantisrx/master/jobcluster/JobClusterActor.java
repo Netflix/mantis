@@ -1317,7 +1317,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     public void onJobSubmit(final SubmitJobRequest request) {
         final ActorRef sender = getSender();
         // if the job is submitted with a userDefinedType check to see if such a job is already running. If so just reply with a reference to it.
-        if(request.getJobDefinition().isPresent()) {
+        if (request.getJobDefinition().isPresent()) {
             String uniq = request.getJobDefinition().get().getJobSla().getUserProvidedType();
             if(uniq != null && !uniq.isEmpty()) {
                 Optional<JobInfo> existingJob = jobManager.getJobInfoByUniqueId(uniq);
@@ -1519,7 +1519,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     private void submitJob(JobDefinition jobDefinition, ActorRef sender, String user) throws PersistException {
-        if(logger.isTraceEnabled()) { logger.trace("Enter submitJobb"); }
+        if (logger.isTraceEnabled()) { logger.trace("Enter submitJobb"); }
         JobId jId = null;
         try {
             validateJobDefinition(jobDefinition);
@@ -1532,6 +1532,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .withJobState(JobState.Accepted)
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefinition)
+                    .withHeartbeatIntervalSecs(0)
+                    .withWorkerTimeoutSecs(0)
                     .build();
 
             eventPublisher.publishAuditEvent(
@@ -1643,33 +1645,26 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
      * @throws InvalidJobRequest If the job definition is invalid
      */
     private void validateJobDefinition(JobDefinition definition) throws InvalidJobRequest {
-        if (definition == null){
+        if (definition == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition cannot be null");
         }
-        if (definition.getArtifactName() == null){
+        if (definition.getArtifactName() == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition job artifactName attribute cannot be null");
         }
-        if (definition.getName() == null){
+        if (definition.getName() == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition name attribute cannot be null");
         }
 
-        if (definition.getSchedulingInfo() == null){
+        if (definition.getSchedulingInfo() == null) {
             throw new InvalidJobRequest(null, "MantisJobDefinition schedulingInfo cannot be null");
         }
 
-        for(StageSchedulingInfo ssi : definition.getSchedulingInfo().getStages().values()) {
-            List<JobConstraints> hardConstraints = ssi.getHardConstraints();
-
-            List<JobConstraints> softConstraints = ssi.getSoftConstraints();
-
-            validateConstraints(softConstraints,hardConstraints);
-
-        };
-
-
+        for (StageSchedulingInfo ssi : definition.getSchedulingInfo().getStages().values()) {
+            validateConstraints(ssi.getSoftConstraints(), ssi.getHardConstraints());
+        }
     }
 
-    private void validateConstraints(List<JobConstraints> softConstraints, List<JobConstraints> hardConstraints) throws InvalidJobRequest{
+    private void validateConstraints(List<JobConstraints> softConstraints, List<JobConstraints> hardConstraints) throws InvalidJobRequest {
         // ok to have null constraints as they will get replaced later with empty list in JobActor.setupStageWorkers
         if(softConstraints != null) {
 
