@@ -61,8 +61,8 @@ public class HighAvailabilityServicesUtil {
                   parts[0],
                   "127.0.0.1",
                   apiPort,
-                  apiPort + 2,
-                  apiPort + 4,
+                  apiPort,
+                  apiPort,
                   "api/postjobstatus",
                   apiPort + 6,
                   System.currentTimeMillis())));
