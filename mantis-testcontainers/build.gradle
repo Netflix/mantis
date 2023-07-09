@@ -16,6 +16,7 @@
 
 dependencies {
     api libraries.mantisShaded
+    testImplementation project(":mantis-server:mantis-server-worker-client")
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -15,12 +15,21 @@
  */
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.HttpUrl;
+import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -28,6 +37,7 @@ import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
+@Slf4j
 public class TestContainerHelloWorld {
     private static final int ZOOKEEPER_PORT = 2181;
     private static final int CONTROL_PLANE_API_PORT = 8100;
@@ -37,11 +47,15 @@ public class TestContainerHelloWorld {
 
     private static final String CONTROL_PLANE_ALIAS = "mantiscontrolplane";
 
+    private static final String CLUSTER_ID = "testcluster1";
+
+
+    private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Test
     public void helloWorld() throws Exception {
-        String path = "/messages/zk-tc";
-        String content = "Running Zookeeper with Testcontainers";
+
         try (
             Network network = Network.newNetwork();
             GenericContainer<?> zookeeper =
@@ -59,32 +73,15 @@ public class TestContainerHelloWorld {
 
         ) {
             zookeeper.start();
-
-
-            String connectionString = zookeeper.getHost() + ":" + zookeeper.getMappedPort(ZOOKEEPER_PORT);
-            System.out.println(connectionString);
+            zkCheck(zookeeper);
 
             // master.addEnv("MANTIS_ZOOKEEPER_CONNECTSTRING", "zk:2181");
             master.start();
-            System.out.println("Finsih start");
-
-            CuratorFramework curatorFramework = CuratorFrameworkFactory
-                .builder()
-                .connectString(connectionString)
-                .retryPolicy(new RetryOneTime(100))
-                .build();
-            curatorFramework.start();
-            curatorFramework.create().creatingParentsIfNeeded().forPath(path, content.getBytes());
-
-            byte[] bytes = curatorFramework.getData().forPath(path);
-            curatorFramework.close();
-
-            assertEquals(new String(bytes, StandardCharsets.UTF_8), content);
-            System.out.println("ZK check pass!");
+            log.info("Finsih start");
 
             String url = String.format(
                 "http://%s:%d/api/", master.getHost(), master.getMappedPort(CONTROL_PLANE_API_PORT));
-            System.out.println("Using url: " + url);
+            log.info("Using control plane url: " + url);
 
             OkHttpClient client = new OkHttpClient();
 
@@ -92,25 +89,103 @@ public class TestContainerHelloWorld {
                 .url(url + "v1/resourceClusters/list")
                 .build();
             Response response = client.newCall(request).execute();
-            System.out.println(response.body().string());
+            log.info(response.body().string());
 
             // Create agent(s)
-            GenericContainer<?> agent0 =
-                new GenericContainer<>("netflixoss/mantisserveragent:latest")
-                    .withNetwork(network)
-                    .withEnv("resource_cluster_id".toUpperCase(), "testcluster1");
-            agent0.start();
-            System.out.println("agent started.");
+            final String agentId0 = "agent0";
+            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, network);
 
-            Request request2 = new Request.Builder()
-                .url(url + "v1/resourceClusters/testcluster1/getRegisteredTaskExecutors")
-                .build();
-            Response response2 = client.newCall(request).execute();
-            System.out.println(response2.body().string());
+            if (!ensureAgentStarted(master.getHost(),
+                master.getMappedPort(CONTROL_PLANE_API_PORT),
+                CLUSTER_ID,
+                agentId0,
+                agent0,
+                5,
+                Duration.ofSeconds(3).toMillis())) {
+                    fail("Failed to register agent: " + agent0.getContainerId());
+            }
 
 
             Thread.sleep(Duration.ofSeconds(360).toMillis());
         }
 
+    }
+
+    private void zkCheck(GenericContainer<?> zookeeper) throws Exception {
+        final String path = "/messages/zk-tc";
+        final String content = "Running Zookeeper with Testcontainers";
+        String connectionString = zookeeper.getHost() + ":" + zookeeper.getMappedPort(ZOOKEEPER_PORT);
+        log.info(connectionString);
+
+        CuratorFramework curatorFramework = CuratorFrameworkFactory
+            .builder()
+            .connectString(connectionString)
+            .retryPolicy(new RetryOneTime(100))
+            .build();
+        curatorFramework.start();
+        curatorFramework.create().creatingParentsIfNeeded().forPath(path, content.getBytes());
+
+        byte[] bytes = curatorFramework.getData().forPath(path);
+        curatorFramework.close();
+
+        assertEquals(new String(bytes, StandardCharsets.UTF_8), content);
+        System.out.println("ZK check pass!");
+    }
+
+    private GenericContainer<?> createAgent(String agentId, String resourceClusterId, Network network) {
+        return
+            new GenericContainer<>("netflixoss/mantisserveragent:latest")
+                .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withNetwork(network);
+    }
+
+    private boolean ensureAgentStarted(
+        String controlPlaneHost,
+        int controlPlanePort,
+        String resourceClusterId,
+        String agentId,
+        GenericContainer<?> agent,
+        int retries,
+        long sleepMillis)
+        throws InterruptedException, IOException {
+        agent.start();
+        log.info("{} agent started.", agent.getContainerId());
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/resourceClusters")
+            .addPathSegment(resourceClusterId)
+            .addPathSegment("getRegisteredTaskExecutors")
+            .build();
+        log.info("Req: {}", reqUrl);
+
+        for(int i = 0; i < retries; i++) {
+            Request request = new Request.Builder()
+                .url(reqUrl)
+                .build();
+
+            try {
+                Response response = HTTP_CLIENT.newCall(request).execute();
+                String responseBody = response.body().string();
+                log.info("Registered agents: {}.", responseBody);
+
+                List<TaskExecutorID> listResponses =
+                    mapper.readValue(responseBody, new TypeReference<List<TaskExecutorID>>() {});
+
+                for (TaskExecutorID taskExecutorID : listResponses) {
+                    if (taskExecutorID.getResourceId().equals(agentId)) {
+                        log.info("Agent {} has registered to {}.", agentId, resourceClusterId);
+                        return true;
+                    }
+                }
+
+                Thread.sleep(sleepMillis);
+            } catch (Exception e) {
+                log.warn("Get registred agent call error", e);
+            }
+        }
+        return false;
     }
 }
