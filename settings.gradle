@@ -65,6 +65,8 @@ include 'mantis-shaded'
 include 'mantis-source-jobs:mantis-source-job-kafka'
 include 'mantis-source-jobs:mantis-source-job-publish'
 
+include 'mantis-testcontainers'
+
 gradleEnterprise {
     buildScan {
         publishAlways()
@@ -72,3 +74,4 @@ gradleEnterprise {
         termsOfServiceAgree = 'yes'
     }
 }
+
