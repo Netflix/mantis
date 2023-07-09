@@ -32,14 +32,14 @@ import java.util.List;
  */
 public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
 
-    private ToKeyComputation<T, K, R> computation;
-    private long keyExpireTimeSeconds;
+    private final ToKeyComputation<T, K, R> computation;
+    private final long keyExpireTimeSeconds;
 
 
     /**
-     * @param computation
-     * @param config
-     * @param inputCodec
+     * @param computation is a ToGroupComputation
+     * @param config is a ScalartoGroup config
+     * @param inputCodec is codec of mantisx runtime codec
      *
      * @deprecated As of release 0.603, use {@link #ScalarToKey(ToKeyComputation, Config, Codec)} (ToGroupComputation, Config, Codec)} instead
      */
@@ -75,9 +75,9 @@ public class ScalarToKey<T, K, R> extends KeyValueStageConfig<T, K, R> {
         private List<ParameterDefinition<?>> parameters = Collections.emptyList();
 
         /**
-         * @param codec
+         * @param codec is Codec of netty reactivex
          *
-         * @return
+         * @return Config
          *
          * @deprecated As of release 0.603, use {@link #codec(Codec)} instead
          */

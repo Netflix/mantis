@@ -30,7 +30,7 @@ import io.reactivex.mantis.remote.observable.RemoteRxServer;
 import io.reactivex.mantis.remote.observable.ServeGroupedObservable;
 import java.util.Iterator;
 import java.util.List;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;

@@ -22,7 +22,7 @@ import lombok.Getter;
 
 public class ObservableSinkImpl<T> extends SinkFunction<T> {
     @Getter
-    private Sink<T> sink;
+    private final Sink<T> sink;
 
     public ObservableSinkImpl(SelfDocumentingSink<T> sink) {
         this.sink = sink;

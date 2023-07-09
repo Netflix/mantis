@@ -19,7 +19,6 @@ package io.mantisrx.runtime.command;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.MantisJobProvider;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
@@ -30,7 +29,7 @@ import java.util.jar.JarFile;
 
 public class ReadJobFromJar implements Command {
 
-    private String jobJarFile;
+    private final String jobJarFile;
     @SuppressWarnings("rawtypes")
     private Job job;
 
@@ -80,9 +79,8 @@ public class ReadJobFromJar implements Command {
                 );
             }
 
-        } catch (MalformedURLException e) {
-            throw new ReadJobFromJarException(e);
         } catch (IOException e) {
+            //MalformedURLException is Subclass of the IOException
             throw new ReadJobFromJarException(e);
         }
 

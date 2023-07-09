@@ -23,7 +23,7 @@ import io.mantisrx.runtime.sink.Sink;
 public class SinkHolder<T> {
 
     private Metadata metadata;
-    private Sink<T> sinkAction;
+    private final Sink<T> sinkAction;
 
     public SinkHolder(final SelfDocumentingSink<T> sinkAction) {
         this.metadata = sinkAction.metadata();

@@ -89,7 +89,7 @@ public class Context {
     /**
      * Returns the Job Parameters associated with the current job
      *
-     * @return
+     * @return Parameters
      */
 
     public Parameters getParameters() {
@@ -103,7 +103,7 @@ public class Context {
     /**
      * Returns the JobId of the current job.
      *
-     * @return
+     * @return String
      */
     public String getJobId() {
         return workerInfo.getJobId();
@@ -112,7 +112,7 @@ public class Context {
     /**
      * Returns information related to the current worker
      *
-     * @return
+     * @return WorkerInfo
      */
     public WorkerInfo getWorkerInfo() {
         return workerInfo;
@@ -159,11 +159,12 @@ public class Context {
      * Returns an Observable of WorkerMap for the current Job. The user can use this Observable
      * to track the location information of all the workers of the current job.
      *
-     * @return
+     * @return Observable
      */
     public Observable<WorkerMap> getWorkerMapObservable() {
         return this.workerMapObservable;
     }
 
+    @Nullable
     public ClassLoader getClassLoader() { return this.classLoader; }
 }

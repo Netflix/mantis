@@ -33,7 +33,7 @@ public class ServerClientContext<R, E> extends ServerContext<HttpClient<R, E>> {
     private final HttpRequestFactory<R> requestFactory;
     private final Observer<HttpSourceEvent> sourceObserver;
 
-    private Action1<ServerInfo> noOpAction = new Action1<ServerInfo>() {
+    private final Action1<ServerInfo> noOpAction = new Action1<ServerInfo>() {
         @Override
         public void call(ServerInfo t) {}
     };

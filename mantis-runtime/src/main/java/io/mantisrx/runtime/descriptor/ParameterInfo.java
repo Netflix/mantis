@@ -23,12 +23,12 @@ import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ParameterInfo {
 
-    private String name;
-    private String description;
-    private String defaultValue;
-    private String parameterType;
-    private String validatorDescription;
-    private boolean required;
+    private final String name;
+    private final String description;
+    private final String defaultValue;
+    private final String parameterType;
+    private final String validatorDescription;
+    private final boolean required;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -18,19 +18,18 @@ package io.mantisrx.runtime;
 
 import io.mantisrx.runtime.lifecycle.Lifecycle;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
 public class Job<T> {
 
-    private Metadata metadata;
-    private SourceHolder<?> source;
-    private List<StageConfig<?, ?>> stages;
-    private SinkHolder<T> sink;
-    private Lifecycle lifecycle;
-    private Map<String, ParameterDefinition<?>> parameterDefinitions = new HashMap<>();
+    private final Metadata metadata;
+    private final SourceHolder<?> source;
+    private final List<StageConfig<?, ?>> stages;
+    private final SinkHolder<T> sink;
+    private final Lifecycle lifecycle;
+    private final Map<String, ParameterDefinition<?>> parameterDefinitions;
 
     Job(SourceHolder<?> source, List<StageConfig<?, ?>> stages, SinkHolder<T> sink,
         Lifecycle lifecycle, Metadata metadata,

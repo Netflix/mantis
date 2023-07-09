@@ -28,7 +28,7 @@ import rx.subscriptions.SerialSubscription;
 
 public class OperatorResumeOnError<T> implements Operator<T, T> {
 
-    private static Scheduler scheduler = Schedulers.trampoline();
+    private static final Scheduler scheduler = Schedulers.trampoline();
     private final ResumeOnErrorPolicy<T> resumePolicy;
     private final int currentAttempts;
 
