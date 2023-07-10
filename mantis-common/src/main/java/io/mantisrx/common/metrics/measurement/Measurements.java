@@ -19,6 +19,7 @@ package io.mantisrx.common.metrics.measurement;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonProperty;
+import io.micrometer.core.instrument.Meter;
 import java.util.Collection;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class Measurements {
     private long timestamp;
     private Collection<CounterMeasurement> counters;
     private Collection<GaugeMeasurement> gauges;
+    private Collection<MicrometerMeasurement> micrometers;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -44,6 +46,21 @@ public class Measurements {
         this.counters = counters;
         this.gauges = gauges;
         this.tags = tags;
+    }
+
+    @JsonCreator
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public Measurements(
+        @JsonProperty("name") String name,
+        @JsonProperty("timestamp") long timestamp,
+        @JsonProperty("micrometers") Collection<MicrometerMeasurement> micrometers,
+        @JsonProperty("tags") Map<String, String> tags) {
+        this.name = name;
+        this.timestamp = timestamp;
+        this.counters = counters;
+        this.gauges = gauges;
+        this.tags = tags;
+        this.micrometers = micrometers;
     }
 
     public String getName() {
@@ -62,6 +79,10 @@ public class Measurements {
         return gauges;
     }
 
+    public Collection<MicrometerMeasurement> getMicrometers() {
+        return micrometers;
+    }
+
     public Map<String, String> getTags() {
         return tags;
     }
@@ -74,6 +95,25 @@ public class Measurements {
                 ", tags=" + tags +
                 ", counters=" + counters +
                 ", gauges=" + gauges +
+                ", micrometers=" + micrometers +
                 '}';
+    }
+
+    public static class MicrometerMeasurement {
+        Meter.Type type;
+        double value;
+
+        public MicrometerMeasurement(Meter.Type type, double value) {
+            this.type = type;
+            this.value = value;
+        }
+
+        public Meter.Type getType() {
+            return type;
+        }
+
+        public double getValue() {
+            return value;
+        }
     }
 }
