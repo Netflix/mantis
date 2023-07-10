@@ -59,6 +59,7 @@ ext.libraries = [
         flinkRpcImpl   : [
                 "org.apache.flink:flink-rpc-akka:${versions.flink}",
         ],
+        flinkShadedNetty      : "org.apache.flink:flink-shaded-netty:4.1.70.Final-15.0",
         junit4         : [
                 "junit:junit:${versions.junit4}",
                 "junit:junit-dep:${versions.junit4}",
