@@ -113,6 +113,7 @@ import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
+import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
@@ -1536,6 +1537,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     .withWorkerTimeoutSecs(0)
                     .build();
 
+            final Long heartbeatInterval = jobDefinition.getParameters().stream().filter(p -> p.getName().equalsIgnoreCase("mantis.worker.heartbeat.intervalv2.secs"))
+                .map(Parameter::getValue)
+                .filter(Objects::nonNull)
+                .map(v -> {try { return Long.parseLong(v); } catch (Exception e) {return 0;}})
+                .findFirst()
+                .orElse(0L);
             eventPublisher.publishAuditEvent(
                 new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_SUBMIT,
                     jId.getId(), jId + " submitter: " + user)

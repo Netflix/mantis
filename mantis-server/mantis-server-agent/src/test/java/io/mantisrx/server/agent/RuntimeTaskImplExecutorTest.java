@@ -15,7 +15,6 @@
  */
 package io.mantisrx.server.agent;
 
-import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -212,7 +211,8 @@ public class RuntimeTaskImplExecutorTest {
                     .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                         Lists.newArrayList(), Lists.newArrayList()).build(),
                 MantisJobDurationType.Transient,
-                    DEFAULT_HEARTBEAT_INTERVAL_SECS, 1000L,
+                    0,
+                1000L,
                 1L,
                 new WorkerPorts(2, 3, 4, 5, 6),
                 Optional.of(SineFunctionJobProvider.class.getName()))), Time.seconds(1));

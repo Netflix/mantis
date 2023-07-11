@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,9 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataImpl.class);
     private final JobId jobId;
     private final long submittedAt;
+    @Getter
     private final long heartbeatIntervalSecs;
+    @Getter
     private final long workerTimeoutSecs;
     private long startedAt = DEFAULT_STARTED_AT_EPOCH;
     private long endedAt = DEFAULT_STARTED_AT_EPOCH;
@@ -116,16 +119,6 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
     @Override
     public int getNextWorkerNumberToUse() {
         return nextWorkerNumberToUse;
-    }
-
-    @Override
-    public long getHeartbeatIntervalSecs() {
-        return heartbeatIntervalSecs;
-    }
-
-    @Override
-    public long getWorkerTimeoutSecs() {
-        return workerTimeoutSecs;
     }
 
     public void setNextWorkerNumberToUse(int n, MantisJobStore store) throws Exception{

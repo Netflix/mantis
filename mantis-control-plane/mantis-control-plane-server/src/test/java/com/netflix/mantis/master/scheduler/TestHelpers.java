@@ -16,7 +16,6 @@
 
 package com.netflix.mantis.master.scheduler;
 
-import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -102,7 +101,7 @@ public class TestHelpers {
                             mantisJobMetadata.getSchedulingInfo(),
                             mantisJobMetadata.getParameters(),
                             mantisJobMetadata.getSubscriptionTimeoutSecs(),
-                            DEFAULT_HEARTBEAT_INTERVAL_SECS,
+                            0,
                             mantisJobMetadata.getMinRuntimeSecs()
                     ),
                     mantisJobMetadata.getSla().get().getDurationType(),

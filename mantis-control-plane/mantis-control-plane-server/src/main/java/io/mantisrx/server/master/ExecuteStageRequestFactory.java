@@ -16,8 +16,6 @@
 
 package io.mantisrx.server.master;
 
-import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
-
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
@@ -33,9 +31,6 @@ public class ExecuteStageRequestFactory {
       ScheduleRequest scheduleRequest,
       TaskExecutorRegistration matchedTaskExecutorInfo) {
     long heartbeatIntervalSecs = scheduleRequest.getJobMetadata().getHeartbeatIntervalSecs();
-    if (heartbeatIntervalSecs <= 0) {
-        heartbeatIntervalSecs = DEFAULT_HEARTBEAT_INTERVAL_SECS;
-    }
     return new ExecuteStageRequest(
         scheduleRequest.getWorkerId().getJobCluster(),
         scheduleRequest.getWorkerId().getJobId(),

@@ -16,8 +16,6 @@
 
 package io.mantisrx.server.worker;
 
-import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
-
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.runtime.MachineDefinitions;
@@ -113,7 +111,7 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
         final ExecuteStageRequest executeStageRequest = new ExecuteStageRequest(workerInfo.getJobName(), workerInfo.getJobId(), workerInfo.getWorkerIndex(), workerInfo.getWorkerNumber(),
                 jobJarUrl, workerInfo.getStageNumber(), workerInfo.getNumStages(), ports, timeoutToReportStartSec, workerInfo.getMetricsPort(), params, schedInfo, MantisJobDurationType.Transient,
-                DEFAULT_HEARTBEAT_INTERVAL_SECS, 0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)), Optional.empty());
+                0, 0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)), Optional.empty());
 
         return new WrappedExecuteStageRequest(PublishSubject.<Boolean>create(), executeStageRequest);
     }

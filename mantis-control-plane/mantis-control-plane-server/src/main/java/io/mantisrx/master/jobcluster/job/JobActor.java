@@ -284,7 +284,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         if (mantisJobMetaData.getWorkerTimeoutSecs() > 0) {
             return mantisJobMetaData.getWorkerTimeoutSecs();
         } else {
-            return ConfigurationProvider.getConfig().getWorkerTimeoutSecs();
+            return ConfigurationProvider.getConfig().getDefaultWorkerTimeoutSecs();
         }
     }
 
@@ -1195,6 +1195,13 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                 : mjmd.getSubscriptionTimeoutSecs();
     }
 
+    static long getHeartbeatIntervalSecs(final IMantisJobMetadata mjmd) {
+        if (mjmd.getHeartbeatIntervalSecs() > 0) {
+            return mjmd.getHeartbeatIntervalSecs();
+        }
+        return ConfigurationProvider.getConfig().getDefaultWorkerHeartbeatIntervalSecs();
+    }
+
     /**
      * Keeps track of the last used worker number and mints a new one every time a worker is scheduled.
      */
@@ -1638,7 +1645,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
                                 mantisJobMetaData.getSchedulingInfo(),
                                 mantisJobMetaData.getParameters(),
                                 getSubscriptionTimeoutSecs(mantisJobMetaData),
-                                mantisJobMetaData.getHeartbeatIntervalSecs(),
+                                getHeartbeatIntervalSecs(mantisJobMetaData),
                                 mantisJobMetaData.getMinRuntimeSecs()
                         ),
                         mantisJobMetaData.getSla().orElse(new JobSla.Builder().build()).getDurationType(),

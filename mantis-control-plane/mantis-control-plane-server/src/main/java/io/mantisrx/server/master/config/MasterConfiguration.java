@@ -199,9 +199,14 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Config("mantis.zookeeper.leader.election.path")
     String getLeaderElectionPath();
 
+    @Config("mantis.worker.heartbeat.intervalv2.secs")
+    @Default("20")
+    long getDefaultWorkerHeartbeatIntervalSecs();
+
+    //todo: fix the property name, ideally to mantis.worker.timeout.secs
     @Config("mantis.worker.heartbeat.interval.secs")
     @Default("60")
-    long getWorkerTimeoutSecs();
+    long getDefaultWorkerTimeoutSecs();
 
     @Config("mantis.worker.heartbeat.interval.init.secs")
     @Default("180")

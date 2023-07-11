@@ -16,8 +16,6 @@
 
 package io.mantisrx.server.master.mesos;
 
-import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
-
 import com.google.protobuf.ByteString;
 import com.netflix.fenzo.VirtualMachineLease;
 import io.mantisrx.common.JsonSerializer;
@@ -161,7 +159,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                     scheduleRequest.getJobMetadata().getParameters(),
                     scheduleRequest.getJobMetadata().getSchedulingInfo(),
                     scheduleRequest.getDurationType(),
-                    DEFAULT_HEARTBEAT_INTERVAL_SECS,
+                    scheduleRequest.getJobMetadata().getHeartbeatIntervalSecs(),
                     scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
                     scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
                     launchTaskRequest.getPorts(),

@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.core;
 
-import static io.mantisrx.server.core.ExecuteStageRequest.DEFAULT_HEARTBEAT_INTERVAL_SECS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -51,7 +50,8 @@ public class ExecuteStageRequestTest {
                 .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                     Lists.newArrayList(), Lists.newArrayList()).build(),
             MantisJobDurationType.Perpetual,
-            DEFAULT_HEARTBEAT_INTERVAL_SECS, 1000L,
+            0,
+            1000L,
             1L,
             new WorkerPorts(2, 3, 4, 5, 6),
             java.util.Optional.of("className"));
@@ -64,7 +64,8 @@ public class ExecuteStageRequestTest {
                 .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                     Lists.newArrayList(), Lists.newArrayList()).build(),
             MantisJobDurationType.Perpetual,
-            DEFAULT_HEARTBEAT_INTERVAL_SECS, 1000L,
+            0,
+            1000L,
             1L,
             new WorkerPorts(2, 3, 4, 5, 6),
             java.util.Optional.empty());

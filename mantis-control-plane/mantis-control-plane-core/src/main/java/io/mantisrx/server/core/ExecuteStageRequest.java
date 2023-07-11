@@ -44,6 +44,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 public class ExecuteStageRequest implements Serializable {
+    //todo: refactor into ConfigurationProvider or something equivalent and drive from there!
     public static final long DEFAULT_HEARTBEAT_INTERVAL_SECS = 20;
     private static final long serialVersionUID = 1L;
 

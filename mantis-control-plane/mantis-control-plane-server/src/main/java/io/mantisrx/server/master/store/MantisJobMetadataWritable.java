@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +44,13 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
 
     private static final Logger logger = LoggerFactory.getLogger(MantisJobMetadataWritable.class);
 
+    @Getter
     private final String user;
+    @Getter
     private final JobSla sla;
+    @Getter
     private final long subscriptionTimeoutSecs;
+    @Getter
     private final List<Label> labels;
     @JsonIgnore
     private final ConcurrentMap<Integer, MantisStageMetadataWritable> stageMetadataMap;
@@ -53,20 +58,33 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     private final ConcurrentMap<Integer, Integer> workerNumberToStageMap;
     @JsonIgnore
     private final ReentrantLock lock = new ReentrantLock();
+    @Getter
     private String jobId;
+    @Getter
     private String name;
+    @Getter
     private long submittedAt;
+    @Getter
     private long startedAt = DEFAULT_STARTED_AT_EPOCH;
+
+    @Getter
     private URL jarUrl;
+    @Getter
     private volatile MantisJobState state;
-    private int numStages;
-    private List<Parameter> parameters;
+    @Getter
+    private final int numStages;
+    @Getter
+    private final List<Parameter> parameters;
+    @Getter
     private int nextWorkerNumberToUse = 1;
-    private WorkerMigrationConfig migrationConfig;
+    @Getter
+    private final WorkerMigrationConfig migrationConfig;
     @JsonIgnore
     private Object sink; // ToDo need to figure out what object we store for sink
-    private long heartbeatIntervalSecs;
-    private long workerTimeoutSecs;
+    @Getter
+    private final long heartbeatIntervalSecs;
+    @Getter
+    private final long workerTimeoutSecs;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -126,76 +144,8 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         };
     }
 
-    @Override
-    public String getJobId() {
-        return jobId;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getUser() {
-        return user;
-    }
-
-    @Override
-    public long getSubmittedAt() {
-        return submittedAt;
-    }
-
-    @Override
-    public long getStartedAt() { return startedAt;}
-
-    @Override
-    public URL getJarUrl() {
-        return jarUrl;
-    }
-
-    @Override
-    public JobSla getSla() {
-        return sla;
-    }
-
-    @Override
-    public List<Parameter> getParameters() {
-        return parameters;
-    }
-
-    @Override
-    public List<Label> getLabels() {
-        return labels;
-    }
-
-    @Override
-    public long getSubscriptionTimeoutSecs() {
-        return subscriptionTimeoutSecs;
-    }
-
-    @Override
-    public int getNextWorkerNumberToUse() {
-        return nextWorkerNumberToUse;
-    }
-
     public void setNextWorkerNumberToUse(int n) {
         this.nextWorkerNumberToUse = n;
-    }
-
-    @Override
-    public WorkerMigrationConfig getMigrationConfig() {
-        return this.migrationConfig;
-    }
-
-    @Override
-    public long getHeartbeatIntervalSecs() {
-        return heartbeatIntervalSecs;
-    }
-
-    @Override
-    public long getWorkerTimeoutSecs() {
-        return workerTimeoutSecs;
     }
 
     void setJobState(MantisJobState state) throws InvalidJobStateChangeException {
@@ -204,20 +154,10 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         this.state = state;
     }
 
-    @Override
-    public MantisJobState getState() {
-        return state;
-    }
-
     @JsonIgnore
     @Override
     public Collection<? extends MantisStageMetadata> getStageMetadata() {
         return stageMetadataMap.values();
-    }
-
-    @Override
-    public int getNumStages() {
-        return numStages;
     }
 
     @JsonIgnore
