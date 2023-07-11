@@ -1029,7 +1029,7 @@ public class JobTestLifecycle {
 		JobDefinition jobDefnMock = mock(JobDefinition.class);
 		MantisJobMetadataImpl mantisJobMeta = new MantisJobMetadataImpl(JobId.fromId("job-1").get(),
 				Instant.now().toEpochMilli(),Instant.now().toEpochMilli(), jobDefnMock, JobState.Accepted,
-				0);
+				0, 20, 20);
 
 		MantisJobStore jobStoreMock = mock(MantisJobStore.class);
 		WorkerNumberGenerator wng = new WorkerNumberGenerator();

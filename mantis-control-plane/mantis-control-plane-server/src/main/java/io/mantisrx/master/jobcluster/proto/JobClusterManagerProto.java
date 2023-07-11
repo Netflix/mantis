@@ -20,7 +20,6 @@ import akka.actor.ActorRef;
 import akka.http.javadsl.model.Uri;
 import com.mantisrx.common.utils.LabelUtils;
 import com.netflix.spectator.impl.Preconditions;
-import com.sun.org.apache.bcel.internal.generic.FSUB;
 import io.mantisrx.common.Label;
 import io.mantisrx.master.api.akka.route.pagination.ListObject;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;

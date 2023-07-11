@@ -65,6 +65,9 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     private WorkerMigrationConfig migrationConfig;
     @JsonIgnore
     private Object sink; // ToDo need to figure out what object we store for sink
+    private long heartbeatIntervalSecs;
+    private long workerTimeoutSecs;
+
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
     public MantisJobMetadataWritable(@JsonProperty("jobId") String jobId,
@@ -76,6 +79,8 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
                                      @JsonProperty("numStages") int numStages,
                                      @JsonProperty("sla") JobSla sla,
                                      @JsonProperty("state") MantisJobState state,
+                                     @JsonProperty("workerTimeoutSecs") long workerTimeoutSecs,
+                                     @JsonProperty("heartbeatIntervalSecs") long heartbeatIntervalSecs,
                                      @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
                                      @JsonProperty("parameters") List<Parameter> parameters,
                                      @JsonProperty("nextWorkerNumberToUse") int nextWorkerNumberToUse,
@@ -92,6 +97,8 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
         this.sla = sla;
         this.state = state == null ? MantisJobState.Accepted : state;
         this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
+        this.heartbeatIntervalSecs = heartbeatIntervalSecs;
+        this.workerTimeoutSecs = workerTimeoutSecs;
         this.stageMetadataMap = new ConcurrentHashMap<>();
         this.workerNumberToStageMap = new ConcurrentHashMap<>();
         if (parameters == null) {
@@ -179,6 +186,16 @@ public class MantisJobMetadataWritable implements MantisJobMetadata {
     @Override
     public WorkerMigrationConfig getMigrationConfig() {
         return this.migrationConfig;
+    }
+
+    @Override
+    public long getHeartbeatIntervalSecs() {
+        return heartbeatIntervalSecs;
+    }
+
+    @Override
+    public long getWorkerTimeoutSecs() {
+        return workerTimeoutSecs;
     }
 
     void setJobState(MantisJobState state) throws InvalidJobStateChangeException {
