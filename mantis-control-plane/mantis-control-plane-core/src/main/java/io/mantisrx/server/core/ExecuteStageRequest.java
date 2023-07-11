@@ -34,12 +34,14 @@ import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * ExecuteStageRequest represents the data structure that defines the StageTask workload a given worker needs to run.
  * The data structure is sent over the wire using java serialization when the server requests a given task executor to
  * perform a certain stage task.
  */
+@Slf4j
 @Getter
 @ToString
 @EqualsAndHashCode
@@ -117,6 +119,7 @@ public class ExecuteStageRequest implements Serializable {
         this.schedulingInfo = schedulingInfo;
         this.durationType = durationType;
         this.heartbeatIntervalSecs = (heartbeatIntervalSecs > 0) ? heartbeatIntervalSecs : DEFAULT_HEARTBEAT_INTERVAL_SECS;
+        log.info("heartbeat interval {}, using {}", heartbeatIntervalSecs, this.heartbeatIntervalSecs);
         this.hasJobMaster = schedulingInfo != null && schedulingInfo.forStage(0) != null;
         this.subscriptionTimeoutSecs = subscriptionTimeoutSecs;
         this.minRuntimeSecs = minRuntimeSecs;

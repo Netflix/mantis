@@ -1897,6 +1897,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         public void checkHeartBeats(Instant currentTime) {
             LOGGER.trace("In WorkerManager::checkHeartBeats");
 
+            LOGGER.info("Using worker timeout {} for job {}", getWorkerTimeoutSecs(), this.jobMgr.getJobDetails());
             // heartbeat misses are calculated as 3 * heartbeatInterval, pick 1.5 multiplier for this check interval
             long missedHeartBeatToleranceSecs = (long) (1.5 * getWorkerTimeoutSecs());
             // Allow more time for workers to start

@@ -113,7 +113,6 @@ import io.mantisrx.runtime.JobConstraints;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.command.InvalidJobException;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.server.core.JobCompletedReason;
 import io.mantisrx.server.master.ConstraintsEvaluators;
 import io.mantisrx.server.master.InvalidJobRequest;
@@ -1526,23 +1525,21 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             validateJobDefinition(jobDefinition);
             long lastJobIdNumber = jobClusterMetadata.getLastJobCount();
             jId = new JobId(name, ++lastJobIdNumber);
-            logger.info("Creating new job id: " + jId + " with job defn " + jobDefinition);
+            final long heartbeatInterval = jobDefinition.getLongParameter("mantis.worker.heartbeat.intervalv2.secs", 0L);
+            final long workerTimeoutSecs = jobDefinition.getLongParameter("mantis.worker.timeout.secs", 0L);
+            logger.info("Job heartbeat interval {}", heartbeatInterval);
+            logger.info("Creating new job id: {} with job defn {}, with heartbeat {} and workertimeout {}",
+                jId, jobDefinition, heartbeatInterval, workerTimeoutSecs);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(jId)
                     .withSubmittedAt(Instant.now())
                     .withJobState(JobState.Accepted)
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefinition)
-                    .withHeartbeatIntervalSecs(0)
-                    .withWorkerTimeoutSecs(0)
+                    .withHeartbeatIntervalSecs(heartbeatInterval)
+                    .withWorkerTimeoutSecs(workerTimeoutSecs)
                     .build();
 
-            final Long heartbeatInterval = jobDefinition.getParameters().stream().filter(p -> p.getName().equalsIgnoreCase("mantis.worker.heartbeat.intervalv2.secs"))
-                .map(Parameter::getValue)
-                .filter(Objects::nonNull)
-                .map(v -> {try { return Long.parseLong(v); } catch (Exception e) {return 0;}})
-                .findFirst()
-                .orElse(0L);
             eventPublisher.publishAuditEvent(
                 new LifecycleEventsProto.AuditEvent(LifecycleEventsProto.AuditEvent.AuditEventType.JOB_SUBMIT,
                     jId.getId(), jId + " submitter: " + user)
