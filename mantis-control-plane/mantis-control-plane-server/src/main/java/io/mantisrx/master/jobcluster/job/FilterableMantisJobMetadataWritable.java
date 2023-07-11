@@ -21,6 +21,7 @@ import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.WorkerMigrationConfig;
 import io.mantisrx.runtime.parameter.Parameter;
+import io.mantisrx.server.master.domain.Costs;
 import io.mantisrx.server.master.store.MantisJobMetadataWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonCreator;
 import io.mantisrx.shaded.com.fasterxml.jackson.annotation.JsonFilter;
@@ -31,6 +32,7 @@ import java.util.List;
 
 @JsonFilter("jobMetadata")
 public class FilterableMantisJobMetadataWritable extends MantisJobMetadataWritable {
+    private final Costs costs;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -47,9 +49,10 @@ public class FilterableMantisJobMetadataWritable extends MantisJobMetadataWritab
                                                @JsonProperty("parameters") List<Parameter> parameters,
                                                @JsonProperty("nextWorkerNumberToUse") int nextWorkerNumberToUse,
                                                @JsonProperty("migrationConfig") WorkerMigrationConfig migrationConfig,
-                                               @JsonProperty("labels") List<Label> labels) {
+                                               @JsonProperty("labels") List<Label> labels,
+                                               @JsonProperty("costs") Costs costs1) {
         super(jobId, name, user, submittedAt, startedAt, jarUrl, numStages, sla, state, subscriptionTimeoutSecs,
                 parameters, nextWorkerNumberToUse, migrationConfig, labels);
+        this.costs = costs1;
     }
-
 }
