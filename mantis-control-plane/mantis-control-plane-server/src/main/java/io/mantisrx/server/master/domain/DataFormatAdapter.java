@@ -582,7 +582,8 @@ public class DataFormatAdapter {
                 jobMetadata.getNextWorkerNumberToUse(),
                 // TODO need to wire migration config here so it can get persisted
                 null,
-                jobMetadata.getLabels());
+                jobMetadata.getLabels(),
+                jobMetadata.getJobCosts());
     }
 
 
