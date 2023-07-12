@@ -19,7 +19,7 @@ package io.mantisrx.common.metrics;
 import io.mantisrx.common.metrics.measurement.CounterMeasurement;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
-import io.mantisrx.common.metrics.measurement.Measurements.MicrometerMeasurement;
+import io.mantisrx.common.metrics.measurement.MicrometerMeasurement;
 import io.mantisrx.common.metrics.spectator.MetricId;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -77,16 +77,16 @@ public class MetricsServer {
                         long timestamp = System.currentTimeMillis();
                         List<Measurements> measurements = new ArrayList<>();
 
+
                         for (Meter meter: micrometerregistry.getMeters()) {
                             Collection<MicrometerMeasurement> micrometers = new LinkedList<>();
                             micrometers.add(new MicrometerMeasurement(meter.getId().getType(), meter.measure().iterator().next().getValue()));
-                            measurements.add(new Measurements(meter.getId().getName(), timestamp, micrometers, tags));
+                            measurements.add(new Measurements(meter.getId().getName(), timestamp, null, null, micrometers, tags));
                         }
 
                         for (io.mantisrx.common.metrics.Metrics metrics : registry.metrics()) {
                             Collection<CounterMeasurement> counters = new LinkedList<>();
                             Collection<GaugeMeasurement> gauges = new LinkedList<>();
-
                             for (Entry<MetricId, Counter> counterEntry : metrics.counters().entrySet()) {
                                 Counter counter = counterEntry.getValue();
                                 counters.add(new CounterMeasurement(counterEntry.getKey().metricName(), counter.value()));
@@ -95,7 +95,7 @@ public class MetricsServer {
                                 gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
                             }
                             measurements.add(new Measurements(metrics.getMetricGroupId().name(),
-                                timestamp, counters, gauges, tags));
+                                timestamp, counters, gauges, null,tags));
                         }
                         return Observable.from(measurements);
                     }

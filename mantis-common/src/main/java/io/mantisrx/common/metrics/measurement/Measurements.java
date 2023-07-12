@@ -40,27 +40,14 @@ public class Measurements {
             @JsonProperty("timestamp") long timestamp,
             @JsonProperty("counters") Collection<CounterMeasurement> counters,
             @JsonProperty("gauges") Collection<GaugeMeasurement> gauges,
+            @JsonProperty("micrometers") Collection<MicrometerMeasurement> micrometers,
             @JsonProperty("tags") Map<String, String> tags) {
         this.name = name;
         this.timestamp = timestamp;
         this.counters = counters;
         this.gauges = gauges;
-        this.tags = tags;
-    }
-
-    @JsonCreator
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public Measurements(
-        @JsonProperty("name") String name,
-        @JsonProperty("timestamp") long timestamp,
-        @JsonProperty("micrometers") Collection<MicrometerMeasurement> micrometers,
-        @JsonProperty("tags") Map<String, String> tags) {
-        this.name = name;
-        this.timestamp = timestamp;
-        this.counters = counters;
-        this.gauges = gauges;
-        this.tags = tags;
         this.micrometers = micrometers;
+        this.tags = tags;
     }
 
     public String getName() {
@@ -97,23 +84,5 @@ public class Measurements {
                 ", gauges=" + gauges +
                 ", micrometers=" + micrometers +
                 '}';
-    }
-
-    public static class MicrometerMeasurement {
-        Meter.Type type;
-        double value;
-
-        public MicrometerMeasurement(Meter.Type type, double value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public Meter.Type getType() {
-            return type;
-        }
-
-        public double getValue() {
-            return value;
-        }
     }
 }
