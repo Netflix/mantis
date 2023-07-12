@@ -40,7 +40,10 @@
                 "name": "_mantis.artifact",
                 "value": "schema-inferer-thin-1.0.61.zip"
             }
-        ]
+        ],
+        "costs": {
+            "dailyCost": 100.0
+        }
     },
     "stageMetadataList": [
         {

@@ -55,4 +55,8 @@ public class FilterableMantisJobMetadataWritable extends MantisJobMetadataWritab
                 parameters, nextWorkerNumberToUse, migrationConfig, labels);
         this.costs = costs1;
     }
+
+    public Costs getCosts() {
+        return costs;
+    }
 }
