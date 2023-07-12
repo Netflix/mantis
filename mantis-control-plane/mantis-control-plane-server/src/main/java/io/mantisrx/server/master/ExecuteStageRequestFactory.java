@@ -30,7 +30,6 @@ public class ExecuteStageRequestFactory {
   public ExecuteStageRequest of(
       ScheduleRequest scheduleRequest,
       TaskExecutorRegistration matchedTaskExecutorInfo) {
-    long heartbeatIntervalSecs = scheduleRequest.getJobMetadata().getHeartbeatIntervalSecs();
     return new ExecuteStageRequest(
         scheduleRequest.getWorkerId().getJobCluster(),
         scheduleRequest.getWorkerId().getJobId(),
@@ -45,7 +44,7 @@ public class ExecuteStageRequestFactory {
         scheduleRequest.getJobMetadata().getParameters(),
         scheduleRequest.getJobMetadata().getSchedulingInfo(),
         scheduleRequest.getDurationType(),
-        heartbeatIntervalSecs,
+        scheduleRequest.getJobMetadata().getHeartbeatIntervalSecs(),
         scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
         scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
         matchedTaskExecutorInfo.getWorkerPorts(),
