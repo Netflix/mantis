@@ -53,7 +53,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(ClutchAutoScaler.class);
     private static final String autoscaleLogMessageFormat = "Autoscaling stage %d to %d instances on controller output: cpu/mem/network %f/%f/%f (dampening: %f) and predicted error: %f with dominant resource: %s";
-    private static final FastVector attributes = new FastVector();
+    private static final FastVector<Attribute> attributes = new FastVector<>();
 
     static {
         attributes.add(new Attribute("cpu"));
@@ -71,7 +71,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
     private final AtomicLong targetScale = new AtomicLong(0);
     private final AtomicDouble gainDampeningFactor = new AtomicDouble(1.0);
     private final AtomicLong cooldownTimestamp;
-    private final AtomicLong rps = new AtomicLong(0);
+    private final AtomicLong rps;
     private final ClutchPIDConfig defaultConfig = new ClutchPIDConfig(60.0, Tuple.of(0.0, 25.0), 0.01, 0.01);
     Cache<Long, Long> actionCache = CacheBuilder.newBuilder()
             .maximumSize(12)
@@ -85,7 +85,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
         this.initialSize = initialSize;
         this.targetScale.set(initialSize);
         this.config = config;
-        this.rps.set(Math.round(config.rps));
+        this.rps = new AtomicLong(Math.round(config.rps));
 
         this.cooldownTimestamp = new AtomicLong(System.currentTimeMillis() + config.cooldownSeconds.getOrElse(0L) * 1000);
 
@@ -233,7 +233,7 @@ public class ClutchAutoScaler implements Observable.Transformer<JobAutoScaler.Ev
                 .doOnNext(x -> actionCache.put(System.currentTimeMillis(), x - targetScale.get()))
                 .doOnNext(targetScale::set)
                 .doOnNext(__ -> cooldownTimestamp.set(System.currentTimeMillis() + config.cooldownSeconds.getOrElse(0L) * 1000))
-                .map(x -> (Object) x);
+                .map(x -> x);
     }
 
     private class ClutchController implements Observable.Transformer<JobAutoScaler.Event, ClutchControllerOutput> {

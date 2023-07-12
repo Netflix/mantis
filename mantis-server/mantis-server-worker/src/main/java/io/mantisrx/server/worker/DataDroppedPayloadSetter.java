@@ -79,17 +79,17 @@ class DataDroppedPayloadSetter implements Closeable {
                     if (dropped != null)
                         totalDropped += dropped.value();
                     else
-                        logger.warn("Unexpected to get null dropped counter for metric " + m.getMetricGroupId().id());
+                        logger.warn("Unexpected to get null dropped counter for metric {}", m.getMetricGroupId().id());
                     if (onNext != null)
                         totalOnNext += onNext.value();
                     else
-                        logger.warn("Unexpected to get null onNext counter for metric " + m.getMetricGroupId().id());
+                        logger.warn("Unexpected to get null onNext counter for metric {}", m.getMetricGroupId().id());
                 }
                 final StatusPayloads.DataDropCounts dataDrop = new StatusPayloads.DataDropCounts(totalOnNext, totalDropped);
                 try {
                     heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, objectMapper.writeValueAsString(dataDrop));
                 } catch (JsonProcessingException e) {
-                    logger.warn("Error writing json for dataDrop payload: " + e.getMessage());
+                    logger.warn("Error writing json for dataDrop payload: {}", e.getMessage());
                 }
                 dropCountGauge.set(dataDrop.getDroppedCount());
                 onNextCountGauge.set(dataDrop.getOnNextCount());

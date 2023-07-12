@@ -30,7 +30,7 @@ class GaugeData {
     GaugeData(final long when, final List<GaugeMeasurement> gauges) {
         this.when = when;
         for (GaugeMeasurement gauge : gauges) {
-            this.gauges.put(gauge.getEvent(), (double) gauge.getValue());
+            this.gauges.put(gauge.getEvent(), gauge.getValue());
         }
     }
 

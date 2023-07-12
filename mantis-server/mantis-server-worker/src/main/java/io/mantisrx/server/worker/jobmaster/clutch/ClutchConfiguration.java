@@ -18,6 +18,7 @@ package io.mantisrx.server.worker.jobmaster.clutch;
 
 import io.mantisrx.server.worker.jobmaster.clutch.rps.ClutchRpsPIDConfig;
 import io.vavr.control.Option;
+import java.util.Objects;
 
 
 public class ClutchConfiguration {
@@ -119,38 +120,38 @@ public class ClutchConfiguration {
         if (Double.compare(this.getRps(), other.getRps()) != 0) return false;
         final Object this$minSamples = this.getMinSamples();
         final Object other$minSamples = other.getMinSamples();
-        if (this$minSamples == null ? other$minSamples != null : !this$minSamples.equals(other$minSamples))
+        if (!Objects.equals(this$minSamples, other$minSamples))
             return false;
         final Object this$cooldownSeconds = this.getCooldownSeconds();
         final Object other$cooldownSeconds = other.getCooldownSeconds();
-        if (this$cooldownSeconds == null ? other$cooldownSeconds != null : !this$cooldownSeconds.equals(other$cooldownSeconds))
+        if (!Objects.equals(this$cooldownSeconds, other$cooldownSeconds))
             return false;
         final Object this$panicThresholdSeconds = this.getPanicThresholdSeconds();
         final Object other$panicThresholdSeconds = other.getPanicThresholdSeconds();
-        if (this$panicThresholdSeconds == null ? other$panicThresholdSeconds != null : !this$panicThresholdSeconds.equals(other$panicThresholdSeconds))
+        if (!Objects.equals(this$panicThresholdSeconds, other$panicThresholdSeconds))
             return false;
         final Object this$maxAdjustment = this.getMaxAdjustment();
         final Object other$maxAdjustment = other.getMaxAdjustment();
-        if (this$maxAdjustment == null ? other$maxAdjustment != null : !this$maxAdjustment.equals(other$maxAdjustment))
+        if (!Objects.equals(this$maxAdjustment, other$maxAdjustment))
             return false;
         final Object this$cpu = this.getCpu();
         final Object other$cpu = other.getCpu();
-        if (this$cpu == null ? other$cpu != null : !this$cpu.equals(other$cpu)) return false;
+        if (!Objects.equals(this$cpu, other$cpu)) return false;
         final Object this$memory = this.getMemory();
         final Object other$memory = other.getMemory();
-        if (this$memory == null ? other$memory != null : !this$memory.equals(other$memory)) return false;
+        if (!Objects.equals(this$memory, other$memory)) return false;
         final Object this$network = this.getNetwork();
         final Object other$network = other.getNetwork();
-        if (this$network == null ? other$network != null : !this$network.equals(other$network)) return false;
+        if (!Objects.equals(this$network, other$network)) return false;
         final Object this$rpsConfig = this.getRpsConfig();
         final Object other$rpsConfig = other.getRpsConfig();
-        if (this$rpsConfig == null ? other$rpsConfig != null : !this$rpsConfig.equals(other$rpsConfig)) return false;
+        if (!Objects.equals(this$rpsConfig, other$rpsConfig)) return false;
         final Object this$useExperimental = this.getUseExperimental();
         final Object other$useExperimental = other.getUseExperimental();
-        if (this$useExperimental == null ? other$useExperimental != null : !this$useExperimental.equals(other$useExperimental)) return false;
+        if (!Objects.equals(this$useExperimental, other$useExperimental)) return false;
         final Object this$integralDecay = this.getIntegralDecay();
         final Object other$integralDecay = other.getIntegralDecay();
-        if (this$integralDecay == null ? other$integralDecay != null : !this$integralDecay.equals(other$integralDecay))
+        if (!Objects.equals(this$integralDecay, other$integralDecay))
             return false;
         return true;
     }

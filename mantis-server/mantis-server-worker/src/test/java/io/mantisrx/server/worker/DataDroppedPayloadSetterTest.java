@@ -37,7 +37,7 @@ public class DataDroppedPayloadSetterTest {
     private static final Logger logger = LoggerFactory.getLogger(DataDroppedPayloadSetterTest.class);
 
     @Test
-    public void testAggregateDropOperatorMetrics() throws Exception {
+    public void testAggregateDropOperatorMetrics() {
         SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
         Heartbeat heartbeat = new Heartbeat("job-1", 1, 1, 1);
         DataDroppedPayloadSetter payloadSetter = new DataDroppedPayloadSetter(heartbeat);

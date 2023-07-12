@@ -22,8 +22,8 @@ import java.util.Set;
 
 public class WorkerIndexHistory {
 
-    final Set<Integer> runningWorkerIndex = new HashSet<Integer>();
-    final Set<Integer> terminalWorkerIndex = new HashSet<Integer>();
+    private final Set<Integer> runningWorkerIndex = new HashSet<>();
+    private final Set<Integer> terminalWorkerIndex = new HashSet<>();
 
     public synchronized void addToRunningIndex(int workerIndex) {
         runningWorkerIndex.add(workerIndex);

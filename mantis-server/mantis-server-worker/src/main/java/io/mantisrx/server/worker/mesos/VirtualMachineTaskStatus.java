@@ -18,9 +18,9 @@ package io.mantisrx.server.worker.mesos;
 
 public class VirtualMachineTaskStatus {
 
-    private String taskId;
-    private TYPE type;
-    private String message;
+    private final String taskId;
+    private final TYPE type;
+    private final String message;
     public VirtualMachineTaskStatus(String taskId, TYPE type, String message) {
         this.taskId = taskId;
         this.type = type;
@@ -40,6 +40,6 @@ public class VirtualMachineTaskStatus {
     }
 
     public enum TYPE {
-        STARTED, COMPLETED, ERROR;
+        STARTED, COMPLETED, ERROR
     }
 }

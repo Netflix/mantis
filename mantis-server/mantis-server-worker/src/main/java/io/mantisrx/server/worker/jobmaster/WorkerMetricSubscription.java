@@ -29,7 +29,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observer;
-import rx.functions.Action1;
 
 
 public class WorkerMetricSubscription {
@@ -54,15 +53,12 @@ public class WorkerMetricSubscription {
         }
 
         metricsClient = workerMetricsClient.getMetricsClientByJobId(jobId,
-                new SseWorkerConnectionFunction(true, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        logger.error("Metric connection error: " + throwable.getMessage());
-                        try {
-                            Thread.sleep(500);
-                        } catch (InterruptedException ie) {
-                            logger.error("Interrupted waiting for retrying connection");
-                        }
+                new SseWorkerConnectionFunction(true, throwable -> {
+                    logger.error("Metric connection error: {}", throwable.getMessage());
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ie) {
+                        logger.error("Interrupted waiting for retrying connection");
                     }
                 }, metricNamesFilter),
                 new Observer<WorkerConnectionsStatus>() {

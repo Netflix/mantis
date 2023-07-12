@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MantisStageActuator extends IActuator {
 
-    private static Logger logger = LoggerFactory.getLogger(MantisStageActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(MantisStageActuator.class);
     private final JobAutoScaler.StageScaler scaler;
     private Long lastValue;
 
@@ -48,7 +48,6 @@ public class MantisStageActuator extends IActuator {
         } else if (desiredNumWorkers > this.lastValue) {
             scaler.scaleUpStage(lastValue.intValue(), desiredNumWorkers.intValue(), reason);
             this.lastValue = desiredNumWorkers;
-        } else {
         }
 
         return desiredNumWorkers * 1.0;

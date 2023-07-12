@@ -67,11 +67,7 @@ public class SourceJobWorkerMetricsSubscription {
     protected Map<String, Set<String>> getSourceJobToClientMap() {
         Map<String, Set<String>> results = new HashMap<>();
         for (SourceJobParameters.TargetInfo info : targetInfos) {
-            Set<String> clientIds = results.get(info.sourceJobName);
-            if (clientIds == null) {
-                clientIds = new HashSet<>();
-                results.put(info.sourceJobName, clientIds);
-            }
+            Set<String> clientIds = results.computeIfAbsent(info.sourceJobName, k -> new HashSet<>());
             clientIds.add(info.clientId);
         }
         return results;

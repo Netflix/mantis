@@ -27,11 +27,11 @@ import rx.Observer;
 @SuppressWarnings("rawtypes") // suppressed due to unknown mantis job typ
 public class ExecutionDetails {
 
-    private ClassLoader classLoader;
-    private WrappedExecuteStageRequest executeStageRequest;
-    private Observer<Status> status;
-    private Job mantisJob;
-    private List<Parameter> parameters;
+    private final ClassLoader classLoader;
+    private final WrappedExecuteStageRequest executeStageRequest;
+    private final Observer<Status> status;
+    private final Job mantisJob;
+    private final List<Parameter> parameters;
 
     public ExecutionDetails(WrappedExecuteStageRequest executeStageRequest, Observer<Status> status,
                             Job mantisJob, ClassLoader classLoader, List<Parameter> parameters) {

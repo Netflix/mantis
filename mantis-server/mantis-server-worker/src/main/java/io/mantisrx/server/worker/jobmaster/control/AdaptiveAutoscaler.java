@@ -33,7 +33,7 @@ import rx.Observable;
  */
 public class AdaptiveAutoscaler implements Observable.Transformer<JobAutoScaler.Event, Object> {
 
-    private static Logger logger = LoggerFactory.getLogger(AdaptiveAutoscaler.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdaptiveAutoscaler.class);
 
     private final AdaptiveAutoscalerConfig config;
     private final JobAutoScaler.StageScaler scaler;
@@ -59,6 +59,6 @@ public class AdaptiveAutoscaler implements Observable.Transformer<JobAutoScaler.
                 .lift(new MantisStageActuator(this.initialSize, scaler))
                 .map(Math::round)
                 .doOnNext(targetScale::set)
-                .map(x -> (Object) x); // TODO: Necessary?
+                .map(x -> x); // TODO: Necessary?
     }
 }

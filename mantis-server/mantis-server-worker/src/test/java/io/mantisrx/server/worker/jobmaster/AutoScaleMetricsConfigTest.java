@@ -36,7 +36,7 @@ public class AutoScaleMetricsConfigTest {
     }
 
     @Test
-    public void testGetAggregationAlgoForSourceJobMetrics() throws Exception {
+    public void testGetAggregationAlgoForSourceJobMetrics() {
         AutoScaleMetricsConfig config = new AutoScaleMetricsConfig();
 
         AutoScaleMetricsConfig.AggregationAlgo aglo = config.getAggregationAlgo(

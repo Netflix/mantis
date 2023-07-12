@@ -52,7 +52,7 @@ public class MesosMetricsCollector implements MetricsCollector {
         .zipWith(Observable.range(1, 3), (Func2<Throwable, Integer, Integer>) (t1, integer) -> integer)
         .flatMap((Func1<Integer, Observable<?>>) integer -> {
             long delay = 2L;
-            logger.info(": retrying conx after sleeping for " + delay + " secs");
+            logger.info(": retrying conx after sleeping for {} secs", delay);
             return Observable.timer(delay, TimeUnit.SECONDS);
         });
 
@@ -86,12 +86,12 @@ public class MesosMetricsCollector implements MetricsCollector {
         return RxNetty
             .createHttpRequest(HttpClientRequest.createGet(url), new HttpClient.HttpClientConfig.Builder()
                 .setFollowRedirect(true).followRedirect(MAX_REDIRECTS).build())
-            .lift(new OperatorOnErrorResumeNextViaFunction<>(t -> Observable.error(t)))
+            .lift(new OperatorOnErrorResumeNextViaFunction<>(Observable::error))
             .timeout(GET_TIMEOUT_SECS, TimeUnit.SECONDS)
             .retryWhen(retryLogic)
             .flatMap((Func1<HttpClientResponse<ByteBuf>, Observable<ByteBuf>>) r -> r.getContent())
             .map(o -> o.toString(Charset.defaultCharset()))
-            .doOnError(throwable -> logger.warn("Can't get resource usage from mesos slave endpoint (" + url + ") - " + throwable.getMessage(), throwable))
+            .doOnError(throwable -> logger.warn("Can't get resource usage from mesos slave endpoint ({}) - {}", url, throwable.getMessage(), throwable))
             .toBlocking()
             .firstOrDefault("");
     }

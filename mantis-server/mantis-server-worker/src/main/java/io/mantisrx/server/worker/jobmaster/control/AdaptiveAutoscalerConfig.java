@@ -20,6 +20,7 @@ import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.Objects;
 
 
 public class AdaptiveAutoscalerConfig {
@@ -103,7 +104,7 @@ public class AdaptiveAutoscalerConfig {
         final AdaptiveAutoscalerConfig other = (AdaptiveAutoscalerConfig) o;
         final Object this$metric = this.getMetric();
         final Object other$metric = other.getMetric();
-        if (this$metric == null ? other$metric != null : !this$metric.equals(other$metric)) return false;
+        if (!Objects.equals(this$metric, other$metric)) return false;
         if (Double.compare(this.getSetPoint(), other.getSetPoint()) != 0) return false;
         if (this.isInvert() != other.isInvert()) return false;
         if (Double.compare(this.getRope(), other.getRope()) != 0) return false;

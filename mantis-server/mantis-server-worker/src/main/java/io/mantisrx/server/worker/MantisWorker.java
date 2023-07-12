@@ -60,12 +60,12 @@ public class MantisWorker extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(MantisWorker.class);
     @Argument(alias = "p", description = "Specify a configuration file", required = false)
     private static String propFile = "worker.properties";
-    private CountDownLatch blockUntilShutdown = new CountDownLatch(1);
+    private final CountDownLatch blockUntilShutdown = new CountDownLatch(1);
+    private final List<Service> mantisServices = new LinkedList<>();
 
     //    static {
     //    	RxNetty.useNativeTransportIfApplicable();
     //    }
-    private List<Service> mantisServices = new LinkedList<Service>();
 
     public MantisWorker(ConfigurationFactory configFactory, io.mantisrx.server.master.client.config.ConfigurationFactory coreConfigFactory) {
         this(configFactory, Optional.empty());
@@ -102,12 +102,7 @@ public class MantisWorker extends BaseService {
         final MantisMasterGateway gateway =
             highAvailabilityServices.getMasterClientApi();
         // shutdown hook
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        };
+        Thread t = new Thread(this::shutdown);
         t.setDaemon(true);
         Runtime.getRuntime().addShutdownHook(t);
 
@@ -209,7 +204,7 @@ public class MantisWorker extends BaseService {
      *
      * @param resourceName the name of the resource. It can either be a file name, or a path.
      * @return An {@link java.io.InputStream} instance that represents the found resource. Null otherwise.
-     * @throws java.io.FileNotFoundException
+     * @throws java.io.FileNotFoundException if the resource is not found.
      */
     private static InputStream findResourceAsStream(String resourceName) throws FileNotFoundException {
         File resource = new File(resourceName);
@@ -242,7 +237,7 @@ public class MantisWorker extends BaseService {
             worker.start();
         } catch (Exception e) {
             // unexpected to get runtime exception, will exit
-            logger.error("Unexpected error: " + e.getMessage(), e);
+            logger.error("Unexpected error: {}", e.getMessage(), e);
             System.exit(2);
         }
     }
@@ -264,14 +259,14 @@ public class MantisWorker extends BaseService {
         logger.info("Starting Mantis Worker");
         RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
         for (Service service : mantisServices) {
-            logger.info("Starting service: " + service);
+            logger.info("Starting service: {}", service);
             try {
                 service.start();
             } catch (Throwable e) {
-                logger.error(String.format("Failed to start service %s: %s", service, e.getMessage()), e);
+                logger.error("Failed to start service {}: {}", service, e.getMessage(), e);
                 throw e;
             }
-            logger.info("Started service: " + service);
+            logger.info("Started service: {}", service);
         }
 
         logger.info("Started Mantis Worker successfully");

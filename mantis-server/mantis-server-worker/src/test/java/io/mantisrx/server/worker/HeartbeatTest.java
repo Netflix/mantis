@@ -16,33 +16,40 @@
 
 package io.mantisrx.server.worker;
 
+import static org.junit.Assert.assertEquals;
+
 import io.mantisrx.server.core.Status;
 import io.mantisrx.server.core.StatusPayloads;
 import java.util.List;
-import junit.framework.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
 
 
 public class HeartbeatTest {
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(HeartbeatTest.class);
 
     @Test
-    public void testSingleUsePayloads() throws Exception {
+    public void testSingleUsePayloads() {
         Heartbeat heartbeat = new Heartbeat("Jobcluster-123", 1, 0, 0);
         heartbeat.setPayload("" + StatusPayloads.Type.SubscriptionState, "true");
         int val1 = 10;
         int val2 = 12;
         heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, "" + val1);
         heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, "" + val2);
-        final Status currentHeartbeatStatus = heartbeat.getCurrentHeartbeatStatus();
-        List<Status.Payload> payloads = currentHeartbeatStatus.getPayloads();
-        Assert.assertEquals(2, payloads.size());
+        List<Status.Payload> payloads = heartbeat.getCurrentHeartbeatStatus().getPayloads();
+
+        logger.debug("Current Payloads: {}", payloads);
+        assertEquals(2, payloads.size());
+
         int value = 0;
         for (Status.Payload p : payloads) {
             if (StatusPayloads.Type.valueOf(p.getType()) == StatusPayloads.Type.IncomingDataDrop)
                 value = Integer.parseInt(p.getData());
         }
-        Assert.assertEquals(val2, value);
+        assertEquals(val2, value);
+
         payloads = heartbeat.getCurrentHeartbeatStatus().getPayloads();
-        Assert.assertEquals(1, payloads.size());
+        logger.debug("Payloads after draining single-use payloads: {}", payloads);
+        assertEquals(1, payloads.size());
     }
 }

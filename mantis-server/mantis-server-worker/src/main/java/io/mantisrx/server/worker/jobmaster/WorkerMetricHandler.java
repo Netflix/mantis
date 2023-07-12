@@ -43,7 +43,6 @@ import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.Subscription;
-import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.observers.SerializedObserver;
@@ -126,7 +125,7 @@ import rx.subjects.PublishSubject;
         public StageMetricDataOperator(final int stage,
                                        final Func1<Integer, Integer> numStageWorkersFn,
                                        final AutoScaleMetricsConfig autoScaleMetricsConfig) {
-            logger.debug("setting operator for stage " + stage);
+            logger.debug("setting operator for stage {}", stage);
             this.stage = stage;
             this.numStageWorkersFn = numStageWorkersFn;
             this.autoScaleMetricsConfig = autoScaleMetricsConfig;
@@ -164,7 +163,7 @@ import rx.subjects.PublishSubject;
                 List<WorkerHost> candidates = workerHostsByStage.get(stage);
                 if (candidates != null) {
                     candidates.stream().filter(h -> h.getWorkerIndex() == workerIndex).map(WorkerHost::getHost).findFirst().ifPresent(host ->
-                        lookupWorkersByHost(host).stream().forEach(i -> workerResubmitFunc.call(i)));
+                        lookupWorkersByHost(host).stream().forEach(workerResubmitFunc::call));
                 }
             });
         }
@@ -175,7 +174,7 @@ import rx.subjects.PublishSubject;
             final String enableOutlierWorkerResubmit = "true";
 
             final boolean resubmitOutlierWorker =
-                    Boolean.valueOf(
+                    Boolean.parseBoolean(
                             ServiceRegistry.INSTANCE.getPropertiesService()
                                     .getStringValue(resubmitOutlierWorkerProp, enableOutlierWorkerResubmit));
             return resubmitOutlierWorker;
@@ -261,114 +260,110 @@ import rx.subjects.PublishSubject;
         @Override
         public Subscriber<? super MetricData> call(final Subscriber<? super Object> child) {
             child.add(Schedulers.computation().createWorker().schedulePeriodically(
-                    new Action0() {
-                        @Override
-                        public void call() {
+                () -> {
 
-                            List<Map<String, GaugeData>> listofAggregates = new ArrayList<>();
+                    List<Map<String, GaugeData>> listofAggregates = new ArrayList<>();
 
-                            synchronized (workersMap) {
-                                for (Map.Entry<Integer, WorkerMetrics> entry : workersMap.entrySet()) {
-                                    // get the aggregate metric values by metric group per worker
-                                    listofAggregates.add(metricAggregator.getAggregates(entry.getValue().getGaugesByMetricGrp()));
-                                }
-                            }
-                            final int numWorkers = numStageWorkersFn.call(stage);
-                            // get the aggregate metric values by metric group for all workers in stage
-                            Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
-                            logger.info("Job stage " + stage + " avgResUsage from " +
-                                    workersMap.size() + " workers: " + allWorkerAggregates.toString());
+                    synchronized (workersMap) {
+                        for (Map.Entry<Integer, WorkerMetrics> entry : workersMap.entrySet()) {
+                            // get the aggregate metric values by metric group per worker
+                            listofAggregates.add(metricAggregator.getAggregates(entry.getValue().getGaugesByMetricGrp()));
+                        }
+                    }
+                    final int numWorkers = numStageWorkersFn.call(stage);
+                    // get the aggregate metric values by metric group for all workers in stage
+                    Map<String, GaugeData> allWorkerAggregates = getAggregates(listofAggregates);
+                    logger.info("Job stage {} avgResUsage from {} workers: {}", stage, workersMap.size(), allWorkerAggregates.toString());
 
-                            for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
-                                final String metricGrp = userDefinedMetric.getKey();
-                                for (String metric : userDefinedMetric.getValue()) {
-                                    if (!allWorkerAggregates.containsKey(metricGrp) || !allWorkerAggregates.get(metricGrp).getGauges().containsKey(metric)) {
-                                        logger.debug("no gauge data found for UserDefined (metric={})", userDefinedMetric);
-                                    } else {
-                                        jobAutoScaleObserver.onNext(
-                                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage,
-                                                        allWorkerAggregates.get(metricGrp).getGauges().get(metric), numWorkers, ""));
-                                    }
-                                }
-                            }
-                            if (allWorkerAggregates.containsKey(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP)) {
-                                final Map<String, Double> gauges = allWorkerAggregates.get(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP).getGauges();
-                                if (gauges.containsKey(KAFKA_LAG)) {
-                                    jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage,
-                                                    gauges.get(KAFKA_LAG), numWorkers, "")
-                                    );
-                                }
-                                if (gauges.containsKey(KAFKA_PROCESSED)) {
-                                    jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaProcessed, stage,
-                                                    gauges.get(KAFKA_PROCESSED), numWorkers, ""));
-                                }
-                            }
-                            if (allWorkerAggregates.containsKey(RESOURCE_USAGE_METRIC_GROUP)) {
-                                // cpuPctUsageCurr is Published as (cpuUsageCurr * 100.0) from ResourceUsagePayloadSetter, reverse transform to retrieve curr cpu usage
-                                double cpuUsageCurr = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.CPU_PCT_USAGE_CURR) / 100.0;
+                    for (Map.Entry<String, Set<String>> userDefinedMetric : autoScaleMetricsConfig.getUserDefinedMetrics().entrySet()) {
+                        final String metricGrp = userDefinedMetric.getKey();
+                        for (String metric : userDefinedMetric.getValue()) {
+                            if (!allWorkerAggregates.containsKey(metricGrp) || !allWorkerAggregates.get(metricGrp).getGauges().containsKey(metric)) {
+                                logger.debug("no gauge data found for UserDefined (metric={})", userDefinedMetric);
+                            } else {
                                 jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.CPU, stage,
-                                                cpuUsageCurr, numWorkers, ""));
-                                jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.TOT_MEM_USAGE_CURR), numWorkers, ""));
-                                jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Network, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR), numWorkers, ""));
-                                jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
-                                                allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes"), numWorkers, "")
-                                );
-                            }
-
-                            if (allWorkerAggregates.containsKey(DATA_DROP_METRIC_GROUP)) {
-                                final GaugeData gaugeData = allWorkerAggregates.get(DATA_DROP_METRIC_GROUP);
-                                final Map<String, Double> gauges = gaugeData.getGauges();
-                                if (gauges.containsKey(DROP_PERCENT)) {
-                                    jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage,
-                                                    gauges.get(DROP_PERCENT), numWorkers, ""));
-                                }
-                            }
-
-                            if (allWorkerAggregates.containsKey(WORKER_STAGE_INNER_INPUT)) {
-                                final GaugeData gaugeData = allWorkerAggregates.get(WORKER_STAGE_INNER_INPUT);
-                                final Map<String, Double> gauges = gaugeData.getGauges();
-                                if (gauges.containsKey(ON_NEXT_GAUGE)) {
-                                    // Divide by 6 to account for 6 second reset by Atlas on counter metric.
-                                    jobAutoScaleObserver.onNext(
-                                            new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
-                                                    gauges.get(ON_NEXT_GAUGE) / 6.0, numWorkers, ""));
-                                }
-                            }
-
-                            double sourceJobDrops = 0;
-                            boolean hasSourceJobDropsMetric = false;
-                            Map<String, String> sourceMetricsRecent = sourceJobMetricsRecent.asMap();
-                            for (Map.Entry<String, WorkerMetrics> worker : sourceJobWorkersMap.entrySet()) {
-                                Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
-                                for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
-                                    String metricKey = worker.getKey() + ":" + group.getKey();
-                                    for (Map.Entry<String, Double> gauge : group.getValue().getGauges().entrySet()) {
-                                        if (sourceMetricsRecent.containsKey(metricKey) &&
-                                                autoScaleMetricsConfig.isSourceJobDropMetric(group.getKey(), gauge.getKey())) {
-                                            sourceJobDrops += gauge.getValue();
-                                            hasSourceJobDropsMetric = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if (hasSourceJobDropsMetric) {
-                                logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobDrops);
-                                // Divide by 6 to account for 6 second reset by Atlas on counter metric.
-                                jobAutoScaleObserver.onNext(
-                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
-                                                sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));
+                                        new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage,
+                                                allWorkerAggregates.get(metricGrp).getGauges().get(metric), numWorkers, ""));
                             }
                         }
-                    }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
+                    }
+                    if (allWorkerAggregates.containsKey(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP)) {
+                        final Map<String, Double> gauges = allWorkerAggregates.get(KAFKA_CONSUMER_FETCH_MGR_METRIC_GROUP).getGauges();
+                        if (gauges.containsKey(KAFKA_LAG)) {
+                            jobAutoScaleObserver.onNext(
+                                    new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaLag, stage,
+                                            gauges.get(KAFKA_LAG), numWorkers, "")
+                            );
+                        }
+                        if (gauges.containsKey(KAFKA_PROCESSED)) {
+                            jobAutoScaleObserver.onNext(
+                                    new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.KafkaProcessed, stage,
+                                            gauges.get(KAFKA_PROCESSED), numWorkers, ""));
+                        }
+                    }
+                    if (allWorkerAggregates.containsKey(RESOURCE_USAGE_METRIC_GROUP)) {
+                        // cpuPctUsageCurr is Published as (cpuUsageCurr * 100.0) from ResourceUsagePayloadSetter, reverse transform to retrieve curr cpu usage
+                        double cpuUsageCurr = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.CPU_PCT_USAGE_CURR) / 100.0;
+                        jobAutoScaleObserver.onNext(
+                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.CPU, stage,
+                                        cpuUsageCurr, numWorkers, ""));
+                        jobAutoScaleObserver.onNext(
+                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Memory, stage,
+                                        allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.TOT_MEM_USAGE_CURR), numWorkers, ""));
+                        jobAutoScaleObserver.onNext(
+                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.Network, stage,
+                                        allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.NW_BYTES_USAGE_CURR), numWorkers, ""));
+                        jobAutoScaleObserver.onNext(
+                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.JVMMemory, stage,
+                                        allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get("jvmMemoryUsedBytes"), numWorkers, "")
+                        );
+                    }
+
+                    if (allWorkerAggregates.containsKey(DATA_DROP_METRIC_GROUP)) {
+                        final GaugeData gaugeData = allWorkerAggregates.get(DATA_DROP_METRIC_GROUP);
+                        final Map<String, Double> gauges = gaugeData.getGauges();
+                        if (gauges.containsKey(DROP_PERCENT)) {
+                            jobAutoScaleObserver.onNext(
+                                    new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.DataDrop, stage,
+                                            gauges.get(DROP_PERCENT), numWorkers, ""));
+                        }
+                    }
+
+                    if (allWorkerAggregates.containsKey(WORKER_STAGE_INNER_INPUT)) {
+                        final GaugeData gaugeData = allWorkerAggregates.get(WORKER_STAGE_INNER_INPUT);
+                        final Map<String, Double> gauges = gaugeData.getGauges();
+                        if (gauges.containsKey(ON_NEXT_GAUGE)) {
+                            // Divide by 6 to account for 6 second reset by Atlas on counter metric.
+                            jobAutoScaleObserver.onNext(
+                                    new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.RPS, stage,
+                                            gauges.get(ON_NEXT_GAUGE) / 6.0, numWorkers, ""));
+                        }
+                    }
+
+                    double sourceJobDrops = 0;
+                    boolean hasSourceJobDropsMetric = false;
+                    Map<String, String> sourceMetricsRecent = sourceJobMetricsRecent.asMap();
+                    for (Map.Entry<String, WorkerMetrics> worker : sourceJobWorkersMap.entrySet()) {
+                        Map<String, GaugeData> metricGroups = metricAggregator.getAggregates(worker.getValue().getGaugesByMetricGrp());
+                        for (Map.Entry<String, GaugeData> group : metricGroups.entrySet()) {
+                            String metricKey = worker.getKey() + ":" + group.getKey();
+                            for (Map.Entry<String, Double> gauge : group.getValue().getGauges().entrySet()) {
+                                if (sourceMetricsRecent.containsKey(metricKey) &&
+                                        autoScaleMetricsConfig.isSourceJobDropMetric(group.getKey(), gauge.getKey())) {
+                                    sourceJobDrops += gauge.getValue();
+                                    hasSourceJobDropsMetric = true;
+                                }
+                            }
+                        }
+                    }
+                    if (hasSourceJobDropsMetric) {
+                        logger.info("Job stage {}, source job drop metrics: {}", stage, sourceJobDrops);
+                        // Divide by 6 to account for 6 second reset by Atlas on counter metric.
+                        jobAutoScaleObserver.onNext(
+                                new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.SourceJobDrop, stage,
+                                        sourceJobDrops / 6.0 / numWorkers, numWorkers, ""));
+                    }
+                }, metricsIntervalSeconds, metricsIntervalSeconds, TimeUnit.SECONDS
             ));
             return new Subscriber<MetricData>() {
                 @Override
@@ -378,13 +373,14 @@ import rx.subjects.PublishSubject;
 
                 @Override
                 public void onError(Throwable e) {
-                    logger.error("Unexpected error: " + e.getMessage(), e);
+                    logger.error("Unexpected error: {}", e.getMessage(), e);
                 }
 
                 @Override
                 public void onNext(MetricData metricData) {
-                    logger.debug("Got metric metricData for job " + jobId + " stage " + stage +
-                            ", worker " + metricData.getWorkerNumber() + ": " + metricData);
+                    logger.debug("Got metric metricData for job {} stage {}, worker {}: {}",
+                        jobId, stage, metricData.getWorkerNumber(), metricData);
+
                     if (jobId.equals(metricData.getJobId())) {
                         addDataPoint(metricData);
                     } else {
@@ -410,7 +406,7 @@ import rx.subjects.PublishSubject;
 
         logger.info("Starting worker metric handler with autoscale config {}", autoScaleMetricsConfig);
         metricDataSubject
-                .groupBy(metricData -> metricData.getStage())
+                .groupBy(MetricData::getStage)
                 .lift(new DropOperator<>(WorkerMetricHandler.class.getName()))
                 .doOnNext(go -> {
                     final Integer stage = go.getKey();
