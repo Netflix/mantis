@@ -17,29 +17,10 @@
 package io.mantisrx.common.metrics.measurement;
 
 import io.micrometer.core.instrument.Meter;
+import lombok.Value;
 
+@Value
 public class MicrometerMeasurement {
         Meter.Type type;
         double value;
-
-        public MicrometerMeasurement(Meter.Type type, double value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public Meter.Type getType() {
-            return type;
-        }
-
-        public double getValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return "MicrometerMeasurement{" +
-                    "type=" + type +
-                    ", value=" + value +
-                    '}';
-    }
 }

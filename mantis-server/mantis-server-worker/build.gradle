@@ -40,6 +40,7 @@ dependencies {
     implementation "com.yahoo.datasketches:sketches-core:0.9.1"
 
     implementation libraries.spectatorApi
+    implementation 'io.micrometer:micrometer-core:1.11.0'
 
     testImplementation libraries.junit4
     testImplementation libraries.mockitoAll

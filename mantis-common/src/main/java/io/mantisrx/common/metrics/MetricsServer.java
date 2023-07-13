@@ -31,6 +31,7 @@ import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class MetricsServer {
                         for (Meter meter: micrometerregistry.getMeters()) {
                             Collection<MicrometerMeasurement> micrometers = new LinkedList<>();
                             micrometers.add(new MicrometerMeasurement(meter.getId().getType(), meter.measure().iterator().next().getValue()));
-                            measurements.add(new Measurements(meter.getId().getName(), timestamp, null, null, micrometers, tags));
+                            measurements.add(new Measurements(meter.getId().getName(), timestamp, Collections.emptyList(), Collections.emptyList(), micrometers, tags));
                         }
 
                         for (io.mantisrx.common.metrics.Metrics metrics : registry.metrics()) {
@@ -95,7 +96,7 @@ public class MetricsServer {
                                 gauges.add(new GaugeMeasurement(gaugeEntry.getKey().metricName(), gaugeEntry.getValue().doubleValue()));
                             }
                             measurements.add(new Measurements(metrics.getMetricGroupId().name(),
-                                timestamp, counters, gauges, null,tags));
+                                timestamp, counters, gauges, Collections.emptyList(),tags));
                         }
                         return Observable.from(measurements);
                     }
