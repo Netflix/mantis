@@ -469,6 +469,7 @@ public class MantisJobMetadataImpl implements IMantisJobMetadata {
                 ", jobDefinition=" + jobDefinition +
                 ", stageMetadataMap=" + stageMetadataMap +
                 ", heartbeatIntervalSecs=" + heartbeatIntervalSecs +
+                ", workerTimeoutSecs=" + workerTimeoutSecs +
                 ", workerNumberToStageMap=" + workerNumberToStageMap +
                 '}';
     }

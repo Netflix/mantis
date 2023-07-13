@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.executor;
 
-import static io.mantisrx.runtime.parameter.ParameterUtils.STAGE_CONCURRENCY;
+import static io.mantisrx.common.SystemParameters.STAGE_CONCURRENCY;
 
 import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;

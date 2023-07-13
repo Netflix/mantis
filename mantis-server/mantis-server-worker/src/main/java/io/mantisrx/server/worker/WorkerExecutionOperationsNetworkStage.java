@@ -16,7 +16,7 @@
 
 package io.mantisrx.server.worker;
 
-import static io.mantisrx.runtime.parameter.ParameterUtils.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
 
 import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;

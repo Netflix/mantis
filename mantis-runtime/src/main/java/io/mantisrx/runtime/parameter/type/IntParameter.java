@@ -24,12 +24,7 @@ public class IntParameter extends Builder<Integer> {
 
     @Override
     public ParameterDecoder<Integer> decoder() {
-        return new ParameterDecoder<Integer>() {
-            @Override
-            public Integer decode(String value) {
-                return Integer.parseInt(value);
-            }
-        };
+        return Integer::parseInt;
     }
 
     @Override

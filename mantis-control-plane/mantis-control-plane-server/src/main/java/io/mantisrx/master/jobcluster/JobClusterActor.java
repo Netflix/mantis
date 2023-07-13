@@ -17,6 +17,8 @@
 package io.mantisrx.master.jobcluster;
 
 import static akka.pattern.PatternsCS.ask;
+import static io.mantisrx.common.SystemParameters.JOB_WORKER_HEARTBEAT_INTERVAL_SECS;
+import static io.mantisrx.common.SystemParameters.JOB_WORKER_TIMEOUT_SECS;
 import static io.mantisrx.master.StringConstants.MANTIS_MASTER_USER;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR;
 import static io.mantisrx.master.jobcluster.proto.BaseResponse.ResponseCode.CLIENT_ERROR_NOT_FOUND;
@@ -1525,18 +1527,18 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             validateJobDefinition(jobDefinition);
             long lastJobIdNumber = jobClusterMetadata.getLastJobCount();
             jId = new JobId(name, ++lastJobIdNumber);
-            final long heartbeatInterval = jobDefinition.getLongParameter("mantis.worker.heartbeat.intervalv2.secs", 0L);
-            final long workerTimeoutSecs = jobDefinition.getLongParameter("mantis.worker.timeout.secs", 0L);
-            logger.info("Job heartbeat interval {}", heartbeatInterval);
+            final int heartbeatIntervalSecs = jobDefinition.getIntSystemParameter(JOB_WORKER_HEARTBEAT_INTERVAL_SECS, 0);
+            final int workerTimeoutSecs = jobDefinition.getIntSystemParameter(JOB_WORKER_TIMEOUT_SECS, 0);
+            logger.info("Job heartbeat interval {}", heartbeatIntervalSecs);
             logger.info("Creating new job id: {} with job defn {}, with heartbeat {} and workertimeout {}",
-                jId, jobDefinition, heartbeatInterval, workerTimeoutSecs);
+                jId, jobDefinition, heartbeatIntervalSecs, workerTimeoutSecs);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
                     .withJobId(jId)
                     .withSubmittedAt(Instant.now())
                     .withJobState(JobState.Accepted)
                     .withNextWorkerNumToUse(1)
                     .withJobDefinition(jobDefinition)
-                    .withHeartbeatIntervalSecs(heartbeatInterval)
+                    .withHeartbeatIntervalSecs(heartbeatIntervalSecs)
                     .withWorkerTimeoutSecs(workerTimeoutSecs)
                     .build();
 

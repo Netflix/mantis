@@ -247,14 +247,14 @@ public class JobDefinition {
     }
 
     @JsonIgnore
-    public long getLongParameter(String paramName, long defaultValue) {
+    public int getIntSystemParameter(String paramName, int defaultValue) {
         return getParameters().stream()
-            .filter(p -> p.getName().equalsIgnoreCase(paramName))
+            .filter(p -> paramName.equals(p.getName()))
             .map(Parameter::getValue)
             .filter(Objects::nonNull)
             .map(v -> {
                 try {
-                    return Long.parseLong(v);
+                    return Integer.parseInt(v);
                 } catch (Exception e) {
                     return defaultValue;
                 }})

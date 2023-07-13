@@ -17,33 +17,24 @@
 package io.mantisrx.runtime.parameter.type;
 
 import io.mantisrx.runtime.parameter.ParameterDecoder;
-import io.mantisrx.runtime.parameter.ParameterDefinition;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import io.mantisrx.runtime.parameter.ParameterDefinition.Builder;
 
 
-public class EnumParameter<T extends Enum<T>> extends ParameterDefinition.Builder<Enum<T>> {
-
-    private final Class<T> clazz;
-
-    public EnumParameter(Class<T> clazz) {
-        this.clazz = clazz;
-    }
+public class LongParameter extends Builder<Long> {
 
     @Override
-    public ParameterDecoder<Enum<T>> decoder() {
-        return value -> T.valueOf(clazz, value.trim());
+    public ParameterDecoder<Long> decoder() {
+        return Long::parseLong;
     }
 
     @Override
     public String getTypeDescription() {
-        List<String> ts = Arrays.stream(clazz.getEnumConstants()).map(Enum::name).collect(Collectors.toList());
-        return "One of (" + String.join(",", ts) + ")";
+        return Long.class.getSimpleName();
     }
 
     @Override
-    public Class<Enum<T>> classType() {
-        return null;
+    public Class<Long> classType() {
+        return Long.class;
     }
+
 }
