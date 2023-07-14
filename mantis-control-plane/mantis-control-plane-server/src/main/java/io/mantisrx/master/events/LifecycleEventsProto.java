@@ -211,7 +211,7 @@ public class LifecycleEventsProto {
         }
     }
 
-    public static final Status from(final StatusEvent ev) {
+    public static Status from(final StatusEvent ev) {
         Status.TYPE type;
         switch (ev.statusEventType) {
             case INFO:

@@ -17,11 +17,11 @@
 package io.mantisrx.server.worker.jobmaster;
 
 import io.mantisrx.common.MantisServerSentEvent;
+import io.mantisrx.common.SystemParameters;
 import io.mantisrx.common.metrics.measurement.GaugeMeasurement;
 import io.mantisrx.common.metrics.measurement.Measurements;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
-import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.runtime.parameter.SourceJobParameters;
 import io.mantisrx.server.core.Service;
 import io.mantisrx.server.core.stats.MetricStringConstants;
@@ -122,7 +122,7 @@ public class JobMasterService implements Service {
         Observable<Observable<MantisServerSentEvent>> metrics = workerMetricSubscription.getMetricsClient().getResults();
 
         boolean isSourceJobMetricEnabled = (boolean) context.getParameters().get(
-                ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM, false);
+                SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM, false);
         if (isSourceJobMetricEnabled) {
             metrics = metrics.mergeWith(getSourceJobMetrics());
         }
@@ -137,14 +137,14 @@ public class JobMasterService implements Service {
 
     protected Observable<Observable<MantisServerSentEvent>> getSourceJobMetrics() {
         List<SourceJobParameters.TargetInfo> targetInfos = SourceJobParameters.parseTargetInfo(
-                (String) context.getParameters().get(ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM, "{}"));
+                (String) context.getParameters().get(SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM, "{}"));
         if (targetInfos.isEmpty()) {
             targetInfos = SourceJobParameters.parseInputParameters(context);
         }
         targetInfos = SourceJobParameters.enforceClientIdConsistency(targetInfos, jobId);
 
         String additionalDropMetricPatterns =
-                (String) context.getParameters().get(ParameterUtils.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM, "");
+                (String) context.getParameters().get(SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM, "");
         autoScaleMetricsConfig.addSourceJobDropMetrics(additionalDropMetricPatterns);
 
         SourceJobWorkerMetricsSubscription sourceSub = new SourceJobWorkerMetricsSubscription(

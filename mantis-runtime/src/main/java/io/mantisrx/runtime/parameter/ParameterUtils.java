@@ -16,6 +16,18 @@
 
 package io.mantisrx.runtime.parameter;
 
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_CLUTCH_EXPERIMENTAL_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM;
+import static io.mantisrx.common.SystemParameters.JOB_WORKER_HEARTBEAT_INTERVAL_SECS;
+import static io.mantisrx.common.SystemParameters.JOB_WORKER_TIMEOUT_SECS;
+import static io.mantisrx.common.SystemParameters.MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE;
+import static io.mantisrx.common.SystemParameters.PER_STAGE_JVM_OPTS_FORMAT;
+import static io.mantisrx.common.SystemParameters.STAGE_CONCURRENCY;
+
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.compression.CompressionUtils;
 import io.mantisrx.runtime.parameter.type.BooleanParameter;
@@ -30,26 +42,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import rx.functions.Func1;
 
 
+@Slf4j
 public class ParameterUtils {
 
-    public static final String JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM = "mantis.jobmaster.autoscale.metric";
-    public static final String JOB_MASTER_AUTOSCALE_CONFIG_SYSTEM_PARAM = "mantis.jobmaster.autoscale.adaptive.config";
-    public static final String JOB_MASTER_CLUTCH_SYSTEM_PARAM = "mantis.jobmaster.clutch.config";
-    public static final String JOB_MASTER_CLUTCH_EXPERIMENTAL_PARAM = "mantis.jobmaster.clutch.experimental.enabled";
-    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_METRIC_PARAM = "mantis.jobmaster.autoscale.sourcejob.metric.enabled";
-    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_TARGET_PARAM = "mantis.jobmaster.autoscale.sourcejob.target";
-    public static final String JOB_MASTER_AUTOSCALE_SOURCEJOB_DROP_METRIC_PATTERNS_PARAM = "mantis.jobmaster.autoscale.sourcejob.dropMetricPatterns";
-    public static final String PER_STAGE_JVM_OPTS_FORMAT = "MANTIS_WORKER_JVM_OPTS_STAGE%d";
-    public static final String STAGE_CONCURRENCY = "mantis.stageConcurrency";
-    public static final int MAX_NUM_STAGES_FOR_JVM_OPTS_OVERRIDE = 5;
-    static final ConcurrentHashMap<String, ParameterDefinition<?>> systemParams
-            = new ConcurrentHashMap<>();
-    private static final Logger logger = LoggerFactory.getLogger(ParameterUtils.class);
+    static final Map<String, ParameterDefinition<?>> systemParams = new ConcurrentHashMap<>();
 
     static {
         ParameterDefinition<Integer> keyBuffer = new IntParameter()
@@ -250,6 +250,23 @@ public class ParameterUtils {
                         "Example: PushServerSse:clientId=_CLIENT_ID_:*::droppedCounter::MAX,ServerSentEventRequestHandler:clientId=_CLIENT_ID_:*::droppedCounter::MAX")
                 .build();
         systemParams.put(autoscaleSourceJobDropMetricPattern.getName(), autoscaleSourceJobDropMetricPattern);
+
+        ParameterDefinition<Integer> workerHeartbeatInterval = new IntParameter()
+                .name(JOB_WORKER_HEARTBEAT_INTERVAL_SECS)
+                .validator(Validators.alwaysPass())
+                .defaultValue(0)
+                .description("Configures heartbeat interval (in seconds) for job workers. This is useful to configure worker restart logic.")
+                .build();
+        systemParams.put(workerHeartbeatInterval.getName(), workerHeartbeatInterval);
+
+        ParameterDefinition<Integer> workerTimeout = new IntParameter()
+            .name(JOB_WORKER_TIMEOUT_SECS)
+            .validator(Validators.alwaysPass())
+            .defaultValue(0)
+            .description("Configures timeout interval (in seconds) for job workers. There is some grace period and retries " +
+                "built in to allow for network delays and/or miss a few worker heartbeats before being killed.")
+            .build();
+        systemParams.put(workerTimeout.getName(), workerTimeout);
     }
 
     private ParameterUtils() {
@@ -334,12 +351,11 @@ public class ParameterUtils {
             definition = parameterDefinitions.get(name);
 
             if (definition == null) {
-
                 if (name.startsWith("mantis.") || name.startsWith("MANTIS")) {
-                    logger.info("mantis runtime parameter " + name + " used, looking up definition >>>");
+                    log.info("mantis runtime parameter {} used, looking up definition >>>", name);
                     definition = systemParams.get(name);
                 } else {
-                    logger.warn("No parameter definition for parameter with name: {}, will skip parameter", name);
+                    log.warn("No parameter definition for parameter with name: {}, will skip parameter", name);
                     continue;
                 }
             }

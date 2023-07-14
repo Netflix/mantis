@@ -72,7 +72,7 @@ public class SinkPublisher<T> implements WorkerPublisher<T> {
     }
 
     @Override
-    @SuppressWarnings( {"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void start(StageConfig<?, T> stage,
                       Observable<Observable<T>> observablesToPublish) {
         sink = sinkHolder.getSinkAction();

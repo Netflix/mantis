@@ -211,6 +211,7 @@ public class RuntimeTaskImplExecutorTest {
                     .singleWorkerStageWithConstraints(new MachineDefinition(1, 10, 10, 10, 2),
                         Lists.newArrayList(), Lists.newArrayList()).build(),
                 MantisJobDurationType.Transient,
+                    0,
                 1000L,
                 1L,
                 new WorkerPorts(2, 3, 4, 5, 6),

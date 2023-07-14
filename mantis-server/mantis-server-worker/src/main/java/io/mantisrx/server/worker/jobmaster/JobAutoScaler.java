@@ -19,11 +19,11 @@ package io.mantisrx.server.worker.jobmaster;
 import com.netflix.control.clutch.Clutch;
 import com.netflix.control.clutch.ClutchExperimental;
 import io.mantisrx.common.MantisProperties;
+import io.mantisrx.common.SystemParameters;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
 import io.mantisrx.runtime.descriptor.StageSchedulingInfo;
-import io.mantisrx.runtime.parameter.ParameterUtils;
 import io.mantisrx.server.core.stats.UsageDataStats;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.worker.jobmaster.clutch.ClutchAutoScaler;
@@ -132,7 +132,7 @@ public class JobAutoScaler {
 
                     Optional<String> clutchCustomConfiguration =
                             Optional.ofNullable(
-                                MantisProperties.getProperty("JOB_PARAM_" + ParameterUtils.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
+                                MantisProperties.getProperty("JOB_PARAM_" + SystemParameters.JOB_MASTER_CLUTCH_SYSTEM_PARAM));
 
                     if (stageSchedulingInfo != null && (stageSchedulingInfo.getScalingPolicy() != null ||
                             clutchCustomConfiguration.isPresent())) {

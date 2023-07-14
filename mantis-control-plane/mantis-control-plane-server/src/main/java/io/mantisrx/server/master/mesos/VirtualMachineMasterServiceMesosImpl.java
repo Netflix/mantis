@@ -159,6 +159,7 @@ public class VirtualMachineMasterServiceMesosImpl extends BaseService implements
                     scheduleRequest.getJobMetadata().getParameters(),
                     scheduleRequest.getJobMetadata().getSchedulingInfo(),
                     scheduleRequest.getDurationType(),
+                    scheduleRequest.getJobMetadata().getHeartbeatIntervalSecs(),
                     scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
                     scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
                     launchTaskRequest.getPorts(),
