@@ -65,13 +65,13 @@
             "locked": "0.9.94"
         },
         "org.apache.curator:curator-client": {
-            "locked": "2.12.0"
+            "locked": "5.1.0"
         },
         "org.apache.curator:curator-framework": {
-            "locked": "2.12.0"
+            "locked": "5.1.0"
         },
         "org.apache.curator:curator-recipes": {
-            "locked": "2.12.0"
+            "locked": "5.1.0"
         },
         "org.apache.zookeeper:zookeeper": {
             "locked": "3.5.7"
