@@ -1529,7 +1529,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             jId = new JobId(name, ++lastJobIdNumber);
             final int heartbeatIntervalSecs = jobDefinition.getIntSystemParameter(JOB_WORKER_HEARTBEAT_INTERVAL_SECS, 0);
             final int workerTimeoutSecs = jobDefinition.getIntSystemParameter(JOB_WORKER_TIMEOUT_SECS, 0);
-            logger.info("Job heartbeat interval {}", heartbeatIntervalSecs);
             logger.info("Creating new job id: {} with job defn {}, with heartbeat {} and workertimeout {}",
                 jId, jobDefinition, heartbeatIntervalSecs, workerTimeoutSecs);
             MantisJobMetadataImpl mantisJobMetaData = new MantisJobMetadataImpl.Builder()
