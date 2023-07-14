@@ -29,7 +29,7 @@ ext {
     guavaFailureAccessVersion = '1.0.1'
     guavaVersion = '31.1-jre'
     curatorVersion = '2.12.+'
-    zookeeperVersion = '3.4.+'
+    zookeeperVersion = '3.5.7'
     jlineVersion = '0.9.94'
     nettyVersion = '3.7.0.Final'
 }
