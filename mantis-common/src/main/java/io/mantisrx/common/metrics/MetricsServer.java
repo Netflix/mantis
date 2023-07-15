@@ -58,17 +58,19 @@ public class MetricsServer {
     private int port;
     private Map<String, String> tags;
     private long publishRateInSeconds;
+    private MeterRegistry registry;
 
-    public MetricsServer(int port, long publishRateInSeconds, Map<String, String> tags) {
+    public MetricsServer(int port, long publishRateInSeconds, Map<String, String> tags, MeterRegistry registry) {
         this.port = port;
         this.publishRateInSeconds = publishRateInSeconds;
         this.tags = tags;
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(new Jdk8Module());
+        this.registry = registry;
     }
 
     private Observable<Measurements> measurements(long timeFrequency) {
-        final MeterRegistry micrometerregistry = Metrics.globalRegistry;
+        final MeterRegistry micrometerregistry = registry;
         final MetricsRegistry registry = MetricsRegistry.getInstance();
         return
             Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
