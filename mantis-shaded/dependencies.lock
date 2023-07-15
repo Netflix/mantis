@@ -75,6 +75,9 @@
         },
         "org.apache.zookeeper:zookeeper": {
             "locked": "3.5.7"
+        },
+        "org.apache.zookeeper:zookeeper-jute": {
+            "locked": "3.5.7"
         }
     },
     "testAnnotationProcessor": {
