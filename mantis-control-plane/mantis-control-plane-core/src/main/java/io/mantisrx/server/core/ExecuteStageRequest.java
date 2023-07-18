@@ -79,27 +79,30 @@ public class ExecuteStageRequest implements Serializable {
     // class name that provides the job provider.
     @Nullable
     private final String nameOfJobProviderClass;
+    private final String user;
 
     @JsonCreator
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public ExecuteStageRequest(@JsonProperty("jobName") String jobName,
-                               @JsonProperty("jobID") String jobId,
-                               @JsonProperty("workerIndex") int workerIndex,
-                               @JsonProperty("workerNumber") int workerNumber,
-                               @JsonProperty("jobJarUrl") URL jobJarUrl,
-                               @JsonProperty("stage") int stage,
-                               @JsonProperty("totalNumStages") int totalNumStages,
-                               @JsonProperty("ports") List<Integer> ports,
-                               @JsonProperty("timeoutToReportStart") long timeoutToReportStart,
-                               @JsonProperty("metricsPort") int metricsPort,
-                               @JsonProperty("parameters") List<Parameter> parameters,
-                               @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
-                               @JsonProperty("durationType") MantisJobDurationType durationType,
-                               @JsonProperty("heartbeatIntervalSecs") long heartbeatIntervalSecs,
-                               @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
-                               @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
-                               @JsonProperty("workerPorts") WorkerPorts workerPorts,
-                               @JsonProperty("nameOfJobProviderClass") Optional<String> nameOfJobProviderClass) {
+    public ExecuteStageRequest(
+        @JsonProperty("jobName") String jobName,
+        @JsonProperty("jobID") String jobId,
+        @JsonProperty("workerIndex") int workerIndex,
+        @JsonProperty("workerNumber") int workerNumber,
+        @JsonProperty("jobJarUrl") URL jobJarUrl,
+        @JsonProperty("stage") int stage,
+        @JsonProperty("totalNumStages") int totalNumStages,
+        @JsonProperty("ports") List<Integer> ports,
+        @JsonProperty("timeoutToReportStart") long timeoutToReportStart,
+        @JsonProperty("metricsPort") int metricsPort,
+        @JsonProperty("parameters") List<Parameter> parameters,
+        @JsonProperty("schedulingInfo") SchedulingInfo schedulingInfo,
+        @JsonProperty("durationType") MantisJobDurationType durationType,
+        @JsonProperty("heartbeatIntervalSecs") long heartbeatIntervalSecs,
+        @JsonProperty("subscriptionTimeoutSecs") long subscriptionTimeoutSecs,
+        @JsonProperty("minRuntimeSecs") long minRuntimeSecs,
+        @JsonProperty("workerPorts") WorkerPorts workerPorts,
+        @JsonProperty("nameOfJobProviderClass") Optional<String> nameOfJobProviderClass,
+        @JsonProperty("user") String user) {
         this.jobName = jobName;
         this.jobId = jobId;
         this.workerIndex = workerIndex;
@@ -108,6 +111,7 @@ public class ExecuteStageRequest implements Serializable {
         this.stage = stage;
         this.totalNumStages = totalNumStages;
         this.nameOfJobProviderClass = nameOfJobProviderClass.orElse(null);
+        this.user = user;
         this.ports.addAll(ports);
         this.metricsPort = metricsPort;
         this.timeoutToReportStart = timeoutToReportStart;

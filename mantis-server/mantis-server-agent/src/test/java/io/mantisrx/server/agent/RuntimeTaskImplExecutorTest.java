@@ -215,7 +215,8 @@ public class RuntimeTaskImplExecutorTest {
                 1000L,
                 1L,
                 new WorkerPorts(2, 3, 4, 5, 6),
-                Optional.of(SineFunctionJobProvider.class.getName()))), Time.seconds(1));
+                Optional.of(SineFunctionJobProvider.class.getName()),
+                "user")), Time.seconds(1));
         wait.get();
         Assert.assertTrue(startedSignal.await(5, TimeUnit.SECONDS));
         Subscription subscription = HttpSources.source(HttpClientFactories.sseClientFactory(),

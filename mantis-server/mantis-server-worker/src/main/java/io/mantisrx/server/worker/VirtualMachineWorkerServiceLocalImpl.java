@@ -111,7 +111,8 @@ public class VirtualMachineWorkerServiceLocalImpl extends BaseService implements
 
         final ExecuteStageRequest executeStageRequest = new ExecuteStageRequest(workerInfo.getJobName(), workerInfo.getJobId(), workerInfo.getWorkerIndex(), workerInfo.getWorkerNumber(),
                 jobJarUrl, workerInfo.getStageNumber(), workerInfo.getNumStages(), ports, timeoutToReportStartSec, workerInfo.getMetricsPort(), params, schedInfo, MantisJobDurationType.Transient,
-                0, 0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)), Optional.empty());
+                0, 0L, 0L, new WorkerPorts(Arrays.asList(7151, 7152, 7153, 7154, 7155)), Optional.empty(),
+                "user");
 
         return new WrappedExecuteStageRequest(PublishSubject.<Boolean>create(), executeStageRequest);
     }

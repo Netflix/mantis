@@ -48,7 +48,7 @@ public class ExecuteStageRequestFactory {
         scheduleRequest.getJobMetadata().getSubscriptionTimeoutSecs(),
         scheduleRequest.getJobMetadata().getMinRuntimeSecs() - (System.currentTimeMillis() - scheduleRequest.getJobMetadata().getMinRuntimeSecs()),
         matchedTaskExecutorInfo.getWorkerPorts(),
-        Optional.empty()
-    );
+        Optional.empty(),
+        scheduleRequest.getJobMetadata().getUser());
   }
 }
