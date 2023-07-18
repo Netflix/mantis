@@ -122,10 +122,10 @@ public class MasterMain implements Service {
     private MasterConfiguration config;
     private SchedulingService schedulingService;
     private ILeadershipManager leadershipManager;
-    private final MeterRegistry registry;
+    private final MeterRegistry micrometerRegistry;
 
-    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber, MeterRegistry registry) {
-        this.registry = registry;
+    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber, MeterRegistry micrometerRegistry) {
+        this.micrometerRegistry = micrometerRegistry;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
         Metrics metrics = new Metrics.Builder()
             .id("MasterMain")
@@ -241,7 +241,7 @@ public class MasterMain implements Service {
 
             // start serving metrics
             if (config.getMasterMetricsPort() > 0) {
-                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap(), registry).start();
+                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap(), micrometerRegistry).start();
             }
             new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
                     new HashMap<>()).start();

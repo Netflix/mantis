@@ -58,19 +58,19 @@ public class MetricsServer {
     private int port;
     private Map<String, String> tags;
     private long publishRateInSeconds;
-    private MeterRegistry registry;
+    private MeterRegistry micrometerRegistry;
 
-    public MetricsServer(int port, long publishRateInSeconds, Map<String, String> tags, MeterRegistry registry) {
+    public MetricsServer(int port, long publishRateInSeconds, Map<String, String> tags, MeterRegistry micrometerRegistry) {
         this.port = port;
         this.publishRateInSeconds = publishRateInSeconds;
         this.tags = tags;
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(new Jdk8Module());
-        this.registry = registry;
+        this.micrometerRegistry = micrometerRegistry;
     }
 
     private Observable<Measurements> measurements(long timeFrequency) {
-        final MeterRegistry micrometerregistry = registry;
+        final MeterRegistry microRegistry = this.micrometerRegistry;
         final MetricsRegistry registry = MetricsRegistry.getInstance();
         return
             Observable.interval(0, timeFrequency, TimeUnit.SECONDS)
@@ -81,7 +81,7 @@ public class MetricsServer {
                         List<Measurements> measurements = new ArrayList<>();
 
 
-                        for (Meter meter: micrometerregistry.getMeters()) {
+                        for (Meter meter: microRegistry.getMeters()) {
                             Collection<MicrometerMeasurement> micrometers = new LinkedList<>();
                             micrometers.add(new MicrometerMeasurement(meter.getId().getType(), meter.measure().iterator().next().getValue()));
                             measurements.add(new Measurements(meter.getId().getName(), timestamp, Collections.emptyList(), Collections.emptyList(), micrometers, tags));
