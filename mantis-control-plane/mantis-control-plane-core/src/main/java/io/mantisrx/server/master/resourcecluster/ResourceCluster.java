@@ -21,6 +21,7 @@ import io.mantisrx.server.core.domain.ArtifactID;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,13 +55,40 @@ public interface ResourceCluster extends ResourceClusterGateway {
      */
     CompletableFuture<Ack> initializeTaskExecutor(TaskExecutorID taskExecutorID, WorkerId workerId);
 
-    CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors();
+    default CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors() {
+        return getRegisteredTaskExecutors(Collections.emptyMap());
+    }
 
-    CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors();
+    /**
+     * Get the registered set of task executors
+     * @param attributes attributes to filter out the set of task executors to be considered for registration.
+     * @return the list of task executor IDs
+     */
+    CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors(Map<String, String> attributes);
 
-    CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors();
+    default CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors() {
+        return getAvailableTaskExecutors(Collections.emptyMap());
+    }
 
-    CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors();
+    /**
+     * Get the available set of task executors
+     *
+     * @param attributes attributes to filter out the set of task executors to be considered for availability.
+     * @return the list of task executor IDs
+     */
+    CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors(Map<String, String> attributes);
+
+    default CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors() {
+        return getBusyTaskExecutors(Collections.emptyMap());
+    }
+
+    CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors(Map<String, String> attributes);
+
+    default CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors() {
+        return getUnregisteredTaskExecutors(Collections.emptyMap());
+    }
+
+    CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors(Map<String, String> attributes);
 
     CompletableFuture<ResourceOverview> resourceOverview();
 

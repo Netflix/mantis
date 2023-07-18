@@ -91,40 +91,40 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors() {
+    public CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors(Map<String, String> attributes) {
         return Patterns.ask(
                 resourceClusterManagerActor,
-                new GetRegisteredTaskExecutorsRequest(clusterID), askTimeout)
+                new GetRegisteredTaskExecutorsRequest(clusterID, attributes), askTimeout)
             .thenApply(TaskExecutorsList.class::cast)
             .toCompletableFuture()
             .thenApply(l -> l.getTaskExecutors());
     }
 
     @Override
-    public CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors() {
+    public CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors(Map<String, String> attributes) {
         return Patterns.ask(
                 resourceClusterManagerActor,
-                new GetAvailableTaskExecutorsRequest(clusterID), askTimeout)
+                new GetAvailableTaskExecutorsRequest(clusterID, attributes), askTimeout)
             .thenApply(TaskExecutorsList.class::cast)
             .toCompletableFuture()
             .thenApply(l -> l.getTaskExecutors());
     }
 
     @Override
-    public CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors() {
+    public CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors(Map<String, String> attributes) {
         return Patterns.ask(
                 resourceClusterManagerActor,
-                new GetBusyTaskExecutorsRequest(clusterID), askTimeout)
+                new GetBusyTaskExecutorsRequest(clusterID, attributes), askTimeout)
             .thenApply(TaskExecutorsList.class::cast)
             .toCompletableFuture()
             .thenApply(l -> l.getTaskExecutors());
     }
 
     @Override
-    public CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors() {
+    public CompletableFuture<List<TaskExecutorID>> getUnregisteredTaskExecutors(Map<String, String> attributes) {
         return Patterns.ask(
                 resourceClusterManagerActor,
-                new GetUnregisteredTaskExecutorsRequest(clusterID), askTimeout)
+                new GetUnregisteredTaskExecutorsRequest(clusterID, attributes), askTimeout)
             .thenApply(TaskExecutorsList.class::cast)
             .toCompletableFuture()
             .thenApply(l -> l.getTaskExecutors());

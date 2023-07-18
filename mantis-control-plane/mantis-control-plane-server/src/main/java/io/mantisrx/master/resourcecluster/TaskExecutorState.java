@@ -32,6 +32,7 @@ import io.mantisrx.server.master.scheduler.WorkerOnDisabledVM;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
@@ -262,5 +263,9 @@ class TaskExecutorState {
                 }
             });
         return this.gateway;
+    }
+
+    boolean containsAttributes(Map<String, String> attributes) {
+        return registration != null && registration.containsAttributes(attributes);
     }
 }
