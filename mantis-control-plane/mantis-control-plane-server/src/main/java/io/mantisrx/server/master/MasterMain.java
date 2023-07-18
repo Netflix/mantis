@@ -127,11 +127,12 @@ public class MasterMain implements Service {
     public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber, MeterRegistry registry) {
         this.registry = registry;
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
-        String groupName = "MasterMain";
-        Counter masterInitSuccess = Counter.builder(groupName + "_masterInitSuccess")
-            .register(registry);
-        Counter masterInitError = Counter.builder(groupName + "_masterInitError")
-            .register(registry);
+        Metrics metrics = new Metrics.Builder()
+            .id("MasterMain")
+            .addCounter("masterInitSuccess")
+            .addCounter("masterInitError")
+            .build();
+        Metrics m = MetricsRegistry.getInstance().registerAndGet(metrics);
         try {
             ConfigurationProvider.initialize(configFactory);
             this.config = ConfigurationProvider.getConfig();
@@ -259,12 +260,10 @@ public class MasterMain implements Service {
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
                        resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps));
             }
-//            m.getCounter("masterInitSuccess").increment();
-            masterInitSuccess.increment();
+            m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {
             logger.error("caught exception on Mantis Master initialization", e);
-//            m.getCounter("masterInitError").increment();
-            masterInitError.increment();
+            m.getCounter("masterInitError").increment();
             shutdown();
             System.exit(1);
         }
