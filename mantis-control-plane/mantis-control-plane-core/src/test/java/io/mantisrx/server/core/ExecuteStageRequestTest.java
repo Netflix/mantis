@@ -54,7 +54,8 @@ public class ExecuteStageRequestTest {
             1000L,
             1L,
             new WorkerPorts(2, 3, 4, 5, 6),
-            java.util.Optional.of("className"));
+            java.util.Optional.of("className"),
+            "user1");
         example2 = new ExecuteStageRequest("jobName", "jobId-0", 0, 1,
             new URL("http://datamesh/whatever"),
             1, 1,
@@ -68,7 +69,8 @@ public class ExecuteStageRequestTest {
             1000L,
             1L,
             new WorkerPorts(2, 3, 4, 5, 6),
-            java.util.Optional.empty());
+            java.util.Optional.empty(),
+            "user1");
     }
 
     @Test
@@ -145,6 +147,7 @@ public class ExecuteStageRequestTest {
             "        \"sinkPort\": 6\n" +
             "    },\n" +
             "    \"nameOfJobProviderClass\": \"className\",\n" +
+            "    \"user\": \"user1\",\n" +
             "    \"hasJobMaster\": false,\n" +
             "    \"jobId\": \"jobId-0\",\n" +
             "    \"workerId\":\n" +
@@ -227,6 +230,7 @@ public class ExecuteStageRequestTest {
             "        \"sinkPort\": 6\n" +
             "    },\n" +
             "    \"nameOfJobProviderClass\": null,\n" +
+            "    \"user\": \"user1\",\n" +
             "    \"hasJobMaster\": false,\n" +
             "    \"jobId\": \"jobId-0\",\n" +
             "    \"workerId\":\n" +
