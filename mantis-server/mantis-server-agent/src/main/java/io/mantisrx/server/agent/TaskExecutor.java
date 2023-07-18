@@ -23,6 +23,7 @@ import io.mantisrx.common.JsonSerializer;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.runtime.MachineDefinition;
+import io.mantisrx.runtime.MantisJobState;
 import io.mantisrx.runtime.loader.ClassLoaderHandle;
 import io.mantisrx.runtime.loader.RuntimeTask;
 import io.mantisrx.runtime.loader.SinkSubscriptionStateHandler;
@@ -109,12 +110,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // represents the current connection to the resource manager.
     private ResourceManagerGatewayCxn currentResourceManagerCxn;
     private TaskExecutorReport currentReport;
-    private RuntimeTask currentTask;
     private Subscription currentTaskStatusSubscription;
     private int resourceManagerCxnIdx;
     private Throwable previousFailure;
 
     private final TaskFactory taskFactory;
+
+    private RuntimeTask currentTask;
+    private ExecuteStageRequest currentRequest;
 
     public TaskExecutor(
         RpcService rpcService,
@@ -481,6 +484,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private void prepareTask(WrappedExecuteStageRequest wrappedRequest) {
         try {
+            this.currentRequest = wrappedRequest.getRequest();
+
             UserCodeClassLoader userCodeClassLoader = this.taskFactory.getUserCodeClassLoader(
                 wrappedRequest.getRequest(), classLoaderHandle);
             ClassLoader cl = userCodeClassLoader.asClassLoader();
@@ -501,6 +506,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }, 0, TimeUnit.MILLISECONDS);
         } catch (Exception ex) {
             log.error("Failed to submit task, request: {}", wrappedRequest.getRequest(), ex);
+            final Status failedStatus = new Status(currentRequest.getJobId(), currentRequest.getStage(), currentRequest.getWorkerIndex(), currentRequest.getWorkerNumber(),
+                Status.TYPE.INFO, "stage " + currentRequest.getStage() + " worker index=" + currentRequest.getWorkerIndex() + " number=" + currentRequest.getWorkerNumber() + " failed during initialization",
+                MantisJobState.Failed);
+            updateExecutionStatus(failedStatus);
             listeners.enqueue(getTaskFailedEvent(null, ex));
         }
         finally {
