@@ -59,12 +59,23 @@ public interface ResourceCluster extends ResourceClusterGateway {
         return getRegisteredTaskExecutors(Collections.emptyMap());
     }
 
+    /**
+     * Get the registered set of task executors
+     * @param attributes attributes to filter out the set of task executors to be considered for registration.
+     * @return the list of task executor IDs
+     */
     CompletableFuture<List<TaskExecutorID>> getRegisteredTaskExecutors(Map<String, String> attributes);
 
     default CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors() {
         return getAvailableTaskExecutors(Collections.emptyMap());
     }
 
+    /**
+     * Get the available set of task executors
+     *
+     * @param attributes attributes to filter out the set of task executors to be considered for availability.
+     * @return the list of task executor IDs
+     */
     CompletableFuture<List<TaskExecutorID>> getAvailableTaskExecutors(Map<String, String> attributes);
 
     default CompletableFuture<List<TaskExecutorID>> getBusyTaskExecutors() {

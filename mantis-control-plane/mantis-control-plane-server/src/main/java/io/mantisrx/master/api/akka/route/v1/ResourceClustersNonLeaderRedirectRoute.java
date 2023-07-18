@@ -303,11 +303,12 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route mkTaskExecutorsRoute(
         ClusterID clusterId,
         BiFunction<ResourceCluster, GetTaskExecutorsRequest, CompletableFuture<List<TaskExecutorID>>> taskExecutors) {
+        final GetTaskExecutorsRequest empty = new GetTaskExecutorsRequest(ImmutableMap.of());
         return entity(
             Jackson.optionalEntityUnmarshaller(GetTaskExecutorsRequest.class),
             request -> {
                 if (request == null) {
-                    request = new GetTaskExecutorsRequest(ImmutableMap.of());
+                    request = empty;
                 }
                 return withFuture(taskExecutors.apply(gateway.getClusterFor(clusterId), request));
             });
