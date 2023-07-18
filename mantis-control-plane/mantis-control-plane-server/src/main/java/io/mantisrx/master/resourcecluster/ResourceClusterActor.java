@@ -165,12 +165,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             ReceiveBuilder
                 .create()
                 .match(GetRegisteredTaskExecutorsRequest.class,
-                    req -> sender().tell(getTaskExecutors(ExecutorStateManager.isRegistered),
-                    self()))
-                .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.isBusy), self()))
-                .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.isAvailable), self()))
-                .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.isDisabled), self()))
-                .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(ExecutorStateManager.unregistered), self()))
+                    req -> {
+                        sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isRegistered)), self());
+                    })
+                .match(GetBusyTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isBusy)), self()))
+                .match(GetAvailableTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isAvailable)), self()))
+                .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isDisabled)), self()))
+                .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.unregistered)), self()))
                 .match(GetActiveJobsRequest.class, this::getActiveJobs)
                 .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
                 .match(GetClusterUsageRequest.class,
@@ -740,8 +741,10 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Value
-    static class GetRegisteredTaskExecutorsRequest {
+    static class GetRegisteredTaskExecutorsRequest implements HasAttributes {
         ClusterID clusterID;
+
+        Map<String, String> attributes;
     }
 
     @Value
@@ -759,23 +762,35 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
-    @Value
-    static class GetAvailableTaskExecutorsRequest {
-        ClusterID clusterID;
-    }
-    @Value
-    static class GetDisabledTaskExecutorsRequest {
-        ClusterID clusterID;
+    interface HasAttributes {
+        Map<String, String> getAttributes();
     }
 
     @Value
-    static class GetBusyTaskExecutorsRequest {
+    static class GetAvailableTaskExecutorsRequest implements HasAttributes {
         ClusterID clusterID;
+
+        Map<String, String> attributes;
+    }
+    @Value
+    static class GetDisabledTaskExecutorsRequest implements HasAttributes {
+        ClusterID clusterID;
+
+        Map<String, String> attributes;
     }
 
     @Value
-    static class GetUnregisteredTaskExecutorsRequest {
+    static class GetBusyTaskExecutorsRequest implements HasAttributes {
         ClusterID clusterID;
+
+        Map<String, String> attributes;
+    }
+
+    @Value
+    static class GetUnregisteredTaskExecutorsRequest implements HasAttributes {
+        ClusterID clusterID;
+
+        Map<String, String> attributes;
     }
 
     @Value
@@ -974,5 +989,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private Boolean isJobArtifactCachingEnabled() {
         return true;
 // TODO: fix this ->   return ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.job.artifact.caching.enabled", "false").equals("true");
+    }
+
+    private Predicate<Entry<TaskExecutorID, TaskExecutorState>> filterByAttrs(HasAttributes hasAttributes) {
+        if (hasAttributes.getAttributes().isEmpty()) {
+            return e -> true;
+        } else {
+            return e -> e.getValue().containsAttributes(hasAttributes.getAttributes());
+        }
     }
 }

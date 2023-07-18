@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
-public class ExecutorStateManagerImpl implements ExecutorStateManager{
+public class ExecutorStateManagerImpl implements ExecutorStateManager {
     private final Map<TaskExecutorID, TaskExecutorState> taskExecutorStateMap = new HashMap<>();
 
     /**
