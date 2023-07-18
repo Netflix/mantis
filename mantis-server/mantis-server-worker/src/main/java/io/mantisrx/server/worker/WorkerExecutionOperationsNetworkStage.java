@@ -17,6 +17,7 @@
 package io.mantisrx.server.worker;
 
 import static io.mantisrx.common.SystemParameters.JOB_MASTER_AUTOSCALE_METRIC_SYSTEM_PARAM;
+import static io.mantisrx.server.core.utils.StatusConstants.STATUS_MESSAGE_FORMAT;
 
 import com.mantisrx.common.utils.Closeables;
 import com.netflix.spectator.api.Registry;
@@ -105,6 +106,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     private final List<Closeable> closeables = new ArrayList<>();
     private final ScheduledExecutorService scheduledExecutorService;
     private final ClassLoader classLoader;
+    private Observer<Status> jobStatusObserver;
 
     public WorkerExecutionOperationsNetworkStage(
         Observer<VirtualMachineTaskStatus> vmTaskStatusObserver,
@@ -207,10 +209,10 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     }
 
-    private Closeable startSendingHeartbeats(final Observer<Status> jobStatus, double networkMbps, long heartbeatIntervalSecs) {
+    private Closeable startSendingHeartbeats(final Observer<Status> jobStatusObserver, double networkMbps, long heartbeatIntervalSecs) {
         heartbeatRef.get().setPayload(String.valueOf(StatusPayloads.Type.SubscriptionState), "false");
         Future<?> heartbeatFuture = scheduledExecutorService.scheduleWithFixedDelay(
-            () -> jobStatus.onNext(heartbeatRef.get().getCurrentHeartbeatStatus()),
+            () -> jobStatusObserver.onNext(heartbeatRef.get().getCurrentHeartbeatStatus()),
             heartbeatIntervalSecs,
             heartbeatIntervalSecs,
             TimeUnit.SECONDS);
@@ -270,6 +272,9 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     public void executeStage(final ExecutionDetails setup) throws IOException {
 
         ExecuteStageRequest executionRequest = setup.getExecuteStageRequest().getRequest();
+
+        jobStatusObserver = setup.getStatus();
+
         // Initialize the schedulingInfo observable for current job and mark it shareable to be reused by anyone interested in this data.
         //Observable<JobSchedulingInfo> selfSchedulingInfo = mantisMasterApi.schedulingChanges(executionRequest.getJobId()).switchMap((e) -> Observable.just(e).repeatWhen(x -> x.delay(5 , TimeUnit.SECONDS))).subscribeOn(Schedulers.io()).share();
 
@@ -452,6 +457,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
             logger.info("Calling lifecycle.shutdown()");
             lifecycle.shutdown();
         } catch (Throwable t) {
+            logger.warn("Error during executing stage; shutting down.", t);
             rw.signalFailed(t);
             shutdownStage();
         }
@@ -472,10 +478,6 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
         };
 
         this.subscriptionStateHandler = subscriptionStateHandler;
-    }
-
-    private String getWorkerStringPrefix(int stageNum, int index, int number) {
-        return "stage " + stageNum + " worker index=" + index + " number=" + number;
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
@@ -499,7 +501,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
                     "JobId: {}, executing sink stage: {}, signaling started", rw.getJobId(), rw.getStageNum());
                 rw.getJobStatus().onNext(new Status(rw.getJobId(), rw.getStageNum(), rw.getWorkerIndex(),
                         rw.getWorkerNum(),
-                        TYPE.INFO, getWorkerStringPrefix(rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum()) + " running",
+                        TYPE.INFO, String.format(STATUS_MESSAGE_FORMAT, rw.getStageNum(), rw.getWorkerIndex(), rw.getWorkerNum(), "running"),
                         MantisJobState.Started));
 
                 PortSelector portSelector = new PortSelector() {
@@ -578,7 +580,7 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
     @SuppressWarnings( {"rawtypes"})
     private WorkerConsumer connectToObservableAtPreviousStages(Observable<JobSchedulingInfo> selfSchedulingInfo, final String jobId, final int previousStageNum,
                                                                int numInstanceAtPreviousStage, final StageConfig previousStage, final AtomicBoolean acceptSchedulingChanges,
-                                                               final Observer<Status> jobStatus, final int stageNumToExecute, final int workerIndex, final int workerNumber) {
+                                                               final Observer<Status> jobStatusObserver, final int stageNumToExecute, final int workerIndex, final int workerNumber) {
         logger.info("Watching for scheduling changes");
 
         //Observable<List<Endpoint>> schedulingUpdates = mantisMasterApi.schedulingChanges(jobId)
@@ -618,7 +620,13 @@ public class WorkerExecutionOperationsNetworkStage implements WorkerExecutionOpe
 
     @Override
     public void shutdownStage() throws IOException  {
-        logger.info("Shutdown initiated");
+        if (jobStatusObserver != null) {
+            final Heartbeat heartbeat = heartbeatRef.get();
+            final Status status = new Status(heartbeat.getJobId(), heartbeat.getStageNumber(), heartbeat.getWorkerIndex(), heartbeat.getWorkerNumber(),
+                Status.TYPE.INFO, String.format(STATUS_MESSAGE_FORMAT, heartbeat.getStageNumber(), heartbeat.getWorkerIndex(), heartbeat.getWorkerNumber(), "shutdown"),
+                MantisJobState.Failed);
+            jobStatusObserver.onNext(status);
+        }
         if (subscriptionStateHandler != null) {
             try {
                 subscriptionStateHandler.stopAsync().awaitTerminated(30, TimeUnit.SECONDS);
