@@ -28,5 +28,4 @@ public class GetClusterIdleInstancesRequest {
     ContainerSkuID skuId;
 
     int maxInstanceCount;
-    int desireSize;
 }

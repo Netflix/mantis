@@ -33,5 +33,5 @@ public class GetClusterIdleInstancesResponse {
     @Singular
     List<TaskExecutorID> instanceIds;
 
-    int desireSize;
+    int scaleDownCount;
 }
