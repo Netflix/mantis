@@ -34,4 +34,6 @@ public class GetClusterIdleInstancesResponse {
     List<TaskExecutorID> instanceIds;
 
     int scaleDownCount;
+    int registeredCount;
+    int idleCount;
 }

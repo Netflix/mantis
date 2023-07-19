@@ -207,8 +207,11 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                                 GetClusterIdleInstancesRequest.builder()
                                     .clusterID(this.clusterId)
                                     .skuId(skuId)
-                                    .maxInstanceCount(
+                                    .scaleDownCount(
                                         Math.max(0, decisionO.get().getScaleDownCount()))
+                                    .scaleUpCount(0)
+                                    .registeredCount(decisionO.get().getRegisteredCount())
+                                    .idleCount(decisionO.get().getIdleCount())
                                     .build(),
                                 self());
                             break;
@@ -244,6 +247,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                 .skuId(response.getSkuId())
                 .scaleDownCount(response.getScaleDownCount())
                 .scaleUpCount(0)
+                .registeredCount(response.getRegisteredCount())
+                .idleCount(response.getIdleCount())
                 .idleInstances(response.getInstanceIds())
                 .build(),
             self());
@@ -332,6 +337,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
             .skuId(decision.getSkuId())
             .scaleUpCount(decision.getScaleUpCount())
             .scaleDownCount(decision.getScaleDownCount())
+            .registeredCount(decision.getRegisteredCount())
+            .idleCount(decision.getIdleCount())
             .build();
     }
 
@@ -424,6 +431,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .skuId(this.scaleSpec.getSkuId())
                         .scaleUpCount(0)
                         .scaleDownCount(step)
+                        .registeredCount(usage.getTotalCount())
+                        .idleCount(usage.getIdleCount())
                         .type(scaleType)
                         .build());
             }
@@ -445,6 +454,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
                         .skuId(this.scaleSpec.getSkuId())
                         .scaleUpCount(step)
                         .scaleDownCount(0)
+                        .registeredCount(usage.getTotalCount())
+                        .idleCount(usage.getIdleCount())
                         .type(scaleType)
                         .build());
             }
@@ -475,6 +486,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         ClusterID clusterId;
         int scaleUpCount;
         int scaleDownCount;
+        int registeredCount;
+        int idleCount;
         ScaleType type;
     }
 

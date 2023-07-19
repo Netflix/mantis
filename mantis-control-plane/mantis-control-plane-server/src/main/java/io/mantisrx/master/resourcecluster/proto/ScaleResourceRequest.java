@@ -41,6 +41,10 @@ public class ScaleResourceRequest {
 
     int scaleDownCount;
 
+    int registeredCount;
+
+    int idleCount;
+
     @Singular
     List<TaskExecutorID> idleInstances;
 
@@ -50,7 +54,8 @@ public class ScaleResourceRequest {
             this.region == null ? "" : this.region,
             this.envType != null && this.envType.isPresent() ? this.getEnvType().get().name() : "",
             this.skuId.getResourceID(),
-            this.scaleUpCount, this.scaleDownCount);
+            this.scaleUpCount, this.scaleDownCount,
+            this.registeredCount, this.idleCount);
     }
 
 }
