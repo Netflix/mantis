@@ -32,7 +32,7 @@ public class MantisRxClientImpl<I, O> implements RxClient<I, O> {
     protected final ConnectionPool<O, I> pool;
     private final AtomicBoolean isShutdown = new AtomicBoolean();
 
-    public MantisRxClient(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<O, I> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<O, I> channelFactory, ClientConnectionFactory<O, I, ? extends ObservableConnection<O, I>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
+    public MantisRxClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<O, I> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<O, I> channelFactory, ClientConnectionFactory<O, I, ? extends ObservableConnection<O, I>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
         } else if (null == clientBootstrap) {
@@ -66,7 +66,7 @@ public class MantisRxClientImpl<I, O> implements RxClient<I, O> {
         }
     }
 
-    public MantisRxClient(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<O, I> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<O, I> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
+    public MantisRxClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<O, I> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<O, I> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
         } else if (null == clientBootstrap) {
@@ -107,7 +107,7 @@ public class MantisRxClientImpl<I, O> implements RxClient<I, O> {
                 toReturn = Observable.create(new OnSubscribe<ObservableConnection<O, I>>() {
                     public void call(Subscriber<? super ObservableConnection<O, I>> subscriber) {
                         try {
-                            MantisRxClient.this.channelFactory.connect(subscriber, MantisRxClient.this.serverInfo, MantisRxClient.this.connectionFactory);
+                            MantisRxClientImpl.this.channelFactory.connect(subscriber, MantisRxClientImpl.this.serverInfo, MantisRxClientImpl.this.connectionFactory);
                             // call another method with the ChannelFuture object to expose it
                         } catch (Throwable var3) {
                             subscriber.onError(var3);
