@@ -24,7 +24,7 @@ import rx.Observable.OnSubscribe;
 import rx.Subscriber;
 import rx.Subscription;
 
-public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> implements RxClient<I, O> {
+public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> implements RxClient<HttpClientRequest<I>, HttpClientResponse<O>> {
 
     protected final String name;
     protected final ServerInfo serverInfo;

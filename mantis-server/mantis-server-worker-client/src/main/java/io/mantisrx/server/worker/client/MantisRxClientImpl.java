@@ -20,6 +20,8 @@ import rx.Subscriber;
 import rx.Subscription;
 import rx.Observable.OnSubscribe;
 
+// TODO: Delete this class
+
 public class MantisRxClientImpl<I, O> implements RxClient<I, O> {
     protected final String name;
     protected final ServerInfo serverInfo;
