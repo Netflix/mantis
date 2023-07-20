@@ -2,7 +2,6 @@ package io.mantisrx.server.worker.client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
@@ -12,8 +11,6 @@ import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.client.ConnectionPool;
 import mantis.io.reactivex.netty.client.ConnectionPoolBuilder;
 import mantis.io.reactivex.netty.client.RxClient;
-import mantis.io.reactivex.netty.client.RxClient.ClientConfig;
-import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.metrics.MetricEventsListener;
 import mantis.io.reactivex.netty.metrics.MetricEventsSubject;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
@@ -23,7 +20,7 @@ import rx.Subscriber;
 import rx.Subscription;
 import rx.Observable.OnSubscribe;
 
-public class MantisRxClient<I, O> implements RxClient<I, O> {
+public class MantisRxClientImpl<I, O> implements RxClient<I, O> {
     protected final String name;
     protected final ServerInfo serverInfo;
     protected final Bootstrap clientBootstrap;
