@@ -18,6 +18,7 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static akka.http.javadsl.server.PathMatchers.segment;
 import static akka.http.javadsl.server.directives.CachingDirectives.alwaysCache;
+import static akka.http.javadsl.server.directives.CachingDirectives.cachingProhibited;
 
 import akka.actor.ActorSystem;
 import akka.http.caching.javadsl.Cache;
@@ -208,8 +209,11 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                 path(
                     PathMatchers.segment().slash("getRegisteredTaskExecutors"),
                     (clusterName) -> pathEndOrSingleSlash(() -> concat(
-                        get(() -> mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getRegisteredTaskExecutors(req.getAttributes())))))
-                ),
+                        get(() -> {
+                            log.info("[fdc-91] getRegisteredTaskExecutors hit!");
+                            return mkTaskExecutorsRoute(getClusterID(clusterName), (rc, req) -> rc.getRegisteredTaskExecutors(req.getAttributes()));
+                        }))
+                )),
                 // /{}/getBusyTaskExecutors
                 path(
                     PathMatchers.segment().slash("getBusyTaskExecutors"),
@@ -303,8 +307,9 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route mkTaskExecutorsRoute(
         ClusterID clusterId,
         BiFunction<ResourceCluster, GetTaskExecutorsRequest, CompletableFuture<List<TaskExecutorID>>> taskExecutors) {
+        log.info("[fdc-91] mkTaskExecutorsRoute");
         final GetTaskExecutorsRequest empty = new GetTaskExecutorsRequest(ImmutableMap.of());
-        return entity(
+        return cachingProhibited(() -> entity(
             Jackson.optionalEntityUnmarshaller(GetTaskExecutorsRequest.class),
             request -> {
                 log.info("[fdc-91] GetTaskExecutorsRequest: {}", request);
@@ -312,7 +317,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     request = empty;
                 }
                 return withFuture(taskExecutors.apply(gateway.getClusterFor(clusterId), request));
-            });
+            }));
     }
 
     private Route getTaskExecutorState(ClusterID clusterID, TaskExecutorID taskExecutorID) {
