@@ -307,6 +307,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         return entity(
             Jackson.optionalEntityUnmarshaller(GetTaskExecutorsRequest.class),
             request -> {
+                log.info("[fdc-91] GetTaskExecutorsRequest: {}", request);
                 if (request == null) {
                     request = empty;
                 }
