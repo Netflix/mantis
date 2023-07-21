@@ -63,6 +63,8 @@ public interface TaskExecutorGateway extends RpcGateway {
      */
     CompletableFuture<String> requestThreadDump();
 
+    CompletableFuture<Boolean> isRegistered();
+
     class TaskAlreadyRunningException extends Exception {
         private static final long serialVersionUID = 1L;
 

@@ -88,6 +88,10 @@ import rx.subjects.PublishSubject;
  */
 @Slf4j
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
+
+
+    public static final Time DEFAULT_TIMEOUT = Time.seconds(5);
+
     @Getter
     private final TaskExecutorID taskExecutorID;
     @Getter
@@ -650,6 +654,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public CompletableFuture<String> requestThreadDump() {
         return CompletableFuture.completedFuture(JvmUtils.createThreadDumpAsString());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isRegistered() {
+        return callAsync(() -> this.currentResourceManagerCxn != null, DEFAULT_TIMEOUT);
     }
 
     CompletableFuture<Boolean> isRegistered(Time timeout) {
