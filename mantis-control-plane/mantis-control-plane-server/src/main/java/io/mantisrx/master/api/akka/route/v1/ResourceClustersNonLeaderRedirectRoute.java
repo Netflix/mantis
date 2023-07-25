@@ -83,6 +83,7 @@ import lombok.extern.slf4j.Slf4j;
  * /api/v1/resourceClusters/{}/scaleSku                               (POST)
  * /api/v1/resourceClusters/{}/upgrade                                (POST)
  * /api/v1/resourceClusters/{}/disableTaskExecutors                   (POST)
+ * /api/v1/resourceClusters/{}/disableTaskExecutors/{}                (POST)
  * /api/v1/resourceClusters/{}/setScalerStatus                        (POST)
  * <p>
  * <p>
@@ -169,11 +170,21 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                     ))
                 ),
                 // /{}/disableTaskExecutors
-                path(
+                pathPrefix(
                     PathMatchers.segment().slash("disableTaskExecutors"),
-                    (clusterName) -> pathEndOrSingleSlash(() -> concat(
-                        post(() -> disableTaskExecutors(getClusterID(clusterName)))))
-                ),
+                    (clusterName) -> concat(
+                        // /
+                        pathEndOrSingleSlash(() -> concat(post(() -> disableTaskExecutors(getClusterID(clusterName))))),
+
+                        // /{}
+                        path(
+                            PathMatchers.segment(),
+                            (taskExecutorID) -> pathEndOrSingleSlash(() -> concat(
+                                // POST
+                                post(() -> disableTaskExecutors(getClusterID(clusterName), getTaskExecutorID(taskExecutorID)))
+                            ))
+                    )
+                )),
                 // /{}/setScalerStatus
                 path(
                     PathMatchers.segment().slash("setScalerStatus"),
@@ -327,6 +338,14 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
             return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutorsFor(
                 request.getAttributes(),
                 Instant.now().plus(Duration.ofHours(request.getExpirationDurationInHours()))));
+        });
+    }
+
+    private Route disableTaskExecutors(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+        return entity(Jackson.unmarshaller(DisableTaskExecutorsRequest.class), request -> {
+            log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors/{} called.",
+                clusterID, taskExecutorID);
+            return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutor(taskExecutorID));
         });
     }
 

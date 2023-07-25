@@ -192,6 +192,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(ResourceOverviewRequest.class, this::onResourceOverviewRequest)
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
                 .match(TaskExecutorGatewayRequest.class, this::onTaskExecutorGatewayRequest)
+                .match(DisableTaskExecutorRequest.class, this::onDisableTaskExecutorRequest)
                 .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
                 .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
                 .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
@@ -392,6 +393,13 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     }
                 });
             }
+        }
+    }
+
+    private void onDisableTaskExecutorRequest(DisableTaskExecutorRequest request) {
+        final TaskExecutorState state = executorStateManager.get(request.getTaskExecutorID());
+        if (state != null && state.onNodeDisabled()) {
+            log.info("Marking task executor {} as disabled", request.getTaskExecutorID());
         }
     }
 
@@ -702,6 +710,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class ExpireDisableTaskExecutorsRequest {
         DisableTaskExecutorsRequest request;
+    }
+
+    @Value
+    static class DisableTaskExecutorRequest {
+        TaskExecutorID taskExecutorID;
     }
 
     @Value

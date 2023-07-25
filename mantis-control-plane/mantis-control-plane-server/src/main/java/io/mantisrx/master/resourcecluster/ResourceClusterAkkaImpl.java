@@ -21,6 +21,7 @@ import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ArtifactList;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAvailableTaskExecutorsRequest;
@@ -243,6 +244,17 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     @Override
     public CompletableFuture<Ack> disableTaskExecutorsFor(Map<String, String> attributes, Instant expiry) {
         final DisableTaskExecutorsRequest msg = new DisableTaskExecutorsRequest(attributes, clusterID, expiry);
+
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, msg, askTimeout)
+                .thenApply(Ack.class::cast)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> disableTaskExecutor(TaskExecutorID taskExecutorID) {
+        final DisableTaskExecutorRequest msg = new DisableTaskExecutorRequest(taskExecutorID);
 
         return
             Patterns
