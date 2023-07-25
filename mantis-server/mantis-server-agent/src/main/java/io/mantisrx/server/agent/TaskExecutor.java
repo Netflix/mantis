@@ -363,6 +363,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         private final int tolerableConsecutiveHeartbeatFailures;
 
         private int numFailedHeartbeats = 0;
+        // flag representing if the task executor has been registered with the resource manager
+        @Getter
+        private volatile boolean registered = false;
 
         @Override
         protected String serviceName() {
@@ -384,6 +387,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 gateway
                     .registerTaskExecutor(taskExecutorRegistration)
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                registered = true;
             } catch (Exception e) {
                 // the registration may or may not have succeeded. Since we don't know let's just
                 // do the disconnection just to be safe.
@@ -413,13 +417,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     })
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 
-                // the heartbeat was successful, let's reset the counter.
+                // the heartbeat was successful, let's reset the counter and set the registered flag
                 numFailedHeartbeats = 0;
+                registered = true;
             } catch (Exception e) {
                 log.error("Failed to send heartbeat to gateway {}", gateway, e);
-                // increase the number of failed heartbeats by 1
+                // increase the number of failed heartbeats by 1 and clear the registered flag
                 numFailedHeartbeats += 1;
                 if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
+                    registered = false;
                     throw e;
                 } else {
                     log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
@@ -430,6 +436,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         @Override
         public void shutDown() throws Exception {
+            registered = false;
             gateway
                 .disconnectTaskExecutor(
                     new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
@@ -658,7 +665,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     @Override
     public CompletableFuture<Boolean> isRegistered() {
-        return callAsync(() -> this.currentResourceManagerCxn != null, DEFAULT_TIMEOUT);
+        return callAsync(() -> this.currentResourceManagerCxn != null && this.currentResourceManagerCxn.isRegistered(), DEFAULT_TIMEOUT);
     }
 
     CompletableFuture<Boolean> isRegistered(Time timeout) {

@@ -81,6 +81,10 @@ public class TaskExecutorStarter extends AbstractIdleService {
             .get();
     }
 
+    public TaskExecutor getTaskExecutor() {
+        return this.taskExecutor;
+    }
+
     public static TaskExecutorStarterBuilder builder(WorkerConfiguration workerConfiguration) {
         return new TaskExecutorStarterBuilder(workerConfiguration);
     }
