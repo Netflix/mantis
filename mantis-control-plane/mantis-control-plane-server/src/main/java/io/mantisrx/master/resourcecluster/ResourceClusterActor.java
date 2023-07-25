@@ -401,6 +401,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         if (state != null && state.onNodeDisabled()) {
             log.info("Marking task executor {} as disabled", request.getTaskExecutorID());
         }
+        sender().tell(Ack.getInstance(), self());
     }
 
     private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
