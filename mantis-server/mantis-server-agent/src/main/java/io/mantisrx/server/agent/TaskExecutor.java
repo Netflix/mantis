@@ -363,6 +363,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         private final int tolerableConsecutiveHeartbeatFailures;
 
         private int numFailedHeartbeats = 0;
+        // flag representing if the task executor has been registered with the resource manager
         @Getter
         private volatile boolean registered = false;
 
@@ -416,12 +417,12 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     })
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 
-                // the heartbeat was successful, let's reset the counter.
+                // the heartbeat was successful, let's reset the counter and set the registered flag
                 numFailedHeartbeats = 0;
                 registered = true;
             } catch (Exception e) {
                 log.error("Failed to send heartbeat to gateway {}", gateway, e);
-                // increase the number of failed heartbeats by 1
+                // increase the number of failed heartbeats by 1 and clear the registered flag
                 numFailedHeartbeats += 1;
                 registered = false;
                 if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
