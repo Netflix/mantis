@@ -253,13 +253,13 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<Ack> disableTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+    public CompletableFuture<TaskExecutorOnDisabled> disableTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID) {
         final DisableTaskExecutorRequest msg = new DisableTaskExecutorRequest(taskExecutorID, clusterID);
 
         return
             Patterns
                 .ask(resourceClusterManagerActor, msg, askTimeout)
-                .thenApply(Ack.class::cast)
+                .thenApply(TaskExecutorOnDisabled.class::cast)
                 .toCompletableFuture();
     }
 

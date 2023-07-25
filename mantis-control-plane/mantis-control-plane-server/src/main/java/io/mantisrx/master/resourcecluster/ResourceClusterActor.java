@@ -38,6 +38,7 @@ import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ConnectionFailedException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorOnDisabled;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
@@ -398,11 +399,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onDisableTaskExecutorRequest(DisableTaskExecutorRequest request) {
         final TaskExecutorState state = executorStateManager.get(request.getTaskExecutorID());
-        log.info("onDisableTaskExecutorRequest {}", state);
+        log.info("Trying to disable task executor {} with state {}", request.getTaskExecutorID(), state);
+
         if (state != null && state.onNodeDisabled()) {
             log.info("Marking task executor {} as disabled", request.getTaskExecutorID());
+            sender().tell(new TaskExecutorOnDisabled(true), self());
+        } else {
+            sender().tell(new TaskExecutorOnDisabled(false), self());
         }
-        sender().tell(Ack.getInstance(), self());
     }
 
     private void onDisableTaskExecutorsRequestExpiry(ExpireDisableTaskExecutorsRequest request) {
