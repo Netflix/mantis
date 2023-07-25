@@ -20,6 +20,7 @@ import io.mantisrx.common.properties.DefaultMantisPropertiesLoader;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,16 +28,18 @@ import org.slf4j.LoggerFactory;
 public class ServiceRegistry {
 
     private static Logger logger = LoggerFactory.getLogger(ServiceRegistry.class);
-    private final AtomicReference<MantisPropertiesLoader> registryRef = new AtomicReference<>(null);
+    private final AtomicReference<State> registryRef = new AtomicReference<>(null);
     public static ServiceRegistry INSTANCE = new ServiceRegistry();
 
     private ServiceRegistry() {
     }
 
     public void setMantisPropertiesService(MantisPropertiesLoader service) {
-        logger.info(String.format("Setting Mantis Properties Service to %s", service), new Exception());
-        if (!registryRef.compareAndSet(null, service)) {
-            logger.error("MantisPropertiesService already set to {}", registryRef.get());
+        logger.debug("Setting Mantis Properties Service to {}", service);
+        if (!registryRef.compareAndSet(null, new State(service, new Exception()))) {
+            logger.error(
+                "MantisPropertiesService already set to {} as part of the below stacktrace",
+                registryRef.get().getPropertiesLoader(), registryRef.get().getStackTrace());
         }
     }
 
@@ -46,7 +49,7 @@ public class ServiceRegistry {
             setMantisPropertiesService(loadMantisPropertiesLoader());
         }
 
-        return registryRef.get();
+        return registryRef.get().getPropertiesLoader();
     }
 
     private static MantisPropertiesLoader loadMantisPropertiesLoader() {
@@ -60,5 +63,9 @@ public class ServiceRegistry {
         return mpl;
     }
 
-
+    @Value
+    class State {
+        MantisPropertiesLoader propertiesLoader;
+        Exception stackTrace;
+    }
 }
