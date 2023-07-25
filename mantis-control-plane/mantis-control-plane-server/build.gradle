@@ -27,7 +27,6 @@ ext {
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
     rxJavaReactiveStreamsVersion = '1.+'
-    curatorVersion = '2.11.0'
     testngVersion = '6.+'
     scalaBinaryVersion = '2.12'
 }

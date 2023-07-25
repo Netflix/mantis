@@ -19,7 +19,6 @@ ext {
 
     cliParserVersion = '1.1.1'
     configMagicVersion = '0.11'
-    curatorVersion = '2.11.0'
     hdrHistogramVersion = '2.+'
     jodaTimeVersion = '2.+'
     jsonVersion = '20180813'
