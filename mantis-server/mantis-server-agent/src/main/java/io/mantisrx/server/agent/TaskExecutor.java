@@ -424,8 +424,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 log.error("Failed to send heartbeat to gateway {}", gateway, e);
                 // increase the number of failed heartbeats by 1 and clear the registered flag
                 numFailedHeartbeats += 1;
-                registered = false;
                 if (numFailedHeartbeats > tolerableConsecutiveHeartbeatFailures) {
+                    registered = false;
                     throw e;
                 } else {
                     log.info("Ignoring heartbeat failure to gateway {} due to failed heartbeats {} <= {}",
