@@ -715,6 +715,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     @Value
     static class DisableTaskExecutorRequest {
         TaskExecutorID taskExecutorID;
+        ClusterID clusterID;
     }
 
     @Value

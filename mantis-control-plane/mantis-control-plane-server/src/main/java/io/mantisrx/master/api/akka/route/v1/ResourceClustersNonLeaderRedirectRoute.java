@@ -181,7 +181,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                             PathMatchers.segment(),
                             (taskExecutorID) -> pathEndOrSingleSlash(() -> concat(
                                 // POST
-                                post(() -> disableTaskExecutors(getClusterID(clusterName), getTaskExecutorID(taskExecutorID)))
+                                post(() -> disableTaskExecutor(getClusterID(clusterName), getTaskExecutorID(taskExecutorID)))
                             ))
                     )
                 )),
@@ -341,12 +341,10 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         });
     }
 
-    private Route disableTaskExecutors(ClusterID clusterID, TaskExecutorID taskExecutorID) {
-        return entity(Jackson.unmarshaller(DisableTaskExecutorsRequest.class), request -> {
-            log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors/{} called.",
-                clusterID, taskExecutorID);
-            return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutor(taskExecutorID));
-        });
+    private Route disableTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+        log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors/{} called.",
+            clusterID, taskExecutorID);
+        return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutor(clusterID, taskExecutorID));
     }
 
     private Route setScalerStatus(String clusterID) {
