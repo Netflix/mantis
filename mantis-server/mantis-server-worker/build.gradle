@@ -19,7 +19,6 @@ apply plugin: 'eu.appsatori.fatjar'
 ext {
     mantisRxControlVersion = '1.3.+'
     mesosVersion = '1.7.2'
-    httpComponentsVersion = '4.5.6'
 }
 
 dependencies {
@@ -36,7 +35,7 @@ dependencies {
         exclude group: 'com.github.spullara.cli-parser', module: 'cli-parser'
         exclude group: 'org.pentaho.pentaho-commons', module: 'pentaho-package-manager'
     }
-    implementation "org.apache.httpcomponents:httpclient:$httpComponentsVersion"
+    implementation libraries.httpClient
     implementation "io.mantisrx:mantis-rxcontrol:$mantisRxControlVersion"
     implementation "com.yahoo.datasketches:sketches-core:0.9.1"
 
