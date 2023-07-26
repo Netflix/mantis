@@ -22,6 +22,8 @@ import io.mantisrx.client.MantisSSEJob;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,6 +65,7 @@ public class SubmitWithRuntimeLimit {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean completed = new AtomicBoolean(false);
         final long runtimeLimitSecs = 30;
+        final MeterRegistry meterRegistry = new SimpleMeterRegistry();
         MantisSSEJob job = new MantisSSEJob.Builder(properties)
                 .name(jobName)
                 .jobSla(new JobSla(runtimeLimitSecs, 0L, JobSla.StreamSLAType.Lossy, MantisJobDurationType.Perpetual, ""))
@@ -72,7 +75,7 @@ public class SubmitWithRuntimeLimit {
                         System.err.println("Reconnecting due to error: " + throwable.getMessage());
                     }
                 })
-                .buildJobSubmitter();
+                .buildJobSubmitter(meterRegistry);
         final Observable<Observable<MantisServerSentEvent>> observable = job.submitAndGet();
         final Subscription subscription = observable
                 .flatMap(new Func1<Observable<MantisServerSentEvent>, Observable<?>>() {
