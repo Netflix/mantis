@@ -110,7 +110,7 @@ public class MantisSSEJob implements Closeable {
             resultsObservable = exists ?
                     sinksToObservable(builder.mantisClient.getSinkClientByJobName(
                             builder.name,
-                            new SseSinkConnectionFunction(true, builder.onConnectionReset, builder.sinkParameters),
+                            new SseSinkConnectionFunction(true, builder.onConnectionReset, builder.sinkParameters, meterRegistry),
                             builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs,meterRegistry)
                     )
                             .share()
@@ -148,7 +148,7 @@ public class MantisSSEJob implements Closeable {
                                     jobSla, builder.schedulingInfo);
                             logger.info("Submitted job name " + builder.name + " and got jobId: " + jobId);
                             resultsObservable = builder.mantisClient
-                                    .getSinkClientByJobId(jobId, new SseSinkConnectionFunction(true, builder.onConnectionReset),
+                                    .getSinkClientByJobId(jobId, new SseSinkConnectionFunction(true, builder.onConnectionReset,meterRegistry),
                                             builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs, meterRegistry)
                                     .getResults();
                             resultsObservable.subscribe(subscriber);

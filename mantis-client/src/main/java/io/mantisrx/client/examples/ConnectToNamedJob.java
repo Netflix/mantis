@@ -31,6 +31,8 @@ import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.MasterClientWrapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -147,6 +149,7 @@ public class ConnectToNamedJob {
         }
         final CountDownLatch latch = new CountDownLatch(1);
         MantisSSEJob job = null;
+        final MeterRegistry meterRegistry = new SimpleMeterRegistry();
         try {
             job = new MantisSSEJob.Builder(properties)
                     .name(jobName)
@@ -177,7 +180,7 @@ public class ConnectToNamedJob {
                     .sinkDataRecvTimeoutSecs(11)
                     //          .sinkParams(params)
                     //.sinkParams(new SinkParameters.Builder().withParameter("subscriptionId", "abc").withParameter("filter", "true").build()) // for zuul source job
-                    .buildJobConnector();
+                    .buildJobConnector(meterRegistry);
         } catch (Exception e) {
             e.printStackTrace();
         }
