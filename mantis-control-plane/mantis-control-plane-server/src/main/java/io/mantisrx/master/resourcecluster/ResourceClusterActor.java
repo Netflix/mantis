@@ -108,6 +108,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final ResourceClusterActorMetrics metrics;
 
     private final HashSet<ArtifactID> jobArtifactsToCache = new HashSet<>();
+    private final HashSet<TaskExecutorID> disabledTaskExecutors = new HashSet<>();
 
     static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
         return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter);
@@ -142,6 +143,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     public void preStart() throws Exception {
         super.preStart();
         fetchJobArtifactsToCache();
+        fetchDisabledTaskExecutors();
 
         List<DisableTaskExecutorsRequest> activeRequests =
             mantisJobStore.loadAllDisableTaskExecutorsRequests(clusterID);
@@ -194,6 +196,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(TaskExecutorInfoRequest.class, this::onTaskExecutorInfoRequest)
                 .match(TaskExecutorGatewayRequest.class, this::onTaskExecutorGatewayRequest)
                 .match(DisableTaskExecutorRequest.class, this::onDisableTaskExecutorRequest)
+                .match(DeleteDisabledTaskExecutorRequest.class, this::onDeleteDisabledTaskExecutorRequest)
                 .match(DisableTaskExecutorsRequest.class, this::onNewDisableTaskExecutorsRequest)
                 .match(CheckDisabledTaskExecutors.class, this::findAndMarkDisabledTaskExecutors)
                 .match(ExpireDisableTaskExecutorsRequest.class, this::onDisableTaskExecutorsRequestExpiry)
@@ -235,6 +238,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } catch (IOException e) {
             log.warn("Cannot refresh job artifacts to cache in cluster: {}", clusterID, e);
         }
+    }
+
+    private void fetchDisabledTaskExecutors() {
+        log.info("Fetching persisted task executors");
+        // 1. fetch all TEs
+        // 2. for each TE -> call teState.onNodeDisabled() || remove them if no state is found!
     }
 
     private GetClusterIdleInstancesResponse onGetClusterIdleInstancesRequest(GetClusterIdleInstancesRequest req) {
@@ -397,15 +406,31 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         }
     }
 
+    private void onDeleteDisabledTaskExecutorRequest(DeleteDisabledTaskExecutorRequest request) {
+        //        mantisJobStore.deleteDisabledTaskExecutor(request);
+        disabledTaskExecutors.remove(request.getTaskExecutorID());
+    }
+
     private void onDisableTaskExecutorRequest(DisableTaskExecutorRequest request) {
+        //        mantisJobStore.storeDisabledTaskExecutor(request);
+        log.info("Request to disable task executor {}", request.getTaskExecutorID());
+
         final TaskExecutorState state = executorStateManager.get(request.getTaskExecutorID());
         log.info("Trying to disable task executor {} with state {}", request.getTaskExecutorID(), state);
 
-        if (state != null && state.onNodeDisabled()) {
-            log.info("Marking task executor {} as disabled", request.getTaskExecutorID());
-            sender().tell(new TaskExecutorOnDisabled(true), self());
-        } else {
+        if (state == null) {
+            // If the TE is unknown by mantis, delete it from state
+            //        mantisJobStore.deleteDisabledTaskExecutor(request);
+            disabledTaskExecutors.remove(request.taskExecutorID);
             sender().tell(new TaskExecutorOnDisabled(false), self());
+        } else {
+            // If the TE is known, let's try to disable this TE
+            // disabling TE already disabled should be a no-op
+            log.info("Marking task executor {} as disabled", request.getTaskExecutorID());
+            state.onNodeDisabled();
+            //        mantisJobStore.storeDisabledTaskExecutor(request);
+            disabledTaskExecutors.add(request.taskExecutorID);
+            sender().tell(new TaskExecutorOnDisabled(true), self());
         }
     }
 
@@ -472,6 +497,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                         log.info("Newly registered task executor {} was already marked for disabling because of {}", registration.getTaskExecutorID(), request);
                         state.onNodeDisabled();
                     }
+                }
+                if (disabledTaskExecutors.contains(registration.getTaskExecutorID())) {
+                    log.info("Newly registered task executor {} was already marked for disabling.", registration.getTaskExecutorID());
+//                    disconnectTaskExecutor(registration.getTaskExecutorID());
+                    state.onNodeDisabled();
+                    return;
                 }
                 updateHeartbeatTimeout(registration.getTaskExecutorID());
             }
@@ -720,6 +751,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     @Value
     static class DisableTaskExecutorRequest {
+        TaskExecutorID taskExecutorID;
+        ClusterID clusterID;
+    }
+
+    @Value
+    static class DeleteDisabledTaskExecutorRequest {
         TaskExecutorID taskExecutorID;
         ClusterID clusterID;
     }

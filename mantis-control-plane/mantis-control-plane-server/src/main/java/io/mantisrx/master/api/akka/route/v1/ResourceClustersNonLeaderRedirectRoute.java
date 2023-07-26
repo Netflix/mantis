@@ -344,7 +344,7 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
     private Route disableTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID) {
         log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors/{} called.",
             clusterID, taskExecutorID);
-        return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutor(clusterID, taskExecutorID));
+        return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutor(taskExecutorID));
     }
 
     private Route setScalerStatus(String clusterID) {

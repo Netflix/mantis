@@ -156,7 +156,7 @@ public interface ResourceCluster extends ResourceClusterGateway {
      * @param taskExecutorID ID whom task executor will be disabled.
      * @return a future that completes when the underlying operation is registered by the system
      */
-    CompletableFuture<TaskExecutorOnDisabled> disableTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID);
+    CompletableFuture<TaskExecutorOnDisabled> disableTaskExecutor(TaskExecutorID taskExecutorID);
 
     /**
      * Enables/Disables scaler for a given skuID of a given clusterID
