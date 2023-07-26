@@ -67,10 +67,12 @@ public class SseWorkerConnection {
     private final Action1<Boolean> updateDataRecvngStatus;
     private final Action1<Throwable> connectionResetHandler;
     private final long dataRecvTimeoutSecs;
-    private final CopyOnWriteArraySet<MetricGroupId> metricsSet;
+//    private final CopyOnWriteArraySet<MetricGroupId> metricsSet;
+    private final CopyOnWriteArraySet<String> metricsSet;
     private final int bufferSize;
     private final SinkParameters sinkParameters;
     private final boolean disablePingFiltering;
+    private final MeterRegistry meterRegistry;
     private final AtomicBoolean isConnected = new AtomicBoolean(false);
     private final AtomicBoolean isReceivingData = new AtomicBoolean(false);
     HttpClient<ByteBuf, ServerSentEvent> client;
@@ -115,10 +117,11 @@ public class SseWorkerConnection {
                                final CopyOnWriteArraySet<MetricGroupId> metricsSet,
                                final int bufferSize,
                                final SinkParameters sinkParameters,
-                               final MetricGroupId metricGroupId) {
+//                               final MetricGroupId metricGroupId,
+                               final String metricGroupName;) {
         this(connectionType, hostname, port, updateConxStatus, updateDataRecvngStatus, connectionResetHandler,
                 dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false,
-                metricGroupId);
+                metricGroupName);
     }
     public SseWorkerConnection(final String connectionType,
                                final String hostname,
@@ -128,16 +131,18 @@ public class SseWorkerConnection {
                                final Action1<Throwable> connectionResetHandler,
                                final long dataRecvTimeoutSecs,
                                final boolean reconnectUponConnectionReset,
-                               final CopyOnWriteArraySet<MetricGroupId> metricsSet,
+//                               final CopyOnWriteArraySet<MetricGroupId> metricsSet,
+                               final CopyOnWriteArraySet<String> metricsSet,
                                final int bufferSize,
                                final SinkParameters sinkParameters,
                                final boolean disablePingFiltering,
-                               final MetricGroupId metricGroupId) {
+//                               final MetricGroupId metricGroupId
+                               final String metricGroupName) {
         this.connectionType = connectionType;
         this.hostname = hostname;
         this.port = port;
 
-        this.metricGroupId = metricGroupId;
+        this.metricGroupName = metricGroupName;
         final MetricGroupId connHealthMetricGroup = new MetricGroupId("ConnectionHealth");
         Metrics m = new Metrics.Builder()
                 .id(connHealthMetricGroup)

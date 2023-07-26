@@ -17,16 +17,20 @@
 package io.mantisrx.client;
 
 import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.metrics.Gauge;
+import io.micrometer.core.instrument.Gauge;
+//import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.server.master.client.MasterClientWrapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +49,13 @@ public class SinkClientImpl<T> implements SinkClient<T> {
     final private AtomicBoolean nowClosed = new AtomicBoolean(false);
     final private SinkConnections<T> sinkConnections = new SinkConnections<>();
     private final String sinkGuageName = "SinkConnections";
+    private final AtomicLong sinkConnectionsNum = new AtomicLong(0);
     private final String expectedSinksGaugeName = "ExpectedSinkConnections";
+    private final AtomicLong expectedSinksNum = new AtomicLong(0);
     private final String sinkReceivingDataGaugeName = "sinkRecvngData";
+    private final AtomicLong sinkReceivingDataNum = new AtomicLong(0);
     private final String clientNotConnectedToAllSourcesGaugeName = "clientNotConnectedToAllSources";
+    private final AtomicLong clientNotConnectedToAllSourcesNum = new AtomicLong(0);
     private final Gauge sinkGauge;
     private final Gauge expectedSinksGauge;
     private final Gauge sinkReceivingDataGauge;
@@ -55,37 +63,54 @@ public class SinkClientImpl<T> implements SinkClient<T> {
     private final AtomicInteger numSinkWorkers = new AtomicInteger();
     private final Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver;
     private final long dataRecvTimeoutSecs;
-    private final Metrics metrics;
+//    private final Metrics metrics;
     private final boolean disablePingFiltering;
+    private final MeterRegistry meterRegistry;
 
     SinkClientImpl(String jobId, SinkConnectionFunc<T> sinkConnectionFunc, JobSinkLocator jobSinkLocator,
                    Observable<Integer> numSinkWorkersObservable,
-                   Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs) {
+                   Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs, MeterRegistry meterRegistry) {
         this(jobId, sinkConnectionFunc, jobSinkLocator, numSinkWorkersObservable, sinkConnectionsStatusObserver,
-                dataRecvTimeoutSecs, false);
+                dataRecvTimeoutSecs, false, meterRegistry);
 
     }
 
     SinkClientImpl(String jobId, SinkConnectionFunc<T> sinkConnectionFunc, JobSinkLocator jobSinkLocator,
                    Observable<Integer> numSinkWorkersObservable,
                    Observer<SinkConnectionsStatus> sinkConnectionsStatusObserver, long dataRecvTimeoutSecs,
-                   boolean disablePingFiltering) {
+                   boolean disablePingFiltering, MeterRegistry meterRegistry) {
         this.jobId = jobId;
+        this.meterRegistry = meterRegistry;
         this.sinkConnectionFunc = sinkConnectionFunc;
         this.jobSinkLocator = jobSinkLocator;
-        BasicTag jobIdTag = new BasicTag("jobId", Optional.ofNullable(jobId).orElse("NullJobId"));
-        MetricGroupId metricGroupId = new MetricGroupId(SinkClientImpl.class.getCanonicalName(), jobIdTag);
-        this.metrics = new Metrics.Builder()
-                .id(metricGroupId)
-                .addGauge(sinkGuageName)
-                .addGauge(expectedSinksGaugeName)
-                .addGauge(sinkReceivingDataGaugeName)
-                .addGauge(clientNotConnectedToAllSourcesGaugeName)
-                .build();
-        sinkGauge = metrics.getGauge(sinkGuageName);
-        expectedSinksGauge = metrics.getGauge(expectedSinksGaugeName);
-        sinkReceivingDataGauge = metrics.getGauge(sinkReceivingDataGaugeName);
-        clientNotConnectedToAllSourcesGauge = metrics.getGauge(clientNotConnectedToAllSourcesGaugeName);
+//        BasicTag jobIdTag = new BasicTag("jobId", Optional.ofNullable(jobId).orElse("NullJobId"));
+        Tags jobIdTag = Tags.of("jobId", Optional.ofNullable(jobId).orElse("NullJobId"));
+        String groupName = SinkClientImpl.class.getCanonicalName();
+//        MetricGroupId metricGroupId = new MetricGroupId(SinkClientImpl.class.getCanonicalName(), jobIdTag);
+//        this.metrics = new Metrics.Builder()
+//                .id(metricGroupId)
+//                .addGauge(sinkGuageName)
+//                .addGauge(expectedSinksGaugeName)
+//                .addGauge(sinkReceivingDataGaugeName)
+//                .addGauge(clientNotConnectedToAllSourcesGaugeName)
+//                .build();
+//        sinkGauge = metrics.getGauge(sinkGuageName);
+//        expectedSinksGauge = metrics.getGauge(expectedSinksGaugeName);
+//        sinkReceivingDataGauge = metrics.getGauge(sinkReceivingDataGaugeName);
+//        clientNotConnectedToAllSourcesGauge = metrics.getGauge(clientNotConnectedToAllSourcesGaugeName);
+        sinkGauge = Gauge.builder(groupName + "_" +sinkGuageName, sinkConnectionsNum::get)
+                .tags(jobIdTag)
+                .register(meterRegistry);
+        expectedSinksGauge = Gauge.builder(groupName + "_" + expectedSinksGaugeName, expectedSinksNum::get)
+                .tags(jobIdTag)
+                .register(meterRegistry);
+        sinkReceivingDataGauge = Gauge.builder(groupName + "_" + sinkReceivingDataGaugeName, sinkReceivingDataNum::get)
+                .tags(jobIdTag)
+                .register(meterRegistry);
+        clientNotConnectedToAllSourcesGauge = Gauge.builder(groupName + "_" + clientNotConnectedToAllSourcesGaugeName, clientNotConnectedToAllSourcesNum::get)
+                .tags(jobIdTag)
+                .register(meterRegistry);
+
         numSinkWorkersObservable
                 .doOnNext((integer) -> numSinkWorkers.set(integer))
                 .takeWhile((integer) -> !nowClosed.get())
@@ -218,36 +243,48 @@ public class SinkClientImpl<T> implements SinkClient<T> {
 
     private void updateSinkDataReceivingStatus(Boolean flag) {
         if (flag)
-            sinkReceivingDataGauge.increment();
+//            sinkReceivingDataGauge.increment();
+            sinkReceivingDataNum.incrementAndGet();
         else
-            sinkReceivingDataGauge.decrement();
-        expectedSinksGauge.set(numSinkWorkers.get());
+//            sinkReceivingDataGauge.decrement();
+            sinkReceivingDataNum.decrementAndGet();
+//        expectedSinksGauge.set(numSinkWorkers.get());
+        expectedSinksNum.set(numSinkWorkers.get());
         if (expectedSinksGauge.value() != sinkReceivingDataGauge.value()) {
-            this.clientNotConnectedToAllSourcesGauge.set(1);
+//            this.clientNotConnectedToAllSourcesGauge.set(1);
+            this.clientNotConnectedToAllSourcesNum.set(1);
         } else {
-            this.clientNotConnectedToAllSourcesGauge.set(0);
+//            this.clientNotConnectedToAllSourcesGauge.set(0);
+            this.clientNotConnectedToAllSourcesNum.set(0);
         }
         if (sinkConnectionsStatusObserver != null) {
             synchronized (sinkConnectionsStatusObserver) {
-                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get()));
+//                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get()));
+                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataNum.get(), sinkConnectionsNum.get(), numSinkWorkers.get()));
             }
         }
     }
 
     private void updateSinkConx(Boolean flag) {
         if (flag)
-            sinkGauge.increment();
+//            sinkGauge.increment();
+            sinkConnectionsNum.incrementAndGet();
         else
-            sinkGauge.decrement();
-        expectedSinksGauge.set(numSinkWorkers.get());
+//            sinkGauge.decrement();
+            sinkConnectionsNum.decrementAndGet();
+//        expectedSinksGauge.set(numSinkWorkers.get());
+        expectedSinksNum.set(numSinkWorkers.get());
         if (expectedSinksGauge.value() != sinkReceivingDataGauge.value()) {
-            this.clientNotConnectedToAllSourcesGauge.set(1);
+//            this.clientNotConnectedToAllSourcesGauge.set(1);
+            this.clientNotConnectedToAllSourcesNum.set(1);
         } else {
-            this.clientNotConnectedToAllSourcesGauge.set(0);
+//            this.clientNotConnectedToAllSourcesGauge.set(0);
+            this.clientNotConnectedToAllSourcesNum.set(0);
         }
         if (sinkConnectionsStatusObserver != null) {
             synchronized (sinkConnectionsStatusObserver) {
-                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get()));
+//                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataGauge.value(), sinkGauge.value(), numSinkWorkers.get()));
+                sinkConnectionsStatusObserver.onNext(new SinkConnectionsStatus(sinkReceivingDataNum.get(), sinkConnectionsNum.get(), numSinkWorkers.get()));
             }
         }
     }

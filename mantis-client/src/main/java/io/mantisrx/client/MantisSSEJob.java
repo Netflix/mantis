@@ -16,6 +16,7 @@
 
 package io.mantisrx.client;
 
+import com.netflix.spectator.api.Meter;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;
@@ -24,6 +25,7 @@ import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.master.client.ConditionalRetry;
 import io.mantisrx.server.master.client.NoSuchJobException;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivx.mantis.operators.DropOperator;
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -50,9 +52,11 @@ public class MantisSSEJob implements Closeable {
     private String jobId = null;
     private int forPartition = -1;
     private int totalPartitions = 0;
-    private MantisSSEJob(Builder builder, Mode mode) {
+    private final MeterRegistry meterRegistry;
+    private MantisSSEJob(Builder builder, Mode mode, MeterRegistry meterRegistry) {
         this.builder = builder;
         this.mode = mode;
+        this.meterRegistry = meterRegistry;
         if (builder.connectTimeoutSecs > 0)
             System.setProperty(ConnectTimeoutSecsPropertyName, String.valueOf(builder.connectTimeoutSecs));
     }
@@ -107,7 +111,7 @@ public class MantisSSEJob implements Closeable {
                     sinksToObservable(builder.mantisClient.getSinkClientByJobName(
                             builder.name,
                             new SseSinkConnectionFunction(true, builder.onConnectionReset, builder.sinkParameters),
-                            builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs)
+                            builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs,meterRegistry)
                     )
                             .share()
                     //.lift(new DropOperator<Observable<MantisServerSentEvent>>("client_connect_sse_share"))
@@ -145,7 +149,7 @@ public class MantisSSEJob implements Closeable {
                             logger.info("Submitted job name " + builder.name + " and got jobId: " + jobId);
                             resultsObservable = builder.mantisClient
                                     .getSinkClientByJobId(jobId, new SseSinkConnectionFunction(true, builder.onConnectionReset),
-                                            builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs)
+                                            builder.sinkConnectionsStatusObserver, builder.dataRecvTimeoutSecs, meterRegistry)
                                     .getResults();
                             resultsObservable.subscribe(subscriber);
                         } catch (Exception e) {
@@ -256,21 +260,21 @@ public class MantisSSEJob implements Closeable {
             return this;
         }
 
-        public MantisSSEJob buildJobSubmitter() {
-            return new MantisSSEJob(this, Mode.Submit);
+        public MantisSSEJob buildJobSubmitter(MeterRegistry meterRegistry) {
+            return new MantisSSEJob(this, Mode.Submit, meterRegistry);
         }
 
-        public MantisSSEJob buildJobConnector(int forPartition, int totalPartitions) {
+        public MantisSSEJob buildJobConnector(int forPartition, int totalPartitions, MeterRegistry meterRegistry) {
             if (forPartition >= totalPartitions)
                 throw new IllegalArgumentException("forPartition " + forPartition + " must be less than totalPartitions " + totalPartitions);
-            MantisSSEJob job = new MantisSSEJob(this, Mode.Connect);
+            MantisSSEJob job = new MantisSSEJob(this, Mode.Connect, meterRegistry);
             job.forPartition = forPartition;
             job.totalPartitions = totalPartitions;
             return job;
         }
 
-        public MantisSSEJob buildJobConnector() {
-            return new MantisSSEJob(this, Mode.Connect);
+        public MantisSSEJob buildJobConnector(MeterRegistry meterRegistry) {
+            return new MantisSSEJob(this, Mode.Connect, meterRegistry);
         }
 
     }
