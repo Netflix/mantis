@@ -32,6 +32,8 @@ import io.mantisrx.connector.iceberg.sink.writer.MantisDataFile;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -54,15 +56,17 @@ class IcebergCommitterStageTest {
     private Context context;
     private IcebergCommitter committer;
     private IcebergCommitterStage.Transformer transformer;
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
         this.scheduler = new TestScheduler();
         this.subscriber = new TestSubscriber<>();
+        this.meterRegistry = new SimpleMeterRegistry();
 
         Parameters parameters = StageOverrideParameters.newParameters();
         CommitterConfig config = new CommitterConfig(parameters);
-        CommitterMetrics metrics = new CommitterMetrics();
+        CommitterMetrics metrics = new CommitterMetrics(meterRegistry);
         this.committer = mock(IcebergCommitter.class);
 
         transformer = new IcebergCommitterStage.Transformer(config, metrics, committer, scheduler);

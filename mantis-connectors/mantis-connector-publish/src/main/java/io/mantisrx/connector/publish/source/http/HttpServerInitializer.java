@@ -17,6 +17,7 @@
 package io.mantisrx.connector.publish.source.http;
 
 import io.mantisrx.connector.publish.core.QueryRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -34,10 +35,12 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
     private static final int DEFAULT_MAX_HEADER_SIZE = 16384;
     private static final int DEFAULT_MAX_CHUNK_SIZE = 32768;
     private static final int DEFAULT_MAX_CONTENT_LENGTH = 1048576;
+    private MeterRegistry metricsRegistry;
 
-    public HttpServerInitializer(QueryRegistry registry, Subject<String, String> eventSubject) {
+    public HttpServerInitializer(QueryRegistry registry, Subject<String, String> eventSubject, MeterRegistry metricsRegistry) {
         this.registry = registry;
         this.eventSubject = eventSubject;
+        this.metricsRegistry = metricsRegistry;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast("inflater", new HttpContentDecompressor());
         p.addLast("aggregator", new HttpObjectAggregator(DEFAULT_MAX_CONTENT_LENGTH));
 
-        p.addLast(new HttpSourceServerHandler(registry, eventSubject));
+        p.addLast(new HttpSourceServerHandler(registry, eventSubject, metricsRegistry));
         p.addLast(new NettyExceptionHandler());
     }
 }

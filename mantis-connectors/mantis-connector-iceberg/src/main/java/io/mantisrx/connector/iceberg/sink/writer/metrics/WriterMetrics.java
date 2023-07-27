@@ -16,10 +16,12 @@
 
 package io.mantisrx.connector.iceberg.sink.writer.metrics;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class WriterMetrics {
 
@@ -43,42 +45,42 @@ public class WriterMetrics {
 
     public static final String BATCH_SIZE = "batchSize";
     private final Gauge batchSize;
+    private AtomicLong batchSizeValue = new AtomicLong(0);
 
     public static final String BATCH_SIZE_BYTES = "batchSizeBytes";
     private final Gauge batchSizeBytes;
+    private AtomicLong batchSizeBytesValue = new AtomicLong(0);
+    private final MeterRegistry meterRegistry;
 
-    public WriterMetrics() {
-        Metrics metrics = new Metrics.Builder()
-                .name(WriterMetrics.class.getCanonicalName())
-                .addCounter(OPEN_SUCCESS_COUNT)
-                .addCounter(OPEN_FAILURE_COUNT)
-                .addCounter(WRITE_SUCCESS_COUNT)
-                .addCounter(WRITE_FAILURE_COUNT)
-                .addCounter(BATCH_SUCCESS_COUNT)
-                .addCounter(BATCH_FAILURE_COUNT)
-                .addGauge(BATCH_SIZE)
-                .addGauge(BATCH_SIZE_BYTES)
-                .build();
-
-        metrics = MetricsRegistry.getInstance().registerAndGet(metrics);
-
-        openSuccessCount = metrics.getCounter(OPEN_SUCCESS_COUNT);
-        openFailureCount = metrics.getCounter(OPEN_FAILURE_COUNT);
-        writeSuccessCount = metrics.getCounter(WRITE_SUCCESS_COUNT);
-        writeFailureCount = metrics.getCounter(WRITE_FAILURE_COUNT);
-        batchSuccessCount = metrics.getCounter(BATCH_SUCCESS_COUNT);
-        batchFailureCount = metrics.getCounter(BATCH_FAILURE_COUNT);
-        batchSize = metrics.getGauge(BATCH_SIZE);
-        batchSizeBytes = metrics.getGauge(BATCH_SIZE_BYTES);
+    public WriterMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        String groupName = WriterMetrics.class.getCanonicalName();
+        openSuccessCount = Counter.builder(groupName + "_" + OPEN_SUCCESS_COUNT)
+                .register(meterRegistry);
+        openFailureCount = Counter.builder(groupName + "_" + OPEN_FAILURE_COUNT)
+                .register(meterRegistry);
+        writeSuccessCount = Counter.builder(groupName + "_" + WRITE_SUCCESS_COUNT)
+                .register(meterRegistry);
+        writeFailureCount = Counter.builder(groupName + "_" + WRITE_FAILURE_COUNT)
+                .register(meterRegistry);
+        batchSuccessCount = Counter.builder(groupName + "_" + BATCH_SUCCESS_COUNT)
+                .register(meterRegistry);
+        batchFailureCount = Counter.builder(groupName + "_" + BATCH_FAILURE_COUNT)
+                .register(meterRegistry);
+        batchSize = Gauge.builder(groupName + "_" + BATCH_SIZE, batchSizeValue::get)
+                .register(meterRegistry);
+        batchSizeBytes = Gauge.builder(groupName + "_" + BATCH_SIZE_BYTES, batchSizeBytesValue::get)
+                .register(meterRegistry);
     }
+
 
     public void setGauge(final String metric, final long value) {
         switch (metric) {
             case BATCH_SIZE:
-                batchSize.set(value);
+                batchSizeValue.set(value);
                 break;
             case BATCH_SIZE_BYTES:
-                batchSizeBytes.set(value);
+                batchSizeBytesValue.set(value);
                 break;
             default:
                 break;

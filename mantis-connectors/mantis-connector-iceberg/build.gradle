@@ -35,6 +35,7 @@ dependencies {
     }
     api project(":mantis-runtime")
     implementation libraries.slf4jApi
+    implementation libraries.micrometerCore
 
     // We only need the Configuration interface.
     api "org.apache.hadoop:hadoop-common:$hadoopVersion"

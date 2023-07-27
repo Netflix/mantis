@@ -16,12 +16,12 @@
 
 package io.mantisrx.connector.iceberg.sink.committer.metrics;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.Timer;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class CommitterMetrics {
 
@@ -39,30 +39,29 @@ public class CommitterMetrics {
 
     public static final String COMMIT_BATCH_SIZE = "commitBatchSize";
     private final Gauge commitBatchSize;
+    private AtomicLong commitBatchSizeValue = new AtomicLong(0);
+    private final MeterRegistry meterRegistry;
 
-    public CommitterMetrics() {
-        Metrics metrics = new Metrics.Builder()
-                .name(CommitterMetrics.class.getCanonicalName())
-                .addCounter(INVOCATION_COUNT)
-                .addCounter(COMMIT_SUCCESS_COUNT)
-                .addCounter(COMMIT_FAILURE_COUNT)
-                .addTimer(COMMIT_LATENCY_MSEC)
-                .addGauge(COMMIT_BATCH_SIZE)
-                .build();
+    public CommitterMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        String groupName = CommitterMetrics.class.getCanonicalName();
+        invocationCount = Counter.builder(groupName + "_" + INVOCATION_COUNT)
+                .register(meterRegistry);
+        commitSuccessCount = Counter.builder(groupName + "_" + COMMIT_SUCCESS_COUNT)
+                .register(meterRegistry);
+        commitFailureCount = Counter.builder(groupName + "_" + COMMIT_FAILURE_COUNT)
+                .register(meterRegistry);
+        commitLatencyMsec = Timer.builder(groupName + "_" + COMMIT_LATENCY_MSEC)
+                .register(meterRegistry);
+        commitBatchSize = Gauge.builder(groupName + "_" + COMMIT_BATCH_SIZE, commitBatchSizeValue::get)
+                .register(meterRegistry);
 
-        metrics = MetricsRegistry.getInstance().registerAndGet(metrics);
-
-        invocationCount = metrics.getCounter(INVOCATION_COUNT);
-        commitSuccessCount = metrics.getCounter(COMMIT_SUCCESS_COUNT);
-        commitFailureCount = metrics.getCounter(COMMIT_FAILURE_COUNT);
-        commitLatencyMsec = metrics.getTimer(COMMIT_LATENCY_MSEC);
-        commitBatchSize = metrics.getGauge(COMMIT_BATCH_SIZE);
     }
 
     public void setGauge(final String metric, final long value) {
         switch (metric) {
             case COMMIT_BATCH_SIZE:
-                commitBatchSize.set(value);
+                commitBatchSizeValue.set(value);
                 break;
             default:
                 break;
@@ -107,7 +106,7 @@ public class CommitterMetrics {
                 commitFailureCount.increment(value);
                 break;
             case COMMIT_BATCH_SIZE:
-                commitBatchSize.increment(value);
+                commitBatchSizeValue.addAndGet(value);
                 break;
             default:
                 break;

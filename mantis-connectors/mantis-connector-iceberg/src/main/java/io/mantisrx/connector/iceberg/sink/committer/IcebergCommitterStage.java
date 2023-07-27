@@ -29,6 +29,9 @@ import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.type.StringParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -97,9 +100,9 @@ public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, 
     /**
      * Use this to instantiate a new transformer from a given {@link Context}.
      */
-    public static Transformer newTransformer(Context context) {
+    public static Transformer newTransformer(Context context, MeterRegistry meterRegistry) {
         CommitterConfig config = new CommitterConfig(context.getParameters());
-        CommitterMetrics metrics = new CommitterMetrics();
+        CommitterMetrics metrics = new CommitterMetrics(meterRegistry);
         Catalog catalog = context.getServiceLocator().service(Catalog.class);
         TableIdentifier id = TableIdentifier.of(config.getCatalog(), config.getDatabase(), config.getTable());
         Table table = catalog.loadTable(id);
@@ -125,7 +128,7 @@ public class IcebergCommitterStage implements ScalarComputation<MantisDataFile, 
      */
     @Override
     public void init(Context context) {
-        transformer = newTransformer(context);
+        transformer = newTransformer(context, new CompositeMeterRegistry().add(new SimpleMeterRegistry()));
     }
 
     @Override

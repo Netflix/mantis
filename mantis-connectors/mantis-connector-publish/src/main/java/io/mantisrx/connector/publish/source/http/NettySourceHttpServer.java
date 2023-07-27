@@ -18,6 +18,7 @@ package io.mantisrx.connector.publish.source.http;
 
 import io.mantisrx.connector.publish.core.QueryRegistry;
 import io.mantisrx.runtime.Context;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -40,10 +41,12 @@ public class NettySourceHttpServer implements SourceHttpServer {
     private Runnable nettyServerRunnable;
     private volatile boolean isInitialized = false;
     private volatile boolean isStarted = false;
+    private final MeterRegistry metricsRegistry;
 
-    public NettySourceHttpServer(Context context, int threadCount) {
+    public NettySourceHttpServer(Context context, int threadCount, MeterRegistry metricsRegistry) {
         this.bossGroup = new NioEventLoopGroup(threadCount);
         this.workerGroup = new NioEventLoopGroup();
+        this.metricsRegistry = metricsRegistry;
     }
 
     @Override
@@ -55,7 +58,7 @@ public class NettySourceHttpServer implements SourceHttpServer {
                     b.option(ChannelOption.SO_BACKLOG, 1024);
                     b.group(bossGroup, workerGroup)
                             .channel(NioServerSocketChannel.class)
-                            .childHandler(new HttpServerInitializer(queryRegistry, eventSubject));
+                            .childHandler(new HttpServerInitializer(queryRegistry, eventSubject, metricsRegistry));
                     Channel ch = b.bind(port).sync().channel();
                     ch.closeFuture().sync();
                 } catch (Exception e) {

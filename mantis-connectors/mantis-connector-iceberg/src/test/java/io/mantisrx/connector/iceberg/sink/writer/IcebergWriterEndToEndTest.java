@@ -35,6 +35,7 @@ import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.MantisJobDurationType;
 import io.mantisrx.runtime.TestWorkerInfo;
 import io.mantisrx.runtime.WorkerInfo;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -113,7 +114,7 @@ public class IcebergWriterEndToEndTest {
 
         final IcebergWriterPool writerPool = new FixedIcebergWriterPool(writerFactory, writerConfig);
         Transformer transformer =
-                IcebergWriterStage.newTransformer(writerConfig, new WriterMetrics(), writerPool, partitioner,
+                IcebergWriterStage.newTransformer(writerConfig, new WriterMetrics(new SimpleMeterRegistry()), writerPool, partitioner,
                         WORKER_INFO, null);
 
         final int size = 1000;

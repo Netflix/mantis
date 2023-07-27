@@ -19,9 +19,8 @@ package io.mantisrx.connector.publish.source.http;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.connector.publish.core.QueryRegistry;
 import io.mantisrx.publish.proto.MantisServerSubscription;
@@ -67,24 +66,19 @@ public class HttpSourceServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private final QueryRegistry registry;
     private final Subject<String, String> eventSubject;
+    private final MeterRegistry meterRegistry;
 
-    public HttpSourceServerHandler(QueryRegistry queryRegistry, Subject<String, String> eventSubject) {
+    public HttpSourceServerHandler(QueryRegistry queryRegistry, Subject<String, String> eventSubject, MeterRegistry meterRegistry) {
         registry = queryRegistry;
         this.eventSubject = eventSubject;
-        metricGroupId = new MetricGroupId(SourceHttpServer.METRIC_GROUP + "_incoming");
+        this.meterRegistry = meterRegistry;
+//        metricGroupId = new MetricGroupId(SourceHttpServer.METRIC_GROUP + "_incoming");
+        String groupName = SourceHttpServer.METRIC_GROUP + "_incoming";
 
-        Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addCounter("GetRequestCount")
-                .addCounter("PostRequestCount")
-                .addCounter("UnknownRequestCount")
-                .build();
+        getRequestCount = meterRegistry.counter(groupName + "_" + "GetRequestCount");
+        unknownRequestCount = meterRegistry.counter(groupName + "_" + "UnknownRequestCount");
+        postRequestCount = meterRegistry.counter(groupName + "_" + "PostRequestCount");
 
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-
-        getRequestCount = m.getCounter("GetRequestCount");
-        unknownRequestCount = m.getCounter("UnknownRequestCount");
-        postRequestCount = m.getCounter("PostRequestCount");
     }
 
     @Override
