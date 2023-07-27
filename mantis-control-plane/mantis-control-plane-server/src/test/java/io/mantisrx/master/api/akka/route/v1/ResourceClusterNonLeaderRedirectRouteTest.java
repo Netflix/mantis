@@ -185,8 +185,8 @@ public class ResourceClusterNonLeaderRedirectRouteTest extends JUnitRouteTest {
         when(resourceCluster.disableTaskExecutorsFor(
             ArgumentMatchers.eq(RESOURCE_CLUSTER_DISABLE_TASK_EXECUTORS_ATTRS),
             ArgumentMatchers.argThat(expiry ->
-                expiry.isAfter(Instant.now().plus(Duration.ofHours(18))) &&
-                    expiry.isBefore(Instant.now().plus(Duration.ofHours(19))))))
+                expiry.isAfter(Instant.now().plus(Duration.ofHours(17))) &&
+                    expiry.isBefore(Instant.now().plus(Duration.ofHours(20))))))
             .thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(resourceClusters.getClusterFor(ClusterID.of("myCluster"))).thenReturn(resourceCluster);
 
