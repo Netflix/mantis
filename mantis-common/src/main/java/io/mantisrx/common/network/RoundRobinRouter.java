@@ -41,23 +41,10 @@ public class RoundRobinRouter<T> {
     private Gauge activeConnections;
     private AtomicLong activeConnectionsValue = new AtomicLong(0);
 
-    public RoundRobinRouter() {
-        meterRegistry = new SimpleMeterRegistry();
+    public RoundRobinRouter(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         activeConnections = Gauge.builder("activeConnections", activeConnectionsValue, AtomicLong::get)
             .register(meterRegistry);
-
-        metrics = new Metrics.Builder()
-            .name("RoundRobin")
-            .addGauge("activeConnections")
-            .build();
-    }
-
-    public Metrics getMetrics() {
-        return metrics;
-    }
-
-    public Meter getMeter() {
-        return meterRegistry.getMeters().iterator().next();
     }
 
     public synchronized boolean add(WritableEndpoint<T> endpoint) {
