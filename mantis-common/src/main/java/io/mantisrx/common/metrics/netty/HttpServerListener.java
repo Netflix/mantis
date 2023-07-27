@@ -16,11 +16,11 @@
 
 package io.mantisrx.common.metrics.netty;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import mantis.io.reactivex.netty.metrics.HttpServerMetricEventsListener;
 import mantis.io.reactivex.netty.server.ServerMetricsEvent;
 
@@ -37,35 +37,38 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
     private final Counter responseWriteFailed;
     //    private final Timer responseWriteTimes;
     //    private final Timer requestReadTimes;
-
+    private final AtomicLong requestBacklogValue = new AtomicLong(0);
+    private final AtomicLong inflightRequestsValue = new AtomicLong(0);
+    private MeterRegistry micrometerRegistry;
     private final HttpServerMetricEventsListenerImpl delegate;
 
-    protected HttpServerListener(String monitorId) {
-        super(monitorId);
+    protected HttpServerListener(String monitorId, MeterRegistry micrometerRegistry) {
+        super(monitorId, micrometerRegistry);
 
-        Metrics m = new Metrics.Builder()
-                .name("httpServer_" + monitorId)
-                .addGauge("requestBacklog")
-                .addGauge("inflightRequests")
-                .addCounter("processedRequests")
-                .addCounter("failedRequests")
-                .addCounter("responseWriteFailed")
 
-                .build();
+        String groupName = "httpServer" + "-" + monitorId;
 
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        requestBacklog = m.getGauge("requestBacklog");
-        inflightRequests = m.getGauge("inflightRequests");
-        //        responseWriteTimes = newTimer("responseWriteTimes");
-        //        requestReadTimes = newTimer("requestReadTimes");
-        processedRequests = m.getCounter("processedRequests");
-        failedRequests = m.getCounter("failedRequests");
-        responseWriteFailed = m.getCounter("responseWriteFailed");
+        requestBacklog = Gauge.builder(groupName + "_requestBacklog", requestBacklogValue::get)
+                .register(micrometerRegistry);
+
+        inflightRequests = Gauge.builder(groupName + "_inflightRequests", inflightRequestsValue::get)
+                .register(micrometerRegistry);
+
+        processedRequests = Counter.builder(groupName + "_processedRequests")
+                .register(micrometerRegistry);
+
+        failedRequests = Counter.builder(groupName + "_failedRequests")
+                .register(micrometerRegistry);
+
+        responseWriteFailed = Counter.builder(groupName + "_responseWriteFailed")
+                .register(micrometerRegistry);
+
         delegate = new HttpServerMetricEventsListenerImpl();
     }
 
-    public static HttpServerListener newHttpListener(String monitorId) {
-        return new HttpServerListener(monitorId);
+    public static HttpServerListener newHttpListener(String monitorId, MeterRegistry micrometerRegistry) {
+        return new HttpServerListener(monitorId,micrometerRegistry);
+
     }
 
     @Override
@@ -75,19 +78,19 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
     }
 
     public long getRequestBacklog() {
-        return requestBacklog.value();
+        return requestBacklogValue.get();
     }
 
     public long getInflightRequests() {
-        return inflightRequests.value();
+        return inflightRequestsValue.get();
     }
 
-    public long getProcessedRequests() {
-        return processedRequests.value();
+    public double getProcessedRequests() {
+        return processedRequests.count();
     }
 
-    public long getFailedRequests() {
-        return failedRequests.value();
+    public double getFailedRequests() {
+        return failedRequests.count();
     }
 
     //    public Timer getResponseWriteTimes() {
@@ -98,8 +101,8 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
     //        return requestReadTimes;
     //    }
 
-    public long getResponseWriteFailed() {
-        return responseWriteFailed.value();
+    public double getResponseWriteFailed() {
+        return responseWriteFailed.count();
     }
 
     private class HttpServerMetricEventsListenerImpl extends HttpServerMetricEventsListener {
@@ -107,13 +110,13 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
         @Override
         protected void onRequestHandlingFailed(long duration, TimeUnit timeUnit, Throwable throwable) {
             processedRequests.increment();
-            inflightRequests.decrement();
+            inflightRequestsValue.decrementAndGet();
             failedRequests.increment();
         }
 
         @Override
         protected void onRequestHandlingSuccess(long duration, TimeUnit timeUnit) {
-            inflightRequests.decrement();
+            inflightRequestsValue.decrementAndGet();
             processedRequests.increment();
         }
 
@@ -144,13 +147,13 @@ public class HttpServerListener extends TcpServerListener<ServerMetricsEvent<?>>
 
         @Override
         protected void onRequestHandlingStart(long duration, TimeUnit timeUnit) {
-            requestBacklog.decrement();
+            requestBacklogValue.decrementAndGet();
         }
 
         @Override
         protected void onNewRequestReceived() {
-            requestBacklog.increment();
-            inflightRequests.increment();
+            requestBacklogValue.incrementAndGet();
+            inflightRequestsValue.incrementAndGet();
         }
 
         @Override

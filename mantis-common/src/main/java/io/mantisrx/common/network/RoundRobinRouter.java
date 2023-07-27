@@ -16,12 +16,18 @@
 
 package io.mantisrx.common.network;
 
-import io.mantisrx.common.metrics.Gauge;
+import com.netflix.spectator.api.CompositeRegistry;
+import io.micrometer.core.instrument.Meter;
 import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class RoundRobinRouter<T> {
@@ -31,19 +37,27 @@ public class RoundRobinRouter<T> {
     private int currentListSize;
     private int count;
     private Metrics metrics;
+    private MeterRegistry meterRegistry;
     private Gauge activeConnections;
+    private AtomicLong activeConnectionsValue = new AtomicLong(0);
 
     public RoundRobinRouter() {
-        metrics = new Metrics.Builder()
-                .name("RoundRobin")
-                .addGauge("activeConnections")
-                .build();
+        meterRegistry = new SimpleMeterRegistry();
+        activeConnections = Gauge.builder("activeConnections", activeConnectionsValue, AtomicLong::get)
+            .register(meterRegistry);
 
-        activeConnections = metrics.getGauge("activeConnections");
+        metrics = new Metrics.Builder()
+            .name("RoundRobin")
+            .addGauge("activeConnections")
+            .build();
     }
 
     public Metrics getMetrics() {
         return metrics;
+    }
+
+    public Meter getMeter() {
+        return meterRegistry.getMeters().iterator().next();
     }
 
     public synchronized boolean add(WritableEndpoint<T> endpoint) {
@@ -56,7 +70,7 @@ public class RoundRobinRouter<T> {
             currentListSize++;
             added = true;
         }
-        activeConnections.set(endpoints.size());
+        activeConnectionsValue.set(endpoints.size());
         return added;
     }
 
@@ -70,7 +84,7 @@ public class RoundRobinRouter<T> {
             currentListSize--;
             removed = true;
         }
-        activeConnections.set(endpoints.size());
+        activeConnectionsValue.set(endpoints.size());
         return removed;
     }
 

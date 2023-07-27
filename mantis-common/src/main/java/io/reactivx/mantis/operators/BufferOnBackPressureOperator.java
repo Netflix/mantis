@@ -15,10 +15,9 @@
  */
 package io.reactivx.mantis.operators;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,59 +45,58 @@ public class BufferOnBackPressureOperator<T> implements Operator<T, T> {
     private final Counter error;
     private final Counter complete;
     private final Gauge subscribe;
+    private AtomicLong subscribedValue = new AtomicLong(0);
     private final Gauge requestedGauge;
+    private AtomicLong requestedValue = new AtomicLong(0);
     private final Counter dropped;
     private final Gauge bufferedGauge;
+    private AtomicLong bufferedValue = new AtomicLong(0);
     private String name;
-    public BufferOnBackPressureOperator(String name) {
-        this(name, DEFAULT_SIZE);
+    public BufferOnBackPressureOperator(MeterRegistry meterRegistry,String name) {
+        this(meterRegistry, name, DEFAULT_SIZE);
     }
 
-    public BufferOnBackPressureOperator(final Metrics m, int size) {
+    public BufferOnBackPressureOperator(MeterRegistry meterRegistry, int size) {
         this.size = size;
         this.queue = new ArrayBlockingQueue<Object>(size);
-        next = m.getCounter("" + Counters.onNext);
-        error = m.getCounter("" + Counters.onError);
-        complete = m.getCounter("" + Counters.onComplete);
-        subscribe = m.getGauge("" + Gauges.subscribe);
-        dropped = m.getCounter("" + Counters.dropped);
-        requestedGauge = m.getGauge("" + Gauges.requested);
-        bufferedGauge = m.getGauge("" + Gauges.bufferedGauge);
+
+        next = Counter.builder("onNext").register(meterRegistry);
+        error = Counter.builder("onError").register(meterRegistry);
+        complete = Counter.builder("onComplete").register(meterRegistry);
+        subscribe = Gauge.builder("subscribe", subscribedValue::get).register(meterRegistry);
+        dropped = Counter.builder("dropped").register(meterRegistry);
+        requestedGauge = Gauge.builder("requested", requestedValue::get).register(meterRegistry);
+        bufferedGauge = Gauge.builder("bufferedGauge", bufferedValue::get).register(meterRegistry);
 
     }
 
 
-    public BufferOnBackPressureOperator(String name, int size) {
+    public BufferOnBackPressureOperator(MeterRegistry meterRegistry, String name, int size) {
         this.size = size;
         this.name = METRICS_NAME_PREFIX + name;
         this.queue = new ArrayBlockingQueue<Object>(size);
 
-        Metrics m = new Metrics.Builder()
-                .name(this.name)
-                .addCounter("" + Counters.onNext)
-                .addCounter("" + Counters.onError)
-                .addCounter("" + Counters.onComplete)
-                .addGauge("" + Gauges.subscribe)
-                .addCounter("" + Counters.dropped)
-                .addGauge("" + Gauges.requested)
-                .addGauge("" + Gauges.bufferedGauge)
-                .build();
-
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-
-        next = m.getCounter("" + Counters.onNext);
-        error = m.getCounter("" + Counters.onError);
-        complete = m.getCounter("" + Counters.onComplete);
-        subscribe = m.getGauge("" + Gauges.subscribe);
-        dropped = m.getCounter("" + Counters.dropped);
-        requestedGauge = m.getGauge("" + Gauges.requested);
-        bufferedGauge = m.getGauge("" + Gauges.bufferedGauge);
+        next = Counter.builder(name + "-" + "" + Counters.onNext)
+            .register(meterRegistry);
+        error = Counter.builder(name + "-" + "" + Counters.onError)
+            .register(meterRegistry);
+        complete = Counter.builder(name + "-" + "" + Counters.onComplete)
+            .register(meterRegistry);
+        subscribe = Gauge.builder(name + "-" + "" + Gauges.subscribe, subscribedValue::get)
+            .register(meterRegistry);
+        dropped = Counter.builder(name + "-" + "" + Counters.dropped)
+            .register(meterRegistry);
+        requestedGauge = Gauge.builder(name + "-" + "" + Gauges.requested, requestedValue::get)
+            .register(meterRegistry);
+        bufferedGauge = Gauge.builder(name + "-" + "" + Gauges.bufferedGauge, bufferedValue::get)
+            .register(meterRegistry);
 
     }
 
     @Override
     public Subscriber<? super T> call(final Subscriber<? super T> child) {
-        subscribe.increment();
+
+        subscribedValue.incrementAndGet();
         final AtomicLong requested = new AtomicLong();
         final AtomicInteger completionEmitted = new AtomicInteger();
         final AtomicInteger terminated = new AtomicInteger();
@@ -110,7 +108,7 @@ public class BufferOnBackPressureOperator<T> implements Operator<T, T> {
         child.add(Subscriptions.create(new Action0() {
             @Override
             public void call() {
-                subscribe.decrement();
+                subscribedValue.decrementAndGet();
             }
         }));
 
@@ -119,7 +117,8 @@ public class BufferOnBackPressureOperator<T> implements Operator<T, T> {
             @Override
             public void request(long n) {
                 requested.getAndAdd(n);
-                requestedGauge.increment(n);
+                requestedValue.addAndGet(n);
+
                 //         System.out.println("request: " + requested.get());
                 pollQueue(child,
                         requested,
@@ -172,14 +171,14 @@ public class BufferOnBackPressureOperator<T> implements Operator<T, T> {
                 if (requested.get() > 0 && queue.isEmpty()) {
                     NotificationLite.accept((Observer) child, item);
                     requested.decrementAndGet();
-                    requestedGauge.decrement();
+                    requestedValue.decrementAndGet();
                     next.increment();
                     //		System.out.println("next count: " + next.value());
                 } else {
                     boolean success = queue.offer(item);
                     if (success) {
                         bufferedCount.incrementAndGet();
-                        bufferedGauge.increment();
+                        bufferedValue.incrementAndGet();
                         //				System.out.println("buffered count: " + bufferedGauge.value());
                         drainIfPossible(child, requested, bufferedCount, onCompleteReceived, completionEmitted);
 
@@ -209,16 +208,16 @@ public class BufferOnBackPressureOperator<T> implements Operator<T, T> {
             if (t != null) {
                 NotificationLite.accept((Observer) child, t);
                 requested.decrementAndGet();
-                requestedGauge.decrement();
+                requestedValue.decrementAndGet();
                 bufferedCount.decrementAndGet();
-                bufferedGauge.decrement();
+                bufferedValue.decrementAndGet();
                 //		System.out.println("buffered count: " + bufferedGauge.value() + " next " + next.value())  ;
             } else {
                 if (onCompleteReceived.get()) {
                     if (completionEmitted.compareAndSet(0, 1)) {
                         child.onCompleted();
                         queue.clear();
-                        bufferedGauge.set(0);
+                        bufferedValue.set(0);
                     }
                 }
                 // queue is empty break

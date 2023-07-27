@@ -18,12 +18,13 @@ package io.mantisrx.common.metrics.netty;
 
 import static com.mantisrx.common.utils.MantisMetricStringConstants.GROUP_ID_TAG;
 
-import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Counter;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.metrics.HttpClientMetricEventsListener;
 
@@ -38,40 +39,49 @@ public class HttpClientListener extends TcpClientListener<ClientMetricsEvent<?>>
     private final Counter processedRequests;
     private final Counter requestWriteFailed;
     private final Counter failedResponses;
+    private MeterRegistry micrometerRegistry;
+    private final AtomicLong requestBacklogValue = new AtomicLong(0);
+    private final AtomicLong inflightRequestsValue = new AtomicLong(0);
     //    private final Timer requestWriteTimes;
     //    private final Timer responseReadTimes;
     //    private final Timer requestProcessingTimes;
 
     private final HttpClientMetricEventsListenerImpl delegate = new HttpClientMetricEventsListenerImpl();
 
-    protected HttpClientListener(String monitorId) {
-        super(monitorId);
+    protected HttpClientListener(String monitorId, MeterRegistry micrometerRegistry) {
+        super(monitorId, micrometerRegistry);
 
         final String metricsGroup = "httpClient";
+        String groupName = metricsGroup + "-" + monitorId;
         final String idValue = Optional.ofNullable(monitorId).orElse("none");
-        final BasicTag idTag = new BasicTag(GROUP_ID_TAG, idValue);
-        Metrics m = new Metrics.Builder()
-                .id(metricsGroup, idTag)
-                .addGauge("requestBacklog")
-                .addGauge("inflightRequests")
-                .addCounter("processedRequests")
-                .addCounter("requestWriteFailed")
-                .addCounter("failedResponses")
 
-                .build();
+        final Tags idTag = Tags.of(GROUP_ID_TAG, idValue);
 
-        requestBacklog = m.getGauge("requestBacklog");
-        inflightRequests = m.getGauge("inflightRequests");
-        //        requestWriteTimes = newTimer("requestWriteTimes");
-        //        responseReadTimes = newTimer("responseReadTimes");
-        processedRequests = m.getCounter("processedRequests");
-        requestWriteFailed = m.getCounter("requestWriteFailed");
-        failedResponses = m.getCounter("failedResponses");
-        //  requestProcessingTimes = newTimer("requestProcessingTimes");
+
+        requestBacklog = Gauge.builder(groupName + "_" + "requestBacklog", requestBacklogValue::get)
+                .tags(idTag)
+                .register(micrometerRegistry);
+
+        inflightRequests = Gauge.builder(groupName + "_" + "inflightRequests", inflightRequestsValue::get)
+                .tags(idTag)
+                .register(micrometerRegistry);
+
+        processedRequests = Counter.builder(groupName + "_" + "processedRequests")
+                .tags(idTag)
+                .register(micrometerRegistry);
+
+        requestWriteFailed = Counter.builder(groupName + "_" + "requestWriteFailed")
+                .tags(idTag)
+                .register(micrometerRegistry);
+
+        failedResponses = Counter.builder(groupName + "_" + "failedResponses")
+                .tags(idTag)
+                .register(micrometerRegistry);
+
     }
 
-    public static HttpClientListener newHttpListener(String monitorId) {
-        return new HttpClientListener(monitorId);
+    public static HttpClientListener newHttpListener(String monitorId, MeterRegistry micrometerRegistry) {
+        return new HttpClientListener(monitorId, micrometerRegistry);
     }
 
     @Override
@@ -81,23 +91,23 @@ public class HttpClientListener extends TcpClientListener<ClientMetricsEvent<?>>
     }
 
     public long getRequestBacklog() {
-        return (long) requestBacklog.doubleValue();
+        return requestBacklogValue.get();
     }
 
     public long getInflightRequests() {
-        return (long) inflightRequests.doubleValue();
+        return inflightRequestsValue.get();
     }
 
-    public long getProcessedRequests() {
-        return processedRequests.value();
+    public double getProcessedRequests() {
+        return processedRequests.count();
     }
 
-    public long getRequestWriteFailed() {
-        return requestWriteFailed.value();
+    public double getRequestWriteFailed() {
+        return requestWriteFailed.count();
     }
 
-    public long getFailedResponses() {
-        return failedResponses.value();
+    public double getFailedResponses() {
+        return failedResponses.count();
     }
 
     //    public Timer getRequestWriteTimes() {
@@ -117,14 +127,14 @@ public class HttpClientListener extends TcpClientListener<ClientMetricsEvent<?>>
 
         @Override
         protected void onResponseReceiveComplete(long duration, TimeUnit timeUnit) {
-            inflightRequests.decrement();
+            inflightRequestsValue.decrementAndGet();
             processedRequests.increment();
             //  responseReadTimes.record(duration, timeUnit);
         }
 
         @Override
         protected void onResponseFailed(long duration, TimeUnit timeUnit, Throwable throwable) {
-            inflightRequests.decrement();
+            inflightRequestsValue.decrementAndGet();
             processedRequests.increment();
             failedResponses.increment();
         }
@@ -146,13 +156,13 @@ public class HttpClientListener extends TcpClientListener<ClientMetricsEvent<?>>
 
         @Override
         protected void onRequestHeadersWriteStart() {
-            requestBacklog.decrement();
+            requestBacklogValue.decrementAndGet();
         }
 
         @Override
         protected void onRequestSubmitted() {
-            requestBacklog.increment();
-            inflightRequests.increment();
+            requestBacklogValue.incrementAndGet();
+            inflightRequestsValue.incrementAndGet();
         }
 
         @Override

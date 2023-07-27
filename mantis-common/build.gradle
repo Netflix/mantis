@@ -30,8 +30,6 @@ dependencies {
     api "org.xerial.snappy:snappy-java:$snappyVersion"
     api "org.jctools:jctools-core:$jctoolsVersion"
 
-    // spectatorApi should be packaged at entry point level to avoid version conflicts.
-    compileOnly libraries.spectatorApi
 
     api libraries.jsr305
     api libraries.mantisShaded
@@ -41,6 +39,7 @@ dependencies {
     api libraries.slf4jLog4j12
     implementation libraries.commonsIo
     implementation 'net.jcip:jcip-annotations:1.0'
+    implementation libraries.micrometerCore
 
     testImplementation libraries.spectatorApi
     testImplementation libraries.commonsLang3

@@ -16,7 +16,8 @@
 
 package io.mantisrx.common.network;
 
-import com.netflix.spectator.api.BasicTag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivx.mantis.operators.DropOperator;
 import java.util.Optional;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
@@ -64,7 +65,7 @@ public class WritableEndpoint<T> extends Endpoint implements Comparable<Writable
 
     public Observable<T> read() {
         return subject
-                .lift(new DropOperator<>("outgoing_subject", new BasicTag("slotId", Optional.ofNullable(slotId).orElse("none"))));
+                .lift(new DropOperator<>(new SimpleMeterRegistry(), "outgoing_subject", Tags.of("slotId", Optional.ofNullable(slotId).orElse("none"))));
     }
 
     @Override
