@@ -181,7 +181,10 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
                             PathMatchers.segment(),
                             (taskExecutorID) -> pathEndOrSingleSlash(() -> concat(
                                 // POST
-                                post(() -> disableTaskExecutor(getClusterID(clusterName), getTaskExecutorID(taskExecutorID)))
+                                post(() -> disableTaskExecutor(getClusterID(clusterName), getTaskExecutorID(taskExecutorID))),
+
+                                // DELETE
+                                delete(() -> deleteDisabledTaskExecutor(getClusterID(clusterName), getTaskExecutorID(taskExecutorID)))
                             ))
                     )
                 )),
@@ -345,6 +348,12 @@ public class ResourceClustersNonLeaderRedirectRoute extends BaseRoute {
         log.info("POST /api/v1/resourceClusters/{}/disableTaskExecutors/{} called.",
             clusterID, taskExecutorID);
         return withFuture(gateway.getClusterFor(clusterID).disableTaskExecutor(taskExecutorID));
+    }
+
+    private Route deleteDisabledTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+        log.info("DELETE /api/v1/resourceClusters/{}/disableTaskExecutors/{} called.",
+            clusterID, taskExecutorID);
+        return withFuture(gateway.getClusterFor(clusterID).deleteDisabledTaskExecutor(taskExecutorID));
     }
 
     private Route setScalerStatus(String clusterID) {

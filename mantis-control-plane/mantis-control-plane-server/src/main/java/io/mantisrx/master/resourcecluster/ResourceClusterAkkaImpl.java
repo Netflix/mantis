@@ -21,6 +21,7 @@ import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.ArtifactList;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DeleteDisabledTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
@@ -253,13 +254,24 @@ class ResourceClusterAkkaImpl extends ResourceClusterGatewayAkkaImpl implements 
     }
 
     @Override
-    public CompletableFuture<TaskExecutorOnDisabled> disableTaskExecutor(ClusterID clusterID, TaskExecutorID taskExecutorID) {
+    public CompletableFuture<TaskExecutorOnDisabled> disableTaskExecutor(TaskExecutorID taskExecutorID) {
         final DisableTaskExecutorRequest msg = new DisableTaskExecutorRequest(taskExecutorID, clusterID);
 
         return
             Patterns
                 .ask(resourceClusterManagerActor, msg, askTimeout)
                 .thenApply(TaskExecutorOnDisabled.class::cast)
+                .toCompletableFuture();
+    }
+
+    @Override
+    public CompletableFuture<Ack> deleteDisabledTaskExecutor(TaskExecutorID taskExecutorID) {
+        final DeleteDisabledTaskExecutorRequest msg = new DeleteDisabledTaskExecutorRequest(taskExecutorID, clusterID);
+
+        return
+            Patterns
+                .ask(resourceClusterManagerActor, msg, askTimeout)
+                .thenApply(Ack.class::cast)
                 .toCompletableFuture();
     }
 

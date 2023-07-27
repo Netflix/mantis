@@ -23,6 +23,7 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.ReceiveBuilder;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.AddNewJobArtifactsToCacheRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.DeleteDisabledTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.DisableTaskExecutorRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetAssignedTaskExecutorRequest;
@@ -147,6 +148,8 @@ class ResourceClustersManagerActor extends AbstractActor {
                 .match(DisableTaskExecutorsRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(DisableTaskExecutorRequest.class, req ->
+                    getRCActor(req.getClusterID()).forward(req, context()))
+                .match(DeleteDisabledTaskExecutorRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))
                 .match(AddNewJobArtifactsToCacheRequest.class, req ->
                     getRCActor(req.getClusterID()).forward(req, context()))

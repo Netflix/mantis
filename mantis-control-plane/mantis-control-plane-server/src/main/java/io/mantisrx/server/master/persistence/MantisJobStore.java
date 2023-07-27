@@ -158,6 +158,18 @@ public class MantisJobStore {
         return storageProvider.loadAllDisableTaskExecutorsRequests(clusterID);
     }
 
+    public void storeNewDisabledTaskExecutor(TaskExecutorID taskExecutorID) throws IOException {
+        storageProvider.storeNewDisabledTaskExecutor(taskExecutorID);
+    }
+
+    public void deleteDisabledTaskExecutor(TaskExecutorID taskExecutorID) throws IOException {
+        storageProvider.deleteDisabledTaskExecutor(taskExecutorID);
+    }
+
+    public List<TaskExecutorID> loadAllDisabledTaskExecutors(ClusterID clusterID) throws IOException {
+        return storageProvider.loadAllDisabledTaskExecutors(clusterID);
+    }
+
     public void replaceTerminatedWorker(IMantisWorkerMetadata oldWorker, IMantisWorkerMetadata replacement) throws Exception {
         storageProvider.storeAndUpdateWorkers(oldWorker, replacement);
     }

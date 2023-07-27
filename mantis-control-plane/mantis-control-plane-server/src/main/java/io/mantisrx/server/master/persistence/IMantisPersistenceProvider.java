@@ -165,6 +165,12 @@ public interface IMantisPersistenceProvider {
 
     List<DisableTaskExecutorsRequest> loadAllDisableTaskExecutorsRequests(ClusterID clusterID) throws IOException;
 
+    void storeNewDisabledTaskExecutor(TaskExecutorID taskExecutorID) throws IOException;
+
+    void deleteDisabledTaskExecutor(TaskExecutorID taskExecutorID) throws IOException;
+
+    List<TaskExecutorID> loadAllDisabledTaskExecutors(ClusterID clusterID) throws IOException;
+
     boolean isArtifactExists(String resourceId) throws IOException;
 
     JobArtifact getArtifactById(String resourceId) throws IOException;
