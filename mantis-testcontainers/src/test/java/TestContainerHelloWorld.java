@@ -25,6 +25,8 @@ import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,8 @@ import org.junit.Test;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.utility.MountableFile;
 
 @Slf4j
 public class TestContainerHelloWorld {
@@ -49,6 +53,9 @@ public class TestContainerHelloWorld {
     private static final int JOB_SINK_PORT = 5055;
 
     private static final String ZOOKEEPER_ALIAS = "zookeeper";
+
+    // set to false to run remote/pre-bulit images.
+    private static final boolean USE_LOCAL_BUILT_IMAGE = true;
 
     private static final String CONTROL_PLANE_ALIAS = "mantiscontrolplane";
 
@@ -84,6 +91,10 @@ public class TestContainerHelloWorld {
     @Test
     public void helloWorld() throws Exception {
 
+        Path path = Paths.get("../mantis-control-plane/Dockerfile");
+        log.info("Building control plane image from: {}", path);
+        ImageFromDockerfile controlPlaneDockerFile = new ImageFromDockerfile()
+            .withDockerfile(path);
         try (
             Network network = Network.newNetwork();
             GenericContainer<?> zookeeper =
@@ -92,13 +103,16 @@ public class TestContainerHelloWorld {
                     .withNetworkAliases(ZOOKEEPER_ALIAS)
                     .withExposedPorts(ZOOKEEPER_PORT);
 
-            GenericContainer<?> master =
-            new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
-                .withNetwork(network)
-                .withNetworkAliases(CONTROL_PLANE_ALIAS)
-                .withExposedPorts(CONTROL_PLANE_API_PORT);
-                // .withExposedPorts(CONTROL_PLANE_API_V2_PORT); // failed to open?
-
+            GenericContainer<?> master = USE_LOCAL_BUILT_IMAGE ?
+                new GenericContainer<>(controlPlaneDockerFile)
+                    .withNetwork(network)
+                    .withNetworkAliases(CONTROL_PLANE_ALIAS)
+                    .withExposedPorts(CONTROL_PLANE_API_PORT)
+                :
+                new GenericContainer<>("netflixoss/mantiscontrolplaneserver:latest")
+                    .withNetwork(network)
+                    .withNetworkAliases(CONTROL_PLANE_ALIAS)
+                    .withExposedPorts(CONTROL_PLANE_API_PORT);
         ) {
             zookeeper.start();
             zkCheck(zookeeper);
@@ -182,7 +196,22 @@ public class TestContainerHelloWorld {
     }
 
     private GenericContainer<?> createAgent(String agentId, String resourceClusterId, Network network) {
-        return
+        Path path = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
+        log.info("Building agent image from: {}", path);
+        ImageFromDockerfile dockerFile = new ImageFromDockerfile()
+            .withDockerfile(path);
+
+        // setup sample job artifact
+        MountableFile sampleArtifact = MountableFile.forHostPath(
+            Paths.get("../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-2.1.0-SNAPSHOT.zip"));
+
+        return USE_LOCAL_BUILT_IMAGE ?
+            new GenericContainer<>(dockerFile) // "netflixoss/mantisserveragent:latest")
+                .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withCopyFileToContainer(sampleArtifact, "/")
+                .withNetwork(network)
+            :
             new GenericContainer<>("netflixoss/mantisserveragent:latest")
                 .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_agent_id".toUpperCase(), agentId)

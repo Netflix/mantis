@@ -26,6 +26,14 @@ dependencies {
 
     testImplementation 'com.squareup.okhttp3:okhttp:latest.release'
 }
+
+// require following tasks to build container images.
+test {
+    dependsOn ':mantis-server:mantis-server-agent:installDist'
+    dependsOn ':mantis-control-plane:mantis-control-plane-server:installDist'
+    dependsOn ':mantis-examples:mantis-examples-sine-function:build'
+}
+
 //
 //test {
 //    useJUnitPlatform()
