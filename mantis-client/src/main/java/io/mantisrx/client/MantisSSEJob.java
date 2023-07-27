@@ -16,7 +16,6 @@
 
 package io.mantisrx.client;
 
-import com.netflix.spectator.api.Meter;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.runtime.JobSla;
 import io.mantisrx.runtime.MantisJobDurationType;

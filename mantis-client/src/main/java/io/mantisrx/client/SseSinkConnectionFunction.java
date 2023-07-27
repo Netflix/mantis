@@ -20,9 +20,6 @@ import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATO
 
 import com.mantisrx.common.utils.NettyUtils;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.server.worker.client.SseWorkerConnection;
@@ -48,9 +45,7 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
 
     private static final String DEFAULT_BUFFER_SIZE_STR = "0";
     private static final Logger logger = LoggerFactory.getLogger(SseSinkConnectionFunction.class);
-//    private static final CopyOnWriteArraySet<MetricGroupId> metricsSet = new CopyOnWriteArraySet<>();
     private static final CopyOnWriteArraySet<String> metricsSet = new CopyOnWriteArraySet<>();
-//    private static final MetricGroupId metricGroupId;
     private static final String metricGroupName;
     private static MeterRegistry meterRegistry;
 
@@ -69,7 +64,6 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
         // Use single netty thread
         NettyUtils.setNettyThreads();
 
-//        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseSinkConnectionFunction_withBuffer");
         metricGroupName = DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseSinkConnectionFunction_withBuffer";
         metricsSet.add(metricGroupName);
         logger.info("SETTING UP METRICS PRINTER THREAD");
@@ -82,10 +76,6 @@ public class SseSinkConnectionFunction implements SinkConnectionFunc<MantisServe
                         for (String metricGroup : metricGroups) {
                             final Meter meter = meterRegistry.find(metricGroup).meter();
                             if (meter != null) {
-//                                final Counter onNext = metric.getCounter("" + DropOperator.Counters.onNext);
-//                                final Counter onError = metric.getCounter("" + DropOperator.Counters.onError);
-//                                final Counter onComplete = metric.getCounter("" + DropOperator.Counters.onComplete);
-//                                final Counter dropped = metric.getCounter("" + DropOperator.Counters.dropped);
                                 Counter onNext = meterRegistry.counter(metricGroup + "_" + DropOperator.Counters.onNext);
                                 Counter onError = meterRegistry.counter(metricGroup + "_" + DropOperator.Counters.onError);
                                 Counter onComplete = meterRegistry.counter(metricGroup + "_" + DropOperator.Counters.onComplete);
