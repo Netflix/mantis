@@ -15,6 +15,7 @@
  */
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
@@ -35,6 +36,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Test;
+import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
@@ -140,10 +142,20 @@ public class TestContainerHelloWorld {
             getJobCluster(controlPlaneHost, controlPlanePort);
             quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
 
-            // getJobSink(agent0);
+            // test sse
+            Thread.sleep(Duration.ofSeconds(2).toMillis());
+            String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
+            Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
+            String stdout = lsResult.getStdout();
 
-            log.warn("Waiting for exit test.");
-            Thread.sleep(Duration.ofSeconds(360).toMillis());
+            log.info("stdout: {}", stdout);
+            assertTrue(stdout.contains("data: {\"x\":"));
+
+            /*
+            Uncomment following lines to keep the containers running.
+             */
+            // log.warn("Waiting for exit test.");
+            // Thread.sleep(Duration.ofSeconds(3600).toMillis());
         }
 
     }
