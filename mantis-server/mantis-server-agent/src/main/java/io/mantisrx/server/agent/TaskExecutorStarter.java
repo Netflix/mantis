@@ -33,7 +33,9 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,11 @@ public class TaskExecutorStarter extends AbstractIdleService {
         highAvailabilityServices.startAsync().awaitRunning();
 
         taskExecutor.start();
+        try {
+            taskExecutor.awaitRunning().get();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
