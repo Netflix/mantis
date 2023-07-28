@@ -101,7 +101,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final RpcService rpcService;
     private final ClusterID clusterID;
     private final MantisJobStore mantisJobStore;
-    private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsRequests;
+    private final Set<DisableTaskExecutorsRequest> activeDisableTaskExecutorsByAttributesRequests;
+    private final Set<TaskExecutorID> disabledTaskExecutors;
     private final JobMessageRouter jobMessageRouter;
 
     private final ResourceClusterActorMetrics metrics;
@@ -130,7 +131,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.rpcService = rpcService;
         this.jobMessageRouter = jobMessageRouter;
         this.mantisJobStore = mantisJobStore;
-        this.activeDisableTaskExecutorsRequests = new HashSet<>();
+        this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
+        this.disabledTaskExecutors = new HashSet<>();
 
         this.executorStateManager = new ExecutorStateManagerImpl();
 
@@ -339,20 +341,30 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     // custom equals function to check if the existing set already has the request under consideration.
     private boolean addNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest newRequest) {
-        for (DisableTaskExecutorsRequest existing: activeDisableTaskExecutorsRequests) {
-            if (existing.targetsSameTaskExecutorsAs(newRequest)) {
-                return false;
+        if (newRequest.isRequestByAttributes()) {
+            log.info("Req with attributes {}", newRequest);
+            for (DisableTaskExecutorsRequest existing: activeDisableTaskExecutorsByAttributesRequests) {
+                if (existing.targetsSameTaskExecutorsAs(newRequest)) {
+                    return false;
+                }
             }
-        }
 
-        Preconditions.checkState(activeDisableTaskExecutorsRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
-        return true;
+            Preconditions.checkState(activeDisableTaskExecutorsByAttributesRequests.add(newRequest), "activeDisableTaskExecutorRequests cannot contain %s", newRequest);
+            return true;
+        } else if (newRequest.getTaskExecutorID().isPresent() && !disabledTaskExecutors.contains(newRequest.getTaskExecutorID().get())) {
+            log.info("Req with id {}", newRequest);
+            disabledTaskExecutors.add(newRequest.getTaskExecutorID().get());
+            return true;
+        }
+        log.info("No Req {}", newRequest);
+        return false;
     }
 
     private void onNewDisableTaskExecutorsRequest(DisableTaskExecutorsRequest request) {
         ActorRef sender = sender();
         if (addNewDisableTaskExecutorsRequest(request)) {
             try {
+                log.info("New req to add {}", request);
                 // store the request in a persistent store in order to retrieve it if the node goes down
                 mantisJobStore.storeNewDisabledTaskExecutorsRequest(request);
                 // figure out the time to expire the current request
@@ -362,7 +374,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     getExpiryKeyFor(request),
                     new ExpireDisableTaskExecutorsRequest(request),
                     toExpiry);
-                findAndMarkDisabledTaskExecutors(new CheckDisabledTaskExecutors("new_request"));
+                findAndMarkDisabledTaskExecutorsFor(request);
                 sender.tell(Ack.getInstance(), self());
             } catch (IOException e) {
                 sender().tell(new Status.Failure(e), self());
@@ -376,10 +388,27 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         return "ExpireDisableTaskExecutorsRequest-" + request;
     }
 
+    private void findAndMarkDisabledTaskExecutorsFor(DisableTaskExecutorsRequest request) {
+        if (request.isRequestByAttributes()) {
+            findAndMarkDisabledTaskExecutors(new CheckDisabledTaskExecutors("new_request"));
+        } else if (request.getTaskExecutorID().isPresent()) {
+            final TaskExecutorID taskExecutorID = request.getTaskExecutorID().get();
+            final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
+            if (state == null) {
+                // If the TE is unknown by mantis, delete it from state
+                disabledTaskExecutors.remove(taskExecutorID);
+                self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
+            } else {
+                log.info("Marking task executor {} as disabled", taskExecutorID);
+                state.onNodeDisabled();
+            }
+        }
+    }
+
     private void findAndMarkDisabledTaskExecutors(CheckDisabledTaskExecutors r) {
         log.info("Checking disabled task executors for Cluster {} because of {}", clusterID.getResourceID(), r.getReason());
         final Instant now = clock.instant();
-        for (DisableTaskExecutorsRequest request : activeDisableTaskExecutorsRequests) {
+        for (DisableTaskExecutorsRequest request : activeDisableTaskExecutorsByAttributesRequests) {
             if (request.isExpired(now)) {
                 self().tell(new ExpireDisableTaskExecutorsRequest(request), self());
             } else {
@@ -399,7 +428,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             log.info("Expiring Disable Task Executors Request {}", request.getRequest());
             getTimers().cancel(getExpiryKeyFor(request.getRequest()));
-            if (activeDisableTaskExecutorsRequests.remove(request.getRequest())) {
+            if (activeDisableTaskExecutorsByAttributesRequests.remove(request.getRequest()) || (request.getRequest().getTaskExecutorID().isPresent() && disabledTaskExecutors.remove(request.getRequest().getTaskExecutorID().get()))) {
                 mantisJobStore.deleteExpiredDisableTaskExecutorsRequest(request.getRequest());
             }
         } catch (Exception e) {
@@ -453,11 +482,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     this.executorStateManager.markAvailable(taskExecutorID);
                 }
                 // check if the task executor has been marked as 'Disabled'
-                for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
-                    if (request.covers(registration)) {
-                        log.info("Newly registered task executor {} was already marked for disabling because of {}", registration.getTaskExecutorID(), request);
-                        state.onNodeDisabled();
-                    }
+                if (isTaskExecutorDisabled(registration)) {
+                    log.info("Newly registered task executor {} was already marked for disabling.", registration.getTaskExecutorID());
+                    state.onNodeDisabled();
                 }
                 updateHeartbeatTimeout(registration.getTaskExecutorID());
             }
@@ -469,6 +496,15 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } catch (Exception e) {
             sender().tell(new Status.Failure(e), self());
         }
+    }
+
+    private boolean isTaskExecutorDisabled(TaskExecutorRegistration registration) {
+        for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsByAttributesRequests) {
+            if (request.covers(registration)) {
+                return true;
+            }
+        }
+        return disabledTaskExecutors.contains(registration.getTaskExecutorID());
     }
 
     private void onHeartbeat(TaskExecutorHeartbeat heartbeat) {

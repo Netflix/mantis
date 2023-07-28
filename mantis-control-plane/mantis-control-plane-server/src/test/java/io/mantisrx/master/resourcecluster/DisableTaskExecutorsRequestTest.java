@@ -23,17 +23,18 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import org.junit.Test;
 
 public class DisableTaskExecutorsRequestTest {
     private static final DisableTaskExecutorsRequest R1 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now(), Optional.empty());
     private static final DisableTaskExecutorsRequest R2 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr2", "attr2"), ClusterID.of("cluster1"), Instant.now());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr2", "attr2"), ClusterID.of("cluster1"), Instant.now(), Optional.empty());
     private static final DisableTaskExecutorsRequest R3 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster2"), Instant.now());
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster2"), Instant.now(), Optional.empty());
     private static final DisableTaskExecutorsRequest R4 =
-        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now().plus(Duration.ofDays(1)));
+        new DisableTaskExecutorsRequest(ImmutableMap.of("attr1", "attr1"), ClusterID.of("cluster1"), Instant.now().plus(Duration.ofDays(1)), Optional.empty());
 
     @Test
     public void checkIfDifferentRequestsHaveDifferentHashes() {
@@ -49,4 +50,6 @@ public class DisableTaskExecutorsRequestTest {
     public void checkIfSimilarRequestsHaveSameHashes() {
         assertEquals(R1.getHash(), R4.getHash());
     }
+
+    // TODO(fdichiara): add tests with new field.
 }
