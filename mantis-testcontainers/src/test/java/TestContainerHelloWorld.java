@@ -48,9 +48,6 @@ import org.testcontainers.utility.MountableFile;
 public class TestContainerHelloWorld {
     private static final int ZOOKEEPER_PORT = 2181;
     private static final int CONTROL_PLANE_API_PORT = 8100;
-    private static final int CONTROL_PLANE_API_V2_PORT = 8075;
-
-    private static final int JOB_SINK_PORT = 5055;
 
     private static final String ZOOKEEPER_ALIAS = "zookeeper";
 
@@ -62,6 +59,8 @@ public class TestContainerHelloWorld {
     private static final String CLUSTER_ID = "testcluster1";
 
     private static final String JOB_CLUSTER_NAME = "hello-sine-testcontainers";
+
+    private static final String CONTAINER_ARTIFACT_PATH = "/apps/mantis/mantis-server-agent/mantis-artifacts/storage/";
 
     private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
         + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-2.1.0-SNAPSHOT"
@@ -206,15 +205,16 @@ public class TestContainerHelloWorld {
             Paths.get("../mantis-examples/mantis-examples-sine-function/build/distributions/mantis-examples-sine-function-2.1.0-SNAPSHOT.zip"));
 
         return USE_LOCAL_BUILT_IMAGE ?
-            new GenericContainer<>(dockerFile) // "netflixoss/mantisserveragent:latest")
+            new GenericContainer<>(dockerFile)
                 .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_agent_id".toUpperCase(), agentId)
-                .withCopyFileToContainer(sampleArtifact, "/")
+                .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
             :
             new GenericContainer<>("netflixoss/mantisserveragent:latest")
                 .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network);
     }
 
