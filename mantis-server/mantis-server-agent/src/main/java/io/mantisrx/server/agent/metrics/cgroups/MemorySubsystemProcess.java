@@ -57,15 +57,16 @@ class MemorySubsystemProcess implements SubsystemProcess {
     }
 
     private void handleV2(UsageBuilder usageBuilder) throws IOException {
-        Long memLimit = cgroup.getMetric(null, "memory.max");
+        Long memLimit = cgroup.getMetric("", "memory.max");
         usageBuilder.memLimit(memLimit);
 
-        Map<String, Long> stats = cgroup.getStats(null, "memory.stat");
+        Long memCurrent = cgroup.getMetric("", "memory.current");
+        usageBuilder.memRssBytes(memCurrent);
+
+        Map<String, Long> stats = cgroup.getStats("", "memory.stat");
         Optional<Long> anon = Optional.ofNullable(stats.get("anon"));
-        Optional<Long> shmem = Optional.ofNullable(stats.get("shmem"));
-        if (anon.isPresent() && shmem.isPresent()) {
+        if (anon.isPresent()) {
             usageBuilder.memAnonBytes(anon.get());
-            usageBuilder.memRssBytes(shmem.get() + anon.get());
         } else {
             log.warn("stats for memory not found; stats={}", stats);
         }

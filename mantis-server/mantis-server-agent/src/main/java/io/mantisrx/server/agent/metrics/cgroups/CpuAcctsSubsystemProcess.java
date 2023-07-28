@@ -72,12 +72,12 @@ class CpuAcctsSubsystemProcess implements SubsystemProcess {
     }
 
     private void handleV2(Usage.UsageBuilder resourceUsageBuilder) throws IOException {
-        Map<String, Long> cpuStats = cgroup.getStats(null, "cpu.stat");
+        Map<String, Long> cpuStats = cgroup.getStats("", "cpu.stat");
         resourceUsageBuilder
             .cpusUserTimeSecs(cpuStats.getOrDefault("user_usec", 0L) / 1000.0)
             .cpusSystemTimeSecs(cpuStats.getOrDefault("system_usec", 0L) / 1000.0);
 
-        List<Long> metrics = cgroup.getMetrics(null, "cpu.max");
+        List<Long> metrics = cgroup.getMetrics("", "cpu.max");
         if (metrics.size() != 2) {
             log.warn("cpu.max metrics={} are not configured correctly", metrics);
         } else {

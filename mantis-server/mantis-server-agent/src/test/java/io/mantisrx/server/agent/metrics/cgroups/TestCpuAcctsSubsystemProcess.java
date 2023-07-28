@@ -22,14 +22,17 @@ import static org.mockito.Mockito.when;
 
 import io.mantisrx.runtime.loader.config.Usage;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.mantisrx.shaded.com.google.common.io.Resources;
+import java.io.IOException;
 import org.junit.Test;
 
 public class TestCpuAcctsSubsystemProcess {
-    private final Cgroup cgroup = mock(Cgroup.class);
-    private final CpuAcctsSubsystemProcess process = new CpuAcctsSubsystemProcess(cgroup);
 
     @Test
     public void testWhenCgroupsReturnsCorrectData() throws Exception {
+        final Cgroup cgroup = mock(Cgroup.class);
+        final CpuAcctsSubsystemProcess process = new CpuAcctsSubsystemProcess(cgroup);
+
         when(cgroup.isV1()).thenReturn(true);
         when(cgroup.getStats("cpuacct", "cpuacct.stat"))
             .thenReturn(ImmutableMap.<String, Long>of("user", 43873627L, "system", 4185541L));
@@ -46,5 +49,19 @@ public class TestCpuAcctsSubsystemProcess {
         assertEquals(4L, (long) usage.getCpusLimit());
         assertEquals(438736L, (long) usage.getCpusUserTimeSecs());
         assertEquals(41855L, (long) usage.getCpusSystemTimeSecs());
+    }
+
+    @Test
+    public void testCgroupsV2() throws IOException {
+        final Cgroup cgroupv2 =
+            new CgroupImpl(Resources.getResource("example2").getPath());
+
+        final CpuAcctsSubsystemProcess process = new CpuAcctsSubsystemProcess(cgroupv2);
+        final Usage.UsageBuilder usageBuilder = Usage.builder();
+        process.getUsage(usageBuilder);
+        final Usage usage = usageBuilder.build();
+        assertEquals(2L, (long) usage.getCpusLimit());
+        assertEquals(4231313L, (long) usage.getCpusUserTimeSecs());
+        assertEquals(1277084L, (long) usage.getCpusSystemTimeSecs());
     }
 }

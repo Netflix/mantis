@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -37,15 +36,6 @@ import lombok.RequiredArgsConstructor;
 public class CgroupImpl implements Cgroup {
 
     private final String path;
-
-    private List<String> getSubsystems() {
-        return
-            Arrays.asList(Objects.requireNonNull(Paths.get(path).toFile().listFiles()))
-                .stream()
-                .filter(s -> s.isDirectory())
-                .map(s -> s.getName())
-                .collect(Collectors.toList());
-    }
 
     /**
      * Maybe change this to the below command in the future.
@@ -62,16 +52,7 @@ public class CgroupImpl implements Cgroup {
     }
 
     @Override
-    public Boolean isV2() {
-        return !isV1();
-    }
-
-    @Override
-    public List<Long> getMetrics(@Nullable String subsystem, String metricName) throws IOException {
-        if (subsystem == null) {
-            subsystem = "";
-        }
-
+    public List<Long> getMetrics(String subsystem, String metricName) throws IOException {
         Path metricPath = Paths.get(path, subsystem, metricName);
         try {
             return
@@ -89,11 +70,7 @@ public class CgroupImpl implements Cgroup {
     }
 
     @Override
-    public Long getMetric(@Nullable String subsystem, String metricName) throws IOException {
-        if (subsystem == null) {
-            subsystem = "";
-        }
-
+    public Long getMetric(String subsystem, String metricName) throws IOException {
         Path metricPath = Paths.get(path, subsystem, metricName);
         try {
             return Files.readAllLines(metricPath).stream().findFirst()
@@ -112,11 +89,7 @@ public class CgroupImpl implements Cgroup {
      * @throws IOException
      */
     @Override
-    public Map<String, Long> getStats(@Nullable String subsystem, String stat) throws IOException {
-        if (subsystem == null) {
-            subsystem = "";
-        }
-
+    public Map<String, Long> getStats(String subsystem, String stat) throws IOException {
         Path statPath = Paths.get(path, subsystem, stat);
         return
             Files.readAllLines(statPath)
@@ -145,5 +118,14 @@ public class CgroupImpl implements Cgroup {
             // the range of signed long. In this case, return Long max value.
             return Long.MAX_VALUE;
         }
+    }
+
+    private List<String> getSubsystems() {
+        return
+            Arrays.asList(Objects.requireNonNull(Paths.get(path).toFile().listFiles()))
+                .stream()
+                .filter(s -> s.isDirectory())
+                .map(s -> s.getName())
+                .collect(Collectors.toList());
     }
 }
