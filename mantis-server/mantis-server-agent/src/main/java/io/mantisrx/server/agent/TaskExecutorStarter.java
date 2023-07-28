@@ -67,11 +67,17 @@ public class TaskExecutorStarter extends AbstractIdleService {
         highAvailabilityServices.startAsync().awaitRunning();
 
         taskExecutor.start();
-        try {
-            taskExecutor.awaitRunning().get();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        taskExecutor.awaitRunning().exceptionally(ex -> {
+            try {
+                log.error("Task executor did not start successfully. Stop and exit.");
+                // Don't need to wait for termination here. The shutdown hook in AgentV2Main will wait for 2 minutes.
+                this.stopAsync().awaitTerminated(1, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Force exit if termination doesn't complete.
+                System.exit(2);
+            }
+            return null;
+        });
     }
 
     @Override
