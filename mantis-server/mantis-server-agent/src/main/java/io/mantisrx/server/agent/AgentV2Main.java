@@ -167,7 +167,7 @@ public class AgentV2Main implements Service {
         stopping.set(true);
         try {
             logger.info("Received signal to shutdown; shutting down task executor");
-            taskExecutorStarter.stopAsync().awaitTerminated();
+            taskExecutorStarter.stopAsync().awaitTerminated(2, TimeUnit.MINUTES);
         } catch (Throwable e) {
             logger.error("Failed to stop gracefully", e);
         }
