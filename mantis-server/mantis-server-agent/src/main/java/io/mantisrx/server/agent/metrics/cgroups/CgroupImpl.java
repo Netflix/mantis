@@ -22,31 +22,69 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class CgroupImpl implements Cgroup {
+
     private final String path;
+
+    /**
+     * Maybe change this to the below command in the future.
+     * <p>
+     * ``` stat -fc %T /sys/fs/cgroup/ ``` This should return cgroup2fs for cgroupv2 and tmpfs for
+     * cgroupv1.
+     */
+    @Getter(lazy = true, value = AccessLevel.PRIVATE)
+    private final boolean old = getSubsystems().size() > 0;
+
+    @Override
+    public Boolean isV1() {
+        return isOld();
+    }
+
+    @Override
+    public List<Long> getMetrics(String subsystem, String metricName) throws IOException {
+        Path metricPath = Paths.get(path, subsystem, metricName);
+        try {
+            return
+                Files.readAllLines(metricPath)
+                    .stream()
+                    .findFirst()
+                    .map(s -> Arrays.asList(s.split(" ")))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(CgroupImpl::convertStringToLong)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
 
     @Override
     public Long getMetric(String subsystem, String metricName) throws IOException {
         Path metricPath = Paths.get(path, subsystem, metricName);
         try {
-            return Files.readAllLines(metricPath).stream().findFirst().map(CgroupImpl::convertStringToLong).get();
+            return Files.readAllLines(metricPath).stream().findFirst()
+                .map(CgroupImpl::convertStringToLong).get();
         } catch (Exception e) {
             throw new IOException(e);
         }
     }
 
     /**
-     * Example usage:
-     * user 43873627
-     * system 4185541
+     * Example usage: user 43873627 system 4185541
      *
      * @param subsystem subsystem the stat file is part of.
-     * @param stat name of the stat file
+     * @param stat      name of the stat file
      * @return map of metrics to their corresponding values
      * @throws IOException
      */
@@ -58,7 +96,8 @@ public class CgroupImpl implements Cgroup {
                 .stream()
                 .map(l -> {
                     String[] parts = l.split("\\s+");
-                    Preconditions.checkArgument(parts.length == 2, "Expected two parts only but was {} parts", parts.length);
+                    Preconditions.checkArgument(parts.length == 2,
+                        "Expected two parts only but was {} parts", parts.length);
                     return new Tuple2<>(parts[0], convertStringToLong(parts[1]));
                 })
                 .collect(Collectors.toMap(t -> t._1, t -> t._2));
@@ -68,8 +107,8 @@ public class CgroupImpl implements Cgroup {
      * Convert a number from its string representation to a long.
      *
      * @param strval: value to convert
-     * @return The converted long value. Long max value is returned if the
-     *         string representation exceeds the range of type long.
+     * @return The converted long value. Long max value is returned if the string representation
+     * exceeds the range of type long.
      */
     private static long convertStringToLong(String strval) {
         try {
@@ -79,5 +118,14 @@ public class CgroupImpl implements Cgroup {
             // the range of signed long. In this case, return Long max value.
             return Long.MAX_VALUE;
         }
+    }
+
+    private List<String> getSubsystems() {
+        return
+            Arrays.asList(Objects.requireNonNull(Paths.get(path).toFile().listFiles()))
+                .stream()
+                .filter(s -> s.isDirectory())
+                .map(s -> s.getName())
+                .collect(Collectors.toList());
     }
 }
