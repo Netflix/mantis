@@ -30,6 +30,9 @@ public class TestCpuAcctsSubsystemProcess {
 
     @Test
     public void testWhenCgroupsReturnsCorrectData() throws Exception {
+        when(cgroup.isV1()).thenReturn(true);
+        when(cgroup.getStats("cpuacct", "cpuacct.stat"))
+            .thenReturn(ImmutableMap.<String, Long>of("user", 43873627L, "system", 4185541L));
         when(cgroup.getStats("cpuacct", "cpuacct.stat"))
             .thenReturn(ImmutableMap.<String, Long>of("user", 43873627L, "system", 4185541L));
         when(cgroup.getMetric("cpuacct", "cpu.cfs_quota_us"))

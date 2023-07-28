@@ -31,6 +31,7 @@ public class TestMemorySubsystemProcess {
 
     @Test
     public void testHappyPath() throws Exception {
+        when(cgroup.isV1()).thenReturn(true);
         when(cgroup.getMetric("memory", "memory.limit_in_bytes"))
             .thenReturn(17179869184L);
         when(cgroup.getStats("memory", "memory.stat"))

@@ -18,6 +18,7 @@ package io.mantisrx.server.agent.metrics.cgroups;
 
 import io.mantisrx.runtime.loader.config.Usage;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -35,6 +36,14 @@ class CpuAcctsSubsystemProcess implements SubsystemProcess {
 
     @Override
     public void getUsage(Usage.UsageBuilder resourceUsageBuilder) throws IOException {
+        if (cgroup.isV1()) {
+            handleV1(resourceUsageBuilder);
+        } else {
+            handleV2(resourceUsageBuilder);
+        }
+    }
+
+    private void handleV1(Usage.UsageBuilder resourceUsageBuilder) throws IOException {
         final Map<String, Long> stat = cgroup.getStats("cpuacct", "cpuacct.stat");
         Optional<Long> user = Optional.ofNullable(stat.get("user"));
         Optional<Long> system = Optional.ofNullable(stat.get("system"));
@@ -59,6 +68,22 @@ class CpuAcctsSubsystemProcess implements SubsystemProcess {
             resourceUsageBuilder.cpusLimit(quotaCount);
         } else {
             log.warn("quota={} & period={} are not configured correctly", quota, period);
+        }
+    }
+
+    private void handleV2(Usage.UsageBuilder resourceUsageBuilder) throws IOException {
+        Map<String, Long> cpuStats = cgroup.getStats(null, "cpu.stat");
+        resourceUsageBuilder
+            .cpusUserTimeSecs(cpuStats.getOrDefault("user_usec", 0L) / 1000.0)
+            .cpusSystemTimeSecs(cpuStats.getOrDefault("system_usec", 0L) / 1000.0);
+
+        List<Long> metrics = cgroup.getMetrics(null, "cpu.max");
+        if (metrics.size() != 2) {
+            log.warn("cpu.max metrics={} are not configured correctly", metrics);
+        } else {
+            Long quota = metrics.get(0);
+            Long period = metrics.get(1);
+            resourceUsageBuilder.cpusLimit(quota / (float) period);
         }
     }
 }

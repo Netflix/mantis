@@ -17,9 +17,16 @@
 package io.mantisrx.server.agent.metrics.cgroups;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 interface Cgroup {
-    Long getMetric(String subsystem, String metricName) throws IOException;
-    Map<String, Long> getStats(String subsystem, String stat) throws IOException;
+    Boolean isV1();
+
+    Boolean isV2();
+
+    List<Long> getMetrics(@Nullable String subsystem, String metricName) throws IOException;
+    Long getMetric(@Nullable String subsystem, String metricName) throws IOException;
+    Map<String, Long> getStats(@Nullable String subsystem, String stat) throws IOException;
 }
