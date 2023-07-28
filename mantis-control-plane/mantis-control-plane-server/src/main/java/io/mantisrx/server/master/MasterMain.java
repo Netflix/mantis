@@ -354,7 +354,11 @@ public class MasterMain implements Service {
         }
 
         try {
-            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(loadProperties(propFile));
+            Properties props = new Properties();
+            props.putAll(System.getenv());
+            props.putAll(System.getProperties());
+            props.putAll(loadProperties(propFile));
+            StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
             MasterMain master = new MasterMain(factory, auditEventSubscriber);
