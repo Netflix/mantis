@@ -43,6 +43,7 @@ Sticky sampling extracts values from the event that correspond to fields specifi
 For eg: For `keys: ["zipcode", "zipcode_alt", "state"]`, following will be concatenated result to hash-based-sampler:
 
 | zipcode | zipcode_alt | state | concat-result   |
+| ------- | ----------- | ----- | --------------- |
 | 100001  | null        | NY    | 100001NY        |
 | null    | 100001      | NY    | 100001NY        |
 | 100001  | 100001      | NY    | 100001100001NY  |
