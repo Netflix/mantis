@@ -17,12 +17,14 @@
 package io.mantisrx.master.resourcecluster;
 
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
 import javax.xml.bind.DatatypeConverter;
@@ -36,22 +38,29 @@ public class DisableTaskExecutorsRequest {
 
     Instant expiry;
 
+    Optional<TaskExecutorID> taskExecutorID;
+
+    boolean isRequestByAttributes() {
+        return attributes.size() > 0;
+    }
+
     boolean isExpired(Instant now) {
         return expiry.compareTo(now) <= 0;
     }
 
     boolean targetsSameTaskExecutorsAs(DisableTaskExecutorsRequest another) {
-        return this.attributes.entrySet().containsAll(another.attributes.entrySet());
+        return this.isRequestByAttributes() && another.isRequestByAttributes() && this.attributes.entrySet().containsAll(another.attributes.entrySet());
     }
 
     boolean covers(@Nullable TaskExecutorRegistration registration) {
-        return registration != null && registration.containsAttributes(this.attributes);
+        return this.isRequestByAttributes() && registration != null && registration.containsAttributes(this.attributes);
     }
 
     public String getHash() {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("MD5");
             messageDigest.update(clusterID.getResourceID().getBytes(StandardCharsets.UTF_8));
+            taskExecutorID.ifPresent(executorID -> messageDigest.update(executorID.getResourceId().getBytes(StandardCharsets.UTF_8)));
             TreeMap<String, String> clone = new TreeMap<>(attributes);
             clone.forEach((key, value) -> {
                 messageDigest.update(key.getBytes(StandardCharsets.UTF_8));
