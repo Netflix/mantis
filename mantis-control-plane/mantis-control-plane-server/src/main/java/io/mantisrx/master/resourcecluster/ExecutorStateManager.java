@@ -35,9 +35,23 @@ import org.apache.commons.lang3.tuple.Pair;
  * A component to manage the states of {@link TaskExecutorState} for a given {@link ResourceClusterActor}.
  */
 public interface ExecutorStateManager {
-    void putIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state);
-    void markAvailable(TaskExecutorID taskExecutorID);
-    void markUnavailable(TaskExecutorID taskExecutorID);
+    /**
+     * Store and track the given task executor's state inside this {@link ExecutorStateManager} if there is no existing
+     * state already. Ignore the given state instance if there is already a state associated with the given ID.
+     * @param taskExecutorID TaskExecutorID
+     * @param state new task executor state
+     * @return whether the given task executor becomes available.
+     */
+    boolean onTaskExecutorStateAssigned(TaskExecutorID taskExecutorID, TaskExecutorState state);
+
+    /**
+     * Try to mark the given task executor as available if its tracked state is available.
+     * @param taskExecutorID TaskExecutorID
+     * @return whether the given task executor becomes available.
+     */
+    boolean tryMarkAvailable(TaskExecutorID taskExecutorID);
+
+    void tryMarkUnavailable(TaskExecutorID taskExecutorID);
 
     @Nullable
     TaskExecutorState get(TaskExecutorID taskExecutorID);

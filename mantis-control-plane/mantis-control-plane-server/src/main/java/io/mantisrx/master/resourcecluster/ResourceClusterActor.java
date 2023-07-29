@@ -450,7 +450,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             mantisJobStore.storeNewTaskExecutor(registration);
             if (stateChange) {
                 if (state.isAvailable()) {
-                    this.executorStateManager.markAvailable(taskExecutorID);
+                    this.executorStateManager.tryMarkAvailable(taskExecutorID);
                 }
                 // check if the task executor has been marked as 'Disabled'
                 for (DisableTaskExecutorsRequest request: activeDisableTaskExecutorsRequests) {
@@ -479,7 +479,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange) {
                 if (state.isAvailable()) {
-                    this.executorStateManager.markAvailable(taskExecutorID);
+                    this.executorStateManager.tryMarkAvailable(taskExecutorID);
                 }
             }
 
@@ -498,9 +498,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             boolean stateChange = state.onTaskExecutorStatusChange(statusChange);
             if (stateChange) {
                 if (state.isAvailable()) {
-                    this.executorStateManager.markAvailable(taskExecutorID);
+                    this.executorStateManager.tryMarkAvailable(taskExecutorID);
                 } else {
-                    this.executorStateManager.markUnavailable(taskExecutorID);
+                    this.executorStateManager.tryMarkUnavailable(taskExecutorID);
                 }
             }
 
@@ -552,7 +552,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             {
                 boolean stateChange = state.onUnassignment();
                 if (stateChange) {
-                    this.executorStateManager.markAvailable(request.getTaskExecutorID());
+                    this.executorStateManager.tryMarkAvailable(request.getTaskExecutorID());
                 }
             } catch (IllegalStateException e) {
                 if (state.isRegistered()) {
@@ -661,7 +661,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void setupTaskExecutorStateIfNecessary(TaskExecutorID taskExecutorID) {
         this.executorStateManager
-            .putIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
+            .onTaskExecutorStateAssigned(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
     }
 
     private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {

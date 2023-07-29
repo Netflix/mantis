@@ -21,4 +21,5 @@ public class WorkerConstants {
     public static final String WORKER_TASK_ATTRIBUTE_ENV_KEY = "MANTIS_WORKER_CONTAINER_ATTRIBUTE";
     // TODO(fdichiara): make this configurable.
     public static final String AUTO_SCALE_GROUP_KEY = "NETFLIX_AUTO_SCALE_GROUP";
+    public static final String MANTIS_WORKER_CONTAINER_GENERATION = "MANTIS_WORKER_CONTAINER_GENERATION";
 }
