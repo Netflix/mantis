@@ -1,30 +1,39 @@
+/*
+ * Copyright 2023 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.mantisrx.server.worker.client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import java.util.concurrent.atomic.AtomicBoolean;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
 import mantis.io.reactivex.netty.client.ClientConnectionFactory;
 import mantis.io.reactivex.netty.client.ClientMetricsEvent;
 import mantis.io.reactivex.netty.client.ConnectionPool;
 import mantis.io.reactivex.netty.client.ConnectionPoolBuilder;
-import mantis.io.reactivex.netty.client.RxClient;
-import mantis.io.reactivex.netty.metrics.MetricEventsListener;
 import mantis.io.reactivex.netty.metrics.MetricEventsSubject;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
-import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient.HttpClientConfig.Builder;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientImpl;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import rx.Observable;
-import rx.Observable.OnSubscribe;
-import rx.Subscriber;
-import rx.Subscription;
 
-public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> implements RxClient<HttpClientRequest<I>, HttpClientResponse<O>> {
+public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     protected final String name;
     protected final ServerInfo serverInfo;
@@ -35,9 +44,8 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> implements 
     protected final ClientConfig clientConfig;
     protected final MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject;
     protected final ConnectionPool<HttpClientResponse<O>, HttpClientRequest<I>> pool;
-    private final AtomicBoolean isShutdown = new AtomicBoolean();
 
-    public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<O, I>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
+    public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
@@ -99,68 +107,12 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> implements 
             });
             this.pool = poolBuilder.build();
             this.channelFactory = poolBuilder.getChannelFactory();
-            this.connectionFactory = poolBuilder.getConnectionFactory();
+            this.connectionFactory = (ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>>) poolBuilder.getConnectionFactory();
         }
     }
 
-
-    public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> getConnectionObservable() {
-        if (this.isShutdown.get()) {
-            return Observable.error(new IllegalStateException("Client is already shutdown."));
-        } else {
-            Observable toReturn;
-            if (null != this.pool) {
-                toReturn = this.pool.acquire();
-            } else {
-                toReturn = Observable.create(new OnSubscribe<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>>() {
-                    public void call(Subscriber<? super ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> subscriber) {
-                        try {
-                            MantisHttpClientImpl.this.channelFactory.connect(subscriber, MantisHttpClientImpl.this.serverInfo, MantisHttpClientImpl.this.connectionFactory);
-                            // call another method with the ChannelFuture object to expose it
-                        } catch (Throwable var3) {
-                            subscriber.onError(var3);
-                        }
-
-                    }
-                });
-            }
-
-            return toReturn.take(1);
-        }
+    public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
+        Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection = super.connect();
+        return observableConection.doOnNext(x -> x.getChannel().closeFuture());
     }
-
-    public void shutdown() {
-        if (this.isShutdown.compareAndSet(false, true)) {
-            if (null != this.pool) {
-                this.pool.shutdown();
-            }
-
-        }
-    }
-
-    public String name() {
-        return this.name;
-    }
-
-    @Override
-    protected PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> adaptPipelineConfigurator(PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
-        return PipelineConfigurators.createClientConfigurator(pipelineConfigurator, clientConfig, eventsSubject);
-    }
-
-    public Subscription subscribe(MetricEventsListener<? extends ClientMetricsEvent<?>> listener) {
-        return this.eventsSubject.subscribe(listener);
-    }
-
-    public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request) {
-        return this.submit(request, this.getConnectionObservable());
-    }
-
-    public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request, ClientConfig config) {
-        return this.submit(request, this.getConnectionObservable(), config);
-    }
-
-    public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request, Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionObservable) {
-        return super.submit(request, connectionObservable, (ClientConfig)(null == this.clientConfig ? Builder.newDefaultConfig() : this.clientConfig));
-    }
-
 }
