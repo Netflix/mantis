@@ -14,6 +14,8 @@ RUN mkdir -p /apps/mantis/mantis-server-agent/mantis-artifacts/storage
 
 COPY ./build/distributions/* /apps/mantis/mantis-server-agent/mantis-artifacts/storage/
 
+RUN apt-get update && apt-get install -y curl
+
 WORKDIR /apps/mantis/mantis-server-agent
 
 ENTRYPOINT [ "bin/mantis-server-agent", "-p", "conf/agent-docker.properties" ]

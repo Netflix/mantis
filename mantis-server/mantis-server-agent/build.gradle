@@ -36,5 +36,13 @@ dependencies {
     testImplementation(testFixtures(project(":mantis-control-plane:mantis-control-plane-core")))
 }
 
+tasks.register('copyPlaceholderFile', Copy) {
+    from 'src/test/resources/placeholder.txt'
+    into "${buildDir}/distributions"
+}
+
+tasks.named('installDist') {
+    dependsOn copyPlaceholderFile
+}
 
 mainClassName = "io.mantisrx.server.agent.AgentV2Main"

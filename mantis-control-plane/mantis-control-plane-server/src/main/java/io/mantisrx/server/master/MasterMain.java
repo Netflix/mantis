@@ -272,6 +272,17 @@ public class MasterMain implements Service {
         } catch (IOException e) {
             throw new RuntimeException(String.format("Can't load properties from the given property file %s: %s", propFile, e.getMessage()), e);
         }
+
+        for (String key : props.stringPropertyNames()) {
+            String envVarKey = key.toUpperCase().replace('.', '_');
+            String envValue = System.getenv(envVarKey);
+            if (envValue != null) {
+                props.setProperty(key, envValue);
+                logger.info("Override config from env {}: {}.", key, envValue);
+            }
+
+        }
+
         return props;
     }
 
