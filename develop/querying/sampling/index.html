@@ -885,6 +885,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operate/hearbeat.md" class="md-nav__link">
+        Worker Heartbeats and Timeouts
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1469,6 +1483,39 @@ a query like such:</p>
 
 <p>The query above should retrieve 2% of the total stream (see <a href="#random-sampling">Random Sampling</a>
 above for why), predicated on the events being uniformly distributed over the <code>zipcode</code>s.</p>
+<h3 id="how-sticky-sampling-works">How sticky sampling works<a class="headerlink" href="#how-sticky-sampling-works" title="Permanent link">&para;</a></h3>
+<p>Sticky sampling extracts values from the event that correspond to fields specified in <code>keys</code> array. <code>null</code> values are filtered out and remaining values concatenated to generate a hash. A uniform random sampling is performed on the hash to select values consistently.</p>
+<p>For eg: For <code>keys: ["zipcode", "zipcode_alt", "state"]</code>, following will be concatenated result to hash-based-sampler:</p>
+<table>
+<thead>
+<tr>
+<th>zipcode</th>
+<th>zipcode_alt</th>
+<th>state</th>
+<th>concat-result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100001</td>
+<td>null</td>
+<td>NY</td>
+<td>100001NY</td>
+</tr>
+<tr>
+<td>null</td>
+<td>100001</td>
+<td>NY</td>
+<td>100001NY</td>
+</tr>
+<tr>
+<td>100001</td>
+<td>100001</td>
+<td>NY</td>
+<td>100001100001NY</td>
+</tr>
+</tbody>
+</table>
 <!-- Do not edit below this line -->
 <!-- START -->
 <!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->

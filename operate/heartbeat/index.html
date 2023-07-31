@@ -9,17 +9,13 @@
       
       
       
-        <link rel="prev" href="../source-jobs/">
-      
-      
-        <link rel="next" href="../mantis-publish/">
       
       <link rel="icon" href="../../images/favicon.ico">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.4">
     
     
       
-        <title>Runtime - Mantis</title>
+        <title>Worker Heartbeats - Mantis</title>
       
     
     
@@ -69,7 +65,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mantis-job-components" class="md-skip">
+        <a href="#worker-heartbeats" class="md-skip">
           Skip to content
         </a>
       
@@ -103,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Runtime
+              Worker Heartbeats
             
           </span>
         </div>
@@ -787,7 +783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operate/tuning/" class="md-nav__link">
+      <a href="../tuning/" class="md-nav__link">
         Tuning
       </a>
     </li>
@@ -801,7 +797,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operate/autoscaling/" class="md-nav__link">
+      <a href="../autoscaling/" class="md-nav__link">
         Autoscaling
       </a>
     </li>
@@ -815,7 +811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operate/autoscalingstrategies/" class="md-nav__link">
+      <a href="../autoscalingstrategies/" class="md-nav__link">
         Autoscaling Strategies
       </a>
     </li>
@@ -829,7 +825,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operate/profiling/" class="md-nav__link">
+      <a href="../profiling/" class="md-nav__link">
         Memory and CPU Profiling
       </a>
     </li>
@@ -843,7 +839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operate/hearbeat.md" class="md-nav__link">
+      <a href="../hearbeat.md" class="md-nav__link">
         Worker Heartbeats and Timeouts
       </a>
     </li>
@@ -954,16 +950,14 @@
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
       
       
       
@@ -972,7 +966,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           Internals
@@ -985,7 +979,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infrastructure-overview/" class="md-nav__link">
+      <a href="../../internals/infrastructure-overview/" class="md-nav__link">
         Infrastructure Overview
       </a>
     </li>
@@ -1026,7 +1020,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mantis-jobs/introduction/" class="md-nav__link">
+      <a href="../../internals/mantis-jobs/introduction/" class="md-nav__link">
         Introduction
       </a>
     </li>
@@ -1040,7 +1034,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mantis-jobs/source/" class="md-nav__link">
+      <a href="../../internals/mantis-jobs/source/" class="md-nav__link">
         Source
       </a>
     </li>
@@ -1054,7 +1048,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mantis-jobs/processing-stage/" class="md-nav__link">
+      <a href="../../internals/mantis-jobs/processing-stage/" class="md-nav__link">
         Processing Stage
       </a>
     </li>
@@ -1068,7 +1062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mantis-jobs/sink/" class="md-nav__link">
+      <a href="../../internals/mantis-jobs/sink/" class="md-nav__link">
         Sink
       </a>
     </li>
@@ -1089,7 +1083,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../source-jobs/" class="md-nav__link">
+      <a href="../../internals/source-jobs/" class="md-nav__link">
         Source Jobs
       </a>
     </li>
@@ -1101,55 +1095,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Runtime
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../internals/runtime/" class="md-nav__link">
         Runtime
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mantis-job-components" class="md-nav__link">
-    Mantis Job Components
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#runtime-lifecycle" class="md-nav__link">
-    Runtime Lifecycle
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1161,7 +1111,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mantis-publish/" class="md-nav__link">
+      <a href="../../internals/mantis-publish/" class="md-nav__link">
         Mantis Publish
       </a>
     </li>
@@ -1411,28 +1361,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mantis-job-components" class="md-nav__link">
-    Mantis Job Components
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#runtime-lifecycle" class="md-nav__link">
-    Runtime Lifecycle
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1450,88 +1380,14 @@
   
 
 
-  <h1>Runtime</h1>
-
-<p>The Mantis Runtime is consists of two components:</p>
-<ol>
-<li>A single <strong><a href="../../glossary#mantismaster" title="The Mantis Master coordinates the execution of [Mantis Jobs] and starts the services on each Worker.">Mantis Master</a></strong> which coordinates the execution of <a href="../../glossary#job" title="A Mantis Job takes in a stream of data, transforms it by using RxJava operators, and then outputs the results as another stream. It is composed of a Source, one or more Processing Stages, and a Sink.">Mantis Jobs</a>.</li>
-<li>Independent <strong>Mantis Jobs</strong> which receive streams of events as input, <a href="../../glossary#transformation" title="A transformation acts on each datum from a stream or Observables of data, changing it in some manner before passing it along as a new stream or Observable. Transformations may change data between scalar and grouped forms.">transform</a> events one at a
-   time, and produce streams of events as output.</li>
-</ol>
-<p>This page assumes familiarity with Mantis Job high-level concepts. An introduction can be found in
-<a href="../../developing/writingjobs">Writing Mantis Jobs</a>. This page presents internal details for Mantis Jobs.</p>
-<h2 id="mantis-job-components">Mantis Job Components<a class="headerlink" href="#mantis-job-components" title="Permanent link">&para;</a></h2>
-<p>A Mantis Job consists of three <a href="../../glossary#component" title="A Mantis Job is composed of three types of component: a Source, one or more Processing Stages, and a Sink.">components</a>. Each one is based on a <a href="../../glossary#cold" title="A cold ReactiveX Observable waits until an observer subscribes to it before it begins to emit items. This means the observer is guaranteed to see the whole Observable sequence from the beginning. This is in contrast to a hot Observable, which may begin emitting items as soon as it is created, even before observers have subscribed to it.">cold Observable</a> that emits
-events to the next Observer in the Observable chain:</p>
-<ol>
-<li>
-<p><strong>Source</strong></p>
-<p>The <a href="../../glossary#source" title="The Source component of a Mantis Job fetches data from a source outside of Mantis and makes it available to the Processing Stage component in the form of an RxJava Observable. There are two varieties of Source: a Source Job and a custom source.">Source</a> component is an <code>RxFunction</code> that consumes data in a streaming, non-blocking,
-<a href="../../glossary#backpressure" title="Backpressure refers to a set of possible strategies for coping with ReactiveX Observables that produce items more rapidly than their observers consume them.">backpressure</a>-aware manner from an external service.</p>
-</li>
-<li>
-<p><strong>Processing Stage</strong></p>
-<p>A <a href="../../glossary#stage" title="A Processing Stage component of a Mantis Job transforms the RxJava Observables it obtains from the Source component.">Processing Stage</a> component is based on an <code>RxFunction</code>. This is where
-event transformations take place. There can be many Processing Stages in a Mantis Job.</p>
-</li>
-<li>
-<p><strong>Sink</strong></p>
-<p>The <a href="../../glossary#sink" title="The Sink is the final component of a Mantis Job. It takes the Observable that has been transformed by the Processing Stage and outputs it in the form of a new data stream.">Sink</a> component is based on an <code>RxAction</code>. It asynchronously emits results of the
-final Processing Stage to an external service.</p>
-</li>
-</ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Mantis Jobs can consume events from typical external services such as APIs, databases, and
-<a href="../../glossary#kafka" title="Apache Kafka is a large-scale, distributed streaming platform.">Kafka</a> topics. Mantis Jobs can also consume events emitted by other Mantis Jobs. This is
-referred to in Mantis as <strong>job chaining</strong>.</p>
-</div>
-<h2 id="runtime-lifecycle">Runtime Lifecycle<a class="headerlink" href="#runtime-lifecycle" title="Permanent link">&para;</a></h2>
-<p>The entry point for a Mantis Job is the Mantis <a href="../../glossary#worker" title="A worker is the smallest unit of work that is scheduled within a Mantis component. You can configure how many resources Mantis allocates to each worker, and Mantis will adjust the number of workers your Mantis component needs based on its autoscaling policy.">Worker</a>. The Mantis Master starts three primary
-services on a Mantis Worker when the Master boots the Worker up:</p>
-<ol>
-<li>
-<p>The <strong>virtual machine worker</strong> service interacts with the underlying substrate, currently
-   <a href="../../glossary#mesos" title="Apache Mesos is an open-source technique for balancing resources across frameworks in clusters.">Mesos</a>. This service subscribes to task updates and registers the Mantis Worker with Mesos
-   executor callbacks to launch Mantis Jobs.</p>
-</li>
-<li>
-<p>The <strong>heartbeat service</strong> sends HTTP heartbeat requests to notify the Mantis Master that the
-   worker is alive and available to process events.</p>
-</li>
-<li>
-<p>The <strong>stage executor</strong> dynamically loads bytecode for a Mantis Job, creates an in-memory
-   representation of all the <a href="../../glossary#metadata" title="Mantis inserts metadata into its Job payload. This may include information about where the data came from, for instance. You can define additional metadata to include in the payload when you establish the Job Cluster.">metadata</a> required to execute events for that Mantis Job, and
-   processes events for the current Processing Stage.</p>
-</li>
-</ol>
-<h3 id="job-master-stage">Job Master Stage<a class="headerlink" href="#job-master-stage" title="Permanent link">&para;</a></h3>
-<p>The <a href="../../glossary#jobmaster" title="If a job is configured with autoscaling, Mantis will add a Job Master component to it as its initial component. This component will send metrics back to Mantis to help it govern the autoscaling process.">Job Master</a>  <a href="../../glossary#autoscaling" title="You can establish an autoscaling policy for each component of your Mantis Job that governs how Mantis adjusts the number of workers assigned to that component as its workload changes.">autoscales</a> Processing Stages. It can autoscale such stages independently of each
-other. If the configuration of a Job indicates that any Processing Stage is autoscalable, Mantis
-will automatically add a Job Master as the initial processing stage of the Job. This is a hidden
-stage that Job owners do not explicitly manage; instead, Mantis will create and configure a
-<code>JobMasterService</code>. This service creates a subscription to worker metrics via the
-<code>WorkerMetricHandler</code> and a <code>MetricsClient</code> which receives metrics over HTTP via <a href="../../glossary#sse" title="Server-sent events (SSE) are a way for a browser to receive automatic updates from a server through an HTTP connection. Mantis includes an SSE Sink.">SSE</a> and sends
-them over to the <code>JobAutoScaler</code>.</p>
-<h4 id="job-autoscaler">Job Autoscaler<a class="headerlink" href="#job-autoscaler" title="Permanent link">&para;</a></h4>
-<p>The Job autoscaler is based on a <a href="https://en.wikipedia.org/wiki/PID_controller">PID controller</a>.
-Within this autoscaler are three controllers for CPU, memory, and network resources which
-continuously calculate an error value and apply corrections. Once the autoscaler makes a prediction,
-it delegates an API call to the Mantis Master to perform the scaling action on resources for a
-Processing stage.</p>
-<h3 id="single-stage-and-multi-stage-jobs">Single-Stage and Multi-Stage Jobs<a class="headerlink" href="#single-stage-and-multi-stage-jobs" title="Permanent link">&para;</a></h3>
-<p>A Job with only one Processing Stage is a single-stage Job. In such a case, the entire Job (Source,
-Processing Stage, and Sink) will execute on the current worker node.</p>
-<p>A Job with more than one Processing Stage is a multi-stage Job. In such a Job, the stage executor
-will first inspect the current component. If the current component is a Source, then the executor
-will execute it as a Source. Otherwise, it will inspect the context again to determine if current
-component is a Sink. If so, it will acquire a port and create a <code>SinkPublisher</code> to publish events to
-the next Job. Finally, if the component is a normal Processing Stage, then the executor will execute
-its transformations.</p>
-<!-- Do not edit below this line -->
-<!-- START -->
-<!-- This section comes from the file "reference_links". It is automagically inserted into other files by means of the "refgen" script, also in the "docs/" directory. Edit this section only in the "reference_links" file, not in any of the other files in which it is included, or your edits will be overwritten. -->
-<!-- END -->
+<h1 id="worker-heartbeats">Worker Heartbeats<a class="headerlink" href="#worker-heartbeats" title="Permanent link">&para;</a></h1>
+<p>Mantis job workers send heartbeats to Mantis master periodically. Missed heartbeats after a certain interval causes worker resubmit.</p>
+<p>By default, workers send heartbeats at a fixed interval configured in master — <code>mantis.worker.heartbeat.intervalv2.secs</code>. It defaults to 20s. <a href="https://github.com/search?q=repo%3ANetflix%2Fmantis%20mantis.worker.heartbeat.intervalv2.secs&amp;type=code">sourcecode</a></p>
+<p>Along with it, there's a default configuration for worker timeout in master — <code>mantis.worker.heartbeat.interval.secs</code>. It defaults to 60s. <a href="https://github.com/search?q=repo%3ANetflix%2Fmantis+mantis.worker.heartbeat.interval.secs&amp;type=code">sourcecode</a></p>
+<p>If you want to customize these for your job, you could configure following system parameters during job cluster and/or job update — <a href="https://github.com/Netflix/mantis/blob/master/mantis-common/src/main/java/io/mantisrx/common/SystemParameters.java#L27-L28">sourcecode</a></p>
+<div class="codehilite"><pre><span></span><code>    mantis.job.worker.heartbeat.interval.secs
+    mantis.job.worker.timeout.secs
+</code></pre></div>
 
 
 
