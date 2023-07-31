@@ -118,7 +118,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
     }
 
     @Override
-    public void tryMarkUnavailable(TaskExecutorID taskExecutorID) {
+    public boolean tryMarkUnavailable(TaskExecutorID taskExecutorID) {
         if (this.taskExecutorStateMap.containsKey(taskExecutorID)) {
             TaskExecutorState taskExecutorState = this.taskExecutorStateMap.get(taskExecutorID);
             if (taskExecutorState.getRegistration() != null) {
@@ -127,12 +127,13 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
                     this.executorByCores.get(cpuCores)
                         .remove(TaskExecutorHolder.of(taskExecutorID, taskExecutorState.getRegistration()));
                 }
-                return;
+                return true;
             }
         }
 
         // todo: check archive map as well?
         log.warn("invalid task executor to mark as unavailable: {}", taskExecutorID);
+        return false;
     }
 
     @Override
