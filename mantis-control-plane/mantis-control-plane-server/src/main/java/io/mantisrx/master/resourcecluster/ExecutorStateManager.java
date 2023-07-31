@@ -51,6 +51,10 @@ public interface ExecutorStateManager {
      */
     boolean tryMarkAvailable(TaskExecutorID taskExecutorID);
 
+    /**
+     * Try to mark the given task executor as unavailable.
+     * @param taskExecutorID TaskExecutorID
+     */
     void tryMarkUnavailable(TaskExecutorID taskExecutorID);
 
     @Nullable
