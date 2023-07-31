@@ -133,12 +133,13 @@ public class JobDefinition {
     }
 
     public boolean requireInheritInstanceCheck() {
-        return this.schedulingInfo != null && this.deploymentStrategy != null && this.getDeploymentStrategy().requireInheritInstanceCheck();
+        return this.schedulingInfo != null &&
+            (this.deploymentStrategy == null || this.getDeploymentStrategy().requireInheritInstanceCheck());
     }
 
     public boolean requireInheritInstanceCheck(int stageNum) {
         return this.schedulingInfo != null && this.getSchedulingInfo().getStages().containsKey(stageNum) &&
-                this.deploymentStrategy != null && this.getDeploymentStrategy().requireInheritInstanceCheck(stageNum);
+            (this.deploymentStrategy == null || this.getDeploymentStrategy().requireInheritInstanceCheck(stageNum));
     }
 
     private void validateSla() throws InvalidJobException {
