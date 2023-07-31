@@ -28,6 +28,7 @@ import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.runtime.parameter.SinkParameter;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.logging.LogLevel;
 import io.reactivx.mantis.operators.DropOperator;
 import java.util.Collection;
 import java.util.List;
@@ -35,9 +36,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import mantis.io.reactivex.netty.RxNetty;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurators;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
+import mantis.io.reactivex.netty.protocol.http.client.HttpClientBuilder;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
@@ -182,15 +183,26 @@ public class SseWorkerConnection {
         resetConnected();
     }
 
+    private <I, O> HttpClientBuilder<I, O> newHttpClientBuilder(String host, int port) {
+        return new MantisHttpClientBuilder<I, O>(host, port).withMaxConnections(1000).enableWireLogging(LogLevel.DEBUG);
+    }
+
     public synchronized Observable<MantisServerSentEvent> call() {
         if (isShutdown)
             return Observable.empty();
-        client =
-                RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
-                        .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
-                        //.enableWireLogging(LogLevel.ERROR)
-                        .withNoConnectionPooling()
-                        .build();
+
+        client = this.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
+                .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
+                //.enableWireLogging(LogLevel.ERROR)
+                .withNoConnectionPooling()
+                .build();
+
+//        client =
+//                RxNetty.<ByteBuf, ServerSentEvent>newHttpClientBuilder(hostname, port)
+//                        .pipelineConfigurator(PipelineConfigurators.<ByteBuf>clientSseConfigurator())
+//                        //.enableWireLogging(LogLevel.ERROR)
+//                        .withNoConnectionPooling()
+//                        .build();
         StringBuilder sp = new StringBuilder();
 
         String delimiter = sinkParameters == null
@@ -211,7 +223,9 @@ public class SseWorkerConnection {
         sp.append(sp.length() == 0 ? getDefaultSinkParams("?") : getDefaultSinkParams("&"));
 
         String uri = "/" + sp.toString();
+        logger.info("---------Called ---------");
         logger.info(getName() + ": Using uri: " + uri);
+
         return
                 client.submit(HttpClientRequest.createGet(uri))
                         .takeUntil(shutdownSubject)
