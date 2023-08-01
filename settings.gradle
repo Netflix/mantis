@@ -62,6 +62,8 @@ include 'mantis-server:mantis-server-worker-client'
 
 include 'mantis-shaded'
 
+include 'mantis-testcontainers'
+
 include 'mantis-source-jobs:mantis-source-job-kafka'
 include 'mantis-source-jobs:mantis-source-job-publish'
 
