@@ -74,8 +74,8 @@ class CpuAcctsSubsystemProcess implements SubsystemProcess {
     private void handleV2(Usage.UsageBuilder resourceUsageBuilder) throws IOException {
         Map<String, Long> cpuStats = cgroup.getStats("", "cpu.stat");
         resourceUsageBuilder
-            .cpusUserTimeSecs(cpuStats.getOrDefault("user_usec", 0L) / 1000.0)
-            .cpusSystemTimeSecs(cpuStats.getOrDefault("system_usec", 0L) / 1000.0);
+            .cpusUserTimeSecs(cpuStats.getOrDefault("user_usec", 0L) / 1000_000.0)
+            .cpusSystemTimeSecs(cpuStats.getOrDefault("system_usec", 0L) / 1000_000.0);
 
         List<Long> metrics = cgroup.getMetrics("", "cpu.max");
         if (metrics.size() != 2) {

@@ -63,7 +63,7 @@ public class TestCpuAcctsSubsystemProcess {
         process.getUsage(usageBuilder);
         final Usage usage = usageBuilder.build();
         assertEquals(2L, (long) usage.getCpusLimit());
-        assertEquals(4231313L, (long) usage.getCpusUserTimeSecs());
-        assertEquals(1277084L, (long) usage.getCpusSystemTimeSecs());
+        assertEquals(4231L, (long) usage.getCpusUserTimeSecs());
+        assertEquals(1277L, (long) usage.getCpusSystemTimeSecs());
     }
 }
