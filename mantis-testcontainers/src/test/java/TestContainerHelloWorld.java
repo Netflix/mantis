@@ -156,7 +156,7 @@ public class TestContainerHelloWorld {
             quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
 
             // test sse
-            Thread.sleep(Duration.ofSeconds(2).toMillis());
+            Thread.sleep(Duration.ofSeconds(10).toMillis());
             String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
             Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
             String stdout = lsResult.getStdout();
@@ -206,14 +206,14 @@ public class TestContainerHelloWorld {
 
         return USE_LOCAL_BUILT_IMAGE ?
             new GenericContainer<>(dockerFile)
-                .withEnv("mantis_resource_cluster_id".toUpperCase(), resourceClusterId)
-                .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
             :
             new GenericContainer<>("netflixoss/mantisserveragent:latest")
-                .withEnv("mantis_resource_cluster_id".toUpperCase(), resourceClusterId)
-                .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network);
     }

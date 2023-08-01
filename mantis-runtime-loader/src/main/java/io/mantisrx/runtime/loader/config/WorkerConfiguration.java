@@ -38,7 +38,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     // ------------------------------------------------------------------------
     //  Task Executor machine related configurations
     // ------------------------------------------------------------------------
-    @Config({"mantis.taskexecutor.id", "MANTIS_AGENT_ID"})
+    @Config({"mantis.taskexecutor.id", "MANTIS_TASKEXECUTOR_ID"})
     @DefaultNull
     String getTaskExecutorId();
 
@@ -46,7 +46,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
         return getExternalAddress();
     }
 
-    @Config({"mantis.taskexecutor.cluster-id", "MANTIS_RESOURCE_CLUSTER_ID"})
+    @Config({"mantis.taskexecutor.cluster-id", "MANTIS_TASKEXECUTOR_CLUSTER_ID"})
     @Default("DEFAULT_CLUSTER")
     String getClusterId();
 
