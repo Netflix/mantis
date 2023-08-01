@@ -24,9 +24,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -120,12 +122,16 @@ public class CgroupImpl implements Cgroup {
         }
     }
 
+    private static final Set<String> knownSubsystems =
+        new HashSet<>(Arrays.asList("cpu", "cpuacct", "cpuset", "memory"));
+
     private List<String> getSubsystems() {
         return
             Arrays.asList(Objects.requireNonNull(Paths.get(path).toFile().listFiles()))
                 .stream()
                 .filter(s -> s.isDirectory())
                 .map(s -> s.getName())
+                .filter(s -> knownSubsystems.contains(s))
                 .collect(Collectors.toList());
     }
 }
