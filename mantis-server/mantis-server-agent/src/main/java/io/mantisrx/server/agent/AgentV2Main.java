@@ -102,7 +102,6 @@ public class AgentV2Main implements Service {
             props.putAll(System.getenv());
             props.putAll(System.getProperties());
             props.putAll(loadProperties(propFile));
-            updatePropertiesWithEnvVars(props);
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             AgentV2Main agent = new AgentV2Main(factory);
             agent.start(); // blocks until shutdown hook (ctrl-c)
@@ -110,23 +109,6 @@ public class AgentV2Main implements Service {
             // unexpected to get a RuntimeException, will exit
             logger.error("Unexpected error: " + e.getMessage(), e);
             System.exit(2);
-        }
-    }
-
-    private static void updatePropertiesWithEnvVars(Properties p) {
-        for (String key : p.stringPropertyNames()) {
-            String value = p.getProperty(key);
-            if (value.startsWith("env:")) {
-                String envVarKey = value.substring(4);  // skip the "env:" prefix
-                String envValue = System.getenv(envVarKey.toUpperCase());
-                if (envValue != null) {
-                    p.setProperty(key, envValue);
-                    logger.info("Override config {}: {}.", key, envValue);
-                }
-                else {
-                    throw new RuntimeException("Mandatory env missing: " + key);
-                }
-            }
         }
     }
 

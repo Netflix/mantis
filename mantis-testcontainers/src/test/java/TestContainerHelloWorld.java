@@ -134,10 +134,10 @@ public class TestContainerHelloWorld {
 
             // Create agent(s)
             final String agentId0 = "agent0";
-            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, network);
+            final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
+            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, network);
 
             String controlPlaneHost = master.getHost();
-
             int controlPlanePort = master.getMappedPort(CONTROL_PLANE_API_PORT);
 
             if (!ensureAgentStarted(
@@ -155,8 +155,16 @@ public class TestContainerHelloWorld {
             getJobCluster(controlPlaneHost, controlPlanePort);
             quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
 
+            if (!ensureJobWorkerStarted(
+                controlPlaneHost,
+                controlPlanePort,
+                5,
+                Duration.ofSeconds(2).toMillis())) {
+                fail("Failed to start job worker.");
+            }
+
             // test sse
-            Thread.sleep(Duration.ofSeconds(2).toMillis());
+            // Thread.sleep(Duration.ofSeconds(1).toMillis());
             String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
             Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
             String stdout = lsResult.getStdout();
@@ -194,7 +202,8 @@ public class TestContainerHelloWorld {
         System.out.println("ZK check pass!");
     }
 
-    private GenericContainer<?> createAgent(String agentId, String resourceClusterId, Network network) {
+    private GenericContainer<?> createAgent(String agentId, String resourceClusterId, String hostname,
+        Network network) {
         Path path = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
         log.info("Building agent image from: {}", path);
         ImageFromDockerfile dockerFile = new ImageFromDockerfile()
@@ -206,16 +215,20 @@ public class TestContainerHelloWorld {
 
         return USE_LOCAL_BUILT_IMAGE ?
             new GenericContainer<>(dockerFile)
-                .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
-                .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
+                .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
+                .withCreateContainerCmdModifier(it -> it.withName(hostname))
             :
             new GenericContainer<>("netflixoss/mantisserveragent:latest")
-                .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
-                .withEnv("mantis_agent_id".toUpperCase(), agentId)
+                .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
+                .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
-                .withNetwork(network);
+                .withNetwork(network)
+                .withCreateContainerCmdModifier(it -> it.withName(hostname));
     }
 
     private boolean ensureAgentStarted(
@@ -256,6 +269,45 @@ public class TestContainerHelloWorld {
                         log.info("Agent {} has registered to {}.", agentId, resourceClusterId);
                         return true;
                     }
+                }
+
+                Thread.sleep(sleepMillis);
+            } catch (Exception e) {
+                log.warn("Get registred agent call error", e);
+            }
+        }
+        return false;
+    }
+
+    private boolean ensureJobWorkerStarted(
+        String controlPlaneHost,
+        int controlPlanePort,
+        int retries,
+        long sleepMillis) {
+        log.info("waiting for job worker to start.");
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/jobClusters")
+            .addPathSegment(JOB_CLUSTER_NAME)
+            .addPathSegment("latestJobDiscoveryInfo")
+            .build();
+        log.info("Req: {}", reqUrl);
+
+        for(int i = 0; i < retries; i++) {
+            Request request = new Request.Builder()
+                .url(reqUrl)
+                .build();
+
+            try {
+                Response response = HTTP_CLIENT.newCall(request).execute();
+                String responseBody = response.body().string();
+                log.info("Job cluster state: {}.", responseBody);
+
+                if (responseBody.contains("\"state\":\"Started\"")) {
+                    log.info("Job worker started.");
+                    return true;
                 }
 
                 Thread.sleep(sleepMillis);

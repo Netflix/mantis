@@ -101,7 +101,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
             return this.executorByCores.get(cpuCores).add(teHolder);
         }
         else {
-            log.warn("Ignore unavailable TE: {}", taskExecutorID);
+            log.debug("Ignore unavailable TE: {}", taskExecutorID);
             return false;
         }
     }
