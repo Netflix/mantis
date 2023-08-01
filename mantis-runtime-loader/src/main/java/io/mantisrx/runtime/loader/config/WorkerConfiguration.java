@@ -46,7 +46,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
         return getExternalAddress();
     }
 
-    @Config({"mantis.taskexecutor.cluster-id", "RESOURCE_CLUSTER_ID"})
+    @Config({"mantis.taskexecutor.cluster-id", "MANTIS_RESOURCE_CLUSTER_ID"})
     @Default("DEFAULT_CLUSTER")
     String getClusterId();
 
@@ -96,7 +96,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     // ------------------------------------------------------------------------
     //  RPC related configurations
     // ------------------------------------------------------------------------
-    @Config({"mantis.taskexecutor.rpc.external-address", "HOSTNAME"})
+    @Config({"mantis.taskexecutor.rpc.external-address", "MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", "HOSTNAME"})
     @Default("localhost")
     String getExternalAddress();
 

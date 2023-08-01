@@ -206,13 +206,13 @@ public class TestContainerHelloWorld {
 
         return USE_LOCAL_BUILT_IMAGE ?
             new GenericContainer<>(dockerFile)
-                .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_resource_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_agent_id".toUpperCase(), agentId)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
             :
             new GenericContainer<>("netflixoss/mantisserveragent:latest")
-                .withEnv("resource_cluster_id".toUpperCase(), resourceClusterId)
+                .withEnv("mantis_resource_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_agent_id".toUpperCase(), agentId)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network);
