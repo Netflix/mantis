@@ -86,7 +86,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
      * @param state state
      * @return whether the target executor is marked as available.
      */
-    public boolean tryMarkAvailable(TaskExecutorID taskExecutorID, TaskExecutorState state) {
+    private boolean tryMarkAvailable(TaskExecutorID taskExecutorID, TaskExecutorState state) {
         if (state.isAvailable() && state.getRegistration() != null) {
             TaskExecutorHolder teHolder = TaskExecutorHolder.of(taskExecutorID, state.getRegistration());
             log.debug("Marking executor {} as available for matching.", teHolder);

@@ -46,7 +46,7 @@ interface ExecutorStateManager {
     /**
      * Try to mark the given task executor as available if its tracked state is available.
      * @param taskExecutorID TaskExecutorID
-     * @return whether the given task executor becomes available.
+     * @return whether the given task executor became available.
      */
     boolean tryMarkAvailable(TaskExecutorID taskExecutorID);
 
