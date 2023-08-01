@@ -16,6 +16,7 @@
 
 package io.mantisrx.master.resourcecluster;
 
+import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.TaskExecutorAssignmentRequest;
@@ -27,21 +28,26 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.cache.Cache;
 import io.mantisrx.shaded.com.google.common.cache.CacheBuilder;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import lombok.Builder;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -53,7 +59,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
      * Cache the available executors ready to accept assignments. Note these executors' state are not strongly
      * synchronized and requires state level check when matching.
      */
-    private final SortedMap<Double, Set<TaskExecutorID>> executorByCores = new ConcurrentSkipListMap<>();
+    private final SortedMap<Double, NavigableSet<TaskExecutorHolder>> executorByCores = new ConcurrentSkipListMap<>();
 
     private final Cache<TaskExecutorID, TaskExecutorState> archivedState = CacheBuilder.newBuilder()
         .maximumSize(10000)
@@ -63,62 +69,71 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         .build();
 
     @Override
-    public void putIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
+    public void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
         this.taskExecutorStateMap.putIfAbsent(taskExecutorID, state);
         if (this.archivedState.getIfPresent(taskExecutorID) != null) {
             log.info("Reviving archived executor: {}", taskExecutorID);
             this.archivedState.invalidate(taskExecutorID);
         }
 
-        // add to buckets. however new executors won't have valid registration at this moment and requires marking
-        // again later when registration is ready.
+        tryMarkAvailable(taskExecutorID, state);
+    }
+
+    /**
+     * Add to buckets. however new executors won't have valid registration at this moment and requires marking
+     * again later when registration is ready.
+     * @param taskExecutorID taskExecutorID
+     * @param state state
+     * @return whether the target executor is marked as available.
+     */
+    private boolean tryMarkAvailable(TaskExecutorID taskExecutorID, TaskExecutorState state) {
         if (state.isAvailable() && state.getRegistration() != null) {
-            log.info("Marking executor {} as available for matching.", taskExecutorID);
+            TaskExecutorHolder teHolder = TaskExecutorHolder.of(taskExecutorID, state.getRegistration());
+            log.debug("Marking executor {} as available for matching.", teHolder);
             double cpuCores = state.getRegistration().getMachineDefinition().getCpuCores();
             if (!this.executorByCores.containsKey(cpuCores)) {
-                this.executorByCores.putIfAbsent(cpuCores, new HashSet<>());
+                this.executorByCores.putIfAbsent(
+                    cpuCores,
+                    new TreeSet<>(TaskExecutorHolder.generationFirstComparator));
             }
 
-            this.executorByCores.get(cpuCores).add(taskExecutorID);
+            log.info("Assign {} to available.", teHolder.getId());
+            return this.executorByCores.get(cpuCores).add(teHolder);
+        }
+        else {
+            log.warn("Ignore unavailable TE: {}", taskExecutorID);
+            return false;
         }
     }
 
     @Override
-    public void markAvailable(TaskExecutorID taskExecutorID) {
+    public boolean tryMarkAvailable(TaskExecutorID taskExecutorID) {
         if (!this.taskExecutorStateMap.containsKey(taskExecutorID)) {
             log.warn("marking invalid executor as available: {}", taskExecutorID);
-            return;
+            return false;
         }
 
         TaskExecutorState taskExecutorState = this.taskExecutorStateMap.get(taskExecutorID);
-        if (taskExecutorState.getRegistration() == null) {
-            log.warn("marking invalid executor registration as available: {}", taskExecutorID);
-            return;
-        }
-
-        double cpuCores = taskExecutorState.getRegistration().getMachineDefinition().getCpuCores();
-        if (!this.executorByCores.containsKey(cpuCores)) {
-            this.executorByCores.putIfAbsent(cpuCores, new HashSet<>());
-        }
-
-        this.executorByCores.get(cpuCores).add(taskExecutorID);
+        return tryMarkAvailable(taskExecutorID, taskExecutorState);
     }
 
     @Override
-    public void markUnavailable(TaskExecutorID taskExecutorID) {
+    public boolean tryMarkUnavailable(TaskExecutorID taskExecutorID) {
         if (this.taskExecutorStateMap.containsKey(taskExecutorID)) {
             TaskExecutorState taskExecutorState = this.taskExecutorStateMap.get(taskExecutorID);
             if (taskExecutorState.getRegistration() != null) {
                 double cpuCores = taskExecutorState.getRegistration().getMachineDefinition().getCpuCores();
                 if (this.executorByCores.containsKey(cpuCores)) {
-                    this.executorByCores.get(cpuCores).remove(taskExecutorID);
+                    this.executorByCores.get(cpuCores)
+                        .remove(TaskExecutorHolder.of(taskExecutorID, taskExecutorState.getRegistration()));
                 }
-                return;
+                return true;
             }
         }
 
         // todo: check archive map as well?
         log.warn("invalid task executor to mark as unavailable: {}", taskExecutorID);
+        return false;
     }
 
     @Override
@@ -209,7 +224,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
     @Override
     public Optional<Pair<TaskExecutorID, TaskExecutorState>> findBestFit(TaskExecutorAssignmentRequest request) {
         // only allow allocation in the lowest CPU cores matching group.
-        SortedMap<Double, Set<TaskExecutorID>> targetMap =
+        SortedMap<Double, NavigableSet<TaskExecutorHolder>> targetMap =
             this.executorByCores.tailMap(request.getAllocationRequest().getMachineDefinition().getCpuCores());
 
         if (targetMap.size() < 1) {
@@ -220,19 +235,21 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         log.trace("Applying assignmentReq: {} to {} cores.", request, targetCoreCount);
 
         return this.executorByCores.get(targetCoreCount)
+            .descendingSet()
             .stream()
-            .filter(tid -> {
-                if (!this.taskExecutorStateMap.containsKey(tid)) {
+            .filter(teHolder -> {
+                if (!this.taskExecutorStateMap.containsKey(teHolder.getId())) {
                     return false;
                 }
 
-                TaskExecutorState st = this.taskExecutorStateMap.get(tid);
+                TaskExecutorState st = this.taskExecutorStateMap.get(teHolder.getId());
                 return st.isAvailable() &&
                     st.getRegistration() != null &&
                     st.getRegistration().getMachineDefinition().canFit(
                         request.getAllocationRequest().getMachineDefinition());
             })
-            .findAny()
+            .findFirst()
+            .map(TaskExecutorHolder::getId)
             .map(taskExecutorID -> Pair.of(taskExecutorID, this.taskExecutorStateMap.get(taskExecutorID)));
     }
 
@@ -294,5 +311,29 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         GetClusterUsageResponse res = resBuilder.build();
         log.info("Usage result: {}", res);
         return res;
+    }
+
+    /**
+     * Holder class in {@link ExecutorStateManagerImpl} to wrap task executor ID with other metatdata needed during
+     * scheduling e.g. generation.
+     */
+    @Builder
+    @Value
+    protected static class TaskExecutorHolder {
+        TaskExecutorID Id;
+        String generation;
+
+        static TaskExecutorHolder of(TaskExecutorID id, TaskExecutorRegistration reg) {
+            String generation = reg.getAttributeByKey(WorkerConstants.MANTIS_WORKER_CONTAINER_GENERATION)
+                .orElse(reg.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).orElse("empty-generation"));
+            return TaskExecutorHolder.builder()
+                .Id(id)
+                .generation(generation)
+                .build();
+        }
+
+        static Comparator<TaskExecutorHolder> generationFirstComparator =
+            Comparator.comparing(TaskExecutorHolder::getGeneration)
+                .thenComparing(teh -> teh.getId().getResourceId());
     }
 }
