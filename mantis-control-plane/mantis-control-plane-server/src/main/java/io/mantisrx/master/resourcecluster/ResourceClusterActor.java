@@ -661,7 +661,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void setupTaskExecutorStateIfNecessary(TaskExecutorID taskExecutorID) {
         this.executorStateManager
-            .onTaskExecutorStateAssigned(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
+            .trackIfAbsent(taskExecutorID, TaskExecutorState.of(clock, rpcService, jobMessageRouter));
     }
 
     private void updateHeartbeatTimeout(TaskExecutorID taskExecutorID) {

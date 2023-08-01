@@ -69,14 +69,14 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         .build();
 
     @Override
-    public boolean onTaskExecutorStateAssigned(TaskExecutorID taskExecutorID, TaskExecutorState state) {
+    public void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state) {
         this.taskExecutorStateMap.putIfAbsent(taskExecutorID, state);
         if (this.archivedState.getIfPresent(taskExecutorID) != null) {
             log.info("Reviving archived executor: {}", taskExecutorID);
             this.archivedState.invalidate(taskExecutorID);
         }
 
-        return tryMarkAvailable(taskExecutorID, state);
+        tryMarkAvailable(taskExecutorID, state);
     }
 
     /**
@@ -313,13 +313,17 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         return res;
     }
 
+    /**
+     * Holder class in {@link ExecutorStateManagerImpl} to wrap task executor ID with other metatdata needed during
+     * scheduling e.g. generation.
+     */
     @Builder
     @Value
     protected static class TaskExecutorHolder {
         TaskExecutorID Id;
         String generation;
 
-        public static TaskExecutorHolder of(TaskExecutorID id, TaskExecutorRegistration reg) {
+        static TaskExecutorHolder of(TaskExecutorID id, TaskExecutorRegistration reg) {
             String generation = reg.getAttributeByKey(WorkerConstants.MANTIS_WORKER_CONTAINER_GENERATION)
                 .orElse(reg.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).orElse("empty-generation"));
             return TaskExecutorHolder.builder()
@@ -328,7 +332,7 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
                 .build();
         }
 
-        public static Comparator<TaskExecutorHolder> generationFirstComparator =
+        static Comparator<TaskExecutorHolder> generationFirstComparator =
             Comparator.comparing(TaskExecutorHolder::getGeneration)
                 .thenComparing(teh -> teh.getId().getResourceId());
     }

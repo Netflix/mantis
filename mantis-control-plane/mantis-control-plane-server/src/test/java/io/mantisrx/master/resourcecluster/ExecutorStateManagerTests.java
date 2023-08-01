@@ -134,19 +134,19 @@ public class ExecutorStateManagerTests {
 
         assertFalse(bestFitO.isPresent());
 
-        stateManager.onTaskExecutorStateAssigned(TASK_EXECUTOR_ID_1, state1);
+        stateManager.trackIfAbsent(TASK_EXECUTOR_ID_1, state1);
         state1.onRegistration(registration1);
         state1.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_1, CLUSTER_ID,
             TaskExecutorReport.available()));
         stateManager.tryMarkAvailable(TASK_EXECUTOR_ID_1);
 
-        stateManager.onTaskExecutorStateAssigned(TASK_EXECUTOR_ID_2, state2);
+        stateManager.trackIfAbsent(TASK_EXECUTOR_ID_2, state2);
         state2.onRegistration(registration2);
         state2.onTaskExecutorStatusChange(new TaskExecutorStatusChange(TASK_EXECUTOR_ID_2, CLUSTER_ID,
             TaskExecutorReport.available()));
         stateManager.tryMarkAvailable(TASK_EXECUTOR_ID_2);
 
-        stateManager.onTaskExecutorStateAssigned(TASK_EXECUTOR_ID_3, state3);
+        stateManager.trackIfAbsent(TASK_EXECUTOR_ID_3, state3);
         state3.onRegistration(registration3);
 
         // test machine def 1
@@ -336,7 +336,7 @@ public class ExecutorStateManagerTests {
         ExecutorStateManager stateManager) {
         TaskExecutorState state = TaskExecutorState.of(clock, rpc, router);
         TaskExecutorRegistration reg = getRegistrationBuilder(id, mdef, attributes).build();
-        stateManager.onTaskExecutorStateAssigned(id, state);
+        stateManager.trackIfAbsent(id, state);
         state.onRegistration(reg);
         state.onTaskExecutorStatusChange(
             new TaskExecutorStatusChange(

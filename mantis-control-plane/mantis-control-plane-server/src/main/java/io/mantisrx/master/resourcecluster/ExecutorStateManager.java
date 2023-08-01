@@ -40,9 +40,8 @@ interface ExecutorStateManager {
      * state already. Ignore the given state instance if there is already a state associated with the given ID.
      * @param taskExecutorID TaskExecutorID
      * @param state new task executor state
-     * @return whether the given task executor becomes available.
      */
-    boolean onTaskExecutorStateAssigned(TaskExecutorID taskExecutorID, TaskExecutorState state);
+    void trackIfAbsent(TaskExecutorID taskExecutorID, TaskExecutorState state);
 
     /**
      * Try to mark the given task executor as available if its tracked state is available.
