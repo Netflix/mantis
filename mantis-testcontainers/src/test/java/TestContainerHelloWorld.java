@@ -155,8 +155,16 @@ public class TestContainerHelloWorld {
             getJobCluster(controlPlaneHost, controlPlanePort);
             quickSubmitJobCluster(controlPlaneHost, controlPlanePort);
 
+            if (!ensureJobWorkerStarted(
+                controlPlaneHost,
+                controlPlanePort,
+                5,
+                Duration.ofSeconds(2).toMillis())) {
+                fail("Failed to start job worker.");
+            }
+
             // test sse
-            Thread.sleep(Duration.ofSeconds(10).toMillis());
+            // Thread.sleep(Duration.ofSeconds(1).toMillis());
             String cmd = "curl -N -H \"Accept: text/event-stream\"  \"localhost:5055\" & sleep 3; kill $!";
             Container.ExecResult lsResult = agent0.execInContainer("bash", "-c", cmd);
             String stdout = lsResult.getStdout();
@@ -256,6 +264,45 @@ public class TestContainerHelloWorld {
                         log.info("Agent {} has registered to {}.", agentId, resourceClusterId);
                         return true;
                     }
+                }
+
+                Thread.sleep(sleepMillis);
+            } catch (Exception e) {
+                log.warn("Get registred agent call error", e);
+            }
+        }
+        return false;
+    }
+
+    private boolean ensureJobWorkerStarted(
+        String controlPlaneHost,
+        int controlPlanePort,
+        int retries,
+        long sleepMillis) {
+        log.info("waiting for job worker to start.");
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/jobClusters")
+            .addPathSegment(JOB_CLUSTER_NAME)
+            .addPathSegment("latestJobDiscoveryInfo")
+            .build();
+        log.info("Req: {}", reqUrl);
+
+        for(int i = 0; i < retries; i++) {
+            Request request = new Request.Builder()
+                .url(reqUrl)
+                .build();
+
+            try {
+                Response response = HTTP_CLIENT.newCall(request).execute();
+                String responseBody = response.body().string();
+                log.info("Job cluster state: {}.", responseBody);
+
+                if (responseBody.contains("\"state\":\"Started\"")) {
+                    log.info("Job worker started.");
+                    return true;
                 }
 
                 Thread.sleep(sleepMillis);
