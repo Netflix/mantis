@@ -134,10 +134,10 @@ public class TestContainerHelloWorld {
 
             // Create agent(s)
             final String agentId0 = "agent0";
-            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, network);
+            final String agent0Hostname = String.format("%s%shostname", agentId0, CLUSTER_ID);
+            GenericContainer<?> agent0 = createAgent(agentId0, CLUSTER_ID, agent0Hostname, network);
 
             String controlPlaneHost = master.getHost();
-
             int controlPlanePort = master.getMappedPort(CONTROL_PLANE_API_PORT);
 
             if (!ensureAgentStarted(
@@ -202,7 +202,8 @@ public class TestContainerHelloWorld {
         System.out.println("ZK check pass!");
     }
 
-    private GenericContainer<?> createAgent(String agentId, String resourceClusterId, Network network) {
+    private GenericContainer<?> createAgent(String agentId, String resourceClusterId, String hostname,
+        Network network) {
         Path path = Paths.get("../mantis-server/mantis-server-agent/Dockerfile");
         log.info("Building agent image from: {}", path);
         ImageFromDockerfile dockerFile = new ImageFromDockerfile()
@@ -216,14 +217,18 @@ public class TestContainerHelloWorld {
             new GenericContainer<>(dockerFile)
                 .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
+                .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
                 .withNetwork(network)
+                .withCreateContainerCmdModifier(it -> it.withName(hostname))
             :
             new GenericContainer<>("netflixoss/mantisserveragent:latest")
                 .withEnv("mantis_taskexecutor_cluster_id".toUpperCase(), resourceClusterId)
                 .withEnv("mantis_taskexecutor_id".toUpperCase(), agentId)
+                .withEnv("MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", hostname)
                 .withCopyFileToContainer(sampleArtifact, CONTAINER_ARTIFACT_PATH)
-                .withNetwork(network);
+                .withNetwork(network)
+                .withCreateContainerCmdModifier(it -> it.withName(hostname));
     }
 
     private boolean ensureAgentStarted(

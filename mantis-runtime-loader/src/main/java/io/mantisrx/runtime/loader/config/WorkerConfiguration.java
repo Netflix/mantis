@@ -96,7 +96,7 @@ public interface WorkerConfiguration extends CoreConfiguration {
     // ------------------------------------------------------------------------
     //  RPC related configurations
     // ------------------------------------------------------------------------
-    @Config({"mantis.taskexecutor.rpc.external-address", "MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS", "HOSTNAME"})
+    @Config({"mantis.taskexecutor.rpc.external-address", "MANTIS_TASKEXECUTOR_RPC_EXTERNAL_ADDRESS"})
     @Default("localhost")
     String getExternalAddress();
 
