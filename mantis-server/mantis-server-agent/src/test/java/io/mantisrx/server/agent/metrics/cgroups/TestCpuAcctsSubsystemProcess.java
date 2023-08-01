@@ -17,6 +17,7 @@
 package io.mantisrx.server.agent.metrics.cgroups;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -55,6 +56,7 @@ public class TestCpuAcctsSubsystemProcess {
     public void testCgroupsV2() throws IOException {
         final Cgroup cgroupv2 =
             new CgroupImpl(Resources.getResource("example2").getPath());
+        assertFalse(cgroupv2.isV1());
 
         final CpuAcctsSubsystemProcess process = new CpuAcctsSubsystemProcess(cgroupv2);
         final Usage.UsageBuilder usageBuilder = Usage.builder();
