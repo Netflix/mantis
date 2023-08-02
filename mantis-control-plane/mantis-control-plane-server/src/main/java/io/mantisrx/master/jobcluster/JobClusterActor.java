@@ -1801,7 +1801,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                     if(!jobClusterMetadata.isDisabled()) {
                         SLA sla = this.jobClusterMetadata.getJobClusterDefinition().getSLA();
                         if(sla.getMin() == 0 && sla.getMax() == 0) {
-                            logger.info("No SLA specified nothing to enforce {}", sla);
+                            logger.info("{} No SLA specified nothing to enforce {}",
+                                completedJob.get().getJobId(), sla);
                         } else {
                             try {
                                 // first check if response has job meta for last job
@@ -3450,6 +3451,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 triggerId = triggerOperator.registerTrigger(triggerGroup, scheduledTrigger);
                 isCronActive = true;
             } catch (IllegalArgumentException e) {
+                destroyCron();
+                logger.error("Failed to start cron for {}: {}", jobClusterName, e);
                 throw new SchedulerException(e.getMessage(), e);
             }
 
@@ -3459,9 +3462,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
             try {
                 if (triggerId != null) {
                     logger.info("Destroying cron " + triggerId);
-                    triggerOperator.deleteTrigger(triggerGroup, triggerId);
                     triggerId = null;
                     isCronActive = false;
+                    triggerOperator.deleteTrigger(triggerGroup, triggerId);
                 }
             } catch (TriggerNotFoundException | SchedulerException e) {
                 logger.warn("Couldn't delete trigger group " + triggerGroup + ", id " + triggerId);
