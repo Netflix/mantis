@@ -72,6 +72,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -617,9 +618,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             taskExecutorsList.getTaskExecutors()
                 .stream()
-                .map(this::getTaskExecutorStatus)
+                .map(this::getTaskExecutorState)
                 .filter(Objects::nonNull)
-                .map(TaskExecutorStatus::getRegistration)
+                .map(TaskExecutorState::getRegistration)
                 .filter(Objects::nonNull)
                 .filter(registration -> registration.getTaskExecutorContainerDefinitionId().isPresent() && registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).isPresent())
                 .collect(groupingBy(registration -> Tuple.of(registration.getTaskExecutorContainerDefinitionId().get(), registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).get()), Collectors.counting()))
@@ -636,11 +637,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         return this.executorStateManager.getResourceOverview();
     }
 
+    @Nonnull
     private TaskExecutorStatus getTaskExecutorStatus(TaskExecutorID taskExecutorID) {
         final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         if (state == null) {
-            log.warn("Unknown executorID: {}", taskExecutorID);
-            return null;
+            log.info("Unknown executorID: {}", taskExecutorID);
+            return TaskExecutorStatus.NotFound;
         }
 
         return new TaskExecutorStatus(
@@ -651,6 +653,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             state.isDisabled(),
             state.getWorkerId(),
             state.getLastActivity().toEpochMilli());
+    }
+
+    @Nullable
+    private TaskExecutorState getTaskExecutorState(TaskExecutorID taskExecutorID) {
+        return this.executorStateManager.get(taskExecutorID);
     }
 
     private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {
