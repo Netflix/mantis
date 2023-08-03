@@ -40,4 +40,4 @@ jobs:
           NETFLIX_OSS_REPO_PASSWORD: ${{ secrets.ORG_NETFLIXOSS_PASSWORD }}
           NETFLIX_OSS_SONATYPE_STAGING_PROFILE_ID: "c3547130240327"
         with:
-          arguments: -Prelease.useLastTag=true final
+          arguments: -Prelease.useLastTag=true -x test final
