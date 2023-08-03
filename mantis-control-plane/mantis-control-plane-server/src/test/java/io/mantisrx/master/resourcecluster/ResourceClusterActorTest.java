@@ -45,7 +45,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.NotFoundException;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
@@ -292,7 +292,7 @@ public class ResourceClusterActorTest {
         resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TaskExecutorID.of("invalid"), CLUSTER_ID),
             probe.getRef());
         Failure teNotFoundStatusRes = probe.expectMsgClass(Failure.class);
-        assertTrue(teNotFoundStatusRes.cause() instanceof NotFoundException);
+        assertTrue(teNotFoundStatusRes.cause() instanceof ResourceNotFoundException);
 
         assertEquals(1, usageRes.getUsages().stream()
             .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID())).count());

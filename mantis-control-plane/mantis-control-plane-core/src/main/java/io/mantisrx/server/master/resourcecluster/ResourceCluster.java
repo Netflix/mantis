@@ -230,8 +230,8 @@ public interface ResourceCluster extends ResourceClusterGateway {
         long lastHeartbeatInMs;
     }
 
-    class NotFoundException extends Exception {
-        public NotFoundException(String message) {
+    class ResourceNotFoundException extends Exception {
+        public ResourceNotFoundException(String message) {
             super(message);
         }
     }

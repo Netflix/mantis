@@ -42,7 +42,7 @@ import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.NotFoundException;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceNotFoundException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ser.FilterProvider;
@@ -324,7 +324,7 @@ abstract class BaseRoute extends AllDirectives {
         return onComplete(tFuture,
             t -> t.fold(
                 throwable -> {
-                    if (throwable instanceof NotFoundException) {
+                    if (throwable instanceof ResourceNotFoundException) {
                         return complete(StatusCodes.NOT_FOUND);
                     }
                     return complete(StatusCodes.INTERNAL_SERVER_ERROR, throwable, Jackson.marshaller());

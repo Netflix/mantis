@@ -37,7 +37,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ConnectionFailedException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.NotFoundException;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
@@ -639,11 +639,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     }
 
     @Nonnull
-    private Object getTaskExecutorStatus(TaskExecutorID taskExecutorID) throws NotFoundException {
+    private Object getTaskExecutorStatus(TaskExecutorID taskExecutorID) throws ResourceNotFoundException {
         final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         if (state == null) {
             log.info("Unknown executorID: {}", taskExecutorID);
-            return new Status.Failure(new NotFoundException(String.format("%s not found",
+            return new Status.Failure(new ResourceNotFoundException(String.format("%s not found",
                 taskExecutorID.getResourceId())));
         }
 
