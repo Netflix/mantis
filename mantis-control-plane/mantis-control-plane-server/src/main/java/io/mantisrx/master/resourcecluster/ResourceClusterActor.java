@@ -43,6 +43,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
@@ -175,7 +176,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isDisabled)), self()))
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.unregistered)), self()))
                 .match(GetActiveJobsRequest.class, this::getActiveJobs)
-                .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
+                .match(GetTaskExecutorStatusRequest.class, this::getTaskExecutorStatus)
                 .match(GetClusterUsageRequest.class,
                     req -> sender().tell(this.executorStateManager.getClusterUsage(req), self()))
                 .match(GetClusterIdleInstancesRequest.class,
@@ -617,9 +618,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             taskExecutorsList.getTaskExecutors()
                 .stream()
-                .map(this::getTaskExecutorStatus)
+                .map(this::getTaskExecutorState)
                 .filter(Objects::nonNull)
-                .map(TaskExecutorStatus::getRegistration)
+                .map(TaskExecutorState::getRegistration)
                 .filter(Objects::nonNull)
                 .filter(registration -> registration.getTaskExecutorContainerDefinitionId().isPresent() && registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).isPresent())
                 .collect(groupingBy(registration -> Tuple.of(registration.getTaskExecutorContainerDefinitionId().get(), registration.getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).get()), Collectors.counting()))
@@ -636,21 +637,33 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         return this.executorStateManager.getResourceOverview();
     }
 
-    private TaskExecutorStatus getTaskExecutorStatus(TaskExecutorID taskExecutorID) {
+    private void getTaskExecutorStatus(GetTaskExecutorStatusRequest req) {
+        TaskExecutorID taskExecutorID = req.getTaskExecutorID();
         final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         if (state == null) {
-            log.warn("Unknown executorID: {}", taskExecutorID);
-            return null;
+            log.info("Unknown executorID: {}", taskExecutorID);
+            getSender().tell(
+                new Status.Failure(new TaskExecutorNotFoundException(String.format("%s not found",
+                    taskExecutorID.getResourceId()))),
+                self());
         }
+        else {
+            getSender().tell(
+                new TaskExecutorStatus(
+                    state.getRegistration(),
+                    state.isRegistered(),
+                    state.isRunningTask(),
+                    state.isAssigned(),
+                    state.isDisabled(),
+                    state.getWorkerId(),
+                    state.getLastActivity().toEpochMilli()),
+                self());
+        }
+    }
 
-        return new TaskExecutorStatus(
-            state.getRegistration(),
-            state.isRegistered(),
-            state.isRunningTask(),
-            state.isAssigned(),
-            state.isDisabled(),
-            state.getWorkerId(),
-            state.getLastActivity().toEpochMilli());
+    @Nullable
+    private TaskExecutorState getTaskExecutorState(TaskExecutorID taskExecutorID) {
+        return this.executorStateManager.get(taskExecutorID);
     }
 
     private void onTaskExecutorDisconnection(TaskExecutorDisconnection disconnection) {

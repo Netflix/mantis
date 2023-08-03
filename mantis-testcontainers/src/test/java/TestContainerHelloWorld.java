@@ -24,11 +24,13 @@ import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFramework;
 import io.mantisrx.shaded.org.apache.curator.framework.CuratorFrameworkFactory;
 import io.mantisrx.shaded.org.apache.curator.retry.RetryOneTime;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -171,6 +173,8 @@ public class TestContainerHelloWorld {
 
             log.info("stdout: {}", stdout);
             assertTrue(stdout.contains("data: {\"x\":"));
+
+            testTEStates(controlPlaneHost, controlPlanePort);
 
             /*
             Uncomment following lines to keep the containers running.
@@ -346,6 +350,57 @@ public class TestContainerHelloWorld {
             log.warn("Create cluster call error", e);
         }
         return true;
+    }
+
+    private void testTEStates(
+        String controlPlaneHost,
+        int controlPlanePort) {
+        try
+        {
+            Optional<Response> responseO = checkTeState(controlPlaneHost, controlPlanePort, "agent0");
+            assertTrue(responseO.isPresent());
+            assertTrue(responseO.get().isSuccessful());
+            String resBody = responseO.get().body().string();
+            log.info("agent0: {}", resBody);
+            assertTrue(resBody.contains("\"registered\":true,\"runningTask\":true"));
+
+            responseO = checkTeState(controlPlaneHost, controlPlanePort, "invalid");
+            assertTrue(responseO.isPresent());
+            assertEquals(404, responseO.get().code());
+        }
+        catch (IOException ioe) {
+            log.error("failed to check TE state", ioe);
+            fail("failed to check TE state " + ioe);
+        }
+    }
+
+    private Optional<Response> checkTeState(
+        String controlPlaneHost,
+        int controlPlanePort,
+        String teId) {
+        HttpUrl reqUrl = new Builder()
+            .scheme("http")
+            .host(controlPlaneHost)
+            .port(controlPlanePort)
+            .addPathSegments("api/v1/resourceClusters")
+            .addPathSegment(CLUSTER_ID)
+            .addPathSegment("taskExecutors")
+            .addPathSegment(teId)
+            .addPathSegment("getTaskExecutorState")
+            .build();
+        log.info("Req: {}", reqUrl);
+        Request request = new Request.Builder()
+            .url(reqUrl)
+            .get()
+            .build();
+
+        try {
+            Response response = HTTP_CLIENT.newCall(request).execute();
+            return Optional.of(response);
+        } catch (Exception e) {
+            log.warn("Get TE state call error", e);
+            return Optional.empty();
+        }
     }
 
     private boolean quickSubmitJobCluster(

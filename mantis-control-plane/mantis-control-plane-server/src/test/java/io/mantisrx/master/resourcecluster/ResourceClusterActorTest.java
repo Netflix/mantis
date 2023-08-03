@@ -25,12 +25,14 @@ import static org.mockito.Mockito.when;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.actor.Status.Failure;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
 import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetActiveJobsRequest;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
+import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetTaskExecutorStatusRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
 import io.mantisrx.master.resourcecluster.proto.GetClusterUsageResponse;
@@ -44,10 +46,12 @@ import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
@@ -278,6 +282,17 @@ public class ResourceClusterActorTest {
                 .findFirst().get();
         assertEquals(1, usage1.getIdleCount());
         assertEquals(1, usage1.getTotalCount());
+
+        // test get TE status
+        resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TASK_EXECUTOR_ID_2, CLUSTER_ID), probe.getRef());
+        TaskExecutorStatus teStatusRes = probe.expectMsgClass(TaskExecutorStatus.class);
+        assertEquals(TASK_EXECUTOR_REGISTRATION_2, teStatusRes.getRegistration());
+
+        // test get invalid TE status
+        resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TaskExecutorID.of("invalid"), CLUSTER_ID),
+            probe.getRef());
+        Failure teNotFoundStatusRes = probe.expectMsgClass(Failure.class);
+        assertTrue(teNotFoundStatusRes.cause() instanceof TaskExecutorNotFoundException);
 
         assertEquals(1, usageRes.getUsages().stream()
             .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID())).count());

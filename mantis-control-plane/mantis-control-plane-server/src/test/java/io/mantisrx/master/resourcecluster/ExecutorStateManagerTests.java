@@ -19,6 +19,8 @@ package io.mantisrx.master.resourcecluster;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -329,6 +331,9 @@ public class ExecutorStateManagerTests {
         assertEquals(SCALE_GROUP_1,
             Objects.requireNonNull(bestFitO.get().getRight().getRegistration())
                 .getAttributeByKey(WorkerConstants.AUTO_SCALE_GROUP_KEY).orElse("invalid"));
+
+        assertNotNull(stateManager.get(TASK_EXECUTOR_ID_1));
+        assertNull(stateManager.get(TaskExecutorID.of("invalid")));
     }
 
     private TaskExecutorState registerNewTaskExecutor(TaskExecutorID id, MachineDefinition mdef,
