@@ -228,14 +228,11 @@ public interface ResourceCluster extends ResourceClusterGateway {
         @Nullable
         WorkerId workerId;
         long lastHeartbeatInMs;
+    }
 
-        public static TaskExecutorStatus NotFound = new TaskExecutorStatus(
-            null,
-            false,
-            false,
-            false,
-            false,
-            null,
-            -1);
+    class NotFoundException extends Exception {
+        public NotFoundException(String message) {
+            super(message);
+        }
     }
 }

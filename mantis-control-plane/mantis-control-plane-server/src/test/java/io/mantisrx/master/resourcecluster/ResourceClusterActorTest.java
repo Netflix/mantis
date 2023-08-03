@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.actor.Status.Failure;
 import akka.testkit.javadsl.TestKit;
 import io.mantisrx.common.Ack;
 import io.mantisrx.common.WorkerConstants;
@@ -44,6 +45,7 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
+import io.mantisrx.server.master.resourcecluster.ResourceCluster.NotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
@@ -289,8 +291,8 @@ public class ResourceClusterActorTest {
         // test get invalid TE status
         resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TaskExecutorID.of("invalid"), CLUSTER_ID),
             probe.getRef());
-        teStatusRes = probe.expectMsgClass(TaskExecutorStatus.class);
-        assertEquals(TaskExecutorStatus.NotFound, teStatusRes);
+        Failure teNotFoundStatusRes = probe.expectMsgClass(Failure.class);
+        assertTrue(teNotFoundStatusRes.cause() instanceof NotFoundException);
 
         assertEquals(1, usageRes.getUsages().stream()
             .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID())).count());
