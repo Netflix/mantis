@@ -45,13 +45,13 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
@@ -292,7 +292,7 @@ public class ResourceClusterActorTest {
         resourceClusterActor.tell(new GetTaskExecutorStatusRequest(TaskExecutorID.of("invalid"), CLUSTER_ID),
             probe.getRef());
         Failure teNotFoundStatusRes = probe.expectMsgClass(Failure.class);
-        assertTrue(teNotFoundStatusRes.cause() instanceof ResourceNotFoundException);
+        assertTrue(teNotFoundStatusRes.cause() instanceof TaskExecutorNotFoundException);
 
         assertEquals(1, usageRes.getUsages().stream()
             .filter(usage -> Objects.equals(usage.getUsageGroupKey(), CONTAINER_DEF_ID_2.getResourceID())).count());

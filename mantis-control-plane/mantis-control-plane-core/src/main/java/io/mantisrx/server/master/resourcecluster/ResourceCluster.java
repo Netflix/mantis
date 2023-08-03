@@ -229,10 +229,4 @@ public interface ResourceCluster extends ResourceClusterGateway {
         WorkerId workerId;
         long lastHeartbeatInMs;
     }
-
-    class ResourceNotFoundException extends Exception {
-        public ResourceNotFoundException(String message) {
-            super(message);
-        }
-    }
 }

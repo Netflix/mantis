@@ -37,13 +37,13 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ConnectionFailedException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.NoResourceAvailableException;
-import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceNotFoundException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorAllocationRequest;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorID;
+import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport.Available;
@@ -73,7 +73,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -177,7 +176,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .match(GetDisabledTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.isDisabled)), self()))
                 .match(GetUnregisteredTaskExecutorsRequest.class, req -> sender().tell(getTaskExecutors(filterByAttrs(req).and(ExecutorStateManager.unregistered)), self()))
                 .match(GetActiveJobsRequest.class, this::getActiveJobs)
-                .match(GetTaskExecutorStatusRequest.class, req -> sender().tell(getTaskExecutorStatus(req.getTaskExecutorID()), self()))
+                .match(GetTaskExecutorStatusRequest.class, this::getTaskExecutorStatus)
                 .match(GetClusterUsageRequest.class,
                     req -> sender().tell(this.executorStateManager.getClusterUsage(req), self()))
                 .match(GetClusterIdleInstancesRequest.class,
@@ -638,23 +637,28 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         return this.executorStateManager.getResourceOverview();
     }
 
-    @Nonnull
-    private Object getTaskExecutorStatus(TaskExecutorID taskExecutorID) throws ResourceNotFoundException {
+    private void getTaskExecutorStatus(GetTaskExecutorStatusRequest req) {
+        TaskExecutorID taskExecutorID = req.getTaskExecutorID();
         final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
         if (state == null) {
             log.info("Unknown executorID: {}", taskExecutorID);
-            return new Status.Failure(new ResourceNotFoundException(String.format("%s not found",
-                taskExecutorID.getResourceId())));
+            getSender().tell(
+                new Status.Failure(new TaskExecutorNotFoundException(String.format("%s not found",
+                    taskExecutorID.getResourceId()))),
+                self());
         }
-
-        return new TaskExecutorStatus(
-            state.getRegistration(),
-            state.isRegistered(),
-            state.isRunningTask(),
-            state.isAssigned(),
-            state.isDisabled(),
-            state.getWorkerId(),
-            state.getLastActivity().toEpochMilli());
+        else {
+            getSender().tell(
+                new TaskExecutorStatus(
+                    state.getRegistration(),
+                    state.isRegistered(),
+                    state.isRunningTask(),
+                    state.isAssigned(),
+                    state.isDisabled(),
+                    state.getWorkerId(),
+                    state.getLastActivity().toEpochMilli()),
+                self());
+        }
     }
 
     @Nullable
