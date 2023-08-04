@@ -724,9 +724,22 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private void onCacheJobArtifactsOnTaskExecutorRequest(CacheJobArtifactsOnTaskExecutorRequest request) {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
         if (state != null) {
-            TaskExecutorGateway gateway = state.getGateway().join();
-            List<URI> artifacts = jobArtifactsToCache.stream().map(artifactID -> URI.create(artifactID.getResourceID())).collect(Collectors.toList());
-            gateway.cacheJobArtifacts(new CacheJobArtifactsRequest(artifacts));
+            if (state.getGateway() != null) {
+                TaskExecutorGateway gateway = state.getGateway().join();
+                if (gateway != null) {
+                    // TODO(fdichiara): store URI directly to avoid remapping for each TE
+                    List<URI> artifacts = jobArtifactsToCache.stream().map(artifactID -> URI.create(artifactID.getResourceID())).collect(Collectors.toList());
+                    try {
+                        gateway.cacheJobArtifacts(new CacheJobArtifactsRequest(artifacts));
+                    } catch(Exception e) {
+                        log.warn("Failed to cache job artifacts in task executor {}", request.getTaskExecutorID());
+                    }
+                } else {
+                    log.warn("Failed to fetch gateway for task executor {}", request.getTaskExecutorID());
+                }
+            } else {
+                log.warn("Gateway for task executor {} is not set", request.getTaskExecutorID());
+            }
         }
     }
 
