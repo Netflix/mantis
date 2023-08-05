@@ -54,6 +54,7 @@ import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
+import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.vavr.Tuple;
 import java.io.IOException;
@@ -62,6 +63,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -110,8 +113,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private final HashSet<ArtifactID> jobArtifactsToCache = new HashSet<>();
 
-    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
-        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter);
+    private final int maxJobArtifactsToCache;
+    private final String jobClustersWithArtifactCachingEnabled;
+
+    static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter, int maxJobArtifactsToCache, String jobClustersWithArtifactCachingEnabled) {
+        return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter, maxJobArtifactsToCache, jobClustersWithArtifactCachingEnabled);
     }
 
     ResourceClusterActor(
@@ -122,7 +128,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
-        JobMessageRouter jobMessageRouter) {
+        JobMessageRouter jobMessageRouter,
+        int maxJobArtifactsToCache,
+        String jobClustersWithArtifactCachingEnabled) {
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -134,6 +142,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         this.mantisJobStore = mantisJobStore;
         this.activeDisableTaskExecutorsByAttributesRequests = new HashSet<>();
         this.disabledTaskExecutors = new HashSet<>();
+        this.maxJobArtifactsToCache = maxJobArtifactsToCache;
+        this.jobClustersWithArtifactCachingEnabled = jobClustersWithArtifactCachingEnabled;
 
         this.executorStateManager = new ExecutorStateManagerImpl();
 
@@ -209,12 +219,36 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onAddNewJobArtifactsToCacheRequest(AddNewJobArtifactsToCacheRequest req) {
         try {
-            mantisJobStore.addNewJobArtifactsToCache(req.getClusterID(), req.getArtifacts());
-            jobArtifactsToCache.addAll(req.artifacts);
+            Set<ArtifactID> newArtifacts = new HashSet<>(req.artifacts);
+            newArtifacts.removeAll(jobArtifactsToCache);
+
+            if (!newArtifacts.isEmpty()) {
+                if(jobArtifactsToCache.size() < maxJobArtifactsToCache) {
+                    log.info("Storing and caching new artifacts: {}", newArtifacts);
+
+                    jobArtifactsToCache.addAll(newArtifacts);
+                    mantisJobStore.addNewJobArtifactsToCache(req.getClusterID(), ImmutableList.copyOf(jobArtifactsToCache));
+                    refreshTaskExecutorJobArtifactCache();
+                } else {
+                    log.warn("Cannot enable caching for artifacts {}. Max number ({}) of job artifacts to cache reached.", newArtifacts, maxJobArtifactsToCache);
+
+                    metrics.incrementCounter(
+                        ResourceClusterActorMetrics.MAX_JOB_ARTIFACTS_TO_CACHE_REACHED,
+                        TagList.create(ImmutableMap.of(
+                            "resourceCluster",
+                            clusterID.getResourceID())));
+                }
+            }
             sender().tell(Ack.getInstance(), self());
         } catch (IOException e) {
             log.warn("Cannot add new job artifacts {} to cache in cluster: {}", req.getArtifacts(), req.getClusterID(), e);
         }
+    }
+
+    private void refreshTaskExecutorJobArtifactCache() {
+        // TODO: implement rate control to confirm we are not overwhelming the TEs with excessive caching requests
+        getTaskExecutors(ExecutorStateManager.isAvailable).getTaskExecutors().forEach(taskExecutorID ->
+            self().tell(new CacheJobArtifactsOnTaskExecutorRequest(taskExecutorID, clusterID), self()));
     }
 
     private void onRemoveJobArtifactsToCacheRequest(RemoveJobArtifactsToCacheRequest req) {
@@ -554,6 +588,12 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         if (matchedExecutor.isPresent()) {
             log.info("matched executor {} for request {}", matchedExecutor.get().getKey(), request);
+
+            // trigger job artifact cache if needed
+            if(shouldCacheJobArtifacts(request)) {
+                self().tell(new AddNewJobArtifactsToCacheRequest(clusterID, Collections.singletonList(request.getAllocationRequest().getJobMetadata().getJobArtifact())), self());
+            }
+
             matchedExecutor.get().getValue().onAssignment(request.getAllocationRequest().getWorkerId());
             // let's give some time for the assigned executor to be scheduled work. otherwise, the assigned executor
             // will be returned back to the pool.
@@ -723,13 +763,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onCacheJobArtifactsOnTaskExecutorRequest(CacheJobArtifactsOnTaskExecutorRequest request) {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state != null) {
+        if (state != null && state.isRegistered()) {
             if (state.getGateway() != null) {
                 TaskExecutorGateway gateway = state.getGateway().join();
                 if (gateway != null) {
                     // TODO(fdichiara): store URI directly to avoid remapping for each TE
                     List<URI> artifacts = jobArtifactsToCache.stream().map(artifactID -> URI.create(artifactID.getResourceID())).collect(Collectors.toList());
                     try {
+                        log.debug("Caching artifacts {} in task executor {}", artifacts, request.getTaskExecutorID());
                         gateway.cacheJobArtifacts(new CacheJobArtifactsRequest(artifacts));
                     } catch(Exception e) {
                         log.warn("Failed to cache job artifacts in task executor {}", request.getTaskExecutorID());
@@ -741,6 +782,25 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 log.warn("Gateway for task executor {} is not set", request.getTaskExecutorID());
             }
         }
+    }
+
+    /**
+     * Artifact is added to the list of artifacts if it's the first worker of the first stage
+     * (this is to reduce the work in master) and if the job cluster is enabled (via config
+     * for now)
+     */
+    private boolean shouldCacheJobArtifacts(TaskExecutorAssignmentRequest request) {
+        final WorkerId workerId = request.getAllocationRequest().getWorkerId();
+        final boolean isFirstWorkerOfFirstStage = request.getAllocationRequest().getStageNum() == 1 && workerId.getWorkerIndex() == 0;
+        if (isFirstWorkerOfFirstStage) {
+            final Set<String> jobClusters = getJobClustersWithArtifactCachingEnabled();
+            return jobClusters.contains(workerId.getJobCluster());
+        }
+        return false;
+    }
+
+    private Set<String> getJobClustersWithArtifactCachingEnabled() {
+        return new HashSet<>(Arrays.asList(jobClustersWithArtifactCachingEnabled.split(",")));
     }
 
     @Value

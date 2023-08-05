@@ -38,6 +38,7 @@ public class ResourceClusterActorMetrics {
 
     public static final String TE_CONNECTION_FAILURE = "taskExecutorConnectionFailure";
     public static final String TE_RECONNECTION_FAILURE = "taskExecutorReconnectionFailure";
+    public static final String MAX_JOB_ARTIFACTS_TO_CACHE_REACHED = "maxJobArtifactsToCacheReached";
 
     private final Registry registry;
 

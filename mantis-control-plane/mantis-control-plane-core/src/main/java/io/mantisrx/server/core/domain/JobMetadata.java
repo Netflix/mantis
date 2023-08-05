@@ -54,4 +54,9 @@ public class JobMetadata {
         this.heartbeatIntervalSecs = heartbeatIntervalSecs;
         this.minRuntimeSecs = minRuntimeSecs;
     }
+
+    public ArtifactID getJobArtifact() {
+        final String urlString = jobJarUrl.toString();
+        return  ArtifactID.of(urlString.substring(urlString.lastIndexOf('/') + 1));
+    }
 }

@@ -370,6 +370,15 @@ public interface MasterConfiguration extends CoreConfiguration {
     @Default("io.mantisrx.master.jobcluster.job.NoopCostsCalculator")
     CostsCalculator getJobCostsCalculator();
 
+    @Config("mantis.job.worker.max.artifacts.to.cache")
+    @Default("5")
+    int getMaxJobArtifactsToCache();
+
+    @Config("mantis.artifactCaching.jobClusters")
+    @Default("")
+    String getJobClustersWithArtifactCachingEnabled();
+
+
     default Duration getHeartbeatInterval() {
         return Duration.ofMillis(getHeartbeatIntervalInMs());
     }

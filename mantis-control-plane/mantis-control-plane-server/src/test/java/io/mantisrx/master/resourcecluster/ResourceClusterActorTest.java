@@ -190,7 +190,9 @@ public class ResourceClusterActorTest {
                 Clock.systemDefaultZone(),
                 rpcService,
                 mantisJobStore,
-                jobMessageRouter);
+                jobMessageRouter,
+                0,
+                "");
 
         resourceClusterActor = actorSystem.actorOf(props);
         resourceCluster =
