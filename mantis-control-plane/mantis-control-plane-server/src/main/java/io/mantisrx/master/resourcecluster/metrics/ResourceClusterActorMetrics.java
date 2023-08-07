@@ -16,10 +16,12 @@
 
 package io.mantisrx.master.resourcecluster.metrics;
 
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.Tag;
-import io.mantisrx.common.metrics.spectator.MetricId;
+//import com.netflix.spectator.api.Registry;
+//import com.netflix.spectator.api.Tag;
+//import io.mantisrx.common.metrics.spectator.MetricId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,17 +41,24 @@ public class ResourceClusterActorMetrics {
     public static final String TE_CONNECTION_FAILURE = "taskExecutorConnectionFailure";
     public static final String TE_RECONNECTION_FAILURE = "taskExecutorReconnectionFailure";
 
-    private final Registry registry;
+//    private final Registry registry;
+    private final MeterRegistry meterRegistry;
 
-    public ResourceClusterActorMetrics() {
-        this.registry = SpectatorRegistryFactory.getRegistry();
+    public ResourceClusterActorMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
-    public void setGauge(final String metric, final long value, final Iterable<Tag> tags) {
-        registry.gauge(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry)).set(value);
+//    public void setGauge(final String metric, final long value, final Iterable<Tag> tags) {
+//        registry.gauge(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry)).set(value);
+//    }
+    public void setGauge(final String metric, final long value, final Tags tags) {
+        meterRegistry.gauge(METRIC_GROUP_ID + "_" + metric, tags, value);
     }
 
-    public void incrementCounter(final String metric, final Iterable<Tag> tags) {
-        registry.counter(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry)).increment();
+//    public void incrementCounter(final String metric, final Iterable<Tag> tags) {
+//        registry.counter(new MetricId(METRIC_GROUP_ID, metric, tags).getSpectatorId(registry)).increment();
+//    }
+    public void incrementCounter(final String metric, final Tags tags) {
+        meterRegistry.counter(METRIC_GROUP_ID + "_" + metric, tags).increment();
     }
 }

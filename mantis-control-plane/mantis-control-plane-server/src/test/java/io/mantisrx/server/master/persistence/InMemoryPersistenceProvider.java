@@ -18,10 +18,12 @@ package io.mantisrx.server.master.persistence;
 
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.server.master.store.KeyValueStore;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 public class InMemoryPersistenceProvider extends KeyValueBasedPersistenceProvider {
 
     public InMemoryPersistenceProvider() {
-        super(KeyValueStore.inMemory(), LifecycleEventPublisher.noop());
+        super(KeyValueStore.inMemory(), LifecycleEventPublisher.noop(), new SimpleMeterRegistry());
     }
 }

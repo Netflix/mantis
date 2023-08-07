@@ -27,6 +27,8 @@ import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
 import io.mantisrx.server.master.LeadershipManagerLocalImpl;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Test;
 
 public class LeaderRedirectionFilterTest extends AllDirectives {
@@ -43,9 +45,10 @@ public class LeaderRedirectionFilterTest extends AllDirectives {
             8100 + 6,
             System.currentTimeMillis());
         MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         ILeadershipManager leadershipManager = new LeadershipManagerLocalImpl(fakeMasterDesc);
         leadershipManager.becomeLeader();
-        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
+        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager, meterRegistry);
         Route testRoute = route(path("test", () -> complete("done")));
         Route route = filter.redirectIfNotLeader(testRoute);
         // leader is not ready by default
@@ -67,11 +70,12 @@ public class LeaderRedirectionFilterTest extends AllDirectives {
             "api/postjobstatus",
             8100 + 6,
             System.currentTimeMillis());
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         MasterMonitor masterMonitor = new LocalMasterMonitor(fakeMasterDesc);
         ILeadershipManager leadershipManager = new LeadershipManagerLocalImpl(fakeMasterDesc);
         // Stop being leader, the filter should redirect so the returned Route is different from the input Route
         leadershipManager.stopBeingLeader();
-        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager);
+        LeaderRedirectionFilter filter = new LeaderRedirectionFilter(masterMonitor, leadershipManager, meterRegistry);
         Route testRoute = route(path("test", () -> complete("done")));
         Route route = filter.redirectIfNotLeader(testRoute);
         // filter should return input Route if we are current leader

@@ -77,10 +77,6 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
@@ -111,6 +107,9 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -153,21 +152,15 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     JobClusterInfoManager jobClusterInfoManager;
 
     private ActorRef jobListHelperActor;
-    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator) {
+    private MeterRegistry meterRegistry;
+    public JobClustersManagerActor(final MantisJobStore store, final LifecycleEventPublisher eventPublisher, final CostsCalculator costsCalculator, MeterRegistry meterRegistry) {
         this.jobStore = store;
         this.eventPublisher = eventPublisher;
         this.costsCalculator = costsCalculator;
+        this.meterRegistry = meterRegistry;
 
-        MetricGroupId metricGroupId = getMetricGroupId();
-        Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addCounter("numJobClusterInitFailures")
-                .addCounter("numJobClusterInitSuccesses")
-
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        this.numJobClusterInitFailures = m.getCounter("numJobClusterInitFailures");
-        this.numJobClusterInitSuccesses = m.getCounter("numJobClusterInitSuccesses");
+        this.numJobClusterInitFailures = meterRegistry.counter("JobClustersManagerActor_numJobClusterInitFailures");
+        this.numJobClusterInitSuccesses = meterRegistry.counter("JobClustersManagerActor_numJobClusterInitSuccesses");
 
         initializedBehavior = getInitializedBehavior();
     }
@@ -323,7 +316,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
             mantisSchedulerFactory = initMsg.getScheduler();
             Map<String, IJobClusterMetadata> jobClusterMap = new HashMap<>();
 
-            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator);
+            this.jobClusterInfoManager = new JobClusterInfoManager(jobStore, mantisSchedulerFactory, eventPublisher, costsCalculator, meterRegistry);
 
             if (!initMsg.isLoadJobsFromStore()) {
                 getContext().become(initializedBehavior);
@@ -616,8 +609,8 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     @Override
     public SupervisorStrategy supervisorStrategy() {
         // custom supervisor strategy to resume the Actor on Exception instead of the default restart
-        return MantisActorSupervisorStrategy.getInstance().create();
-
+//        return MantisActorSupervisorStrategy.getInstance().create();
+        return new MantisActorSupervisorStrategy(meterRegistry).create();
     }
 
     @Override
@@ -823,22 +816,19 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         private final LifecycleEventPublisher eventPublisher;
         private MantisSchedulerFactory mantisSchedulerFactory;
         private final MantisJobStore jobStore;
-        private final Metrics metrics;
+//        private final Metrics metrics;
+         private final MeterRegistry meterRegistry;
         private final CostsCalculator costsCalculator;
 
-        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator) {
+        JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator, MeterRegistry meterRegistry) {
             this.eventPublisher = eventPublisher;
             this.mantisSchedulerFactory  = mantisSchedulerFactory;
             this.jobStore = jobStore;
             this.costsCalculator = costsCalculator;
+            this.meterRegistry = meterRegistry;
 
-
-            MetricGroupId metricGroupId = new MetricGroupId("JobClusterInfoManager");
-            Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addGauge(new GaugeCallback(metricGroupId, "jobClustersGauge", () -> 1.0 * jobClusterNameToInfoMap.size()))
-                .build();
-            this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
+            Gauge jobClustersGauge = Gauge.builder("JobClusterInfoManager_jobClustersGauge", () -> 1.0 * jobClusterNameToInfoMap.size())
+                    .register(meterRegistry);
         }
 
          /**

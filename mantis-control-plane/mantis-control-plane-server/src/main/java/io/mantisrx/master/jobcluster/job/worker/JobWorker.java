@@ -19,12 +19,15 @@ package io.mantisrx.master.jobcluster.job.worker;
 import static io.mantisrx.master.events.LifecycleEventsProto.StatusEvent;
 import static io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
 import static java.util.Optional.ofNullable;
-
-import com.netflix.spectator.api.BasicTag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Counter;
+//import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
@@ -41,10 +44,12 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.scheduler.*;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +62,9 @@ public class JobWorker implements IMantisWorkerEventProcessor {
     private final IMantisWorkerMetadata metadata;
     private final LifecycleEventPublisher eventPublisher;
 
-    private final Metrics metrics;
-    private final MetricGroupId metricsGroupId;
+//    private final Metrics metrics;
+    private final MeterRegistry meterRegistry;
+//    private final MetricGroupId metricsGroupId;
 
     private final Counter numWorkerLaunched;
     private final Counter numWorkerTerminated;
@@ -67,6 +73,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
     private final Counter numWorkersDisabledVM;
     private final Counter numHeartBeatsReceived;
     private final Gauge lastWorkerLaunchToStartMillis;
+    private final AtomicLong lastWorkerLaunchToStartMillisValue = new AtomicLong(0);
 
     /**
      * Creates an instance of JobWorker.
@@ -74,31 +81,35 @@ public class JobWorker implements IMantisWorkerEventProcessor {
      * @param eventPublisher A {@link LifecycleEventPublisher} where lifecycle events are to be sent.
      */
     public JobWorker(final IMantisWorkerMetadata metadata,
-                     final LifecycleEventPublisher eventPublisher) {
+                     final LifecycleEventPublisher eventPublisher,
+                     MeterRegistry meterRegistry) {
         Preconditions.checkNotNull(metadata, "metadata");
         this.metadata = metadata;
         this.eventPublisher = eventPublisher;
-        this.metricsGroupId = new MetricGroupId("JobWorker", new BasicTag("jobId", this.metadata.getJobId()));
+        this.meterRegistry = meterRegistry;
+        numWorkerLaunched = addCounter("JobWorker_numWorkerLaunched");
+        numWorkerTerminated = addCounter("JobWorker_numWorkerTerminated");
+        numWorkerLaunchFailed = addCounter("JobWorker_numWorkerLaunchFailed");
+        numWorkerUnschedulable = addCounter("JobWorker_numWorkerUnschedulable");
+        numWorkersDisabledVM = addCounter("JobWorker_numWorkersDisabledVM");
+        numHeartBeatsReceived = addCounter("JobWorker_numHeartBeatsReceived");
+        lastWorkerLaunchToStartMillis = addGauge("JobWorker_lastWorkerLaunchToStartMillis", lastWorkerLaunchToStartMillisValue);
+    }
 
-        Metrics m = new Metrics.Builder()
-                .id(metricsGroupId)
-                .addCounter("numWorkerLaunched")
-                .addCounter("numWorkerTerminated")
-                .addCounter("numWorkerLaunchFailed")
-                .addCounter("numWorkerUnschedulable")
-                .addCounter("numWorkersDisabledVM")
-                .addCounter("numHeartBeatsReceived")
-                .addGauge("lastWorkerLaunchToStartMillis")
-                .build();
+    private Counter addCounter(String name) {
+        Tags idTags = Tags.of("jobId", this.metadata.getJobId());
+        Counter counter = Counter.builder(name)
+                .tags(idTags)
+                .register(meterRegistry);
+        return counter;
+    }
 
-        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.numWorkerLaunched = metrics.getCounter("numWorkerLaunched");
-        this.numWorkerTerminated = metrics.getCounter("numWorkerTerminated");
-        this.numWorkerLaunchFailed = metrics.getCounter("numWorkerLaunchFailed");
-        this.numWorkerUnschedulable = metrics.getCounter("numWorkerUnschedulable");
-        this.numWorkersDisabledVM = metrics.getCounter("numWorkersDisabledVM");
-        this.numHeartBeatsReceived = metrics.getCounter("numHeartBeatsReceived");
-        this.lastWorkerLaunchToStartMillis = metrics.getGauge("lastWorkerLaunchToStartMillis");
+    private Gauge addGauge(String name, AtomicLong value) {
+        Tags idTags = Tags.of("jobId", this.metadata.getJobId());
+        Gauge gauge = Gauge.builder(name, value::get)
+                .tags(idTags)
+                .register(meterRegistry);
+        return gauge;
     }
 
     public IMantisWorkerMetadata getMetadata() {
@@ -335,7 +346,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
             persistStateRequired = true;
             final long startLatency = workerEvent.getEventTimeMs() - metadata.getLaunchedAt();
             if (startLatency > 0) {
-                lastWorkerLaunchToStartMillis.set(startLatency);
+                lastWorkerLaunchToStartMillisValue.set(startLatency);
             } else {
                 LOGGER.info("Unexpected error when computing startlatency for {} start time {} launch time {}",
                         workerEvent.getWorkerId().getId(), workerEvent.getEventTimeMs(), metadata.getLaunchedAt());
@@ -438,6 +449,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
         private Optional<ClusterID> resourceCluster = Optional.empty();
         private IMantisWorkerMetadata metadata;
         private LifecycleEventPublisher eventPublisher;
+        private MeterRegistry meterRegistry;
 
         /**
          * Default constructor.
@@ -741,7 +753,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
                 preferredCluster,
                 resourceCluster
             );
-            return new JobWorker(this.metadata, this.eventPublisher);
+            return new JobWorker(this.metadata, this.eventPublisher,  this.meterRegistry);
         }
 
     }

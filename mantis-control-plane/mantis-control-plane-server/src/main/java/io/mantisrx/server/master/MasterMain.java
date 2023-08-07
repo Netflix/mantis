@@ -131,7 +131,7 @@ public class MasterMain implements Service {
         try {
             ConfigurationProvider.initialize(configFactory);
             this.config = ConfigurationProvider.getConfig();
-            leadershipManager = new LeadershipManagerZkImpl(config, mantisServices);
+            leadershipManager = new LeadershipManagerZkImpl(config, mantisServices, micrometerRegistry);
 
             Thread t = new Thread(() -> shutdown());
             t.setDaemon(true);
@@ -166,7 +166,7 @@ public class MasterMain implements Service {
                 new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber,
                     workerEventSubscriber.and(workerMetricsCollector));
 
-            storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher);
+            storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher, micrometerRegistry);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, config.getJobCostsCalculator()), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
@@ -202,14 +202,15 @@ public class MasterMain implements Service {
             if (config.getMesosEnabled()) {
                 final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, vmLeaseRescindedSubject,
                     jobMessageRouter,
-                    workerRegistry);
+                    workerRegistry,
+                    micrometerRegistry);
 
                 final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
                     this.config,
                     getDescriptionJson(),
                     mesosDriverSupplier);
 
-                schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService);
+                schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService, micrometerRegistry);
 
 
                 mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
@@ -229,14 +230,14 @@ public class MasterMain implements Service {
             }
 
             final MantisSchedulerFactory mantisSchedulerFactory =
-                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), MetricsRegistry.getInstance());
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), micrometerRegistry);
 
             final boolean loadJobsFromStoreOnInit = true;
             final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
 
             // start serving metrics
             if (config.getMasterMetricsPort() > 0) {
-                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap()).start();
+                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap(), micrometerRegistry).start();
             }
             new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
                     new HashMap<>()).start();
@@ -246,14 +247,14 @@ public class MasterMain implements Service {
 
             if (this.config.isLocalMode()) {
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps, micrometerRegistry));
                 leadershipManager.becomeLeader();
             } else {
-                curatorService = new CuratorService(this.config);
+                curatorService = new CuratorService(this.config, micrometerRegistry);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps, micrometerRegistry));
             }
             m.getCounter("masterInitSuccess").increment();
         } catch (Exception e) {

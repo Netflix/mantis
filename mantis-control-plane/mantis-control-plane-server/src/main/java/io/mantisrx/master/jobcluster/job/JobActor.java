@@ -27,10 +27,16 @@ import com.netflix.fenzo.ConstraintEvaluator;
 import com.netflix.fenzo.VMTaskFitnessCalculator;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Counter;
+
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.events.LifecycleEventsProto;
@@ -98,8 +104,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private static final double DEFAULT_JOB_MASTER_MEM = 1024;
     private static final double DEFAULT_JOB_MASTER_NW = 128;
     private static final double DEFAULT_JOB_MASTER_DISK = 1024;
-    private final Metrics metrics;
-    private final MetricGroupId metricsGroupId;
+//    private final Metrics metrics;
+    private final MeterRegistry meterRegistry;
+//    private final MetricGroupId metricsGroupId;
 
     private final Counter numWorkerResubmissions;
     private final Counter numWorkerResubmitLimitReached;
@@ -185,7 +192,8 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         final MantisJobStore jobStore,
         final MantisScheduler scheduler,
         final LifecycleEventPublisher eventPublisher,
-        final CostsCalculator costsCalculator) {
+        final CostsCalculator costsCalculator,
+        MeterRegistry meterRegistry) {
 
         this.clusterName = jobMetadata.getClusterName();
         this.jobId = jobMetadata.getJobId();
@@ -195,6 +203,7 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
         this.eventPublisher = eventPublisher;
         this.mantisJobMetaData = jobMetadata;
         this.costsCalculator = costsCalculator;
+        this.meterRegistry = meterRegistry;
 
         initializedBehavior = getInitializedBehavior();
 
@@ -204,25 +213,21 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
 
         terminatedBehavior = getTerminatedBehavior();
 
-        this.metricsGroupId = getMetricGroupId(jobId.getId(), getResourceCluster());
-        Metrics m = new Metrics.Builder()
-                .id(metricsGroupId)
-                .addCounter("numWorkerResubmissions")
-                .addCounter("numWorkerResubmitLimitReached")
-                .addCounter("numWorkerTerminated")
-                .addCounter("numScaleStage")
-                .addCounter("numWorkersCompletedNotTerminal")
-                .addCounter("numSchedulingChangesRefreshed")
-                .addCounter("numMissingWorkerPorts")
-                .build();
-        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.numWorkerResubmissions = metrics.getCounter("numWorkerResubmissions");
-        this.numWorkerResubmitLimitReached = metrics.getCounter("numWorkerResubmitLimitReached");
-        this.numWorkerTerminated = metrics.getCounter("numWorkerTerminated");
-        this.numScaleStage = metrics.getCounter("numScaleStage");
-        this.numWorkersCompletedNotTerminal = metrics.getCounter("numWorkersCompletedNotTerminal");
-        this.numSchedulingChangesRefreshed = metrics.getCounter("numSchedulingChangesRefreshed");
-        this.numMissingWorkerPorts = metrics.getCounter("numMissingWorkerPorts");
+        this.numWorkerResubmissions = addCounter("JobActor_numWorkerResubmissions");
+        this.numWorkerResubmitLimitReached = addCounter("JobActor_numWorkerResubmitLimitReached");
+        this.numWorkerTerminated = addCounter("JobActor_numWorkerTerminated");
+        this.numScaleStage = addCounter("JobActor_numScaleStage");
+        this.numWorkersCompletedNotTerminal = addCounter("JobActor_numWorkersCompletedNotTerminal");
+        this.numSchedulingChangesRefreshed = addCounter("JobActor_numSchedulingChangesRefreshed");
+        this.numMissingWorkerPorts = addCounter("JobActor_numMissingWorkerPorts");
+    }
+
+    private Counter addCounter(String name) {
+        Tags tags = Tags.of("jobId", jobId.getId(), "cluster", getResourceCluster());
+        Counter counter = Counter.builder(name)
+            .tags(tags)
+            .register(meterRegistry);
+        return counter;
     }
 
     /**
@@ -232,9 +237,9 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
      * @param resourceCluster
      * @return
      */
-    MetricGroupId getMetricGroupId(String id, String resourceCluster) {
-        return new MetricGroupId("JobActor", new BasicTag("jobId", id), new BasicTag("resourceCluster", resourceCluster));
-    }
+//    MetricGroupId getMetricGroupId(String id, String resourceCluster) {
+//        return new MetricGroupId("JobActor", new BasicTag("jobId", id), new BasicTag("resourceCluster", resourceCluster));
+//    }
 
     /**
      * Validates the job definition, stores the job to persistence. Instantiates the SubscriptionManager to keep track
@@ -335,9 +340,11 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     @Override
     public void postStop() throws Exception {
         LOGGER.info("Job Actor {} stopped invoking cleanup logic", jobId);
-        if (metricsGroupId != null) {
-            MetricsRegistry.getInstance().remove(metricsGroupId);
-        }
+//        if (metricsGroupId != null) {
+////            MetricsRegistry.getInstance().remove(metricsGroupId);
+//        }
+        meterRegistry.remove(this.numMissingWorkerPorts);
+        meterRegistry.remove(this.numWorkerResubmitLimitReached);
         //shutdown();
     }
 
@@ -2225,4 +2232,5 @@ public class JobActor extends AbstractActorWithTimers implements IMantisJobManag
     private String getResourceCluster() {
         return mantisJobMetaData.getJobDefinition().getResourceCluster().map(ClusterID::getResourceID).orElse("mesos");
     }
+
 }

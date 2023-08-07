@@ -41,11 +41,12 @@ import com.netflix.fenzo.triggers.exceptions.TriggerNotFoundException;
 import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Counter;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.spectator.GaugeCallback;
+//import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
@@ -134,6 +135,9 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -150,11 +154,14 @@ import java.util.TreeSet;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Action1;
+import rx.functions.Func0;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
@@ -177,8 +184,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private static final String CHECK_EXPIRED_TIMER_KEY = "EXPIRE_OLD_JOBS";
 
     private static final long EXPIRED_JOBS_CHECK_INTERVAL_SECS = 3600;
-
-
+    private final MeterRegistry meterRegistry;
     private final Counter numJobSubmissions;
     private final Counter numJobShutdowns;
     private final Counter numJobActorCreationCounter;
@@ -195,7 +201,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     private final Counter numJobClusterUpdate;
     private final Counter numJobClusterUpdateErrors;
     private final Counter numSLAEnforcementExecutions;
-
+    private final Gauge acceptedJobsGauge;
+    private final Gauge activeJobsGauge;
+    private final Gauge terminatingJobsGauge;
+    private final Gauge completedJobsGauge;
+    private final Gauge actorToJobIdMappingsGauge;
 
     public static Props props(
         final String name,
@@ -225,11 +235,12 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
 
     public JobClusterActor(
-        final String name,
+        MeterRegistry meterRegistry, final String name,
         final MantisJobStore jobStore,
         final MantisSchedulerFactory schedulerFactory,
         final LifecycleEventPublisher eventPublisher,
         final CostsCalculator costsCalculator) {
+        this.meterRegistry = meterRegistry;
         this.name = name;
         this.jobStore = jobStore;
         this.mantisSchedulerFactory = schedulerFactory;
@@ -242,48 +253,70 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         initializedBehavior =  buildInitializedBehavior();
         disabledBehavior = buildDisabledBehavior();
 
-        MetricGroupId metricGroupId = getMetricGroupId(name);
-        Metrics m = new Metrics.Builder()
-            .id(metricGroupId)
-            .addCounter("numJobSubmissions")
-            .addCounter("numJobSubmissionFailures")
-            .addCounter("numJobShutdowns")
-            .addCounter("numJobActorCreationCounter")
-            .addCounter("numJobsInitialized")
-            .addCounter("numJobClustersInitialized")
-            .addCounter("numJobClusterInitializeFailures")
-            .addCounter("numJobClusterEnable")
-            .addCounter("numJobClusterEnableErrors")
-            .addCounter("numJobClusterDisable")
-            .addCounter("numJobClusterDisableErrors")
-            .addCounter("numJobClusterDelete")
-            .addCounter("numJobClusterDeleteErrors")
-            .addCounter("numJobClusterUpdate")
-            .addCounter("numJobClusterUpdateErrors")
-            .addCounter("numSLAEnforcementExecutions")
-            .addGauge(new GaugeCallback(metricGroupId, "acceptedJobsGauge", () -> 1.0 * this.jobManager.acceptedJobsCount()))
-            .addGauge(new GaugeCallback(metricGroupId, "activeJobsGauge", () -> 1.0 * this.jobManager.activeJobsCount()))
-            .addGauge(new GaugeCallback(metricGroupId, "terminatingJobsGauge", () -> 1.0 * this.jobManager.terminatingJobsMap.size()))
-            .addGauge(new GaugeCallback(metricGroupId, "completedJobsGauge", () -> 1.0 * this.jobManager.completedJobsCache.completedJobs.size()))
-            .addGauge(new GaugeCallback(metricGroupId, "actorToJobIdMappingsGauge", () -> 1.0 * this.jobManager.actorToJobIdMap.size()))
-            .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        this.numJobSubmissions = m.getCounter("numJobSubmissions");
-        this.numJobActorCreationCounter = m.getCounter("numJobActorCreationCounter");
-        this.numJobSubmissionFailures = m.getCounter("numJobSubmissionFailures");
-        this.numJobShutdowns = m.getCounter("numJobShutdowns");
-        this.numJobsInitialized = m.getCounter("numJobsInitialized");
-        this.numJobClustersInitialized = m.getCounter("numJobClustersInitialized");
-        this.numJobClusterInitializeFailures = m.getCounter("numJobClusterInitializeFailures");
-        this.numJobClusterEnable = m.getCounter("numJobClusterEnable");
-        this.numJobClusterDisable = m.getCounter("numJobClusterDisable");
-        this.numJobClusterDelete = m.getCounter("numJobClusterDelete");
-        this.numJobClusterUpdate = m.getCounter("numJobClusterUpdate");
-        this.numJobClusterEnableErrors = m.getCounter("numJobClusterEnableErrors");
-        this.numJobClusterDisableErrors = m.getCounter("numJobClusterDisableErrors");
-        this.numJobClusterDeleteErrors = m.getCounter("numJobClusterDeleteErrors");
-        this.numJobClusterUpdateErrors = m.getCounter("numJobClusterUpdateErrors");
-        this.numSLAEnforcementExecutions = m.getCounter("numSLAEnforcementExecutions");
+//        MetricGroupId metricGroupId = getMetricGroupId(name);
+//        Metrics m = new Metrics.Builder()
+//            .id(metricGroupId)
+//            .addCounter("numJobSubmissions")
+//            .addCounter("numJobSubmissionFailures")
+//            .addCounter("numJobShutdowns")
+//            .addCounter("numJobActorCreationCounter")
+//            .addCounter("numJobsInitialized")
+//            .addCounter("numJobClustersInitialized")
+//            .addCounter("numJobClusterInitializeFailures")
+//            .addCounter("numJobClusterEnable")
+//            .addCounter("numJobClusterEnableErrors")
+//            .addCounter("numJobClusterDisable")
+//            .addCounter("numJobClusterDisableErrors")
+//            .addCounter("numJobClusterDelete")
+//            .addCounter("numJobClusterDeleteErrors")
+//            .addCounter("numJobClusterUpdate")
+//            .addCounter("numJobClusterUpdateErrors")
+//            .addCounter("numSLAEnforcementExecutions")
+//            .addGauge(new GaugeCallback(metricGroupId, "acceptedJobsGauge", () -> 1.0 * this.jobManager.acceptedJobsCount()))
+//            .addGauge(new GaugeCallback(metricGroupId, "activeJobsGauge", () -> 1.0 * this.jobManager.activeJobsCount()))
+//            .addGauge(new GaugeCallback(metricGroupId, "terminatingJobsGauge", () -> 1.0 * this.jobManager.terminatingJobsMap.size()))
+//            .addGauge(new GaugeCallback(metricGroupId, "completedJobsGauge", () -> 1.0 * this.jobManager.completedJobsCache.completedJobs.size()))
+//            .addGauge(new GaugeCallback(metricGroupId, "actorToJobIdMappingsGauge", () -> 1.0 * this.jobManager.actorToJobIdMap.size()))
+////            .build();
+//        m = MetricsRegistry.getInstance().registerAndGet(m);
+
+        this.numJobSubmissions = addCounter( "numJobSubmissions");
+        this.numJobSubmissionFailures = addCounter( "numJobSubmissionFailures");
+        this.numJobShutdowns = addCounter( "numJobShutdowns");
+        this.numJobActorCreationCounter = addCounter( "numJobActorCreationCounter");
+        this.numJobsInitialized = addCounter( "numJobsInitialized");
+        this.numJobClustersInitialized = addCounter( "numJobClustersInitialized");
+        this.numJobClusterInitializeFailures = addCounter( "numJobClusterInitializeFailures");
+        this.numJobClusterEnable = addCounter( "numJobClusterEnable");
+        this.numJobClusterEnableErrors = addCounter( "numJobClusterEnableErrors");
+        this.numJobClusterDisable = addCounter( "numJobClusterDisable");
+        this.numJobClusterDisableErrors = addCounter( "numJobClusterDisableErrors");
+        this.numJobClusterDelete = addCounter( "numJobClusterDelete");
+        this.numJobClusterDeleteErrors = addCounter( "numJobClusterDeleteErrors");
+        this.numJobClusterUpdate = addCounter( "numJobClusterUpdate");
+        this.numJobClusterUpdateErrors = addCounter( "numJobClusterUpdateErrors");
+        this.numSLAEnforcementExecutions = addCounter( "numSLAEnforcementExecutions");
+
+        this.acceptedJobsGauge = addGauge( "acceptedJobsGauge", this.jobManager.acceptedJobsCount());
+        this.activeJobsGauge = addGauge( "activeJobsGauge", this.jobManager.activeJobsCount());
+        this.terminatingJobsGauge = addGauge( "terminatingJobsGauge", this.jobManager.terminatingJobsMap.size());
+        this.completedJobsGauge = addGauge( "completedJobsGauge", this.jobManager.completedJobsCache.completedJobs.size());
+        this.actorToJobIdMappingsGauge = addGauge( "actorToJobIdMappingsGauge", this.jobManager.actorToJobIdMap.size());
+
+    }
+
+    private Counter addCounter(String meterName) {
+        Counter counter = Counter.builder("JobClusterActor_" +meterName)
+            .tags("jobCluster", name)
+            .register(meterRegistry);
+        return counter;
+    }
+
+    private Gauge addGauge(String meterName,int value) {
+        Gauge gauge = Gauge.builder("JobClusterActor_legacyGaugeCallbackMetricGroup_"+meterName, () -> 1.0 * value)
+            .tags("jobCluster", name)
+            .register(meterRegistry);
+        return gauge;
     }
 
 
@@ -625,9 +658,9 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .build();
     }
 
-    MetricGroupId getMetricGroupId(String name) {
-        return new MetricGroupId("JobClusterActor", new BasicTag("jobCluster", name));
-    }
+//    MetricGroupId getMetricGroupId(String name) {
+//        return new MetricGroupId("JobClusterActor", new BasicTag("jobCluster", name));
+//    }
 
     @Override
     public void preStart() throws Exception {
@@ -641,7 +674,28 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         super.postStop();
         if (name != null) {
             // de-register metrics from MetricsRegistry
-            MetricsRegistry.getInstance().remove(getMetricGroupId(name));
+//            MetricsRegistry.getInstance().remove(getMetricGroupId(name));
+            meterRegistry.remove(numJobSubmissions);
+            meterRegistry.remove(numJobShutdowns);
+            meterRegistry.remove(numJobActorCreationCounter);
+            meterRegistry.remove(numJobClustersInitialized);
+            meterRegistry.remove(numJobClusterInitializeFailures);
+            meterRegistry.remove(numJobsInitialized);
+            meterRegistry.remove(numJobSubmissionFailures);
+            meterRegistry.remove(numJobClusterEnable);
+            meterRegistry.remove(numJobClusterEnableErrors);
+            meterRegistry.remove(numJobClusterDisable);
+            meterRegistry.remove(numJobClusterDisableErrors);
+            meterRegistry.remove(numJobClusterDelete);
+            meterRegistry.remove(numJobClusterDeleteErrors);
+            meterRegistry.remove(numJobClusterUpdate);
+            meterRegistry.remove(numJobClusterUpdateErrors);
+            meterRegistry.remove(numSLAEnforcementExecutions);
+            meterRegistry.remove(acceptedJobsGauge);
+            meterRegistry.remove(activeJobsGauge);
+            meterRegistry.remove(terminatingJobsGauge);
+            meterRegistry.remove(completedJobsGauge);
+            meterRegistry.remove(actorToJobIdMappingsGauge);
         }
     }
 

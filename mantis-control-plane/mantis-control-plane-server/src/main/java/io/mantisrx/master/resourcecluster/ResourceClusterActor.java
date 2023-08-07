@@ -54,6 +54,8 @@ import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.Comparators;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.vavr.Tuple;
 import java.io.IOException;
 import java.net.URI;
@@ -107,6 +109,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
     private final ResourceClusterActorMetrics metrics;
 
     private final HashSet<ArtifactID> jobArtifactsToCache = new HashSet<>();
+    private final MeterRegistry meterRegistry;
 
     static Props props(final ClusterID clusterID, final Duration heartbeatTimeout, Duration assignmentTimeout, Duration disabledTaskExecutorsCheckInterval, Clock clock, RpcService rpcService, MantisJobStore mantisJobStore, JobMessageRouter jobMessageRouter) {
         return Props.create(ResourceClusterActor.class, clusterID, heartbeatTimeout, assignmentTimeout, disabledTaskExecutorsCheckInterval, clock, rpcService, mantisJobStore, jobMessageRouter);
@@ -120,7 +123,9 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         Clock clock,
         RpcService rpcService,
         MantisJobStore mantisJobStore,
-        JobMessageRouter jobMessageRouter) {
+        JobMessageRouter jobMessageRouter,
+        MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         this.clusterID = clusterID;
         this.heartbeatTimeout = heartbeatTimeout;
         this.assignmentTimeout = assignmentTimeout;
@@ -134,7 +139,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
         this.executorStateManager = new ExecutorStateManagerImpl();
 
-        this.metrics = new ResourceClusterActorMetrics();
+        this.metrics = new ResourceClusterActorMetrics(meterRegistry);
     }
 
     @Override
@@ -315,22 +320,22 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             } catch (Exception e) {
                 metrics.incrementCounter(
                     ResourceClusterActorMetrics.TE_CONNECTION_FAILURE,
-                    TagList.create(ImmutableMap.of(
+                    Tags.of(
                         "resourceCluster",
                         clusterID.getResourceID(),
                         "taskExecutor",
-                        request.getTaskExecutorID().getResourceId())));
+                        request.getTaskExecutorID().getResourceId()));
                 try {
                     // let's try one more time by reconnecting with the gateway.
                     sender().tell(state.reconnect().join(), self());
                 } catch (Exception e1) {
                     metrics.incrementCounter(
                         ResourceClusterActorMetrics.TE_RECONNECTION_FAILURE,
-                        TagList.create(ImmutableMap.of(
+                        Tags.of(
                             "resourceCluster",
                             clusterID.getResourceID(),
                             "taskExecutor",
-                            request.getTaskExecutorID().getResourceId())));
+                            request.getTaskExecutorID().getResourceId()));
                     sender().tell(new Status.Failure(new ConnectionFailedException(e)), self());
                 }
             }
@@ -528,7 +533,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         } else {
             metrics.incrementCounter(
                 ResourceClusterActorMetrics.NO_RESOURCES_AVAILABLE,
-                TagList.create(ImmutableMap.of(
+                Tags.of(
                     "resourceCluster",
                     clusterID.getResourceID(),
                     "workerId",
@@ -536,7 +541,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                     "jobCluster",
                     request.getAllocationRequest().getWorkerId().getJobCluster(),
                     "cpuCores",
-                    String.valueOf(request.getAllocationRequest().getMachineDefinition().getCpuCores()))));
+                    String.valueOf(request.getAllocationRequest().getMachineDefinition().getCpuCores())));
             sender().tell(new Status.Failure(new NoResourceAvailableException(
                 String.format("No resource available for request %s: resource overview: %s", request,
                     getResourceOverview()))), self());
@@ -590,7 +595,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
                 .forEach((keys, count) -> metrics.setGauge(
                     metricName,
                     count,
-                    TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "sku", keys._1.getResourceID(), "autoScaleGroup", keys._2))));
+                    Tags.of("resourceCluster", clusterID.getResourceID(), "sku", keys._1.getResourceID(), "autoScaleGroup", keys._2)));
         } catch (Exception e) {
             log.warn("Error while publishing resource cluster metrics by sku. RC: {}, Metric: {}.", clusterID.getResourceID(), metricName, e);
         }
@@ -645,7 +650,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         try {
             metrics.incrementCounter(
                 ResourceClusterActorMetrics.HEARTBEAT_TIMEOUT,
-                TagList.create(ImmutableMap.of("resourceCluster", clusterID.getResourceID(), "taskExecutorID", timeout.getTaskExecutorID().getResourceId())));
+                Tags.of("resourceCluster", clusterID.getResourceID(), "taskExecutorID", timeout.getTaskExecutorID().getResourceId()));
             log.info("heartbeat timeout received for {}", timeout.getTaskExecutorID());
             final TaskExecutorID taskExecutorID = timeout.getTaskExecutorID();
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);

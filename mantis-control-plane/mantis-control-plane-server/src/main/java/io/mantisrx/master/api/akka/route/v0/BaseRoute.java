@@ -33,35 +33,37 @@ import akka.japi.pf.PFBuilder;
 import akka.pattern.AskTimeoutException;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import scala.concurrent.duration.Duration;
 
 abstract class BaseRoute extends AllDirectives {
-    protected HttpResponse toHttpResponse(final BaseResponse r) {
+    protected HttpResponse toHttpResponse(final BaseResponse r, MeterRegistry meterRegistry) {
+        MasterApiMetrics masterApiMetrics = new MasterApiMetrics(meterRegistry);
         switch (r.responseCode) {
             case SUCCESS:
             case SUCCESS_CREATED:
-                MasterApiMetrics.getInstance().incrementResp2xx();
+                masterApiMetrics.incrementResp2xx();
                 return HttpResponse.create()
                     .withEntity(ContentTypes.APPLICATION_JSON, r.message)
                     .withStatus(StatusCodes.OK);
             case CLIENT_ERROR:
             case CLIENT_ERROR_NOT_FOUND:
             case CLIENT_ERROR_CONFLICT:
-                MasterApiMetrics.getInstance().incrementResp4xx();
+                masterApiMetrics.incrementResp4xx();
                 return HttpResponse.create()
                     .withEntity(ContentTypes.APPLICATION_JSON, "{\"error\": \"" + r.message + "\"}")
                     .withStatus(StatusCodes.BAD_REQUEST);
             case OPERATION_NOT_ALLOWED:
-                MasterApiMetrics.getInstance().incrementResp4xx();
+                masterApiMetrics.incrementResp4xx();
                 return HttpResponse.create()
                     .withEntity(ContentTypes.APPLICATION_JSON, "{\"error\": \"" + r.message + "\"}")
                     .withStatus(StatusCodes.METHOD_NOT_ALLOWED);
             case SERVER_ERROR:
             default:
-                MasterApiMetrics.getInstance().incrementResp5xx();
+                masterApiMetrics.incrementResp5xx();
                 return HttpResponse.create()
                     .withEntity(ContentTypes.APPLICATION_JSON, "{\"error\": \"" + r.message + "\"}")
                     .withStatus(StatusCodes.INTERNAL_SERVER_ERROR);
@@ -69,15 +71,18 @@ abstract class BaseRoute extends AllDirectives {
     }
 
     protected <T extends BaseResponse> RouteAdapter completeAsync(final CompletionStage<T> stage,
-                                                                final Function<T, RouteAdapter> successTransform) {
+                                                                final Function<T, RouteAdapter> successTransform,
+                                                                  MeterRegistry meterRegistry) {
         return completeAsync(stage,
             successTransform,
-            r -> complete(StatusCodes.BAD_REQUEST, "{\"error\": \"" + r.message + "\"}"));
+            r -> complete(StatusCodes.BAD_REQUEST, "{\"error\": \"" + r.message + "\"}"),
+            meterRegistry);
     }
 
     protected <T extends BaseResponse> RouteAdapter completeAsync(final CompletionStage<T> stage,
                                                                   final Function<T, RouteAdapter> successTransform,
-                                                                  final Function<T, RouteAdapter> clientFailureTransform) {
+                                                                  final Function<T, RouteAdapter> clientFailureTransform,
+                                                                  MeterRegistry meterRegistry) {
         return onComplete(
             stage,
             resp -> resp
@@ -85,7 +90,7 @@ abstract class BaseRoute extends AllDirectives {
                     switch (r.responseCode) {
                         case SUCCESS:
                         case SUCCESS_CREATED:
-                            MasterApiMetrics.getInstance().incrementResp2xx();
+                            new MasterApiMetrics(meterRegistry).incrementResp2xx();
                             return successTransform.apply(r);
                         case CLIENT_ERROR:
                         case CLIENT_ERROR_NOT_FOUND:
@@ -94,19 +99,19 @@ abstract class BaseRoute extends AllDirectives {
                         case SERVER_ERROR:
                         case OPERATION_NOT_ALLOWED:
                         default:
-                            MasterApiMetrics.getInstance().incrementResp5xx();
+                            new MasterApiMetrics(meterRegistry).incrementResp5xx();
                             return complete(StatusCodes.INTERNAL_SERVER_ERROR, r.message);
                     }
                 })
                 .recover(new PFBuilder<Throwable, Route>()
                     .match(AskTimeoutException.class, te -> {
-                        MasterApiMetrics.getInstance().incrementAskTimeOutCount();
-                        MasterApiMetrics.getInstance().incrementResp5xx();
+                        new MasterApiMetrics(meterRegistry).incrementAskTimeOutCount();
+                        new MasterApiMetrics(meterRegistry).incrementResp5xx();
                         return complete(StatusCodes.INTERNAL_SERVER_ERROR,
                             "{\"error\": \"" + te.getMessage() + "\"}");
                     })
                     .matchAny(ex -> {
-                        MasterApiMetrics.getInstance().incrementResp5xx();
+                        new MasterApiMetrics(meterRegistry).incrementResp5xx();
                         return complete(StatusCodes.INTERNAL_SERVER_ERROR,
                             "{\"error\": \"" + ex.getMessage() + "\"}");
                     })

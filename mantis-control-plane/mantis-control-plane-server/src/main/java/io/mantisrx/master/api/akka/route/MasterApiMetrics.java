@@ -16,9 +16,9 @@
 
 package io.mantisrx.master.api.akka.route;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+
 
 public class MasterApiMetrics {
     private final Counter resp2xx;
@@ -26,26 +26,15 @@ public class MasterApiMetrics {
     private final Counter resp5xx;
     private final Counter askTimeOutCount;
 
-    private static final MasterApiMetrics INSTANCE = new MasterApiMetrics();
-
-    private MasterApiMetrics() {
-        Metrics m = new Metrics.Builder()
-                .id("MasterApiMetrics")
-                .addCounter("resp2xx")
-                .addCounter("resp4xx")
-                .addCounter("resp5xx")
-                .addCounter("askTimeOutCount")
-                .build();
-        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.askTimeOutCount = metrics.getCounter("askTimeOutCount");
-        this.resp2xx = metrics.getCounter("resp2xx");
-        this.resp4xx = metrics.getCounter("resp4xx");
-        this.resp5xx = metrics.getCounter("resp5xx");
+    private  final MeterRegistry meterRegistry;
+    public MasterApiMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        this.resp2xx = meterRegistry.counter("MasterApiMetrics_resp2xx");
+        this.resp4xx = meterRegistry.counter("MasterApiMetrics"+"_"+"resp4xx");
+        this.resp5xx = meterRegistry.counter("MasterApiMetrics"+"_"+"resp5xx");
+        this.askTimeOutCount = meterRegistry.counter("MasterApiMetrics"+"_"+"askTimeOutCount");
     }
 
-    public static final MasterApiMetrics getInstance() {
-        return INSTANCE;
-    }
 
     public void incrementResp2xx() {
         resp2xx.increment();

@@ -18,7 +18,8 @@ package io.mantisrx.server.master.scheduler;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.SchedulingService;
 import io.mantisrx.server.master.config.MasterConfiguration;
@@ -41,7 +42,8 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
     private final JobMessageRouter jobMessageRouter;
     private final SchedulingService mesosSchedulingService;
     private final MasterConfiguration masterConfiguration;
-    private final MetricsRegistry metricsRegistry;
+//    private final MetricsRegistry metricsRegistry;
+    private final MeterRegistry meterRegistry;
     private final Map<ClusterID, ActorRef> actorRefMap = new ConcurrentHashMap<>();
 
     @Override
@@ -64,7 +66,7 @@ public class MantisSchedulerFactoryImpl implements MantisSchedulerFactory {
                             resourceClusters.getClusterFor(cid),
                             executeStageRequestFactory,
                             jobMessageRouter,
-                            metricsRegistry),
+                            meterRegistry),
                         "scheduler-for-" + cid.getResourceID()));
             log.info("Created scheduler actor for cluster: {}", clusterIDOptional.get().getResourceID());
             return new ResourceClusterAwareScheduler(resourceClusterAwareSchedulerActor);

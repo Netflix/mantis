@@ -20,11 +20,11 @@ import akka.actor.ActorRef;
 import akka.dispatch.Envelope;
 import akka.dispatch.MessageQueue;
 import akka.dispatch.UnboundedMessageQueueSemantics;
-import com.netflix.spectator.api.Counter;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.Timer;
-import com.netflix.spectator.api.patterns.PolledMeter;
-import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.FunctionCounter;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -38,21 +38,27 @@ public class MeteredMessageQueue implements MessageQueue, UnboundedMessageQueueS
     private final Counter insertCounter;
     private final Timer waitTimer;
     private final ConcurrentLinkedQueue<Entry> queue = new ConcurrentLinkedQueue<>();
+    private final MeterRegistry meterRegistry;
 
     /**
      * Creates an instance.
      * @param path The actor path.
      */
-    public MeteredMessageQueue(final String path) {
-        Registry registry = SpectatorRegistryFactory.getRegistry();
+
+    public MeteredMessageQueue(final String path, MeterRegistry meterRegistry) {
         this.path = path;
-        this.insertCounter = registry.counter("akka.queue.insert", "path", path);
-        this.waitTimer = registry.timer("akka.queue.wait", "path", path);
-        PolledMeter
-            .using(registry)
-            .withName("akka.queue.size")
-            .withTag("path", path)
-            .monitorSize(queue);
+        this.meterRegistry = meterRegistry;
+        Tags tag = Tags.of("path", path);
+        this.insertCounter = Counter.builder("akka.queue.insert")
+                .tags(tag)
+                .register(meterRegistry);
+        this.waitTimer = Timer.builder("akka.queue.wait")
+                .tags(tag)
+                .register(meterRegistry);
+        FunctionCounter.builder("akka.queue.size", queue, q -> q.size())
+                .tags(tag)
+                .register(meterRegistry);
+
     }
 
     /**
@@ -73,7 +79,7 @@ public class MeteredMessageQueue implements MessageQueue, UnboundedMessageQueueS
          * Creates an instance of this class.
          * @param v
          */
-         Entry(final Envelope v) {
+        Entry(final Envelope v) {
             this.v = v;
             this.t = System.nanoTime();
         }

@@ -19,7 +19,8 @@ package io.mantisrx.master.api.akka.route.handlers;
 import static akka.pattern.PatternsCS.ask;
 
 import akka.actor.ActorRef;
-import io.mantisrx.common.metrics.Counter;
+import io.micrometer.core.instrument.Counter;
+//import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
@@ -27,6 +28,7 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoRequest;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.UpdateSchedulingInfoResponse;
 import io.mantisrx.server.master.config.ConfigurationProvider;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -39,17 +41,14 @@ public class JobClusterRouteHandlerAkkaImpl implements JobClusterRouteHandler {
     private final ActorRef jobClustersManagerActor;
     private final Counter allJobClustersGET;
     private final Duration timeout;
+    private final MeterRegistry meterRegistry;
 
-    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
+    public JobClusterRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         this.jobClustersManagerActor = jobClusterManagerActor;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);
-        Metrics m = new Metrics.Builder()
-            .id("JobClusterRouteHandler")
-            .addCounter("allJobClustersGET")
-            .build();
-        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        allJobClustersGET = metrics.getCounter("allJobClustersGET");
+        allJobClustersGET = meterRegistry.counter("JobClusterRouteHandler_allJobClustersGET");
     }
 
     @Override

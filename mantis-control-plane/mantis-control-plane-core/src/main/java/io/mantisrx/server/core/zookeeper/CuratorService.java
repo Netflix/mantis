@@ -16,9 +16,11 @@
 
 package io.mantisrx.server.core.zookeeper;
 
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+//import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.Service;
@@ -32,6 +34,7 @@ import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionState;
 import io.mantisrx.shaded.org.apache.curator.framework.state.ConnectionStateListener;
 import io.mantisrx.shaded.org.apache.curator.retry.ExponentialBackoffRetry;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,15 +51,15 @@ public class CuratorService extends BaseService {
     private final CuratorFramework curator;
     private final ZookeeperMasterMonitor masterMonitor;
     private final Gauge isConnectedGauge;
+    private AtomicLong isConnected = new AtomicLong(0);
+    private final MeterRegistry meterRegistry;
 
-    public CuratorService(CoreConfiguration configs) {
+    public CuratorService(CoreConfiguration configs, MeterRegistry meterRegistry) {
         super(false);
-        Metrics m = new Metrics.Builder()
-                .name(CuratorService.class.getCanonicalName())
-                .addGauge(isConnectedGaugeName)
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        isConnectedGauge = m.getGauge(isConnectedGaugeName);
+        this.meterRegistry = meterRegistry;
+        String groupName = CuratorService.class.getCanonicalName();
+        isConnectedGauge = Gauge.builder(groupName + "_" + isConnectedGaugeName, isConnected::get)
+                .register(meterRegistry);
 
         curator = CuratorFrameworkFactory.builder()
                 .compressionProvider(new GzipCompressionProvider())
@@ -77,11 +80,13 @@ public class CuratorService extends BaseService {
             public void stateChanged(CuratorFramework client, ConnectionState newState) {
                 if (newState.isConnected()) {
                     LOG.info("Curator connected");
-                    isConnectedGauge.set(1L);
+//                    isConnectedGauge.set(1L);
+                    isConnected.set(1L);
                 } else {
                     // ToDo: determine if it is safe to restart our service instead of committing suicide
                     LOG.error("Curator connection lost");
-                    isConnectedGauge.set(0L);
+//                    isConnectedGauge.set(0L);
+                    isConnected.set(0L);
                 }
             }
         }, MoreExecutors.newDirectExecutorService());
@@ -90,7 +95,7 @@ public class CuratorService extends BaseService {
     @Override
     public void start() {
         try {
-            isConnectedGauge.set(0L);
+            isConnected.set(0L);
             setupCuratorListener();
             curator.start();
             masterMonitor.startAsync().awaitRunning();

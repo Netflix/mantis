@@ -17,9 +17,9 @@
 package io.mantisrx.server.master.mesos;
 
 import com.netflix.fenzo.VirtualMachineLease;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -28,6 +28,9 @@ import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus;
 import io.mantisrx.server.master.scheduler.WorkerResourceStatus.VMResourceState;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,7 +63,9 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
     private final Action1<List<VirtualMachineLease>> addVMLeaseAction;
     private final WorkerRegistry workerRegistry;
     private final Gauge lastOfferReceivedMillis;
+    private final AtomicLong lastOfferReceivedMillisValue = new AtomicLong(0);
     private final Gauge lastValidOfferReceiveMillis;
+    private final AtomicLong lastValidOfferReceiveMillisValue = new AtomicLong(0);
     private final Counter numMesosRegistered;
     private final Counter numMesosDisconnects;
     private final Counter numOfferRescinded;
@@ -73,43 +78,47 @@ public class MesosSchedulerCallbackHandler implements Scheduler {
     private AtomicLong lastOfferReceivedAt = new AtomicLong(System.currentTimeMillis());
     private AtomicLong lastValidOfferReceivedAt = new AtomicLong(System.currentTimeMillis());
     private long reconciliationTrial = 0;
+    private MeterRegistry meterRegistry;
 
     public MesosSchedulerCallbackHandler(
             final Action1<List<VirtualMachineLease>> addVMLeaseAction,
             final Observer<String> vmLeaseRescindedObserver,
             final JobMessageRouter jobMessageRouter,
-            final WorkerRegistry workerRegistry) {
+            final WorkerRegistry workerRegistry,
+            MeterRegistry meterRegistry) {
         this.addVMLeaseAction = Preconditions.checkNotNull(addVMLeaseAction);
         this.vmLeaseRescindedObserver = vmLeaseRescindedObserver;
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
-        Metrics m = new Metrics.Builder()
-                .name(MesosSchedulerCallbackHandler.class.getCanonicalName())
-                .addCounter("numMesosRegistered")
-                .addCounter("numMesosDisconnects")
-                .addCounter("numOfferRescinded")
-                .addCounter("numReconcileTasks")
-                .addGauge("lastOfferReceivedMillis")
-                .addGauge("lastValidOfferReceiveMillis")
-                .addCounter("numInvalidOffers")
-                .addCounter("numOfferTooSmall")
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        numMesosRegistered = m.getCounter("numMesosRegistered");
-        numMesosDisconnects = m.getCounter("numMesosDisconnects");
-        numOfferRescinded = m.getCounter("numOfferRescinded");
-        numReconcileTasks = m.getCounter("numReconcileTasks");
-        lastOfferReceivedMillis = m.getGauge("lastOfferReceivedMillis");
-        lastValidOfferReceiveMillis = m.getGauge("lastValidOfferReceiveMillis");
-        numInvalidOffers = m.getCounter("numInvalidOffers");
-        numOfferTooSmall = m.getCounter("numOfferTooSmall");
+        this.meterRegistry = meterRegistry;
+//
+        numMesosRegistered = addCounter("numMesosRegistered");
+        numMesosDisconnects = addCounter("numMesosDisconnects");
+        numOfferRescinded = addCounter("numOfferRescinded");
+        numReconcileTasks = addCounter("numReconcileTasks");
+        numInvalidOffers = addCounter("numInvalidOffers");
+        numOfferTooSmall = addCounter("numOfferTooSmall");
+        lastOfferReceivedMillis = addGauge("lastOfferReceivedMillis", lastOfferReceivedMillisValue);
+        lastValidOfferReceiveMillis = addGauge("lastValidOfferReceiveMillis", lastValidOfferReceiveMillisValue);
         Observable
                 .interval(10, 10, TimeUnit.SECONDS)
                 .doOnNext(aLong -> {
-                    lastOfferReceivedMillis.set(System.currentTimeMillis() - lastOfferReceivedAt.get());
-                    lastValidOfferReceiveMillis.set(System.currentTimeMillis() - lastValidOfferReceivedAt.get());
+                    lastOfferReceivedMillisValue.set(System.currentTimeMillis() - lastOfferReceivedAt.get());
+                    lastValidOfferReceiveMillisValue.set(System.currentTimeMillis() - lastValidOfferReceivedAt.get());
                 })
                 .subscribe();
+    }
+
+    private Counter addCounter(String name) {
+        Counter counter = Counter.builder(MesosSchedulerCallbackHandler.class.getCanonicalName() + "_" + name)
+            .register(meterRegistry);
+        return counter;
+    }
+
+    private Gauge addGauge(String name, AtomicLong value) {
+        Gauge gauge = Gauge.builder(MesosSchedulerCallbackHandler.class.getCanonicalName() + "_" + name, value::get)
+            .register(meterRegistry);
+        return gauge;
     }
 
     // simple offer resource validator

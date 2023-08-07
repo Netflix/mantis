@@ -23,6 +23,8 @@ import io.mantisrx.server.core.Configurations;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.util.Iterator;
 import java.util.Map;
@@ -49,12 +51,13 @@ public class MasterClientWrapperTest {
     }
 
     MasterClientWrapper clientWrapper = null;
+    private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     //@Before
     public void init() {
       HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
           Configurations.frmProperties(zkProps, CoreConfiguration.class));
-      clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+      clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi(), meterRegistry);
     }
 
     //	@Test
@@ -165,7 +168,7 @@ public class MasterClientWrapperTest {
     public void testJobStatusEndpoint() {
       HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
           Configurations.frmProperties(zkProps, CoreConfiguration.class));
-      MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+      MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi(),meterRegistry);
         String jobId = "PriamRequestSource-45";
 
         clientWrapper.getMasterClientApi()
@@ -190,7 +193,7 @@ public class MasterClientWrapperTest {
 
       HighAvailabilityServices haServices = HighAvailabilityServicesUtil.createHAServices(
           Configurations.frmProperties(zkProps, CoreConfiguration.class));
-      MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+      MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi(), meterRegistry);
 
         CountDownLatch cdLatch = new CountDownLatch(1);
         clientWrapper.namedJobExists("APIRequestSource")

@@ -16,9 +16,9 @@
 
 package io.mantisrx.server.master.persistence;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
@@ -52,6 +52,8 @@ import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableList;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -130,19 +132,23 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
     private final LifecycleEventPublisher eventPublisher;
     private final Counter noWorkersFoundCounter;
     private final Counter workersFoundCounter;
+    private final MeterRegistry meterRegistry;
 
-    public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher) {
+    public KeyValueBasedPersistenceProvider(KeyValueStore kvStore, LifecycleEventPublisher eventPublisher, MeterRegistry meterRegistry) {
         this.kvStore = kvStore;
         this.eventPublisher = eventPublisher;
-        Metrics m = new Metrics.Builder()
-            .id("storage")
-            .addCounter("noWorkersFound")
-            .addCounter("workersFound")
-            .build();
-
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
-        this.workersFoundCounter = m.getCounter("workersFound");
+        this.meterRegistry = meterRegistry;
+//        Metrics m = new Metrics.Builder()
+//            .id("storage")
+//            .addCounter("noWorkersFound")
+//            .addCounter("workersFound")
+//            .build();
+//
+//        m = MetricsRegistry.getInstance().registerAndGet(m);
+//        this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
+//        this.workersFoundCounter = m.getCounter("workersFound");
+        this.noWorkersFoundCounter = meterRegistry.counter("Storage_noWorkersFound");
+        this.workersFoundCounter = meterRegistry.counter("Storage_workersFound");
     }
 
     protected String getJobMetadataFieldName() {

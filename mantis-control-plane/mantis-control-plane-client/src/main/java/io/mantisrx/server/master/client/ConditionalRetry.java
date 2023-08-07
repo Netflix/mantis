@@ -16,7 +16,10 @@
 
 package io.mantisrx.server.master.client;
 
-import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Counter;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
@@ -29,16 +32,18 @@ import rx.functions.Func2;
 public class ConditionalRetry {
 
     private static final Logger logger = LoggerFactory.getLogger(ConditionalRetry.class);
+    private final MeterRegistry meterRegistry;
     private final Counter counter;
     private final String name;
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>(null);
     private final Func1<Observable<? extends Throwable>, Observable<?>> retryLogic;
 
-    public ConditionalRetry(Counter counter, String name) {
-        this(counter, name, Integer.MAX_VALUE);
+    public ConditionalRetry(Counter counter, String name, MeterRegistry meterRegistry) {
+        this(counter, name, Integer.MAX_VALUE, meterRegistry);
     }
 
-    public ConditionalRetry(Counter counter, String name, final int max) {
+    public ConditionalRetry(Counter counter, String name, final int max, MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         this.counter = counter;
         this.name = name;
         this.retryLogic =

@@ -19,13 +19,15 @@ package io.mantisrx.master.api.akka.route.handlers;
 import static akka.pattern.PatternsCS.ask;
 
 import akka.actor.ActorRef;
-import io.mantisrx.common.metrics.Counter;
+import io.micrometer.core.instrument.Counter;
+//import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.WorkerEvent;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -40,21 +42,17 @@ public class JobRouteHandlerAkkaImpl implements JobRouteHandler {
     private final Counter listJobIds;
     private final Counter listArchivedWorkers;
     private final Duration timeout;
+//    private final MeterRegistry meterRegistry;
 
-    public JobRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor) {
+    public JobRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, MeterRegistry meterRegistry) {
+//        this.meterRegistry = meterRegistry;
         this.jobClustersManagerActor = jobClusterManagerActor;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);
-        Metrics m = new Metrics.Builder()
-            .id("JobRouteHandler")
-            .addCounter("listAllJobs")
-            .addCounter("listJobIds")
-            .addCounter("listArchivedWorkers")
-            .build();
-        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.listAllJobs = metrics.getCounter("listAllJobs");
-        this.listJobIds = metrics.getCounter("listJobIds");
-        this.listArchivedWorkers = metrics.getCounter("listArchivedWorkers");
+        this.listAllJobs = meterRegistry.counter("JobRouteHandler_listAllJobs");
+        this.listJobIds = meterRegistry.counter("JobRouteHandler_listJobIds");
+        this.listArchivedWorkers = meterRegistry.counter("JobRouteHandler_listArchivedWorkers");
+
     }
 
     @Override

@@ -16,9 +16,8 @@
 
 package io.mantisrx.master.akka;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 
 /**
@@ -30,25 +29,11 @@ public final class ActorSystemMetrics {
     private final Counter actorDeathPactExcCount;
     private final Counter actorResumeCount;
 
-    private static final ActorSystemMetrics INSTANCE = new ActorSystemMetrics();
-
-    private ActorSystemMetrics() {
-        Metrics m = new Metrics.Builder()
-            .id("ActorSystemMetrics")
-            .addCounter("actorKilledCount")
-            .addCounter("actorInitExceptionCount")
-            .addCounter("actorDeathPactExcCount")
-            .addCounter("actorResumeCount")
-            .build();
-        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.actorKilledCount = metrics.getCounter("actorKilledCount");
-        this.actorInitExceptionCount = metrics.getCounter("actorInitExceptionCount");
-        this.actorDeathPactExcCount = metrics.getCounter("actorDeathPactExcCount");
-        this.actorResumeCount = metrics.getCounter("actorResumeCount");
-    }
-
-    public static ActorSystemMetrics getInstance() {
-        return INSTANCE;
+    public ActorSystemMetrics(MeterRegistry meterRegistry) {
+        this.actorKilledCount = meterRegistry.counter("ActorSystemMetrics_actorKilledCount");
+        this.actorInitExceptionCount = meterRegistry.counter("ActorSystemMetrics_actorInitExceptionCount");
+        this.actorDeathPactExcCount = meterRegistry.counter("ActorSystemMetrics_actorDeathPactExcCount");
+        this.actorResumeCount = meterRegistry.counter("ActorSystemMetrics_actorResumeCount");
     }
 
     /**

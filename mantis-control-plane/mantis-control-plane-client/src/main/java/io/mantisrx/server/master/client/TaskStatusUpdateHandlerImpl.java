@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.master.client;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.server.core.Status;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.ExceptionUtils;
@@ -26,20 +25,18 @@ import org.apache.flink.util.ExceptionUtils;
 @Slf4j
 public class TaskStatusUpdateHandlerImpl implements TaskStatusUpdateHandler {
 
+    private final MeterRegistry meterRegistry;
     private final Counter failureCounter;
     private final Counter workerSentHeartbeats;
     private final MantisMasterGateway masterMonitor;
 
-    TaskStatusUpdateHandlerImpl(MantisMasterGateway masterGateway) {
-        final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
-                .name("ReportStatusServiceHttpImpl")
-                .addCounter("failureCounter")
-                .addCounter("workerSentHeartbeats")
-                .build());
+    TaskStatusUpdateHandlerImpl(MantisMasterGateway masterGateway, MeterRegistry meterRegistry) {
 
-        this.failureCounter = metrics.getCounter("failureCounter");
-        this.workerSentHeartbeats = metrics.getCounter("workerSentHeartbeats");
+        String groupName = "ReportStatusServiceHttpImpl";
+        this.failureCounter = Counter.builder(groupName + ".failureCounter").register(meterRegistry);
+        this.workerSentHeartbeats = Counter.builder(groupName + ".workerSentHeartbeats").register(meterRegistry);
         this.masterMonitor = masterGateway;
+        this.meterRegistry = meterRegistry;
     }
 
     @Override

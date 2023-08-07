@@ -39,9 +39,11 @@ import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter;
@@ -73,7 +75,8 @@ import org.slf4j.LoggerFactory;
 public class JobRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobRoute.class);
     private final JobRouteHandler jobRouteHandler;
-    private final Metrics metrics;
+//    private final Metrics metrics;
+    private final MeterRegistry meterRegistry;
 
     private final Counter jobListGET;
     private final Counter jobListJobIdGET;
@@ -96,32 +99,42 @@ public class JobRoute extends BaseRoute {
         }
     };
 
-    public JobRoute(final JobRouteHandler jobRouteHandler, final ActorSystem actorSystem) {
+    public JobRoute(final JobRouteHandler jobRouteHandler, final ActorSystem actorSystem, MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         this.jobRouteHandler = jobRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
+        this.jobListGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListGET");
+        this.jobListJobIdGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListJobIdGET");
+        this.jobListRegexGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListRegexGET");
+        this.jobListLabelMatchGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListLabelMatchGET");
+        this.jobArchivedWorkersGET = meterRegistry.counter("V0JobRoute" + "_" +"jobArchivedWorkersGET");
+        this.jobArchivedWorkersGETInvalid = meterRegistry.counter("V0JobRoute" + "_" +"jobArchivedWorkersGETInvalid");
+        this.workerHeartbeatStatusPOST = meterRegistry.counter("V0JobRoute" + "_" +"workerHeartbeatStatusPOST");
+        this.workerHeartbeatSkipped = meterRegistry.counter("V0JobRoute" + "_" +"workerHeartbeatSkipped");
 
-        Metrics m = new Metrics.Builder()
-            .id("V0JobRoute")
-            .addCounter("jobListGET")
-            .addCounter("jobListJobIdGET")
-            .addCounter("jobListRegexGET")
-            .addCounter("jobListLabelMatchGET")
-            .addCounter("jobArchivedWorkersGET")
-            .addCounter("jobArchivedWorkersGETInvalid")
-            .addCounter("workerHeartbeatStatusPOST")
-            .addCounter("workerHeartbeatSkipped")
-            .build();
-        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.jobListGET = metrics.getCounter("jobListGET");
-        this.jobListJobIdGET = metrics.getCounter("jobListJobIdGET");
-        this.jobListRegexGET = metrics.getCounter("jobListRegexGET");
-        this.jobListLabelMatchGET = metrics.getCounter("jobListLabelMatchGET");
-        this.jobArchivedWorkersGET = metrics.getCounter("jobArchivedWorkersGET");
-        this.jobArchivedWorkersGETInvalid = metrics.getCounter("jobArchivedWorkersGETInvalid");
-        this.workerHeartbeatStatusPOST = metrics.getCounter("workerHeartbeatStatusPOST");
-        this.workerHeartbeatSkipped = metrics.getCounter("workerHeartbeatSkipped");
+
+//        Metrics m = new Metrics.Builder()
+//            .id("V0JobRoute")
+//            .addCounter("jobListGET")
+//            .addCounter("jobListJobIdGET")
+//            .addCounter("jobListRegexGET")
+//            .addCounter("jobListLabelMatchGET")
+//            .addCounter("jobArchivedWorkersGET")
+//            .addCounter("jobArchivedWorkersGETInvalid")
+//            .addCounter("workerHeartbeatStatusPOST")
+//            .addCounter("workerHeartbeatSkipped")
+//            .build();
+//        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
+//        this.jobListGET = metrics.getCounter("jobListGET");
+//        this.jobListJobIdGET = metrics.getCounter("jobListJobIdGET");
+//        this.jobListRegexGET = metrics.getCounter("jobListRegexGET");
+//        this.jobListLabelMatchGET = metrics.getCounter("jobListLabelMatchGET");
+//        this.jobArchivedWorkersGET = metrics.getCounter("jobArchivedWorkersGET");
+//        this.jobArchivedWorkersGETInvalid = metrics.getCounter("jobArchivedWorkersGETInvalid");
+//        this.workerHeartbeatStatusPOST = metrics.getCounter("workerHeartbeatStatusPOST");
+//        this.workerHeartbeatSkipped = metrics.getCounter("workerHeartbeatSkipped");
     }
 
     private static final PathMatcher0 API_JOBS = segment("api").slash("jobs");

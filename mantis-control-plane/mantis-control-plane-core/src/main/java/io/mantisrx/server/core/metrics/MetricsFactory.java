@@ -18,6 +18,7 @@ package io.mantisrx.server.core.metrics;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.ExecuteStageRequest;
 import io.mantisrx.server.core.stats.MetricStringConstants;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,11 +30,11 @@ public class MetricsFactory {
    * @param request request for which the metrics need to be published
    * @return MetricsServerService server
    */
-  public static MetricsServerService newMetricsServer(CoreConfiguration configuration, ExecuteStageRequest request) {
+  public static MetricsServerService newMetricsServer(CoreConfiguration configuration, ExecuteStageRequest request, MeterRegistry meterRegistry) {
 
     // todo(sundaram): get rid of the dependency on the metrics port defined at the ExecuteStageRequest level
     // because that's a configuration of the task manager rather than the request.
-    return new MetricsServerService(request.getMetricsPort(), 1, getCommonTags(request));
+    return new MetricsServerService(request.getMetricsPort(), 1, getCommonTags(request), meterRegistry);
   }
 
   public static MetricsPublisherService newMetricsPublisher(CoreConfiguration config, ExecuteStageRequest request) {

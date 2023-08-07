@@ -20,10 +20,12 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.slf4j.Logger;
@@ -38,16 +40,11 @@ public class LeaderRedirectionFilter extends AllDirectives {
     private final Counter api503MasterNotReady;
     private final Counter apiRedirectsToLeader;
 
-    public LeaderRedirectionFilter(final MasterMonitor masterMonitor, final ILeadershipManager leadershipManager) {
+    public LeaderRedirectionFilter(final MasterMonitor masterMonitor, final ILeadershipManager leadershipManager, MeterRegistry meterRegistry) {
         this.masterMonitor = masterMonitor;
         this.leadershipManager = leadershipManager;
-        Metrics m = new Metrics.Builder()
-                .id("LeaderRedirectionFilter")
-                .addCounter("api503MasterNotReady")
-                .addCounter("apiRedirectsToLeader")
-                .build();
-        this.api503MasterNotReady = m.getCounter("api503MasterNotReady");
-        this.apiRedirectsToLeader = m.getCounter("apiRedirectsToLeader");
+        this.api503MasterNotReady = meterRegistry.counter("LeaderRedirectionFilter_api503MasterNotReady");
+        this.apiRedirectsToLeader = meterRegistry.counter("LeaderRedirectionFilter_apiRedirectsToLeader");
     }
 
     private boolean isLocalHost(MasterDescription master) {

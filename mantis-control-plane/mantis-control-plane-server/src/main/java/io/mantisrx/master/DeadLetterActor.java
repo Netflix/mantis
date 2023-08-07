@@ -19,9 +19,8 @@ package io.mantisrx.master;
 import akka.actor.AbstractActor;
 import akka.actor.DeadLetter;
 import io.mantisrx.common.JsonSerializer;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,14 +28,11 @@ public class DeadLetterActor extends AbstractActor {
 
     private final Counter numDeadLetterMsgs;
     private final JsonSerializer serializer;
+    private final MeterRegistry meterRegistry;
 
-    public DeadLetterActor() {
-        Metrics m = new Metrics.Builder()
-                .id("DeadLetterActor")
-                .addCounter("numDeadLetterMsgs")
-                .build();
-        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.numDeadLetterMsgs = metrics.getCounter("numDeadLetterMsgs");
+    public DeadLetterActor(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        numDeadLetterMsgs = meterRegistry.counter("DeadLetterActor_numDeadLetterMsgs");
         this.serializer = new JsonSerializer();
     }
 

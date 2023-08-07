@@ -17,9 +17,10 @@
 package io.mantisrx.server.master.client;
 
 import com.mantisrx.common.utils.Services;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.runtime.MantisJobState;
@@ -29,6 +30,8 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.util.ArrayList;
@@ -48,20 +51,25 @@ public class MasterClientWrapper {
 
     public static final String InvalidNamedJob = "No_such_named_job";
     private static final Logger logger = LoggerFactory.getLogger(MasterClientWrapper.class);
+    private final MeterRegistry meterRegistry;
     private final Counter masterConnectRetryCounter;
     private final MantisMasterGateway masterClientApi;
     private final PublishSubject<JobSinkNumWorkers> numSinkWorkersSubject = PublishSubject.create();
     private final PublishSubject<JobNumWorkers> numWorkersSubject = PublishSubject.create();
 
     // blocks until getting master info from zookeeper
-    public MasterClientWrapper(MantisMasterGateway gateway) {
+    public MasterClientWrapper(MantisMasterGateway gateway, MeterRegistry meterRegistry) {
         this.masterClientApi = gateway;
-        Metrics m = new Metrics.Builder()
-                .name(MasterClientWrapper.class.getCanonicalName())
-                .addCounter("MasterConnectRetryCount")
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        masterConnectRetryCounter = m.getCounter("MasterConnectRetryCount");
+        this.meterRegistry = meterRegistry;
+//        Metrics m = new Metrics.Builder()
+//                .name(MasterClientWrapper.class.getCanonicalName())
+//                .addCounter("MasterConnectRetryCount")
+//                .build();
+//        m = MetricsRegistry.getInstance().registerAndGet(m);
+//        masterConnectRetryCounter = m.getCounter("MasterConnectRetryCount");
+        String groupName = MasterClientWrapper.class.getCanonicalName();
+        masterConnectRetryCounter = Counter.builder(groupName + ".MasterConnectRetryCount")
+            .register(meterRegistry);
     }
 
     public static String getWrappedHost(String host, int workerNumber) {
@@ -84,7 +92,7 @@ public class MasterClientWrapper {
         HighAvailabilityServices haServices =
             HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class));
         Services.startAndWait(haServices);
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi(), new SimpleMeterRegistry());
         clientWrapper.getMasterClientApi()
                 .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
                     @Override
@@ -172,7 +180,7 @@ public class MasterClientWrapper {
     }
 
     public Observable<EndpointChange> getAllWorkerMetricLocations(final String jobId) {
-        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "AllSchedInfoRetry", 10);
+        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "AllSchedInfoRetry", 10, meterRegistry);
         Observable<List<Endpoint>> schedulingUpdates =
                                 masterClientApi
                                         .schedulingChanges(jobId)
@@ -214,7 +222,7 @@ public class MasterClientWrapper {
 
     public Observable<EndpointChange> getSinkLocations(final String jobId, final int sinkStage,
                                                        final int forPartition, final int totalPartitions) {
-        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "SchedInfoRetry", 10);
+        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "SchedInfoRetry", 10, meterRegistry);
         Observable<List<Endpoint>> schedulingUpdates =
                 masterClientApi
                                     .schedulingChanges(jobId)
@@ -274,13 +282,13 @@ public class MasterClientWrapper {
     }
 
     public Observable<Boolean> namedJobExists(final String jobName) {
-        final ConditionalRetry namedJobRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobExists", Integer.MAX_VALUE);
+        final ConditionalRetry namedJobRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobExists", Integer.MAX_VALUE, meterRegistry);
         logger.info("verifying if job name exists: " + jobName);
         return masterClientApi.namedJobExists(jobName).retryWhen(namedJobRetry.getRetryLogic());
     }
 
     public Observable<String> getNamedJobsIds(final String jobName) {
-        final ConditionalRetry namedJobsIdsRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobsIds", Integer.MAX_VALUE);
+        final ConditionalRetry namedJobsIdsRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobsIds", Integer.MAX_VALUE, meterRegistry);
         logger.info("verifying if job name exists: " + jobName);
         return masterClientApi.namedJobExists(jobName)
                 .onErrorResumeNext((Throwable throwable) -> {

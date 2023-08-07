@@ -16,12 +16,10 @@
 
 package io.mantisrx.master.events;
 
-import com.netflix.spectator.api.Tag;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.Timer;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.Gauge;
 import io.mantisrx.master.events.LifecycleEventsProto.JobStatusEvent;
 import io.mantisrx.master.events.LifecycleEventsProto.WorkerListChangedEvent;
 import io.mantisrx.master.events.LifecycleEventsProto.WorkerStatusEvent;
@@ -42,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -65,8 +64,9 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
     private final Duration epochDuration;
     private final Clock clock;
+    private final MeterRegistry meterRegistry;
 
-    private final WorkerMetricsCollectorMetrics workerMetricsCollectorMetrics = new WorkerMetricsCollectorMetrics();
+    private final WorkerMetricsCollectorMetrics workerMetricsCollectorMetrics = new WorkerMetricsCollectorMetrics(meterRegistry);
 
     @Override
     protected void runOneIteration() {
@@ -109,7 +109,7 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
     private WorkerMetrics getWorkerMetrics(String clusterName) {
         return clusterWorkersMetrics.computeIfAbsent(
-            clusterName, dontCare -> new WorkerMetrics(clusterName));
+            clusterName, dontCare -> new WorkerMetrics(clusterName, meterRegistry));
     }
 
     @Override
@@ -174,25 +174,17 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
         private final Timer schedulingDuration;
         private final Timer preparationDuration;
         private final Timer runningDuration;
+        private final MeterRegistry meterRegistry;
 
-        public WorkerMetrics(final String clusterName) {
-            MetricGroupId metricGroupId =
-                new MetricGroupId(
-                    "WorkerMetricsCollector",
-                    Tag.of("cluster", clusterName),
-                    Tag.of("resourceCluster", clusterName));
-            Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addTimer(SCHEDULING_DURATION)
-                .addTimer(PREPARATION_DURATION)
-                .addTimer(RUNNING_DURATION)
-                .build();
+        public WorkerMetrics(final String clusterName, MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
+            Tags tags = Tags.of("cluster", clusterName, "resourceCluster", clusterName);
+            schedulingDuration = meterRegistry.timer("WorkerMetricsCollector_" + SCHEDULING_DURATION, tags);
+            preparationDuration = meterRegistry.timer("WorkerMetricsCollector_" + PREPARATION_DURATION, tags);
+            runningDuration = meterRegistry.timer("WorkerMetricsCollector_" + RUNNING_DURATION, tags);
 
-            m = MetricsRegistry.getInstance().registerAndGet(m);
-            this.schedulingDuration = m.getTimer(SCHEDULING_DURATION);
-            this.preparationDuration = m.getTimer(PREPARATION_DURATION);
-            this.runningDuration = m.getTimer(RUNNING_DURATION);
         }
+
 
         private void reportSchedulingDuration(long durationInMillis) {
             this.schedulingDuration.record(durationInMillis, TimeUnit.MILLISECONDS);
@@ -211,20 +203,26 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
 
         public static final String JOB_WORKERS_MAP_SIZE = "jobWorkersMapSize";
         private final Gauge jobWorkersMapSize;
+        private final AtomicLong jobWorkersMapSizeValue = new AtomicLong(0);
+        private final MeterRegistry registry;
 
-        public WorkerMetricsCollectorMetrics() {
-            MetricGroupId metricGroupId = new MetricGroupId("WorkerMetricsCollector");
 
-            Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addGauge(JOB_WORKERS_MAP_SIZE)
-                .build();
-
-            this.jobWorkersMapSize = m.getGauge(JOB_WORKERS_MAP_SIZE);
+        public WorkerMetricsCollectorMetrics(MeterRegistry meterRegistry) {
+            this.registry = meterRegistry;
+            jobWorkersMapSize = Gauge.builder("WorkerMetricsCollector_" + JOB_WORKERS_MAP_SIZE, jobWorkersMapSizeValue::get)
+                .register(meterRegistry);
+//            MetricGroupId metricGroupId = new MetricGroupId("WorkerMetricsCollector");
+//
+//            Metrics m = new Metrics.Builder()
+//                .id(metricGroupId)
+//                .addGauge(JOB_WORKERS_MAP_SIZE)
+//                .build();
+//
+//            this.jobWorkersMapSize = m.getGauge(JOB_WORKERS_MAP_SIZE);
         }
 
         private void reportJobWorkersSize(int size) {
-            jobWorkersMapSize.set(size);
+            jobWorkersMapSizeValue.set(size);
         }
     }
 

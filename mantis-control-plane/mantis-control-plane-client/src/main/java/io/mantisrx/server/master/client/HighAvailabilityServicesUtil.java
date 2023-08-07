@@ -15,9 +15,8 @@
  */
 package io.mantisrx.server.master.client;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.LocalMasterMonitor;
 import io.mantisrx.server.core.master.MasterDescription;
@@ -28,6 +27,7 @@ import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGatewayClient;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -70,7 +70,7 @@ public class HighAvailabilityServicesUtil {
     }
     else {
       if (HAServiceInstanceRef.get() == null) {
-          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration));
+          HAServiceInstanceRef.compareAndSet(null, new ZkHighAvailabilityServices(configuration, new SimpleMeterRegistry()));
       }
     }
 
@@ -131,15 +131,13 @@ public class HighAvailabilityServicesUtil {
     private final Counter resourceLeaderAlreadyRegisteredCounter;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
 
-    public ZkHighAvailabilityServices(CoreConfiguration configuration) {
-      curatorService = new CuratorService(configuration);
-      final Metrics metrics = MetricsRegistry.getInstance().registerAndGet(new Metrics.Builder()
-        .name("ZkHighAvailabilityServices")
-        .addCounter("resourceLeaderChangeCounter")
-        .addCounter("resourceLeaderAlreadyRegisteredCounter")
-        .build());
-      resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
-      resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
+    public ZkHighAvailabilityServices(CoreConfiguration configuration, MeterRegistry meterRegistry) {
+      curatorService = new CuratorService(configuration, meterRegistry);
+        String groupName = "ZkHighAvailabilityServices";
+        resourceLeaderChangeCounter = Counter.builder(groupName + "_resourceLeaderChangeCounter")
+            .register(meterRegistry);
+        resourceLeaderAlreadyRegisteredCounter = Counter.builder(groupName + "_resourceLeaderAlreadyRegisteredCounter")
+            .register(meterRegistry);
     }
 
     @Override

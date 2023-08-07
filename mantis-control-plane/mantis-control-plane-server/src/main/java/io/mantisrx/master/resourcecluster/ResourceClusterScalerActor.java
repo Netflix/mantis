@@ -20,10 +20,11 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.netflix.spectator.api.BasicTag;
+//import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.Ack;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.Counter;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
@@ -40,6 +41,8 @@ import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -84,6 +87,7 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
     private final Counter numReachScaleMaxLimit;
     private final Counter numReachScaleMinLimit;
     private final Counter numScaleRuleTrigger;
+    private final MeterRegistry meterRegistry;
 
     public static Props props(
         ClusterID clusterId,
@@ -111,7 +115,8 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         Duration ruleRefreshThreshold,
         IMantisPersistenceProvider storageProvider,
         ActorRef resourceClusterHostActor,
-        ActorRef resourceClusterActor) {
+        ActorRef resourceClusterActor,
+        MeterRegistry meterRegistry) {
         this.clusterId = clusterId;
         this.resourceClusterActor = resourceClusterActor;
         this.resourceClusterHostActor = resourceClusterHostActor;
@@ -119,25 +124,39 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.clock = clock;
         this.scalerPullThreshold = scalerPullThreshold;
         this.ruleSetRefreshThreshold = ruleRefreshThreshold;
+        this.meterRegistry = meterRegistry;
 
-        MetricGroupId metricGroupId = new MetricGroupId(
-            "ResourceClusterScalerActor",
-            new BasicTag("resourceCluster", this.clusterId.getResourceID()));
+        this.numScaleDown = addCounter("numScaleDown");
+        this.numReachScaleMaxLimit = addCounter("numReachScaleMaxLimit");
+        this.numScaleUp = addCounter("numScaleUp");
+        this.numReachScaleMinLimit = addCounter("numReachScaleMinLimit");
+        this.numScaleRuleTrigger = addCounter("numScaleRuleTrigger");
 
-        Metrics m = new Metrics.Builder()
-            .id(metricGroupId)
-            .addCounter("numScaleDown")
-            .addCounter("numReachScaleMaxLimit")
-            .addCounter("numScaleUp")
-            .addCounter("numReachScaleMinLimit")
-            .addCounter("numScaleRuleTrigger")
-            .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        this.numScaleDown = m.getCounter("numScaleDown");
-        this.numReachScaleMaxLimit = m.getCounter("numReachScaleMaxLimit");
-        this.numScaleUp = m.getCounter("numScaleUp");
-        this.numReachScaleMinLimit = m.getCounter("numReachScaleMinLimit");
-        this.numScaleRuleTrigger = m.getCounter("numScaleRuleTrigger");
+//        MetricGroupId metricGroupId = new MetricGroupId(
+//            "ResourceClusterScalerActor",
+//            new BasicTag("resourceCluster", this.clusterId.getResourceID()));
+//
+//        Metrics m = new Metrics.Builder()
+//            .id(metricGroupId)
+//            .addCounter("numScaleDown")
+//            .addCounter("numReachScaleMaxLimit")
+//            .addCounter("numScaleUp")
+//            .addCounter("numReachScaleMinLimit")
+//            .addCounter("numScaleRuleTrigger")
+//            .build();
+//        m = MetricsRegistry.getInstance().registerAndGet(m);
+//        this.numScaleDown = m.getCounter("numScaleDown");
+//        this.numReachScaleMaxLimit = m.getCounter("numReachScaleMaxLimit");
+//        this.numScaleUp = m.getCounter("numScaleUp");
+//        this.numReachScaleMinLimit = m.getCounter("numReachScaleMinLimit");
+//        this.numScaleRuleTrigger = m.getCounter("numScaleRuleTrigger");
+    }
+
+    private Counter addCounter(String name) {
+        Counter counter = Counter.builder("ResourceClusterScalerActor_" + name)
+            .tags("resourceCluster", this.clusterId.getResourceID())
+            .register(meterRegistry);
+        return counter;
     }
 
     @Override

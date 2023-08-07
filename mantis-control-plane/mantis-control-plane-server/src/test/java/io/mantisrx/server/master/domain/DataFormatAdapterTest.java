@@ -59,6 +59,8 @@ import io.mantisrx.server.master.store.NamedJob;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.mantisrx.shaded.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -718,6 +720,7 @@ public class DataFormatAdapterTest {
     }
     @Test
     public void convertMantisJobWriteableTest() throws Exception {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         String artifactName = "artifact";
         String version = "1.0.0";
         String clusterName = "myCluster";
@@ -774,7 +777,7 @@ public class DataFormatAdapterTest {
 
                 .build());
 
-        ((MantisJobMetadataImpl) jobmeta).addWorkerMetadata(1, new JobWorker(workerMetadata,eventPublisher));
+        ((MantisJobMetadataImpl) jobmeta).addWorkerMetadata(1, new JobWorker(workerMetadata,eventPublisher, meterRegistry));
 
         MantisJobMetadata oldFormat = DataFormatAdapter.convertMantisJobMetadataToMantisJobMetadataWriteable(jobmeta);
         System.out.println("oldForamt -> " + oldFormat);

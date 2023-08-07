@@ -18,12 +18,13 @@ package io.mantisrx.master.utils;
 
 import static java.util.Objects.requireNonNull;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.github.benmanes.caffeine.cache.stats.StatsCounter;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Timer;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public final class CaffeineMetrics implements StatsCounter {
@@ -32,34 +33,30 @@ public final class CaffeineMetrics implements StatsCounter {
     private final Counter loadSuccessCount;
     private final Counter loadFailureCount;
     // TODO make totalLoadTime a Timer
-    private final Gauge totalLoadTime;
+    private final Timer totalLoadTime;
     private final Counter evictionCount;
     private final Counter evictionWeight;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Constructs an instance for use by a single cache.
      */
-    public CaffeineMetrics(String metricGroup) {
+    public CaffeineMetrics(String metricGroup, MeterRegistry meterRegistry) {
         requireNonNull(metricGroup);
-        Metrics m = new Metrics.Builder()
-            .id("CaffeineMetrics_" + metricGroup)
-            .addCounter("hits")
-            .addCounter("misses")
-            .addGauge("loadTimeMillis")
-            .addCounter("loadsSuccess")
-            .addCounter("loadsFailure")
-            .addCounter("evictions")
-            .addCounter("evictionsWeight")
-            .build();
+        this.meterRegistry = meterRegistry;
+        hitCount = addCounter(metricGroup + "_hits");
+        missCount = addCounter(metricGroup + "_misses");
+        loadSuccessCount = addCounter(metricGroup + "_loadsSuccess");
+        loadFailureCount = addCounter(metricGroup + "_loadsFailure");
+        evictionCount = addCounter(metricGroup + "_evictions");
+        evictionWeight = addCounter(metricGroup + "_evictionsWeight");
+        totalLoadTime = meterRegistry.timer(metricGroup + "_loadTimeMillis");
+    }
 
-        Metrics metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        hitCount = metrics.getCounter("hits");
-        missCount = metrics.getCounter("misses");
-        totalLoadTime = metrics.getGauge("loadTimeMillis");
-        loadSuccessCount = metrics.getCounter("loadsSuccess");
-        loadFailureCount = metrics.getCounter("loadsFailure");
-        evictionCount = metrics.getCounter("evictions");
-        evictionWeight = metrics.getCounter("evictionsWeight");
+    private Counter addCounter(String name) {
+        Counter counter = Counter.builder("CaffeineMetrics_" + name)
+            .register(meterRegistry);
+        return counter;
     }
 
     @Override
@@ -75,13 +72,13 @@ public final class CaffeineMetrics implements StatsCounter {
     @Override
     public void recordLoadSuccess(long loadTime) {
         loadSuccessCount.increment();
-        totalLoadTime.set(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS));
+        totalLoadTime.record(Duration.ofDays(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS)));
     }
 
     @Override
     public void recordLoadFailure(long loadTime) {
         loadFailureCount.increment();
-        totalLoadTime.set(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS));
+        totalLoadTime.record(Duration.ofDays(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS)));
     }
 
     @Override
@@ -100,13 +97,13 @@ public final class CaffeineMetrics implements StatsCounter {
     @Override
     public CacheStats snapshot() {
         return new CacheStats(
-            hitCount.value(),
-            missCount.value(),
-            loadSuccessCount.value(),
-            loadFailureCount.value(),
-            totalLoadTime.value(),
-            evictionCount.value(),
-            evictionWeight.value());
+            (long)hitCount.count(),
+            (long) missCount.count(),
+            (long) loadSuccessCount.count(),
+            (long) loadFailureCount.count(),
+            totalLoadTime.count(),
+            (long)evictionCount.count(),
+            (long)evictionWeight.count());
     }
 
     @Override

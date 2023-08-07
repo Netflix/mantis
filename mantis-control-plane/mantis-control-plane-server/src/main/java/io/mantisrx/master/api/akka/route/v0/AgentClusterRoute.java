@@ -33,14 +33,16 @@ import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import io.mantisrx.shaded.com.google.common.annotations.VisibleForTesting;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,23 +73,28 @@ public class AgentClusterRoute extends BaseRoute {
     private final Counter listAgentClustersCount;
 
 
-    public AgentClusterRoute(final AgentClusterOperations agentClusterOperations, final ActorSystem actorSystem) {
+    public AgentClusterRoute(final AgentClusterOperations agentClusterOperations, final ActorSystem actorSystem, MeterRegistry meterRegistry) {
         this.agentClusterOps = agentClusterOperations;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
 
-        Metrics m = new Metrics.Builder()
-            .id("V0AgentClusterRoute")
-            .addCounter("setActive")
-            .addCounter("listActive")
-            .addCounter("listJobsOnVMs")
-            .addCounter("listAgentClusters")
-            .build();
-        this.setActiveCount = m.getCounter("setActive");
-        this.listActiveCount = m.getCounter("listActive");
-        this.listJobsOnVMsCount = m.getCounter("listJobsOnVMs");
-        this.listAgentClustersCount = m.getCounter("listAgentClusters");
+//        Metrics m = new Metrics.Builder()
+//            .id("V0AgentClusterRoute")
+//            .addCounter("setActive")
+//            .addCounter("listActive")
+//            .addCounter("listJobsOnVMs")
+//            .addCounter("listAgentClusters")
+//            .build();
+//        this.setActiveCount = m.getCounter("setActive");
+//        this.listActiveCount = m.getCounter("listActive");
+//        this.listJobsOnVMsCount = m.getCounter("listJobsOnVMs");
+//        this.listAgentClustersCount = m.getCounter("listAgentClusters");
+        this.setActiveCount = meterRegistry.counter("V0AgentClusterRoute_setActive");
+        this.listActiveCount = meterRegistry.counter("V0AgentClusterRoute_listActive");
+        this.listJobsOnVMsCount = meterRegistry.counter("V0AgentClusterRoute_listJobsOnVMs");
+        this.listAgentClustersCount = meterRegistry.counter("V0AgentClusterRoute_listAgentClusters");
+
     }
 
     private static final PathMatcher0 API_VM_ACTIVEVMS = segment("api").slash("vm").slash("activevms");

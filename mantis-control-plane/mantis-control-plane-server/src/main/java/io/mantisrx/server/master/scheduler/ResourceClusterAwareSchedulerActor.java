@@ -21,11 +21,6 @@ import static akka.pattern.Patterns.pipe;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.netflix.spectator.api.Tag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.Timer;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.ExecuteStageRequestFactory;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
@@ -35,6 +30,9 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.worker.TaskExecutorGateway;
 import io.mantisrx.server.worker.TaskExecutorGateway.TaskNotFoundException;
 import io.mantisrx.shaded.com.google.common.base.Throwables;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -58,6 +56,7 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
     private final Timer schedulingLatency;
     private final Counter schedulingFailures;
     private final Counter connectionFailures;
+    private final MeterRegistry meterRegistry;
 
     public static Props props(
         int maxScheduleRetries,
@@ -66,9 +65,9 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         final ResourceCluster resourceCluster,
         final ExecuteStageRequestFactory executeStageRequestFactory,
         final JobMessageRouter jobMessageRouter,
-        final MetricsRegistry metricsRegistry) {
+        final MeterRegistry meterRegistry) {
         return Props.create(ResourceClusterAwareSchedulerActor.class, maxScheduleRetries, maxCancelRetries, intervalBetweenRetries, resourceCluster, executeStageRequestFactory,
-            jobMessageRouter, metricsRegistry);
+            jobMessageRouter, meterRegistry);
     }
 
     public ResourceClusterAwareSchedulerActor(
@@ -78,26 +77,31 @@ class ResourceClusterAwareSchedulerActor extends AbstractActorWithTimers {
         ResourceCluster resourceCluster,
         ExecuteStageRequestFactory executeStageRequestFactory,
         JobMessageRouter jobMessageRouter,
-        MetricsRegistry metricsRegistry) {
+        MeterRegistry meterRegistry) {
         this.resourceCluster = resourceCluster;
         this.executeStageRequestFactory = executeStageRequestFactory;
         this.jobMessageRouter = jobMessageRouter;
         this.maxScheduleRetries = maxScheduleRetries;
         this.intervalBetweenRetries = intervalBetweenRetries;
         this.maxCancelRetries = maxCancelRetries;
-        final String metricsGroup = "ResourceClusterAwareSchedulerActor";
-        final Metrics metrics =
-            new Metrics.Builder()
-                .id(metricsGroup, Tag.of("resourceCluster", resourceCluster.getName()))
-                .addTimer("schedulingLatency")
-                .addCounter("schedulingFailures")
-                .addCounter("connectionFailures")
-                .build();
-        metricsRegistry.registerAndGet(metrics);
-        this.schedulingLatency = metrics.getTimer("schedulingLatency");
-        this.schedulingFailures = metrics.getCounter("schedulingFailures");
-        this.connectionFailures = metrics.getCounter("connectionFailures");
+        this.meterRegistry = meterRegistry;
+        this.schedulingLatency = addTimer("schedulingLatency");
+        this.schedulingFailures = addCounter("schedulingFailures");
+        this.connectionFailures = addCounter("connectionFailures");
 
+    }
+    private Counter addCounter(String name) {
+        Counter counter = Counter.builder("ResourceClusterAwareSchedulerActor_" + name)
+            .tags("resourceCluster", resourceCluster.getName())
+            .register(meterRegistry);
+        return counter;
+    }
+
+    private Timer addTimer(String name) {
+        Timer timer = Timer.builder("ResourceClusterAwareSchedulerActor_" + name)
+            .tags("resourceCluster", resourceCluster.getName())
+            .register(meterRegistry);
+        return timer;
     }
 
     @Override

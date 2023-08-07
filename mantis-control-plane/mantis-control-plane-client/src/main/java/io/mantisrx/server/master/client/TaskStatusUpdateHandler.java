@@ -17,6 +17,7 @@
 package io.mantisrx.server.master.client;
 
 import io.mantisrx.server.core.Status;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * TaskStatusUpdateHandler is responsible for handling updates to task statuses as the task is being run.
@@ -29,7 +30,7 @@ public interface TaskStatusUpdateHandler {
      * @param gateway gateway that needs to kept upto date.
      * @return created instance of TaskStatusUpdateHandler
      */
-    static TaskStatusUpdateHandler forReportingToGateway(MantisMasterGateway gateway) {
-        return new TaskStatusUpdateHandlerImpl(gateway);
+    static TaskStatusUpdateHandler forReportingToGateway(MantisMasterGateway gateway, MeterRegistry meterRegistry) {
+        return new TaskStatusUpdateHandlerImpl(gateway, meterRegistry);
     }
 }
