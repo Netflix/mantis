@@ -211,14 +211,6 @@ public class WorkerMetricsCollector extends AbstractScheduledService implements
             this.registry = meterRegistry;
             jobWorkersMapSize = Gauge.builder("WorkerMetricsCollector_" + JOB_WORKERS_MAP_SIZE, jobWorkersMapSizeValue::get)
                 .register(meterRegistry);
-//            MetricGroupId metricGroupId = new MetricGroupId("WorkerMetricsCollector");
-//
-//            Metrics m = new Metrics.Builder()
-//                .id(metricGroupId)
-//                .addGauge(JOB_WORKERS_MAP_SIZE)
-//                .build();
-//
-//            this.jobWorkersMapSize = m.getGauge(JOB_WORKERS_MAP_SIZE);
         }
 
         private void reportJobWorkersSize(int size) {

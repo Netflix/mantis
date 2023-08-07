@@ -77,6 +77,10 @@ import io.mantisrx.server.master.scheduler.MantisSchedulerFactoryImpl;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.org.apache.curator.utils.ZKPaths;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -117,21 +121,19 @@ public class MasterMain implements Service {
     private MasterConfiguration config;
     private SchedulingService schedulingService;
     private ILeadershipManager leadershipManager;
+    private MeterRegistry meterRegistry;
 
-    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber) {
-
+    public MasterMain(ConfigurationFactory configFactory, AuditEventSubscriber auditEventSubscriber, MeterRegistry meterRegistry) {
+        this.meterRegistry = new CompositeMeterRegistry().add(new SimpleMeterRegistry());
         String test = "{\"jobId\":\"sine-function-1\",\"status\":{\"jobId\":\"sine-function-1\",\"stageNum\":1,\"workerIndex\":0,\"workerNumber\":2,\"type\":\"HEARTBEAT\",\"message\":\"heartbeat\",\"state\":\"Noop\",\"hostname\":null,\"timestamp\":1525813363585,\"reason\":\"Normal\",\"payloads\":[{\"type\":\"SubscriptionState\",\"data\":\"false\"},{\"type\":\"IncomingDataDrop\",\"data\":\"{\\\"onNextCount\\\":0,\\\"droppedCount\\\":0}\"}]}}";
 
-        Metrics metrics = new Metrics.Builder()
-                .id("MasterMain")
-                .addCounter("masterInitSuccess")
-                .addCounter("masterInitError")
-                .build();
-        Metrics m = MetricsRegistry.getInstance().registerAndGet(metrics);
+        Counter masterInitSuccess = meterRegistry.counter("MasterMain_masterInitSuccess");
+        Counter masterInitError = meterRegistry.counter("MasterMain_masterInitError");
+
         try {
             ConfigurationProvider.initialize(configFactory);
             this.config = ConfigurationProvider.getConfig();
-            leadershipManager = new LeadershipManagerZkImpl(config, mantisServices, micrometerRegistry);
+            leadershipManager = new LeadershipManagerZkImpl(config, mantisServices, meterRegistry);
 
             Thread t = new Thread(() -> shutdown());
             t.setDaemon(true);
@@ -158,7 +160,7 @@ public class MasterMain implements Service {
             final WorkerMetricsCollector workerMetricsCollector = new WorkerMetricsCollector(
                 Duration.ofMinutes(5), // cleanup jobs after 5 minutes
                 Duration.ofMinutes(1), // check every 1 minute for jobs to be cleaned up
-                Clock.systemDefaultZone());
+                Clock.systemDefaultZone(), meterRegistry);
             mantisServices.addService(BaseService.wrap(workerMetricsCollector));
 
             // TODO who watches actors created at this level?
@@ -166,7 +168,7 @@ public class MasterMain implements Service {
                 new LifecycleEventPublisherImpl(auditEventSubscriberAkka, statusEventSubscriber,
                     workerEventSubscriber.and(workerMetricsCollector));
 
-            storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher, micrometerRegistry);
+            storageProvider = new KeyValueBasedPersistenceProvider(this.config.getStorageProvider(), lifecycleEventPublisher, meterRegistry);
             final MantisJobStore mantisJobStore = new MantisJobStore(storageProvider);
             final ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(mantisJobStore, lifecycleEventPublisher, config.getJobCostsCalculator()), "JobClustersManager");
             final JobMessageRouter jobMessageRouter = new JobMessageRouterImpl(jobClusterManagerActor);
@@ -203,14 +205,14 @@ public class MasterMain implements Service {
                 final MesosDriverSupplier mesosDriverSupplier = new MesosDriverSupplier(this.config, vmLeaseRescindedSubject,
                     jobMessageRouter,
                     workerRegistry,
-                    micrometerRegistry);
+                    meterRegistry);
 
                 final VirtualMachineMasterServiceMesosImpl vmService = new VirtualMachineMasterServiceMesosImpl(
                     this.config,
                     getDescriptionJson(),
                     mesosDriverSupplier);
 
-                schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService, micrometerRegistry);
+                schedulingService = new SchedulingService(jobMessageRouter, workerRegistry, vmLeaseRescindedSubject, vmService, meterRegistry);
 
 
                 mesosDriverSupplier.setAddVMLeaseAction(schedulingService::addOffers);
@@ -230,14 +232,14 @@ public class MasterMain implements Service {
             }
 
             final MantisSchedulerFactory mantisSchedulerFactory =
-                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), micrometerRegistry);
+                new MantisSchedulerFactoryImpl(system, resourceClusters, new ExecuteStageRequestFactory(getConfig()), jobMessageRouter, schedulingService, getConfig(), meterRegistry);
 
             final boolean loadJobsFromStoreOnInit = true;
             final JobClustersManagerService jobClustersManagerService = new JobClustersManagerService(jobClusterManagerActor, mantisSchedulerFactory, loadJobsFromStoreOnInit);
 
             // start serving metrics
             if (config.getMasterMetricsPort() > 0) {
-                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap(), micrometerRegistry).start();
+                new MetricsServerService(config.getMasterMetricsPort(), 1, Collections.emptyMap(), meterRegistry).start();
             }
             new MetricsPublisherService(config.getMetricsPublisher(), config.getMetricsPublisherFrequencyInSeconds(),
                     new HashMap<>()).start();
@@ -247,19 +249,19 @@ public class MasterMain implements Service {
 
             if (this.config.isLocalMode()) {
                 mantisServices.addService(new MasterApiAkkaService(new LocalMasterMonitor(leadershipManager.getDescription()), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps, micrometerRegistry));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps, meterRegistry));
                 leadershipManager.becomeLeader();
             } else {
-                curatorService = new CuratorService(this.config, micrometerRegistry);
+                curatorService = new CuratorService(this.config, meterRegistry);
                 curatorService.start();
                 mantisServices.addService(createLeaderElector(curatorService, leadershipManager));
                 mantisServices.addService(new MasterApiAkkaService(curatorService.getMasterMonitor(), leadershipManager.getDescription(), jobClusterManagerActor, statusEventBrokerActor,
-                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps, micrometerRegistry));
+                       resourceClusters, resourceClustersHostActor, config.getApiPort(), storageProvider, lifecycleEventPublisher, leadershipManager, agentClusterOps, meterRegistry));
             }
-            m.getCounter("masterInitSuccess").increment();
+            masterInitSuccess.increment();
         } catch (Exception e) {
             logger.error("caught exception on Mantis Master initialization", e);
-            m.getCounter("masterInitError").increment();
+            masterInitError.increment();
             shutdown();
             System.exit(1);
         }
@@ -362,7 +364,8 @@ public class MasterMain implements Service {
             StaticPropertiesConfigurationFactory factory = new StaticPropertiesConfigurationFactory(props);
             setupDummyAgentClusterAutoScaler();
             final AuditEventSubscriber auditEventSubscriber = new AuditEventSubscriberLoggingImpl();
-            MasterMain master = new MasterMain(factory, auditEventSubscriber);
+            MeterRegistry meterRegistry = new CompositeMeterRegistry().add(new SimpleMeterRegistry());
+            MasterMain master = new MasterMain(factory, auditEventSubscriber, meterRegistry);
             master.start(); // blocks until shutdown hook (ctrl-c)
         } catch (Exception e) {
             // unexpected to get a RuntimeException, will exit

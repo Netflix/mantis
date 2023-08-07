@@ -609,7 +609,6 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
     @Override
     public SupervisorStrategy supervisorStrategy() {
         // custom supervisor strategy to resume the Actor on Exception instead of the default restart
-//        return MantisActorSupervisorStrategy.getInstance().create();
         return new MantisActorSupervisorStrategy(meterRegistry).create();
     }
 

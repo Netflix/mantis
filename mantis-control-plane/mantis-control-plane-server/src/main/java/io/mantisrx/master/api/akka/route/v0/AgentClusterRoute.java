@@ -33,8 +33,6 @@ import akka.http.javadsl.server.Route;
 import akka.http.javadsl.server.RouteResult;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.vm.AgentClusterOperations;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -79,17 +77,6 @@ public class AgentClusterRoute extends BaseRoute {
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
 
-//        Metrics m = new Metrics.Builder()
-//            .id("V0AgentClusterRoute")
-//            .addCounter("setActive")
-//            .addCounter("listActive")
-//            .addCounter("listJobsOnVMs")
-//            .addCounter("listAgentClusters")
-//            .build();
-//        this.setActiveCount = m.getCounter("setActive");
-//        this.listActiveCount = m.getCounter("listActive");
-//        this.listJobsOnVMsCount = m.getCounter("listJobsOnVMs");
-//        this.listAgentClustersCount = m.getCounter("listAgentClusters");
         this.setActiveCount = meterRegistry.counter("V0AgentClusterRoute_setActive");
         this.listActiveCount = meterRegistry.counter("V0AgentClusterRoute_listActive");
         this.listJobsOnVMsCount = meterRegistry.counter("V0AgentClusterRoute_listJobsOnVMs");

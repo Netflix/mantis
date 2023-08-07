@@ -23,14 +23,8 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Counter;
-//import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.WorkerPorts;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.job.IMantisWorkerEventProcessor;
@@ -44,7 +38,6 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.persistence.exceptions.InvalidWorkerStateChangeException;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.scheduler.*;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -62,9 +55,7 @@ public class JobWorker implements IMantisWorkerEventProcessor {
     private final IMantisWorkerMetadata metadata;
     private final LifecycleEventPublisher eventPublisher;
 
-//    private final Metrics metrics;
     private final MeterRegistry meterRegistry;
-//    private final MetricGroupId metricsGroupId;
 
     private final Counter numWorkerLaunched;
     private final Counter numWorkerTerminated;

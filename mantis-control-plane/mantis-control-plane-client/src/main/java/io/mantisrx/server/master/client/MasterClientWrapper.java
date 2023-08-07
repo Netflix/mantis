@@ -18,9 +18,6 @@ package io.mantisrx.server.master.client;
 
 import com.mantisrx.common.utils.Services;
 import io.micrometer.core.instrument.Counter;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.runtime.MantisJobState;
@@ -61,15 +58,8 @@ public class MasterClientWrapper {
     public MasterClientWrapper(MantisMasterGateway gateway, MeterRegistry meterRegistry) {
         this.masterClientApi = gateway;
         this.meterRegistry = meterRegistry;
-//        Metrics m = new Metrics.Builder()
-//                .name(MasterClientWrapper.class.getCanonicalName())
-//                .addCounter("MasterConnectRetryCount")
-//                .build();
-//        m = MetricsRegistry.getInstance().registerAndGet(m);
-//        masterConnectRetryCounter = m.getCounter("MasterConnectRetryCount");
         String groupName = MasterClientWrapper.class.getCanonicalName();
-        masterConnectRetryCounter = Counter.builder(groupName + ".MasterConnectRetryCount")
-            .register(meterRegistry);
+        masterConnectRetryCounter = meterRegistry.counter(groupName + ".MasterConnectRetryCount");
     }
 
     public static String getWrappedHost(String host, int workerNumber) {

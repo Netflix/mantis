@@ -45,7 +45,7 @@ import rx.schedulers.Schedulers;
 public class HighAvailabilityServicesUtil {
   private final static AtomicReference<HighAvailabilityServices> HAServiceInstanceRef = new AtomicReference<>();
 
-  public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
+    public static HighAvailabilityServices createHAServices(CoreConfiguration configuration) {
     if (configuration.isLocalMode()) {
       log.warn("HA service running in local mode. This is only valid in local test.");
       if (HAServiceInstanceRef.get() == null) {
@@ -134,10 +134,8 @@ public class HighAvailabilityServicesUtil {
     public ZkHighAvailabilityServices(CoreConfiguration configuration, MeterRegistry meterRegistry) {
       curatorService = new CuratorService(configuration, meterRegistry);
         String groupName = "ZkHighAvailabilityServices";
-        resourceLeaderChangeCounter = Counter.builder(groupName + "_resourceLeaderChangeCounter")
-            .register(meterRegistry);
-        resourceLeaderAlreadyRegisteredCounter = Counter.builder(groupName + "_resourceLeaderAlreadyRegisteredCounter")
-            .register(meterRegistry);
+        resourceLeaderChangeCounter = meterRegistry.counter(groupName + "_resourceLeaderChangeCounter");
+        resourceLeaderAlreadyRegisteredCounter = meterRegistry.counter(groupName + "_resourceLeaderAlreadyRegisteredCounter");
     }
 
     @Override

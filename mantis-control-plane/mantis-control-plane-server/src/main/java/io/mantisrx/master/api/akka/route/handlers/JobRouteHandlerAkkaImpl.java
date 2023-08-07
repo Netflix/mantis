@@ -20,9 +20,6 @@ import static akka.pattern.PatternsCS.ask;
 
 import akka.actor.ActorRef;
 import io.micrometer.core.instrument.Counter;
-//import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
 import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto;
 import io.mantisrx.server.master.config.ConfigurationProvider;
@@ -42,10 +39,10 @@ public class JobRouteHandlerAkkaImpl implements JobRouteHandler {
     private final Counter listJobIds;
     private final Counter listArchivedWorkers;
     private final Duration timeout;
-//    private final MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
     public JobRouteHandlerAkkaImpl(ActorRef jobClusterManagerActor, MeterRegistry meterRegistry) {
-//        this.meterRegistry = meterRegistry;
+        this.meterRegistry = meterRegistry;
         this.jobClustersManagerActor = jobClusterManagerActor;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.timeout = Duration.ofMillis(timeoutMs);

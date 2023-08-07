@@ -17,10 +17,6 @@
 package io.mantisrx.server.master.mesos;
 
 import com.netflix.fenzo.VirtualMachineLease;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Gauge;
-//import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;

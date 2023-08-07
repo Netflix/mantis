@@ -38,15 +38,9 @@ import com.netflix.fenzo.triggers.CronTrigger;
 import com.netflix.fenzo.triggers.TriggerOperator;
 import com.netflix.fenzo.triggers.exceptions.SchedulerException;
 import com.netflix.fenzo.triggers.exceptions.TriggerNotFoundException;
-import com.netflix.spectator.api.BasicTag;
 import com.netflix.spectator.impl.Preconditions;
 import io.mantisrx.common.Label;
 import io.micrometer.core.instrument.Counter;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
-//import io.mantisrx.common.metrics.spectator.GaugeCallback;
-//import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.JobClustersManagerActor.UpdateSchedulingInfo;
 import io.mantisrx.master.akka.MantisActorSupervisorStrategy;
 import io.mantisrx.master.api.akka.route.proto.JobClusterProtoAdapter.JobIdInfo;
@@ -252,33 +246,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
 
         initializedBehavior =  buildInitializedBehavior();
         disabledBehavior = buildDisabledBehavior();
-
-//        MetricGroupId metricGroupId = getMetricGroupId(name);
-//        Metrics m = new Metrics.Builder()
-//            .id(metricGroupId)
-//            .addCounter("numJobSubmissions")
-//            .addCounter("numJobSubmissionFailures")
-//            .addCounter("numJobShutdowns")
-//            .addCounter("numJobActorCreationCounter")
-//            .addCounter("numJobsInitialized")
-//            .addCounter("numJobClustersInitialized")
-//            .addCounter("numJobClusterInitializeFailures")
-//            .addCounter("numJobClusterEnable")
-//            .addCounter("numJobClusterEnableErrors")
-//            .addCounter("numJobClusterDisable")
-//            .addCounter("numJobClusterDisableErrors")
-//            .addCounter("numJobClusterDelete")
-//            .addCounter("numJobClusterDeleteErrors")
-//            .addCounter("numJobClusterUpdate")
-//            .addCounter("numJobClusterUpdateErrors")
-//            .addCounter("numSLAEnforcementExecutions")
-//            .addGauge(new GaugeCallback(metricGroupId, "acceptedJobsGauge", () -> 1.0 * this.jobManager.acceptedJobsCount()))
-//            .addGauge(new GaugeCallback(metricGroupId, "activeJobsGauge", () -> 1.0 * this.jobManager.activeJobsCount()))
-//            .addGauge(new GaugeCallback(metricGroupId, "terminatingJobsGauge", () -> 1.0 * this.jobManager.terminatingJobsMap.size()))
-//            .addGauge(new GaugeCallback(metricGroupId, "completedJobsGauge", () -> 1.0 * this.jobManager.completedJobsCache.completedJobs.size()))
-//            .addGauge(new GaugeCallback(metricGroupId, "actorToJobIdMappingsGauge", () -> 1.0 * this.jobManager.actorToJobIdMap.size()))
-////            .build();
-//        m = MetricsRegistry.getInstance().registerAndGet(m);
 
         this.numJobSubmissions = addCounter( "numJobSubmissions");
         this.numJobSubmissionFailures = addCounter( "numJobSubmissionFailures");
@@ -658,10 +625,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
                 .build();
     }
 
-//    MetricGroupId getMetricGroupId(String name) {
-//        return new MetricGroupId("JobClusterActor", new BasicTag("jobCluster", name));
-//    }
-
     @Override
     public void preStart() throws Exception {
         logger.info("JobClusterActor {} started", name);
@@ -674,7 +637,6 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         super.postStop();
         if (name != null) {
             // de-register metrics from MetricsRegistry
-//            MetricsRegistry.getInstance().remove(getMetricGroupId(name));
             meterRegistry.remove(numJobSubmissions);
             meterRegistry.remove(numJobShutdowns);
             meterRegistry.remove(numJobActorCreationCounter);
@@ -716,7 +678,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     @Override
     public SupervisorStrategy supervisorStrategy() {
         // custom supervisor strategy to resume the child actors on Exception instead of the default restart
-        return MantisActorSupervisorStrategy.getInstance().create();
+        return new MantisActorSupervisorStrategy(meterRegistry).create();
     }
 
 

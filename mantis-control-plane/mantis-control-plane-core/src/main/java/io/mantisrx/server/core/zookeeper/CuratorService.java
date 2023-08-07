@@ -18,9 +18,6 @@ package io.mantisrx.server.core.zookeeper;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-//import io.mantisrx.common.metrics.Gauge;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.server.core.BaseService;
 import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.Service;
@@ -80,12 +77,10 @@ public class CuratorService extends BaseService {
             public void stateChanged(CuratorFramework client, ConnectionState newState) {
                 if (newState.isConnected()) {
                     LOG.info("Curator connected");
-//                    isConnectedGauge.set(1L);
                     isConnected.set(1L);
                 } else {
                     // ToDo: determine if it is safe to restart our service instead of committing suicide
                     LOG.error("Curator connection lost");
-//                    isConnectedGauge.set(0L);
                     isConnected.set(0L);
                 }
             }

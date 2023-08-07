@@ -16,7 +16,6 @@
 
 package io.mantisrx.server.master.client;
 
-//import io.mantisrx.common.metrics.Counter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;

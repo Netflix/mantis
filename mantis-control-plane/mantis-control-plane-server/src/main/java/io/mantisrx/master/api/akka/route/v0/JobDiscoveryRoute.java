@@ -30,9 +30,6 @@ import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.stream.javadsl.Source;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.api.akka.route.handlers.JobDiscoveryRouteHandler;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
@@ -53,7 +50,6 @@ public class JobDiscoveryRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobDiscoveryRoute.class);
     private final JobDiscoveryRouteHandler jobDiscoveryRouteHandler;
 
-//    private final Metrics metrics;
     private final MeterRegistry meterRegistry;
     private final Counter schedulingInfoStreamGET;
     private final Counter jobClusterInfoStreamGET;
@@ -61,16 +57,8 @@ public class JobDiscoveryRoute extends BaseRoute {
     public JobDiscoveryRoute(final JobDiscoveryRouteHandler jobDiscoveryRouteHandler, MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         this.jobDiscoveryRouteHandler = jobDiscoveryRouteHandler;
-//        Metrics m = new Metrics.Builder()
-//                .id("JobDiscoveryRoute")
-//                .addCounter("schedulingInfoStreamGET")
-//                .addCounter("jobClusterInfoStreamGET")
-//                .build();
-//        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
-//        this.schedulingInfoStreamGET = metrics.getCounter("schedulingInfoStreamGET");
-//        this.jobClusterInfoStreamGET = metrics.getCounter("jobClusterInfoStreamGET");
-        this.schedulingInfoStreamGET = meterRegistry.counter("JobDiscoveryRoute" + "_" + "schedulingInfoStreamGET");
-        this.jobClusterInfoStreamGET = meterRegistry.counter("JobDiscoveryRoute" + "_" + "jobClusterInfoStreamGET");
+        this.schedulingInfoStreamGET = meterRegistry.counter("JobDiscoveryRoute_schedulingInfoStreamGET");
+        this.jobClusterInfoStreamGET = meterRegistry.counter("JobDiscoveryRoute_jobClusterInfoStreamGET");
     }
 
     private static final HttpHeader ACCESS_CONTROL_ALLOW_ORIGIN_HEADER =

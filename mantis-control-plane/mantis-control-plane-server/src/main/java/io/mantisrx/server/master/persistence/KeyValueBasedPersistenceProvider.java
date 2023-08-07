@@ -16,9 +16,6 @@
 
 package io.mantisrx.server.master.persistence;
 
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.master.events.LifecycleEventPublisher;
 import io.mantisrx.master.jobcluster.IJobClusterMetadata;
 import io.mantisrx.master.jobcluster.job.IMantisJobMetadata;
@@ -138,15 +135,6 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         this.kvStore = kvStore;
         this.eventPublisher = eventPublisher;
         this.meterRegistry = meterRegistry;
-//        Metrics m = new Metrics.Builder()
-//            .id("storage")
-//            .addCounter("noWorkersFound")
-//            .addCounter("workersFound")
-//            .build();
-//
-//        m = MetricsRegistry.getInstance().registerAndGet(m);
-//        this.noWorkersFoundCounter = m.getCounter("noWorkersFound");
-//        this.workersFoundCounter = m.getCounter("workersFound");
         this.noWorkersFoundCounter = meterRegistry.counter("Storage_noWorkersFound");
         this.workersFoundCounter = meterRegistry.counter("Storage_workersFound");
     }

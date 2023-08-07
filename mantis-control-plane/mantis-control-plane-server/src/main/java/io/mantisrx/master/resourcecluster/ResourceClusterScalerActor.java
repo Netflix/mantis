@@ -20,13 +20,8 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-//import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.Ack;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
 import io.micrometer.core.instrument.Counter;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.master.resourcecluster.ResourceClusterActor.GetClusterUsageRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesRequest;
 import io.mantisrx.master.resourcecluster.proto.GetClusterIdleInstancesResponse;
@@ -42,7 +37,6 @@ import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -131,25 +125,6 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
         this.numScaleUp = addCounter("numScaleUp");
         this.numReachScaleMinLimit = addCounter("numReachScaleMinLimit");
         this.numScaleRuleTrigger = addCounter("numScaleRuleTrigger");
-
-//        MetricGroupId metricGroupId = new MetricGroupId(
-//            "ResourceClusterScalerActor",
-//            new BasicTag("resourceCluster", this.clusterId.getResourceID()));
-//
-//        Metrics m = new Metrics.Builder()
-//            .id(metricGroupId)
-//            .addCounter("numScaleDown")
-//            .addCounter("numReachScaleMaxLimit")
-//            .addCounter("numScaleUp")
-//            .addCounter("numReachScaleMinLimit")
-//            .addCounter("numScaleRuleTrigger")
-//            .build();
-//        m = MetricsRegistry.getInstance().registerAndGet(m);
-//        this.numScaleDown = m.getCounter("numScaleDown");
-//        this.numReachScaleMaxLimit = m.getCounter("numReachScaleMaxLimit");
-//        this.numScaleUp = m.getCounter("numScaleUp");
-//        this.numReachScaleMinLimit = m.getCounter("numReachScaleMinLimit");
-//        this.numScaleRuleTrigger = m.getCounter("numScaleRuleTrigger");
     }
 
     private Counter addCounter(String name) {
