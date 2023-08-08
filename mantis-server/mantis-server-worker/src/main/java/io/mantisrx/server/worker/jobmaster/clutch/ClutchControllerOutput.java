@@ -17,8 +17,10 @@
 package io.mantisrx.server.worker.jobmaster.clutch;
 
 import io.mantisrx.runtime.descriptor.StageScalingPolicy;
+import lombok.ToString;
 
 
+@ToString
 public class ClutchControllerOutput {
 
     public final StageScalingPolicy.ScalingReason reason;

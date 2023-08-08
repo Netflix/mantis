@@ -34,6 +34,7 @@ public class ClutchMantisStageActuator implements Observable.Transformer<Tuple3<
 
     protected Double processStep(Tuple3<String, Double, Integer> tup) {
         int desiredNumWorkers = ((Double) Math.ceil(tup._2)).intValue();
+        logger.info("[Autoscaling] processStep={}", desiredNumWorkers);
         logger.info("Received request to scale to {} from {} workers.", desiredNumWorkers, tup._3);
 
         String reason = tup._1;

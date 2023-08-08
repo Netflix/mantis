@@ -18,8 +18,12 @@ package io.mantisrx.server.worker.jobmaster.control.utils;
 
 
 import io.mantisrx.server.worker.jobmaster.control.Controller;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 
+@Slf4j
+@ToString
 public class Integrator extends Controller {
 
     private double sum = 0;
@@ -52,9 +56,14 @@ public class Integrator extends Controller {
 
     @Override
     protected Double processStep(Double input) {
+        log.info("[Autoscaling] integratorPrevSum={}", sum);
         sum += input;
         sum = (sum > max) ? max : sum;
         sum = (sum < min) ? min : sum;
+        log.info("[Autoscaling] integratorMin={}", min);
+        log.info("[Autoscaling] integratorMax={}", max);
+        log.info("[Autoscaling] integratorInput={}", input);
+        log.info("[Autoscaling] integratorSum={}", sum);
         return sum;
     }
 }

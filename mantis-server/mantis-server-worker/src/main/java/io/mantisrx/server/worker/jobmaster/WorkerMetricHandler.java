@@ -126,7 +126,7 @@ import rx.subjects.PublishSubject;
         public StageMetricDataOperator(final int stage,
                                        final Func1<Integer, Integer> numStageWorkersFn,
                                        final AutoScaleMetricsConfig autoScaleMetricsConfig) {
-            logger.debug("setting operator for stage " + stage);
+            logger.info("setting operator for stage " + stage);
             this.stage = stage;
             this.numStageWorkersFn = numStageWorkersFn;
             this.autoScaleMetricsConfig = autoScaleMetricsConfig;
@@ -192,7 +192,7 @@ import rx.subjects.PublishSubject;
         private void addDataPoint(final MetricData datapoint) {
             final int workerIndex = datapoint.getWorkerIndex();
 
-            logger.debug("adding data point for worker idx={} data={}", workerIndex, datapoint);
+            logger.info("[fdc-91] adding data point for worker idx={} data={}", workerIndex, datapoint);
 
             WorkerMetrics workerMetrics = workersMap.get(workerIndex);
             if (workerMetrics == null) {
@@ -260,7 +260,7 @@ import rx.subjects.PublishSubject;
 
         @Override
         public Subscriber<? super MetricData> call(final Subscriber<? super Object> child) {
-            child.add(Schedulers.computation().createWorker().schedulePeriodically(
+                child.add(Schedulers.computation().createWorker().schedulePeriodically(
                     new Action0() {
                         @Override
                         public void call() {
@@ -283,8 +283,9 @@ import rx.subjects.PublishSubject;
                                 final String metricGrp = userDefinedMetric.getKey();
                                 for (String metric : userDefinedMetric.getValue()) {
                                     if (!allWorkerAggregates.containsKey(metricGrp) || !allWorkerAggregates.get(metricGrp).getGauges().containsKey(metric)) {
-                                        logger.debug("no gauge data found for UserDefined (metric={})", userDefinedMetric);
+                                        logger.info("no gauge data found for UserDefined (metric={})", userDefinedMetric);
                                     } else {
+                                        // TODO: not sure if this gets hit
                                         jobAutoScaleObserver.onNext(
                                                 new JobAutoScaler.Event(StageScalingPolicy.ScalingReason.UserDefined, stage,
                                                         allWorkerAggregates.get(metricGrp).getGauges().get(metric), numWorkers, ""));
@@ -306,6 +307,7 @@ import rx.subjects.PublishSubject;
                                 }
                             }
                             if (allWorkerAggregates.containsKey(RESOURCE_USAGE_METRIC_GROUP)) {
+                                // TODO: yes!
                                 // cpuPctUsageCurr is Published as (cpuUsageCurr * 100.0) from ResourceUsagePayloadSetter, reverse transform to retrieve curr cpu usage
                                 double cpuUsageCurr = allWorkerAggregates.get(RESOURCE_USAGE_METRIC_GROUP).getGauges().get(MetricStringConstants.CPU_PCT_USAGE_CURR) / 100.0;
                                 jobAutoScaleObserver.onNext(
@@ -324,6 +326,7 @@ import rx.subjects.PublishSubject;
                             }
 
                             if (allWorkerAggregates.containsKey(DATA_DROP_METRIC_GROUP)) {
+                                // TODO: yes!
                                 final GaugeData gaugeData = allWorkerAggregates.get(DATA_DROP_METRIC_GROUP);
                                 final Map<String, Double> gauges = gaugeData.getGauges();
                                 if (gauges.containsKey(DROP_PERCENT)) {
@@ -334,6 +337,7 @@ import rx.subjects.PublishSubject;
                             }
 
                             if (allWorkerAggregates.containsKey(WORKER_STAGE_INNER_INPUT)) {
+                                // TODO: yes!
                                 final GaugeData gaugeData = allWorkerAggregates.get(WORKER_STAGE_INNER_INPUT);
                                 final Map<String, Double> gauges = gaugeData.getGauges();
                                 if (gauges.containsKey(ON_NEXT_GAUGE)) {
@@ -383,7 +387,7 @@ import rx.subjects.PublishSubject;
 
                 @Override
                 public void onNext(MetricData metricData) {
-                    logger.debug("Got metric metricData for job " + jobId + " stage " + stage +
+                    logger.info("[fdc-91] Got metric metricData for job " + jobId + " stage " + stage +
                             ", worker " + metricData.getWorkerNumber() + ": " + metricData);
                     if (jobId.equals(metricData.getJobId())) {
                         addDataPoint(metricData);
@@ -402,7 +406,7 @@ import rx.subjects.PublishSubject;
                     final Map<Integer, WorkerAssignments> workerAssignments = jobSchedulingInfo.getWorkerAssignments();
                     for (Map.Entry<Integer, WorkerAssignments> workerAssignmentsEntry : workerAssignments.entrySet()) {
                         final WorkerAssignments workerAssignment = workerAssignmentsEntry.getValue();
-                        logger.debug("setting numWorkers={} for stage={}", workerAssignment.getNumWorkers(), workerAssignment.getStage());
+                        logger.info("setting numWorkers={} for stage={}", workerAssignment.getNumWorkers(), workerAssignment.getStage());
                         numWorkersByStage.put(workerAssignment.getStage(), workerAssignment.getNumWorkers());
                         workerHostsByStage.put(workerAssignment.getStage(), new ArrayList<>(workerAssignment.getHosts().values()));
                     }
