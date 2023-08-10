@@ -310,20 +310,32 @@ public class ResourceClusterScalerActor extends AbstractActorWithTimers {
 
             if (!req.getEnabled()) {
                 // setup a timer to re-enable autoscaling after a given period
-                getTimers().startSingleTimer(
-                    "ExpireSetScalerStatusRequest-" + clusterId,
-                    new ExpireSetScalerStatusRequest(req),
-                    Duration.ofSeconds(req.getExpirationDurationInSeconds()));
+                setExpireSetScalerStatusRequestTimer(new ExpireSetScalerStatusRequest(req));
             }
         }
     }
 
     private void onExpireSetScalerStatus(ExpireSetScalerStatusRequest req) {
+        log.info("Expiration set scaler status request: {}", req);
+
         // re-enable autoscaling if it's been disabled for longer than threshold
         final ContainerSkuID skuID = req.request.getSkuId();
-        if (skuToRuleMap.containsKey(skuID) && !skuToRuleMap.get(skuID).isLastActionOlderThan(req.getRequest().getExpirationDurationInSeconds())) {
-            skuToRuleMap.get(skuID).setEnabled(true);
+        final ClusterAvailabilityRule rule = skuToRuleMap.get(skuID);
+        if (rule != null && !rule.isEnabled()) {
+            if (!skuToRuleMap.get(skuID).isLastActionOlderThan(req.getRequest().getExpirationDurationInSeconds())) {
+                skuToRuleMap.get(skuID).setEnabled(true);
+            } else {
+                // try again later
+                setExpireSetScalerStatusRequestTimer(req);
+            }
         }
+    }
+
+    private void setExpireSetScalerStatusRequestTimer(ExpireSetScalerStatusRequest req) {
+        getTimers().startSingleTimer(
+            "ExpireSetScalerStatusRequest-" + clusterId,
+            req,
+            Duration.ofSeconds(req.getRequest().getExpirationDurationInSeconds()));
     }
 
     private ScaleResourceRequest translateScaleDecision(ScaleDecision decision) {
