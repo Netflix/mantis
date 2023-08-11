@@ -32,8 +32,8 @@ import com.netflix.fenzo.queues.TaskQueue;
 import com.netflix.fenzo.queues.TaskQueueException;
 import com.netflix.fenzo.queues.tiered.TieredQueue;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Gauge;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.GaugeCallback;
@@ -53,6 +53,9 @@ import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.server.master.scheduler.WorkerUnscheduleable;
 import io.mantisrx.shaded.com.google.common.collect.Sets;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -90,25 +93,42 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private final Counter numResourceAllocations;
     private final Counter numResourceOffersRejected;
     private final Gauge workersToLaunch;
+    private final AtomicLong workersToLaunchValue = new AtomicLong(0);
     private final Gauge pendingWorkers;
+    private final AtomicLong pendingWorkersValue = new AtomicLong(0);
     private final Gauge schedulerRunMillis;
+    private final AtomicLong schedulerRunMillisValue = new AtomicLong(0);
     private final Counter perWorkerSchedulingTimeMs;
     private final SynchronizedHistogram workerAcceptedToLaunchedDistMs = new SynchronizedHistogram(3_600_000L, 3);
     private final Gauge totalActiveAgents;
+    private final AtomicLong totalActiveAgentsValue = new AtomicLong(0);
     private final Counter numAgentsUsed;
     private final Gauge idleAgents;
+    private final AtomicLong idleAgentsValue = new AtomicLong(0);
     private final Gauge totalAvailableCPUs;
+    private final AtomicLong totalAvailableCPUsValue = new AtomicLong(0);
     private final Gauge totalAllocatedCPUs;
+    private final AtomicLong totalAllocatedCPUsValue = new AtomicLong(0);
     private final Gauge totalAvailableMemory;
+    private final AtomicLong totalAvailableMemoryValue = new AtomicLong(0);
     private final Gauge totalAllocatedMemory;
+    private final AtomicLong totalAllocatedMemoryValue = new AtomicLong(0);
     private final Gauge totalAvailableNwMbps;
+    private final AtomicLong totalAvailableNwMbpsValue = new AtomicLong(0);
     private final Gauge totalAllocatedNwMbps;
+    private final AtomicLong totalAllocatedNwMbpsValue = new AtomicLong(0);
     private final Gauge cpuUtilization;
+    private final AtomicLong cpuUtilizationValue = new AtomicLong(0);
     private final Gauge memoryUtilization;
+    private final AtomicLong memoryUtilizationValue = new AtomicLong(0);
     private final Gauge networkUtilization;
+    private final AtomicLong networkUtilizationValue = new AtomicLong(0);
     private final Gauge dominantResUtilization;
+    private final AtomicLong dominantResUtilizationValue = new AtomicLong(0);
     private final Gauge fenzoLaunchedTasks;
+    private final AtomicLong fenzoLaunchedTasksValue = new AtomicLong(0);
     private final Gauge jobMgrRunningWorkers;
+    private final AtomicLong jobMgrRunningWorkersValue = new AtomicLong(0);
     private final Counter numAutoScaleUpActions;
     private final Counter numAutoScaleDownActions;
     private final Counter numMissingWorkerPorts;
@@ -123,16 +143,19 @@ public class SchedulingService extends BaseService implements MantisScheduler {
     private long SCHEDULING_ITERATION_INTERVAL_MILLIS = 50;
     private long MAX_DELAY_MILLIS_BETWEEN_SCHEDULING_ITER = 5_000;
     private AtomicLong lastSchedulingResultCallback = new AtomicLong(System.currentTimeMillis());
+    private MeterRegistry meterRegistry;
 
     public SchedulingService(final JobMessageRouter jobMessageRouter,
                              final WorkerRegistry workerRegistry,
                              final Observable<String> vmLeaseRescindedObservable,
-                             final VirtualMachineMasterService virtualMachineService) {
+                             final VirtualMachineMasterService virtualMachineService,
+                             MeterRegistry meterRegistry) {
         super(true);
         this.schedulingState = new SchedulingStateManager();
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
         this.virtualMachineService = virtualMachineService;
+        this.meterRegistry = meterRegistry;
         this.slaveClusterAttributeName = ConfigurationProvider.getConfig().getSlaveClusterAttributeName();
         SCHEDULING_ITERATION_INTERVAL_MILLIS = ConfigurationProvider.getConfig().getSchedulerIterationIntervalMillis();
         AgentFitnessCalculator agentFitnessCalculator = new AgentFitnessCalculator();
@@ -152,71 +175,57 @@ public class SchedulingService extends BaseService implements MantisScheduler {
         taskSchedulingService = setupTaskSchedulingService(taskScheduler);
 
         setupAutoscaleRulesDynamicUpdater();
-        MetricGroupId metricGroupId = new MetricGroupId(SchedulingService.class.getCanonicalName());
-        Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addCounter("numWorkersLaunched")
-                .addCounter("numResourceOffersReceived")
-                .addCounter("numResourceAllocations")
-                .addCounter("numResourceOffersRejected")
-                .addGauge("workersToLaunch")
-                .addGauge("pendingWorkers")
-                .addGauge("schedulerRunMillis")
-                .addCounter("perWorkerSchedulingTimeMillis")
-                .addGauge(new GaugeCallback(metricGroupId, "workerAcceptedToLaunchedMsP50", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(50)))
-                .addGauge(new GaugeCallback(metricGroupId, "workerAcceptedToLaunchedMsP95", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(95)))
-                .addGauge(new GaugeCallback(metricGroupId, "workerAcceptedToLaunchedMsP99", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(99)))
-                .addGauge(new GaugeCallback(metricGroupId, "workerAcceptedToLaunchedMsMax", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(100)))
-                .addGauge("totalActiveAgents")
-                .addCounter("numAgentsUsed")
-                .addGauge("idleAgents")
-                .addGauge("totalAvailableCPUs")
-                .addGauge("totalAllocatedCPUs")
-                .addGauge("totalAvailableMemory")
-                .addGauge("totalAllocatedMemory")
-                .addGauge("totalAvailableNwMbps")
-                .addGauge("totalAllocatedNwMbps")
-                .addGauge("cpuUtilization")
-                .addGauge("memoryUtilization")
-                .addGauge("networkUtilization")
-                .addGauge("dominantResUtilization")
-                .addCounter("numAutoScaleUpActions")
-                .addCounter("numAutoScaleDownActions")
-                .addGauge("fenzoLaunchedTasks")
-                .addGauge("jobMgrRunningWorkers")
-                .addCounter("numMissingWorkerPorts")
-                .addCounter("schedulingResultExceptions")
-                .addCounter("schedulingCallbackExceptions")
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        numWorkersLaunched = m.getCounter("numWorkersLaunched");
-        numResourceOffersReceived = m.getCounter("numResourceOffersReceived");
-        numResourceAllocations = m.getCounter("numResourceAllocations");
-        numResourceOffersRejected = m.getCounter("numResourceOffersRejected");
-        workersToLaunch = m.getGauge("workersToLaunch");
-        pendingWorkers = m.getGauge("pendingWorkers");
-        schedulerRunMillis = m.getGauge("schedulerRunMillis");
-        totalActiveAgents = m.getGauge("totalActiveAgents");
-        numAgentsUsed = m.getCounter("numAgentsUsed");
-        idleAgents = m.getGauge("idleAgents");
-        totalAvailableCPUs = m.getGauge("totalAvailableCPUs");
-        totalAllocatedCPUs = m.getGauge("totalAllocatedCPUs");
-        totalAvailableMemory = m.getGauge("totalAvailableMemory");
-        totalAllocatedMemory = m.getGauge("totalAllocatedMemory");
-        totalAvailableNwMbps = m.getGauge("totalAvailableNwMbps");
-        totalAllocatedNwMbps = m.getGauge("totalAllocatedNwMbps");
-        cpuUtilization = m.getGauge("cpuUtilization");
-        memoryUtilization = m.getGauge("memoryUtilization");
-        networkUtilization = m.getGauge("networkUtilization");
-        dominantResUtilization = m.getGauge("dominantResUtilization");
-        numAutoScaleUpActions = m.getCounter("numAutoScaleUpActions");
-        numAutoScaleDownActions = m.getCounter("numAutoScaleDownActions");
-        fenzoLaunchedTasks = m.getGauge("fenzoLaunchedTasks");
-        jobMgrRunningWorkers = m.getGauge("jobMgrRunningWorkers");
-        numMissingWorkerPorts = m.getCounter("numMissingWorkerPorts");
-        schedulingResultExceptions = m.getCounter("schedulingResultExceptions");
-        schedulingCallbackExceptions = m.getCounter("schedulingCallbackExceptions");
-        perWorkerSchedulingTimeMs = m.getCounter("perWorkerSchedulingTimeMillis");
+
+        numWorkersLaunched = addCounter("numWorkersLaunched");
+        numResourceOffersReceived = addCounter("numResourceOffersReceived");
+        numResourceAllocations = addCounter("numResourceAllocations");
+        numResourceOffersRejected = addCounter("numResourceOffersRejected");
+        workersToLaunch = addGauge("workersToLaunch", workersToLaunchValue);
+        pendingWorkers = addGauge("pendingWorkers", pendingWorkersValue);
+        schedulerRunMillis = addGauge("schedulerRunMillis", schedulerRunMillisValue);
+        totalActiveAgents = addGauge("totalActiveAgents", totalActiveAgentsValue);
+        numAgentsUsed = addCounter("numAgentsUsed");
+        idleAgents = addGauge("idleAgents", idleAgentsValue);
+        totalAvailableCPUs = addGauge("totalAvailableCPUs", totalAvailableCPUsValue);
+        totalAllocatedCPUs = addGauge("totalAllocatedCPUs", totalAllocatedCPUsValue);
+        totalAvailableMemory = addGauge("totalAvailableMemory", totalAvailableMemoryValue);
+        totalAllocatedMemory = addGauge("totalAllocatedMemory", totalAllocatedMemoryValue);
+        totalAvailableNwMbps = addGauge("totalAvailableNwMbps", totalAvailableNwMbpsValue);
+        totalAllocatedNwMbps = addGauge("totalAllocatedNwMbps", totalAllocatedNwMbpsValue);
+        cpuUtilization = addGauge("cpuUtilization", cpuUtilizationValue);
+        memoryUtilization = addGauge("memoryUtilization", memoryUtilizationValue);
+        networkUtilization = addGauge("networkUtilization", networkUtilizationValue);
+        dominantResUtilization = addGauge("dominantResUtilization", dominantResUtilizationValue);
+        numAutoScaleUpActions = addCounter("numAutoScaleUpActions");
+        numAutoScaleDownActions = addCounter("numAutoScaleDownActions");
+        fenzoLaunchedTasks = addGauge("fenzoLaunchedTasks", fenzoLaunchedTasksValue);
+        jobMgrRunningWorkers = addGauge("jobMgrRunningWorkers", jobMgrRunningWorkersValue);
+        numMissingWorkerPorts = addCounter("numMissingWorkerPorts");
+        schedulingResultExceptions = addCounter("schedulingResultExceptions");
+        schedulingCallbackExceptions = addCounter("schedulingCallbackExceptions");
+        perWorkerSchedulingTimeMs = addCounter("perWorkerSchedulingTimeMillis");
+
+        String groupName = SchedulingService.class.getCanonicalName();
+        Gauge.builder(groupName + "_workerAcceptedToLaunchedMsP50", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(50))
+                .register(meterRegistry);
+        Gauge.builder(groupName + "_workerAcceptedToLaunchedMsP95", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(95))
+                .register(meterRegistry);
+        Gauge.builder(groupName + "_workerAcceptedToLaunchedMsP99", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(99))
+                .register(meterRegistry);
+        Gauge.builder(groupName + "_workerAcceptedToLaunchedMsMax", () -> (double) workerAcceptedToLaunchedDistMs.getValueAtPercentile(100))
+                .register(meterRegistry);
+    }
+
+    private Counter addCounter(String name) {
+        Counter counter = Counter.builder(SchedulingService.class.getCanonicalName() + "_" + name)
+            .register(meterRegistry);
+        return counter;
+    }
+
+    private Gauge addGauge(String name, AtomicLong value) {
+        Gauge gauge = Gauge.builder(SchedulingService.class.getCanonicalName() + "_" + name, value::get)
+            .register(meterRegistry);
+        return gauge;
     }
 
     private TaskScheduler setupTaskSchedulerAndAutoScaler(Observable<String> vmLeaseRescindedObservable,
@@ -456,13 +465,13 @@ public class SchedulingService extends BaseService implements MantisScheduler {
             numResourceAllocations.increment(schedulingResult.getNumAllocations());
             numResourceOffersRejected.increment(schedulingResult.getLeasesRejected());
             final int requestedWorkers = workersLaunched + schedulingResult.getFailures().size();
-            workersToLaunch.set(requestedWorkers);
-            pendingWorkers.set(schedulingResult.getFailures().size());
-            schedulerRunMillis.set(schedulingResult.getRuntime());
-            totalActiveAgents.set(schedulingResult.getTotalVMsCount());
+            workersToLaunchValue.set(requestedWorkers);
+            pendingWorkersValue.set(schedulingResult.getFailures().size());
+            schedulerRunMillisValue.set(schedulingResult.getRuntime());
+            totalActiveAgentsValue.set(schedulingResult.getTotalVMsCount());
             numAgentsUsed.increment(assignmentResultSize);
             final int idleVMsCount = schedulingResult.getIdleVMsCount();
-            idleAgents.set(idleVMsCount);
+            idleAgentsValue.set(idleVMsCount);
             SchedulerCounters.getInstance().endIteration(requestedWorkers, workersLaunched, assignmentResultSize,
                     schedulingResult.getLeasesRejected());
             if (requestedWorkers > 0 && SchedulerCounters.getInstance().getCounter().getIterationNumber() % 10 == 0) {
@@ -600,8 +609,8 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                 final int fenzoTaskSetSize = tasks.size();
                 if (state == TaskQueue.TaskState.LAUNCHED) {
                     final int numRunningWorkers = workerRegistry.getNumRunningWorkers(null);
-                    fenzoLaunchedTasks.set(fenzoTaskSetSize);
-                    jobMgrRunningWorkers.set(numRunningWorkers);
+                    fenzoLaunchedTasksValue.set(fenzoTaskSetSize);
+                    jobMgrRunningWorkersValue.set(numRunningWorkers);
 
                     if (numRunningWorkers != fenzoTaskSetSize) {
                         logger.error("{} running workers as per Job Manager, {} tasks launched as per Fenzo", numRunningWorkers, fenzoTaskSetSize);
@@ -663,19 +672,19 @@ public class SchedulingService extends BaseService implements MantisScheduler {
                 }
             }
         }
-        totalAvailableCPUs.set((long) totalCPU);
-        totalAllocatedCPUs.set((long) usedCPU);
-        cpuUtilization.set((long) (usedCPU * 100.0 / totalCPU));
+        totalAvailableCPUsValue.set((long) totalCPU);
+        totalAllocatedCPUsValue.set((long) usedCPU);
+        cpuUtilizationValue.set((long) (usedCPU * 100.0 / totalCPU));
         double DRU = usedCPU * 100.0 / totalCPU;
-        totalAvailableMemory.set((long) totalMemory);
-        totalAllocatedMemory.set((long) usedMemory);
-        memoryUtilization.set((long) (usedMemory * 100.0 / totalMemory));
+        totalAvailableMemoryValue.set((long) totalMemory);
+        totalAllocatedMemoryValue.set((long) usedMemory);
+        memoryUtilizationValue.set((long) (usedMemory * 100.0 / totalMemory));
         DRU = Math.max(DRU, usedMemory * 100.0 / totalMemory);
-        totalAvailableNwMbps.set((long) totalNwMbps);
-        totalAllocatedNwMbps.set((long) usedNwMbps);
-        networkUtilization.set((long) (usedNwMbps * 100.0 / totalNwMbps));
+        totalAvailableNwMbpsValue.set((long) totalNwMbps);
+        totalAllocatedNwMbpsValue.set((long) usedNwMbps);
+        networkUtilizationValue.set((long) (usedNwMbps * 100.0 / totalNwMbps));
         DRU = Math.max(DRU, usedNwMbps * 100.0 / totalNwMbps);
-        dominantResUtilization.set((long) DRU);
+        dominantResUtilizationValue.set((long) DRU);
     }
 
     @Override

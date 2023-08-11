@@ -16,18 +16,17 @@
 
 package io.mantisrx.server.master;
 
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.master.config.MasterConfiguration;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func0;
@@ -37,19 +36,23 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
 
     private static final Logger logger = LoggerFactory.getLogger(LeadershipManagerZkImpl.class);
     private final Gauge isLeaderGauge;
+    private final AtomicLong isLeaderGaugeValue = new AtomicLong(0);
     private final Gauge isLeaderReadyGauge;
+    private final AtomicLong isLeaderReadyGaugeValue = new AtomicLong(0);
     private final AtomicBoolean firstTimeLeaderMode = new AtomicBoolean(false);
     private final MasterConfiguration config;
     private final ServiceLifecycle serviceLifecycle;
     private volatile boolean isLeader = false;
     private volatile boolean isReady = false;
     private volatile Instant becameLeaderAt;
+    private final MeterRegistry meterRegistry;
 
     public LeadershipManagerZkImpl(final MasterConfiguration config,
-                                   final ServiceLifecycle serviceLifecycle) {
+                                   final ServiceLifecycle serviceLifecycle,
+                                   MeterRegistry meterRegistry) {
         this.config = config;
         this.serviceLifecycle = serviceLifecycle;
-        MetricGroupId metricGroupId = new MetricGroupId(MasterMain.class.getCanonicalName());
+        this.meterRegistry = meterRegistry;
         Func0<Double> leaderSinceInSeconds = () -> {
             if (isLeader) {
                 return (double) Duration.between(becameLeaderAt, Instant.now()).getSeconds();
@@ -58,22 +61,25 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
             }
         };
 
-        Metrics m = new Metrics.Builder()
-                .id(metricGroupId)
-                .addGauge("isLeaderGauge")
-                .addGauge("isLeaderReadyGauge")
-                .addGauge(new GaugeCallback(metricGroupId, "leaderSinceInSeconds", leaderSinceInSeconds))
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        isLeaderGauge = m.getGauge("isLeaderGauge");
-        isLeaderReadyGauge = m.getGauge("isLeaderReadyGauge");
+        isLeaderGauge = addGauge("isLeaderGauge", isLeaderGaugeValue);
+        isLeaderReadyGauge = addGauge("isLeaderReadyGauge", isLeaderReadyGaugeValue);
+        String groupName = MasterMain.class.getCanonicalName();
+        Gauge.builder(groupName + "leaderSinceInSeconds", leaderSinceInSeconds::call)
+            .register(meterRegistry);
+    }
+
+    private Gauge addGauge(String name, AtomicLong value) {
+        String groupName = MasterMain.class.getCanonicalName();
+        Gauge gauge = Gauge.builder(groupName + "_" + name, value::get)
+            .register(meterRegistry);
+        return gauge;
     }
 
     public void becomeLeader() {
         logger.info("Becoming leader now");
         if (firstTimeLeaderMode.compareAndSet(false, true)) {
             serviceLifecycle.becomeLeader();
-            isLeaderGauge.set(1L);
+            isLeaderGaugeValue.set(1L);
             becameLeaderAt = Instant.now();
         } else {
             logger.warn("Unexpected to be told to enter leader mode more than once, ignoring.");
@@ -91,7 +97,7 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
 
     public void setLeaderReady() {
         logger.info("marking leader READY");
-        isLeaderReadyGauge.set(1L);
+        isLeaderReadyGaugeValue.set(1L);
         isReady = true;
     }
 
@@ -99,8 +105,8 @@ public class LeadershipManagerZkImpl implements ILeadershipManager {
         logger.info("Asked to stop being leader now");
         isReady = false;
         isLeader = false;
-        isLeaderGauge.set(0L);
-        isLeaderReadyGauge.set(0L);
+        isLeaderGaugeValue.set(0L);
+        isLeaderReadyGaugeValue.set(0L);
         if (!firstTimeLeaderMode.get()) {
             logger.warn("Unexpected to be told to stop being leader when we haven't entered leader mode before, ignoring.");
             return;

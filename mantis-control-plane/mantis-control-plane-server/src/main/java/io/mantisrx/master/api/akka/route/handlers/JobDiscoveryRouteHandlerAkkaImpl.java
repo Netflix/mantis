@@ -23,8 +23,6 @@ import static io.mantisrx.master.api.akka.route.utils.JobDiscoveryHeartbeats.SCH
 import akka.actor.ActorRef;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.master.api.akka.route.proto.JobClusterInfo;
 import io.mantisrx.master.api.akka.route.proto.JobDiscoveryRouteProto;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
@@ -35,6 +33,9 @@ import io.mantisrx.master.jobcluster.proto.JobClusterManagerProto.GetLastSubmitt
 import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.master.config.ConfigurationProvider;
 import io.mantisrx.server.master.domain.JobId;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Optional;
@@ -58,11 +59,12 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
 
     private final Counter schedInfoStreamErrors;
     private final Counter lastSubmittedJobIdStreamErrors;
+    private final MeterRegistry meterRegistry;
 
     private final AsyncLoadingCache<GetJobSchedInfoRequest, GetJobSchedInfoResponse> schedInfoCache;
     private final AsyncLoadingCache<GetLastSubmittedJobIdStreamRequest, GetLastSubmittedJobIdStreamResponse> lastSubmittedJobIdStreamRespCache;
 
-    public JobDiscoveryRouteHandlerAkkaImpl(ActorRef jobClustersManagerActor, Duration serverIdleTimeout) {
+    public JobDiscoveryRouteHandlerAkkaImpl(ActorRef jobClustersManagerActor, Duration serverIdleTimeout, MeterRegistry meterRegistry) {
         this.jobClustersManagerActor = jobClustersManagerActor;
         long timeoutMs = Optional.ofNullable(ConfigurationProvider.getConfig().getMasterApiAskTimeoutMs()).orElse(1000L);
         this.askTimeout = Duration.ofMillis(timeoutMs);
@@ -76,14 +78,9 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
             .expireAfterWrite(5, TimeUnit.SECONDS)
             .maximumSize(500)
             .buildAsync(this::lastSubmittedJobId);
-
-        Metrics m = new Metrics.Builder()
-            .id("JobDiscoveryRouteHandlerAkkaImpl")
-            .addCounter("schedInfoStreamErrors")
-            .addCounter("lastSubmittedJobIdStreamErrors")
-            .build();
-        this.schedInfoStreamErrors = m.getCounter("schedInfoStreamErrors");
-        this.lastSubmittedJobIdStreamErrors = m.getCounter("lastSubmittedJobIdStreamErrors");
+        this.meterRegistry = meterRegistry;
+        this.schedInfoStreamErrors = meterRegistry.counter("JobDiscoveryRouteHandlerAkkaImpl_schedInfoStreamErrors");
+        this.lastSubmittedJobIdStreamErrors = meterRegistry.counter("JobDiscoveryRouteHandlerAkkaImpl_lastSubmittedJobIdStreamErrors");
     }
 
 

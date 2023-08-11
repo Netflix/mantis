@@ -63,6 +63,8 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.MantisSchedulerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -115,6 +117,7 @@ public class JobClusterRouteTest {
 
     @BeforeClass
     public static void setup() throws Exception {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         TestHelpers.setupMasterConfig();
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -138,10 +141,10 @@ public class JobClusterRouteTest {
                 jobClustersManagerActor.tell(new JobClusterManagerProto.JobClustersManagerInitialize(fakeSchedulerFactory, false), ActorRef.noSender());
 
 
-                final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor);
-                final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor);
+                final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(jobClustersManagerActor, meterRegistry);
+                final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(jobClustersManagerActor, meterRegistry);
 
-                final JobClusterRoute app = new JobClusterRoute(jobClusterRouteHandler, jobRouteHandler, system);
+                final JobClusterRoute app = new JobClusterRoute(jobClusterRouteHandler, jobRouteHandler, system, meterRegistry);
                 final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute(Function.identity()).flow(system, materializer);
                 logger.info("starting test server on port {}", serverPort);
                 binding = http.bindAndHandle(routeFlow,

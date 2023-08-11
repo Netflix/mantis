@@ -47,6 +47,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
@@ -74,6 +75,7 @@ class ResourceClustersManagerActor extends AbstractActor {
     private final ActorRef resourceClusterHostActor;
     private final IMantisPersistenceProvider mantisPersistenceProvider;
     private final JobMessageRouter jobMessageRouter;
+    private MeterRegistry meterRegistry;
 
     public static Props props(
         MasterConfiguration masterConfiguration,
@@ -100,7 +102,8 @@ class ResourceClustersManagerActor extends AbstractActor {
         MantisJobStore mantisJobStore,
         ActorRef resourceClusterHostActorRef,
         IMantisPersistenceProvider mantisPersistenceProvider,
-        JobMessageRouter jobMessageRouter) {
+        JobMessageRouter jobMessageRouter,
+        MeterRegistry meterRegistry) {
         this.masterConfiguration = masterConfiguration;
         this.clock = clock;
         this.rpcService = rpcService;
@@ -108,7 +111,7 @@ class ResourceClustersManagerActor extends AbstractActor {
         this.resourceClusterHostActor = resourceClusterHostActorRef;
         this.mantisPersistenceProvider = mantisPersistenceProvider;
         this.jobMessageRouter = jobMessageRouter;
-
+        this.meterRegistry = meterRegistry;
         this.resourceClusterActorMap = new HashMap<>();
     }
 
@@ -235,7 +238,7 @@ class ResourceClustersManagerActor extends AbstractActor {
 
     @Override
     public SupervisorStrategy supervisorStrategy() {
-        return MantisActorSupervisorStrategy.getInstance().create();
+        return new MantisActorSupervisorStrategy(meterRegistry).create();
     }
 
     @Value

@@ -23,6 +23,7 @@ import akka.actor.OneForOneStrategy;
 import akka.actor.SupervisorStrategy;
 import akka.actor.SupervisorStrategyConfigurator;
 import akka.japi.pf.DeciderBuilder;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,10 +33,19 @@ import org.slf4j.LoggerFactory;
  */
 public class MantisActorSupervisorStrategy implements SupervisorStrategyConfigurator {
     private static final Logger LOGGER = LoggerFactory.getLogger(MantisActorSupervisorStrategy.class);
+    private static final MantisActorSupervisorStrategy INSTANCE = new MantisActorSupervisorStrategy(meterRegistry);
 
-    private static final MantisActorSupervisorStrategy INSTANCE = new MantisActorSupervisorStrategy();
+    private MeterRegistry meterRegistry;
 
-    public static MantisActorSupervisorStrategy getInstance() {
+    public MantisActorSupervisorStrategy(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    public static synchronized getInstance(MeterRegistry meterRegistry) {
+        if (INSTANCE == null) {
+            ActorSystemMetrics actorMetrics = new ActorSystemMetrics(meterRegistry);
+            INSTANCE = new MantisActorSupervisorStrategy(actorMetrics);
+        }
         return INSTANCE;
     }
 
@@ -44,23 +54,23 @@ public class MantisActorSupervisorStrategy implements SupervisorStrategyConfigur
         // custom supervisor strategy to resume the child actors on Exception instead of the default restart behavior
         return new OneForOneStrategy(DeciderBuilder
             .match(ActorInitializationException.class, e -> {
-                ActorSystemMetrics.getInstance().incrementActorInitExceptionCount();
+                new ActorSystemMetrics(meterRegistry).incrementActorInitExceptionCount();
                 LOGGER.error("Stopping the actor because of exception", e);
                 return SupervisorStrategy.stop();
             })
             .match(ActorKilledException.class, e -> {
-                ActorSystemMetrics.getInstance().incrementActorKilledCount();
+                new ActorSystemMetrics(meterRegistry).incrementActorKilledCount();
                 LOGGER.error("Stopping the actor because of exception", e);
                 return SupervisorStrategy.stop();
             })
             .match(DeathPactException.class, e -> {
-                ActorSystemMetrics.getInstance().incrementActorDeathPactExcCount();
+                new ActorSystemMetrics(meterRegistry).incrementActorDeathPactExcCount();
                 LOGGER.error("Stopping the actor because of exception", e);
                 return SupervisorStrategy.stop();
             })
             .match(Exception.class, e -> {
                 LOGGER.error("resuming actor on exception {}", e.getMessage(), e);
-                ActorSystemMetrics.getInstance().incrementActorResumeCount();
+                new ActorSystemMetrics(meterRegistry).incrementActorResumeCount();
                 return SupervisorStrategy.resume();
             })
             .build());

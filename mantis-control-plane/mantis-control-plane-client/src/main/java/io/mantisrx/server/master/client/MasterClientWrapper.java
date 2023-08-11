@@ -17,9 +17,7 @@
 package io.mantisrx.server.master.client;
 
 import com.mantisrx.common.utils.Services;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.runtime.MantisJobState;
@@ -29,6 +27,8 @@ import io.mantisrx.server.core.JobSchedulingInfo;
 import io.mantisrx.server.core.NamedJobInfo;
 import io.mantisrx.server.core.WorkerAssignments;
 import io.mantisrx.server.core.WorkerHost;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.ToDeltaEndpointInjector;
 import java.util.ArrayList;
@@ -48,20 +48,18 @@ public class MasterClientWrapper {
 
     public static final String InvalidNamedJob = "No_such_named_job";
     private static final Logger logger = LoggerFactory.getLogger(MasterClientWrapper.class);
+    private final MeterRegistry meterRegistry;
     private final Counter masterConnectRetryCounter;
     private final MantisMasterGateway masterClientApi;
     private final PublishSubject<JobSinkNumWorkers> numSinkWorkersSubject = PublishSubject.create();
     private final PublishSubject<JobNumWorkers> numWorkersSubject = PublishSubject.create();
 
     // blocks until getting master info from zookeeper
-    public MasterClientWrapper(MantisMasterGateway gateway) {
+    public MasterClientWrapper(MantisMasterGateway gateway, MeterRegistry meterRegistry) {
         this.masterClientApi = gateway;
-        Metrics m = new Metrics.Builder()
-                .name(MasterClientWrapper.class.getCanonicalName())
-                .addCounter("MasterConnectRetryCount")
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        masterConnectRetryCounter = m.getCounter("MasterConnectRetryCount");
+        this.meterRegistry = meterRegistry;
+        String groupName = MasterClientWrapper.class.getCanonicalName();
+        masterConnectRetryCounter = meterRegistry.counter(groupName + "_MasterConnectRetryCount");
     }
 
     public static String getWrappedHost(String host, int workerNumber) {
@@ -76,15 +74,16 @@ public class MasterClientWrapper {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         Properties zkProps = new Properties();
         zkProps.put("mantis.zookeeper.connectString", "ec2-50-19-255-1.compute-1.amazonaws.com:2181,ec2-54-235-159-245.compute-1.amazonaws.com:2181,ec2-50-19-255-97.compute-1.amazonaws.com:2181,ec2-184-73-152-248.compute-1.amazonaws.com:2181,ec2-50-17-247-179.compute-1.amazonaws.com:2181");
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
         String jobId = "GroupByIPNJ-12";
         HighAvailabilityServices haServices =
-            HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class));
+            HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class), meterRegistry);
         Services.startAndWait(haServices);
-        MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi());
+        MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi(), new SimpleMeterRegistry());
         clientWrapper.getMasterClientApi()
                 .flatMap(new Func1<MantisMasterGateway, Observable<EndpointChange>>() {
                     @Override
@@ -172,7 +171,7 @@ public class MasterClientWrapper {
     }
 
     public Observable<EndpointChange> getAllWorkerMetricLocations(final String jobId) {
-        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "AllSchedInfoRetry", 10);
+        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "AllSchedInfoRetry", 10, meterRegistry);
         Observable<List<Endpoint>> schedulingUpdates =
                                 masterClientApi
                                         .schedulingChanges(jobId)
@@ -214,7 +213,7 @@ public class MasterClientWrapper {
 
     public Observable<EndpointChange> getSinkLocations(final String jobId, final int sinkStage,
                                                        final int forPartition, final int totalPartitions) {
-        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "SchedInfoRetry", 10);
+        final ConditionalRetry schedInfoRetry = new ConditionalRetry(masterConnectRetryCounter, "SchedInfoRetry", 10, meterRegistry);
         Observable<List<Endpoint>> schedulingUpdates =
                 masterClientApi
                                     .schedulingChanges(jobId)
@@ -274,13 +273,13 @@ public class MasterClientWrapper {
     }
 
     public Observable<Boolean> namedJobExists(final String jobName) {
-        final ConditionalRetry namedJobRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobExists", Integer.MAX_VALUE);
+        final ConditionalRetry namedJobRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobExists", Integer.MAX_VALUE, meterRegistry);
         logger.info("verifying if job name exists: " + jobName);
         return masterClientApi.namedJobExists(jobName).retryWhen(namedJobRetry.getRetryLogic());
     }
 
     public Observable<String> getNamedJobsIds(final String jobName) {
-        final ConditionalRetry namedJobsIdsRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobsIds", Integer.MAX_VALUE);
+        final ConditionalRetry namedJobsIdsRetry = new ConditionalRetry(masterConnectRetryCounter, "NamedJobsIds", Integer.MAX_VALUE, meterRegistry);
         logger.info("verifying if job name exists: " + jobName);
         return masterClientApi.namedJobExists(jobName)
                 .onErrorResumeNext((Throwable throwable) -> {

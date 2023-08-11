@@ -21,6 +21,7 @@ import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.scheduler.JobMessageRouter;
 import io.mantisrx.server.master.scheduler.WorkerRegistry;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -51,15 +52,18 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private volatile Action1<List<VirtualMachineLease>> addVMLeaseAction = null;
     private final AtomicInteger numAttemptsToInit = new AtomicInteger(0);
+    private final MeterRegistry meterRegistry;
 
     public MesosDriverSupplier(final MasterConfiguration masterConfig,
                                final Observer<String> vmLeaseRescindedObserver,
                                final JobMessageRouter jobMessageRouter,
-                               final WorkerRegistry workerRegistry) {
+                               final WorkerRegistry workerRegistry,
+                               MeterRegistry meterRegistry) {
         this.masterConfig = masterConfig;
         this.vmLeaseRescindedObserver = vmLeaseRescindedObserver;
         this.jobMessageRouter = jobMessageRouter;
         this.workerRegistry = workerRegistry;
+        this.meterRegistry = meterRegistry;
     }
 
     Optional<MesosSchedulerDriver> initMesosSchedulerDriverWithTimeout(MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler,
@@ -96,7 +100,7 @@ public class MesosDriverSupplier implements Supplier<MesosSchedulerDriver> {
             logger.info("initializing mesos scheduler callback handler");
             final MesosSchedulerCallbackHandler mesosSchedulerCallbackHandler =
                     new MesosSchedulerCallbackHandler(addVMLeaseAction, vmLeaseRescindedObserver, jobMessageRouter,
-                            workerRegistry);
+                            workerRegistry, meterRegistry);
             final Protos.FrameworkInfo framework = Protos.FrameworkInfo.newBuilder()
                     .setUser(masterConfig.getMantisFrameworkUserName())
                     .setName(masterConfig.getMantisFrameworkName())

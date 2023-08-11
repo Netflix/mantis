@@ -23,6 +23,7 @@ import akka.dispatch.MailboxType;
 import akka.dispatch.MessageQueue;
 import akka.dispatch.ProducesMessageQueue;
 import com.typesafe.config.Config;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
@@ -34,6 +35,7 @@ import scala.Option;
 public class UnboundedMeteredMailbox implements MailboxType, ProducesMessageQueue<MeteredMessageQueue> {
     private final ActorSystem.Settings settings;
     private final Config config;
+    private final MeterRegistry meterRegistry;
     private static final Logger LOGGER = LoggerFactory.getLogger(UnboundedMeteredMailbox.class);
 
     /**
@@ -41,9 +43,10 @@ public class UnboundedMeteredMailbox implements MailboxType, ProducesMessageQueu
      * @param settings
      * @param config
      */
-    public UnboundedMeteredMailbox(final ActorSystem.Settings settings, final Config config) {
+    public UnboundedMeteredMailbox(final ActorSystem.Settings settings, final Config config, final MeterRegistry meterRegistry) {
         this.settings = settings;
         this.config = config;
+        this.meterRegistry = meterRegistry;
     }
 
     /**
@@ -57,7 +60,7 @@ public class UnboundedMeteredMailbox implements MailboxType, ProducesMessageQueu
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("created message queue for {}", path);
         }
-        return new MeteredMessageQueue(path);
+        return new MeteredMessageQueue(path, meterRegistry);
     }
 
     /** Summarizes a path for use in a metric tag. */

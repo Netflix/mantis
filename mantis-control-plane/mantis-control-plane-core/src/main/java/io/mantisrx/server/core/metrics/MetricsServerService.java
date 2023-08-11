@@ -18,6 +18,7 @@ package io.mantisrx.server.core.metrics;
 
 import io.mantisrx.common.metrics.MetricsServer;
 import io.mantisrx.server.core.Service;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Map;
 
 
@@ -26,8 +27,8 @@ public class MetricsServerService implements Service {
     private MetricsServer server;
 
     public MetricsServerService(final int port, final int publishRateInSeconds,
-                                final Map<String, String> tags) {
-        server = new MetricsServer(port, publishRateInSeconds, tags);
+                                final Map<String, String> tags, MeterRegistry meterRegistry) {
+        server = new MetricsServer(port, publishRateInSeconds, tags, meterRegistry);
     }
 
     @Override

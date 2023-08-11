@@ -99,6 +99,8 @@ import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.server.master.store.MantisStageMetadataWritable;
 import io.mantisrx.server.master.store.MantisWorkerMetadataWritable;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
@@ -182,6 +184,7 @@ public class JobRouteTest {
         JobTestHelper.createDirsIfRequired();
         final CountDownLatch latch = new CountDownLatch(1);
         TestHelpers.setupMasterConfig();
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
         t = new Thread(() -> {
             try {
@@ -197,7 +200,7 @@ public class JobRouteTest {
                         new StatusEventSubscriberLoggingImpl(),
                         new WorkerEventSubscriberLoggingImpl());
 
-                IMantisPersistenceProvider mantisStorageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), lifecycleEventPublisher);
+                IMantisPersistenceProvider mantisStorageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), lifecycleEventPublisher, meterRegistry);
                 ActorRef jobClustersManagerActor = system.actorOf(
                     JobClustersManagerActor.props(
                         new MantisJobStore(new FileBasedPersistenceProvider(true)),
@@ -213,10 +216,10 @@ public class JobRouteTest {
                         false), ActorRef.noSender());
 
                 final JobClusterRouteHandler jobClusterRouteHandler = new JobClusterRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, meterRegistry);
                 final JobArtifactRouteHandler jobArtifactRouteHandler = new JobArtifactRouteHandlerImpl(mantisStorageProvider);
                 final JobRouteHandler jobRouteHandler = new JobRouteHandlerAkkaImpl(
-                        jobClustersManagerActor);
+                        jobClustersManagerActor, meterRegistry);
 
                 MasterDescription masterDescription = new MasterDescription(
                         "127.0.0.1",
@@ -234,17 +237,19 @@ public class JobRouteTest {
 
                 final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(
                         jobClustersManagerActor,
-                        idleTimeout);
+                        idleTimeout,
+                        meterRegistry);
                 final MasterDescriptionRoute masterDescriptionRoute = new MasterDescriptionRoute(
                         masterDescription);
-                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, system);
+                final JobRoute v0JobRoute = new JobRoute(jobRouteHandler, system, meterRegistry);
 
                 final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(
-                        jobDiscoveryRouteHandler);
+                        jobDiscoveryRouteHandler, meterRegistry);
                 final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(
                         jobClusterRouteHandler,
                         jobRouteHandler,
-                        system);
+                        system,
+                        meterRegistry);
                 final JobClustersRoute v1JobClusterRoute = new JobClustersRoute(
                         jobClusterRouteHandler, system);
                 final JobsRoute v1JobsRoute = new JobsRoute(
@@ -260,7 +265,8 @@ public class JobRouteTest {
                 final AgentClusterOperations mockAgentClusterOps = mock(AgentClusterOperations.class);
                 final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(
                         mockAgentClusterOps,
-                        system);
+                        system,
+                        meterRegistry);
                 final AgentClustersRoute v1AgentClusterRoute = new AgentClustersRoute(
                         mockAgentClusterOps);
                 final JobDiscoveryStreamRoute v1JobDiscoveryStreamRoute = new JobDiscoveryStreamRoute(jobDiscoveryRouteHandler);
@@ -274,7 +280,8 @@ public class JobRouteTest {
                 leadershipMgr.setLeaderReady();
                 LeaderRedirectionFilter leaderRedirectionFilter = new LeaderRedirectionFilter(
                         localMasterMonitor,
-                        leadershipMgr);
+                        leadershipMgr,
+                        meterRegistry);
                 final MantisMasterRoute app = new MantisMasterRoute(
                         system,
                         leaderRedirectionFilter,

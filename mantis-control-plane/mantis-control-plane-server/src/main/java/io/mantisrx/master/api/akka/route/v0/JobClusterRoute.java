@@ -57,9 +57,12 @@ import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import akka.japi.JavaPartialFunction;
 import akka.japi.Pair;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
 import io.mantisrx.master.api.akka.route.handlers.JobRouteHandler;
@@ -102,8 +105,7 @@ public class JobClusterRoute extends BaseRoute {
             }
         }
     };
-    private final Metrics metrics;
-
+    private final MeterRegistry meterRegistry;
     private final Counter jobClusterSubmit;
     private final Counter jobClusterSubmitError;
     private final Counter jobClusterCreate;
@@ -127,60 +129,37 @@ public class JobClusterRoute extends BaseRoute {
     private final Counter jobClusterListClusterGET;
 
     public JobClusterRoute(final JobClusterRouteHandler jobClusterRouteHandler,
-                             final JobRouteHandler jobRouteHandler,
-                             final ActorSystem actorSystem) {
+                           final JobRouteHandler jobRouteHandler,
+                           final ActorSystem actorSystem,
+                           MeterRegistry meterRegistry) {
+        super(meterRegistry);
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
+        this.meterRegistry = meterRegistry;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
-                config.getApiCacheTtlMilliseconds());
-
-        Metrics m = new Metrics.Builder()
-                .id("V0JobClusterRoute")
-                .addCounter("jobClusterSubmit")
-                .addCounter("jobClusterSubmitError")
-                .addCounter("jobClusterCreate")
-                .addCounter("jobClusterCreateError")
-                .addCounter("jobClusterCreateUpdate")
-                .addCounter("jobClusterCreateUpdateError")
-                .addCounter("jobClusterDelete")
-                .addCounter("jobClusterDeleteError")
-                .addCounter("jobClusterDisable")
-                .addCounter("jobClusterDisableError")
-                .addCounter("jobClusterEnable")
-                .addCounter("jobClusterEnableError")
-                .addCounter("jobClusterQuickupdate")
-                .addCounter("jobClusterQuickupdateError")
-                .addCounter("jobClusterUpdateLabel")
-                .addCounter("jobClusterUpdateLabelError")
-                .addCounter("jobClusterListGET")
-                .addCounter("jobClusterListJobIdGET")
-                .addCounter("jobClusterListClusterGET")
-                .addCounter("jobClusterUpdateSla")
-                .addCounter("jobClusterUpdateSlaError")
-                .build();
-        this.metrics = MetricsRegistry.getInstance().registerAndGet(m);
-        this.jobClusterSubmit = metrics.getCounter("jobClusterSubmit");
-        this.jobClusterSubmitError = metrics.getCounter("jobClusterSubmitError");
-        this.jobClusterCreate = metrics.getCounter("jobClusterCreate");
-        this.jobClusterCreateError = metrics.getCounter("jobClusterCreateError");
-        this.jobClusterCreateUpdate = metrics.getCounter("jobClusterCreateUpdate");
-        this.jobClusterCreateUpdateError = metrics.getCounter("jobClusterCreateUpdateError");
-        this.jobClusterDelete = metrics.getCounter("jobClusterDelete");
-        this.jobClusterDeleteError = metrics.getCounter("jobClusterDeleteError");
-        this.jobClusterDisable = metrics.getCounter("jobClusterDisable");
-        this.jobClusterDisableError = metrics.getCounter("jobClusterDisableError");
-        this.jobClusterEnable = metrics.getCounter("jobClusterEnable");
-        this.jobClusterEnableError = metrics.getCounter("jobClusterEnableError");
-        this.jobClusterQuickupdate = metrics.getCounter("jobClusterQuickupdate");
-        this.jobClusterQuickupdateError = metrics.getCounter("jobClusterQuickupdateError");
-        this.jobClusterUpdateLabel = metrics.getCounter("jobClusterUpdateLabel");
-        this.jobClusterUpdateLabelError = metrics.getCounter("jobClusterUpdateLabelError");
-        this.jobClusterListGET = metrics.getCounter("jobClusterListGET");
-        this.jobClusterListJobIdGET = metrics.getCounter("jobClusterListJobIdGET");
-        this.jobClusterListClusterGET = metrics.getCounter("jobClusterListClusterGET");
-        this.jobClusterUpdateSla = metrics.getCounter("jobClusterUpdateSla");
-        this.jobClusterUpdateSlaError = metrics.getCounter("jobClusterUpdateSlaError");
+            config.getApiCacheTtlMilliseconds());
+        this.jobClusterSubmit = meterRegistry.counter("V0JobClusterRoute_jobClusterSubmit");
+        this.jobClusterSubmitError = meterRegistry.counter("V0JobClusterRoute_jobClusterSubmitError");
+        this.jobClusterCreate = meterRegistry.counter("V0JobClusterRoute_jobClusterCreate");
+        this.jobClusterCreateError = meterRegistry.counter("V0JobClusterRoute_jobClusterCreateError");
+        this.jobClusterCreateUpdate = meterRegistry.counter("V0JobClusterRoute_jobClusterCreateUpdate");
+        this.jobClusterCreateUpdateError = meterRegistry.counter("V0JobClusterRoute_jobClusterCreateUpdateError");
+        this.jobClusterDelete = meterRegistry.counter("V0JobClusterRoute_jobClusterDelete");
+        this.jobClusterDeleteError = meterRegistry.counter("V0JobClusterRoute_jobClusterDeleteError");
+        this.jobClusterDisable = meterRegistry.counter("V0JobClusterRoute_jobClusterDisable");
+        this.jobClusterDisableError = meterRegistry.counter("V0JobClusterRoute_jobClusterDisableError");
+        this.jobClusterEnable = meterRegistry.counter("V0JobClusterRoute_jobClusterEnable");
+        this.jobClusterEnableError = meterRegistry.counter("V0JobClusterRoute_jobClusterEnableError");
+        this.jobClusterQuickupdate = meterRegistry.counter("V0JobClusterRoute_jobClusterQuickupdate");
+        this.jobClusterQuickupdateError = meterRegistry.counter("V0JobClusterRoute_jobClusterQuickupdateError");
+        this.jobClusterUpdateLabel = meterRegistry.counter("V0JobClusterRoute_jobClusterUpdateLabel");
+        this.jobClusterUpdateLabelError = meterRegistry.counter("V0JobClusterRoute_jobClusterUpdateLabelError");
+        this.jobClusterListGET = meterRegistry.counter("V0JobClusterRoute_jobClusterListGET");
+        this.jobClusterListJobIdGET = meterRegistry.counter("V0JobClusterRoute_jobClusterListJobIdGET");
+        this.jobClusterListClusterGET = meterRegistry.counter("V0JobClusterRoute_jobClusterListClusterGET");
+        this.jobClusterUpdateSla = meterRegistry.counter("V0JobClusterRoute_jobClusterUpdateSla");
+        this.jobClusterUpdateSlaError = meterRegistry.counter("V0JobClusterRoute_jobClusterUpdateSlaError");
     }
 
     private Cache<Uri, RouteResult> createCache(ActorSystem actorSystem) {
@@ -227,7 +206,8 @@ public class JobClusterRoute extends BaseRoute {
                                     resp.getJobIds().stream()
                                     .map(jobId -> jobId.getJobId())
                                     .collect(Collectors.toList()),
-                                    Jackson.marshaller())
+                                    Jackson.marshaller()),
+                            meterRegistry
                             )
                         )
                     );
@@ -243,7 +223,8 @@ public class JobClusterRoute extends BaseRoute {
                             resp -> completeOK(
                                 resp.getJobIds(),
                                 Jackson.marshaller()),
-                            resp -> completeOK(Collections.emptyList(), Jackson.marshaller())
+                            resp -> completeOK(Collections.emptyList(), Jackson.marshaller()),
+                            meterRegistry
                         );
                     })
                 );
@@ -563,7 +544,9 @@ public class JobClusterRoute extends BaseRoute {
                                             .collect(Collectors.toList())
                                             ,
                                         Jackson.marshaller()),
-                                    resp -> completeOK(Collections.emptyList(), Jackson.marshaller()))));
+                                    resp -> completeOK(Collections.emptyList(), Jackson.marshaller()),
+                                    meterRegistry
+                                )));
                         }),
                         path(PathMatchers.segment(), (jobCluster) -> {
                             if (logger.isDebugEnabled()) {
@@ -575,7 +558,8 @@ public class JobClusterRoute extends BaseRoute {
                                 resp -> completeOK(
                                     resp.getJobCluster().map(jc -> Arrays.asList(jc)).orElse(Collections.emptyList()),
                                     Jackson.marshaller()),
-                                resp -> completeOK(Collections.emptyList(), Jackson.marshaller())
+                                resp -> completeOK(Collections.emptyList(), Jackson.marshaller()),
+                                meterRegistry
                             );
                         })
                     )),

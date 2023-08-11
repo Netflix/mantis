@@ -62,6 +62,8 @@ import io.mantisrx.server.master.scheduler.MantisScheduler;
 import io.mantisrx.server.master.scheduler.ScheduleRequest;
 import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
@@ -87,9 +89,9 @@ public class JobTestLifecycle {
 	@BeforeClass
 	public static void setup() {
 		system = ActorSystem.create();
-
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
 		TestHelpers.setupMasterConfig();
-		storageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), eventPublisher);
+		storageProvider = new KeyValueBasedPersistenceProvider(new FileBasedStore(), eventPublisher, meterRegistry);
 		jobStore = new MantisJobStore(storageProvider);
 	}
 

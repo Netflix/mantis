@@ -17,6 +17,7 @@
 dependencies {
     implementation libraries.asyncHttpClient
     implementation libraries.spotifyFutures
+    implementation libraries.micrometerCore
     api project(":mantis-control-plane:mantis-control-plane-core")
 
     api project(":mantis-remote-observable")

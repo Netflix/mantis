@@ -100,6 +100,8 @@ import io.mantisrx.server.master.scheduler.WorkerEvent;
 import io.mantisrx.server.master.scheduler.WorkerLaunched;
 import io.mantisrx.server.master.store.FileBasedStore;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.time.Duration;
@@ -291,12 +293,12 @@ public class JobClusterManagerTest {
 
     @Test
     public void testBootStrapJobClustersAndJobs1() {
-
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
             new FileBasedStore(rootDir.getRoot()),
-            eventPublisher));
+            eventPublisher, meterRegistry));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
@@ -393,12 +395,13 @@ public class JobClusterManagerTest {
 
     @Test
     public void testBootStrapJobClustersAndJobs() {
-
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
             new FileBasedStore(rootDir.getRoot()),
-            eventPublisher));
+            eventPublisher,
+            meterRegistry));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
             jobStoreSpied,
@@ -641,12 +644,13 @@ public class JobClusterManagerTest {
     @Test
     public void testBootstrapJobClusterAndJobsWithCorruptedWorkerPorts()
         throws IOException, io.mantisrx.server.master.persistence.exceptions.InvalidJobException {
-
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         TestKit probe = new TestKit(system);
         JobTestHelper.deleteAllFiles();
         MantisJobStore jobStore = new MantisJobStore(new KeyValueBasedPersistenceProvider(
             new FileBasedStore(rootDir.getRoot()),
-            eventPublisher));
+            eventPublisher,
+            meterRegistry));
         MantisJobStore jobStoreSpied = Mockito.spy(jobStore);
 //        MantisScheduler schedulerMock = mock(MantisScheduler.class);
         ActorRef jobClusterManagerActor = system.actorOf(JobClustersManagerActor.props(
