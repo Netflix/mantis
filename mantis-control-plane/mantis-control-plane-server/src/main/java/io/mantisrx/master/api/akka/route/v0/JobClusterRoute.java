@@ -61,6 +61,7 @@ import akka.japi.Pair;
 //import io.mantisrx.common.metrics.Metrics;
 //import io.mantisrx.common.metrics.MetricsRegistry;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.handlers.JobClusterRouteHandler;
@@ -131,6 +132,7 @@ public class JobClusterRoute extends BaseRoute {
                            final JobRouteHandler jobRouteHandler,
                            final ActorSystem actorSystem,
                            MeterRegistry meterRegistry) {
+        super(meterRegistry);
         this.jobClusterRouteHandler = jobClusterRouteHandler;
         this.jobRouteHandler = jobRouteHandler;
         this.meterRegistry = meterRegistry;
@@ -308,7 +310,7 @@ public class JobClusterRoute extends BaseRoute {
                             jobClusterSubmit.increment();
                             return completeWithFuture(
                                 jobClusterRouteHandler.submit(JobClusterProtoAdapter.toSubmitJobClusterRequest(mjd))
-                                    .thenApply(resp->toHttpResponse(resp,meterRegistry)));
+                                    .thenApply(this::toHttpResponse));
                         } catch (Exception e) {
                             logger.warn("exception in submit job request {}", request, e);
                             jobClusterSubmitError.increment();
@@ -345,7 +347,7 @@ public class JobClusterRoute extends BaseRoute {
                                             }
                                             return r;
                                         })
-                                        .thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                        .thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error creating JobCluster {}", jobClusterDefn, e);
                                     jobClusterCreateError.increment();
@@ -376,7 +378,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final CompletionStage<UpdateJobClusterResponse> response =
                                         jobClusterRouteHandler.update(JobClusterProtoAdapter.toUpdateJobClusterRequest(namedJobDefinition));
                                     jobClusterCreateUpdate.increment();
-                                    return completeWithFuture(response.thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                    return completeWithFuture(response.thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error updating JobCluster {}", jobClusterDefn, e);
                                     jobClusterCreateUpdateError.increment();
@@ -398,7 +400,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final CompletionStage<DeleteJobClusterResponse> response =
                                         jobClusterRouteHandler.delete(deleteJobClusterRequest);
                                     jobClusterDelete.increment();
-                                    return completeWithFuture(response.thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                    return completeWithFuture(response.thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error deleting JobCluster {}", deleteReq, e);
                                     jobClusterDeleteError.increment();
@@ -416,7 +418,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final CompletionStage<DisableJobClusterResponse> response =
                                         jobClusterRouteHandler.disable(disableJobClusterRequest);
                                     jobClusterDisable.increment();
-                                    return completeWithFuture(response.thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                    return completeWithFuture(response.thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error disabling JobCluster {}", request, e);
                                     jobClusterDisableError.increment();
@@ -434,7 +436,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final CompletionStage<EnableJobClusterResponse> response =
                                         jobClusterRouteHandler.enable(enableJobClusterRequest);
                                     jobClusterEnable.increment();
-                                    return completeWithFuture(response.thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                    return completeWithFuture(response.thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error enabling JobCluster {}", request, e);
                                     jobClusterEnableError.increment();
@@ -452,7 +454,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final CompletionStage<UpdateJobClusterArtifactResponse> response =
                                         jobClusterRouteHandler.updateArtifact(updateJobClusterArtifactRequest);
                                     jobClusterQuickupdate.increment();
-                                    return completeWithFuture(response.thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                    return completeWithFuture(response.thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error on quickupdate for JobCluster {}", request, e);
                                     jobClusterQuickupdateError.increment();
@@ -469,7 +471,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final UpdateJobClusterLabelsRequest updateJobClusterLabelsRequest = Jackson.fromJSON(request, UpdateJobClusterLabelsRequest.class);
                                     jobClusterUpdateLabel.increment();
                                     return completeWithFuture(jobClusterRouteHandler.updateLabels(updateJobClusterLabelsRequest)
-                                        .thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                        .thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error updating labels for JobCluster {}", request, e);
                                     jobClusterUpdateLabelError.increment();
@@ -486,7 +488,7 @@ public class JobClusterRoute extends BaseRoute {
                                 try {
                                     final UpdateJobClusterSLARequest updateJobClusterSLARequest = Jackson.fromJSON(request, UpdateJobClusterSLARequest.class);
                                     return completeWithFuture(jobClusterRouteHandler.updateSLA(updateJobClusterSLARequest)
-                                        .thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                        .thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error updating SLA for JobCluster {}", request, e);
                                     jobClusterUpdateSlaError.increment();
@@ -503,7 +505,7 @@ public class JobClusterRoute extends BaseRoute {
                                     final UpdateJobClusterWorkerMigrationStrategyRequest updateMigrateStrategyReq =
                                         Jackson.fromJSON(request, UpdateJobClusterWorkerMigrationStrategyRequest.class);
                                     return completeWithFuture(jobClusterRouteHandler.updateWorkerMigrateStrategy(updateMigrateStrategyReq)
-                                        .thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                        .thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error updating migrate strategy for JobCluster {}", request, e);
                                     return complete(StatusCodes.BAD_REQUEST, "Can't find valid json in request: " + e.getMessage());
@@ -518,7 +520,7 @@ public class JobClusterRoute extends BaseRoute {
                                 try {
                                     final JobClusterManagerProto.SubmitJobRequest submitJobRequest = Jackson.fromJSON(request, JobClusterManagerProto.SubmitJobRequest.class);
                                     return completeWithFuture(jobClusterRouteHandler.submit(submitJobRequest)
-                                        .thenApply(resp -> toHttpResponse(resp, meterRegistry)));
+                                        .thenApply(this::toHttpResponse));
                                 } catch (IOException e) {
                                     logger.warn("Error on quick submit for JobCluster {}", request, e);
                                     return complete(StatusCodes.BAD_REQUEST, "Can't find valid json in request: " + e.getMessage());

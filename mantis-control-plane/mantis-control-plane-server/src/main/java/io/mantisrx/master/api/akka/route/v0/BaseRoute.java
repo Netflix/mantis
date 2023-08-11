@@ -40,7 +40,11 @@ import java.util.function.Function;
 import scala.concurrent.duration.Duration;
 
 abstract class BaseRoute extends AllDirectives {
-    protected HttpResponse toHttpResponse(final BaseResponse r, MeterRegistry meterRegistry) {
+    private final MeterRegistry meterRegistry;
+    public BaseRoute (MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+    protected HttpResponse toHttpResponse(final BaseResponse r) {
         MasterApiMetrics masterApiMetrics = new MasterApiMetrics(meterRegistry);
         switch (r.responseCode) {
             case SUCCESS:

@@ -33,11 +33,20 @@ import org.slf4j.LoggerFactory;
  */
 public class MantisActorSupervisorStrategy implements SupervisorStrategyConfigurator {
     private static final Logger LOGGER = LoggerFactory.getLogger(MantisActorSupervisorStrategy.class);
+    private static final MantisActorSupervisorStrategy INSTANCE = new MantisActorSupervisorStrategy(meterRegistry);
 
     private MeterRegistry meterRegistry;
 
     public MantisActorSupervisorStrategy(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
+    }
+
+    public static synchronized getInstance(MeterRegistry meterRegistry) {
+        if (INSTANCE == null) {
+            ActorSystemMetrics actorMetrics = new ActorSystemMetrics(meterRegistry);
+            INSTANCE = new MantisActorSupervisorStrategy(actorMetrics);
+        }
+        return INSTANCE;
     }
 
     @Override

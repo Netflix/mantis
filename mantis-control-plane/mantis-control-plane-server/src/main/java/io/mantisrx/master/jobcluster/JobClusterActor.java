@@ -149,6 +149,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -264,11 +265,11 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         this.numJobClusterUpdateErrors = addCounter( "numJobClusterUpdateErrors");
         this.numSLAEnforcementExecutions = addCounter( "numSLAEnforcementExecutions");
 
-        this.acceptedJobsGauge = addGauge( "acceptedJobsGauge", this.jobManager.acceptedJobsCount());
-        this.activeJobsGauge = addGauge( "activeJobsGauge", this.jobManager.activeJobsCount());
-        this.terminatingJobsGauge = addGauge( "terminatingJobsGauge", this.jobManager.terminatingJobsMap.size());
-        this.completedJobsGauge = addGauge( "completedJobsGauge", this.jobManager.completedJobsCache.completedJobs.size());
-        this.actorToJobIdMappingsGauge = addGauge( "actorToJobIdMappingsGauge", this.jobManager.actorToJobIdMap.size());
+        this.acceptedJobsGauge = addGauge( "acceptedJobsGauge", () -> 1.0 * this.jobManager.acceptedJobsCount());
+        this.activeJobsGauge = addGauge( "activeJobsGauge", () -> 1.0 * this.jobManager.activeJobsCount());
+        this.terminatingJobsGauge = addGauge( "terminatingJobsGauge", () -> 1.0 * this.jobManager.terminatingJobsMap.size());
+        this.completedJobsGauge = addGauge( "completedJobsGauge", () -> 1.0 * this.jobManager.completedJobsCache.completedJobs.size());
+        this.actorToJobIdMappingsGauge = addGauge( "actorToJobIdMappingsGauge", () -> 1.0 * this.jobManager.actorToJobIdMap.size());
 
     }
 
@@ -279,8 +280,8 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
         return counter;
     }
 
-    private Gauge addGauge(String meterName,int value) {
-        Gauge gauge = Gauge.builder("JobClusterActor_legacyGaugeCallbackMetricGroup_"+meterName, () -> 1.0 * value)
+    private Gauge addGauge(String meterName, Supplier<Number> gaugeFunc) {
+        Gauge gauge = Gauge.builder("JobClusterActor_"+meterName, gaugeFunc)
             .tags("jobCluster", name)
             .register(meterRegistry);
         return gauge;

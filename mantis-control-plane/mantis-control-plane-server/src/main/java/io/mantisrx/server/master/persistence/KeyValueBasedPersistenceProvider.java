@@ -135,8 +135,8 @@ public class KeyValueBasedPersistenceProvider implements IMantisPersistenceProvi
         this.kvStore = kvStore;
         this.eventPublisher = eventPublisher;
         this.meterRegistry = meterRegistry;
-        this.noWorkersFoundCounter = meterRegistry.counter("Storage_noWorkersFound");
-        this.workersFoundCounter = meterRegistry.counter("Storage_workersFound");
+        this.noWorkersFoundCounter = meterRegistry.counter("storage_noWorkersFound");
+        this.workersFoundCounter = meterRegistry.counter("storage_workersFound");
     }
 
     protected String getJobMetadataFieldName() {

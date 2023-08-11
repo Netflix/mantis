@@ -30,9 +30,9 @@ public class MasterApiMetrics {
     public MasterApiMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         this.resp2xx = meterRegistry.counter("MasterApiMetrics_resp2xx");
-        this.resp4xx = meterRegistry.counter("MasterApiMetrics"+"_"+"resp4xx");
-        this.resp5xx = meterRegistry.counter("MasterApiMetrics"+"_"+"resp5xx");
-        this.askTimeOutCount = meterRegistry.counter("MasterApiMetrics"+"_"+"askTimeOutCount");
+        this.resp4xx = meterRegistry.counter("MasterApiMetrics_resp4xx");
+        this.resp5xx = meterRegistry.counter("MasterApiMetrics_resp5xx");
+        this.askTimeOutCount = meterRegistry.counter("MasterApiMetrics_askTimeOutCount");
     }
 
 

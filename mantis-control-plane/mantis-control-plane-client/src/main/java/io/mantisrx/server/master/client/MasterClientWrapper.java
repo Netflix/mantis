@@ -59,7 +59,7 @@ public class MasterClientWrapper {
         this.masterClientApi = gateway;
         this.meterRegistry = meterRegistry;
         String groupName = MasterClientWrapper.class.getCanonicalName();
-        masterConnectRetryCounter = meterRegistry.counter(groupName + ".MasterConnectRetryCount");
+        masterConnectRetryCounter = meterRegistry.counter(groupName + "_MasterConnectRetryCount");
     }
 
     public static String getWrappedHost(String host, int workerNumber) {
@@ -74,13 +74,14 @@ public class MasterClientWrapper {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         Properties zkProps = new Properties();
         zkProps.put("mantis.zookeeper.connectString", "ec2-50-19-255-1.compute-1.amazonaws.com:2181,ec2-54-235-159-245.compute-1.amazonaws.com:2181,ec2-50-19-255-97.compute-1.amazonaws.com:2181,ec2-184-73-152-248.compute-1.amazonaws.com:2181,ec2-50-17-247-179.compute-1.amazonaws.com:2181");
         zkProps.put("mantis.zookeeper.leader.announcement.path", "/leader");
         zkProps.put("mantis.zookeeper.root", "/mantis/master");
         String jobId = "GroupByIPNJ-12";
         HighAvailabilityServices haServices =
-            HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class));
+            HighAvailabilityServicesUtil.createHAServices(Configurations.frmProperties(zkProps, CoreConfiguration.class), meterRegistry);
         Services.startAndWait(haServices);
         MasterClientWrapper clientWrapper = new MasterClientWrapper(haServices.getMasterClientApi(), new SimpleMeterRegistry());
         clientWrapper.getMasterClientApi()

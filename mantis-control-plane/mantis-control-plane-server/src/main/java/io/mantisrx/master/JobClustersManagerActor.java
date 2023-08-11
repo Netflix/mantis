@@ -815,8 +815,7 @@ public class JobClustersManagerActor extends AbstractActorWithTimers implements 
         private final LifecycleEventPublisher eventPublisher;
         private MantisSchedulerFactory mantisSchedulerFactory;
         private final MantisJobStore jobStore;
-//        private final Metrics metrics;
-         private final MeterRegistry meterRegistry;
+        private final MeterRegistry meterRegistry;
         private final CostsCalculator costsCalculator;
 
         JobClusterInfoManager(MantisJobStore jobStore, MantisSchedulerFactory mantisSchedulerFactory, LifecycleEventPublisher eventPublisher, CostsCalculator costsCalculator, MeterRegistry meterRegistry) {

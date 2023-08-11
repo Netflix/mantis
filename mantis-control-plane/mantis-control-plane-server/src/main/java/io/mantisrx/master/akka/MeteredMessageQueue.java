@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import akka.dispatch.Envelope;
 import akka.dispatch.MessageQueue;
 import akka.dispatch.UnboundedMessageQueueSemantics;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tags;
@@ -49,13 +50,9 @@ public class MeteredMessageQueue implements MessageQueue, UnboundedMessageQueueS
         this.path = path;
         this.meterRegistry = meterRegistry;
         Tags tag = Tags.of("path", path);
-        this.insertCounter = Counter.builder("akka.queue.insert")
-                .tags(tag)
-                .register(meterRegistry);
-        this.waitTimer = Timer.builder("akka.queue.wait")
-                .tags(tag)
-                .register(meterRegistry);
-        FunctionCounter.builder("akka.queue.size", queue, q -> q.size())
+        this.insertCounter = meterRegistry.counter("akka.queue.insert", tag);
+        this.waitTimer = meterRegistry.timer("akka.queue.wait", tag);
+        Gauge.builder("akka.queue.size", queue, q -> q.size())
                 .tags(tag)
                 .register(meterRegistry);
 

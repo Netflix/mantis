@@ -72,13 +72,13 @@ public final class CaffeineMetrics implements StatsCounter {
     @Override
     public void recordLoadSuccess(long loadTime) {
         loadSuccessCount.increment();
-        totalLoadTime.record(Duration.ofDays(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS)));
+        totalLoadTime.record(Duration.ofNanos(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS)));
     }
 
     @Override
     public void recordLoadFailure(long loadTime) {
         loadFailureCount.increment();
-        totalLoadTime.record(Duration.ofDays(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS)));
+        totalLoadTime.record(Duration.ofNanos(TimeUnit.MILLISECONDS.convert(loadTime, TimeUnit.NANOSECONDS)));
     }
 
     @Override

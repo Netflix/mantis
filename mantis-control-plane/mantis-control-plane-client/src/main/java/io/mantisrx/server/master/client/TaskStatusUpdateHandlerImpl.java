@@ -33,8 +33,8 @@ public class TaskStatusUpdateHandlerImpl implements TaskStatusUpdateHandler {
     TaskStatusUpdateHandlerImpl(MantisMasterGateway masterGateway, MeterRegistry meterRegistry) {
 
         String groupName = "ReportStatusServiceHttpImpl";
-        this.failureCounter = Counter.builder(groupName + ".failureCounter").register(meterRegistry);
-        this.workerSentHeartbeats = Counter.builder(groupName + ".workerSentHeartbeats").register(meterRegistry);
+        this.failureCounter = meterRegistry.counter(groupName + "_failureCounter");
+        this.workerSentHeartbeats = meterRegistry.counter(groupName + "_workerSentHeartbeats");
         this.masterMonitor = masterGateway;
         this.meterRegistry = meterRegistry;
     }
