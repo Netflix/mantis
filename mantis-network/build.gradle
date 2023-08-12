@@ -24,8 +24,9 @@ dependencies {
     implementation "io.mantisrx:mql-jvm:$mqlVersion"
     api project(':mantis-common')
     compileOnly libraries.spectatorApi
+    implementation libraries.micrometerCore
     testImplementation libraries.spectatorApi
-    
+
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore
     testImplementation libraries.slf4jLog4j12

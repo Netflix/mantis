@@ -18,6 +18,9 @@ package io.reactivex.mantis.network.push;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -32,17 +35,19 @@ public class TimedChunkerTest {
 
     private TestProcessor<Integer> processor;
     private MonitoredQueue<Integer> monitoredQueue;
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     public void setup() {
         monitoredQueue = new MonitoredQueue<>("test-queue", 100, false);
         processor = new TestProcessor<>(0);
+        meterRegistry = new SimpleMeterRegistry();
 
     }
 
     @Test
     public void testProcessData() throws Exception {
-        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 500, processor, null);
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 500, processor, null, meterRegistry);
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -71,7 +76,7 @@ public class TimedChunkerTest {
 
     @Test
     public void testBufferLength() throws Exception {
-        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 500, processor, null);
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 5, 500, processor, null, meterRegistry);
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -99,7 +104,7 @@ public class TimedChunkerTest {
 
     @Test
     public void testMaxTime() throws Exception {
-        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 200, processor, null);
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 200, processor, null, meterRegistry);
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
@@ -130,7 +135,7 @@ public class TimedChunkerTest {
     public void testLongProcessing() throws Exception {
         // Processing time take longer than drain interval.
         processor = new TestProcessor<>(400);
-        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 200, processor, null);
+        TimedChunker<Integer> timedChunker = new TimedChunker<>(monitoredQueue, 100, 200, processor, null, meterRegistry);
 
         List<Integer> expected = new ArrayList<>();
         for (int i = 0; i < 50; i++) {

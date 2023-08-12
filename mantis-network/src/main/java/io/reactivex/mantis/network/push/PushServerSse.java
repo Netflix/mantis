@@ -19,15 +19,19 @@ package io.reactivex.mantis.network.push;
 import com.mantisrx.common.utils.MantisSSEConstants;
 import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.common.compression.CompressionUtils;
-import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.mql.jvm.core.Query;
 import io.mantisrx.mql.jvm.interfaces.MQLServer;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,16 +73,15 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
     private S processorState;
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
     private boolean supportLegacyMetrics;
-    private MetricsRegistry metricsRegistry;
-
+    private MeterRegistry meterRegistry;
     public PushServerSse(PushTrigger<T> trigger, ServerConfig<T> config,
                          PublishSubject<String> serverSignals,
                          Func2<Map<String, List<String>>, S, Void> requestPreprocessor,
                          Func2<Map<String, List<String>>, S, Void> requestPostprocessor,
                          final Func2<Map<String, List<String>>, S, Void> subscribeProcessor,
-                         S state, boolean supportLegacyMetrics) {
+                         S state, boolean supportLegacyMetrics, MeterRegistry meterRegistry) {
         super(trigger, config, serverSignals);
-        this.metricsRegistry = config.getMetricsRegistry();
+        this.meterRegistry = meterRegistry;
         this.predicate = config.getPredicate();
         this.processorState = state;
         this.requestPostprocessor = requestPostprocessor;
@@ -87,20 +90,16 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
         this.supportLegacyMetrics = supportLegacyMetrics;
     }
 
-    private Metrics registerSseMetrics(String uniqueClientId, String socketAddrStr) {
-        final BasicTag clientIdTag = new BasicTag(CLIENT_ID_TAG_NAME, Optional.ofNullable(uniqueClientId).orElse("none"));
-        final BasicTag sockAddrTag = new BasicTag(SOCK_ADDR_TAG_NAME, Optional.ofNullable(socketAddrStr).orElse("none"));
-
+    private List<Meter> registerSseMetrics(String uniqueClientId, String socketAddrStr) {
+        final Tags clientIdTag = Tags.of(CLIENT_ID_TAG_NAME, Optional.ofNullable(uniqueClientId).orElse("none"));
+        final Tags sockAddrTag = Tags.of(SOCK_ADDR_TAG_NAME, Optional.ofNullable(socketAddrStr).orElse("none"));
         final String metricGroup = supportLegacyMetrics ? PUSH_SERVER_LEGACY_METRIC_GROUP_NAME : PUSH_SERVER_METRIC_GROUP_NAME;
-        Metrics sseSinkMetrics = new Metrics.Builder()
-                .id(metricGroup, clientIdTag, sockAddrTag)
-                .addCounter(PROCESSED_COUNTER_METRIC_NAME)
-                .addCounter(DROPPED_COUNTER_METRIC_NAME)
-                .build();
-
-        sseSinkMetrics = metricsRegistry.registerAndGet(sseSinkMetrics);
-
-        return sseSinkMetrics;
+        Counter sseProcessedCounter = meterRegistry.counter(metricGroup + PROCESSED_COUNTER_METRIC_NAME, clientIdTag.and(sockAddrTag));
+        Counter sseDroppedCounter = meterRegistry.counter(metricGroup + DROPPED_COUNTER_METRIC_NAME, clientIdTag.and(sockAddrTag));
+        List<Meter> meters = new ArrayList<>();
+        meters.add(sseProcessedCounter);
+        meters.add(sseDroppedCounter);
+        return meters;
     }
 
     @Override
@@ -233,15 +232,18 @@ public class PushServerSse<T, S> extends PushServer<T, ServerSentEvent> {
 
                         InetSocketAddress socketAddress = (InetSocketAddress) response.getChannel().remoteAddress();
 
-                        Metrics metrics;
+//                        Metrics metrics;
                         if (groupId == null) {
                             String address = socketAddress.getAddress().toString();
-                            metrics = registerSseMetrics(address, address);
+                            List<Meter> meters = registerSseMetrics(address, address);
+                            sseProcessedCounter = (Counter)meters.get(0);
+                            sseDroppedCounter = (Counter) meters.get(1);
                         } else {
-                            metrics = registerSseMetrics(groupId, socketAddress.getAddress().toString());
+                            List<Meter> meters = registerSseMetrics(groupId, socketAddress.getAddress().toString());
+                            sseProcessedCounter = (Counter)meters.get(0);
+                            sseDroppedCounter = (Counter) meters.get(1);
                         }
-                        sseProcessedCounter = metrics.getCounter(PROCESSED_COUNTER_METRIC_NAME);
-                        sseDroppedCounter = metrics.getCounter(DROPPED_COUNTER_METRIC_NAME);
+
 
                         response.getHeaders().set("Access-Control-Allow-Origin", "*");
                         response.getHeaders().set("content-type", "text/event-stream");

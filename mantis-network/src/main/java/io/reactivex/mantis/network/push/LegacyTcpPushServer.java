@@ -16,9 +16,8 @@
 
 package io.reactivex.mantis.network.push;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.WriteBufferWaterMark;
@@ -48,14 +47,14 @@ public class LegacyTcpPushServer<T> extends PushServer<T, RemoteRxEvent> {
 
     private Func1<Map<String, List<String>>, Func1<T, Boolean>> predicate;
     private String name;
-    private MetricsRegistry metricsRegistry;
+    private MeterRegistry meterRegistry;
 
     public LegacyTcpPushServer(PushTrigger<T> trigger, ServerConfig<T> config,
                                Observable<String> serverSignals) {
         super(trigger, config, serverSignals);
         this.predicate = config.getPredicate();
         this.name = config.getName();
-        this.metricsRegistry = config.getMetricsRegistry();
+        this.meterRegistry = config.getMeterRegistry();
     }
 
     @Override
@@ -129,16 +128,10 @@ public class LegacyTcpPushServer<T> extends PushServer<T, RemoteRxEvent> {
                                             }
 
                                             // support legacy metrics per connection
-                                            Metrics sseSinkMetrics = new Metrics.Builder()
-                                                    .name("DropOperator_outgoing_subject_" + slotId)
-                                                    .addCounter("onNext")
-                                                    .addCounter("dropped")
-                                                    .build();
 
-                                            sseSinkMetrics = metricsRegistry.registerAndGet(sseSinkMetrics);
+                                            Counter legacyMsgProcessedCounter = meterRegistry.counter("DropOperator_outgoing_subject_" + slotId + "onNext");
+                                            Counter legacyDroppedWrites = meterRegistry.counter("DropOperator_outgoing_subject_" + slotId + "dropped");
 
-                                            Counter legacyMsgProcessedCounter = sseSinkMetrics.getCounter("onNext");
-                                            Counter legacyDroppedWrites = sseSinkMetrics.getCounter("dropped");
 
                                             return manageConnection(newConnection, socketAddress.getHostString(), socketAddress.getPort(),
                                                     groupId, slotId, id, null,

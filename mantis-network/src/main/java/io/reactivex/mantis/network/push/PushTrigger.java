@@ -17,6 +17,10 @@
 package io.reactivex.mantis.network.push;
 
 import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.List;
 import rx.functions.Action1;
 
 
@@ -25,14 +29,14 @@ public class PushTrigger<T> {
     protected MonitoredQueue<T> buffer;
     protected Action1<MonitoredQueue<T>> doOnStart;
     protected Action1<MonitoredQueue<T>> doOnStop;
-    protected Metrics metrics;
+    protected MeterRegistry meterRegistry;
 
     public PushTrigger(Action1<MonitoredQueue<T>> doOnStart,
                        Action1<MonitoredQueue<T>> doOnStop,
-                       Metrics metrics) {
+                       MeterRegistry meterRegistry) {
         this.doOnStart = doOnStart;
         this.doOnStop = doOnStop;
-        this.metrics = metrics;
+        this.meterRegistry = new SimpleMeterRegistry();
     }
 
     public void setBuffer(MonitoredQueue<T> buffer) {
@@ -47,7 +51,7 @@ public class PushTrigger<T> {
         doOnStop.call(buffer);
     }
 
-    public Metrics getMetrics() {
-        return metrics;
+    public List<Meter> getMetrics() {
+        return meterRegistry.getMeters();
     }
 }

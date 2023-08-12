@@ -15,10 +15,8 @@
  */
 package io.reactivex.mantis.network.push;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -44,30 +42,23 @@ public class TimedChunker<T> implements Callable<Void> {
     private Counter numEventsDrained;
     private Counter drainTriggeredByTimer;
     private Counter drainTriggeredByBatch;
+    private final MeterRegistry meterRegistry;
 
     public TimedChunker(MonitoredQueue<T> buffer, int maxBufferLength,
                         int maxTimeMSec, ChunkProcessor<T> processor,
-                        ConnectionManager<T> connectionManager) {
+                        ConnectionManager<T> connectionManager,
+                        MeterRegistry meterRegistry) {
         this.maxBufferLength = maxBufferLength;
         this.maxTimeMSec = maxTimeMSec;
         this.buffer = buffer;
         this.processor = processor;
         this.connectionManager = connectionManager;
         this.internalBuffer = new ArrayList<>(maxBufferLength);
-
-        MetricGroupId metricsGroup = new MetricGroupId("TimedChunker");
-        Metrics metrics = new Metrics.Builder()
-            .id(metricsGroup)
-            .addCounter("interrupted")
-            .addCounter("numEventsDrained")
-            .addCounter("drainTriggeredByTimer")
-            .addCounter("drainTriggeredByBatch")
-            .build();
-        interrupted = metrics.getCounter("interrupted");
-        numEventsDrained = metrics.getCounter("numEventsDrained");
-        drainTriggeredByTimer = metrics.getCounter("drainTriggeredByTimer");
-        drainTriggeredByBatch = metrics.getCounter("drainTriggeredByBatch");
-        MetricsRegistry.getInstance().registerAndGet(metrics);
+        this.meterRegistry = meterRegistry;
+        interrupted = meterRegistry.counter("TimedChunker_interrupted");
+        numEventsDrained = meterRegistry.counter("TimedChunker_numEventsDrained");
+        drainTriggeredByTimer = meterRegistry.counter("TimedChunker_drainTriggeredByTimer");
+        drainTriggeredByBatch = meterRegistry.counter("TimedChunker_drainTriggeredByBatch");
     }
 
     @Override

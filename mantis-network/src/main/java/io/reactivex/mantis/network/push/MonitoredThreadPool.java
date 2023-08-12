@@ -17,12 +17,13 @@
 package io.reactivex.mantis.network.push;
 
 import com.mantisrx.common.utils.MantisMetricStringConstants;
-import com.netflix.spectator.api.BasicTag;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.spectator.GaugeCallback;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -37,11 +38,13 @@ public class MonitoredThreadPool {
     private static final Logger logger = LoggerFactory.getLogger(MonitoredThreadPool.class);
     private String name;
     private ThreadPoolExecutor threadPool;
-    private Metrics metrics;
+    private MeterRegistry meterRegistry;
     private Counter rejectCount;
     private Counter exceptions;
+    private Gauge activeTasks;
+    private Gauge queueLength;
 
-    public MonitoredThreadPool(String name, final ThreadPoolExecutor threadPool) {
+    public MonitoredThreadPool(String name, final ThreadPoolExecutor threadPool, MeterRegistry meterRegistry) {
         this.name = name;
         this.threadPool = threadPool;
         this.threadPool.setRejectedExecutionHandler(new RejectedExecutionHandler() {
@@ -52,23 +55,15 @@ public class MonitoredThreadPool {
         });
 
         final String poolId = Optional.ofNullable(name).orElse("none");
-        final BasicTag tag = new BasicTag(MantisMetricStringConstants.GROUP_ID_TAG, poolId);
-        final MetricGroupId metricsGroup = new MetricGroupId("MonitoredThreadPool", tag);
-
-        Gauge activeTasks = new GaugeCallback(metricsGroup, "activeTasks", () -> (double) threadPool.getActiveCount());
-
-        Gauge queueLength = new GaugeCallback(metricsGroup, "queueLength", () -> (double) threadPool.getQueue().size());
-
-        metrics = new Metrics.Builder()
-                .id(metricsGroup)
-                .addCounter("rejectCount")
-                .addCounter("exceptions")
-                .addGauge(activeTasks)
-                .addGauge(queueLength)
-                .build();
-
-        rejectCount = metrics.getCounter("rejectCount");
-        exceptions = metrics.getCounter("exceptions");
+        final Tags tag = Tags.of(MantisMetricStringConstants.GROUP_ID_TAG, poolId);
+        activeTasks = Gauge.builder("MonitoredThreadPool_activeTasks", () -> (double) threadPool.getActiveCount())
+                .tags(tag)
+                .register(meterRegistry);
+        queueLength = Gauge.builder("MonitoredThreadPool_queueLength", () -> (double) threadPool.getQueue().size())
+                .tags(tag)
+                .register(meterRegistry);
+        rejectCount = meterRegistry.counter("MonitoredThreadPool_rejectCount");
+        exceptions = meterRegistry.counter("MonitoredThreadPool_exceptions");
     }
 
     private void rejected() {
@@ -76,8 +71,14 @@ public class MonitoredThreadPool {
         rejectCount.increment();
     }
 
-    public Metrics getMetrics() {
-        return metrics;
+    public List<Meter> getMetrics() {
+        List<Meter> meters = new ArrayList<>();
+        meters.add(rejectCount);
+        meters.add(exceptions);
+        meters.add(activeTasks);
+        meters.add(queueLength);
+        return meters;
+
     }
 
     public int getMaxPoolSize() {

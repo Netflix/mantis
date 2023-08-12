@@ -38,7 +38,7 @@ public class PushServers {
         Action0 onComplete = new ErrorOnComplete(serverSignals, serverName);
         Action1<Throwable> onError = serverSignals::onError;
 
-        PushTrigger<T> trigger = ObservableTrigger.oo(serverName, o, onComplete, onError);
+        PushTrigger<T> trigger = ObservableTrigger.oo(serverName, o, onComplete, onError, config.getMeterRegistry());
         return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
@@ -52,7 +52,7 @@ public class PushServers {
         Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<KeyValuePair<K, V>> trigger = ObservableTrigger.oogo(serverName, go, onComplete, onError, groupExpirySeconds,
-                keyEncoder, hashFunction);
+                keyEncoder, hashFunction, config.getMeterRegistry());
         return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
@@ -67,7 +67,7 @@ public class PushServers {
         Action1<Throwable> onError = serverSignals::onError;
 
         PushTrigger<KeyValuePair<K, V>> trigger = ObservableTrigger.oomgo(serverName, go, onComplete, onError, groupExpirySeconds,
-                keyEncoder, hashFunction);
+                keyEncoder, hashFunction, config.getMeterRegistry());
         return new LegacyTcpPushServer<>(trigger, config, serverSignals);
     }
 
@@ -82,11 +82,11 @@ public class PushServers {
         Action0 onComplete = new ErrorOnComplete(serverSignals, serverName);
         Action1<Throwable> onError = serverSignals::onError;
 
-        PushTrigger<T> trigger = ObservableTrigger.o(serverName, o, onComplete, onError);
+        PushTrigger<T> trigger = ObservableTrigger.o(serverName, o, onComplete, onError, config.getMeterRegistry());
 
         return new PushServerSse<>(trigger, config, serverSignals,
             requestPreprocessor, requestPostprocessor,
-            subscribeProcessor, state, supportLegacyMetrics);
+            subscribeProcessor, state, supportLegacyMetrics, config.getMeterRegistry());
     }
 
     public static <T> PushServerSse<T, Void> infiniteStreamSse(ServerConfig<T> config, Observable<T> o) {
