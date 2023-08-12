@@ -232,7 +232,7 @@ public class ResourceClusterActorTest {
                         TaskExecutorReport.available())).get());
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
         assertEquals(
             TASK_EXECUTOR_ID,
             resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).get());
@@ -328,7 +328,7 @@ public class ResourceClusterActorTest {
 
         assertEquals(
             TASK_EXECUTOR_ID_3,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION_2, null, 0)).get());
 
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(
@@ -362,7 +362,7 @@ public class ResourceClusterActorTest {
 
         assertEquals(
             TASK_EXECUTOR_ID_2,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
         probe = new TestKit(actorSystem);
         resourceClusterActor.tell(new GetClusterUsageRequest(
                 CLUSTER_ID, ResourceClusterScalerActor.groupKeyFromTaskExecutorDefinitionIdFunc),
@@ -417,13 +417,13 @@ public class ResourceClusterActorTest {
                         TaskExecutorReport.available())).get());
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
         assertEquals(ImmutableList.of(), resourceCluster.getAvailableTaskExecutors().get());
         Thread.sleep(2000);
         assertEquals(ImmutableList.of(TASK_EXECUTOR_ID), resourceCluster.getAvailableTaskExecutors().get());
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
     }
 
     @Test
@@ -464,7 +464,7 @@ public class ResourceClusterActorTest {
 
             assertEquals(
                 taskExecutorID,
-                resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(workerId, MACHINE_DEFINITION))
+                resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(workerId, MACHINE_DEFINITION, null, 0))
                     .get());
         }
 
@@ -577,7 +577,7 @@ public class ResourceClusterActorTest {
         resourceCluster.disableTaskExecutorsFor(ATTRIBUTES, Instant.now().plus(Duration.ofDays(1)), Optional.empty()).get();
         assertEquals(
             TASK_EXECUTOR_ID_2,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).get());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).get());
     }
 
     @Test
@@ -610,7 +610,7 @@ public class ResourceClusterActorTest {
 
         assertEquals(
             TASK_EXECUTOR_ID,
-            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION)).join());
+            resourceCluster.getTaskExecutorFor(TaskExecutorAllocationRequest.of(WORKER_ID, MACHINE_DEFINITION, null, 0)).join());
         assertEquals(TASK_EXECUTOR_ID, resourceCluster.getTaskExecutorAssignedFor(WORKER_ID).join());
         assertEquals(Ack.getInstance(), resourceCluster.notifyTaskExecutorStatusChange(
             new TaskExecutorStatusChange(TASK_EXECUTOR_ID, CLUSTER_ID, TaskExecutorReport.occupied(WORKER_ID))).join());
