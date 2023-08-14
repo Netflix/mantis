@@ -238,7 +238,7 @@ class ResourceClustersManagerActor extends AbstractActor {
 
     @Override
     public SupervisorStrategy supervisorStrategy() {
-        return new MantisActorSupervisorStrategy(meterRegistry).create();
+        return MantisActorSupervisorStrategy.getInstance(meterRegistry).create();
     }
 
     @Value

@@ -28,8 +28,11 @@ public final class ActorSystemMetrics {
     private final Counter actorInitExceptionCount;
     private final Counter actorDeathPactExcCount;
     private final Counter actorResumeCount;
+    private final MeterRegistry meterRegistry;
+    private static ActorSystemMetrics INSTANCE = null;
 
     public ActorSystemMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
         this.actorKilledCount = meterRegistry.counter("ActorSystemMetrics_actorKilledCount");
         this.actorInitExceptionCount = meterRegistry.counter("ActorSystemMetrics_actorInitExceptionCount");
         this.actorDeathPactExcCount = meterRegistry.counter("ActorSystemMetrics_actorDeathPactExcCount");
@@ -62,5 +65,12 @@ public final class ActorSystemMetrics {
      */
     public void incrementActorResumeCount() {
         actorResumeCount.increment();
+    }
+
+    public static synchronized ActorSystemMetrics getInstance(MeterRegistry meterRegistry) {
+        if(INSTANCE == null) {
+            INSTANCE = new ActorSystemMetrics(meterRegistry);
+        }
+        return INSTANCE;
     }
 }

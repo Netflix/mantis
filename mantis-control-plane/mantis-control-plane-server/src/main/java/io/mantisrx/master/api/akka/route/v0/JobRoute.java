@@ -73,7 +73,6 @@ public class JobRoute extends BaseRoute {
     private static final Logger logger = LoggerFactory.getLogger(JobRoute.class);
     private final JobRouteHandler jobRouteHandler;
     private final MeterRegistry meterRegistry;
-
     private final Counter jobListGET;
     private final Counter jobListJobIdGET;
     private final Counter jobListRegexGET;
@@ -96,19 +95,19 @@ public class JobRoute extends BaseRoute {
     };
 
     public JobRoute(final JobRouteHandler jobRouteHandler, final ActorSystem actorSystem, MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
+        super(meterRegistry);
         this.jobRouteHandler = jobRouteHandler;
         MasterConfiguration config = ConfigurationProvider.getConfig();
         this.cache = createCache(actorSystem, config.getApiCacheMinSize(), config.getApiCacheMaxSize(),
                 config.getApiCacheTtlMilliseconds());
-        this.jobListGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListGET");
-        this.jobListJobIdGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListJobIdGET");
-        this.jobListRegexGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListRegexGET");
-        this.jobListLabelMatchGET = meterRegistry.counter("V0JobRoute" + "_" +"jobListLabelMatchGET");
-        this.jobArchivedWorkersGET = meterRegistry.counter("V0JobRoute" + "_" +"jobArchivedWorkersGET");
-        this.jobArchivedWorkersGETInvalid = meterRegistry.counter("V0JobRoute" + "_" +"jobArchivedWorkersGETInvalid");
-        this.workerHeartbeatStatusPOST = meterRegistry.counter("V0JobRoute" + "_" +"workerHeartbeatStatusPOST");
-        this.workerHeartbeatSkipped = meterRegistry.counter("V0JobRoute" + "_" +"workerHeartbeatSkipped");
+        this.jobListGET = meterRegistry.counter("V0JobRoute_jobListGET");
+        this.jobListJobIdGET = meterRegistry.counter("V0JobRoute_jobListJobIdGET");
+        this.jobListRegexGET = meterRegistry.counter("V0JobRoute_jobListRegexGET");
+        this.jobListLabelMatchGET = meterRegistry.counter("V0JobRoute_jobListLabelMatchGET");
+        this.jobArchivedWorkersGET = meterRegistry.counter("V0JobRoute_jobArchivedWorkersGET");
+        this.jobArchivedWorkersGETInvalid = meterRegistry.counter("V0JobRoute_jobArchivedWorkersGETInvalid");
+        this.workerHeartbeatStatusPOST = meterRegistry.counter("V0JobRoute_workerHeartbeatStatusPOST");
+        this.workerHeartbeatSkipped = meterRegistry.counter("V0JobRoute_workerHeartbeatSkipped");
 
     }
 

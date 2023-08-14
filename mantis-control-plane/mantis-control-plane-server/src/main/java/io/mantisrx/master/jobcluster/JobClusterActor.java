@@ -679,7 +679,7 @@ public class JobClusterActor extends AbstractActorWithTimers implements IJobClus
     @Override
     public SupervisorStrategy supervisorStrategy() {
         // custom supervisor strategy to resume the child actors on Exception instead of the default restart
-        return new MantisActorSupervisorStrategy(meterRegistry).create();
+        return MantisActorSupervisorStrategy.getInstance(meterRegistry).create();
     }
 
 
