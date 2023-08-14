@@ -54,6 +54,8 @@ import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.Value;
+import org.apache.commons.lang3.StringUtils;
 import rx.subjects.BehaviorSubject;
 
 public class JobClusterManagerProto {
@@ -1889,6 +1891,17 @@ public class JobClusterManagerProto {
         }
     }
 
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class GetLastLaunchedJobIdStreamRequest extends BaseRequest {
+        String clusterName;
+
+        public GetLastLaunchedJobIdStreamRequest(final String clusterName) {
+            Preconditions.checkArg(StringUtils.isNotBlank(clusterName), "Must provide job cluster name in request");
+            this.clusterName = clusterName;
+        }
+    }
+
     /**
      * Stream of JobId submissions for a cluster
      */
@@ -1928,6 +1941,23 @@ public class JobClusterManagerProto {
             return "GetLastSubmittedJobIdStreamRequest{" +
                    "clusterName='" + clusterName + '\'' +
                    '}';
+        }
+    }
+
+    public static final class GetLastLaunchedJobIdStreamResponse extends BaseResponse {
+        Optional<BehaviorSubject<JobId>> jobIdBehaviorSubject;
+
+        public GetLastLaunchedJobIdStreamResponse(
+            final long requestId,
+            final ResponseCode code,
+            final String msg,
+            final Optional<BehaviorSubject<JobId>> jobIdBehaviorSubject) {
+            super(requestId, code, msg);
+            this.jobIdBehaviorSubject = jobIdBehaviorSubject;
+        }
+
+        public Optional<BehaviorSubject<JobId>> getjobIdBehaviorSubject() {
+            return this.jobIdBehaviorSubject;
         }
     }
 
