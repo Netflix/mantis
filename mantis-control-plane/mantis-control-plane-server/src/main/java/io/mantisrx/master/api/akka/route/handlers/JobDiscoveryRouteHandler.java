@@ -27,4 +27,7 @@ public interface JobDiscoveryRouteHandler {
                                                            final boolean sendHeartbeats);
     CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastSubmittedJobIdStream(final JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest request,
                                                                                             final boolean sendHeartbeats);
+
+    CompletionStage<JobDiscoveryRouteProto.JobClusterInfoResponse> lastLaunchedJobIdStream(final JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest request,
+                                                                                            final boolean sendHeartbeats);
 }
