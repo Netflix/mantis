@@ -78,6 +78,7 @@ public interface IJobClustersManager {
     // worker related messages
 
     void onGetLastSubmittedJobIdSubject(JobClusterManagerProto.GetLastSubmittedJobIdStreamRequest request);
+    void onGetLastLaunchedJobIdSubject(JobClusterManagerProto.GetLastLaunchedJobIdStreamRequest request);
 
     void onWorkerEvent(WorkerEvent r);
 
