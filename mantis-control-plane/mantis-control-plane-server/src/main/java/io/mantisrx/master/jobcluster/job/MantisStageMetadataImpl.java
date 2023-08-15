@@ -566,7 +566,7 @@ public class MantisStageMetadataImpl implements IMantisStageMetadata {
             try {
                 worker.processEvent(event, jobStore);
             } catch (InvalidWorkerStateChangeException wex) {
-                LOGGER.warn("InvalidWorkerStateChangeException from: ", wex);
+                LOGGER.warn("InvalidWorkerStateChangeException from {}: {}", wex);
             }
 
             return of(worker);

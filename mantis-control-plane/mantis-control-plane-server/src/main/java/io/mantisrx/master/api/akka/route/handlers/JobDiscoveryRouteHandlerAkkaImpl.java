@@ -122,7 +122,7 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
                         Observable<JobSchedulingInfo> heartbeats =
                             Observable.interval(5, serverIdleConnectionTimeout.getSeconds() - 1, TimeUnit.SECONDS)
                                 .map(x -> {
-                                    if(isJobCompleted.get()) {
+                                    if(!isJobCompleted.get()) {
                                         return SCHED_INFO_HB_INSTANCE;
                                     } else {
                                         return completedJobSchedulingInfo;
