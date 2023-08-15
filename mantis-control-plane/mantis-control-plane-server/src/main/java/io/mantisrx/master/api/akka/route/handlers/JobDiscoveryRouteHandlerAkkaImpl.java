@@ -46,6 +46,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -112,7 +113,8 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
         try {
             AtomicBoolean isJobCompleted = new AtomicBoolean(false);
             final String jobId = request.getJobId().getId();
-            final JobSchedulingInfo completedJobSchedulingInfo = new JobSchedulingInfo(jobId, new HashMap<>());
+            AtomicReference<JobSchedulingInfo> jobSchedulingInfoAtomicRef =
+                new AtomicReference<>(new JobSchedulingInfo(jobId, new HashMap<>()));
             CompletionStage<JobDiscoveryRouteProto.SchedInfoResponse> jobSchedInfoObsCS = response
                 .thenApply(getJobSchedInfoResp -> {
                     Optional<BehaviorSubject<JobSchedulingInfo>> jobStatusSubjectO = getJobSchedInfoResp.getJobSchedInfoSubject();
@@ -125,15 +127,20 @@ public class JobDiscoveryRouteHandlerAkkaImpl implements JobDiscoveryRouteHandle
                                     if(isJobCompleted.get()) {
                                         return SCHED_INFO_HB_INSTANCE;
                                     } else {
-                                        return completedJobSchedulingInfo;
+                                        return jobSchedulingInfoAtomicRef.get();
                                     }
 
                                 })
                                 .takeWhile(x -> sendHeartbeats == true);
 
+                        Observable<JobSchedulingInfo> jobSchedulingInfoObservable =
+                            jobSchedulingInfoObs
+                                .doOnCompleted(() -> isJobCompleted.set(true))
+                                .doOnNext(jobSchedulingInfoAtomicRef::set);
+
                         // Job SchedulingInfo obs completes on job shutdown. Use the do On completed as a signal to inform the user that there are no workers to connect to.
                         // TODO For future a more explicit key in the payload saying the job is completed.
-                        Observable<JobSchedulingInfo> jobSchedulingInfoWithHBObs = Observable.merge(jobSchedulingInfoObs.doOnCompleted(() -> isJobCompleted.set(true)), heartbeats);
+                        Observable<JobSchedulingInfo> jobSchedulingInfoWithHBObs = Observable.merge(jobSchedulingInfoObservable, heartbeats);
                         return new JobDiscoveryRouteProto.SchedInfoResponse(
                             getJobSchedInfoResp.requestId,
                             getJobSchedInfoResp.responseCode,
