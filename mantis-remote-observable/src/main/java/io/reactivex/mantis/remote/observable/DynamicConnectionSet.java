@@ -17,16 +17,22 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.MantisGroup;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.Endpoint;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.reconciliator.ConnectionSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jctools.queues.SpscArrayQueue;
@@ -51,42 +57,43 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
     private EndpointInjector endpointInjector;
     private PublishSubject<EndpointChange> reconciliatorConnector = PublishSubject.create();
     private Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<T>> toObservableFunc;
-    private Metrics connectionMetrics;
+    private MeterRegistry meterRegistry;
     private PublishSubject<Set<Endpoint>> activeConnectionsSubject = PublishSubject.create();
     private Lock activeConnectionsLock = new ReentrantLock();
     private Map<String, Endpoint> currentActiveConnections = new HashMap<>();
     private int minTimeoutOnUnexpectedTerminateSec;
     private int maxTimeoutOnUnexpectedTerminateSec;
     private Gauge activeConnectionsGauge;
+    private AtomicLong activeConnectionsValue = new AtomicLong(0);
     private Gauge closedConnections;
+    private AtomicLong closedConnectionsValue = new AtomicLong(0);
+
     private Gauge forceCompletedConnections;
+    private AtomicLong forceCompletedConnectionsValue = new AtomicLong(0);
     private Random random = new Random();
 
     public DynamicConnectionSet(Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<T>>
-                                        toObservableFunc, int minTimeoutOnUnexpectedTerminateSec, int maxTimeoutOnUnexpectedTerminateSec) {
+                                        toObservableFunc, int minTimeoutOnUnexpectedTerminateSec, int maxTimeoutOnUnexpectedTerminateSec, MeterRegistry meterRegistry) {
         this.toObservableFunc = toObservableFunc;
-        connectionMetrics = new Metrics.Builder()
-                .name("DynamicConnectionSet")
-                .addGauge("activeConnections")
-                .addGauge("closedConnections")
-                .addGauge("forceCompletedConnections")
-                .build();
-
-        activeConnectionsGauge = connectionMetrics.getGauge("activeConnections");
-        closedConnections = connectionMetrics.getGauge("closedConnections");
-        forceCompletedConnections = connectionMetrics.getGauge("forceCompletedConnections");
+        this.meterRegistry = meterRegistry;
+        activeConnectionsGauge = Gauge.builder("DynamicConnectionSet_activeConnections", activeConnectionsValue::get)
+                .register(meterRegistry);
+        closedConnections = Gauge.builder("DynamicConnectionSet_closedConnections", closedConnectionsValue::get)
+                .register(meterRegistry);
+        forceCompletedConnections = Gauge.builder("DynamicConnectionSet_forceCompletedConnections", forceCompletedConnectionsValue::get)
+                .register(meterRegistry);
 
         this.minTimeoutOnUnexpectedTerminateSec = minTimeoutOnUnexpectedTerminateSec;
         this.maxTimeoutOnUnexpectedTerminateSec = maxTimeoutOnUnexpectedTerminateSec;
     }
 
     public DynamicConnectionSet(Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<T>>
-                                        toObservableFunc) {
-        this(toObservableFunc, MIN_TIME_SEC_DEFAULT, MAX_TIME_SEC_DEFAULT);
+                                        toObservableFunc, MeterRegistry meterRegistry) {
+        this(toObservableFunc, MIN_TIME_SEC_DEFAULT, MAX_TIME_SEC_DEFAULT, meterRegistry);
     }
 
     public static <K, V> DynamicConnectionSet<GroupedObservable<K, V>> create(
-            final ConnectToGroupedObservable.Builder<K, V> config, int maxTimeBeforeDisconnectSec) {
+            final ConnectToGroupedObservable.Builder<K, V> config, int maxTimeBeforeDisconnectSec, MeterRegistry meterRegistry) {
         Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<GroupedObservable<K, V>>> toObservableFunc = new
                 Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<GroupedObservable<K, V>>>() {
                     @Override
@@ -103,12 +110,12 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                         return RemoteObservable.connect(configCopy.build());
                     }
                 };
-        return new DynamicConnectionSet<GroupedObservable<K, V>>(toObservableFunc, MIN_TIME_SEC_DEFAULT, maxTimeBeforeDisconnectSec);
+        return new DynamicConnectionSet<GroupedObservable<K, V>>(toObservableFunc, MIN_TIME_SEC_DEFAULT, maxTimeBeforeDisconnectSec, meterRegistry);
     }
 
     // NJ
     public static <K, V> DynamicConnectionSet<MantisGroup<K, V>> createMGO(
-            final ConnectToGroupedObservable.Builder<K, V> config, int maxTimeBeforeDisconnectSec, final SpscArrayQueue<MantisGroup<?, ?>> inputQueue) {
+            final ConnectToGroupedObservable.Builder<K, V> config, int maxTimeBeforeDisconnectSec, final SpscArrayQueue<MantisGroup<?, ?>> inputQueue, MeterRegistry meterRegistry) {
         Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<MantisGroup<K, V>>> toObservableFunc
                 = new Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<MantisGroup<K, V>>>() {
             @Override
@@ -125,22 +132,22 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                 return RemoteObservable.connectToMGO(configCopy.build(), inputQueue);
             }
         };
-        return new DynamicConnectionSet<MantisGroup<K, V>>(toObservableFunc, MIN_TIME_SEC_DEFAULT, maxTimeBeforeDisconnectSec);
+        return new DynamicConnectionSet<MantisGroup<K, V>>(toObservableFunc, MIN_TIME_SEC_DEFAULT, maxTimeBeforeDisconnectSec, meterRegistry);
     }
 
     public static <K, V> DynamicConnectionSet<GroupedObservable<K, V>> create(
-            final ConnectToGroupedObservable.Builder<K, V> config) {
-        return create(config, MAX_TIME_SEC_DEFAULT);
+            final ConnectToGroupedObservable.Builder<K, V> config, MeterRegistry meterRegistry) {
+        return create(config, MAX_TIME_SEC_DEFAULT, meterRegistry);
     }
 
     // NJ
     public static <K, V> DynamicConnectionSet<MantisGroup<K, V>> createMGO(
-            final ConnectToGroupedObservable.Builder<K, V> config) {
-        return createMGO(config, MAX_TIME_SEC_DEFAULT, inputQueue);
+            final ConnectToGroupedObservable.Builder<K, V> config, MeterRegistry meterRegistry) {
+        return createMGO(config, MAX_TIME_SEC_DEFAULT, inputQueue, meterRegistry);
     }
 
     public static <T> DynamicConnectionSet<T> create(
-            final ConnectToObservable.Builder<T> config, int maxTimeBeforeDisconnectSec) {
+            final ConnectToObservable.Builder<T> config, int maxTimeBeforeDisconnectSec, MeterRegistry meterRegistry) {
         Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<T>> toObservableFunc = new
                 Func3<Endpoint, Action0, PublishSubject<Integer>, RemoteRxConnection<T>>() {
                     @Override
@@ -157,12 +164,12 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                         return RemoteObservable.connect(configCopy.build());
                     }
                 };
-        return new DynamicConnectionSet<T>(toObservableFunc, MIN_TIME_SEC_DEFAULT, maxTimeBeforeDisconnectSec);
+        return new DynamicConnectionSet<T>(toObservableFunc, MIN_TIME_SEC_DEFAULT, maxTimeBeforeDisconnectSec, meterRegistry);
     }
 
     public static <T> DynamicConnectionSet<T> create(
-            final ConnectToObservable.Builder<T> config) {
-        return create(config, MAX_TIME_SEC_DEFAULT);
+            final ConnectToObservable.Builder<T> config, MeterRegistry meterRegistry) {
+        return create(config, MAX_TIME_SEC_DEFAULT, meterRegistry);
     }
 
     public void setEndpointInjector(EndpointInjector endpointInjector) {
@@ -173,8 +180,13 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
         return reconciliatorConnector;
     }
 
-    public Metrics getConnectionMetrics() {
-        return connectionMetrics;
+    public List<Meter> getConnectionMetrics() {
+        List<Meter> meters = new ArrayList<>();
+        meters.add(closedConnections);
+        meters.add(activeConnectionsGauge);
+        meters.add(forceCompletedConnections);
+
+        return meters;
     }
 
     public Observable<Observable<T>> observables() {
@@ -206,7 +218,7 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                                                         activeConnectionsContains(group.getKey(), change.getEndpoint())) {
                                                     logger.info("Received complete request, removing connection from active set, " + change.getEndpoint().getHost() +
                                                             " port: " + change.getEndpoint().getPort() + " id: " + change.getEndpoint().getSlotId());
-                                                    forceCompletedConnections.increment();
+                                                    forceCompletedConnectionsValue.incrementAndGet();
                                                     removeConnection(group.getKey(), change.getEndpoint());
                                                     closeConnectionTrigger.onNext(1);
                                                 }
@@ -247,7 +259,7 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                                                                     @Override
                                                                     public void call() {
                                                                         logger.warn("Removing connection from active set, " + toAdd);
-                                                                        closedConnections.increment();
+                                                                        closedConnectionsValue.incrementAndGet();
                                                                         removeConnection(group.getKey(), toAdd.getEndpoint());
                                                                     }
                                                                 }).subscribe();
@@ -282,7 +294,7 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
         try {
             activeConnectionsLock.lock();
             currentActiveConnections.clear();
-            activeConnectionsGauge.set(0);
+            activeConnectionsValue.set(0);
             activeConnectionsSubject.onNext(new HashSet<Endpoint>());
         } finally {
             activeConnectionsLock.unlock();
@@ -298,7 +310,7 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
                         toAdd.getPort(), toAdd.getSlotId(),
                         toAdd.getCompletedCallback(),
                         toAdd.getErrorCallback()));
-                activeConnectionsGauge.increment();
+                activeConnectionsValue.incrementAndGet();
                 activeConnectionsSubject.onNext(new HashSet<Endpoint>(currentActiveConnections.values()));
             }
         } finally {
@@ -311,7 +323,7 @@ public class DynamicConnectionSet<T> implements ConnectionSet<T> {
             activeConnectionsLock.lock();
             if (currentActiveConnections.containsKey(id)) {
                 currentActiveConnections.remove(id);
-                activeConnectionsGauge.decrement();
+                activeConnectionsValue.decrementAndGet();
                 activeConnectionsSubject.onNext(new HashSet<Endpoint>(currentActiveConnections.values()));
             }
         } finally {

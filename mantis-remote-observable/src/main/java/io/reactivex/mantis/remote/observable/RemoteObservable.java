@@ -21,6 +21,7 @@ import io.mantisrx.common.MantisGroup;
 import io.mantisrx.common.codec.Decoder;
 import io.mantisrx.common.codec.Encoder;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
@@ -217,7 +218,8 @@ public class RemoteObservable {
 
     private static <K, V> Observable<GroupedObservable<K, V>> createTcpConnectionToServer(final ConnectToGroupedObservable<K, V> params,
                                                                                           final RemoteUnsubscribe remoteUnsubscribe, final RxMetrics metrics,
-                                                                                          final Action0 connectionDisconnectCallback, Observable<Integer> closeTrigger) {
+                                                                                          final Action0 connectionDisconnectCallback, Observable<Integer> closeTrigger,
+                                                                                          MeterRegistry meterRegistry) {
         final Decoder<K> keyDecoder = params.getKeyDecoder();
         final Decoder<V> valueDecoder = params.getValueDecoder();
         loadFastProperties();
@@ -249,7 +251,7 @@ public class RemoteObservable {
                                 connection.writeAndFlush(RemoteRxEvent.subscribed(params.getName(), params.getSubscribeParameters())); // send subscribe event to server
                                 remoteUnsubscribe.setConnection(connection);
                                 return connection.getInput()
-                                        .lift(new DropOperator<RemoteRxEvent>("incoming_" + RemoteObservable.class.getCanonicalName() + "_createTcpConnectionToServerGroups"));
+                                        .lift(new DropOperator<RemoteRxEvent>(meterRegistry,"incoming_" + RemoteObservable.class.getCanonicalName() + "_createTcpConnectionToServerGroups"));
                             }
                         })
                         .doOnCompleted(new Action0() {
@@ -394,7 +396,7 @@ public class RemoteObservable {
                                 connection.writeAndFlush(RemoteRxEvent.subscribed(params.getName(), params.getSubscribeParameters())); // send subscribe event to server
                                 remoteUnsubscribe.setConnection(connection);
                                 return connection.getInput()
-                                        .lift(new DropOperator<RemoteRxEvent>("incoming_" + RemoteObservable.class.getCanonicalName() + "_createTcpConnectionToServerGroups"));
+                                        .lift(new DropOperator<RemoteRxEvent>(meterRegistry, "incoming_" + RemoteObservable.class.getCanonicalName() + "_createTcpConnectionToServerGroups"));
                             }
                         })
                         .doOnCompleted(new Action0() {
@@ -518,7 +520,7 @@ public class RemoteObservable {
                                 connection.writeAndFlush(RemoteRxEvent.subscribed(params.getName(), params.getSubscribeParameters())); // send subscribe event to server
                                 remoteUnsubscribe.setConnection(connection);
                                 return connection.getInput()
-                                        .lift(new DropOperator<RemoteRxEvent>("incoming_" + RemoteObservable.class.getCanonicalName() + "_createTcpConnectionToServer"));
+                                        .lift(new DropOperator<RemoteRxEvent>(meterRegistry, "incoming_" + RemoteObservable.class.getCanonicalName() + "_createTcpConnectionToServer"));
                             }
                         })
                         .doOnCompleted(new Action0() {

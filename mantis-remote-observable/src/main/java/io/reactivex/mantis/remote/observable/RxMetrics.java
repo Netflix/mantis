@@ -16,13 +16,18 @@
 
 package io.reactivex.mantis.remote.observable;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RxMetrics {
 
-    private Metrics metrics;
+//    private Metrics metrics;
+    private MeterRegistry meterRegistry;
     private Counter next;
     private Counter nextFailure;
     private Counter error;
@@ -33,30 +38,39 @@ public class RxMetrics {
     private Counter unsubscribe;
 
     public RxMetrics() {
-        metrics = new Metrics.Builder()
-                .name("RemoteObservableMetrics")
-                .addCounter("onNext")
-                .addCounter("onNextFailure")
-                .addCounter("onError")
-                .addCounter("onErrorFailure")
-                .addCounter("onComplete")
-                .addCounter("onCompleteFailure")
-                .addCounter("subscribe")
-                .addCounter("unsubscribe")
-                .build();
+//        metrics = new Metrics.Builder()
+//                .name("RemoteObservableMetrics")
+//                .addCounter("onNext")
+//                .addCounter("onNextFailure")
+//                .addCounter("onError")
+//                .addCounter("onErrorFailure")
+//                .addCounter("onComplete")
+//                .addCounter("onCompleteFailure")
+//                .addCounter("subscribe")
+//                .addCounter("unsubscribe")
+//                .build();
 
-        next = metrics.getCounter("onNext");
-        nextFailure = metrics.getCounter("onNextFailure");
-        error = metrics.getCounter("onError");
-        errorFailure = metrics.getCounter("onErrorFailure");
-        complete = metrics.getCounter("onComplete");
-        completeFailure = metrics.getCounter("onCompleteFailure");
-        subscribe = metrics.getCounter("subscribe");
-        unsubscribe = metrics.getCounter("unsubscribe");
+        next = meterRegistry.counter("RemoteObservableMetrics_onNext");
+        nextFailure = meterRegistry.counter("RemoteObservableMetrics_onNextFailure");
+        error = meterRegistry.counter("RemoteObservableMetrics_onError");
+        errorFailure = meterRegistry.counter("RemoteObservableMetrics_onErrorFailure");
+        complete = meterRegistry.counter("RemoteObservableMetrics_onComplete");
+        completeFailure = meterRegistry.counter("RemoteObservableMetrics_onCompleteFailure");
+        subscribe = meterRegistry.counter("RemoteObservableMetrics_subscribe");
+        unsubscribe = meterRegistry.counter("RemoteObservableMetrics_unsubscribe");
     }
 
-    public Metrics getCountersAndGauges() {
-        return metrics;
+    public List<Meter> getCountersAndGauges() {
+        List<Meter> meters = new ArrayList<>();
+        meters.add(next);
+        meters.add(nextFailure);
+        meters.add(error);
+        meters.add(errorFailure);
+        meters.add(complete);
+        meters.add(completeFailure);
+        meters.add(subscribe);
+        meters.add(unsubscribe);
+        return meters;
     }
 
     public void incrementNextFailureCount() {
@@ -104,11 +118,11 @@ public class RxMetrics {
     }
 
     public long getOnNextCount() {
-        return next.value();
+        return (long)next.count();
     }
 
     public long getOnNextFailureCount() {
-        return nextFailure.value();
+        return (long)nextFailure.count();
     }
 
     public long getOnNextRollingFailureCount() {
@@ -120,11 +134,11 @@ public class RxMetrics {
     }
 
     public long getOnErrorCount() {
-        return error.value();
+        return (long)error.count();
     }
 
     public long getOnErrorFailureCount() {
-        return errorFailure.value();
+        return (long)errorFailure.count();
     }
 
     public long getOnErrorRollingFailureCount() {
@@ -140,18 +154,18 @@ public class RxMetrics {
     }
 
     public long getOnCompletedCount() {
-        return complete.value();
+        return (long)complete.count();
     }
 
     public long getOnCompletedFailureCount() {
-        return completeFailure.value();
+        return (long)completeFailure.count();
     }
 
     public long getSubscribedCount() {
-        return subscribe.value();
+        return (long)subscribe.count();
     }
 
     public long getUnsubscribedCount() {
-        return unsubscribe.value();
+        return (long)unsubscribe.count();
     }
 }

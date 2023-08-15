@@ -17,11 +17,13 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Encoder;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.network.HashFunctions;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.filter.ServerSideFilters;
 import io.reactivex.mantis.remote.observable.slotting.ConsistentHashing;
 import io.reactivex.mantis.remote.observable.slotting.SlottingStrategy;
@@ -53,10 +55,12 @@ public class ServeGroupedObservable<K, V> extends ServeConfig<K, Group<String, V
     private int groupBufferTimeMSec = 250;
     private long expiryInSecs = Long.MAX_VALUE;
     private Counter groupsExpiredCounter;
+    private MeterRegistry meterRegistry;
 
-    public ServeGroupedObservable(Builder<K, V> builder) {
+    public ServeGroupedObservable(Builder<K, V> builder, MeterRegistry meterRegistry) {
         super(builder.name, builder.slottingStrategy, builder.filterFunction,
                 builder.maxWriteAttempts);
+        this.meterRegistry = meterRegistry;
 
         // TODO this should be pushed into builder, default is 0 buffer
         String groupBufferTimeMSecStr =
@@ -69,12 +73,12 @@ public class ServeGroupedObservable<K, V> extends ServeConfig<K, Group<String, V
         this.valueEncoder = builder.valueEncoder;
         this.expiryInSecs = builder.expiryTimeInSecs;
 
-        Metrics m = new Metrics.Builder()
-                .name("ServeGroupedObservable")
-                .addCounter("groupsExpiredCounter")
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        groupsExpiredCounter = m.getCounter("groupsExpiredCounter");
+//        Metrics m = new Metrics.Builder()
+//                .name("ServeGroupedObservable")
+//                .addCounter("groupsExpiredCounter")
+//                .build();
+//        m = MetricsRegistry.getInstance().registerAndGet(m);
+        groupsExpiredCounter = meterRegistry.counter("ServeGroupedObservable_groupsExpiredCounter");
 
         applySlottingSideEffectToObservable(builder.observable, builder.minConnectionsToSubscribe);
     }
@@ -218,6 +222,7 @@ public class ServeGroupedObservable<K, V> extends ServeConfig<K, Group<String, V
         private int maxWriteAttempts = 3;
         private long expiryTimeInSecs = Long.MAX_VALUE;
         private Observable<Integer> minConnectionsToSubscribe = Observable.just(1);
+        private MeterRegistry meterRegistry;
 
         public Builder<K, V> name(String name) {
             if (name != null && name.length() > 127) {
@@ -268,8 +273,13 @@ public class ServeGroupedObservable<K, V> extends ServeConfig<K, Group<String, V
             return this;
         }
 
+        public Builder<K, V> registry(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
+            return this;
+        }
+
         public ServeGroupedObservable<K, V> build() {
-            return new ServeGroupedObservable<K, V>(this);
+            return new ServeGroupedObservable<K, V>(this, meterRegistry);
         }
     }
 }

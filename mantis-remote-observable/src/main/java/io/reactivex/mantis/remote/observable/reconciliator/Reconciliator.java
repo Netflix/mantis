@@ -16,19 +16,23 @@
 
 package io.reactivex.mantis.remote.observable.reconciliator;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.Endpoint;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.DynamicConnectionSet;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointChange.Type;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -52,29 +56,32 @@ public class Reconciliator<T> {
     private PublishSubject<Set<Endpoint>> currentExpectedSet = PublishSubject.create();
     private EndpointInjector injector;
     private PublishSubject<EndpointChange> reconciledChanges = PublishSubject.create();
-    private Metrics metrics;
+    private MeterRegistry meterRegistry;
+//    private Metrics metrics;
     private Counter reconciliationCheck;
     private Gauge running;
+    private AtomicLong runningValue = new AtomicLong(0);
     private Gauge expectedSetSize;
+    private AtomicLong expectedSetSizeValue = new AtomicLong(0);
 
     Reconciliator(Builder<T> builder) {
         this.name = builder.name;
         this.injector = builder.injector;
         this.connectionSet = builder.connectionSet;
-        metrics = new Metrics.Builder()
-                .name("Reconciliator_" + name)
-                .addCounter("reconciliationCheck")
-                .addGauge("expectedSetSize")
-                .addGauge("running")
-                .build();
 
-        reconciliationCheck = metrics.getCounter("reconciliationCheck");
-        running = metrics.getGauge("running");
-        expectedSetSize = metrics.getGauge("expectedSetSize");
+        reconciliationCheck = meterRegistry.counter("Reconciliator_" + name+ "reconciliationCheck");
+        running = Gauge.builder("Reconciliator_" + name + "running", runningValue::get)
+            .register(meterRegistry);
+        expectedSetSize = Gauge.builder("Reconciliator_" + name + "expectedSetSize", expectedSetSizeValue::get)
+            .register(meterRegistry);
     }
 
-    public Metrics getMetrics() {
-        return metrics;
+    public List<Meter> getMetrics() {
+        List<Meter> meters = new ArrayList<>();
+        meters.add(reconciliationCheck);
+        meters.add(running);
+        meters.add(expectedSetSize);
+        return meters;
     }
 
     private Observable<EndpointChange> deltas() {
@@ -112,13 +119,13 @@ public class Reconciliator<T> {
                                         if (sideEffectState.containsKey(id)) {
                                             if (newEndpointChange.getType() == Type.complete) {
                                                 // remove from expecected set
-                                                expectedSetSize.decrement();
+                                                expectedSetSizeValue.decrementAndGet();
                                                 sideEffectState.remove(id);
                                                 currentExpectedSet.onNext(new HashSet<Endpoint>(sideEffectState.values()));
                                             }
                                         } else {
                                             if (newEndpointChange.getType() == Type.add) {
-                                                expectedSetSize.increment();
+                                                expectedSetSizeValue.incrementAndGet();
                                                 sideEffectState.put(id, new Endpoint(newEndpointChange.getEndpoint().getHost(),
                                                         newEndpointChange.getEndpoint().getPort(), newEndpointChange.getEndpoint().getSlotId()));
                                                 currentExpectedSet.onNext(new HashSet<Endpoint>(sideEffectState.values()));
@@ -148,7 +155,7 @@ public class Reconciliator<T> {
     private void startReconciliation() {
         if (startedReconciliation.compareAndSet(false, true)) {
             logger.info("Starting reconciliation for name: " + name);
-            running.increment();
+            runningValue.incrementAndGet();
             subscription =
                     Observable
                             .combineLatest(currentExpectedSet, connectionSet.activeConnections(),
@@ -204,7 +211,7 @@ public class Reconciliator<T> {
     private void stopReconciliation() {
         if (startedReconciliation.compareAndSet(true, false)) {
             logger.info("Stopping reconciliation for name: " + name);
-            running.decrement();
+            runningValue.decrementAndGet();
             subscription.unsubscribe();
         } else {
             logger.info("reconciliation already stopped for name: " + name);
