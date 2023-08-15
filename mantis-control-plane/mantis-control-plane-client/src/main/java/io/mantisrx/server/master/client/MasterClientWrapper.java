@@ -223,10 +223,8 @@ public class MasterClientWrapper {
                                     })
                                     .retryWhen(schedInfoRetry.getRetryLogic())
                                     .map((JobSchedulingInfo jobSchedulingInfo) -> {
-                                        logger.info("Got scheduling info for {}", jobId);
-                                        if (logger.isDebugEnabled()) {
-                                            logger.debug("Worker Assignments {}", jobSchedulingInfo.getWorkerAssignments().get(sinkStage));
-                                        }
+                                        logger.info("Got scheduling info for {} with workerAssignments {}",
+                                            jobId, jobSchedulingInfo.getWorkerAssignments().get(sinkStage));
 
                                         return jobSchedulingInfo.getWorkerAssignments().get(sinkStage);
                                     })
