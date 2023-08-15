@@ -39,6 +39,13 @@ public final class ActorSystemMetrics {
         this.actorResumeCount = meterRegistry.counter("ActorSystemMetrics_actorResumeCount");
     }
 
+    public static synchronized ActorSystemMetrics getInstance(MeterRegistry meterRegistry) {
+        if(INSTANCE == null) {
+            INSTANCE = new ActorSystemMetrics(meterRegistry);
+        }
+        return INSTANCE;
+    }
+
     /**
      * Increments Actor kill count.
      */
@@ -67,10 +74,4 @@ public final class ActorSystemMetrics {
         actorResumeCount.increment();
     }
 
-    public static synchronized ActorSystemMetrics getInstance(MeterRegistry meterRegistry) {
-        if(INSTANCE == null) {
-            INSTANCE = new ActorSystemMetrics(meterRegistry);
-        }
-        return INSTANCE;
-    }
 }
