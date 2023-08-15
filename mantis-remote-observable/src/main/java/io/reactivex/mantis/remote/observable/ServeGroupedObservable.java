@@ -17,9 +17,6 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.codec.Encoder;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.network.HashFunctions;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.micrometer.core.instrument.Counter;
@@ -73,11 +70,6 @@ public class ServeGroupedObservable<K, V> extends ServeConfig<K, Group<String, V
         this.valueEncoder = builder.valueEncoder;
         this.expiryInSecs = builder.expiryTimeInSecs;
 
-//        Metrics m = new Metrics.Builder()
-//                .name("ServeGroupedObservable")
-//                .addCounter("groupsExpiredCounter")
-//                .build();
-//        m = MetricsRegistry.getInstance().registerAndGet(m);
         groupsExpiredCounter = meterRegistry.counter("ServeGroupedObservable_groupsExpiredCounter");
 
         applySlottingSideEffectToObservable(builder.observable, builder.minConnectionsToSubscribe);

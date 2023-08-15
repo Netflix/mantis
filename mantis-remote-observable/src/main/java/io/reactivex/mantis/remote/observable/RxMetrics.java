@@ -16,8 +16,6 @@
 
 package io.reactivex.mantis.remote.observable;
 
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Counter;
@@ -26,7 +24,6 @@ import java.util.List;
 
 public class RxMetrics {
 
-//    private Metrics metrics;
     private MeterRegistry meterRegistry;
     private Counter next;
     private Counter nextFailure;
@@ -38,18 +35,6 @@ public class RxMetrics {
     private Counter unsubscribe;
 
     public RxMetrics() {
-//        metrics = new Metrics.Builder()
-//                .name("RemoteObservableMetrics")
-//                .addCounter("onNext")
-//                .addCounter("onNextFailure")
-//                .addCounter("onError")
-//                .addCounter("onErrorFailure")
-//                .addCounter("onComplete")
-//                .addCounter("onCompleteFailure")
-//                .addCounter("subscribe")
-//                .addCounter("unsubscribe")
-//                .build();
-
         next = meterRegistry.counter("RemoteObservableMetrics_onNext");
         nextFailure = meterRegistry.counter("RemoteObservableMetrics_onNextFailure");
         error = meterRegistry.counter("RemoteObservableMetrics_onError");

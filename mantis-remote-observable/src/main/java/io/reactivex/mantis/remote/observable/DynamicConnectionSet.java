@@ -17,8 +17,6 @@
 package io.reactivex.mantis.remote.observable;
 
 import io.mantisrx.common.MantisGroup;
-//import io.mantisrx.common.metrics.Gauge;
-//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.Endpoint;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
