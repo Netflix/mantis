@@ -775,7 +775,7 @@ class ResourceClusterActor extends AbstractActorWithTimers {
             }
         }
         else {
-            log.warn("no valid TE state for CacheJobArtifactsOnTaskExecutorRequest: {}", request);
+            log.debug("no valid TE state for CacheJobArtifactsOnTaskExecutorRequest: {}", request);
         }
     }
 
