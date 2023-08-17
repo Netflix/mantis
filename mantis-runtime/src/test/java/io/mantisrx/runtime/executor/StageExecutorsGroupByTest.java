@@ -21,6 +21,8 @@ import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.Job;
 import io.mantisrx.runtime.StageConfig;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivex.mantis.remote.observable.ConnectToGroupedObservable;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
@@ -52,9 +54,10 @@ public class StageExecutorsGroupByTest {
         List<StageConfig<?, ?>> stages = job.getStages();
         PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
         int serverPort = portSelector.acquirePort();
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
         WorkerPublisher producer = new WorkerPublisherRemoteObservable(serverPort, null,
-                Observable.just(1), null);
+                Observable.just(1), null,meterRegistry);
         // execute source
 
         BehaviorSubject<Integer> workersInStageOneObservable = BehaviorSubject.create(1);
@@ -106,6 +109,7 @@ public class StageExecutorsGroupByTest {
 
         TestGroupByJob provider = new TestGroupByJob();
         Job<Pair> job = provider.getJobInstance();
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
         List<StageConfig<?, ?>> stages = job.getStages();
         PortSelectorWithinRange portSelector = new PortSelectorWithinRange(8000, 9000);
@@ -151,9 +155,9 @@ public class StageExecutorsGroupByTest {
             }
         };
 
-        WorkerConsumer consumer = new WorkerConsumerRemoteObservable(null, staticEndpoints);
+        WorkerConsumer consumer = new WorkerConsumerRemoteObservable(null, staticEndpoints, meterRegistry);
         WorkerPublisher producer = new WorkerPublisherRemoteObservable(publishPort, null,
-                Observable.just(1), null);
+                Observable.just(1), null, meterRegistry);
         // execute source
         StageExecutors.executeIntermediate(consumer, stages.get(1), producer,
                 new Context());

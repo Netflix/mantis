@@ -22,6 +22,7 @@ import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.PortRequest;
 import io.mantisrx.runtime.sink.predicate.Predicate;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
@@ -59,14 +60,15 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
 
     private PushServerSse<T, Context> pushServerSse;
     private HttpServer<ByteBuf, ServerSentEvent> httpServer;
+    private final MeterRegistry meterRegistry;
 
-    public ServerSentEventsSink(Func1<T, String> encoder) {
-        this(encoder, null, null);
+    public ServerSentEventsSink(Func1<T, String> encoder, MeterRegistry meterRegistry) {
+        this(encoder, null, null, meterRegistry);
     }
 
     ServerSentEventsSink(Func1<T, String> encoder,
                          Func1<Throwable, String> errorEncoder,
-                         Predicate<T> predicate) {
+                         Predicate<T> predicate, MeterRegistry meterRegistry) {
         if (errorEncoder == null) {
             // default
             errorEncoder = Throwable::getMessage;
@@ -76,6 +78,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.predicate = predicate;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
         this.subscribeProcessor = null;
+        this.meterRegistry = meterRegistry;
     }
 
     ServerSentEventsSink(Builder<T> builder) {
@@ -86,6 +89,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         this.requestPostprocessor = builder.requestPostprocessor;
         this.subscribeProcessor = builder.subscribeProcessor;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
+        this.meterRegistry = builder.meterRegistry;
     }
 
     @Override
@@ -154,7 +158,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                 .name(serverName)
                 .groupRouter(Routers.roundRobinSse(serverName, encoder))
                 .port(port)
-                .metricsRegistry(context.getMetricsRegistry())
+                .meterRegistry(meterRegistry)
                 .maxChunkTimeMSec(maxReadTime())
                 .maxChunkSize(maxChunkSize())
                 .bufferCapacity(bufferCapacity())
@@ -183,7 +187,8 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
                         requestPreprocessor,
                         requestPostprocessor,
                         context,
-                        batchInterval))
+                        batchInterval,
+                        meterRegistry))
                 .pipelineConfigurator(PipelineConfigurators.<ByteBuf>serveSseConfigurator())
                 .channelOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024, 5 * 1024 * 1024))
                 .build();
@@ -249,6 +254,7 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
         private Func1<Throwable, String> errorEncoder = Throwable::getMessage;
         private Predicate<T> predicate;
         private Func2<Map<String, List<String>>, Context, Void> subscribeProcessor;
+        private MeterRegistry meterRegistry;
 
         public Builder<T> withEncoder(Func1<T, String> encoder) {
             this.encoder = encoder;
@@ -278,6 +284,11 @@ public class ServerSentEventsSink<T> implements SelfDocumentingSink<T> {
 
         public Builder<T> withRequestPostprocessor(Func2<Map<String, List<String>>, Context, Void> postProcessor) {
             this.requestPostprocessor = postProcessor;
+            return this;
+        }
+
+        public Builder<T> meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
             return this;
         }
 

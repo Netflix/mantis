@@ -16,14 +16,17 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.ServerPoller;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import rx.Observable;
@@ -36,24 +39,23 @@ public class DefaultHttpServerProvider implements HttpServerProvider {
 
     private final ServerPoller serverPoller;
     private final Gauge discoveryActiveGauge;
+    private final AtomicLong discoveryActiveValue = new AtomicLong(0);
     private final Gauge newServersGauge;
+    private final AtomicLong newServersValue = new AtomicLong(0);
     private final Gauge removedServersGauge;
+    private final AtomicLong removedServersValue = new AtomicLong(0);
+    private final MeterRegistry meterRegistry;
 
-    protected DefaultHttpServerProvider(ServerPoller serverPoller) {
+    protected DefaultHttpServerProvider(ServerPoller serverPoller, MeterRegistry meterRegistry) {
         this.serverPoller = serverPoller;
+        this.meterRegistry = meterRegistry;
 
-        Metrics m = new Metrics.Builder()
-                .name("DefaultHttpServerProvider")
-                .addGauge("discoveryActiveGauge")
-                .addGauge("newServersGauge")
-                .addGauge("removedServersGauge")
-                .build();
-
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-
-        discoveryActiveGauge = m.getGauge("discoveryActiveGauge");
-        newServersGauge = m.getGauge("newServersGauge");
-        removedServersGauge = m.getGauge("removedServersGauge");
+        discoveryActiveGauge = Gauge.builder("DefaultHttpServerProvider_discoveryActiveGauge", discoveryActiveValue::get)
+            .register(meterRegistry);
+        newServersGauge = Gauge.builder("DefaultHttpServerProvider_newServersGauge", newServersValue::get)
+            .register(meterRegistry);
+        removedServersGauge = Gauge.builder("DefaultHttpServerProvider_removedServersGauge", removedServersValue::get)
+            .register(meterRegistry);
     }
 
     private static Set<ServerInfo> diff(Set<ServerInfo> left, Set<ServerInfo> right) {
@@ -92,10 +94,10 @@ public class DefaultHttpServerProvider implements HttpServerProvider {
 
                             @Override
                             public void onNext(Set<ServerInfo> servers) {
-                                discoveryActiveGauge.set(servers.size());
+                                discoveryActiveValue.set(servers.size());
                                 Set<ServerInfo> currentServers = activeServers.getAndSet(servers);
                                 Set<ServerInfo> newServers = diff(servers, currentServers);
-                                newServersGauge.set(newServers.size());
+                                newServersValue.set(newServers.size());
                                 //                            for (ServerInfo server : newServers) {
                                 //                                subscriber.onNext(server);
                                 //                            }
@@ -138,7 +140,7 @@ public class DefaultHttpServerProvider implements HttpServerProvider {
                             public void onNext(Set<ServerInfo> servers) {
                                 Set<ServerInfo> currentServers = activeServers.getAndSet(servers);
                                 Set<ServerInfo> serversToRemove = diff(currentServers, servers);
-                                removedServersGauge.set(serversToRemove.size());
+                                removedServersValue.set(serversToRemove.size());
                                 for (ServerInfo server : serversToRemove) {
                                     subscriber.onNext(server);
                                 }

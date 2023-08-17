@@ -16,7 +16,7 @@
 
 package io.mantisrx.runtime.executor;
 
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.GroupToGroup;
 import io.mantisrx.runtime.GroupToScalar;
@@ -29,6 +29,7 @@ import io.mantisrx.runtime.ScalarToScalar;
 import io.mantisrx.runtime.StageConfig;
 import io.mantisrx.server.core.ServiceRegistry;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.network.push.HashFunctions;
 import io.reactivex.mantis.network.push.KeyValuePair;
 import io.reactivex.mantis.network.push.LegacyTcpPushServer;
@@ -58,10 +59,12 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
     private RemoteRxServer server;
     private final MantisPropertiesLoader propService;
     private String jobName;
+    private MeterRegistry meterRegistry;
 
     public WorkerPublisherRemoteObservable(int serverPort,
                                            String name, Observable<Integer> minConnectionsToSubscribe,
-                                           String jobName) {
+                                           String jobName,
+                                           MeterRegistry meterRegistry) {
         this.name = name;
         this.serverPort = serverPort;
         this.propService = ServiceRegistry.INSTANCE.getPropertiesService();
@@ -86,7 +89,7 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                 ServerConfig<T> config = new ServerConfig.Builder<T>()
                         .name(name)
                         .port(serverPort)
-                        .metricsRegistry(MetricsRegistry.getInstance())
+                        .meterRegistry(meterRegistry)
                         .router(Routers.roundRobinLegacyTcpProtocol(name, encoder))
                         .build();
                 final LegacyTcpPushServer<T> modernServer =
@@ -105,7 +108,6 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
                                 // going up stream.
                                 .slottingStrategy(slotting)
                                 .build());
-                MetricsRegistry.getInstance().registerAndGet(slotting.getMetrics());
                 server = serverBuilder
                         .port(serverPort)
                         .build();
@@ -134,13 +136,13 @@ public class WorkerPublisherRemoteObservable<T> implements WorkerPublisher<T> {
         ServerConfig<KeyValuePair<K, T>> config = new ServerConfig.Builder<KeyValuePair<K, T>>()
             .name(name)
             .port(serverPort)
-            .metricsRegistry(MetricsRegistry.getInstance())
+            .meterRegistry(meterRegistry)
             .numQueueConsumers(numConsumerThreads())
             .maxChunkSize(maxChunkSize())
             .maxChunkTimeMSec(maxChunkTimeMSec())
             .bufferCapacity(bufferCapacity())
             .useSpscQueue(useSpsc())
-            .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder))
+            .router(Routers.consistentHashingLegacyTcpProtocol(jobName, keyEncoder, valueEncoder, meterRegistry))
             .build();
 
         if (stage instanceof ScalarToGroup || stage instanceof GroupToGroup) {

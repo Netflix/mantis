@@ -32,6 +32,7 @@ import io.mantisrx.runtime.parameter.validator.Validators;
 import io.mantisrx.runtime.sink.Sink;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,6 +49,7 @@ public class TestJobParameterized extends MantisJobProvider<Integer> {
         Job<Integer> job = new TestJobParameterized().getJobInstance();
 
         LocalJobExecutorNetworked.execute(job,
+                new SimpleMeterRegistry(),
                 new Parameter("start-range", "1"),
                 new Parameter("end-range", "100"),
                 new Parameter("scale-by", "2"));

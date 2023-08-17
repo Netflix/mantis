@@ -20,9 +20,9 @@ import static io.mantisrx.common.SystemParameters.STAGE_CONCURRENCY;
 
 import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.rx.MonitorOperator;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.GroupToGroup;
@@ -41,6 +41,11 @@ import io.mantisrx.runtime.markers.MantisMarker;
 import io.mantisrx.runtime.scheduler.MantisRxSingleThreadScheduler;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivex.mantis.remote.observable.RxMetrics;
 import io.reactivx.mantis.operators.GroupedObservableUtils;
 import java.io.Closeable;
@@ -60,18 +65,13 @@ import rx.schedulers.Schedulers;
 public class StageExecutors {
 
     private static final Logger logger = LoggerFactory.getLogger(StageExecutors.class);
-
     private static Counter groupsExpiredCounter;
+    private static MeterRegistry meterRegistry = new CompositeMeterRegistry().add(new SimpleMeterRegistry());
     private static long stageBufferIntervalMs = 100;
     private static int maxItemsInBuffer = 100;
 
     static {
-        Metrics m = new Metrics.Builder()
-                .name("StageExecutors")
-                .addCounter("groupsExpiredCounter")
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        groupsExpiredCounter = m.getCounter("groupsExpiredCounter");
+        groupsExpiredCounter = meterRegistry.counter("StageExecutors_groupsExpiredCounter");
 
         String stageBufferIntervalMillisStr = ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("mantis.stage.buffer.intervalMs", "100");
         //.info("Read fast property mantis.sse.batchInterval" + flushIntervalMillisStr);
@@ -83,7 +83,6 @@ public class StageExecutors {
     }
 
     private StageExecutors() {
-
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})

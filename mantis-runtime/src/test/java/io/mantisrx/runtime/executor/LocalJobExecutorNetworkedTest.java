@@ -18,6 +18,7 @@ package io.mantisrx.runtime.executor;
 
 import io.mantisrx.runtime.MachineDefinitions;
 import io.mantisrx.runtime.descriptor.SchedulingInfo;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Iterator;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -29,7 +30,7 @@ public class LocalJobExecutorNetworkedTest {
     public void testSingleStage() {
 
         TestJobSingleStage provider = new TestJobSingleStage();
-        LocalJobExecutorNetworked.execute(provider.getJobInstance());
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), new SimpleMeterRegistry());
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
 
@@ -50,7 +51,7 @@ public class LocalJobExecutorNetworkedTest {
                 .multiWorkerStage(2, MachineDefinitions.micro())
                 .build();
 
-        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling, new SimpleMeterRegistry());
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
         int count = 0;
@@ -65,7 +66,7 @@ public class LocalJobExecutorNetworkedTest {
     @Test
     public void testTwoStage() {
         TestJob provider = new TestJob();
-        LocalJobExecutorNetworked.execute(provider.getJobInstance());
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), new SimpleMeterRegistry());
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
         Assert.assertEquals(0, iter.next().intValue());
@@ -82,7 +83,7 @@ public class LocalJobExecutorNetworkedTest {
                 .singleWorkerStage(MachineDefinitions.micro())
                 .singleWorkerStage(MachineDefinitions.micro())
                 .build();
-        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling, new SimpleMeterRegistry());
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
         Assert.assertEquals(0, iter.next().intValue());
@@ -99,7 +100,7 @@ public class LocalJobExecutorNetworkedTest {
                 .multiWorkerStage(2, MachineDefinitions.micro())
                 .singleWorkerStage(MachineDefinitions.micro())
                 .build();
-        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling, new SimpleMeterRegistry());
 
         Iterator<Integer> iter = provider.getItemsWritten().iterator();
         Assert.assertEquals(0, iter.next().intValue());
@@ -116,7 +117,7 @@ public class LocalJobExecutorNetworkedTest {
                 .singleWorkerStage(MachineDefinitions.micro())
                 .singleWorkerStage(MachineDefinitions.micro())
                 .build();
-        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling, new SimpleMeterRegistry());
 
         // with two source instances, should have double the expected
         // input
@@ -133,7 +134,7 @@ public class LocalJobExecutorNetworkedTest {
                 .multiWorkerStage(2, MachineDefinitions.micro())
                 .singleWorkerStage(MachineDefinitions.micro())
                 .build();
-        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling);
+        LocalJobExecutorNetworked.execute(provider.getJobInstance(), scheduling, new SimpleMeterRegistry());
 
         // with two source instances, should have double the expected
         // input

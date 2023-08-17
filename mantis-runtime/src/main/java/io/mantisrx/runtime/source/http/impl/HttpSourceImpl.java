@@ -26,10 +26,10 @@ import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEven
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_FAILED;
 
 import com.mantisrx.common.utils.NettyUtils;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Gauge;
+//import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
@@ -39,6 +39,9 @@ import io.mantisrx.runtime.source.http.HttpRequestFactory;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.util.ReferenceCountUtil;
 import io.reactivx.mantis.operators.DropOperator;
 import java.io.IOException;
@@ -48,6 +51,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Value;
 import mantis.io.reactivex.netty.client.RxClient.ServerInfo;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClient;
@@ -93,8 +97,11 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     private final ClientResumePolicy<R, E> resumePolicy;
     private final PublishSubject<ServerInfo> serversToRemove;
     private final Gauge connectionGauge;
+    private final AtomicLong connectionsValue = new AtomicLong(0);
     private final Gauge retryListGauge;
+    private final AtomicLong retryListValue = new AtomicLong(0);
     private final Gauge connectionAttemptedGauge;
+    private final AtomicLong connectionAttemptedValue = new AtomicLong(0);
     private final Counter connectionEstablishedCounter;
     private final Counter connectionUnsubscribedCounter;
     private final Counter sourceCompletedCounter;
@@ -105,7 +112,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     private final Counter subscriptionCancelledCounter;
     private final Counter dropped;
     //aggregated metrics for all connections to source servers
-    private final Metrics incomingDataMetrics;
+//    private final Metrics incomingDataMetrics;
+    private final MeterRegistry meterRegistry;
     private final ConnectionManager<E> connectionManager = new ConnectionManager<>();
     private final int bufferSize;
     private final Subscription serversToRemoveSubscription;
@@ -127,58 +135,43 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
             HttpClientFactory<R, E> clientFactory,
             Observer<HttpSourceEvent> observer,
             Func2<ServerContext<HttpClientResponse<E>>, E, T> postProcessor,
-            ClientResumePolicy<R, E> resumePolicy) {
+            ClientResumePolicy<R, E> resumePolicy,
+            MeterRegistry meterRegistry) {
         this.requestFactory = requestFactory;
         this.serverProvider = serverProvider;
         this.clientFactory = clientFactory;
         this.observer = observer;
         this.postProcessor = postProcessor;
         this.resumePolicy = resumePolicy;
+        this.meterRegistry = meterRegistry;
 
-        Metrics m = new Metrics.Builder()
-                .name(HttpSourceImpl.class.getCanonicalName())
-                .addGauge("connectionGauge")
-                .addGauge("retryListGauge")
-                .addGauge("connectionAttemptedGauge")
-                .addCounter("connectionEstablishedCounter")
-                .addCounter("connectionUnsubscribedCounter")
-                .addCounter("sourceCompletedCounter")
-                .addCounter("subscriptionEndedCounter")
-                .addCounter("subscriptionEstablishedCounter")
-                .addCounter("subscriptionFailedCounter")
-                .addCounter("serverFoundCounter")
-                .addCounter("subscriptionCancelledCounter")
-                .build();
+        connectionGauge = addGauge("connectionGauge", connectionsValue);
+        retryListGauge = addGauge("retryListGauge", retryListValue);
+        connectionAttemptedGauge = addGauge("connectionAttemptedGauge", connectionAttemptedValue);
+        connectionEstablishedCounter = addCounter("connectionEstablishedCounter");
+        connectionUnsubscribedCounter = addCounter("connectionUnsubscribedCounter");
+        sourceCompletedCounter = addCounter("sourceCompletedCounter");
+        subscriptionEndedCounter = addCounter("subscriptionEndedCounter");
+        subscriptionEstablishedCounter = addCounter("subscriptionEstablishedCounter");
+        subscriptionFailedCounter = addCounter("subscriptionFailedCounter");
+        serverFoundCounter = addCounter("serverFoundCounter");
+        subscriptionCancelledCounter = addCounter("subscriptionCancelledCounter");
 
-        m = MetricsRegistry.getInstance().registerAndGet(m);
+        String incomingMetricsGroup = DROP_OPERATOR_INCOMING_METRIC_GROUP + "_HttpSourceImpl";
+        AtomicLong subscribeValue = new AtomicLong(0);
+        AtomicLong requestedValue = new AtomicLong(0);
+        AtomicLong bufferedValue = new AtomicLong(0);
+        Counter onNext = meterRegistry.counter(incomingMetricsGroup + "onNext");
+        Counter onError = meterRegistry.counter(incomingMetricsGroup + "onError");
+        Counter onComplete = meterRegistry.counter(incomingMetricsGroup + "onComplete");
+        Gauge subscribe = Gauge.builder(incomingMetricsGroup + "subscribe", subscribeValue::get)
+            .register(meterRegistry);
+        Gauge requested = Gauge.builder(incomingMetricsGroup + "requested", requestedValue::get)
+            .register(meterRegistry);
+        Gauge buffered = Gauge.builder(incomingMetricsGroup + "buffered", bufferedValue::get)
+            .register(meterRegistry);
+        dropped = meterRegistry.counter(incomingMetricsGroup + "onNext");
 
-        connectionGauge = m.getGauge("connectionGauge");
-        retryListGauge = m.getGauge("retryListGauge");
-        connectionAttemptedGauge = m.getGauge("connectionAttemptedGauge");
-        connectionEstablishedCounter = m.getCounter("connectionEstablishedCounter");
-        connectionUnsubscribedCounter = m.getCounter("connectionUnsubscribedCounter");
-        sourceCompletedCounter = m.getCounter("sourceCompletedCounter");
-        subscriptionEndedCounter = m.getCounter("subscriptionEndedCounter");
-        subscriptionEstablishedCounter = m.getCounter("subscriptionEstablishedCounter");
-        subscriptionFailedCounter = m.getCounter("subscriptionFailedCounter");
-        serverFoundCounter = m.getCounter("serverFoundCounter");
-        subscriptionCancelledCounter = m.getCounter("subscriptionCancelledCounter");
-
-        incomingDataMetrics = new Metrics.Builder()
-                .name(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_HttpSourceImpl")
-                .addCounter("onNext")
-                .addCounter("onError")
-                .addCounter("onComplete")
-                .addGauge("subscribe")
-                .addCounter("dropped")
-                .addGauge("requested")
-                .addGauge("bufferedGauge")
-
-                .build();
-
-        MetricsRegistry.getInstance().registerAndGet(incomingDataMetrics);
-
-        dropped = incomingDataMetrics.getCounter("dropped");
 
         String bufferSizeStr = ServiceRegistry.INSTANCE.getPropertiesService()
                 .getStringValue("httpSource.buffer.size", DEFAULT_BUFFER_SIZE);
@@ -192,6 +185,20 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
             serverProvider
                 .getServersToRemove()
                 .subscribe(serversToRemove::onNext);
+    }
+
+    private Counter addCounter(String name) {
+        String groupName = HttpSourceImpl.class.getCanonicalName();
+        Counter counter = Counter.builder(groupName + "_" + name)
+            .register(meterRegistry);
+        return counter;
+    }
+
+    private Gauge addGauge(String name, AtomicLong value) {
+        String groupName = HttpSourceImpl.class.getCanonicalName();
+        Gauge gauge = Gauge.builder(groupName + "_" +name, value::get)
+            .register(meterRegistry);
+        return gauge;
     }
 
     public static <R, E, T> Builder<R, E, T> builder(
@@ -321,7 +328,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                         SUBSCRIPTION_ESTABLISHED.newEvent(observer, server);
                         subscriptionEstablishedCounter.increment();
                         connectionManager.serverConnected(server, context.getValue());
-                        connectionGauge.set(getConnectedServers().size());
+                        connectionsValue.set(getConnectedServers().size());
 
                         return streamResponseContent(server, response)
                                 .map(new Func1<E, T>() {
@@ -331,7 +338,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                                         return postProcessor.call(context.map(c -> c.getResponse()), e);
                                     }
                                 })
-                                .lift(new DropOperator<T>(incomingDataMetrics))
+                                .lift(new DropOperator<T>(meterRegistry))
                                 .lift(new Operator<T, T>() {
                                     @Override
                                     public Subscriber<? super T> call(Subscriber<? super T> subscriber) {
@@ -380,10 +387,10 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                 .doOnError((Throwable throwable) -> {
                     SUBSCRIPTION_FAILED.newEvent(observer, server);
                     subscriptionFailedCounter.increment();
-                    retryListGauge.set(getRetryServers().size());
+                    retryListValue.set(getRetryServers().size());
                     logger.info("server disconnected onError1: " + server);
                     connectionManager.serverDisconnected(server);
-                    connectionGauge.set(getConnectedServers().size());
+                    connectionsValue.set(getConnectedServers().size());
                 })
                 // Upon error, simply completes the observable for this particular server. The error should not be
                 // propagated to the entire http source
@@ -393,8 +400,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                     sourceCompletedCounter.increment();
                     logger.info("server disconnected onComplete1: " + server);
                     connectionManager.serverDisconnected(server);
-                    retryListGauge.set(getRetryServers().size());
-                    connectionGauge.set(getConnectedServers().size());
+                    retryListValue.set(getRetryServers().size());
+                    connectionsValue.set(getConnectedServers().size());
                 });
     }
 
@@ -402,7 +409,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
         return clientContext
                 .newResponse((ServerInfo t) -> {
-                    connectionAttemptedGauge.set(getConnectionAttemptedServers().size());
+                    connectionAttemptedValue.set(getConnectionAttemptedServers().size());
                     connectionManager.serverConnectionAttempted(t);
                 })
                 .lift(new OperatorResumeOnError<>(new ResumeOnErrorPolicy<HttpClientResponse<E>>() {
@@ -428,7 +435,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                         }).doOnNext((ServerInfo server) -> {
                             logger.info("server removed: " + server);
                             connectionManager.serverRemoved(server);
-                            connectionGauge.set(getConnectedServers().size());
+                            connectionsValue.set(getConnectedServers().size());
                         })
                 )
                 .doOnNext((HttpClientResponse<E> response) -> checkResponseIsSuccessful(response))
@@ -442,8 +449,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                     subscriptionFailedCounter.increment();
                     logger.info("server disconnected onError2: " + clientContext.getServer());
                     connectionManager.serverDisconnected(clientContext.getServer());
-                    retryListGauge.set(getRetryServers().size());
-                    connectionGauge.set(connectionManager.getConnectedServers().size());
+                    retryListValue.set(getRetryServers().size());
+                    connectionsValue.set(connectionManager.getConnectedServers().size());
                 })
                 .doOnCompleted(() -> {
                     // the response header obs completes here no op
@@ -488,6 +495,7 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
         private Observer<HttpSourceEvent> observer;
         private Func2<ServerContext<HttpClientResponse<E>>, E, T> postProcessor;
         private ClientResumePolicy<R, E> clientResumePolicy;
+        private MeterRegistry meterRegistry;
 
         public Builder(
                 HttpClientFactory<R, E> clientFactory,
@@ -552,6 +560,10 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
 
             return this;
         }
+        public Builder<R, E, T> meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
+            return this;
+        }
 
         public HttpSourceImpl<R, E, T> build() {
             return new HttpSourceImpl<>(
@@ -560,7 +572,8 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
                     httpClientFactory,
                     observer,
                     postProcessor,
-                    clientResumePolicy);
+                    clientResumePolicy,
+                    meterRegistry);
         }
     }
 

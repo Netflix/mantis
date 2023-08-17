@@ -17,11 +17,11 @@
 package io.mantisrx.runtime.sink;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
-import com.netflix.spectator.api.BasicTag;
-import com.netflix.spectator.api.Tag;
+//import com.netflix.spectator.api.BasicTag;
+//import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.compression.CompressionUtils;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
+//import io.mantisrx.common.metrics.Counter;
+//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.HashFunctions;
 import io.mantisrx.common.network.ServerSlotManager;
@@ -29,6 +29,10 @@ import io.mantisrx.common.network.ServerSlotManager.SlotAssignmentManager;
 import io.mantisrx.common.network.WritableEndpoint;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.sink.predicate.Predicate;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivx.mantis.operators.DisableBackPressureOperator;
@@ -87,6 +91,7 @@ public class ServerSentEventRequestHandler<T> implements
     private boolean pingsEnabled = true;
     private int flushIntervalMillis = 250;
     private String format = DEFAULT_FORMAT;
+    private final MeterRegistry meterRegistry;
 
     public ServerSentEventRequestHandler(Observable<T> observableToServe,
                                   Func1<T, String> encoder,
@@ -95,7 +100,7 @@ public class ServerSentEventRequestHandler<T> implements
                                   Func2<Map<String, List<String>>, Context, Void> requestPreprocessor,
                                   Func2<Map<String, List<String>>, Context, Void> requestPostprocessor,
                                   Context context,
-                                  int batchInterval) {
+                                  int batchInterval, MeterRegistry meterRegistry) {
         this.observableToServe = observableToServe;
         this.encoder = encoder;
         this.errorEncoder = errorEncoder;
@@ -104,6 +109,7 @@ public class ServerSentEventRequestHandler<T> implements
         this.requestPostprocessor = requestPostprocessor;
         this.context = context;
         this.flushIntervalMillis = batchInterval;
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -133,9 +139,9 @@ public class ServerSentEventRequestHandler<T> implements
         // Since decoupleSSE would be false and matching with true as string
         // would always ignore code inside if block
         if ("true".equals(decoupleSSE)) {
-            final BasicTag sockAddrTag = new BasicTag("sockAddr", Optional.ofNullable(socketAddrStr).orElse("none"));
+            final Tags sockAddrTag = Tags.of("sockAddr", Optional.ofNullable(socketAddrStr).orElse("none"));
             requestObservable = requestObservable
-                    .lift(new DropOperator<>("outgoing_ServerSentEventRequestHandler", sockAddrTag))
+                    .lift(new DropOperator<>(meterRegistry, "outgoing_ServerSentEventRequestHandler", sockAddrTag))
                     .observeOn(Schedulers.io());
         }
         response.getHeaders().set("Access-Control-Allow-Origin", "*");
@@ -146,29 +152,16 @@ public class ServerSentEventRequestHandler<T> implements
 
         String uniqueClientId = socketAddrStr;
 
-        Tag[] tags = new Tag[2];
         final String clientId = Optional.ofNullable(uniqueClientId).orElse("none");
         final String sockAddr = Optional.ofNullable(socketAddrStr).orElse("none");
-        tags[0] = new BasicTag("clientId", clientId);
-        tags[1] = new BasicTag("sockAddr", sockAddr);
+        Tags tags = Tags.of("clientId", clientId, "sockAddr", sockAddr);
 
-        Metrics sseSinkMetrics = new Metrics.Builder()
-                .id("ServerSentEventRequestHandler", tags)
-                .addCounter("processedCounter")
-                .addCounter("pingCounter")
-                .addCounter("errorCounter")
-                .addCounter("droppedCounter")
-                .addCounter("flushCounter")
-                .addCounter("sourceJobNameMismatchRejection")
-                .build();
-
-
-        final Counter msgProcessedCounter = sseSinkMetrics.getCounter("processedCounter");
-        final Counter pingCounter = sseSinkMetrics.getCounter("pingCounter");
-        final Counter errorCounter = sseSinkMetrics.getCounter("errorCounter");
-        final Counter droppedWrites = sseSinkMetrics.getCounter("droppedCounter");
-        final Counter flushCounter = sseSinkMetrics.getCounter("flushCounter");
-        final Counter sourceJobNameMismatchRejectionCounter = sseSinkMetrics.getCounter("sourceJobNameMismatchRejection");
+        final Counter msgProcessedCounter = meterRegistry.counter("ServerSentEventRequestHandler_processedCounter", tags);
+        final Counter pingCounter = meterRegistry.counter("ServerSentEventRequestHandler_pingCounter", tags);
+        final Counter errorCounter = meterRegistry.counter("ServerSentEventRequestHandler_errorCounter", tags);
+        final Counter droppedWrites = meterRegistry.counter("ServerSentEventRequestHandler_droppedCounter", tags);
+        final Counter flushCounter = meterRegistry.counter("ServerSentEventRequestHandler_flushCounter",tags);
+        final Counter sourceJobNameMismatchRejectionCounter = meterRegistry.counter("ServerSentEventRequestHandler_sourceJobNameMismatchRejection", tags);
 
 
         if (queryParameters != null && queryParameters.containsKey(MantisSSEConstants.TARGET_JOB)) {

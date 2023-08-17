@@ -40,6 +40,8 @@ import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.ParameterUtils;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointChange.Type;
 import io.reactivex.mantis.remote.observable.EndpointInjector;
@@ -75,11 +77,11 @@ public class LocalJobExecutorNetworked {
 
     @SuppressWarnings("rawtypes")
     private static void startSource(int index, int port, int workersAtNextStage, SourceHolder source, StageConfig stage,
-                                    Context context, Observable<Integer> stageWorkersObservable) {
+                                    Context context, Observable<Integer> stageWorkersObservable, MeterRegistry meterRegistry) {
         logger.debug("Creating source publisher on port " + port);
         WorkerPublisherRemoteObservable publisher
                 = new WorkerPublisherRemoteObservable<>(port,
-                null, Observable.just(workersAtNextStage * numPartitions), null); // name is set to null, defaul
+                null, Observable.just(workersAtNextStage * numPartitions), null, meterRegistry); // name is set to null, defaul
         // to start job
         StageExecutors.executeSource(index, source, stage, publisher, context, stageWorkersObservable);
     }
@@ -88,7 +90,7 @@ public class LocalJobExecutorNetworked {
     private static void startIntermediate(int[] previousStagePorts,
                                           int port, StageConfig stage, Context context, int workerIndex,
                                           int workersAtNextStage, int stageNumber,
-                                          int workersAtPreviousStage) {
+                                          int workersAtPreviousStage, MeterRegistry meterRegistry) {
         if (logger.isDebugEnabled()) {
             StringBuilder portsToString = new StringBuilder();
             for (int previousPort : previousStagePorts) {
@@ -100,11 +102,11 @@ public class LocalJobExecutorNetworked {
         Observable<Set<Endpoint>> endpoints = staticEndpoints(previousStagePorts, stageNumber, workerIndex, numPartitions);
         WorkerConsumerRemoteObservable intermediateConsumer
                 = new WorkerConsumerRemoteObservable(null, // name=null local
-                staticInjector(endpoints));
+                staticInjector(endpoints), meterRegistry);
         logger.debug("Creating intermediate publisher on port " + port);
         WorkerPublisherRemoteObservable intermediatePublisher
                 = new WorkerPublisherRemoteObservable<>(port,
-                null, Observable.just(workersAtNextStage * numPartitions), null); // name is null for local
+                null, Observable.just(workersAtNextStage * numPartitions), null, meterRegistry); // name is null for local
         StageExecutors.executeIntermediate(intermediateConsumer, stage, intermediatePublisher,
                 context);
     }
@@ -117,7 +119,8 @@ public class LocalJobExecutorNetworked {
                                   Action1<Throwable> sinkObservableErrorCallback,
                                   int stageNumber,
                                   int workerIndex,
-                                  int workersAtPreviousStage) {
+                                  int workersAtPreviousStage,
+                                  MeterRegistry meterRegistry) {
         if (logger.isDebugEnabled()) {
             StringBuilder portsToString = new StringBuilder();
             for (int previousPort : previousStagePorts) {
@@ -129,7 +132,7 @@ public class LocalJobExecutorNetworked {
         Observable<Set<Endpoint>> endpoints = staticEndpoints(previousStagePorts, stageNumber, workerIndex, numPartitions);
         WorkerConsumerRemoteObservable sinkConsumer
                 = new WorkerConsumerRemoteObservable(null, // name=null for local
-                staticInjector(endpoints));
+                staticInjector(endpoints), meterRegistry);
 
         StageExecutors.executeSink(sinkConsumer, stage, sink, portSelector,
                 new RxMetrics(), context, sinkObservableTerminatedCompletedCallback,
@@ -148,18 +151,19 @@ public class LocalJobExecutorNetworked {
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static void execute(Job job, Parameter... parameters) throws IllegalMantisJobException {
+
+    public static void execute(Job job, MeterRegistry meterRegistry, Parameter... parameters) throws IllegalMantisJobException {
         List<StageConfig> stages = job.getStages();
         SchedulingInfo.Builder builder = new SchedulingInfo.Builder();
         for (@SuppressWarnings("unused") StageConfig stage : stages) {
             builder.singleWorkerStage(MachineDefinitions.micro());
         }
         builder.numberOfStages(stages.size());
-        execute(job, builder.build(), parameters);
+        execute(job, builder.build(), meterRegistry, parameters);
     }
 
     @SuppressWarnings( {"rawtypes", "unchecked"})
-    public static void execute(Job job, SchedulingInfo schedulingInfo, Parameter... parameters) throws IllegalMantisJobException {
+    public static void execute(Job job, SchedulingInfo schedulingInfo, MeterRegistry meterRegistry, Parameter... parameters) throws IllegalMantisJobException {
         // validate job
         try {
             new ValidateJob(job).execute();
@@ -174,9 +178,9 @@ public class LocalJobExecutorNetworked {
         final PortSelector portSelector = new PortSelectorInRange(8000, 9000);
 
         // register netty metrics
-        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory());
+        RxNetty.useMetricListenersFactory(new MantisNettyEventsListenerFactory(meterRegistry));
         // start our metrics server
-        MetricsServer metricsServer = new MetricsServer(portSelector.acquirePort(), 1, Collections.EMPTY_MAP);
+        MetricsServer metricsServer = new MetricsServer(portSelector.acquirePort(), 1, Collections.EMPTY_MAP, meterRegistry);
         metricsServer.start();
 
         Lifecycle lifecycle = job.getLifecycle();
@@ -233,7 +237,7 @@ public class LocalJobExecutorNetworked {
                         lifecycle.getServiceLocator(),
                         //new WorkerInfo(jobId, jobId, 1, i, i, MantisJobDurationType.Perpetual, "localhost", new ArrayList<>(),-1,-1),
                         workerInfo,
-                        MetricsRegistry.getInstance(), () -> {
+                        meterRegistry, () -> {
                     System.exit(0);
                 }, workerMapObservable,
                     Thread.currentThread().getContextClassLoader());
@@ -281,11 +285,11 @@ public class LocalJobExecutorNetworked {
                         ParameterUtils.createContextParameters(parameterDefinitions,
                                 parameters),
                         serviceLocator, workerInfo,
-                        MetricsRegistry.getInstance(), nullAction, workerMapObservable,
+                        meterRegistry, nullAction, workerMapObservable,
                     Thread.currentThread().getContextClassLoader());
 
                 startSource(i, sourcePort, nextStageScalingInfo.getNumberOfInstances(),
-                        job.getSource(), currentStage, context, workersInStageOneObservable);
+                        job.getSource(), currentStage, context, workersInStageOneObservable, meterRegistry);
             }
             // workers for stage 1
             workerInfoMap.put(1, workerInfoList);
@@ -315,12 +319,12 @@ public class LocalJobExecutorNetworked {
                             ParameterUtils.createContextParameters(parameterDefinitions,
                                     parameters),
                             serviceLocator, workerInfo,
-                            MetricsRegistry.getInstance(), nullAction, workerMapObservable,
+                            meterRegistry, nullAction, workerMapObservable,
                         Thread.currentThread().getContextClassLoader());
 
 
                     startIntermediate(previousPorts, port, currentStage, context, j,
-                            nextStageScalingInfo.getNumberOfInstances(), i, previousStageScalingInfo.getNumberOfInstances());
+                            nextStageScalingInfo.getNumberOfInstances(), i, previousStageScalingInfo.getNumberOfInstances(), meterRegistry);
                 }
                 // workers for current stage
                 workerInfoMap.put(i + 1, workerInfoList);
@@ -362,13 +366,13 @@ public class LocalJobExecutorNetworked {
                         ParameterUtils.createContextParameters(parameterDefinitions,
                                 parameters),
                         serviceLocator, workerInfo,
-                        MetricsRegistry.getInstance(), nullAction, workerMapObservable,
+                        meterRegistry, nullAction, workerMapObservable,
                     Thread.currentThread().getContextClassLoader());
 
 
                 startSink(previousStage, previousPorts, currentStage, () -> workerInfo.getWorkerPorts().getSinkPort(), sink,
                         context, countDownLatchOnTerminated,
-                        nullOnCompleted, nullOnError, stages.size(), i, previousStageScalingInfo.getNumberOfInstances());
+                        nullOnCompleted, nullOnError, stages.size(), i, previousStageScalingInfo.getNumberOfInstances(), meterRegistry);
             }
             workerInfoMap.put(stages.size(), workerInfoList);
             workerMapObservable.onNext(new WorkerMap(workerInfoMap));

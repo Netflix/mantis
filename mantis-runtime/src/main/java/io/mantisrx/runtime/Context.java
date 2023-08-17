@@ -16,7 +16,8 @@
 
 package io.mantisrx.runtime;
 
-import io.mantisrx.common.metrics.MetricsRegistry;
+//import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.runtime.lifecycle.LifecycleNoOp;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameters;
@@ -38,7 +39,8 @@ public class Context {
 
     // Callback invoked during job shutdown
     private final Action0 completeAndExitAction;
-    private MetricsRegistry metricsRegistry;
+//    private MetricsRegistry metricsRegistry;
+    private MeterRegistry meterRegistry;
     // Parameters associated with this job
     private Parameters parameters = new Parameters();
     // Service Locator allows the user to access guice modules loaded with this job
@@ -64,16 +66,16 @@ public class Context {
     }
 
     public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
-                   MetricsRegistry metricsRegistry, Action0 completeAndExitAction) {
-        this(parameters, serviceLocator, workerInfo, metricsRegistry, completeAndExitAction, Observable.empty(), null);
+                   MeterRegistry meterRegistry, Action0 completeAndExitAction) {
+        this(parameters, serviceLocator, workerInfo, meterRegistry, completeAndExitAction, Observable.empty(), null);
     }
 
     public Context(Parameters parameters, ServiceLocator serviceLocator, WorkerInfo workerInfo,
-                   MetricsRegistry metricsRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, @Nullable ClassLoader classLoader) {
+                   MeterRegistry meterRegistry, Action0 completeAndExitAction, Observable<WorkerMap> workerMapObservable, @Nullable ClassLoader classLoader) {
         this.parameters = parameters;
         this.serviceLocator = serviceLocator;
         this.workerInfo = workerInfo;
-        this.metricsRegistry = metricsRegistry;
+        this.meterRegistry = meterRegistry;
         if (completeAndExitAction == null)
             throw new IllegalArgumentException("Null complete action provided in Context contructor");
         this.completeAndExitAction = completeAndExitAction;
@@ -82,9 +84,6 @@ public class Context {
     }
 
 
-    public MetricsRegistry getMetricsRegistry() {
-        return metricsRegistry;
-    }
 
     /**
      * Returns the Job Parameters associated with the current job
