@@ -16,9 +16,6 @@
 
 package io.mantisrx.runtime.source.http.impl;
 
-//import io.mantisrx.common.metrics.Gauge;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.source.http.HttpServerProvider;
 import io.mantisrx.runtime.source.http.ServerPoller;
 import io.micrometer.core.instrument.Gauge;

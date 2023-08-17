@@ -18,7 +18,6 @@ package io.mantisrx.runtime.executor;
 
 import io.mantisrx.common.MantisProperties;
 import io.mantisrx.common.WorkerPorts;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.MetricsServer;
 import io.mantisrx.common.metrics.netty.MantisNettyEventsListenerFactory;
 import io.mantisrx.common.network.Endpoint;
@@ -40,7 +39,6 @@ import io.mantisrx.runtime.lifecycle.ServiceLocator;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.parameter.ParameterDefinition;
 import io.mantisrx.runtime.parameter.ParameterUtils;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import io.reactivex.mantis.remote.observable.EndpointChange.Type;

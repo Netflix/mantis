@@ -17,11 +17,7 @@
 package io.mantisrx.runtime.sink;
 
 import com.mantisrx.common.utils.MantisSSEConstants;
-//import com.netflix.spectator.api.BasicTag;
-//import com.netflix.spectator.api.Tag;
 import io.mantisrx.common.compression.CompressionUtils;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.network.Endpoint;
 import io.mantisrx.common.network.HashFunctions;
 import io.mantisrx.common.network.ServerSlotManager;

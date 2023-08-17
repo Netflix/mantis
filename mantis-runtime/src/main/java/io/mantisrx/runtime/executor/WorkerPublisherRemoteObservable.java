@@ -16,7 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.properties.MantisPropertiesLoader;
 import io.mantisrx.runtime.GroupToGroup;
 import io.mantisrx.runtime.GroupToScalar;

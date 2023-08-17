@@ -16,8 +16,6 @@
 
 package io.mantisrx.runtime.executor;
 
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 
 import io.mantisrx.runtime.*;
 import io.micrometer.core.instrument.MeterRegistry;

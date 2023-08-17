@@ -20,9 +20,6 @@ import static io.mantisrx.common.SystemParameters.STAGE_CONCURRENCY;
 
 import com.mantisrx.common.utils.Closeables;
 import io.mantisrx.common.MantisGroup;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.rx.MonitorOperator;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.GroupToGroup;

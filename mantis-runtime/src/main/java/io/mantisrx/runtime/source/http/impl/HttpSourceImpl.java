@@ -26,10 +26,6 @@ import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEven
 import static io.mantisrx.runtime.source.http.impl.HttpSourceImpl.HttpSourceEvent.EventType.SUBSCRIPTION_FAILED;
 
 import com.mantisrx.common.utils.NettyUtils;
-//import io.mantisrx.common.metrics.Counter;
-//import io.mantisrx.common.metrics.Gauge;
-//import io.mantisrx.common.metrics.Metrics;
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.source.Index;
 import io.mantisrx.runtime.source.Source;
@@ -112,7 +108,6 @@ public class HttpSourceImpl<R, E, T> implements Source<T> {
     private final Counter subscriptionCancelledCounter;
     private final Counter dropped;
     //aggregated metrics for all connections to source servers
-//    private final Metrics incomingDataMetrics;
     private final MeterRegistry meterRegistry;
     private final ConnectionManager<E> connectionManager = new ConnectionManager<>();
     private final int bufferSize;

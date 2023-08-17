@@ -16,7 +16,6 @@
 
 package io.mantisrx.runtime;
 
-//import io.mantisrx.common.metrics.MetricsRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.runtime.lifecycle.LifecycleNoOp;
 import io.mantisrx.runtime.lifecycle.ServiceLocator;
@@ -39,7 +38,6 @@ public class Context {
 
     // Callback invoked during job shutdown
     private final Action0 completeAndExitAction;
-//    private MetricsRegistry metricsRegistry;
     private MeterRegistry meterRegistry;
     // Parameters associated with this job
     private Parameters parameters = new Parameters();
