@@ -64,6 +64,7 @@ import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.server.core.master.MasterMonitor;
 import io.mantisrx.server.master.ILeadershipManager;
 import io.mantisrx.server.master.LeaderRedirectionFilter;
+import io.mantisrx.server.master.config.MasterConfiguration;
 import io.mantisrx.server.master.persistence.IMantisPersistenceProvider;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import java.util.concurrent.CompletionStage;
@@ -94,7 +95,7 @@ public class MasterApiAkkaService extends BaseService {
     private final Materializer materializer;
     private final ExecutorService executorService;
     private final CountDownLatch serviceLatch = new CountDownLatch(1);
-    private final boolean namedJobsReferToLaunched;
+    private final MasterConfiguration masterConfig;
 
     public MasterApiAkkaService(final MasterMonitor masterMonitor,
                                 final MasterDescription masterDescription,
@@ -107,7 +108,7 @@ public class MasterApiAkkaService extends BaseService {
                                 final LifecycleEventPublisher lifecycleEventPublisher,
                                 final ILeadershipManager leadershipManager,
                                 final AgentClusterOperations agentClusterOperations,
-                                final boolean namedJobsReferToLaunched) {
+                                final MasterConfiguration masterConfig) {
         super(true);
         Preconditions.checkNotNull(masterMonitor, "MasterMonitor");
         Preconditions.checkNotNull(masterDescription, "masterDescription");
@@ -129,7 +130,7 @@ public class MasterApiAkkaService extends BaseService {
         this.system = ActorSystem.create("MasterApiActorSystem");
         this.materializer = Materializer.createMaterializer(system);
         this.mantisMasterRoute = configureApiRoutes(this.system, agentClusterOperations);
-        this.namedJobsReferToLaunched = namedJobsReferToLaunched;
+        this.masterConfig = masterConfig;
         this.executorService = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "MasterApiAkkaServiceThread");
             t.setDaemon(true);
@@ -158,7 +159,7 @@ public class MasterApiAkkaService extends BaseService {
         final JobStatusRouteHandler jobStatusRouteHandler = new JobStatusRouteHandlerAkkaImpl(actorSystem, statusEventBrokerActor);
         final JobDiscoveryRouteHandler jobDiscoveryRouteHandler = new JobDiscoveryRouteHandlerAkkaImpl(jobClustersManagerActor, idleTimeout);
 
-        final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(namedJobsReferToLaunched, jobDiscoveryRouteHandler);
+        final JobDiscoveryRoute v0JobDiscoveryRoute = new JobDiscoveryRoute(masterConfig.getNamedJobsReferToLaunched(), jobDiscoveryRouteHandler);
         final JobClusterRoute v0JobClusterRoute = new JobClusterRoute(jobClusterRouteHandler, jobRouteHandler, actorSystem);
         final AgentClusterRoute v0AgentClusterRoute = new AgentClusterRoute(agentClusterOperations, actorSystem);
         final JobStatusRoute v0JobStatusRoute = new JobStatusRoute(jobStatusRouteHandler);
