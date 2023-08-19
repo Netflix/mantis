@@ -118,7 +118,7 @@ public class RuntimeTaskImplExecutorTest {
     private CollectingTaskLifecycleListener listener;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, RequestThrottledException {
         final Properties props = new Properties();
         props.setProperty("mantis.zookeeper.root", "");
 

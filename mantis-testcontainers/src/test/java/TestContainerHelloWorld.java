@@ -162,7 +162,7 @@ public class TestContainerHelloWorld {
                 controlPlanePort,
                 5,
                 Duration.ofSeconds(2).toMillis())) {
-                fail("Failed to start job worker.");
+                    fail("Failed to start job worker.");
             }
 
             // test sse
