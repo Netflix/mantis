@@ -57,6 +57,7 @@ import io.mantisrx.server.core.domain.WorkerId;
 import io.mantisrx.server.master.client.HighAvailabilityServices;
 import io.mantisrx.server.master.client.MantisMasterGateway;
 import io.mantisrx.server.master.client.ResourceLeaderConnection;
+import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
@@ -393,7 +394,7 @@ public class RuntimeTaskImplExecutorTest {
         Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
-    private static ResourceClusterGateway getHealthyGateway(String name) {
+    private static ResourceClusterGateway getHealthyGateway(String name) throws RequestThrottledException {
         ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
         when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(
@@ -406,7 +407,7 @@ public class RuntimeTaskImplExecutorTest {
         return gateway;
     }
 
-    private static ResourceClusterGateway getUnhealthyGateway(String name) {
+    private static ResourceClusterGateway getUnhealthyGateway(String name) throws RequestThrottledException {
         ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
         when(gateway.registerTaskExecutor(any())).thenReturn(
             CompletableFutures.exceptionallyCompletedFuture(new UnknownError("error")));

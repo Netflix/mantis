@@ -29,6 +29,7 @@ import io.mantisrx.common.WorkerPorts;
 import io.mantisrx.runtime.MachineDefinition;
 import io.mantisrx.server.agent.TaskExecutor.ResourceManagerGatewayCxn;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
+import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
@@ -134,7 +135,7 @@ public class ResourceManagerGatewayCxnTest {
     }
 
     @Test
-    public void testWhenHeartbeatFailsContinuously() {
+    public void testWhenHeartbeatFailsContinuously() throws RequestThrottledException {
         when(gateway.registerTaskExecutor(Matchers.eq(registration))).thenReturn(
             CompletableFuture.completedFuture(null));
         when(gateway.heartBeatFromTaskExecutor(Matchers.eq(heartbeat)))

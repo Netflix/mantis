@@ -44,6 +44,7 @@ import io.mantisrx.server.master.persistence.MantisJobStore;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
 import io.mantisrx.server.master.resourcecluster.ContainerSkuID;
 import io.mantisrx.server.master.resourcecluster.PagedActiveJobOverview;
+import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.ResourceOverview;
 import io.mantisrx.server.master.resourcecluster.ResourceCluster.TaskExecutorStatus;
@@ -200,7 +201,8 @@ public class ResourceClusterActorTest {
                 resourceClusterActor,
                 Duration.ofSeconds(1),
                 CLUSTER_ID,
-                mapper);
+                mapper,
+                    100);
     }
 
     @Test
@@ -427,7 +429,7 @@ public class ResourceClusterActorTest {
     }
 
     @Test
-    public void testGetMultipleActiveJobs() throws ExecutionException, InterruptedException {
+    public void testGetMultipleActiveJobs() throws ExecutionException, InterruptedException, RequestThrottledException {
         final int n = 10;
         List<String> expectedJobIdList = new ArrayList<>(n);
         for (int i = 0; i < n * 2; i ++) {

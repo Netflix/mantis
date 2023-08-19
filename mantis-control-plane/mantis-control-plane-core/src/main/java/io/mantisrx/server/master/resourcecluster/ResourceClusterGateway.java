@@ -26,13 +26,13 @@ public interface ResourceClusterGateway {
    * triggered at the start of a task executor or when the task executor has lost connection to the resource cluster
    * previously
    */
-  CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration);
+  CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration) throws RequestThrottledException;
 
   /**
    * Triggered when the task executor needs to send a heartbeat every epoch after registration.
    * Absence of a heartbeat from the task executor implies loss of the task executor or a network partition.
    */
-  CompletableFuture<Ack> heartBeatFromTaskExecutor(TaskExecutorHeartbeat heartbeat);
+  CompletableFuture<Ack> heartBeatFromTaskExecutor(TaskExecutorHeartbeat heartbeat) throws RequestThrottledException;
 
   /**
    * Triggered whenever the task executor gets occupied with a worker request or is available to do some work
@@ -42,7 +42,8 @@ public interface ResourceClusterGateway {
   /**
    * Triggered by the task executor when it's about to shut itself down.
    */
-  CompletableFuture<Ack> disconnectTaskExecutor(TaskExecutorDisconnection taskExecutorDisconnection);
+  CompletableFuture<Ack> disconnectTaskExecutor(TaskExecutorDisconnection taskExecutorDisconnection)
+          throws RequestThrottledException;
 
   /**
    * Exception thrown by the resource cluster whenever anyone of the state transitions of the task executor are invalid.

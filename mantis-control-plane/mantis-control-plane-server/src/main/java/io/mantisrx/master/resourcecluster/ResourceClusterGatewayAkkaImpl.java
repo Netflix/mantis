@@ -19,37 +19,69 @@ package io.mantisrx.master.resourcecluster;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterTaskExecutorMapper;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorStatusChange;
+import io.mantisrx.shaded.com.google.common.util.concurrent.RateLimiter;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import lombok.RequiredArgsConstructor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
-@RequiredArgsConstructor
 class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     protected final ActorRef resourceClusterManagerActor;
     protected final Duration askTimeout;
     private final ResourceClusterTaskExecutorMapper mapper;
+    protected final RateLimiter rateLimiter;
+
+    ResourceClusterGatewayAkkaImpl(
+            ActorRef resourceClusterManagerActor,
+            Duration askTimeout,
+            ResourceClusterTaskExecutorMapper mapper,
+            int maxConcurrentRequestCount) {
+        this.resourceClusterManagerActor = resourceClusterManagerActor;
+        this.askTimeout = askTimeout;
+        this.mapper = mapper;
+
+        this.rateLimiter = RateLimiter.create(maxConcurrentRequestCount);
+    }
+
+    protected <In, Out> Out withThrottle(Function<In, Out> func, In req) throws RequestThrottledException {
+        if (this.rateLimiter.tryAcquire(2, TimeUnit.SECONDS)) {
+            return func.apply(req);
+        } else {
+            throw new RequestThrottledException("Throttled req: " + req.getClass().getSimpleName());
+        }
+    }
 
     @Override
-    public CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration) {
-        return
-            Patterns
+    public CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration)
+            throws RequestThrottledException {
+        return withThrottle(this::registerTaskExecutorImpl, registration);
+    }
+
+    private CompletableFuture<Ack> registerTaskExecutorImpl(TaskExecutorRegistration registration) {
+        return Patterns
                 .ask(resourceClusterManagerActor, registration, askTimeout)
                 .thenApply(Ack.class::cast)
                 .toCompletableFuture()
                 .whenComplete((dontCare, throwable) ->
-                    mapper.onTaskExecutorDiscovered(
-                        registration.getClusterID(),
-                        registration.getTaskExecutorID()));
+                        mapper.onTaskExecutorDiscovered(
+                                registration.getClusterID(),
+                                registration.getTaskExecutorID()));
     }
 
     @Override
-    public CompletableFuture<Ack> heartBeatFromTaskExecutor(TaskExecutorHeartbeat heartbeat) {
+    public CompletableFuture<Ack> heartBeatFromTaskExecutor(TaskExecutorHeartbeat heartbeat)
+            throws RequestThrottledException {
+        return withThrottle(this::heartBeatFromTaskExecutorImpl, heartbeat);
+    }
+
+    private CompletableFuture<Ack> heartBeatFromTaskExecutorImpl(TaskExecutorHeartbeat heartbeat) {
         return
             Patterns
                 .ask(resourceClusterManagerActor, heartbeat, askTimeout)
@@ -68,10 +100,15 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
 
     @Override
     public CompletableFuture<Ack> disconnectTaskExecutor(
-        TaskExecutorDisconnection taskExecutorDisconnection) {
+        TaskExecutorDisconnection taskExecutorDisconnection) throws RequestThrottledException {
+        return withThrottle(this::disconnectTaskExecutorImpl, taskExecutorDisconnection);
+    }
+
+    CompletableFuture<Ack> disconnectTaskExecutorImpl(
+            TaskExecutorDisconnection taskExecutorDisconnection) {
         return
-            Patterns.ask(resourceClusterManagerActor, taskExecutorDisconnection, askTimeout)
-                .thenApply(Ack.class::cast)
-                .toCompletableFuture();
+                Patterns.ask(resourceClusterManagerActor, taskExecutorDisconnection, askTimeout)
+                        .thenApply(Ack.class::cast)
+                        .toCompletableFuture();
     }
 }
