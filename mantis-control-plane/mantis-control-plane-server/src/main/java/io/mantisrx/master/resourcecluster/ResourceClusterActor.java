@@ -631,8 +631,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state.isRunningTask()) {
-            log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
+        if (state == null) {
+            log.error("TaskExecutor lost during task assignment: {}", request);
+        }
+        else if (state.isRunningTask()) {
+            log.debug("TaskExecutor {} entered running state already; no need to act", request.getTaskExecutorID());
         } else {
             try
             {
