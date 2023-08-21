@@ -167,6 +167,11 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
 
     @Override
     public TaskExecutorState get(TaskExecutorID taskExecutorID) {
+        return this.taskExecutorStateMap.get(taskExecutorID);
+    }
+
+    @Override
+    public TaskExecutorState getIncludeArchived(TaskExecutorID taskExecutorID) {
         if (this.taskExecutorStateMap.containsKey(taskExecutorID)) {
             return this.taskExecutorStateMap.get(taskExecutorID);
         }
@@ -227,12 +232,25 @@ public class ExecutorStateManagerImpl implements ExecutorStateManager {
         SortedMap<Double, NavigableSet<TaskExecutorHolder>> targetMap =
             this.executorByCores.tailMap(request.getAllocationRequest().getMachineDefinition().getCpuCores());
 
-        if (targetMap.size() < 1) {
+        if (targetMap.isEmpty()) {
             log.warn("Cannot find any executor for request: {}", request);
             return Optional.empty();
         }
         Double targetCoreCount = targetMap.firstKey();
-        log.trace("Applying assignmentReq: {} to {} cores.", request, targetCoreCount);
+        log.debug("Applying assignmentReq: {} to {} cores.", request, targetCoreCount);
+
+        Double requestedCoreCount = request.getAllocationRequest().getMachineDefinition().getCpuCores();
+        if (Math.abs(targetCoreCount - requestedCoreCount) > 1E-10) {
+            // this mismatch should not happen in production and indicates TE registration/spec problem.
+            log.warn("Requested core count mismatched. requested: {}, found: {} for {}", requestedCoreCount,
+                    targetCoreCount,
+                    request);
+        }
+
+        if (this.executorByCores.get(targetCoreCount).isEmpty()) {
+            log.warn("No available TE found for core count: {}, request: {}", targetCoreCount, request);
+            return Optional.empty();
+        }
 
         return this.executorByCores.get(targetCoreCount)
             .descendingSet()

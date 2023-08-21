@@ -91,7 +91,13 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
       return client.executeRequest(request).toCompletableFuture().thenCompose(response -> {
         if (response.getStatusCode() == 200) {
           return CompletableFuture.completedFuture(Ack.getInstance());
-        } else {
+        }
+        else if (response.getStatusCode() == 429) {
+          log.warn("request was throttled on control plane side: {}", request);
+          return CompletableFutures.exceptionallyCompletedFuture(
+                  new RequestThrottledException("request was throttled on control plane side: " + request));
+        }
+        else {
           try {
             log.error("failed request {} with response {}", request, response.getResponseBody());
             return CompletableFutures.exceptionallyCompletedFuture(

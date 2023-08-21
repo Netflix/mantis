@@ -308,7 +308,14 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onTaskExecutorInfoRequest(TaskExecutorInfoRequest request) {
         if (request.getTaskExecutorID() != null) {
-            sender().tell(this.executorStateManager.get(request.getTaskExecutorID()).getRegistration(), self());
+            TaskExecutorState state =
+                    this.executorStateManager.getIncludeArchived(request.getTaskExecutorID());
+            if (state != null && state.getRegistration() != null) {
+                sender().tell(state.getRegistration(), self());
+            } else {
+                sender().tell(new Status.Failure(new Exception(String.format("No task executor state for %s",
+                        request.getTaskExecutorID()))), self());
+            }
         } else {
             Optional<TaskExecutorRegistration> taskExecutorRegistration =
                 this.executorStateManager
@@ -546,6 +553,8 @@ class ResourceClusterActor extends AbstractActorWithTimers {
         setupTaskExecutorStateIfNecessary(heartbeat.getTaskExecutorID());
         try {
             final TaskExecutorID taskExecutorID = heartbeat.getTaskExecutorID();
+
+            // todo: metrics: RC actor mailbox, TE heertbeat, no resouce log
             final TaskExecutorState state = this.executorStateManager.get(taskExecutorID);
             boolean stateChange = state.onHeartbeat(heartbeat);
             if (stateChange) {
@@ -622,8 +631,11 @@ class ResourceClusterActor extends AbstractActorWithTimers {
 
     private void onTaskExecutorAssignmentTimeout(TaskExecutorAssignmentTimeout request) {
         TaskExecutorState state = this.executorStateManager.get(request.getTaskExecutorID());
-        if (state.isRunningTask()) {
-            log.debug("TaskExecutor {} entered running state alraedy; no need to act", request.getTaskExecutorID());
+        if (state == null) {
+            log.error("TaskExecutor lost during task assignment: {}", request);
+        }
+        else if (state.isRunningTask()) {
+            log.debug("TaskExecutor {} entered running state already; no need to act", request.getTaskExecutorID());
         } else {
             try
             {
