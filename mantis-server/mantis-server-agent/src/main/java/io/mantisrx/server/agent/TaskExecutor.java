@@ -411,9 +411,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 currentReportSupplier.apply(timeout)
                     .thenComposeAsync(report -> {
                         log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
-                        return gateway.heartBeatFromTaskExecutor(
-                                new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(),
-                                        taskExecutorRegistration.getClusterID(), report));
+                        return gateway.heartBeatFromTaskExecutor(new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(), taskExecutorRegistration.getClusterID(), report));
                     })
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 

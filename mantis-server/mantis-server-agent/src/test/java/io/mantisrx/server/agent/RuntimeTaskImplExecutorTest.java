@@ -118,7 +118,7 @@ public class RuntimeTaskImplExecutorTest {
     private CollectingTaskLifecycleListener listener;
 
     @Before
-    public void setUp() throws IOException, RequestThrottledException {
+    public void setUp() throws IOException {
         final Properties props = new Properties();
         props.setProperty("mantis.zookeeper.root", "");
 
@@ -394,7 +394,7 @@ public class RuntimeTaskImplExecutorTest {
         Assert.assertTrue(taskExecutor.isRegistered(Time.seconds(1)).get());
     }
 
-    private static ResourceClusterGateway getHealthyGateway(String name) throws RequestThrottledException {
+    private static ResourceClusterGateway getHealthyGateway(String name) {
         ResourceClusterGateway gateway = mock(ResourceClusterGateway.class);
         when(gateway.registerTaskExecutor(any())).thenReturn(CompletableFuture.completedFuture(Ack.getInstance()));
         when(gateway.heartBeatFromTaskExecutor(any())).thenReturn(
