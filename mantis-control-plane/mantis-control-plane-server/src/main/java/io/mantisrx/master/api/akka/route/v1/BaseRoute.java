@@ -42,6 +42,7 @@ import com.netflix.spectator.api.BasicTag;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.master.api.akka.route.MasterApiMetrics;
 import io.mantisrx.master.jobcluster.proto.BaseResponse;
+import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorNotFoundException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
@@ -327,6 +328,11 @@ abstract class BaseRoute extends AllDirectives {
                     if (throwable instanceof TaskExecutorNotFoundException) {
                         return complete(StatusCodes.NOT_FOUND);
                     }
+
+                    if (throwable instanceof RequestThrottledException) {
+                        return complete(StatusCodes.TOO_MANY_REQUESTS);
+                    }
+
                     return complete(StatusCodes.INTERNAL_SERVER_ERROR, throwable, Jackson.marshaller());
                 },
                 r -> complete(StatusCodes.OK, r, Jackson.marshaller())));

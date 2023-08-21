@@ -60,6 +60,9 @@ interface ExecutorStateManager {
     TaskExecutorState get(TaskExecutorID taskExecutorID);
 
     @Nullable
+    TaskExecutorState getIncludeArchived(TaskExecutorID taskExecutorID);
+
+    @Nullable
     TaskExecutorState archive(TaskExecutorID taskExecutorID);
 
     ResourceOverview getResourceOverview();
