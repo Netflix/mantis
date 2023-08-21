@@ -41,7 +41,6 @@ import io.mantisrx.server.master.client.ResourceLeaderConnection;
 import io.mantisrx.server.master.client.ResourceLeaderConnection.ResourceLeaderChangeListener;
 import io.mantisrx.server.master.client.TaskStatusUpdateHandler;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
@@ -412,14 +411,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 currentReportSupplier.apply(timeout)
                     .thenComposeAsync(report -> {
                         log.debug("Sending heartbeat to resource manager {} with report {}", gateway, report);
-                        try {
-                            return gateway.heartBeatFromTaskExecutor(
+                        return gateway.heartBeatFromTaskExecutor(
                                 new TaskExecutorHeartbeat(taskExecutorRegistration.getTaskExecutorID(),
-                                    taskExecutorRegistration.getClusterID(), report));
-                        } catch (RequestThrottledException e) {
-                            log.warn("heartbeat request throttled.");
-                            throw new RuntimeException("heartbeat request throttled.", e);
-                        }
+                                        taskExecutorRegistration.getClusterID(), report));
                     })
                     .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
 

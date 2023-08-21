@@ -18,13 +18,11 @@ package io.mantisrx.master.api.akka.route.v1;
 
 import static akka.http.javadsl.server.PathMatchers.segment;
 
-import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.PathMatcher0;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import io.mantisrx.master.api.akka.route.Jackson;
 import io.mantisrx.server.master.resourcecluster.ClusterID;
-import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusters;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorDisconnection;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
@@ -98,15 +96,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 "POST /api/v1/resourceClusters/{}/actions/registerTaskExecutor called {}",
                 clusterID,
                 request);
-
-            try {
-                return withFuture(gateway.getClusterFor(clusterID).registerTaskExecutor(request));
-            } catch (RequestThrottledException e) {
-                log.warn("[Throttled] /api/v1/resourceClusters/{}/actions/registerTaskExecutor {}",
-                        clusterID.getResourceID(),
-                        request.getTaskExecutorID());
-                return complete(StatusCodes.TOO_MANY_REQUESTS);
-            }
+            return withFuture(gateway.getClusterFor(clusterID).registerTaskExecutor(request));
         });
     }
 
@@ -116,15 +106,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 "POST /api/v1/resourceClusters/{}/actions/heartbeatFromTaskExecutor called {}",
                 clusterID.getResourceID(),
                 request);
-
-            try {
-                return withFuture(gateway.getClusterFor(clusterID).heartBeatFromTaskExecutor(request));
-            } catch (RequestThrottledException e) {
-                log.warn("[Throttled] /api/v1/resourceClusters/{}/actions/heartbeatFromTaskExecutor {}",
-                        clusterID.getResourceID(),
-                        request.getTaskExecutorID());
-                return complete(StatusCodes.TOO_MANY_REQUESTS);
-            }
+            return withFuture(gateway.getClusterFor(clusterID).heartBeatFromTaskExecutor(request));
         });
     }
 
@@ -134,15 +116,7 @@ public class ResourceClustersLeaderExclusiveRoute extends BaseRoute {
                 "POST /api/v1/resourceClusters/{}/actions/disconnectTaskExecutor called {}",
                 clusterID.getResourceID(),
                 request);
-
-            try {
-                return withFuture(gateway.getClusterFor(clusterID).disconnectTaskExecutor(request));
-            } catch (RequestThrottledException e) {
-                log.warn("[Throttled] /api/v1/resourceClusters/{}/actions/disconnectTaskExecutor {}",
-                        clusterID.getResourceID(),
-                        request.getTaskExecutorID());
-                return complete(StatusCodes.TOO_MANY_REQUESTS);
-            }
+            return withFuture(gateway.getClusterFor(clusterID).disconnectTaskExecutor(request));
         });
     }
 

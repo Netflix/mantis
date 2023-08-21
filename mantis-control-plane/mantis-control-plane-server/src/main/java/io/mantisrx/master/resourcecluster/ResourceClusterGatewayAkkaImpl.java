@@ -18,6 +18,7 @@ package io.mantisrx.master.resourcecluster;
 
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
+import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
 import io.mantisrx.server.master.resourcecluster.RequestThrottledException;
 import io.mantisrx.server.master.resourcecluster.ResourceClusterGateway;
@@ -50,18 +51,21 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
         this.rateLimiter = RateLimiter.create(maxConcurrentRequestCount);
     }
 
-    protected <In, Out> Out withThrottle(Function<In, Out> func, In req) throws RequestThrottledException {
-        if (this.rateLimiter.tryAcquire(2, TimeUnit.SECONDS)) {
-            return func.apply(req);
-        } else {
-            throw new RequestThrottledException("Throttled req: " + req.getClass().getSimpleName());
-        }
+    private <In, Out> Function<In, CompletableFuture<Out>> withThrottle(Function<In, CompletableFuture<Out>> func) {
+        return in -> {
+            if (rateLimiter.tryAcquire(1, TimeUnit.SECONDS)) {
+                return func.apply(in);
+            } else {
+                return CompletableFutures.exceptionallyCompletedFuture(
+                        new RequestThrottledException("Throttled req: " + in.getClass().getSimpleName())
+                );
+            }
+        };
     }
 
     @Override
-    public CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration)
-            throws RequestThrottledException {
-        return withThrottle(this::registerTaskExecutorImpl, registration);
+    public CompletableFuture<Ack> registerTaskExecutor(TaskExecutorRegistration registration) {
+        return withThrottle(this::registerTaskExecutorImpl).apply(registration);
     }
 
     private CompletableFuture<Ack> registerTaskExecutorImpl(TaskExecutorRegistration registration) {
@@ -76,9 +80,8 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
     }
 
     @Override
-    public CompletableFuture<Ack> heartBeatFromTaskExecutor(TaskExecutorHeartbeat heartbeat)
-            throws RequestThrottledException {
-        return withThrottle(this::heartBeatFromTaskExecutorImpl, heartbeat);
+    public CompletableFuture<Ack> heartBeatFromTaskExecutor(TaskExecutorHeartbeat heartbeat) {
+        return withThrottle(this::heartBeatFromTaskExecutorImpl).apply(heartbeat);
     }
 
     private CompletableFuture<Ack> heartBeatFromTaskExecutorImpl(TaskExecutorHeartbeat heartbeat) {
@@ -100,8 +103,8 @@ class ResourceClusterGatewayAkkaImpl implements ResourceClusterGateway {
 
     @Override
     public CompletableFuture<Ack> disconnectTaskExecutor(
-        TaskExecutorDisconnection taskExecutorDisconnection) throws RequestThrottledException {
-        return withThrottle(this::disconnectTaskExecutorImpl, taskExecutorDisconnection);
+        TaskExecutorDisconnection taskExecutorDisconnection) {
+        return withThrottle(this::disconnectTaskExecutorImpl).apply(taskExecutorDisconnection);
     }
 
     CompletableFuture<Ack> disconnectTaskExecutorImpl(
