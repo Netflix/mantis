@@ -10,6 +10,9 @@ MAINTAINER Mantis Developers <mantis-oss-dev@netflix.com>
 #    apt-get install -y mesos=1.3.2-2.0.1 && \
 #    apt-get clean
 
+RUN mkdir -p /apps/mantis/mantis-control-plane-server/bin
+RUN mkdir -p /apps/mantis/mantis-control-plane-server/lib
+
 COPY ./mantis-control-plane-server/build/install/mantis-control-plane-server/bin/* /apps/mantis/mantis-control-plane-server/bin/
 COPY ./mantis-control-plane-server/build/install/mantis-control-plane-server/lib/* /apps/mantis/mantis-control-plane-server/lib/
 
