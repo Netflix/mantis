@@ -37,8 +37,8 @@ import org.asynchttpclient.Request;
 @Slf4j
 public class ResourceClusterGatewayClient implements ResourceClusterGateway, Closeable {
 
-  private final int connectTimeout = 100;
-  private final int connectionRequestTimeout = 1000;
+  private final int connectTimeout = 1000;
+  private final int connectionRequestTimeout = 60000;
   private final int socketTimeout = 2000;
   private final ClusterID clusterID;
   @Getter
