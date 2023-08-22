@@ -30,6 +30,7 @@ import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,6 +122,7 @@ public class TwitterDslJob extends MantisJobProvider<String> {
         }
 
         LocalJobExecutorNetworked.execute(new TwitterDslJob().getJobInstance(),
+                new SimpleMeterRegistry(),
                 new Parameter(TwitterSource.CONSUMER_KEY_PARAM, consumerKey),
                 new Parameter(TwitterSource.CONSUMER_SECRET_PARAM, consumerSecret),
                 new Parameter(TwitterSource.TOKEN_PARAM, token),

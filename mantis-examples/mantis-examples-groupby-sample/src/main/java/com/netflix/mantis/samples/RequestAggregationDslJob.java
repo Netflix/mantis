@@ -36,6 +36,7 @@ import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.sink.Sinks;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,6 +136,6 @@ public class RequestAggregationDslJob extends MantisJobProvider<String> {
 
     public static void main(String[] args) {
         // To run locally we use the LocalJobExecutor
-        LocalJobExecutorNetworked.execute(new RequestAggregationDslJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new RequestAggregationDslJob().getJobInstance(), new SimpleMeterRegistry());
     }
 }

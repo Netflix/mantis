@@ -26,6 +26,7 @@ import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.sink.Sinks;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -82,6 +83,6 @@ public class RequestAggregationJob extends MantisJobProvider<String> {
 
     public static void main(String[] args) {
         // To run locally we use the LocalJobExecutor
-        LocalJobExecutorNetworked.execute(new RequestAggregationJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new RequestAggregationJob().getJobInstance(), new SimpleMeterRegistry());
     }
 }

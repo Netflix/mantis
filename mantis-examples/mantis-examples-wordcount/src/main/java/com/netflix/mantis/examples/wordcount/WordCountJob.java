@@ -25,6 +25,7 @@ import io.mantisrx.runtime.MantisJobProvider;
 import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.sink.Sinks;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -85,6 +86,6 @@ public class WordCountJob extends MantisJobProvider<String> {
 
 
     public static void main(String[] args) {
-        LocalJobExecutorNetworked.execute(new WordCountJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new WordCountJob().getJobInstance(), new SimpleMeterRegistry());
     }
 }

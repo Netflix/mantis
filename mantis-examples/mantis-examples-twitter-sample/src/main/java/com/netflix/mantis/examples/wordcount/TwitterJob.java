@@ -27,6 +27,7 @@ import io.mantisrx.runtime.Metadata;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.parameter.Parameter;
 import io.mantisrx.runtime.sink.Sinks;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -121,6 +122,7 @@ public class TwitterJob extends MantisJobProvider<String> {
         }
 
         LocalJobExecutorNetworked.execute(new TwitterJob().getJobInstance(),
+                new SimpleMeterRegistry(),
                 new Parameter(TwitterSource.CONSUMER_KEY_PARAM, consumerKey),
                 new Parameter(TwitterSource.CONSUMER_SECRET_PARAM, consumerSecret),
                 new Parameter(TwitterSource.TOKEN_PARAM, token),

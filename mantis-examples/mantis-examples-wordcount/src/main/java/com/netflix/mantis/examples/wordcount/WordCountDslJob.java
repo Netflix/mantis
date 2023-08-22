@@ -28,6 +28,7 @@ import io.mantisrx.runtime.core.sinks.ObservableSinkImpl;
 import io.mantisrx.runtime.core.sources.ObservableSourceImpl;
 import io.mantisrx.runtime.executor.LocalJobExecutorNetworked;
 import io.mantisrx.runtime.sink.Sinks;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +93,6 @@ public class WordCountDslJob extends MantisJobProvider<String> {
 
 
     public static void main(String[] args) {
-        LocalJobExecutorNetworked.execute(new WordCountDslJob().getJobInstance());
+        LocalJobExecutorNetworked.execute(new WordCountDslJob().getJobInstance(), new SimpleMeterRegistry());
     }
 }

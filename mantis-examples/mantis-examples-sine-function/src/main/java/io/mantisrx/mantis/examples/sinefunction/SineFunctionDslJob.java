@@ -35,6 +35,7 @@ import io.mantisrx.runtime.parameter.type.BooleanParameter;
 import io.mantisrx.runtime.parameter.type.DoubleParameter;
 import io.mantisrx.runtime.parameter.type.IntParameter;
 import io.mantisrx.runtime.parameter.validator.Validators;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -86,6 +87,6 @@ public class SineFunctionDslJob {
             .build()
         ).create();
 
-        LocalJobExecutorNetworked.execute(pointJob);
+        LocalJobExecutorNetworked.execute(pointJob, new SimpleMeterRegistry());
     }
 }
