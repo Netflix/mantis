@@ -17,13 +17,14 @@
 package io.mantisrx.sourcejob.kafka;
 
 import io.mantisrx.common.codec.Codec;
-import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.connector.kafka.KafkaAckable;
 import io.mantisrx.mql.jvm.core.Query;
 import io.mantisrx.runtime.Context;
 import io.mantisrx.runtime.computation.ScalarComputation;
 import io.mantisrx.sourcejob.kafka.core.TaggedData;
 import io.mantisrx.sourcejob.kafka.sink.MQLQueryManager;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,13 +53,10 @@ public abstract class AbstractAckableTaggingStage implements ScalarComputation<K
     private AtomicBoolean errorLogged = new AtomicBoolean(false);
 
     public Observable<TaggedData> call(Context context, Observable<KafkaAckable> data) {
-        context.getMetricsRegistry().registerAndGet(new Metrics.Builder()
-                                                        .name("mql")
-                                                        .addCounter(MQL_COUNTER)
-                                                        .addCounter(MQL_FAILURE)
-                                                        .addCounter(MQL_CLASSLOADER_ERROR)
-                                                        .addCounter(MANTIS_QUERY_COUNTER).build());
-
+        context.getMeterRegistry().counter("mql_" + MQL_COUNTER);
+        context.getMeterRegistry().counter("mql_" + MQL_FAILURE);
+        context.getMeterRegistry().counter("mql_" + MQL_CLASSLOADER_ERROR);
+        context.getMeterRegistry().counter("mql_" + MANTIS_QUERY_COUNTER);
 
         return data
             .map(ackable -> {
@@ -86,8 +84,8 @@ public abstract class AbstractAckableTaggingStage implements ScalarComputation<K
     @SuppressWarnings("unchecked")
     protected List<TaggedData> tagData(Map<String, Object> d, Context context) {
         List<TaggedData> taggedDataList = new ArrayList<>();
+        MeterRegistry meterRegistry = context.getMeterRegistry();
         boolean metaEvent = isMetaEvent(d);
-        Metrics metrics = context.getMetricsRegistry().getMetric("mql");
 
         Collection<Query> queries = MQLQueryManager.getInstance().getRegisteredQueries();
         Iterator<Query> it = queries.iterator();
@@ -110,16 +108,18 @@ public abstract class AbstractAckableTaggingStage implements ScalarComputation<K
                 if (ex instanceof ClassNotFoundException) {
                     logger.error("Error loading MQL: " + ex.getMessage());
                     ex.printStackTrace();
-                    metrics.getCounter(MQL_CLASSLOADER_ERROR).increment();
+
                 } else {
                     ex.printStackTrace();
-                    metrics.getCounter(MQL_FAILURE).increment();
+                    Counter mqlFailure = meterRegistry.find("mql_" + MQL_FAILURE).counter();
+                    mqlFailure.increment();
                     logger.error("MQL Error: " + ex.getMessage());
                     logger.error("MQL Query: " + query.getRawQuery());
                     logger.error("MQL Datum: " + d);
                 }
             } catch (Error e) {
-                metrics.getCounter(MQL_FAILURE).increment();
+                Counter mqlFailure = meterRegistry.find("mql_" + MQL_FAILURE).counter();
+                mqlFailure.increment();
                 if (!errorLogged.get()) {
                     logger.error("caught Error when processing MQL {} on {}", query.getRawQuery(), d.toString(), e);
                     errorLogged.set(true);

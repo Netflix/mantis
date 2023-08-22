@@ -21,6 +21,7 @@ dependencies {
     implementation project(":mantis-connectors:mantis-connector-publish")
 
     implementation libraries.slf4jApi
+    implementation libraries.micrometerCore
 
     testImplementation libraries.junitJupiter
     testImplementation libraries.mockitoCore

@@ -29,6 +29,7 @@ import io.mantisrx.sourcejob.kafka.core.TaggedData;
 import io.mantisrx.sourcejob.kafka.sink.QueryRequestPostProcessor;
 import io.mantisrx.sourcejob.kafka.sink.QueryRequestPreProcessor;
 import io.mantisrx.sourcejob.kafka.sink.TaggedDataSourceSink;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 
@@ -55,13 +56,15 @@ public class QueryableKafkaSourceJob extends MantisJobProvider<TaggedData> {
 
     public static void main(String[] args) {
         LocalJobExecutorNetworked.execute(new QueryableKafkaSourceJob().getJobInstance(),
+                                          new SimpleMeterRegistry(),
                                           new Parameter(KafkaSourceParameters.TOPIC, "nf_errors_log"),
                                           new Parameter(KafkaSourceParameters.NUM_KAFKA_CONSUMER_PER_WORKER, "1"),
                                           new Parameter(KafkaSourceParameters.PARSER_TYPE, ParserType.SIMPLE_JSON.getPropName()),
                                           new Parameter(KafkaSourceParameters.PARSE_MSG_IN_SOURCE, "true"),
                                           new Parameter(KafkaSourceParameters.PREFIX + ConsumerConfig.GROUP_ID_CONFIG, "QueryableKafkaSourceLocal"),
                                           new Parameter(KafkaSourceParameters.PREFIX + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "100.66.49.176:7102"),
-                                          new Parameter(KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"));
+                                          new Parameter(KafkaSourceParameters.PREFIX + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")
+                                          );
     }
 
 
