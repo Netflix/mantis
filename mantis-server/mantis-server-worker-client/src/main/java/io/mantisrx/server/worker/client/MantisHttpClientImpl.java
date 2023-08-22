@@ -27,6 +27,7 @@ import mantis.io.reactivex.netty.client.ConnectionPool;
 import mantis.io.reactivex.netty.client.ConnectionPoolBuilder;
 import mantis.io.reactivex.netty.metrics.MetricEventsSubject;
 import mantis.io.reactivex.netty.pipeline.PipelineConfigurator;
+import mantis.io.reactivex.netty.protocol.http.client.HttpClient.HttpClientConfig.Builder;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientImpl;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
@@ -119,8 +120,9 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
         }
     }
 
-    public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request, ClientConfig config) {
-        return super.submit(request, observableConection, config);
+    public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request) {
+        ClientConfig clientConfig = (ClientConfig) Builder.newDefaultConfig();
+        return super.submit(request, observableConection, clientConfig);
     }
 
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
