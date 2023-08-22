@@ -21,21 +21,22 @@ import static io.mantisrx.server.core.stats.MetricStringConstants.DATA_DROP_METR
 import static io.mantisrx.server.core.stats.MetricStringConstants.DROP_COUNT;
 import static io.mantisrx.server.core.stats.MetricStringConstants.ON_NEXT_COUNT;
 
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.mantisrx.server.core.StatusPayloads;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivx.mantis.operators.DropOperator;
+import io.reactivx.mantis.operators.DropOperator.Counters;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,50 +50,48 @@ class DataDroppedPayloadSetter implements Closeable {
     private ScheduledFuture<?> future;
 
     private final Gauge dropCountGauge;
+    private final AtomicLong dropCountValue = new AtomicLong(0);
     private final Gauge onNextCountGauge;
+    private final AtomicLong onNextCountValue = new AtomicLong(0);
+    private final MeterRegistry meterRegistry;
 
 
-    DataDroppedPayloadSetter(Heartbeat heartbeat) {
+    DataDroppedPayloadSetter(Heartbeat heartbeat, MeterRegistry meterRegistry) {
         this.heartbeat = heartbeat;
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         executor = new ScheduledThreadPoolExecutor(1);
-        Metrics m = new Metrics.Builder()
-                .name(DATA_DROP_METRIC_GROUP)
-                .addGauge(DROP_COUNT)
-                .addGauge(ON_NEXT_COUNT)
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        dropCountGauge = m.getGauge(DROP_COUNT);
-        onNextCountGauge = m.getGauge(ON_NEXT_COUNT);
+        this.meterRegistry = meterRegistry;
+        dropCountGauge = Gauge.builder(DATA_DROP_METRIC_GROUP + "_" + DROP_COUNT, dropCountValue::get)
+            .register(meterRegistry);
+        onNextCountGauge = Gauge.builder(DATA_DROP_METRIC_GROUP + "_" + ON_NEXT_COUNT, dropCountValue::get)
+            .register(meterRegistry);
     }
 
     protected void setPayload(final long intervalSecs) {
-        final Collection<Metrics> metrics = MetricsRegistry.getInstance().getMetrics(metricNamePrefix);
         long totalDropped = 0L;
         long totalOnNext = 0L;
         try {
-            if (metrics != null && !metrics.isEmpty()) {
+            if (meterRegistry.getMeters().contains(dropCountGauge) && meterRegistry.getMeters().contains(onNextCountGauge)){
                 //logger.info("Got " + metrics.size() + " metrics for DropOperator");
-                for (Metrics m : metrics) {
-                    final Counter dropped = m.getCounter("" + DropOperator.Counters.dropped);
-                    final Counter onNext = m.getCounter("" + DropOperator.Counters.onNext);
-                    if (dropped != null)
-                        totalDropped += dropped.value();
-                    else
-                        logger.warn("Unexpected to get null dropped counter for metric " + m.getMetricGroupId().id());
-                    if (onNext != null)
-                        totalOnNext += onNext.value();
-                    else
-                        logger.warn("Unexpected to get null onNext counter for metric " + m.getMetricGroupId().id());
-                }
+                final Counter dropped = meterRegistry.find("DropOperator_" + "" + DropOperator.Counters.dropped).counter();
+                final Counter onNext = meterRegistry.find("DropOperator_" + "" + DropOperator.Counters.onNext).counter();
+                if (dropped != null)
+                    totalDropped += dropped.count();
+                else
+                    logger.warn("Unexpected to get null dropped counter for metric DropOperator DropOperator_dropped.");
+                if (onNext != null)
+                    totalOnNext += onNext.count();
+                else
+                    logger.warn("Unexpected to get null onNext counter for metric DropOperator_onNext.");
+
                 final StatusPayloads.DataDropCounts dataDrop = new StatusPayloads.DataDropCounts(totalOnNext, totalDropped);
                 try {
                     heartbeat.addSingleUsePayload("" + StatusPayloads.Type.IncomingDataDrop, objectMapper.writeValueAsString(dataDrop));
                 } catch (JsonProcessingException e) {
                     logger.warn("Error writing json for dataDrop payload: " + e.getMessage());
                 }
-                dropCountGauge.set(dataDrop.getDroppedCount());
-                onNextCountGauge.set(dataDrop.getOnNextCount());
+                dropCountValue.set(dataDrop.getDroppedCount());
+                onNextCountValue.set(dataDrop.getOnNextCount());
             } else
                 logger.debug("Got no metrics from DropOperator");
         } catch (Exception e) {

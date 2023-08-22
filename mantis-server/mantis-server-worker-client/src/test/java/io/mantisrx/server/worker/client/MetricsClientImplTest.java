@@ -30,6 +30,8 @@ import io.mantisrx.server.worker.TestSseServerFactory;
 import io.mantisrx.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivex.mantis.remote.observable.EndpointChange;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -67,6 +69,7 @@ public class MetricsClientImplTest {
         final String testResUsageMetricData = generateMetricJson(MetricStringConstants.RESOURCE_USAGE_METRIC_GROUP);
         final String testDropDataMetricData = generateMetricJson(MetricStringConstants.DATA_DROP_METRIC_GROUP);
         final int metricsPort = TestSseServerFactory.newServerWithInitialData(testResUsageMetricData);
+        final MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
         final AtomicInteger i = new AtomicInteger(0);
         final Observable<EndpointChange> workerMetricLocationStream = Observable.interval(1, TimeUnit.SECONDS, Schedulers.io()).map(new Func1<Long, EndpointChange>() {
@@ -93,7 +96,7 @@ public class MetricsClientImplTest {
                                     logger.error("Interrupted waiting for retrying connection");
                                 }
                             }
-                        }, new SinkParameters.Builder().withParameter("name", MetricStringConstants.RESOURCE_USAGE_METRIC_GROUP).build()),
+                        }, new SinkParameters.Builder().withParameter("name", MetricStringConstants.RESOURCE_USAGE_METRIC_GROUP).build(), meterRegistry),
                         new JobWorkerMetricsLocator() {
                             @Override
                             public Observable<EndpointChange> locateWorkerMetricsForJob(String jobId) {
@@ -117,7 +120,7 @@ public class MetricsClientImplTest {
                                 logger.info("got WorkerConnStatus {}", workerConnectionsStatus);
                             }
                         },
-                        60);
+                        60, meterRegistry);
 
         final CountDownLatch latch = new CountDownLatch(1);
 

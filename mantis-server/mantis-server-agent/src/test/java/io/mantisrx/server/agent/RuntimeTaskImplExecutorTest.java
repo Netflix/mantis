@@ -67,6 +67,8 @@ import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.collect.ImmutableMap;
 import io.mantisrx.shaded.com.google.common.collect.Lists;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -116,6 +118,7 @@ public class RuntimeTaskImplExecutorTest {
     private SimpleResourceLeaderConnection<ResourceClusterGateway> resourceManagerGatewayCxn;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private CollectingTaskLifecycleListener listener;
+    private MeterRegistry meterRegistry;
 
     @Before
     public void setUp() throws IOException {
@@ -145,6 +148,7 @@ public class RuntimeTaskImplExecutorTest {
         classLoaderHandle = ClassLoaderHandle.fixed(getClass().getClassLoader());
         resourceManagerGateway = getHealthyGateway("gateway 1");
         resourceManagerGatewayCxn = new SimpleResourceLeaderConnection<>(resourceManagerGateway);
+        meterRegistry = new SimpleMeterRegistry();
 
         // worker and task executor do not share the same HA instance.
         highAvailabilityServices = mock(HighAvailabilityServices.class);
@@ -176,7 +180,8 @@ public class RuntimeTaskImplExecutorTest {
                 highAvailabilityServices,
                 classLoaderHandle,
                 executeStageRequest -> SinkSubscriptionStateHandler.noop(),
-                updateTaskExecutionStatusFunction);
+                updateTaskExecutionStatusFunction,
+                meterRegistry);
         taskExecutor.addListener(listener, MoreExecutors.directExecutor());
         taskExecutor.start();
         taskExecutor.awaitRunning().get(2, TimeUnit.SECONDS);
@@ -457,9 +462,10 @@ public class RuntimeTaskImplExecutorTest {
                                    HighAvailabilityServices highAvailabilityServices,
                                    ClassLoaderHandle classLoaderHandle,
                                    SinkSubscriptionStateHandler.Factory subscriptionStateHandlerFactory,
-                                   Consumer<Status> consumer) {
+                                   Consumer<Status> consumer,
+                                   MeterRegistry meterRegistry) {
             super(rpcService, workerConfiguration, highAvailabilityServices, classLoaderHandle,
-                subscriptionStateHandlerFactory);
+                subscriptionStateHandlerFactory, meterRegistry);
         }
 
     }

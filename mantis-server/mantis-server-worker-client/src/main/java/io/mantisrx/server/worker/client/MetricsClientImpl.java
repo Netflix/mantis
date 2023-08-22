@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.worker.client;
 
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.mantisrx.common.network.WorkerEndpoint;
 import io.mantisrx.server.master.client.MasterClientWrapper;
 import io.reactivex.mantis.remote.observable.EndpointChange;
@@ -27,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -51,27 +51,30 @@ class MetricsClientImpl<T> implements MetricsClient<T> {
     private final String expectedWorkersGaugeName = "ExpectedMetricsConnections";
     private final String workerConnReceivingDataGaugeName = "metricsRecvngData";
     private final Gauge workersGauge;
+    private final AtomicLong workersGaugeValue = new AtomicLong(0);
     private final Gauge expectedWorkersGauge;
+    private final AtomicLong expectedWorkersGaugeValue = new AtomicLong(0);
     private final Gauge workerConnReceivingDataGauge;
+    private final AtomicLong workerConnReceivingDataGaugeValue = new AtomicLong(0);
     private final AtomicInteger numWorkers = new AtomicInteger();
     private final Observer<WorkerConnectionsStatus> workerConnectionsStatusObserver;
     private final long dataRecvTimeoutSecs;
+    private final MeterRegistry meterRegistry;
     MetricsClientImpl(String jobId, WorkerConnectionFunc<T> workerConnectionFunc, JobWorkerMetricsLocator jobWorkerMetricsLocator,
                       Observable<Integer> numWorkersObservable,
-                      Observer<WorkerConnectionsStatus> workerConnectionsStatusObserver, long dataRecvTimeoutSecs) {
+                      Observer<WorkerConnectionsStatus> workerConnectionsStatusObserver, long dataRecvTimeoutSecs,
+                      MeterRegistry meterRegistry) {
         this.jobId = jobId;
         this.workerConnectionFunc = workerConnectionFunc;
         this.jobWorkerMetricsLocator = jobWorkerMetricsLocator;
-        Metrics metrics = new Metrics.Builder()
-                .name(MetricsClientImpl.class.getCanonicalName() + "-" + jobId)
-                .addGauge(workersGuageName)
-                .addGauge(expectedWorkersGaugeName)
-                .addGauge(workerConnReceivingDataGaugeName)
-                .build();
-        metrics = MetricsRegistry.getInstance().registerAndGet(metrics);
-        workersGauge = metrics.getGauge(workersGuageName);
-        expectedWorkersGauge = metrics.getGauge(expectedWorkersGaugeName);
-        workerConnReceivingDataGauge = metrics.getGauge(workerConnReceivingDataGaugeName);
+        this.meterRegistry = meterRegistry;
+        String groupName = MetricsClientImpl.class.getCanonicalName() + "-" + jobId;
+        workersGauge = Gauge.builder(groupName + "_" + workersGuageName, workersGaugeValue::get)
+                .register(meterRegistry);
+        expectedWorkersGauge = Gauge.builder(groupName + "_" + expectedWorkersGaugeName, expectedWorkersGaugeValue::get)
+                .register(meterRegistry);
+        workerConnReceivingDataGauge = Gauge.builder(groupName + "_" + workerConnReceivingDataGaugeName, workerConnReceivingDataGaugeValue::get)
+                .register(meterRegistry);
         numWorkersObservable
                 .doOnNext(new Action1<Integer>() {
                     @Override
@@ -149,7 +152,7 @@ class MetricsClientImpl<T> implements MetricsClient<T> {
                     }
                 })
                 .share()
-                .lift(new DropOperator<Observable<T>>("client_metrics_share"))
+                .lift(new DropOperator<Observable<T>>(meterRegistry, "client_metrics_share"))
                 ;
     }
 
@@ -209,26 +212,26 @@ class MetricsClientImpl<T> implements MetricsClient<T> {
 
     private void updateWorkerDataReceivingStatus(Boolean flag) {
         if (flag)
-            workerConnReceivingDataGauge.increment();
+            workerConnReceivingDataGaugeValue.incrementAndGet();
         else
-            workerConnReceivingDataGauge.decrement();
-        expectedWorkersGauge.set(numWorkers.get());
+            workerConnReceivingDataGaugeValue.decrementAndGet();
+        expectedWorkersGaugeValue.set(numWorkers.get());
         if (workerConnectionsStatusObserver != null) {
             synchronized (workerConnectionsStatusObserver) {
-                workerConnectionsStatusObserver.onNext(new WorkerConnectionsStatus(workerConnReceivingDataGauge.value(), workersGauge.value(), numWorkers.get()));
+                workerConnectionsStatusObserver.onNext(new WorkerConnectionsStatus(workerConnReceivingDataGaugeValue.get(), workersGaugeValue.get(), numWorkers.get()));
             }
         }
     }
 
     private void updateWorkerConx(Boolean flag) {
         if (flag)
-            workersGauge.increment();
+            workersGaugeValue.incrementAndGet();
         else
-            workersGauge.decrement();
-        expectedWorkersGauge.set(numWorkers.get());
+            workersGaugeValue.decrementAndGet();
+        expectedWorkersGaugeValue.set(numWorkers.get());
         if (workerConnectionsStatusObserver != null) {
             synchronized (workerConnectionsStatusObserver) {
-                workerConnectionsStatusObserver.onNext(new WorkerConnectionsStatus(workerConnReceivingDataGauge.value(), workersGauge.value(), numWorkers.get()));
+                workerConnectionsStatusObserver.onNext(new WorkerConnectionsStatus(workerConnReceivingDataGaugeValue.get(), workersGaugeValue.get(), numWorkers.get()));
             }
         }
     }

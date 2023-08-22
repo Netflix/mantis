@@ -21,13 +21,10 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.netflix.spectator.api.DefaultRegistry;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
-import io.mantisrx.common.metrics.spectator.MetricGroupId;
-import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.buffer.Unpooled;
 import io.reactivx.mantis.operators.DropOperator;
 import java.nio.charset.Charset;
@@ -36,6 +33,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
 import mantis.io.reactivex.netty.protocol.http.sse.ServerSentEvent;
+import org.apache.flink.metrics.Meter;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,9 +47,8 @@ public class SseWorkerConnectionTest {
 
     @Test
     public void testStreamContentDrops() throws Exception {
-        SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
         String metricGroupString = "testmetric";
-        MetricGroupId metricGroupId = new MetricGroupId(metricGroupString);
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
         SseWorkerConnection workerConnection = new SseWorkerConnection("connection_type",
                 "hostname",
                 80,
@@ -64,7 +61,8 @@ public class SseWorkerConnectionTest {
                 1,
                 null,
                 true,
-                metricGroupId);
+                metricGroupString,
+                meterRegistry);
         HttpClientResponse<ServerSentEvent> response = mock(HttpClientResponse.class);
         TestScheduler testScheduler = Schedulers.test();
 
@@ -83,12 +81,11 @@ public class SseWorkerConnectionTest {
         List<MantisServerSentEvent> events = subscriber.getOnNextEvents();
         assertEquals("0", events.get(0).getEventAsString());
 
-        Metrics metrics = MetricsRegistry.getInstance().getMetric(metricGroupId);
-        Counter onNextCounter = metrics.getCounter(DropOperator.Counters.onNext.toString());
-        Counter droppedCounter = metrics.getCounter(DropOperator.Counters.dropped.toString());
-        logger.info("next: {}", onNextCounter.value());
-        logger.info("drop: {}", droppedCounter.value());
-        assertTrue(onNextCounter.value() < 10);
-        assertTrue(droppedCounter.value() > 90);
+        Counter onNextCounter = meterRegistry.counter(DropOperator.Counters.onNext.toString());
+        Counter droppedCounter = meterRegistry.counter(DropOperator.Counters.dropped.toString());
+        logger.info("next: {}", onNextCounter.count());
+        logger.info("drop: {}", droppedCounter.count());
+        assertTrue(onNextCounter.count() < 10);
+        assertTrue(droppedCounter.count() > 90);
     }
 }

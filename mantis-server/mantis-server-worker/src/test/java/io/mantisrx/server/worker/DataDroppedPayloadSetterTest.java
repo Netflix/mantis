@@ -24,10 +24,12 @@ import static io.reactivx.mantis.operators.DropOperator.METRIC_GROUP;
 import static org.junit.Assert.assertEquals;
 
 import com.netflix.spectator.api.DefaultRegistry;
-import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.common.metrics.spectator.SpectatorRegistryFactory;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.reactivx.mantis.operators.DropOperator;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -40,28 +42,20 @@ public class DataDroppedPayloadSetterTest {
     public void testAggregateDropOperatorMetrics() throws Exception {
         SpectatorRegistryFactory.setRegistry(new DefaultRegistry());
         Heartbeat heartbeat = new Heartbeat("job-1", 1, 1, 1);
-        DataDroppedPayloadSetter payloadSetter = new DataDroppedPayloadSetter(heartbeat);
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        DataDroppedPayloadSetter payloadSetter = new DataDroppedPayloadSetter(heartbeat, meterRegistry);
 
-        Metrics m = new Metrics.Builder()
-                .id(METRIC_GROUP + "_" + INCOMING + "_metric1")
-                .addCounter(DropOperator.Counters.dropped.toString())
-                .addCounter(DropOperator.Counters.onNext.toString())
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        m.getCounter(DropOperator.Counters.dropped.toString()).increment(1);
-        m.getCounter(DropOperator.Counters.onNext.toString()).increment(10);
-        m = new Metrics.Builder()
-                .id(METRIC_GROUP + "_" + INCOMING + "_metric2")
-                .addCounter(DropOperator.Counters.dropped.toString())
-                .addCounter(DropOperator.Counters.onNext.toString())
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        m.getCounter(DropOperator.Counters.dropped.toString()).increment(100);
-        m.getCounter(DropOperator.Counters.onNext.toString()).increment(1000);
+        Counter m1Dropped = meterRegistry.counter(METRIC_GROUP + "_" + INCOMING + "_metric1_" + ("" + DropOperator.Counters.dropped));
+        Counter m1OnNext = meterRegistry.counter(METRIC_GROUP + "_" + INCOMING + "_metric1_" + ("" + DropOperator.Counters.onNext));
+        m1Dropped.increment(1);
+        m1OnNext.increment(10);
+        Counter m2Dropped = meterRegistry.counter(METRIC_GROUP + "_" + INCOMING + "_metric2_" + ("" + DropOperator.Counters.dropped));
+        Counter m2OnNext = meterRegistry.counter(METRIC_GROUP + "_" + INCOMING + "_metric2_" + ("" + DropOperator.Counters.onNext));
+        m2Dropped.increment(100);
+        m2OnNext.increment(1000);
 
         payloadSetter.setPayload(30);
-        m = MetricsRegistry.getInstance().getMetric(new MetricGroupId(DATA_DROP_METRIC_GROUP));
-        assertEquals(101L, m.getGauge(DROP_COUNT).value());
-        assertEquals(1010, m.getGauge(ON_NEXT_COUNT).value());
+        assertEquals(101L, meterRegistry.find(DATA_DROP_METRIC_GROUP + "_" + DROP_COUNT).gauge().value());
+        assertEquals(1010, meterRegistry.find(DATA_DROP_METRIC_GROUP + "_" +ON_NEXT_COUNT).gauge().value());
     }
 }

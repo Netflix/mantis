@@ -27,6 +27,7 @@ import io.mantisrx.server.master.client.HighAvailabilityServicesUtil;
 import io.mantisrx.shaded.com.google.common.base.Preconditions;
 import io.mantisrx.shaded.com.google.common.util.concurrent.AbstractIdleService;
 import io.mantisrx.shaded.com.google.common.util.concurrent.MoreExecutors;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.time.Clock;
@@ -54,6 +55,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
     private final TaskExecutor taskExecutor;
     private final HighAvailabilityServices highAvailabilityServices;
     private final RpcSystem rpcSystem;
+    private final MeterRegistry meterRegistry;
 
     @Override
     protected void startUp() {
@@ -111,6 +113,7 @@ public class TaskExecutorStarter extends AbstractIdleService {
         private TaskFactory taskFactory;
 
         private final List<Tuple2<TaskExecutor.Listener, Executor>> listeners = new ArrayList<>();
+        private MeterRegistry meterRegistry;
 
         private TaskExecutorStarterBuilder(WorkerConfiguration workerConfiguration) {
             this.workerConfiguration = workerConfiguration;
@@ -126,6 +129,11 @@ public class TaskExecutorStarter extends AbstractIdleService {
         public TaskExecutorStarterBuilder rpcSystem(RpcSystem rpcSystem) {
             Preconditions.checkNotNull(rpcSystem);
             this.rpcSystem = rpcSystem;
+            return this;
+        }
+
+        public TaskExecutorStarterBuilder registry(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
             return this;
         }
 
@@ -206,13 +214,14 @@ public class TaskExecutorStarter extends AbstractIdleService {
                     highAvailabilityServices,
                     getClassLoaderHandle(),
                     getSinkSubscriptionHandlerFactory(),
-                    this.taskFactory);
+                    this.taskFactory,
+                    meterRegistry);
 
             for (Tuple2<TaskExecutor.Listener, Executor> listener : listeners) {
                 taskExecutor.addListener(listener._1(), listener._2());
             }
 
-            return new TaskExecutorStarter(taskExecutor, highAvailabilityServices, getRpcSystem());
+            return new TaskExecutorStarter(taskExecutor, highAvailabilityServices, getRpcSystem(), meterRegistry);
         }
     }
 }

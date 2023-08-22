@@ -16,9 +16,8 @@
 
 package io.mantisrx.server.worker;
 
-import io.mantisrx.common.metrics.Gauge;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Gauge;
 import io.mantisrx.common.storage.StorageUnit;
 import io.mantisrx.runtime.loader.config.MetricsCollector;
 import io.mantisrx.runtime.loader.config.Usage;
@@ -33,6 +32,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,18 +48,31 @@ public class ResourceUsagePayloadSetter implements Closeable {
     private final AtomicInteger counter = new AtomicInteger();
     private final MetricsCollector resourceUsageUtils;
     private final Gauge cpuLimitGauge;
+    private final AtomicLong cpuLimitValue = new AtomicLong(0);
     private final Gauge cpuUsageCurrGauge;
+    private final AtomicLong cpuUsageCurrValue = new AtomicLong(0);
     private final Gauge cpuUsagePeakGauge;
+    private final AtomicLong cpuUsagePeakValue = new AtomicLong(0);
     private final Gauge memLimitGauge;
+    private final AtomicLong memLimitValue = new AtomicLong(0);
     private final Gauge cachedMemUsageCurrGauge;
+    private final AtomicLong cachedMemUsageCurrValue = new AtomicLong(0);
     private final Gauge cachedMemUsagePeakGauge;
+    private final AtomicLong cachedMemUsagePeakValue = new AtomicLong(0);
     private final Gauge totMemUsageCurrGauge;
+    private final AtomicLong totMemUsageCurrValue = new AtomicLong(0);
     private final Gauge totMemUsagePeakGauge;
+    private final AtomicLong totMemUsagePeakValue = new AtomicLong(0);
     private final Gauge nwBytesLimitGauge;
+    private final AtomicLong nwBytesLimitValue = new AtomicLong(0);
     private final Gauge nwBytesUsageCurrGauge;
+    private final AtomicLong nwBytesUsageCurrValue = new AtomicLong(0);
     private final Gauge nwBytesUsagePeakGauge;
+    private final AtomicLong nwBytesUsagePeakValue = new AtomicLong(0);
     private final Gauge jvmMemoryUsedGauge;
+    private final AtomicLong jvmMemoryUsedValue = new AtomicLong(0);
     private final Gauge jvmMemoryMaxGauge;
+    private final AtomicLong jvmMemoryMaxValue = new AtomicLong(0);
     private final double nwBytesLimit;
     private double prev_cpus_system_time_secs = -1.0;
     private double prev_cpus_user_time_secs = -1.0;
@@ -72,10 +85,12 @@ public class ResourceUsagePayloadSetter implements Closeable {
     private double peakBytesRead = 0.0;
     private double peakBytesWritten = 0.0;
     private StatusPayloads.ResourceUsage oldUsage = null;
+    private MeterRegistry meterRegistry;
 
-    public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config, double networkMbps) {
+    public ResourceUsagePayloadSetter(Heartbeat heartbeat, WorkerConfiguration config, double networkMbps, MeterRegistry meterRegistry) {
         this.heartbeat = heartbeat;
         this.nwBytesLimit = networkMbps * 1024.0 * 1024.0 / 8.0; // convert from bits to bytes
+        this.meterRegistry = meterRegistry;
         executor = new ScheduledThreadPoolExecutor(1);
         String defaultReportingSchedule = "5,5,10,10,20,30";
         StringTokenizer tokenizer = new StringTokenizer(defaultReportingSchedule, ",");
@@ -98,36 +113,25 @@ public class ResourceUsagePayloadSetter implements Closeable {
         String nwBytesUsagePeakGaugeName = MetricStringConstants.NW_BYTES_USAGE_PEAK;
         String jvmMemoryUsedGaugeName = "jvmMemoryUsedBytes";
         String jvmMemoryMaxGaugeName = "jvmMemoryMaxBytes";
-        Metrics m = new Metrics.Builder()
-                .name("ResourceUsage")
-                .addGauge(cpuLimitGaugeName)
-                .addGauge(cpuUsageCurrGaugeName)
-                .addGauge(cpuUsagePeakGaugeName)
-                .addGauge(memLimitGaugeName)
-                .addGauge(cachedMemUsageCurrGaugeName)
-                .addGauge(cachedMemUsagePeakGaugeName)
-                .addGauge(totMemUsageCurrGaugeName)
-                .addGauge(totMemUsagePeakGaugeName)
-                .addGauge(nwBytesLimitGaugeName)
-                .addGauge(nwBytesUsageCurrGaugeName)
-                .addGauge(nwBytesUsagePeakGaugeName)
-                .addGauge(jvmMemoryUsedGaugeName)
-                .addGauge(jvmMemoryMaxGaugeName)
-                .build();
-        m = MetricsRegistry.getInstance().registerAndGet(m);
-        cpuLimitGauge = m.getGauge(cpuLimitGaugeName);
-        cpuUsageCurrGauge = m.getGauge(cpuUsageCurrGaugeName);
-        cpuUsagePeakGauge = m.getGauge(cpuUsagePeakGaugeName);
-        memLimitGauge = m.getGauge(memLimitGaugeName);
-        cachedMemUsageCurrGauge = m.getGauge(cachedMemUsageCurrGaugeName);
-        cachedMemUsagePeakGauge = m.getGauge(cachedMemUsagePeakGaugeName);
-        totMemUsageCurrGauge = m.getGauge(totMemUsageCurrGaugeName);
-        totMemUsagePeakGauge = m.getGauge(totMemUsagePeakGaugeName);
-        nwBytesLimitGauge = m.getGauge(nwBytesLimitGaugeName);
-        nwBytesUsageCurrGauge = m.getGauge(nwBytesUsageCurrGaugeName);
-        nwBytesUsagePeakGauge = m.getGauge(nwBytesUsagePeakGaugeName);
-        jvmMemoryUsedGauge = m.getGauge(jvmMemoryUsedGaugeName);
-        jvmMemoryMaxGauge = m.getGauge(jvmMemoryMaxGaugeName);
+        cpuLimitGauge = addGauge(cpuLimitGaugeName, cpuLimitValue);
+        cpuUsageCurrGauge = addGauge(cpuUsageCurrGaugeName, cpuUsageCurrValue);
+        cpuUsagePeakGauge = addGauge(cpuUsagePeakGaugeName, cpuUsagePeakValue);
+        memLimitGauge = addGauge(memLimitGaugeName, memLimitValue);
+        cachedMemUsageCurrGauge = addGauge(cachedMemUsageCurrGaugeName, cachedMemUsageCurrValue);
+        cachedMemUsagePeakGauge = addGauge(cachedMemUsagePeakGaugeName, cachedMemUsagePeakValue);
+        totMemUsageCurrGauge = addGauge(totMemUsageCurrGaugeName, totMemUsageCurrValue);
+        totMemUsagePeakGauge = addGauge(totMemUsagePeakGaugeName, totMemUsagePeakValue);
+        nwBytesLimitGauge = addGauge(nwBytesLimitGaugeName, nwBytesLimitValue);
+        nwBytesUsageCurrGauge = addGauge(nwBytesUsageCurrGaugeName, nwBytesUsageCurrValue);
+        nwBytesUsagePeakGauge = addGauge(nwBytesUsagePeakGaugeName, nwBytesUsagePeakValue);
+        jvmMemoryUsedGauge = addGauge(jvmMemoryUsedGaugeName, jvmMemoryUsedValue);
+        jvmMemoryMaxGauge = addGauge(jvmMemoryMaxGaugeName, jvmMemoryMaxValue);
+    }
+
+    private Gauge addGauge(String name, AtomicLong value) {
+        Gauge gauge = Gauge.builder("ResourceUsage_" + name, value::get)
+            .register(meterRegistry);
+        return gauge;
     }
 
     private long getNextDelay() {
@@ -147,19 +151,19 @@ public class ResourceUsagePayloadSetter implements Closeable {
                 } catch (JsonProcessingException e) {
                     logger.warn("Error writing json for resourceUsage payload: " + e.getMessage());
                 }
-                cpuLimitGauge.set(Math.round(usage.getCpuLimit() * 100.0));
-                cpuUsageCurrGauge.set(Math.round(usage.getCpuUsageCurrent() * 100.0));
-                cpuUsagePeakGauge.set(Math.round(usage.getCpuUsagePeak() * 100.0));
-                memLimitGauge.set(Math.round(usage.getMemLimit()));
-                cachedMemUsageCurrGauge.set(Math.round(usage.getMemCacheCurrent()));
-                cachedMemUsagePeakGauge.set(Math.round(usage.getMemCachePeak()));
-                totMemUsageCurrGauge.set(Math.round(usage.getTotMemUsageCurrent()));
-                totMemUsagePeakGauge.set(Math.round(usage.getTotMemUsagePeak()));
-                nwBytesLimitGauge.set(Math.round(nwBytesLimit));
-                nwBytesUsageCurrGauge.set(Math.round(usage.getNwBytesCurrent()));
-                nwBytesUsagePeakGauge.set(Math.round(usage.getNwBytesPeak()));
-                jvmMemoryUsedGauge.set(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
-                jvmMemoryMaxGauge.set(Runtime.getRuntime().maxMemory());
+                cpuLimitValue.set(Math.round(usage.getCpuLimit() * 100.0));
+                cpuUsageCurrValue.set(Math.round(usage.getCpuUsageCurrent() * 100.0));
+                cpuUsagePeakValue.set(Math.round(usage.getCpuUsagePeak() * 100.0));
+                memLimitValue.set(Math.round(usage.getMemLimit()));
+                cachedMemUsageCurrValue.set(Math.round(usage.getMemCacheCurrent()));
+                cachedMemUsagePeakValue.set(Math.round(usage.getMemCachePeak()));
+                totMemUsageCurrValue.set(Math.round(usage.getTotMemUsageCurrent()));
+                totMemUsagePeakValue.set(Math.round(usage.getTotMemUsagePeak()));
+                nwBytesLimitValue.set(Math.round(nwBytesLimit));
+                nwBytesUsageCurrValue.set(Math.round(usage.getNwBytesCurrent()));
+                nwBytesUsagePeakValue.set(Math.round(usage.getNwBytesPeak()));
+                jvmMemoryUsedValue.set(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+                jvmMemoryMaxValue.set(Runtime.getRuntime().maxMemory());
                 if (isBigIncrease(oldUsage, usage) || closeToLimit(usage)) {
                     delay = Math.min(delay, bigUsageChgReportingIntervalSecs);
                 }

@@ -21,12 +21,13 @@ import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATO
 import com.mantisrx.common.utils.MantisSSEConstants;
 import io.mantisrx.common.MantisServerSentEvent;
 import io.mantisrx.common.compression.CompressionUtils;
-import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.runtime.parameter.SinkParameter;
 import io.mantisrx.runtime.parameter.SinkParameters;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.buffer.ByteBuf;
 import io.reactivx.mantis.operators.DropOperator;
 import java.util.Collection;
@@ -59,9 +60,8 @@ public class SseWorkerConnection {
     private final String connectionType;
     private final String hostname;
     private final int port;
-    private final MetricGroupId metricGroupId;
+    private final String metricGroup;
     private final Counter pingCounter;
-
     private final boolean reconnectUponConnectionReset;
     private final Action1<Boolean> updateConxStatus;
     private final Action1<Boolean> updateDataRecvngStatus;
@@ -112,13 +112,13 @@ public class SseWorkerConnection {
                                final Action1<Throwable> connectionResetHandler,
                                final long dataRecvTimeoutSecs,
                                final boolean reconnectUponConnectionReset,
-                               final CopyOnWriteArraySet<MetricGroupId> metricsSet,
+                               final CopyOnWriteArraySet<String> metricsSet,
                                final int bufferSize,
                                final SinkParameters sinkParameters,
-                               final MetricGroupId metricGroupId) {
+                               final String metricGroup,
+                               final MeterRegistry meterRegistry) {
         this(connectionType, hostname, port, updateConxStatus, updateDataRecvngStatus, connectionResetHandler,
-                dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false,
-                metricGroupId);
+                dataRecvTimeoutSecs, reconnectUponConnectionReset, metricsSet, bufferSize, sinkParameters, false, metricGroup, meterRegistry);
     }
     public SseWorkerConnection(final String connectionType,
                                final String hostname,
@@ -132,19 +132,14 @@ public class SseWorkerConnection {
                                final int bufferSize,
                                final SinkParameters sinkParameters,
                                final boolean disablePingFiltering,
-                               final MetricGroupId metricGroupId) {
+                               final String metricGroup,
+                               final MeterRegistry meterRegistry) {
         this.connectionType = connectionType;
         this.hostname = hostname;
         this.port = port;
-
-        this.metricGroupId = metricGroupId;
-        final MetricGroupId connHealthMetricGroup = new MetricGroupId("ConnectionHealth");
-        Metrics m = new Metrics.Builder()
-                .id(connHealthMetricGroup)
-                .addCounter("pingCount")
-                .build();
-        this.pingCounter = m.getCounter("pingCount");
-
+        this.meterRegistry = meterRegistry;
+        this.metricGroup = metricGroup;
+        this.pingCounter = meterRegistry.counter(metricGroup + "_ConnectionHealth_pingCount");
         this.updateConxStatus = updateConxStatus;
         this.updateDataRecvngStatus = updateDataRecvngStatus;
         this.connectionResetHandler = connectionResetHandler;
@@ -283,7 +278,7 @@ public class SseWorkerConnection {
                     .subscribe();
         }
         return response.getContent()
-                .lift(new DropOperator<ServerSentEvent>(metricGroupId))
+                .lift(new DropOperator<ServerSentEvent>(meterRegistry))
                 .flatMap((ServerSentEvent t1) -> {
                     lastDataReceived.set(System.currentTimeMillis());
                     if (isConnected.get() && isReceivingData.compareAndSet(false, true))
@@ -313,17 +308,11 @@ public class SseWorkerConnection {
     }
 
     private boolean hasDataDrop() {
-        final Collection<Metrics> metrics = MetricsRegistry.getInstance().getMetrics(metricNamePrefix);
         long totalDataDrop = 0L;
-        if (metrics != null && !metrics.isEmpty()) {
-            //logger.info("Got " + metrics.size() + " metrics for DropOperator");
-            for (Metrics m : metrics) {
-                final Counter dropped = m.getCounter("" + DropOperator.Counters.dropped);
-                final Counter onNext = m.getCounter("" + DropOperator.Counters.onNext);
-                if (dropped != null)
-                    totalDataDrop += dropped.value();
+        if (meterRegistry.getMeters().contains(pingCounter)) {
+            final Counter dropped = meterRegistry.find(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_" + ("" + DropOperator.Counters.dropped)).counter();
+            final Counter onNext = meterRegistry.find(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_" + ("" + DropOperator.Counters.onNext)).counter();
             }
-        }
         if (totalDataDrop > lastDataDropValue) {
             lastDataDropValue = totalDataDrop;
             return true;

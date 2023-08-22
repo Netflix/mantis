@@ -20,12 +20,11 @@ import static com.mantisrx.common.utils.MantisMetricStringConstants.DROP_OPERATO
 
 import com.mantisrx.common.utils.NettyUtils;
 import io.mantisrx.common.MantisServerSentEvent;
-import io.mantisrx.common.metrics.Counter;
-import io.mantisrx.common.metrics.Metrics;
-import io.mantisrx.common.metrics.MetricsRegistry;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
 import io.mantisrx.runtime.parameter.SinkParameters;
 import io.mantisrx.server.core.ServiceRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 import io.reactivx.mantis.operators.DropOperator;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,8 +41,8 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
 
     private static final String DEFAULT_BUFFER_SIZE_STR = "0";
     private static final Logger logger = LoggerFactory.getLogger(SseWorkerConnectionFunction.class);
-    private static final CopyOnWriteArraySet<MetricGroupId> metricsSet = new CopyOnWriteArraySet<>();
-    private static final MetricGroupId metricGroupId;
+    private static final CopyOnWriteArraySet<String> metricsSet = new CopyOnWriteArraySet<>();
+    private static final String metricGroup;
     private static final Action1<Throwable> defaultConxResetHandler = new Action1<Throwable>() {
         @Override
         public void call(Throwable throwable) {
@@ -58,25 +57,23 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
         // Use single netty thread
         NettyUtils.setNettyThreads();
 
-        metricGroupId = new MetricGroupId(DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseWorkerMetricsConnectionFunction_withBuffer");
-        metricsSet.add(metricGroupId);
+        metricGroup = (DROP_OPERATOR_INCOMING_METRIC_GROUP + "_SseWorkerMetricsConnectionFunction_withBuffer");
+        metricsSet.add(metricGroup);
         logger.info("SETTING UP METRICS PRINTER THREAD");
         new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Set<MetricGroupId> metricGroups = new HashSet<>(metricsSet);
+                    Set<String> metricGroups = new HashSet<>(metricsSet);
                     if (!metricGroups.isEmpty()) {
-                        for (MetricGroupId metricGroupId : metricGroups) {
-                            final Metrics metric = MetricsRegistry.getInstance().getMetric(metricGroupId);
-                            if (metric != null) {
-                                final Counter onNext = metric.getCounter("" + DropOperator.Counters.onNext);
-                                final Counter onError = metric.getCounter("" + DropOperator.Counters.onError);
-                                final Counter onComplete = metric.getCounter("" + DropOperator.Counters.onComplete);
-                                final Counter dropped = metric.getCounter("" + DropOperator.Counters.dropped);
-
-                                logger.info(metricGroupId.id() + ": onNext=" + onNext.value() + ", onError=" + onError.value() +
-                                                ", onComplete=" + onComplete.value() + ", dropped=" + dropped.value()
+                        for (String metricGroup : metricGroups) {
+                            if (metricGroup != null) {
+                                final Counter onNext = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.onNext));
+                                final Counter onError = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.onError));
+                                final Counter onComplete = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.onComplete));
+                                final Counter dropped = meterRegistry.counter(metricGroup + "_DropOperator_" + ("" + DropOperator.Counters.dropped));
+                                logger.info(metricGroup + ": onNext=" + onNext.count() + ", onError=" + onError.count() +
+                                                ", onComplete=" + onComplete.count() + ", dropped=" + dropped.count()
                                         // + ", buffered=" + buffered.value()
                                 );
                             }
@@ -95,15 +92,17 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
     private final Action1<Throwable> connectionResetHandler;
     private final SinkParameters sinkParameters;
     private final int bufferSize;
+    private static MeterRegistry meterRegistry;
 
-    public SseWorkerConnectionFunction(boolean reconnectUponConnectionRest, Action1<Throwable> connectionResetHandler) {
-        this(reconnectUponConnectionRest, connectionResetHandler, null);
+    public SseWorkerConnectionFunction(boolean reconnectUponConnectionRest, Action1<Throwable> connectionResetHandler, MeterRegistry meterRegistry) {
+        this(reconnectUponConnectionRest, connectionResetHandler, null, meterRegistry);
     }
 
-    public SseWorkerConnectionFunction(boolean reconnectUponConnectionRest, Action1<Throwable> connectionResetHandler, SinkParameters sinkParameters) {
+    public SseWorkerConnectionFunction(boolean reconnectUponConnectionRest, Action1<Throwable> connectionResetHandler, SinkParameters sinkParameters, MeterRegistry meterRegistry) {
         this.reconnectUponConnectionRest = reconnectUponConnectionRest;
         this.connectionResetHandler = connectionResetHandler == null ? defaultConxResetHandler : connectionResetHandler;
         this.sinkParameters = sinkParameters;
+        this.meterRegistry = meterRegistry;
         String bufferSizeStr = ServiceRegistry.INSTANCE.getPropertiesService().getStringValue("workerClient.buffer.size", DEFAULT_BUFFER_SIZE_STR);
         bufferSize = Integer.parseInt(bufferSizeStr);
     }
@@ -122,7 +121,7 @@ public class SseWorkerConnectionFunction implements WorkerConnectionFunc<MantisS
             private final SseWorkerConnection workerConn =
                     new SseWorkerConnection("WorkerMetrics", hostname, port, updateConxStatus, updateDataRecvngStatus,
                             connectionResetHandler, dataRecvTimeoutSecs, reconnectUponConnectionRest, metricsSet,
-                            bufferSize, sinkParameters,metricGroupId);
+                            bufferSize, sinkParameters, metricGroup, meterRegistry);
 
             @Override
             public String getName() {
