@@ -61,6 +61,10 @@ public class WorkerConfigurationWritable implements WorkerConfiguration {
     File localStorageDir;
     double networkBandwidthInMB;
     String taskExecutorAttributesStr;
+    int asyncHttpClientMaxConnectionsPerHost;
+    int asyncHttpClientConnectionTimeoutMs;
+    int asyncHttpClientRequestTimeoutMs;
+    int asyncHttpClientReadTimeoutMs;
 
     @JsonIgnore
     MetricsPublisher metricsPublisher;
