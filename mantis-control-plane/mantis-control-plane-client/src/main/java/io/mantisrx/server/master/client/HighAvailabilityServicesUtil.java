@@ -65,7 +65,8 @@ public class HighAvailabilityServicesUtil {
                   apiPort,
                   "api/postjobstatus",
                   apiPort + 6,
-                  System.currentTimeMillis())));
+                  System.currentTimeMillis()),
+              configuration));
       }
     }
     else {
@@ -79,9 +80,11 @@ public class HighAvailabilityServicesUtil {
 
   private static class LocalHighAvailabilityServices extends AbstractIdleService implements HighAvailabilityServices {
     private final MasterMonitor masterMonitor;
+    private final CoreConfiguration configuration;
 
-    public LocalHighAvailabilityServices(MasterDescription masterDescription) {
+    public LocalHighAvailabilityServices(MasterDescription masterDescription, CoreConfiguration configuration) {
         this.masterMonitor = new LocalMasterMonitor(masterDescription);
+        this.configuration = configuration;
     }
 
     @Override
@@ -101,7 +104,7 @@ public class HighAvailabilityServicesUtil {
 
             @Override
             public ResourceClusterGateway getCurrent() {
-                return new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster());
+                return new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
             }
 
             @Override
@@ -130,6 +133,7 @@ public class HighAvailabilityServicesUtil {
     private final Counter resourceLeaderChangeCounter;
     private final Counter resourceLeaderAlreadyRegisteredCounter;
     private final AtomicInteger rmConnections = new AtomicInteger(0);
+    private final CoreConfiguration configuration;
 
     public ZkHighAvailabilityServices(CoreConfiguration configuration) {
       curatorService = new CuratorService(configuration);
@@ -140,6 +144,7 @@ public class HighAvailabilityServicesUtil {
         .build());
       resourceLeaderChangeCounter = metrics.getCounter("resourceLeaderChangeCounter");
       resourceLeaderAlreadyRegisteredCounter = metrics.getCounter("resourceLeaderAlreadyRegisteredCounter");
+      this.configuration = configuration;
     }
 
     @Override
@@ -169,7 +174,7 @@ public class HighAvailabilityServicesUtil {
         final MasterMonitor masterMonitor = curatorService.getMasterMonitor();
 
         ResourceClusterGateway currentResourceClusterGateway =
-            new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster());
+            new ResourceClusterGatewayClient(clusterID, masterMonitor.getLatestMaster(), configuration);
 
         final String nameFormat =
             "ResourceClusterGatewayCxn (" + rmConnections.getAndIncrement() + ")-%d";
@@ -200,7 +205,7 @@ public class HighAvailabilityServicesUtil {
                     return;
                 }
                 ResourceClusterGateway previous = currentResourceClusterGateway;
-                currentResourceClusterGateway = new ResourceClusterGatewayClient(clusterID, nextDescription);
+                currentResourceClusterGateway = new ResourceClusterGatewayClient(clusterID, nextDescription, configuration);
 
                 resourceLeaderChangeCounter.increment();
                 changeListener.onResourceLeaderChanged(previous, currentResourceClusterGateway);

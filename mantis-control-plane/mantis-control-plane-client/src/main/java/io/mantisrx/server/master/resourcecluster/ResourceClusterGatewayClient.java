@@ -21,6 +21,7 @@ import static org.asynchttpclient.Dsl.post;
 
 import com.spotify.futures.CompletableFutures;
 import io.mantisrx.common.Ack;
+import io.mantisrx.server.core.CoreConfiguration;
 import io.mantisrx.server.core.master.MasterDescription;
 import io.mantisrx.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
@@ -48,11 +49,12 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
 
   public ResourceClusterGatewayClient(
       ClusterID clusterID,
-      MasterDescription masterDescription) {
+      MasterDescription masterDescription,
+      CoreConfiguration configuration) {
     this.clusterID = clusterID;
     this.masterDescription = masterDescription;
     this.mapper = new ObjectMapper();
-    this.client = buildCloseableHttpClient();
+    this.client = buildCloseableHttpClient(configuration);
   }
 
   @Override
@@ -122,9 +124,13 @@ public class ResourceClusterGatewayClient implements ResourceClusterGateway, Clo
     return uri;
   }
 
-  private AsyncHttpClient buildCloseableHttpClient() {
+  private AsyncHttpClient buildCloseableHttpClient(CoreConfiguration configuration) {
     return asyncHttpClient(
-        new Builder().setConnectTimeout(connectTimeout).setRequestTimeout(connectionRequestTimeout)
-            .setReadTimeout(socketTimeout).build());
+        new Builder()
+            .setMaxConnections(configuration.getAsyncHttpClientMaxConnectionsPerHost())
+            .setConnectTimeout(configuration.getAsyncHttpClientConnectionTimeoutMs())
+            .setRequestTimeout(configuration.getAsyncHttpClientRequestTimeoutMs())
+            .setReadTimeout(socketTimeout)
+            .build());
   }
 }
