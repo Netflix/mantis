@@ -224,7 +224,6 @@ public class SseWorkerConnection {
         sp.append(sp.length() == 0 ? getDefaultSinkParams("?") : getDefaultSinkParams("&"));
 
         String uri = "/" + sp.toString();
-        logger.info("---------Called ---------");
         logger.info(getName() + ": Using uri: " + uri);
 
         Observable<ObservableConnection<HttpClientResponse<ServerSentEvent>, HttpClientRequest<ByteBuf>>> conn = client.connect();
