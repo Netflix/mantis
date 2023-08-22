@@ -17,36 +17,26 @@
 package io.mantisrx.server.worker.client;
 
 import io.netty.channel.Channel;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import mantis.io.reactivex.netty.channel.ObservableConnection;
-import mantis.io.reactivex.netty.protocol.http.client.HttpClientRequest;
-import mantis.io.reactivex.netty.protocol.http.client.HttpClientResponse;
-import rx.Observable;
+import java.util.ArrayList;
+import java.util.List;
 
-public class SseConnectionMonitor<I, O> {
-    private static SseConnectionMonitor INSTANCE;
-    private Map<Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>>, Channel> sseConnections;
+public class SseConnectionMonitor {
+    private List<Channel> sseConnections;
 
-
-    private SseConnectionMonitor() {
-        sseConnections = new ConcurrentHashMap<>();
+    public SseConnectionMonitor() {
+        sseConnections = new ArrayList<>();
     }
 
-    public static SseConnectionMonitor getInstance() {
-        if(INSTANCE == null) {
-            INSTANCE = new SseConnectionMonitor();
+    public void addConnection(Channel channel) {
+        sseConnections.add(channel);
+    }
+
+    public void closeConnection() {
+        Channel channel;
+        for (int i=0;i<sseConnections.size();i++) {
+            channel = sseConnections.get(i);
+            channel.close();
         }
-
-        return INSTANCE;
-    }
-
-    public void addConnection(Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConnection, Channel channel) {
-        sseConnections.put(observableConnection, channel);
-    }
-
-    public void closeConnection(Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConnection) {
-        Channel channel = sseConnections.get(observableConnection);
-        channel.close();
+        sseConnections.clear();
     }
 }

@@ -46,12 +46,12 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     protected final ConnectionPool<HttpClientResponse<O>, HttpClientRequest<I>> pool;
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
-    final private SseConnectionMonitor<I,O> connectionMonitor;
+    final private SseConnectionMonitor connectionMonitor;
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
 
-        this.connectionMonitor = SseConnectionMonitor.getInstance();
+        this.connectionMonitor = new SseConnectionMonitor();
 
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
@@ -89,7 +89,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<HttpClientResponse<O>, HttpClientRequest<I>> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, poolBuilder, eventsSubject);
 
-        this.connectionMonitor = SseConnectionMonitor.getInstance();
+        this.connectionMonitor = new SseConnectionMonitor();
 
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
@@ -122,15 +122,15 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     public Observable<HttpClientResponse<O>> submit(HttpClientRequest<I> request) {
         ClientConfig clientConfig = (ClientConfig) Builder.newDefaultConfig();
-        return super.submit(request, observableConection, clientConfig);
+        return super.submit(request, this.observableConection, clientConfig);
     }
 
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
-        observableConection = super.connect();
-        return observableConection.doOnNext(x -> this.connectionMonitor.addConnection(observableConection, x.getChannel()));
+        this.observableConection = super.connect();
+        return this.observableConection.doOnNext(x -> this.connectionMonitor.addConnection(x.getChannel()));
     }
 
     public void closeConn() {
-        this.connectionMonitor.closeConnection(observableConection);
+        this.connectionMonitor.closeConnection();
     }
 }
