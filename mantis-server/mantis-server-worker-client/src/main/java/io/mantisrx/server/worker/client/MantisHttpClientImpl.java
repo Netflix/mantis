@@ -19,6 +19,8 @@ package io.mantisrx.server.worker.client;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
+import java.util.ArrayList;
+import java.util.List;
 import mantis.io.reactivex.netty.channel.ObservableConnection;
 import mantis.io.reactivex.netty.client.ClientChannelFactory;
 import mantis.io.reactivex.netty.client.ClientConnectionFactory;
@@ -46,12 +48,12 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     protected final ConnectionPool<HttpClientResponse<O>, HttpClientRequest<I>> pool;
 
     private Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> observableConection;
-    final private SseConnectionMonitor connectionMonitor;
+    private List<Channel> connectionTracker;
 
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ClientChannelFactory<HttpClientResponse<O>, HttpClientRequest<I>> channelFactory, ClientConnectionFactory<HttpClientResponse<O>, HttpClientRequest<I>, ? extends ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connectionFactory, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, channelFactory, connectionFactory, eventsSubject);
 
-        this.connectionMonitor = new SseConnectionMonitor();
+        this.connectionTracker = new ArrayList<>();
 
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
@@ -89,7 +91,7 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
     public MantisHttpClientImpl(String name, ServerInfo serverInfo, Bootstrap clientBootstrap, PipelineConfigurator<HttpClientResponse<O>, HttpClientRequest<I>> pipelineConfigurator, ClientConfig clientConfig, ConnectionPoolBuilder<HttpClientResponse<O>, HttpClientRequest<I>> poolBuilder, MetricEventsSubject<ClientMetricsEvent<?>> eventsSubject) {
         super(name, serverInfo, clientBootstrap, pipelineConfigurator, clientConfig, poolBuilder, eventsSubject);
 
-        this.connectionMonitor = new SseConnectionMonitor();
+        this.connectionTracker = new ArrayList<>();
 
         if (null == name) {
             throw new NullPointerException("Name can not be null.");
@@ -127,10 +129,16 @@ public class MantisHttpClientImpl<I, O> extends HttpClientImpl<I, O> {
 
     public Observable<ObservableConnection<HttpClientResponse<O>, HttpClientRequest<I>>> connect() {
         this.observableConection = super.connect();
-        return this.observableConection.doOnNext(x -> this.connectionMonitor.addConnection(x.getChannel()));
+        return this.observableConection.doOnNext(x -> this.connectionTracker.add(x.getChannel()));
     }
 
     public void closeConn() {
-        this.connectionMonitor.closeConnection();
+        Channel channel;
+        for (Channel value : this.connectionTracker) {
+            channel = value;
+//            channel.alloc().buffer().writeBytes("writing".getBytes());
+            channel.close();
+        }
+        this.connectionTracker.clear();
     }
 }
