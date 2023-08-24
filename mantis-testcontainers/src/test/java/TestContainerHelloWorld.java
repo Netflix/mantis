@@ -67,7 +67,7 @@ public class TestContainerHelloWorld {
     private static final String CONTAINER_ARTIFACT_PATH = "/apps/mantis/mantis-server-agent/mantis-artifacts/storage/";
 
     private static final String LOGGING_ENABLED_METRICS_GROUP =
-            "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute;apiv1;akka.queue.size";
+            "MasterApiMetrics;DeadLetterActor;JobDiscoveryRoute";
     private static final String JOB_CLUSTER_CREATE = "{\"jobDefinition\":{\"name\":\"hello-sine-testcontainers\","
         + "\"user\":\"mantisoss\",\"jobJarFileLocation\":\"file:///mantis-examples-sine-function-2.1.0-SNAPSHOT"
         + ".zip\"," +

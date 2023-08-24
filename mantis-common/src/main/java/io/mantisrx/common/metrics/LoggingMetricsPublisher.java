@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * This implementation will print the metric group in log and is only recommended using in Test/Dev only.
+ * This implementation will print the selected metric groups in log.
  * To use this publisher override config "mantis.metricsPublisher.class" in the master-*.properties file.
  */
 @Slf4j
