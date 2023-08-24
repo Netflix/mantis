@@ -21,6 +21,7 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.github.resilience4j.retry.event.RetryOnRetryEvent;
+import io.mantisrx.common.Ack;
 import io.mantisrx.common.metrics.Counter;
 import io.mantisrx.common.metrics.Metrics;
 import io.mantisrx.common.metrics.spectator.MetricGroupId;
@@ -31,6 +32,7 @@ import io.mantisrx.server.master.resourcecluster.TaskExecutorHeartbeat;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorRegistration;
 import io.mantisrx.server.master.resourcecluster.TaskExecutorReport;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -63,6 +65,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     private final Counter heartbeatFailureCounter;
     private final Counter taskExecutorRegistrationFailureCounter;
     private final Counter taskExecutorDisconnectionFailureCounter;
+    private final Counter taskExecutorRegistrationCounter;
+    private final Counter taskExecutorDisconnectionCounter;
 
     ResourceManagerGatewayCxn(int idx, TaskExecutorRegistration taskExecutorRegistration, ResourceClusterGateway gateway, Time heartBeatInterval, Time heartBeatTimeout, Function<Time, CompletableFuture<TaskExecutorReport>> currentReportSupplier, int tolerableConsecutiveHeartbeatFailures, long heartbeatRetryInitialDelayMillis, long heartbeatRetryMaxDelayMillis, long registrationRetryInitialDelayMillis, double registrationRetryMultiplier, double registrationRetryRandomizationFactor, int registrationRetryMaxAttempts) {
         super(tolerableConsecutiveHeartbeatFailures, heartbeatRetryInitialDelayMillis, heartbeatRetryMaxDelayMillis);
@@ -84,12 +88,15 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
                 .addCounter("heartbeatFailure")
                 .addCounter("taskExecutorRegistrationFailure")
                 .addCounter("taskExecutorDisconnectionFailure")
+                .addCounter("taskExecutorRegistration")
+                .addCounter("taskExecutorDisconnection")
                 .build();
         this.heartbeatTimeoutCounter = m.getCounter("heartbeatTimeout");
         this.heartbeatFailureCounter = m.getCounter("heartbeatFailure");
         this.taskExecutorRegistrationFailureCounter = m.getCounter("taskExecutorRegistrationFailure");
         this.taskExecutorDisconnectionFailureCounter = m.getCounter("taskExecutorDisconnectionFailure");
-
+        this.taskExecutorRegistrationCounter = m.getCounter("taskExecutorRegistration");
+        this.taskExecutorDisconnectionCounter = m.getCounter("taskExecutorDisconnection");
     }
 
     @Override
@@ -117,15 +124,10 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
             log.error("Registration to gateway {} has failed; Disconnecting now to be safe", gateway,
                     e);
             try {
-                gateway.disconnectTaskExecutor(
-                                new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                                        taskExecutorRegistration.getClusterID()))
-                        .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+                disconnectTaskExecutor();
             } catch (Exception inner) {
-                log.error("Disconnection has also failed", inner);
-                taskExecutorDisconnectionFailureCounter.increment();
+                throw e;
             }
-            throw e;
         }
     }
 
@@ -145,12 +147,30 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
         retry.getEventPublisher().onRetry(this::onRegistrationRetry);
 
         try {
-            Retry.decorateCheckedSupplier(retry, () ->
-                    gateway
-                            .registerTaskExecutor(taskExecutorRegistration)
-                            .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit())).apply();
+            Retry.decorateCheckedSupplier(retry, this::registerTaskExecutor).apply();
         } catch (Throwable e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private Ack registerTaskExecutor() throws ExecutionException, InterruptedException, TimeoutException {
+        taskExecutorRegistrationCounter.increment();
+        return gateway
+                .registerTaskExecutor(taskExecutorRegistration)
+                .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+    }
+
+    private void disconnectTaskExecutor() throws ExecutionException, InterruptedException, TimeoutException {
+        taskExecutorDisconnectionCounter.increment();
+        try {
+            gateway.disconnectTaskExecutor(
+                            new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
+                                    taskExecutorRegistration.getClusterID()))
+                    .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+        } catch (Exception inner) {
+            log.error("Disconnection has also failed", inner);
+            taskExecutorDisconnectionFailureCounter.increment();
+            throw inner;
         }
     }
 
@@ -190,10 +210,6 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
     @Override
     public void shutDown() throws Exception {
         registered = false;
-        gateway
-                .disconnectTaskExecutor(
-                        new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
-                                taskExecutorRegistration.getClusterID()))
-                .get(heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
+        disconnectTaskExecutor();
     }
 }
