@@ -85,6 +85,30 @@ public interface WorkerConfiguration extends CoreConfiguration {
     @Default("5000")
     int heartbeatTimeoutMs();
 
+    @Config("mantis.taskexecutor.heartbeats.retry.initial-delay.ms")
+    @Default("1000")
+    long heartbeatRetryInitialDelayMs();
+
+    @Config("mantis.taskexecutor.heartbeats.retry.max-delay.ms")
+    @Default("5000")
+    long heartbeatRetryMaxDelayMs();
+
+    @Config("mantis.taskexecutor.registration.retry.initial-delay.ms")
+    @Default("2000")
+    long registrationRetryInitialDelayMillis();
+
+    @Config("mantis.taskexecutor.registration.retry.mutliplier")
+    @Default("2")
+    double registrationRetryMultiplier();
+
+    @Config("mantis.taskexecutor.registration.retry.randomization-factor")
+    @Default("0.5")
+    double registrationRetryRandomizationFactor();
+
+    @Config("mantis.taskexecutor.registration.retry.max-attempts")
+    @Default("5")
+    int registrationRetryMaxAttempts();
+
     default Time getHeartbeatTimeout() {
         return Time.milliseconds(heartbeatTimeoutMs());
     }
