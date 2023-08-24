@@ -167,10 +167,10 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
                             new TaskExecutorDisconnection(taskExecutorRegistration.getTaskExecutorID(),
                                     taskExecutorRegistration.getClusterID()))
                     .get(2 * heartBeatTimeout.getSize(), heartBeatTimeout.getUnit());
-        } catch (Exception inner) {
-            log.error("Disconnection has also failed", inner);
+        } catch (Exception e) {
+            log.error("Disconnection has failed", e);
             taskExecutorDisconnectionFailureCounter.increment();
-            throw inner;
+            throw e;
         }
     }
 
