@@ -125,9 +125,8 @@ class ResourceManagerGatewayCxn extends ExponentialBackoffAbstractScheduledServi
                     e);
             try {
                 disconnectTaskExecutor();
-            } catch (Exception inner) {
-                throw e;
-            }
+            } catch (Exception ignored) {}
+            throw e;
         }
     }
 
